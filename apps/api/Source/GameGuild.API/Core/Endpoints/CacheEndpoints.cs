@@ -11,11 +11,13 @@ internal sealed class CacheEndpoints : IEndpoint
     {
         // Cache management mutates shared infrastructure state (clear-by-pattern,
         // connectivity tests, statistics); it is an admin-only surface and is never
-        // listed in the anonymous endpoint registry.
+        // listed in the anonymous endpoint registry. Issue #386: gated by the
+        // system-configuration permission tier (SystemAdmin role or a delegated
+        // system:manage-configuration grant) - platform-scoped, not tenant-clamped.
         var group = app.MapGroup("/cache")
             .WithTags("Cache")
             .WithDescription("Cache management operations")
-            .RequireAuthorization(Policies.SystemAdmin);
+            .RequireAuthorization(Policies.SystemConfigurationManage);
 
         group.MapGet("/health", GetCacheHealth)
             .WithName("GetCacheHealth")

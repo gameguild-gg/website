@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using GameGuild.Commerce;
+using GameGuild.Commerce.Payments;
 
 namespace GameGuild.Commerce.Products;
 
@@ -16,16 +17,27 @@ public static class ProductsModule
     {
         // Register repositories
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
+        services.AddScoped<IProductInventoryRepository, ProductInventoryRepository>();
         services.AddScoped<IProductPricingRepository, ProductPricingRepository>();
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
+        services.AddScoped<IPromoStackingRuleRepository, PromoStackingRuleRepository>();
         services.AddScoped<IUserProductRepository, UserProductRepository>();
+        services.AddScoped<IPricingRuleRepository, PricingRuleRepository>();
 
         // Register services
         services.AddScoped<IPricingEngineService, PricingEngineService>();
+        services.AddScoped<IPromoDiscountCalculator, PromoDiscountCalculatorAdapter>();
         services.AddScoped<IProductPricingService, ProductPricingService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
+        services.AddScoped<IPromoCodeUsageRecorder, PromoCodeUsageRecorder>();
+        services.AddScoped<IPromoCodeAuditLogger, PromoCodeAuditLogger>();
         services.AddScoped<IUserProductService, UserProductService>();
         services.AddScoped<IEntitlementService, EntitlementService>();
+        services.AddScoped<IProductCategoryValidator, ProductCategoryValidator>();
+        services.AddScoped<IProductCatalogAuditLogger, ProductCatalogAuditLogger>();
+        services.AddScoped<IProductInventoryService, ProductInventoryService>();
+        services.AddScoped<IBundleSavingsCalculator, BundleSavingsCalculator>();
 
         // Note: Order-related services are now in GameGuild.Commerce.Orders module
         // CQRS handlers are automatically registered by assembly scanning in ApplicationLayerExtensions
@@ -71,6 +83,47 @@ public static class ProductsModule
                 .WithOne(bi => bi.IncludedProduct)
                 .HasForeignKey(bi => bi.IncludedProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Catalog category assignment (issue #401): single category, restrict delete
+            // while products still reference it.
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.CategoryId);
+        });
+
+        // Hierarchical catalog categories (issue #401): self-referencing parent FK,
+        // tenant-unique slug, jsonb attributes.
+        modelBuilder.Entity<ProductCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ParentCategoryId);
+            entity.HasIndex(e => e.DisplayOrder);
+            entity.HasIndex(e => new { e.TenantId, e.Slug }).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.AttributesJson).HasColumnType("jsonb");
+            entity.HasOne(e => e.Parent)
+                .WithMany(e => e.Children)
+                .HasForeignKey(e => e.ParentCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Per-product inventory (issue #401): one-to-one with Product, untracked by default.
+        modelBuilder.Entity<ProductInventory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ProductId).IsUnique();
+            entity.HasIndex(e => e.TrackInventory);
+            entity.Property(e => e.StockQuantity);
+            entity.Property(e => e.ReservedQuantity);
+            entity.Property(e => e.LowStockThreshold);
+            entity.HasOne(e => e.Product)
+                .WithOne(p => p.Inventory)
+                .HasForeignKey<ProductInventory>(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ProductPricing>(entity =>
@@ -101,11 +154,15 @@ public static class ProductsModule
             entity.HasIndex(e => e.Code).IsUnique();
             entity.HasIndex(e => e.Type);
             entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.CampaignId);
+            entity.HasIndex(e => new { e.IsActive, e.ValidUntil });
             entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.DiscountPercentage).HasPrecision(5, 2);
             entity.Property(e => e.DiscountAmount).HasPrecision(10, 2);
+            entity.Property(e => e.MaxDiscountAmount).HasPrecision(10, 2);
             entity.Property(e => e.Currency).HasMaxLength(3).HasDefaultValue("USD");
+            entity.Property(e => e.CampaignId).HasMaxLength(100);
         });
 
         modelBuilder.Entity<PromoCodeUse>(entity =>
@@ -113,7 +170,19 @@ public static class ProductsModule
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.PromoCodeId);
             entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.PromoCodeId, e.UserId });
+            entity.HasIndex(e => e.UsedAt);
+            // Unique nullable index: a repeated idempotency key is a replay, never a second use.
+            entity.HasIndex(e => e.IdempotencyKey).IsUnique();
             entity.Property(e => e.DiscountApplied).HasPrecision(10, 2);
+            entity.Property(e => e.Currency).HasMaxLength(3).HasDefaultValue("USD");
+            entity.Property(e => e.IdempotencyKey).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<PromoCodeUserUsageCounter>(entity =>
+        {
+            entity.HasKey(e => new { e.PromoCodeId, e.UserId });
+            entity.Property(e => e.UseCount).HasDefaultValue(0);
         });
 
         modelBuilder.Entity<ProductSubscriptionPlan>(entity =>

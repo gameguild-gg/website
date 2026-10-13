@@ -273,6 +273,7 @@ public static class SecurityServiceCollectionExtensions
                         {
                             policyBuilder.AllowAnyHeader();
                         }
+                        policyBuilder.WithExposedHeaders("X-Audit-Snapshot-SHA256");
                     }
                 );
             }

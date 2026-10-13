@@ -252,23 +252,17 @@ public class PaymentTransitionTests
     public void PrepareForRetry_WhenMaxRetriesReached_ShouldThrow()
     {
         var p = CreatePendingPayment();
-        // Exhaust all retries
-        for (var i = 0; i < 3; i++)
+        // Exhaust the full retry budget (issue #415 default: 4 attempts)
+        for (var i = 0; i < p.MaxRetries; i++)
         {
             p.MarkAsProcessing();
             p.MarkAsFailed("fail");
-            if (i < 2)
-            {
-                p.PrepareForRetry();
-            }
+            p.PrepareForRetry();
         }
-
-        // At this point RetryCount == 2, one more retry allowed
-        p.PrepareForRetry();
         p.MarkAsProcessing();
         p.MarkAsFailed("fail again");
 
-        // Now RetryCount == 3 == MaxRetries
+        // Now RetryCount == MaxRetries
         var act = () => p.PrepareForRetry();
         act.Should().Throw<InvalidOperationException>();
     }
@@ -1318,122 +1312,6 @@ public class DisputeEvidenceTests
         e.FileSize.Should().Be(102400);
         e.MimeType.Should().Be("application/pdf");
         e.IsFromMerchant.Should().BeTrue();
-    }
-}
-
-#endregion
-
-#region PromoStackingRule Entity Tests
-
-public class PromoStackingRuleTests
-{
-    [Fact]
-    public void GetAllowedPromoCodeIds_WhenNull_ShouldReturnEmpty()
-    {
-        var rule = new PromoStackingRule();
-        rule.GetAllowedPromoCodeIds().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void SetAllowedPromoCodeIds_ShouldSerializeToJson()
-    {
-        var rule = new PromoStackingRule();
-        var ids = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
-        rule.SetAllowedPromoCodeIds(ids);
-
-        rule.AllowedPromoCodeIds.Should().NotBeNull();
-        rule.GetAllowedPromoCodeIds().Should().HaveCount(2);
-        rule.GetAllowedPromoCodeIds().Should().BeEquivalentTo(ids);
-    }
-
-    [Fact]
-    public void SetAllowedPromoCodeIds_EmptyList_ShouldSetNull()
-    {
-        var rule = new PromoStackingRule();
-        rule.SetAllowedPromoCodeIds(new List<Guid>());
-
-        rule.AllowedPromoCodeIds.Should().BeNull();
-    }
-
-    [Fact]
-    public void GetExcludedPromoCodeIds_WhenNull_ShouldReturnEmpty()
-    {
-        var rule = new PromoStackingRule();
-        rule.GetExcludedPromoCodeIds().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void SetExcludedPromoCodeIds_ShouldSerializeToJson()
-    {
-        var rule = new PromoStackingRule();
-        var ids = new List<Guid> { Guid.NewGuid() };
-        rule.SetExcludedPromoCodeIds(ids);
-
-        rule.ExcludedPromoCodeIds.Should().NotBeNull();
-        rule.GetExcludedPromoCodeIds().Should().HaveCount(1);
-    }
-
-    [Fact]
-    public void SetExcludedPromoCodeIds_EmptyList_ShouldSetNull()
-    {
-        var rule = new PromoStackingRule();
-        rule.SetExcludedPromoCodeIds(new List<Guid>());
-        rule.ExcludedPromoCodeIds.Should().BeNull();
-    }
-
-    [Fact]
-    public void GetPromoCodeTypes_WhenNull_ShouldReturnEmpty()
-    {
-        var rule = new PromoStackingRule();
-        rule.GetPromoCodeTypes().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void SetPromoCodeTypes_ShouldSerializeToJson()
-    {
-        var rule = new PromoStackingRule();
-        rule.SetPromoCodeTypes(new List<string> { "percent_off", "fixed_amount" });
-
-        rule.PromoCodeTypes.Should().NotBeNull();
-        rule.GetPromoCodeTypes().Should().HaveCount(2);
-        rule.GetPromoCodeTypes().Should().Contain("percent_off");
-    }
-
-    [Fact]
-    public void SetPromoCodeTypes_EmptyList_ShouldSetNull()
-    {
-        var rule = new PromoStackingRule();
-        rule.SetPromoCodeTypes(new List<string>());
-        rule.PromoCodeTypes.Should().BeNull();
-    }
-
-    [Fact]
-    public void GetAllowedPromoCodeIds_InvalidJson_ShouldReturnEmpty()
-    {
-        var rule = new PromoStackingRule { AllowedPromoCodeIds = "not-json" };
-        rule.GetAllowedPromoCodeIds().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetExcludedPromoCodeIds_InvalidJson_ShouldReturnEmpty()
-    {
-        var rule = new PromoStackingRule { ExcludedPromoCodeIds = "not-json" };
-        rule.GetExcludedPromoCodeIds().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetPromoCodeTypes_InvalidJson_ShouldReturnEmpty()
-    {
-        var rule = new PromoStackingRule { PromoCodeTypes = "not-json" };
-        rule.GetPromoCodeTypes().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void DefaultValues_ShouldBeCorrect()
-    {
-        var rule = new PromoStackingRule();
-        rule.StackBehavior.Should().Be(StackBehavior.Allow);
-        rule.Priority.Should().Be(0);
     }
 }
 

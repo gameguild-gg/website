@@ -1,162 +1,136 @@
-import { BrowserProvider } from 'ethers';
-import { Web3Config, NetworkInfo } from '../types';
+/**
+ * Web3 wallet connection state machine (issue #38).
+ *
+ * Pure reducer: no side effects, no provider access. The React provider
+ * dispatches these actions from adapter lifecycle callbacks.
+ */
+import type { WalletId, Web3Error, Web3State } from '../types';
 
 export const Web3ActionType = {
-  CHECK_PROVIDER: 'CHECK_PROVIDER',
-  PROVIDER_AVAILABLE: 'PROVIDER_AVAILABLE',
-  PROVIDER_UNAVAILABLE: 'PROVIDER_UNAVAILABLE',
   CONNECT_START: 'CONNECT_START',
   CONNECT_SUCCESS: 'CONNECT_SUCCESS',
   CONNECT_FAILURE: 'CONNECT_FAILURE',
-  ACCOUNT_CHANGED: 'ACCOUNT_CHANGED',
-  DISCONNECT: 'DISCONNECT',
-  SET_NETWORK: 'SET_NETWORK',
-  NETWORK_CHANGED: 'NETWORK_CHANGED',
+  AUTH_SIGNING: 'AUTH_SIGNING',
+  AUTH_SUCCESS: 'AUTH_SUCCESS',
+  AUTH_FAILURE: 'AUTH_FAILURE',
+  ACCOUNTS_CHANGED: 'ACCOUNTS_CHANGED',
+  CHAIN_CHANGED: 'CHAIN_CHANGED',
+  WALLET_DISCONNECTED: 'WALLET_DISCONNECTED',
+  CLEAR_ERROR: 'CLEAR_ERROR',
   RESET_STATE: 'RESET_STATE',
-  UPDATE_CONFIG: 'UPDATE_CONFIG',
 } as const;
 
 export type Web3ActionType = (typeof Web3ActionType)[keyof typeof Web3ActionType];
 
 export type Web3Action =
-  | { type: typeof Web3ActionType.CHECK_PROVIDER }
-  | { type: typeof Web3ActionType.PROVIDER_AVAILABLE }
-  | { type: typeof Web3ActionType.PROVIDER_UNAVAILABLE; payload: { error: string } }
-  | { type: typeof Web3ActionType.CONNECT_START }
-  | { type: typeof Web3ActionType.CONNECT_SUCCESS; payload: { provider: BrowserProvider; accountAddress: string; network?: NetworkInfo } }
-  | { type: typeof Web3ActionType.CONNECT_FAILURE; payload: { error: string } }
-  | { type: typeof Web3ActionType.ACCOUNT_CHANGED; payload: { accountAddress: string } }
-  | { type: typeof Web3ActionType.DISCONNECT }
-  | { type: typeof Web3ActionType.SET_NETWORK; payload: { network: NetworkInfo } }
-  | { type: typeof Web3ActionType.NETWORK_CHANGED; payload: { network: NetworkInfo } }
-  | { type: typeof Web3ActionType.RESET_STATE }
-  | { type: typeof Web3ActionType.UPDATE_CONFIG; payload: Partial<Web3Config> };
+  | { type: typeof Web3ActionType.CONNECT_START; walletId: WalletId; walletName: string }
+  | {
+      type: typeof Web3ActionType.CONNECT_SUCCESS;
+      account: string;
+      chainId: string;
+    }
+  | { type: typeof Web3ActionType.CONNECT_FAILURE; error: Web3Error }
+  | { type: typeof Web3ActionType.AUTH_SIGNING }
+  | { type: typeof Web3ActionType.AUTH_SUCCESS }
+  | { type: typeof Web3ActionType.AUTH_FAILURE; error: Web3Error }
+  | { type: typeof Web3ActionType.ACCOUNTS_CHANGED; account: string }
+  | { type: typeof Web3ActionType.CHAIN_CHANGED; chainId: string }
+  | { type: typeof Web3ActionType.WALLET_DISCONNECTED; error?: Web3Error }
+  | { type: typeof Web3ActionType.CLEAR_ERROR }
+  | { type: typeof Web3ActionType.RESET_STATE };
 
 export type Web3Reducer = (state: Web3State, action: Web3Action) => Web3State;
 
-export type Web3State = {};
-
-export const defaultWeb3State: Web3State = {};
+export const defaultWeb3State: Web3State = {
+  status: 'disconnected',
+  walletId: undefined,
+  walletName: undefined,
+  account: undefined,
+  chainId: undefined,
+  error: undefined,
+};
 
 export const web3Reducer: Web3Reducer = (state: Web3State, action: Web3Action): Web3State => {
   switch (action.type) {
-    //
-    case Web3ActionType.CHECK_PROVIDER: {
-      return {
-        ...state,
-        isProviderChecked: false,
-        connectionStatus: 'idle',
-        error: undefined,
-      };
-    }
-    //
-    case Web3ActionType.PROVIDER_AVAILABLE: {
-      return {
-        ...state,
-        isProviderAvailable: true,
-        isProviderChecked: true,
-        error: undefined,
-      };
-    }
-    //
-    case Web3ActionType.PROVIDER_UNAVAILABLE: {
-      return {
-        ...state,
-        isProviderAvailable: false,
-        isProviderChecked: true,
-        connectionStatus: 'error',
-        error: action.payload.error,
-      };
-    }
-    //
     case Web3ActionType.CONNECT_START: {
       return {
         ...state,
-        isConnecting: true,
-        connectionStatus: 'connecting',
+        status: 'connecting',
+        walletId: action.walletId,
+        walletName: action.walletName,
         error: undefined,
       };
     }
-    //
+
     case Web3ActionType.CONNECT_SUCCESS: {
-      const now = Date.now();
       return {
         ...state,
-        isConnecting: false,
-        isConnected: true,
-        provider: action.payload.provider,
-        accountAddress: action.payload.accountAddress,
-        network: action.payload.network,
-        connectionStatus: 'connected',
+        status: 'connected',
+        account: action.account,
+        chainId: action.chainId,
         error: undefined,
-        persistedConnection: state.config.persistConnection ?? true,
-        lastConnected: now,
       };
     }
-    //
+
     case Web3ActionType.CONNECT_FAILURE: {
       return {
         ...state,
-        isConnecting: false,
-        isConnected: false,
-        connectionStatus: 'error',
-        error: action.payload.error,
-        persistedConnection: false,
+        status: 'error',
+        account: undefined,
+        chainId: undefined,
+        error: action.error,
       };
     }
-    //
-    case Web3ActionType.ACCOUNT_CHANGED: {
+
+    case Web3ActionType.AUTH_SIGNING: {
+      // The wallet stays connected while the SIWE message is being signed.
+      return { ...state, status: 'signing', error: undefined };
+    }
+
+    case Web3ActionType.AUTH_SUCCESS: {
+      return { ...state, status: 'authenticated', error: undefined };
+    }
+
+    case Web3ActionType.AUTH_FAILURE: {
+      // Signing/verification failed, but the wallet connection itself is
+      // intact — return to `connected` (or `error` if never fully connected).
+      const status = state.account === undefined ? 'error' : 'connected';
+      return { ...state, status, error: action.error };
+    }
+
+    case Web3ActionType.ACCOUNTS_CHANGED: {
+      // A different account invalidates any prior authentication.
       return {
         ...state,
-        accountAddress: action.payload.accountAddress,
+        account: action.account,
+        status: 'connected',
         error: undefined,
       };
     }
-    //
-    case Web3ActionType.DISCONNECT: {
-      return {
-        ...state,
-        provider: undefined,
-        accountAddress: undefined,
-        network: undefined,
-        isConnecting: false,
-        isConnected: false,
-        connectionStatus: 'disconnected',
-        error: undefined,
-        persistedConnection: false,
-      };
+
+    case Web3ActionType.CHAIN_CHANGED: {
+      return { ...state, chainId: action.chainId };
     }
-    //
-    case Web3ActionType.SET_NETWORK: {
-      return {
-        ...state,
-        network: action.payload.network,
-        error: undefined,
-      };
-    }
-    //
-    case Web3ActionType.NETWORK_CHANGED: {
-      return {
-        ...state,
-        network: action.payload.network,
-        error: undefined,
-      };
-    }
-    //
-    case Web3ActionType.UPDATE_CONFIG: {
-      return {
-        ...state,
-        config: { ...state.config, ...action.payload },
-      };
-    }
-    //
-    case Web3ActionType.RESET_STATE: {
+
+    case Web3ActionType.WALLET_DISCONNECTED: {
       return {
         ...defaultWeb3State,
-        config: state.config, // Preserve config on reset
-        supportedNetworks: state.supportedNetworks, // Preserve supported networks
+        error: action.error,
       };
     }
+
+    case Web3ActionType.CLEAR_ERROR: {
+      if (state.error === undefined) return state;
+      // Keep the error status honest: clearing an error returns a terminal
+      // state (disconnected/connected) instead of erasing the history.
+      const status: Web3State['status'] = state.account === undefined ? 'disconnected' : 'connected';
+      return { ...state, status, error: undefined };
+    }
+
+    case Web3ActionType.RESET_STATE: {
+      return { ...defaultWeb3State };
+    }
+
     default: {
       console.warn(`Unhandled Web3 action type: ${(action as { type: string }).type}`);
       return state;

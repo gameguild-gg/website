@@ -99,7 +99,7 @@ public class EmailCodeService(
 
         if (entry is null)
         {
-            logger.LogWarning("Verification attempted with no pending email sign-in code for {Email}", LogRedaction.MaskEmail(normalizedEmail));
+            logger.LogWarning("Verification attempted with no pending email sign-in code");
             return Task.FromResult(TokenValidationResult.Failed("Invalid code"));
         }
 

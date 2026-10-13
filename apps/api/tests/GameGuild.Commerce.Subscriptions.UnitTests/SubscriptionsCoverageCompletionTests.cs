@@ -152,11 +152,19 @@ public sealed class SubscriptionsCoverageCompletionTests
         PaymentRetryResult.FailedWithRetry(1, 3, DateTime.UtcNow.AddDays(1), "retry").RetriesExhausted.Should().BeFalse();
         PaymentRetryResult.FailedExhausted(3, 3, "done").RetriesExhausted.Should().BeTrue();
 
-        PricingCalculationResult.Simple(money, BillingCycle.Monthly).Currency.Should().Be("USD");
-        PricingCalculationResult.WithDiscount(money, new Money(20m, "USD"), BillingCycle.Annually, [new ConcreteAppliedDiscount { Code = "promo", Description = "Promo", Amount = new Money(20m, "USD"), Type = DiscountType.FixedAmount }])
-            .TotalAmount.Amount.Should().Be(100m);
-        PricingCalculationResult.WithDiscount(money, new Money(20m, "USD"), BillingCycle.Annually)
-            .AppliedDiscounts.Should().BeEmpty();
+        // Issue #417: the unified Payments PricingCalculationResult replaced the Subscriptions duplicate.
+        new PricingCalculationResult { BasePlanPrice = money, BillingCycle = BillingCycle.Monthly, Currency = "USD" }.Currency.Should().Be("USD");
+        new PricingCalculationResult
+        {
+            BasePlanPrice = money,
+            Subtotal = money,
+            TotalDiscounts = new Money(20m, "USD"),
+            SubtotalAfterDiscounts = new Money(100m, "USD"),
+            Total = new Money(100m, "USD"),
+            BillingCycle = BillingCycle.Annually,
+            AppliedDiscounts = [new AppliedDiscount { Code = "promo", Description = "Promo", Amount = new Money(20m, "USD"), Type = DiscountType.FixedAmount }]
+        }.Total.Amount.Should().Be(100m);
+        new PricingCalculationResult { AppliedDiscounts = [] }.AppliedDiscounts.Should().BeEmpty();
 
         new ConcreteBulkRenewalResult { TotalProcessed = 4, SuccessfulRenewals = 3 }.SuccessRate.Should().Be(75m);
         new ConcreteBulkRenewalResult { TotalProcessed = 0, SuccessfulRenewals = 0 }.SuccessRate.Should().Be(0m);
@@ -202,16 +210,21 @@ public sealed class SubscriptionsCoverageCompletionTests
         var planService = Mock.Of<ISubscriptionPlanService>();
         var notificationService = Mock.Of<ISubscriptionNotificationService>();
         var billingLogger = Mock.Of<ILogger<SubscriptionBillingService>>();
+        var pricingLedgerWriter = Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>();
         var lifecycleLogger = Mock.Of<ILogger<SubscriptionLifecycleService>>();
         var notificationLogger = Mock.Of<ILogger<SubscriptionNotificationService>>();
 
-        FluentActions.Invoking(() => new SubscriptionBillingService(null!, planService, notificationService, billingLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionBillingService(repository, null!, notificationService, billingLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, null!, billingLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, notificationService, null!)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionLifecycleService(null!, planService, lifecycleLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, null!, lifecycleLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, null!)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(null!, planService, notificationService, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(repository, null!, notificationService, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, null!, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, notificationService, null!, billingLogger)).Should().Throw<ArgumentNullException>();
+        var intervalPricing = Mock.Of<ISubscriptionIntervalPricingService>();
+        var billingCalculator = Mock.Of<IBillingCalculator>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(null!, planService, intervalPricing, billingCalculator, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, null!, intervalPricing, billingCalculator, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, null!, billingCalculator, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, intervalPricing, null!, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, intervalPricing, billingCalculator, null!)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionNotificationService(null!, planService)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionNotificationService(notificationLogger, null!)).Should().Throw<ArgumentNullException>();
 
@@ -229,7 +242,7 @@ public sealed class SubscriptionsCoverageCompletionTests
         var planRepository = new Mock<ISubscriptionPlanRepository>();
         planRepository.Setup(repo => repo.GetByIdAsync(planWithAnnual.Id, It.IsAny<CancellationToken>())).ReturnsAsync(planWithAnnual);
         planRepository.Setup(repo => repo.UpdateAsync(planWithAnnual, It.IsAny<CancellationToken>())).ReturnsAsync(planWithAnnual);
-        await new TestPlanCommandHandler(planRepository.Object)
+        await new TestPlanCommandHandler(planRepository.Object, new Mock<ISubscriptionPlanListCache>().Object)
             .Handle(new ActivateSubscriptionPlanCommand(planWithAnnual.Id), CancellationToken.None);
     }
 
@@ -728,14 +741,13 @@ public sealed class SubscriptionsCoverageCompletionTests
     private sealed class ConcreteSubscriptionAnalytics : SubscriptionAnalytics;
     private sealed class ConcreteLimitCheckResult : LimitCheckResult;
     private sealed class ConcretePricingAddOn : PricingAddOn;
-    private sealed class ConcreteAppliedDiscount : AppliedDiscount;
     private sealed class NullStringValue
     {
         public override string ToString() => null!;
     }
 
-    private sealed class TestPlanCommandHandler(ISubscriptionPlanRepository repository)
-        : SubscriptionPlanCommandHandlerBase<ActivateSubscriptionPlanCommand>(repository)
+    private sealed class TestPlanCommandHandler(ISubscriptionPlanRepository repository, ISubscriptionPlanListCache planListCache)
+        : SubscriptionPlanCommandHandlerBase<ActivateSubscriptionPlanCommand>(repository, planListCache)
     {
         protected override Guid GetPlanId(ActivateSubscriptionPlanCommand request) => request.Id;
 

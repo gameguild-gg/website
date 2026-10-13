@@ -80,6 +80,7 @@ public static class OpenTelemetryExtensions
                         "GameGuild.API.RateLimiting",
                         "GameGuild.Identity.Authentication.PermissionBulkCheck",
                         "GameGuild.Identity.Authentication.RefreshTokens",
+                        "GameGuild.Identity.Authentication.Sessions",
                         "GameGuild.Identity.Authorization.Cache");
 
                 if (options.ConsoleExporterEnabled)

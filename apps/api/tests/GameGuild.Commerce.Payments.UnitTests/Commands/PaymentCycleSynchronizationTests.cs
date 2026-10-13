@@ -29,6 +29,8 @@ public sealed class PaymentCycleSynchronizationTests
             gateway.Object,
             syncService.Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            Mock.Of<IPaymentDunningLifecycleService>(),
             CreateRevenueAuditService(),
             CreateActorAccessor(),
             Mock.Of<ILogger<RetryPaymentCommandHandler>>());
@@ -98,6 +100,8 @@ public sealed class PaymentCycleSynchronizationTests
             gateway.Object,
             syncService.Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            Mock.Of<IPaymentDunningLifecycleService>(),
             CreateRevenueAuditService(),
             CreateActorAccessor(),
             Mock.Of<ILogger<RetryPaymentCommandHandler>>());

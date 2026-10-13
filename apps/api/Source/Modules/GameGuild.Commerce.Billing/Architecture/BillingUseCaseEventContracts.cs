@@ -24,3 +24,12 @@ using GameGuild.Commerce.Billing;
     typeof(ProcessGooglePayWebhookCommand),
     "commerce.billing.process-google-pay-webhook",
     ConditionalEventTypes = [typeof(BillingWebhookProcessedV1), typeof(BillingWebhookFailedV1)])]
+
+// Pricing-decision ledger drift validation (issue #400): stamps Verified/Drifted
+// outcomes on sampled ledger entries. The ledger rows themselves are the durable
+// record; no named cross-module event is declared and the durable generic operation
+// event remains the observable contract.
+[assembly: UseCaseEventContract(
+    typeof(ValidatePricingLedgerDriftCommand),
+    "commerce.billing.validate-pricing-ledger-drift",
+    NoDomainEventReason = "Drift validation stamps ledger entries in place; the ledger rows and audit trail are the durable record, and the durable generic operation event remains the observable contract.")]

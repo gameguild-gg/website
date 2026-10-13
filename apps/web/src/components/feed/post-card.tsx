@@ -413,7 +413,7 @@ export function PostCard({ item, currentUserId }: { item: SocialFeedItem; curren
           </div>
         ) : null}
         {item.tags.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">{item.tags.map((tag) => <Link key={tag} href={`/?tag=${encodeURIComponent(tag)}`} className="text-xs font-medium text-primary">#{tag}</Link>)}</div>
+          <div className="mt-3 flex flex-wrap gap-2">{item.tags.map((tag) => <Link key={tag} href={`/feed?tag=${encodeURIComponent(tag)}`} className="text-xs font-medium text-primary">#{tag}</Link>)}</div>
         ) : null}
         {blogEmbed ? (
           <BlogPostEmbed title={blogEmbed.title} excerpt={blogEmbed.excerpt} href={blogEmbed.href} />

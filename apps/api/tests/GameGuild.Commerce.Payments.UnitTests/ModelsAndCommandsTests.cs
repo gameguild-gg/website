@@ -176,19 +176,6 @@ public class RevenueSourceEnumTests
         ((int)source).Should().Be(expected);
 }
 
-public class StackBehaviorEnumTests
-{
-    [Theory]
-    [InlineData(StackBehavior.Allow, 0)]
-    [InlineData(StackBehavior.Deny, 1)]
-    [InlineData(StackBehavior.AllowIfFirst, 2)]
-    [InlineData(StackBehavior.AllowIfLast, 3)]
-    [InlineData(StackBehavior.OnlyWithSpecific, 4)]
-    [InlineData(StackBehavior.MaxOnePerType, 5)]
-    public void StackBehavior_ShouldHaveExpectedValues(StackBehavior behavior, int expected) =>
-        ((int)behavior).Should().Be(expected);
-}
-
 public class TaxJurisdictionTypeEnumTests
 {
     [Theory]

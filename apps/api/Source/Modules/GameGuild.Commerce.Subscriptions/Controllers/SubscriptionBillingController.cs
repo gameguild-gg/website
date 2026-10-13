@@ -115,4 +115,51 @@ public sealed class SubscriptionBillingController(ISender sender) : BaseApiContr
         var history = await sender.Send(new GetSubscriptionBillingHistoryQuery(subscriptionId), ct).ConfigureAwait(false);
         return Ok(history);
     }
+
+    /// <summary>
+    ///     Get the current price breakdown of a subscription (issue #417)
+    /// </summary>
+    /// <param name="subscriptionId">Subscription ID</param>
+    /// <param name="promoCode">Optional promo code to include in the breakdown</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Itemized price breakdown from the unified pricing engine</returns>
+    [HttpGet("v{version:apiVersion}/subscriptions/{subscriptionId:guid}/breakdown")]
+    [EndpointSummary("Get subscription price breakdown")]
+    [EndpointDescription("Returns the itemized price breakdown of a subscription's current plan through the unified pricing engine: base plan, discounts, totals and a calculation explanation.")]
+    [ProducesResponseType(typeof(GameGuild.Commerce.Payments.PricingCalculationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSubscriptionPriceBreakdown(Guid subscriptionId, [FromQuery] string? promoCode, CancellationToken ct)
+    {
+        var promoCodes = string.IsNullOrWhiteSpace(promoCode) ? null : new[] { promoCode.Trim() };
+        var breakdown = await sender.Send(new GetSubscriptionPricingBreakdownQuery(subscriptionId, promoCodes), ct).ConfigureAwait(false);
+        return Ok(breakdown);
+    }
+
+    /// <summary>
+    ///     Preview a plan change for a subscription before finalizing (issue #417)
+    /// </summary>
+    /// <param name="subscriptionId">Subscription ID</param>
+    /// <param name="request">Preview request with the new plan id and optional promo codes</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Immediate prorated charge plus next-renewal preview</returns>
+    [HttpPost("v{version:apiVersion}/subscriptions/{subscriptionId:guid}/pricing:preview")]
+    [NoBusinessMutationEndpoint("Preview is a read-only quote; the plan change itself is a separate command.")]
+    [EndpointSummary("Preview a subscription plan-change price")]
+    [EndpointDescription("Previews what switching this subscription to a new plan costs before anything is applied: the immediate prorated charge and the next renewal amount, using the subscription's real billing period.")]
+    [ProducesResponseType(typeof(GameGuild.Commerce.Payments.PricingPreviewResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> PreviewSubscriptionPlanChange(Guid subscriptionId, [FromBody] PreviewSubscriptionPlanChangeRequest request, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var preview = await sender.Send(new PreviewSubscriptionPlanChangeQuery(subscriptionId, request.NewPlanId, request.PromoCodes), ct).ConfigureAwait(false);
+        return Ok(preview);
+    }
 }
+
+/// <summary>Request body for the subscription plan-change preview (issue #417).</summary>
+/// <param name="NewPlanId">Plan being considered.</param>
+/// <param name="PromoCodes">Optional promo codes to preview.</param>
+public sealed record PreviewSubscriptionPlanChangeRequest(
+    Guid NewPlanId,
+    IReadOnlyList<string>? PromoCodes = null);

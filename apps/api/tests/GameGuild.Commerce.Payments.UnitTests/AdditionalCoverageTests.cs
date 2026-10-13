@@ -1130,6 +1130,16 @@ public class PaymentsModuleDiTests
         services.Should().Contain(sd => sd.ServiceType == typeof(IStripePaymentService));
         services.Should().Contain(sd => sd.ServiceType == typeof(IStripeCustomerService));
         services.Should().Contain(sd => sd.ServiceType == typeof(IPaymentGateway));
+
+        // Verify the multi-gateway failover wiring (issue #413)
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayRegistry));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IPaymentGatewaySelector));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayCircuitBreaker));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayAvailabilityAlerter));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayMetricsService));
+        services.Should().Contain(
+            sd => sd.ServiceType == typeof(IPaymentGateway) && sd.ImplementationType == typeof(FailoverPaymentGateway),
+            "the failover composite is the single IPaymentGateway resolved by the payment path");
     }
 
     [Fact]
@@ -1512,14 +1522,14 @@ public class WalletServiceHandlerConstructorTests
     [Fact]
     public void AddFundsCommandHandler_CanBeConstructed()
     {
-        var handler = new AddFundsCommandHandler(_walletService.Object);
+        var handler = new AddFundsCommandHandler(_walletService.Object, Mock.Of<IRevenueAuditService>(), Mock.Of<IActorContextAccessor>());
         handler.Should().NotBeNull();
     }
 
     [Fact]
     public void DeductFundsCommandHandler_CanBeConstructed()
     {
-        var handler = new DeductFundsCommandHandler(_walletService.Object);
+        var handler = new DeductFundsCommandHandler(_walletService.Object, Mock.Of<IRevenueAuditService>(), Mock.Of<IActorContextAccessor>());
         handler.Should().NotBeNull();
     }
 
@@ -1587,7 +1597,7 @@ public class WalletServiceHandlerConstructorTests
     [Fact]
     public void TransferFundsCommandHandler_CanBeConstructed()
     {
-        var handler = new TransferFundsCommandHandler(_walletService.Object);
+        var handler = new TransferFundsCommandHandler(_walletService.Object, Mock.Of<IRevenueAuditService>(), Mock.Of<IActorContextAccessor>());
         handler.Should().NotBeNull();
     }
 
@@ -1821,6 +1831,8 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentSubscriptionSyncService>().Object,
             new Mock<ISubscriptionPaymentContextService>().Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            FraudTestHelpers.AllowAllDetectionService(),
             NullLogger<ProcessPaymentCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1833,6 +1845,8 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentGateway>().Object,
             new Mock<IPaymentSubscriptionSyncService>().Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            new Mock<IPaymentDunningLifecycleService>().Object,
             new Mock<IRevenueAuditService>().Object,
             new Mock<IActorContextAccessor>().Object,
             NullLogger<RetryPaymentCommandHandler>.Instance);
@@ -1853,10 +1867,7 @@ public class PaymentCommandHandlerConstructorTests
     public void ProcessRefundCommandHandler_CanBeConstructed()
     {
         var handler = new ProcessRefundCommandHandler(
-            new Mock<IPaymentRepository>().Object,
-            new Mock<IPaymentGateway>().Object,
-            new Mock<IRevenueAuditService>().Object,
-            new Mock<IActorContextAccessor>().Object,
+            new Mock<IRefundProcessingService>().Object,
             NullLogger<ProcessRefundCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1878,79 +1889,57 @@ public class CalculatePricingQueryHandlerTests
     [Fact]
     public void CanBeConstructed()
     {
-        var handler = new CalculatePricingQueryHandler(new Mock<IPlanPricingResolver>().Object);
+        var handler = new CalculatePricingQueryHandler(new Mock<IPricingEngine>().Object);
         handler.Should().NotBeNull();
     }
 
     [Fact]
-    public void Constructor_NullResolver_Throws()
+    public void Constructor_NullEngine_Throws()
     {
         var act = () => new CalculatePricingQueryHandler(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("pricingResolver");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("pricingEngine");
     }
 
     [Fact]
-    public async Task Handle_PlanNotExists_Throws()
+    public async Task Handle_DelegatesToUnifiedEngine()
     {
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
-
-        var act = () => handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null), CancellationToken.None);
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not found*");
-    }
-
-    [Fact]
-    public async Task Handle_NullPrice_Throws()
-    {
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        resolver.Setup(x => x.GetPlanMonthlyPriceAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Money?)null);
-
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
-
-        var act = () => handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null), CancellationToken.None);
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*pricing*");
-    }
-
-    [Fact]
-    public async Task Handle_ValidPlan_ReturnsPricing()
-    {
+        // Issue #417: the query is a read view over the unified IPricingEngine path.
         var planId = Guid.NewGuid();
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        resolver.Setup(x => x.GetPlanMonthlyPriceAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Money(9.99m, "USD"));
+        var engine = new Mock<IPricingEngine>();
+        engine.Setup(x => x.CalculateAsync(It.IsAny<PricingCalculationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PricingCalculationResult
+            {
+                BasePlanPrice = new Money(9.99m, "USD"),
+                Subtotal = new Money(9.99m, "USD"),
+                SubtotalAfterDiscounts = new Money(9.99m, "USD"),
+                Total = new Money(9.99m, "USD"),
+                AmountDue = new Money(9.99m, "USD")
+            });
 
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
+        var handler = new CalculatePricingQueryHandler(engine.Object);
         var result = await handler.Handle(new CalculatePricingQuery(planId, null), CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.BasePrice.Amount.Should().Be(9.99m);
-        result.TotalPrice.Amount.Should().Be(9.99m);
+        result.BasePlanPrice.Amount.Should().Be(9.99m);
+        result.AmountDue.Amount.Should().Be(9.99m);
+
+        engine.Verify(
+            x => x.CalculateAsync(
+                It.Is<PricingCalculationRequest>(request =>
+                    request.PlanId == planId &&
+                    request.RecordDecision == false &&
+                    request.ApplyCredits == false &&
+                    request.IncludeTax == false),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task Handle_DiscountCode_AppliesDeterministicDiscount()
+    public async Task Handle_NullRequest_Throws()
     {
-        var planId = Guid.NewGuid();
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        resolver.Setup(x => x.GetPlanMonthlyPriceAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Money(100m, "USD"));
-
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
-        var result = await handler.Handle(new CalculatePricingQuery(planId, null, "SAVE20"), CancellationToken.None);
-
-        result.Discount.Amount.Should().Be(20m);
-        result.TotalPrice.Amount.Should().Be(80m);
-        result.AppliedDiscounts.Should().ContainSingle(item => item.Code == "SAVE20");
+        var handler = new CalculatePricingQueryHandler(new Mock<IPricingEngine>().Object);
+        var act = () => handler.Handle(null!, CancellationToken.None);
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
 }
 
@@ -1967,7 +1956,9 @@ public class PaymentControllerConstructorTests
             new Mock<ISender>().Object,
             new Mock<IActorContextAccessor>().Object,
             new Mock<IStripeCustomerService>().Object,
-            new Mock<ISubscriptionPaymentContextService>().Object);
+            new Mock<ISubscriptionPaymentContextService>().Object,
+            new Mock<IPaymentRetryMethodChangeService>().Object,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentsController>.Instance);
         controller.Should().NotBeNull();
     }
 
@@ -2117,12 +2108,6 @@ public class EntityConstructorTests
         entity.Should().NotBeNull();
     }
 
-    [Fact]
-    public void PromoStackingRule_PartialConstructor()
-    {
-        var entity = new PromoStackingRule(new { });
-        entity.Should().NotBeNull();
-    }
 }
 
 #endregion

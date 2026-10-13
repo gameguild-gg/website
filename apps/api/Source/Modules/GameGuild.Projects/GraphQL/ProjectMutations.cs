@@ -1,6 +1,6 @@
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Authorization;
-using GraphQLAuthorize = HotChocolate.Authorization.AuthorizeAttribute;
+using GameGuild.Identity.Authorization.GraphQL;
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -10,7 +10,6 @@ namespace GameGuild.Projects;
 /// GraphQL mutations for Project module using CQRS pattern
 /// </summary>
 [ExtendObjectType("Mutation")]
-[GraphQLAuthorize]
 public class ProjectMutations {
   /// <summary>
   /// Creates a new project using CQRS pattern

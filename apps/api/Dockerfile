@@ -12,6 +12,10 @@ RUN find Source -type f \
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY apps/api/GameGuild.sln apps/api/Directory.Build.props apps/api/Directory.Packages.props apps/api/global.json ./
+# Analyzer severity overrides (Sonar S-rules → none) live in the root
+# .editorconfig; without it the publish stage fails on default-severity
+# diagnostics because SharedKernel sets TreatWarningsAsErrors=true.
+COPY .editorconfig ./
 COPY --from=project-files /metadata/Source/ Source/
 RUN --mount=type=cache,id=nuget-api,target=/root/.nuget/packages \
     dotnet restore "Source/GameGuild.API/GameGuild.API.csproj" --disable-parallel

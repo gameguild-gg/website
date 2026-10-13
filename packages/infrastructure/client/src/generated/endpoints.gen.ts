@@ -392,6 +392,154 @@ export const postApiAuditExportJsonEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Pipeline status: cached rule snapshots, enabled rule counts (global and tenant), vault size,
+ * and the last rule-refresh outcome.
+ */
+export type GetApiAuditRedactionPipelineInput = void;
+export type GetApiAuditRedactionPipelineOutput = Types.ComplianceAuditPiiRedactionPipelineStatusOutput;
+export const getApiAuditRedactionPipelineEndpoint = {
+  operationId: 'getApiAuditRedactionPipeline' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the tenant's rules plus the platform-global rules visible to it.
+ */
+export type GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesInput = void;
+export type GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput[];
+export const getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRules' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a redaction rule. Guarded to tenant administrators; audited; invalidates the rule cache.
+ */
+export interface PostApiAuditRedactionPipelineRulesInput {
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PostApiAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const postApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'postApiAuditRedactionPipelineRules' as const,
+  method: 'POST' as const,
+  path: '/api/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets one rule by id.
+ */
+export interface GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdInput {
+  ruleId: string;
+}
+export type GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdEndpoint = {
+  operationId: 'getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleId' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Updates a rule. Versioned: the request must carry the revision observed on read; a stale
+ * revision returns 409 Conflict.
+ */
+export interface PutApiAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PutApiAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const putApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'putApiAuditRedactionPipelineRules' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a rule. Versioned like the update; audited at high risk.
+ */
+export interface DeleteApiAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+}
+export type DeleteApiAuditRedactionPipelineRulesOutput = void;
+export const deleteApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'deleteApiAuditRedactionPipelineRules' as const,
+  method: 'DELETE' as const,
+  path: '/api/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dry-runs the enabled rules against sample field values without persisting anything — the
+ * pattern-recognition verification surface for administrators.
+ */
+export interface PostApiAuditRedactionPipelineTestInput {
+  body?: Types.ComplianceAuditPiiRedactionTestRunInput;
+}
+export type PostApiAuditRedactionPipelineTestOutput = Types.ComplianceAuditPiiRedactionTestRunOutput;
+export const postApiAuditRedactionPipelineTestEndpoint = {
+  operationId: 'postApiAuditRedactionPipelineTest' as const,
+  method: 'POST' as const,
+  path: '/api/audit/redaction-pipeline/test' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a deterministic token to its original value from the token vault for an authorized
+ * investigation. Requires a reason; audited at critical risk.
+ */
+export interface GetApiAuditRedactionPipelineTokensInput {
+  token: string;
+  query?: {
+    reason?: string;
+  };
+}
+export type GetApiAuditRedactionPipelineTokensOutput = Types.ComplianceAuditPiiTokenResolutionOutput;
+export const getApiAuditRedactionPipelineTokensEndpoint = {
+  operationId: 'getApiAuditRedactionPipelineTokens' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline/tokens/{token}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostApiAuditReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostApiAuditReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postApiAuditReplaySnapshotsEndpoint = {
+  operationId: 'postApiAuditReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesInput {
   query?: {
     skip?: number;
@@ -4463,6 +4611,91 @@ export const postApiTestingLabSettingsResetEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Revokes the remaining balance of a credit grant with an auditable reason. SystemAdmin only.
+ *
+ * Revokes the remaining balance of an account credit grant; the reason is captured on the grant and in the credit ledger. Requires the SystemAdmin role.
+ */
+export interface PostAccountCreditsRevokeInput {
+  grantId: string;
+  body?: Types.CommercePaymentsAccountCreditsControllerRevokeCreditInput;
+}
+export type PostAccountCreditsRevokeOutput = void;
+export const postAccountCreditsRevokeEndpoint = {
+  operationId: 'postAccountCreditsRevoke' as const,
+  method: 'POST' as const,
+  path: '/api/v1/account-credits/{grantId}:revoke' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Per-currency spendable credit balances of the calling user.
+ *
+ * Returns the spendable account credit balance of the calling user per ISO 4217 currency (Active grants, expiry-aware). User and tenant are derived from the authenticated actor.
+ */
+export type GetAccountCreditsBalanceInput = void;
+export type GetAccountCreditsBalanceOutput = Types.CommercePaymentsAccountCreditBalance[];
+export const getAccountCreditsBalanceEndpoint = {
+  operationId: 'getAccountCreditsBalance' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/balance' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Manually issues account credit to a user of the calling tenant. SystemAdmin only.
+ *
+ * Manually grants account credit to a tenant user with an optional expiry. The credit type restricts what the credit may be applied to. Requires the SystemAdmin role; the tenant is derived from the authenticated actor.
+ */
+export interface PostAccountCreditsGrantsInput {
+  body?: Types.CommercePaymentsAccountCreditsControllerIssueCreditInput;
+}
+export type PostAccountCreditsGrantsOutput = Types.CommercePaymentsAccountCreditGrant;
+export const postAccountCreditsGrantsEndpoint = {
+  operationId: 'postAccountCreditsGrants' as const,
+  method: 'POST' as const,
+  path: '/api/v1/account-credits/grants' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Paged credit ledger history of the calling user (grants, consumption, revocation, expiry).
+ *
+ * Returns a paged list of the calling user's account credit ledger rows, newest first. User and tenant are derived from the authenticated actor.
+ */
+export interface GetAccountCreditsHistoryInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAccountCreditsHistoryOutput = Types.PagedResultAccountCreditTransaction;
+export const getAccountCreditsHistoryEndpoint = {
+  operationId: 'getAccountCreditsHistory' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/history' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Growth metrics: credit issuance/usage/expiry rates, referral funnel and top referrers. SystemAdmin only.
+ *
+ * Credit ledger aggregates per currency (issued, applied, expired-unused waste, revoked, active balance, usage and expiration-waste rates), the referral conversion funnel (clicks → signups → conversions → rewards) and the top-referrers leaderboard. Requires the SystemAdmin role.
+ */
+export type GetAccountCreditsMetricsInput = void;
+export type GetAccountCreditsMetricsOutput = Types.CommercePaymentsAccountCreditMetricsReport;
+export const getAccountCreditsMetricsEndpoint = {
+  operationId: 'getAccountCreditsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/metrics' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAdminEconomyAdRewardsPendingClaimsInput {
   query?: {
     confirmed?: boolean;
@@ -5689,6 +5922,53 @@ export const getAuthorizationComplianceReportEndpoint = {
 } as const;
 
 /**
+ * Creates a pending multi-stage approval workflow for a tenant permission grant.
+ */
+export interface PostAuthorizationPermissionApprovalsInput {
+  body?: Types.IdentityAuthorizationCreatePermissionApprovalCommand;
+}
+export type PostAuthorizationPermissionApprovalsOutput = string;
+export const postAuthorizationPermissionApprovalsEndpoint = {
+  operationId: 'postAuthorizationPermissionApprovals' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-approvals' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Loads a workflow with its stages and decisions.
+ */
+export interface GetAuthorizationPermissionApprovalsInput {
+  id: string;
+}
+export type GetAuthorizationPermissionApprovalsOutput = Types.IdentityAuthorizationPermissionApprovalWorkflow;
+export const getAuthorizationPermissionApprovalsEndpoint = {
+  operationId: 'getAuthorizationPermissionApprovals' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-approvals/{id}' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decides the workflow's current stage. On the final approval the guarded grant
+ * executes; a rejection terminates the workflow without granting.
+ */
+export interface PostAuthorizationPermissionApprovalsDecisionsInput {
+  id: string;
+  body?: Types.IdentityAuthorizationControllersDecidePermissionApprovalInput;
+}
+export type PostAuthorizationPermissionApprovalsDecisionsOutput = Types.IdentityAuthorizationPermissionApprovalDecisionResult;
+export const postAuthorizationPermissionApprovalsDecisionsEndpoint = {
+  operationId: 'postAuthorizationPermissionApprovalsDecisions' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-approvals/{id}/decisions' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Builds the permission graph of the caller's tenant: users, dynamic roles, and
  * permission keys connected by assignment, inheritance, grant, and deny edges,
  * with a data-quality summary (cycles, unregistered keys, orphaned roles).
@@ -5737,6 +6017,255 @@ export const getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint
   method: 'GET' as const,
   path: '/api/v1/authorization/permission-graph/roles/{roleId}/permission-removal-impact/{permissionKey}' as const,
   tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the append-only version history of one permission policy (issue #188).
+ */
+export interface GetAuthorizationPermissionPoliciesVersionsInput {
+  policyId: string;
+  query?: {
+    kind?: Types.IdentityAuthorizationPolicyVersionKind;
+  };
+}
+export type GetAuthorizationPermissionPoliciesVersionsOutput = Types.IdentityAuthorizationPolicyVersionHistory[];
+export const getAuthorizationPermissionPoliciesVersionsEndpoint = {
+  operationId: 'getAuthorizationPermissionPoliciesVersions' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-policies/{policyId}/versions' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists permission templates with their role keys and current version.
+ */
+export interface GetAuthorizationPermissionTemplatesInput {
+  query?: {
+    includeInactive?: boolean;
+    category?: string;
+  };
+}
+export type GetAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateSummary[];
+export const getAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a permission template. The initial permission/role set is snapshotted
+ * as version 1 and the creation is audited.
+ */
+export interface PostAuthorizationPermissionTemplatesInput {
+  body?: Types.IdentityAuthorizationCreatePermissionTemplateCommand;
+}
+export type PostAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateMutationResult;
+export const postAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplates' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Updates a permission template. Every accepted update appends a new version
+ * snapshot with the computed diff and bumps the security version of every
+ * tenant holding an active instantiation.
+ */
+export interface PutAuthorizationPermissionTemplatesInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationUpdatePermissionTemplateCommand;
+}
+export type PutAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateMutationResult;
+export const putAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'putAuthorizationPermissionTemplates' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a permission template. Templates with active instantiations are
+ * pinned (fail closed) and must be migrated away first.
+ */
+export interface DeleteAuthorizationPermissionTemplatesInput {
+  templateId: string;
+  query?: {
+    reason?: string;
+  };
+}
+export type DeleteAuthorizationPermissionTemplatesOutput = void;
+export const deleteAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'deleteAuthorizationPermissionTemplates' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Instantiates a template into a tenant: grants the template permissions to the
+ * target users and assigns the template's roles (role templates). Use
+ * `dryRun` for the preview-only form.
+ */
+export interface PostAuthorizationPermissionTemplatesInstantiateInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationInstantiateTemplateInput;
+}
+export type PostAuthorizationPermissionTemplatesInstantiateOutput = Types.IdentityAuthorizationPermissionTemplateInstantiationResult;
+export const postAuthorizationPermissionTemplatesInstantiateEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesInstantiate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}:instantiate' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Dry-run preview of instantiating a template into a tenant: per-target
+ *     permission grants and role assignments that would apply, without mutating
+ * anything.
+ */
+export interface PostAuthorizationPermissionTemplatesInstantiatePreviewInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationPreviewInstantiationInput;
+}
+export type PostAuthorizationPermissionTemplatesInstantiatePreviewOutput = Types.IdentityAuthorizationPermissionTemplateInstantiationResult;
+export const postAuthorizationPermissionTemplatesInstantiatePreviewEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesInstantiatePreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}:instantiate-preview' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Migrates a template's instantiated targets to a target version (issue #370):
+ * applies the version delta across the tenants that instantiated the template,
+ * batched, with durable per-batch progress. Supports dry-run.
+ */
+export interface PostAuthorizationPermissionTemplatesMigrationsInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationMigrateTemplateInput;
+}
+export type PostAuthorizationPermissionTemplatesMigrationsOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const postAuthorizationPermissionTemplatesMigrationsEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesMigrations' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reads the durable progress of one migration (issue #370).
+ */
+export interface GetAuthorizationPermissionTemplatesMigrationsInput {
+  templateId: string;
+  migrationId: string;
+}
+export type GetAuthorizationPermissionTemplatesMigrationsOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const getAuthorizationPermissionTemplatesMigrationsEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplatesMigrations' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations/{migrationId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Rolls back a completed template migration (issue #370): restores every
+ * affected target to its recorded pre-migration state.
+ */
+export interface PostAuthorizationPermissionTemplatesMigrationsRollbackInput {
+  templateId: string;
+  migrationId: string;
+  body?: Types.IdentityAuthorizationRollbackMigrationInput;
+}
+export type PostAuthorizationPermissionTemplatesMigrationsRollbackOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesMigrationsRollback' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations/{migrationId}:rollback' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the append-only version history of a template (issue #370), newest first.
+ */
+export interface GetAuthorizationPermissionTemplatesVersionsInput {
+  templateId: string;
+}
+export type GetAuthorizationPermissionTemplatesVersionsOutput = Types.IdentityAuthorizationPermissionTemplateVersionSummary[];
+export const getAuthorizationPermissionTemplatesVersionsEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplatesVersions' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/versions' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Simulates a permission change (issue #374): given a subject (user, role or
+ * tenant), a grant/revoke delta and an optional resource scope, returns the
+ * before/after effective permission diff. Nothing is applied — no grants are
+ * written, no security version is bumped, no audit entry is recorded.
+ */
+export interface PostAuthorizationPermissionsSimulateInput {
+  body?: Types.IdentityAuthorizationSimulatePermissionChangeCommand;
+}
+export type PostAuthorizationPermissionsSimulateOutput = Types.IdentityAuthorizationPermissionSimulationResult;
+export const postAuthorizationPermissionsSimulateEndpoint = {
+  operationId: 'postAuthorizationPermissionsSimulate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permissions:simulate' as const,
+  tags: ['AccessControlPermissionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reconstructs a subject's effective permission state at a past instant
+ * (issue #189: access rights at any point in time).
+ */
+export interface GetAuthorizationPermissionsHistoryAtInput {
+  query?: {
+    timestamp?: string;
+    userId?: string;
+  };
+}
+export type GetAuthorizationPermissionsHistoryAtOutput = Types.IdentityAuthorizationPermissionHistoryAtSnapshot;
+export const getAuthorizationPermissionsHistoryAtEndpoint = {
+  operationId: 'getAuthorizationPermissionsHistoryAt' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/history/at' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists role-inheritance change events in a window (issue #189: parent-child
+ * relationship changes over time), each with the pre/post hierarchy state and
+ * the cascading effects recorded at mutation time.
+ */
+export interface GetAuthorizationPermissionsHistoryInheritanceInput {
+  query?: {
+    fromTimestamp?: string;
+    toTimestamp?: string;
+  };
+}
+export type GetAuthorizationPermissionsHistoryInheritanceOutput = Types.IdentityAuthorizationInheritanceHistoryEvent[];
+export const getAuthorizationPermissionsHistoryInheritanceEndpoint = {
+  operationId: 'getAuthorizationPermissionsHistoryInheritance' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/history/inheritance' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6474,6 +7003,26 @@ export const postBillingExternalProvidersMigrationDryRunEndpoint = {
 } as const;
 
 /**
+ * Applies the calling user's account credits to one of their invoices (issue #410
+ * multi-tender settlement). Requires an Idempotency-Key header; the optional body
+ * caps the credit tender amount. User and tenant are derived from the actor.
+ *
+ * Settles part or all of an open/past-due invoice with the calling user's account credits, consumed FIFO by expiry in one atomic settlement (credit ledger rows + settlement record + invoice update). Requires the Idempotency-Key header; replays return the recorded settlement. The invoice must belong to the calling user; credits must match the invoice currency. The remaining balance stays owed to provider tenders.
+ */
+export interface PostBillingInvoicesAccountCreditsInput {
+  invoiceId: string;
+  body?: Types.CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput;
+}
+export type PostBillingInvoicesAccountCreditsOutput = Types.CommerceBillingInvoiceAccountCreditSettlementResult;
+export const postBillingInvoicesAccountCreditsEndpoint = {
+  operationId: 'postBillingInvoicesAccountCredits' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/invoices/{invoiceId}/account-credits' as const,
+  tags: ['CommerceBillingInvoices'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Retry invoice payment
  *
  * Accepts a local retry scheduling request for open or past-due invoices. External gateway capture requires configured payment-provider credentials.
@@ -6487,6 +7036,323 @@ export const postBillingInvoicesRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/invoices/{invoiceId}/retry' as const,
   tags: ['CommerceBillingInvoices'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List registered payment methods (own methods; system admins see the whole tenant).
+ *
+ * Lists the live payment methods registered for the tenant. Non-admin actors see their own methods; system admins see all methods in the requested tenant.
+ */
+export interface GetBillingPaymentMethodsInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto[];
+export const getBillingPaymentMethodsEndpoint = {
+  operationId: 'getBillingPaymentMethods' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Register a payment method from a tokenized gateway result.
+ *
+ * Registers a payment method from a Stripe payment method token (pm_...) produced by Stripe.js/Elements or a confirmed SetupIntent. Raw card data is never accepted; only display metadata returned by the gateway is stored.
+ */
+export interface PostBillingPaymentMethodsInput {
+  body?: Types.CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody;
+}
+export type PostBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsEndpoint = {
+  operationId: 'postBillingPaymentMethods' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a single payment method by ID.
+ *
+ * Returns a single registered payment method. Only the owner or a system administrator can read it.
+ */
+export interface GetPaymentMethodByIdInput {
+  paymentMethodId: string;
+}
+export type GetPaymentMethodByIdOutput = Types.CommercePaymentsPaymentMethodDto;
+export const getPaymentMethodByIdEndpoint = {
+  operationId: 'getPaymentMethodById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update display-only fields of a payment method.
+ *
+ * Updates display-only fields (nickname, billing address). Card details come from the gateway and cannot be edited here.
+ */
+export interface PutBillingPaymentMethodsInput {
+  paymentMethodId: string;
+  body?: Types.CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody;
+}
+export type PutBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const putBillingPaymentMethodsEndpoint = {
+  operationId: 'putBillingPaymentMethods' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Remove a payment method (soft delete).
+ *
+ * Soft-deletes a payment method. Fails closed with 409 Conflict while any active subscription still bills with it; set a new default first to re-point subscriptions.
+ */
+export interface DeleteBillingPaymentMethodsInput {
+  paymentMethodId: string;
+}
+export type DeleteBillingPaymentMethodsOutput = void;
+export const deleteBillingPaymentMethodsEndpoint = {
+  operationId: 'deleteBillingPaymentMethods' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Make this payment method the default (custom action per Google API guidelines).
+ *
+ * Makes this payment method its owner's default inside the tenant. Enforces the single-default invariant and re-points subscriptions billed with the previous default.
+ */
+export interface PostBillingPaymentMethodsSetDefaultInput {
+  paymentMethodId: string;
+}
+export type PostBillingPaymentMethodsSetDefaultOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsSetDefaultEndpoint = {
+  operationId: 'postBillingPaymentMethodsSetDefault' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}:set-default' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List pricing-decision ledger entries
+ *
+ * Pages through the durable pricing-decision ledger: one row per checkout/renewal calculation that produced a final price, with headline amounts, applied promo codes, winning pricing rule and drift status. Filterable by tenant, order, subscription, promo code, decision type, drift status and decision date range.
+ */
+export interface GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerInput {
+  query?: {
+    tenantId?: string;
+    orderId?: string;
+    subscriptionId?: string;
+    promoCode?: string;
+    decisionType?: string;
+    driftStatus?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerOutput = Types.PagedResultPricingDecisionLedgerEntryDto;
+export const getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedger' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate a sample of ledger entries for pricing drift
+ *
+ * Drift detection over the pricing-decision ledger: samples entries (preferring never-validated ones), recomputes each final amount from its own breakdown document and stamps the entry Verified or Drifted. Drifted entries — where the stored final no longer follows from the recorded arithmetic — are surfaced first for review.
+ */
+export interface PostBillingPricingDiscountsLedgerValidateDriftInput {
+  body?: Types.CommerceBillingValidatePricingLedgerDriftInput;
+}
+export type PostBillingPricingDiscountsLedgerValidateDriftOutput = Types.CommerceBillingPricingLedgerDriftValidationResult;
+export const postBillingPricingDiscountsLedgerValidateDriftEndpoint = {
+  operationId: 'postBillingPricingDiscountsLedgerValidateDrift' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/:validate-drift' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a pricing-decision ledger entry by id
+ *
+ * Retrieves one pricing-decision ledger entry, including the full calculation breakdown JSON (base, per-rule adjustments, per-code promo applications, caps, final amount), correlation ids and the drift-validation outcome.
+ */
+export interface GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdInput {
+  entryId: string;
+}
+export type GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdOutput = Types.CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export const getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/{entryId}' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Discount effectiveness and pricing analytics over the ledger
+ *
+ * Aggregates the pricing-decision ledger over a window: total decisions, baseline vs final revenue, discount given, promo redemptions, per-code effectiveness (redemptions, discount given, baseline vs influenced revenue), per-pricing-rule impact, stacking outcomes and drift status counts. Feeds the monetization reporting dashboard.
+ */
+export interface GetBillingPricingDiscountsLedgerAnalyticsEffectivenessInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingPricingDiscountsLedgerAnalyticsEffectivenessOutput = Types.CommerceBillingPricingLedgerEffectivenessAggregate;
+export const getBillingPricingDiscountsLedgerAnalyticsEffectivenessEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerAnalyticsEffectiveness' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/analytics/effectiveness' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get pricing rules (paginated) with optional filters
+ */
+export interface GetBillingPricingEngineForGetBillingPricingEngineInput {
+  query?: {
+    isActive?: boolean;
+    ruleType?: Types.CommercePricingRuleType;
+    productId?: string;
+    searchTerm?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingEngineForGetBillingPricingEngineOutput = Types.PagedResultPricingRuleDto;
+export const getBillingPricingEngineForGetBillingPricingEngineEndpoint = {
+  operationId: 'getBillingPricingEngineForGetBillingPricingEngine' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a new pricing rule
+ */
+export interface PostBillingPricingEngineInput {
+  body?: Types.CommerceProductsCreatePricingRuleInput;
+}
+export type PostBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineEndpoint = {
+  operationId: 'postBillingPricingEngine' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Run the pricing engine for a product: base/sale price, the highest-priority applicable
+ * rule (volume tiers, customer segment), and promo codes.
+ */
+export interface PostBillingPricingEngineCalculateInput {
+  body?: Types.CommerceProductsCalculatePricingInput;
+}
+export type PostBillingPricingEngineCalculateOutput = Types.CommerceProductsPricingCalculationResult;
+export const postBillingPricingEngineCalculateEndpoint = {
+  operationId: 'postBillingPricingEngineCalculate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/:calculate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a pricing rule by ID, including its volume tiers
+ */
+export interface GetBillingPricingEngineForGetBillingPricingEngineByRuleIdInput {
+  ruleId: string;
+}
+export type GetBillingPricingEngineForGetBillingPricingEngineByRuleIdOutput = Types.CommerceProductsPricingRuleDto;
+export const getBillingPricingEngineForGetBillingPricingEngineByRuleIdEndpoint = {
+  operationId: 'getBillingPricingEngineForGetBillingPricingEngineByRuleId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a pricing rule (full update; tiers are replaced when provided)
+ */
+export interface PutBillingPricingEngineInput {
+  ruleId: string;
+  body?: Types.CommerceProductsUpdatePricingRuleInput;
+}
+export type PutBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
+export const putBillingPricingEngineEndpoint = {
+  operationId: 'putBillingPricingEngine' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a pricing rule (soft delete)
+ */
+export interface DeleteBillingPricingEngineInput {
+  ruleId: string;
+}
+export type DeleteBillingPricingEngineOutput = void;
+export const deleteBillingPricingEngineEndpoint = {
+  operationId: 'deleteBillingPricingEngine' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Activate a pricing rule
+ */
+export interface PostBillingPricingEngineActivateInput {
+  ruleId: string;
+}
+export type PostBillingPricingEngineActivateOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineActivateEndpoint = {
+  operationId: 'postBillingPricingEngineActivate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}:activate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deactivate a pricing rule
+ */
+export interface PostBillingPricingEngineDeactivateInput {
+  ruleId: string;
+}
+export type PostBillingPricingEngineDeactivateOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineDeactivateEndpoint = {
+  operationId: 'postBillingPricingEngineDeactivate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}:deactivate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6928,6 +7794,210 @@ export const postBillingWebhooksWebhookEventsRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}:retry' as const,
   tags: ['CommerceBillingWebhooks'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List disputes with optional filters, newest first.
+ *
+ * Lists payment disputes with optional status, payment and user filters, newest first. Non-admin actors only see their own tenant's disputes.
+ */
+export interface GetDisputesInput {
+  query?: {
+    status?: Types.CommercePaymentsDisputeStatus;
+    paymentId?: string;
+    userId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetDisputesOutput = Types.CommercePaymentsDisputeListPage;
+export const getDisputesEndpoint = {
+  operationId: 'getDisputes' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a dispute for a payment. The disputing user is the authenticated actor.
+ *
+ * Creates a dispute against a payment. The disputing identity comes from the authenticated actor, never the request body.
+ */
+export interface PostDisputesInput {
+  body?: Types.CommercePaymentsDisputesControllerCreateDisputeInput;
+}
+export type PostDisputesOutput = Types.CommercePaymentsPaymentDispute;
+export const postDisputesEndpoint = {
+  operationId: 'postDisputes' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retrieve a single dispute by id.
+ *
+ * Retrieves a single payment dispute with its attached evidence.
+ */
+export interface GetDisputeByIdInput {
+  disputeId: string;
+}
+export type GetDisputeByIdOutput = Types.CommercePaymentsPaymentDispute;
+export const getDisputeByIdEndpoint = {
+  operationId: 'getDisputeById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/{disputeId}' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Accept a dispute: closes it as lost at the gateway and records the refund through the
+ * approval-aware refund path. Requires the `payments:admin` permission.
+ *
+ * Accepts the dispute (lost) and records the refund through the refund approval workflow. Requires the payments:admin permission.
+ */
+export interface PostDisputesAcceptInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerAcceptDisputeInput;
+}
+export type PostDisputesAcceptOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesAcceptEndpoint = {
+  operationId: 'postDisputesAccept' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:accept' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Cancel a dispute.
+ *
+ * Cancels an open dispute with a reason. Custom action per Google API guidelines.
+ */
+export interface PostDisputesCancelInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerCancelDisputeInput;
+}
+export type PostDisputesCancelOutput = void;
+export const postDisputesCancelEndpoint = {
+  operationId: 'postDisputesCancel' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:cancel' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Challenge a dispute by submitting the merchant evidence to the gateway. Requires the
+ * `payments:admin` permission.
+ *
+ * Submits the merchant evidence to the gateway to contest the chargeback. Requires the payments:admin permission.
+ */
+export interface PostDisputesChallengeInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerChallengeDisputeInput;
+}
+export type PostDisputesChallengeOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesChallengeEndpoint = {
+  operationId: 'postDisputesChallenge' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:challenge' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolve a dispute with an explicit outcome.
+ *
+ * Resolves a dispute with an explicit outcome (won, lost, partial refund, ...). Custom action per Google API guidelines.
+ */
+export interface PostDisputesResolveInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerResolveDisputeInput;
+}
+export type PostDisputesResolveOutput = void;
+export const postDisputesResolveEndpoint = {
+  operationId: 'postDisputesResolve' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:resolve' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Respond to a dispute by advancing its status (review, customer or merchant response).
+ *
+ * Advances a dispute's status (under review, pending customer or merchant response). Custom action per Google API guidelines.
+ */
+export interface PostDisputesRespondInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerRespondDisputeInput;
+}
+export type PostDisputesRespondOutput = void;
+export const postDisputesRespondEndpoint = {
+  operationId: 'postDisputesRespond' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:respond' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the evidence attached to a dispute.
+ *
+ * Lists the evidence files attached to a payment dispute, newest first.
+ */
+export interface GetDisputesEvidenceInput {
+  disputeId: string;
+}
+export type GetDisputesEvidenceOutput = Types.CommercePaymentsDisputeEvidence[];
+export const getDisputesEvidenceEndpoint = {
+  operationId: 'getDisputesEvidence' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/{disputeId}/evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Attach evidence to a dispute. The submitting user is the authenticated actor.
+ *
+ * Attaches an evidence entry to a payment dispute. The submitting identity comes from the authenticated actor, never the request body.
+ */
+export interface PostDisputesEvidenceInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerAddDisputeEvidenceInput;
+}
+export type PostDisputesEvidenceOutput = Types.CommercePaymentsDisputeEvidence;
+export const postDisputesEvidenceEndpoint = {
+  operationId: 'postDisputesEvidence' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}/evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dispute statistics for an inclusive window.
+ *
+ * Returns dispute counts by status, win/loss ratio for decided disputes and the average time to resolution for an inclusive window.
+ */
+export interface GetDisputesStatisticsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetDisputesStatisticsOutput = Types.CommercePaymentsDisputeStatistics;
+export const getDisputesStatisticsEndpoint = {
+  operationId: 'getDisputesStatistics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/statistics' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
   requiresAuth: true,
 } as const;
 
@@ -7428,6 +8498,154 @@ export const deleteEmailDeliverySuppressionsEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * List the pending manual fraud reviews, oldest first.
+ *
+ * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+ */
+export interface GetFraudReviewsInput {
+  query?: {
+    tenantId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetFraudReviewsOutput = Types.CommercePaymentsFraudReviewListItem[];
+export const getFraudReviewsEndpoint = {
+  operationId: 'getFraudReviews' as const,
+  method: 'GET' as const,
+  path: '/api/v1/fraud/reviews' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending fraud review, releasing the fraud hold so the payment may be retried.
+ *
+ * Approves the fraud review for a held payment, releasing the fraud hold so the payment can be retried through the manual retry flow. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsApproveInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsApproveOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsApproveEndpoint = {
+  operationId: 'postFraudReviewsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:approve' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decline a pending fraud review, keeping the payment failed and non-retryable.
+ *
+ * Declines the fraud review for a held payment; it stays failed and is never retried. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsDenyInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsDenyOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsDenyEndpoint = {
+  operationId: 'postFraudReviewsDeny' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:deny' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Purchases a gift subscription for any plan and duration (1-36 months).
+ *
+ * Creates a purchased gift for the given recipient with a positive amount in an ISO 4217 currency, a duration of 1-36 months, an optional plan restriction, an optional personal message and an optional scheduled delivery date (redemption is blocked before it). The full redemption code is returned exactly once and only stored as a SHA-256 hash; unredeemed gifts expire one year after purchase.
+ */
+export interface PostGiftsInput {
+  body?: Types.CommercePaymentsGiftsControllerPurchaseGiftRequestBody;
+}
+export type PostGiftsOutput = Types.CommercePaymentsGiftPurchaseResult;
+export const postGiftsEndpoint = {
+  operationId: 'postGifts' as const,
+  method: 'POST' as const,
+  path: '/api/v1/gifts' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Non-secret preview of a gift by redemption code (no giver identity exposed).
+ *
+ * Returns the public view of a gift (status, amount, currency, duration, plan, recipient name, personal message, delivery/expiry) for a redemption code. The giver identity is never exposed.
+ */
+export interface GetGiftsInput {
+  code: string;
+}
+export type GetGiftsOutput = Types.CommercePaymentsGiftPublicView;
+export const getGiftsEndpoint = {
+  operationId: 'getGifts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/{code}' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Redeems a gift with its redemption code; grants account credit to the calling account.
+ *
+ * Redeems the gift for the authenticated user and grants an account credit of the gift value to their account (existing or newly created accounts alike — the credit lands on whichever account redeems). Blocked before the scheduled delivery date, after the one-year expiry, for already-redeemed gifts, and when the giver tries to redeem their own gift.
+ */
+export interface PostGiftsRedeemInput {
+  code: string;
+}
+export type PostGiftsRedeemOutput = Types.CommercePaymentsGiftPublicView;
+export const postGiftsRedeemEndpoint = {
+  operationId: 'postGiftsRedeem' as const,
+  method: 'POST' as const,
+  path: '/api/v1/gifts/{code}/redeem' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gifts the calling user has redeemed, newest first.
+ *
+ * Returns a paged list of gifts redeemed by the calling user, newest first.
+ */
+export interface GetGiftsReceivedInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetGiftsReceivedOutput = Types.PagedResultGiftPublicView;
+export const getGiftsReceivedEndpoint = {
+  operationId: 'getGiftsReceived' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/received' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gifts the calling user has sent, newest first.
+ *
+ * Returns a paged list of gifts purchased by the calling user, newest first, with their status machine state.
+ */
+export interface GetGiftsSentInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetGiftsSentOutput = Types.PagedResultGiftPublicView;
+export const getGiftsSentEndpoint = {
+  operationId: 'getGiftsSent' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/sent' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
 export type PostIntegrationsEconomyStripeConnectWebhookInput = void;
 export type PostIntegrationsEconomyStripeConnectWebhookOutput = Types.APIControllersEconomyPayoutExecutionOperationDto;
 export const postIntegrationsEconomyStripeConnectWebhookEndpoint = {
@@ -7724,6 +8942,27 @@ export const postPaymentsRetryEndpoint = {
   operationId: 'postPaymentsRetry' as const,
   method: 'POST' as const,
   path: '/api/v1/payments/{paymentId}:retry' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retry-attempt history for one payment (issue #415)
+ *
+ * Every executed retry attempt — manual or dispatched by the automated retry queue — is
+ * persisted as a history entry recording when the attempt was scheduled and executed,
+ * its outcome, the gateway that ran it, and the gateway failure code and transaction
+ * reference when the attempt failed. Use this to audit dunning timelines and explain
+ * recovery outcomes.
+ */
+export interface GetPaymentsRetryAttemptsInput {
+  paymentId: string;
+}
+export type GetPaymentsRetryAttemptsOutput = Types.CommercePaymentsPaymentRetryAttemptDto[];
+export const getPaymentsRetryAttemptsEndpoint = {
+  operationId: 'getPaymentsRetryAttempts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/{paymentId}:retry-attempts' as const,
   tags: ['CommercePayments'] as const,
   requiresAuth: true,
 } as const;
@@ -8287,6 +9526,299 @@ export const getPostsTrendingEndpoint = {
   path: '/api/v1/posts/trending' as const,
   tags: ['SocialPosts'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * Run a full pricing calculation through the unified engine: base plan or custom
+ * amount, add-ons, usage tiers, promo discounts, proration, tax, credits, currency —
+ * itemized, explained, self-validated, and recorded in the pricing-decision ledger.
+ *
+ * Calculates a full price (base, add-ons, usage tiers, discounts, proration, tax, credits) through the single centralized pricing engine and records the decision for audit.
+ */
+export interface PostPricingCalculateInput {
+  body?: Types.CommercePaymentsPricingCalculationInput;
+}
+export type PostPricingCalculateOutput = Types.CommercePaymentsPricingCalculationResult;
+export const postPricingCalculateEndpoint = {
+  operationId: 'postPricingCalculate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/:calculate' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview a plan change before finalizing: the immediate prorated charge and the
+ * next-renewal amount side by side. Read-only — no ledger decision, no credit spend.
+ *
+ * Previews what a plan change costs before it is applied: the immediate prorated charge and the next renewal amount, with discounts, tax, and an itemized breakdown.
+ */
+export interface PostPricingPreviewInput {
+  body?: Types.CommercePaymentsPricingPreviewInput;
+}
+export type PostPricingPreviewOutput = Types.CommercePaymentsPricingPreviewResult;
+export const postPricingPreviewEndpoint = {
+  operationId: 'postPricingPreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/:preview' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a stored price calculation by id
+ *
+ * Retrieves one recorded pricing calculation from the pricing-decision ledger, including the full itemized breakdown (base, add-ons, usage, discounts, proration, tax, credits) that produced the final amount.
+ */
+export interface GetPricingCalculationsInput {
+  calculationId: string;
+}
+export type GetPricingCalculationsOutput = Types.CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export const getPricingCalculationsEndpoint = {
+  operationId: 'getPricingCalculations' as const,
+  method: 'GET' as const,
+  path: '/api/v1/pricing/calculations/{calculationId}' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate the accuracy of a stored price calculation
+ *
+ * Re-validates one stored pricing calculation: recomputes the final amount from the recorded breakdown and checks the calculation invariants — totals match line items, discounts do not exceed the subtotal, tax rates are plausible, proration stays within the plan price, and no rounding drift accumulated.
+ */
+export interface PostPricingValidateInput {
+  calculationId: string;
+}
+export type PostPricingValidateOutput = Types.CommerceBillingPricingCalculationValidationResult;
+export const postPricingValidateEndpoint = {
+  operationId: 'postPricingValidate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/validate/{calculationId}' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the caller's referral code and trackable link, creating them on first use.
+ *
+ * Returns the calling user's opaque unique referral code and the trackable share link built from it (AccountCredits:ReferralLinkBaseUrl base). Idempotent: every call returns the same per-user code.
+ */
+export type GetReferralsCodeInput = void;
+export type GetReferralsCodeOutput = Types.CommercePaymentsReferralsControllerReferralCodeOutput;
+export const getReferralsCodeEndpoint = {
+  operationId: 'getReferralsCode' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/code' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Tracking rows of the caller's referrals, newest first.
+ *
+ * Returns a paged list of the calling user's referral tracking rows, newest first, with funnel timestamps and status.
+ */
+export interface GetReferralsHistoryInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetReferralsHistoryOutput = Types.PagedResultReferral;
+export const getReferralsHistoryEndpoint = {
+  operationId: 'getReferralsHistory' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/history' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Funnel stats of the caller's referrals.
+ *
+ * Returns the calling user's referral funnel counters: shared rows, clicks, signups, conversions (first paid invoice), rewards issued, fraudulent blocks and expiries.
+ */
+export type GetReferralsStatsInput = void;
+export type GetReferralsStatsOutput = Types.CommercePaymentsReferralStats;
+export const getReferralsStatsEndpoint = {
+  operationId: 'getReferralsStats' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/stats' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Records a referral link click for funnel tracking.
+ *
+ * Records a click against a referral code (first click time kept on idempotent replays). The caller IP is hashed (SHA-256) for the same-IP fraud block and never persisted in clear.
+ */
+export interface PostReferralsTrackClickInput {
+  body?: Types.CommercePaymentsReferralsControllerTrackReferralClickInput;
+}
+export type PostReferralsTrackClickOutput = Types.CommercePaymentsReferral;
+export const postReferralsTrackClickEndpoint = {
+  operationId: 'postReferralsTrackClick' as const,
+  method: 'POST' as const,
+  path: '/api/v1/referrals/track-click' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * The signed-up caller applies a referral code to their account.
+ *
+ * Attaches the calling user as the referee of the referral code. Fail-closed blocks: self-referral, referral cap (AccountCredits:MaxReferralsPerUser) and same-IP repeats under the same referrer are rejected or recorded as fraudulent without reward eligibility.
+ */
+export interface PostReferralsTrackSignupInput {
+  body?: Types.CommercePaymentsReferralsControllerTrackReferralSignupInput;
+}
+export type PostReferralsTrackSignupOutput = Types.CommercePaymentsReferralSignupResult;
+export const postReferralsTrackSignupEndpoint = {
+  operationId: 'postReferralsTrackSignup' as const,
+  method: 'POST' as const,
+  path: '/api/v1/referrals/track-signup' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List refunds with optional filters, newest first.
+ *
+ * Lists refunds with optional status and period filters, newest first. Non-admin actors are scoped to their own tenant.
+ */
+export interface GetRefundsInput {
+  query?: {
+    status?: Types.CommercePaymentsRefundStatus;
+    fromUtc?: string;
+    toUtc?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetRefundsOutput = Types.CommercePaymentsRefundListPage;
+export const getRefundsEndpoint = {
+  operationId: 'getRefunds' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Request a refund for a payment. Amounts at or above the manual-approval threshold
+ * are queued as pending; amounts below it (or all refunds when no threshold is
+ * configured) execute immediately.
+ *
+ * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway.
+ */
+export interface PostRefundsInput {
+  body?: Types.CommercePaymentsRefundsControllerRequestRefundHttpInput;
+}
+export type PostRefundsOutput = Types.CommercePaymentsRequestRefundResult;
+export const postRefundsEndpoint = {
+  operationId: 'postRefunds' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retrieve a single refund by id.
+ *
+ * Retrieves a single refund with its lifecycle state, decision trail and gateway references.
+ */
+export interface GetRefundByIdInput {
+  refundId: string;
+}
+export type GetRefundByIdOutput = Types.CommercePaymentsRefundRecord;
+export const getRefundByIdEndpoint = {
+  operationId: 'getRefundById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/{refundId}' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending refund and execute it. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Approves the pending refund and executes it through the gateway. Requires the payments:refunds:approve permission. Custom action per Google API guidelines.
+ */
+export interface PostRefundsApproveInput {
+  refundId: string;
+  body?: Types.CommercePaymentsRefundsControllerRefundDecisionInput;
+}
+export type PostRefundsApproveOutput = Types.CommercePaymentsRefundDecisionResult;
+export const postRefundsApproveEndpoint = {
+  operationId: 'postRefundsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds/{refundId}:approve' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reject a pending refund; no money moves. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Rejects the pending refund; no money moves. Requires the payments:refunds:approve permission. Custom action per Google API guidelines.
+ */
+export interface PostRefundsRejectInput {
+  refundId: string;
+  body?: Types.CommercePaymentsRefundsControllerRefundDecisionInput;
+}
+export type PostRefundsRejectOutput = Types.CommercePaymentsRefundDecisionResult;
+export const postRefundsRejectEndpoint = {
+  operationId: 'postRefundsReject' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds/{refundId}:reject' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * The pending refund-approval queue, oldest first. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Lists refunds waiting for a manual approval decision, oldest first. Requires the payments:refunds:approve permission; non-admin actors are scoped to their own tenant.
+ */
+export interface GetRefundsPendingApprovalsInput {
+  query?: {
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetRefundsPendingApprovalsOutput = Types.CommercePaymentsRefundApprovalQueuePage;
+export const getRefundsPendingApprovalsEndpoint = {
+  operationId: 'getRefundsPendingApprovals' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/pending-approvals' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Refund statistics for an inclusive window.
+ *
+ * Returns refund counts by status, completed refund amounts by currency and the reason breakdown for an inclusive window.
+ */
+export interface GetRefundsStatisticsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetRefundsStatisticsOutput = Types.CommercePaymentsRefundStatistics;
+export const getRefundsStatisticsEndpoint = {
+  operationId: 'getRefundsStatistics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/statistics' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -9127,6 +10659,26 @@ export const getSubscriptionsBillingHistoryEndpoint = {
 } as const;
 
 /**
+ * Get the current price breakdown of a subscription (issue #417)
+ *
+ * Returns the itemized price breakdown of a subscription's current plan through the unified pricing engine: base plan, discounts, totals and a calculation explanation.
+ */
+export interface GetSubscriptionsBreakdownInput {
+  subscriptionId: string;
+  query?: {
+    promoCode?: string;
+  };
+}
+export type GetSubscriptionsBreakdownOutput = Types.CommercePaymentsPricingCalculationResult;
+export const getSubscriptionsBreakdownEndpoint = {
+  operationId: 'getSubscriptionsBreakdown' as const,
+  method: 'GET' as const,
+  path: '/api/v1/subscriptions/{subscriptionId}/breakdown' as const,
+  tags: ['CommerceSubscriptions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get subscription invoices
  *
  * Retrieves the invoice history for a specific subscription.
@@ -9143,6 +10695,24 @@ export const getSubscriptionsInvoicesEndpoint = {
   operationId: 'getSubscriptionsInvoices' as const,
   method: 'GET' as const,
   path: '/api/v1/subscriptions/{subscriptionId}/invoices' as const,
+  tags: ['CommerceSubscriptions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview a plan change for a subscription before finalizing (issue #417)
+ *
+ * Previews what switching this subscription to a new plan costs before anything is applied: the immediate prorated charge and the next renewal amount, using the subscription's real billing period.
+ */
+export interface PostSubscriptionsPricingPreviewInput {
+  subscriptionId: string;
+  body?: Types.CommerceSubscriptionsPreviewSubscriptionPlanChangeInput;
+}
+export type PostSubscriptionsPricingPreviewOutput = Types.CommercePaymentsPricingPreviewResult;
+export const postSubscriptionsPricingPreviewEndpoint = {
+  operationId: 'postSubscriptionsPricingPreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/subscriptions/{subscriptionId}/pricing:preview' as const,
   tags: ['CommerceSubscriptions'] as const,
   requiresAuth: true,
 } as const;
@@ -9473,6 +11043,23 @@ export const getWalletsForGetWalletsEndpoint = {
 } as const;
 
 /**
+ * Wallet-to-wallet transfer (issue #406): moves funds between two same-currency wallets
+ * through the audited TransferFunds command. A duplicate ReferenceId replays
+ * idempotently.
+ */
+export interface PostWalletsTransferInput {
+  body?: Types.CommercePaymentsModelsTransferWalletsInput;
+}
+export type PostWalletsTransferOutput = Types.CommercePaymentsModelsTransferWalletsOutput;
+export const postWalletsTransferEndpoint = {
+  operationId: 'postWalletsTransfer' as const,
+  method: 'POST' as const,
+  path: '/api/v1/wallets:transfer' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get wallet by ID
  */
 export interface GetWalletsForGetWalletsByWalletIdInput {
@@ -9534,6 +11121,24 @@ export const headWalletsEndpoint = {
 } as const;
 
 /**
+ * Administrative balance adjustment (issue #406): credits or debits a wallet through
+ * the audited AddFunds/DeductFunds commands. A duplicate ReferenceId replays
+ * idempotently and returns the original transaction.
+ */
+export interface PostWalletsAdjustInput {
+  walletId: string;
+  body?: Types.CommercePaymentsModelsAdjustWalletInput;
+}
+export type PostWalletsAdjustOutput = Types.CommercePaymentsWalletTransaction;
+export const postWalletsAdjustEndpoint = {
+  operationId: 'postWalletsAdjust' as const,
+  method: 'POST' as const,
+  path: '/api/v1/wallets/{walletId}:adjust' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Freeze wallet
  */
 export interface PostWalletsFreezeInput {
@@ -9579,6 +11184,42 @@ export const getWalletsAuditLogEndpoint = {
   operationId: 'getWalletsAuditLog' as const,
   method: 'GET' as const,
   path: '/api/v1/wallets/{walletId}/audit-log' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Wallet balance analytics (issue #406): total balances by currency, active/frozen
+ * wallet counts and completed transaction volume by type and day.
+ */
+export interface GetWalletsMetricsInput {
+  query?: {
+    days?: number;
+  };
+}
+export type GetWalletsMetricsOutput = Types.CommercePaymentsWalletMetricsOutput;
+export const getWalletsMetricsEndpoint = {
+  operationId: 'getWalletsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/wallets/metrics' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Report-only balance reconciliation (issue #406): per wallet, verifies Balance against
+ * the latest BalanceAfter and the signed sum of completed transactions. Never mutates state.
+ */
+export interface GetWalletsReconciliationInput {
+  query?: {
+    walletId?: string;
+  };
+}
+export type GetWalletsReconciliationOutput = Types.CommercePaymentsWalletReconciliationReportOutput;
+export const getWalletsReconciliationEndpoint = {
+  operationId: 'getWalletsReconciliation' as const,
+  method: 'GET' as const,
+  path: '/api/v1/wallets/reconciliation' as const,
   tags: ['CommercePaymentsWallets'] as const,
   requiresAuth: true,
 } as const;
@@ -10763,6 +12404,24 @@ export const postAdminAuditLogsExportJsonEndpoint = {
 } as const;
 
 /**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostAdminAuditLogsReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostAdminAuditLogsReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postAdminAuditLogsReplaySnapshotsEndpoint = {
+  operationId: 'postAdminAuditLogsReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Downloads a completed scheduled export stored for its tenant.
  */
 export interface GetAdminAuditLogsScheduledExportHistoryDownloadInput {
@@ -11064,6 +12723,12 @@ export const postAdminSecurityAuditExportEndpoint = {
 
 /**
  * Get authentication attempt logs specifically.
+ *
+ * Deliberately kept on the SystemAdmin policy: the authentication-attempt surface
+ * has no tenant-scoped filter today (the request and the underlying query are
+ * platform-wide), so opening it to the Audit.Read self-service tier would leak
+ * cross-tenant authentication data. Revisit together with a tenant filter on
+ * GameGuild.Compliance.Audit.AuthenticationAuditRequest.
  */
 export interface GetAdminSecurityAuditAuthenticationInput {
   query?: {
@@ -12595,6 +14260,181 @@ export const getAssetsSocialMediaEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Execute an audit query DSL expression (JSON or light text syntax) and return a
+ * data-masked, paginated page of matching audit entries plus aggregates over the full
+ * matched set. Execution is bounded by a row-scan cap and a wall-clock timeout.
+ */
+export interface PostAuditQueriesExecuteInput {
+  body?: Types.ComplianceAuditAuditQueryExecuteApiInput;
+}
+export type PostAuditQueriesExecuteOutput = Types.ComplianceAuditAuditQueryDslExecutionResult;
+export const postAuditQueriesExecuteEndpoint = {
+  operationId: 'postAuditQueriesExecute' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/:execute' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Paged-results GET variant of the DSL executor for the light text syntax
+ * (e.g. GET /v1/audit-queries:results?query=actor:alice AND severity:Critical).
+ */
+export interface GetAuditQueriesResultsInput {
+  query?: {
+    query?: string;
+    Skip?: number;
+    Take?: number;
+  };
+}
+export type GetAuditQueriesResultsOutput = Types.ComplianceAuditAuditQueryDslExecutionResult;
+export const getAuditQueriesResultsEndpoint = {
+  operationId: 'getAuditQueriesResults' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/:results' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate a DSL query without executing it and return its canonical JSON form.
+ * Saved-view editors use this to fail closed before persisting a query.
+ */
+export interface PostAuditQueriesValidateInput {
+  body?: Types.ComplianceAuditAuditQueryValidateApiInput;
+}
+export type PostAuditQueriesValidateOutput = Types.ComplianceAuditAuditQueryValidationOutput;
+export const postAuditQueriesValidateEndpoint = {
+  operationId: 'postAuditQueriesValidate' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/:validate' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List saved audit query views visible to the acting user: their own private views
+ * plus every shared view within the caller's tenant.
+ */
+export type GetAuditQueriesSavedForGetAuditQueriesSavedInput = void;
+export type GetAuditQueriesSavedForGetAuditQueriesSavedOutput = Types.ComplianceAuditSavedAuditQueryViewOutput[];
+export const getAuditQueriesSavedForGetAuditQueriesSavedEndpoint = {
+  operationId: 'getAuditQueriesSavedForGetAuditQueriesSaved' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/saved' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a saved audit query view. The query is validated (and tenant-scope checked)
+ * before persistence; a creation revision snapshot is recorded.
+ */
+export interface PostAuditQueriesSavedInput {
+  body?: Types.ComplianceAuditSaveSavedAuditQueryApiInput;
+}
+export type PostAuditQueriesSavedOutput = Types.ComplianceAuditSavedAuditQueryViewOutput;
+export const postAuditQueriesSavedEndpoint = {
+  operationId: 'postAuditQueriesSaved' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/saved' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one saved view. Private views are only visible to their owner.
+ */
+export interface GetAuditQueriesSavedForGetAuditQueriesSavedByIdInput {
+  id: string;
+}
+export type GetAuditQueriesSavedForGetAuditQueriesSavedByIdOutput = Types.ComplianceAuditSavedAuditQueryViewOutput;
+export const getAuditQueriesSavedForGetAuditQueriesSavedByIdEndpoint = {
+  operationId: 'getAuditQueriesSavedForGetAuditQueriesSavedById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/saved/{id}' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a saved view (owner only). A new revision snapshot is recorded.
+ */
+export interface PutAuditQueriesSavedInput {
+  id: string;
+  body?: Types.ComplianceAuditSaveSavedAuditQueryApiInput;
+}
+export type PutAuditQueriesSavedOutput = Types.ComplianceAuditSavedAuditQueryViewOutput;
+export const putAuditQueriesSavedEndpoint = {
+  operationId: 'putAuditQueriesSaved' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit-queries/saved/{id}' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a saved view (owner only). Its revision history is retained for audit.
+ */
+export interface DeleteAuditQueriesSavedInput {
+  id: string;
+}
+export type DeleteAuditQueriesSavedOutput = void;
+export const deleteAuditQueriesSavedEndpoint = {
+  operationId: 'deleteAuditQueriesSaved' as const,
+  method: 'DELETE' as const,
+  path: '/v1/audit-queries/saved/{id}' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Execute a saved view by identifier (owner or shared), paging over its canonical query.
+ * Execution usage and attribution are recorded on the view and in the audit log.
+ */
+export interface PostAuditQueriesSavedExecuteInput {
+  id: string;
+  body?: Types.ComplianceAuditAuditQueryPagingApiInput;
+}
+export type PostAuditQueriesSavedExecuteOutput = Types.ComplianceAuditAuditQueryDslExecutionResult;
+export const postAuditQueriesSavedExecuteEndpoint = {
+  operationId: 'postAuditQueriesSavedExecute' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/saved/{id}:execute' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Full revision history of a saved view: who changed what, when, and the exact query
+ * payload of every revision. Revisions survive deletion of the view itself.
+ */
+export interface GetAuditQueriesSavedRevisionsInput {
+  id: string;
+}
+export type GetAuditQueriesSavedRevisionsOutput = Types.ComplianceAuditSavedAuditQueryRevisionOutput[];
+export const getAuditQueriesSavedRevisionsEndpoint = {
+  operationId: 'getAuditQueriesSavedRevisions' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/saved/{id}/revisions' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Built-in role-based query templates for common investigation and compliance scenarios.
+ */
+export type GetAuditQueriesTemplatesInput = void;
+export type GetAuditQueriesTemplatesOutput = Types.ComplianceAuditAuditQueryTemplate[];
+export const getAuditQueriesTemplatesEndpoint = {
+  operationId: 'getAuditQueriesTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/templates' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAuditCompliancePackagingForGetAuditCompliancePackagingInput {
   query?: {
     skip?: number;
@@ -12717,6 +14557,136 @@ export const getAuditCompliancePackagingTemplatesEndpoint = {
   method: 'GET' as const,
   path: '/v1/audit/compliance-packaging/templates' as const,
   tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Pipeline status: cached rule snapshots, enabled rule counts (global and tenant), vault size,
+ * and the last rule-refresh outcome.
+ */
+export type GetAuditRedactionPipelineInput = void;
+export type GetAuditRedactionPipelineOutput = Types.ComplianceAuditPiiRedactionPipelineStatusOutput;
+export const getAuditRedactionPipelineEndpoint = {
+  operationId: 'getAuditRedactionPipeline' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the tenant's rules plus the platform-global rules visible to it.
+ */
+export type GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesInput = void;
+export type GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput[];
+export const getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRules' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a redaction rule. Guarded to tenant administrators; audited; invalidates the rule cache.
+ */
+export interface PostAuditRedactionPipelineRulesInput {
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PostAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const postAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'postAuditRedactionPipelineRules' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets one rule by id.
+ */
+export interface GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdInput {
+  ruleId: string;
+}
+export type GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdEndpoint = {
+  operationId: 'getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleId' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Updates a rule. Versioned: the request must carry the revision observed on read; a stale
+ * revision returns 409 Conflict.
+ */
+export interface PutAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PutAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const putAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'putAuditRedactionPipelineRules' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a rule. Versioned like the update; audited at high risk.
+ */
+export interface DeleteAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+}
+export type DeleteAuditRedactionPipelineRulesOutput = void;
+export const deleteAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'deleteAuditRedactionPipelineRules' as const,
+  method: 'DELETE' as const,
+  path: '/v1/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dry-runs the enabled rules against sample field values without persisting anything — the
+ * pattern-recognition verification surface for administrators.
+ */
+export interface PostAuditRedactionPipelineTestInput {
+  body?: Types.ComplianceAuditPiiRedactionTestRunInput;
+}
+export type PostAuditRedactionPipelineTestOutput = Types.ComplianceAuditPiiRedactionTestRunOutput;
+export const postAuditRedactionPipelineTestEndpoint = {
+  operationId: 'postAuditRedactionPipelineTest' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/redaction-pipeline/test' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a deterministic token to its original value from the token vault for an authorized
+ * investigation. Requires a reason; audited at critical risk.
+ */
+export interface GetAuditRedactionPipelineTokensInput {
+  token: string;
+  query?: {
+    reason?: string;
+  };
+}
+export type GetAuditRedactionPipelineTokensOutput = Types.ComplianceAuditPiiTokenResolutionOutput;
+export const getAuditRedactionPipelineTokensEndpoint = {
+  operationId: 'getAuditRedactionPipelineTokens' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline/tokens/{token}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
   requiresAuth: true,
 } as const;
 
@@ -13334,18 +15304,15 @@ export const getAuthGithubAuthorizeEndpoint = {
 /**
  * Handle GitHub OAuth callback
  *
- * Handles the GitHub OAuth callback, exchanging the authorization code for tokens.
+ * Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.
  */
-export interface GetAuthGithubCallbackInput {
-  query?: {
-    code?: string;
-    state?: string;
-  };
+export interface PostAuthGithubCallbackInput {
+  body?: Types.IdentityAuthenticationGitHubCallbackRequestDto;
 }
-export type GetAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
-export const getAuthGithubCallbackEndpoint = {
-  operationId: 'getAuthGithubCallback' as const,
-  method: 'GET' as const,
+export type PostAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthGithubCallbackEndpoint = {
+  operationId: 'postAuthGithubCallback' as const,
+  method: 'POST' as const,
   path: '/v1/auth/github:callback' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
@@ -13667,6 +15634,92 @@ export const postAuthOidcSignInCallbackEndpoint = {
   operationId: 'postAuthOidcSignInCallback' as const,
   method: 'POST' as const,
   path: '/v1/auth/oidc/{slug}:sign-in-callback' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Initiate an orchestrated authentication flow
+ *
+ * Validates the local primary credential (identifier + password), assesses sign-in risk and returns the persisted flow state with the required challenge ladder (MFA verification, device trust, risk challenge). Expired, inactive or unknown credentials fail closed.
+ */
+export interface PostAuthOrchestratedInitiateInput {
+  body?: Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto;
+}
+export type PostAuthOrchestratedInitiateOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedInitiateEndpoint = {
+  operationId: 'postAuthOrchestratedInitiate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated:initiate' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Get the current state of an orchestrated authentication flow
+ *
+ * Returns the current state of the flow. Abandoned, expired and unknown flows are not observable and return 404.
+ */
+export interface GetAuthOrchestratedInput {
+  flowId: string;
+}
+export type GetAuthOrchestratedOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const getAuthOrchestratedEndpoint = {
+  operationId: 'getAuthOrchestrated' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/orchestrated/{flowId}' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Abandon an in-flight orchestrated authentication flow
+ *
+ * Terminates the flow; later step, completion and lookup calls fail closed.
+ */
+export interface PostAuthOrchestratedAbandonInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedAbandonOutput = void;
+export const postAuthOrchestratedAbandonEndpoint = {
+  operationId: 'postAuthOrchestratedAbandon' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:abandon' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Complete an orchestrated authentication flow and issue tokens
+ *
+ * Issues access and refresh tokens once every required step of the flow is satisfied. Pending steps, abandoned, expired or already-unknown flows fail closed.
+ */
+export interface PostAuthOrchestratedCompleteInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedCompleteOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthOrchestratedCompleteEndpoint = {
+  operationId: 'postAuthOrchestratedComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:complete' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Satisfy one challenge step of an orchestrated authentication flow
+ *
+ * Verifies one challenge step (TOTP code, backup code or WebAuthn assertion) against the persisted flow and returns the updated state. Out-of-order, repeated, abandoned, expired or locked-out steps fail closed.
+ */
+export interface PostAuthOrchestratedProcessStepInput {
+  flowId: string;
+  body?: Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
+}
+export type PostAuthOrchestratedProcessStepOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedProcessStepEndpoint = {
+  operationId: 'postAuthOrchestratedProcessStep' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:process-step' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
 } as const;
@@ -14104,6 +16157,24 @@ export const deleteAuthSessionsEndpoint = {
   operationId: 'deleteAuthSessions' as const,
   method: 'DELETE' as const,
   path: '/v1/auth/sessions/{sessionId}' as const,
+  tags: ['AuthSessions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Name or rename one of the current user's own sessions
+ *
+ * Assigns a user-defined name to one of the current user's own active sessions. The acting user is taken from the authenticated principal, never from the body.
+ */
+export interface PatchAuthSessionsNameInput {
+  sessionId: string;
+  body?: Types.IdentityAuthenticationRenameSessionInput;
+}
+export type PatchAuthSessionsNameOutput = Types.IdentityAuthenticationSessionSuccessOutput;
+export const patchAuthSessionsNameEndpoint = {
+  operationId: 'patchAuthSessionsName' as const,
+  method: 'PATCH' as const,
+  path: '/v1/auth/sessions/{sessionId}/name' as const,
   tags: ['AuthSessions'] as const,
   requiresAuth: true,
 } as const;
@@ -19110,6 +21181,86 @@ export const getPermissionDelegationsDelegatorEndpoint = {
 } as const;
 
 /**
+ * List catalog categories (optionally filtered to a subtree or the roots)
+ */
+export interface GetProductCategoriesForGetProductCategoriesInput {
+  query?: {
+    parentCategoryId?: string;
+    rootsOnly?: boolean;
+    includeProductCounts?: boolean;
+  };
+}
+export type GetProductCategoriesForGetProductCategoriesOutput = Types.CommerceProductsProductCategoryDto[];
+export const getProductCategoriesForGetProductCategoriesEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategories' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create a category
+ */
+export interface PostProductCategoriesInput {
+  body?: Types.CommerceProductsCreateProductCategoryInput;
+}
+export type PostProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const postProductCategoriesEndpoint = {
+  operationId: 'postProductCategories' as const,
+  method: 'POST' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a category by ID
+ */
+export interface GetProductCategoriesForGetProductCategoriesByCategoryIdInput {
+  categoryId: string;
+}
+export type GetProductCategoriesForGetProductCategoriesByCategoryIdOutput = Types.CommerceProductsProductCategoryDto;
+export const getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategoriesByCategoryId' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Update a category (rename, re-slug, reparent, attributes)
+ */
+export interface PutProductCategoriesInput {
+  categoryId: string;
+  body?: Types.CommerceProductsUpdateProductCategoryInput;
+}
+export type PutProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const putProductCategoriesEndpoint = {
+  operationId: 'putProductCategories' as const,
+  method: 'PUT' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a category (soft). Rejected while children or assigned products exist.
+ */
+export interface DeleteProductCategoriesInput {
+  categoryId: string;
+}
+export type DeleteProductCategoriesOutput = void;
+export const deleteProductCategoriesEndpoint = {
+  operationId: 'deleteProductCategories' as const,
+  method: 'DELETE' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get paginated list of products
  */
 export interface GetProductsForGetProductsInput {
@@ -19118,6 +21269,8 @@ export interface GetProductsForGetProductsInput {
     creatorId?: string;
     searchTerm?: string;
     isBundle?: boolean;
+    categoryId?: string;
+    inStock?: boolean;
     includeUnpublished?: boolean;
     skip?: number;
     take?: number;
@@ -19298,6 +21451,37 @@ export const postProductsDeactivateEndpoint = {
 } as const;
 
 /**
+ * Get a product's real-time availability (issue #401)
+ */
+export interface GetProductsAvailabilityInput {
+  productId: string;
+}
+export type GetProductsAvailabilityOutput = Types.CommerceProductsProductAvailabilityDto;
+export const getProductsAvailabilityEndpoint = {
+  operationId: 'getProductsAvailability' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/availability' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create or replace a product's inventory configuration (issue #401)
+ */
+export interface PutProductsInventoryInput {
+  productId: string;
+  body?: Types.CommerceProductsSetProductInventoryInput;
+}
+export type PutProductsInventoryOutput = Types.CommerceProductsProductInventoryDto;
+export const putProductsInventoryEndpoint = {
+  operationId: 'putProductsInventory' as const,
+  method: 'PUT' as const,
+  path: '/v1/products/{productId}/inventory' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get pricing options for a product
  */
 export interface GetProductsPricingInput {
@@ -19326,6 +21510,24 @@ export const putProductsPricingEndpoint = {
   path: '/v1/products/{productId}/pricing' as const,
   tags: ['CommerceProducts'] as const,
   requiresAuth: true,
+} as const;
+
+/**
+ * Get rule-based recommendations for a product
+ */
+export interface GetProductsRecommendationsInput {
+  productId: string;
+  query?: {
+    take?: number;
+  };
+}
+export type GetProductsRecommendationsOutput = Types.CommerceOrdersProductRecommendationsDto;
+export const getProductsRecommendationsEndpoint = {
+  operationId: 'getProductsRecommendations' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/recommendations' as const,
+  tags: ['CommerceOrdersProducts'] as const,
+  requiresAuth: false,
 } as const;
 
 /**
@@ -20628,6 +22830,7 @@ export interface GetPromoCodesForGetPromoCodesInput {
     type?: Types.CommerceProductsPromoCodeType;
     productId?: string;
     searchTerm?: string;
+    campaignId?: string;
     skip?: number;
     take?: number;
   };
@@ -20657,7 +22860,8 @@ export const postPromoCodesEndpoint = {
 } as const;
 
 /**
- * Apply promo codes to an order
+ * Apply promo codes to an order. Usage is recorded atomically per applied code
+ * (idempotent on the supplied key, fail-closed on usage limits).
  */
 export interface PostPromoCodesApplyInput {
   body?: Types.CommerceProductsApplyPromoCodesInput;
@@ -20667,6 +22871,21 @@ export const postPromoCodesApplyEndpoint = {
   operationId: 'postPromoCodesApply' as const,
   method: 'POST' as const,
   path: '/v1/promo-codes/:apply' as const,
+  tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-generate promo codes with a shared prefix and random suffixes
+ */
+export interface PostPromoCodesGenerateBulkInput {
+  body?: Types.CommerceProductsGenerateBulkPromoCodesInput;
+}
+export type PostPromoCodesGenerateBulkOutput = Types.CommerceProductsPromoCodeDto[];
+export const postPromoCodesGenerateBulkEndpoint = {
+  operationId: 'postPromoCodesGenerateBulk' as const,
+  method: 'POST' as const,
+  path: '/v1/promo-codes/:generate-bulk' as const,
   tags: ['CommerceProductsPromoCodes'] as const,
   requiresAuth: true,
 } as const;
@@ -20820,6 +23039,103 @@ export const getPromoCodesByCodeEndpoint = {
   method: 'GET' as const,
   path: '/v1/promo-codes/by-code/{code}' as const,
   tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get aggregated campaign performance (uses, redemption rate, discount totals, top codes) within an optional window
+ */
+export interface GetPromoCodesCampaignsPerformanceInput {
+  campaignId: string;
+  query?: {
+    from?: string;
+    to?: string;
+  };
+}
+export type GetPromoCodesCampaignsPerformanceOutput = Types.CommerceProductsCampaignPerformanceDto;
+export const getPromoCodesCampaignsPerformanceEndpoint = {
+  operationId: 'getPromoCodesCampaignsPerformance' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-codes/campaigns/{campaignId}/performance' as const,
+  tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List stacking rules ordered by priority (descending)
+ */
+export interface GetPromoStackingRulesForGetPromoStackingRulesInput {
+  query?: {
+    includeInactive?: boolean;
+  };
+}
+export type GetPromoStackingRulesForGetPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto[];
+export const getPromoStackingRulesForGetPromoStackingRulesEndpoint = {
+  operationId: 'getPromoStackingRulesForGetPromoStackingRules' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-stacking-rules' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a stacking rule
+ */
+export interface PostPromoStackingRulesInput {
+  body?: Types.CommerceProductsCreatePromoStackingRuleInput;
+}
+export type PostPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const postPromoStackingRulesEndpoint = {
+  operationId: 'postPromoStackingRules' as const,
+  method: 'POST' as const,
+  path: '/v1/promo-stacking-rules' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a stacking rule by ID
+ */
+export interface GetPromoStackingRulesForGetPromoStackingRulesByRuleIdInput {
+  ruleId: string;
+}
+export type GetPromoStackingRulesForGetPromoStackingRulesByRuleIdOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const getPromoStackingRulesForGetPromoStackingRulesByRuleIdEndpoint = {
+  operationId: 'getPromoStackingRulesForGetPromoStackingRulesByRuleId' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a stacking rule
+ */
+export interface PutPromoStackingRulesInput {
+  ruleId: string;
+  body?: Types.CommerceProductsUpdatePromoStackingRuleInput;
+}
+export type PutPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const putPromoStackingRulesEndpoint = {
+  operationId: 'putPromoStackingRules' as const,
+  method: 'PUT' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a stacking rule
+ */
+export interface DeletePromoStackingRulesInput {
+  ruleId: string;
+}
+export type DeletePromoStackingRulesOutput = void;
+export const deletePromoStackingRulesEndpoint = {
+  operationId: 'deletePromoStackingRules' as const,
+  method: 'DELETE' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
   requiresAuth: true,
 } as const;
 
@@ -26668,6 +28984,16 @@ export const endpoints = {
   getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
   postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
   postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  getApiAuditRedactionPipeline: getApiAuditRedactionPipelineEndpoint,
+  getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRules: getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesEndpoint,
+  postApiAuditRedactionPipelineRules: postApiAuditRedactionPipelineRulesEndpoint,
+  getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleId:
+    getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdEndpoint,
+  putApiAuditRedactionPipelineRules: putApiAuditRedactionPipelineRulesEndpoint,
+  deleteApiAuditRedactionPipelineRules: deleteApiAuditRedactionPipelineRulesEndpoint,
+  postApiAuditRedactionPipelineTest: postApiAuditRedactionPipelineTestEndpoint,
+  getApiAuditRedactionPipelineTokens: getApiAuditRedactionPipelineTokensEndpoint,
+  postApiAuditReplaySnapshots: postApiAuditReplaySnapshotsEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
   postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
@@ -26942,6 +29268,11 @@ export const endpoints = {
   patchApiTestingLabSettings: patchApiTestingLabSettingsEndpoint,
   getApiTestingLabSettingsExists: getApiTestingLabSettingsExistsEndpoint,
   postApiTestingLabSettingsReset: postApiTestingLabSettingsResetEndpoint,
+  postAccountCreditsRevoke: postAccountCreditsRevokeEndpoint,
+  getAccountCreditsBalance: getAccountCreditsBalanceEndpoint,
+  postAccountCreditsGrants: postAccountCreditsGrantsEndpoint,
+  getAccountCreditsHistory: getAccountCreditsHistoryEndpoint,
+  getAccountCreditsMetrics: getAccountCreditsMetricsEndpoint,
   getAdminEconomyAdRewardsPendingClaims: getAdminEconomyAdRewardsPendingClaimsEndpoint,
   getAdminEconomyAdRewardsReconciliations: getAdminEconomyAdRewardsReconciliationsEndpoint,
   getAdminEconomyAdRewardsReports: getAdminEconomyAdRewardsReportsEndpoint,
@@ -27049,9 +29380,26 @@ export const endpoints = {
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
   getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  postAuthorizationPermissionApprovals: postAuthorizationPermissionApprovalsEndpoint,
+  getAuthorizationPermissionApprovals: getAuthorizationPermissionApprovalsEndpoint,
+  postAuthorizationPermissionApprovalsDecisions: postAuthorizationPermissionApprovalsDecisionsEndpoint,
   getAuthorizationPermissionGraph: getAuthorizationPermissionGraphEndpoint,
   getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
   getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
+  getAuthorizationPermissionPoliciesVersions: getAuthorizationPermissionPoliciesVersionsEndpoint,
+  getAuthorizationPermissionTemplates: getAuthorizationPermissionTemplatesEndpoint,
+  postAuthorizationPermissionTemplates: postAuthorizationPermissionTemplatesEndpoint,
+  putAuthorizationPermissionTemplates: putAuthorizationPermissionTemplatesEndpoint,
+  deleteAuthorizationPermissionTemplates: deleteAuthorizationPermissionTemplatesEndpoint,
+  postAuthorizationPermissionTemplatesInstantiate: postAuthorizationPermissionTemplatesInstantiateEndpoint,
+  postAuthorizationPermissionTemplatesInstantiatePreview: postAuthorizationPermissionTemplatesInstantiatePreviewEndpoint,
+  postAuthorizationPermissionTemplatesMigrations: postAuthorizationPermissionTemplatesMigrationsEndpoint,
+  getAuthorizationPermissionTemplatesMigrations: getAuthorizationPermissionTemplatesMigrationsEndpoint,
+  postAuthorizationPermissionTemplatesMigrationsRollback: postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint,
+  getAuthorizationPermissionTemplatesVersions: getAuthorizationPermissionTemplatesVersionsEndpoint,
+  postAuthorizationPermissionsSimulate: postAuthorizationPermissionsSimulateEndpoint,
+  getAuthorizationPermissionsHistoryAt: getAuthorizationPermissionsHistoryAtEndpoint,
+  getAuthorizationPermissionsHistoryInheritance: getAuthorizationPermissionsHistoryInheritanceEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -27095,7 +29443,27 @@ export const endpoints = {
   postBillingExternalProvidersDisable: postBillingExternalProvidersDisableEndpoint,
   postBillingExternalProvidersEnable: postBillingExternalProvidersEnableEndpoint,
   postBillingExternalProvidersMigrationDryRun: postBillingExternalProvidersMigrationDryRunEndpoint,
+  postBillingInvoicesAccountCredits: postBillingInvoicesAccountCreditsEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
+  getPaymentMethodById: getPaymentMethodByIdEndpoint,
+  putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
+  deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
+  getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedger: getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerEndpoint,
+  postBillingPricingDiscountsLedgerValidateDrift: postBillingPricingDiscountsLedgerValidateDriftEndpoint,
+  getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryId:
+    getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdEndpoint,
+  getBillingPricingDiscountsLedgerAnalyticsEffectiveness: getBillingPricingDiscountsLedgerAnalyticsEffectivenessEndpoint,
+  getBillingPricingEngineForGetBillingPricingEngine: getBillingPricingEngineForGetBillingPricingEngineEndpoint,
+  postBillingPricingEngine: postBillingPricingEngineEndpoint,
+  postBillingPricingEngineCalculate: postBillingPricingEngineCalculateEndpoint,
+  getBillingPricingEngineForGetBillingPricingEngineByRuleId: getBillingPricingEngineForGetBillingPricingEngineByRuleIdEndpoint,
+  putBillingPricingEngine: putBillingPricingEngineEndpoint,
+  deleteBillingPricingEngine: deleteBillingPricingEngineEndpoint,
+  postBillingPricingEngineActivate: postBillingPricingEngineActivateEndpoint,
+  postBillingPricingEngineDeactivate: postBillingPricingEngineDeactivateEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
@@ -27118,6 +29486,17 @@ export const endpoints = {
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
   postBillingWebhooksWebhookEventsRetry: postBillingWebhooksWebhookEventsRetryEndpoint,
+  getDisputes: getDisputesEndpoint,
+  postDisputes: postDisputesEndpoint,
+  getDisputeById: getDisputeByIdEndpoint,
+  postDisputesAccept: postDisputesAcceptEndpoint,
+  postDisputesCancel: postDisputesCancelEndpoint,
+  postDisputesChallenge: postDisputesChallengeEndpoint,
+  postDisputesResolve: postDisputesResolveEndpoint,
+  postDisputesRespond: postDisputesRespondEndpoint,
+  getDisputesEvidence: getDisputesEvidenceEndpoint,
+  postDisputesEvidence: postDisputesEvidenceEndpoint,
+  getDisputesStatistics: getDisputesStatisticsEndpoint,
   postEconomyAdRewardsSessions: postEconomyAdRewardsSessionsEndpoint,
   getEconomyAdRewardsSessions: getEconomyAdRewardsSessionsEndpoint,
   postEconomyAdRewardsSessionsComplete: postEconomyAdRewardsSessionsCompleteEndpoint,
@@ -27152,6 +29531,14 @@ export const endpoints = {
   getEmailDeliveryNotificationsTimeline: getEmailDeliveryNotificationsTimelineEndpoint,
   getEmailDeliverySuppressions: getEmailDeliverySuppressionsEndpoint,
   deleteEmailDeliverySuppressions: deleteEmailDeliverySuppressionsEndpoint,
+  getFraudReviews: getFraudReviewsEndpoint,
+  postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
+  postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
+  postGifts: postGiftsEndpoint,
+  getGifts: getGiftsEndpoint,
+  postGiftsRedeem: postGiftsRedeemEndpoint,
+  getGiftsReceived: getGiftsReceivedEndpoint,
+  getGiftsSent: getGiftsSentEndpoint,
   postIntegrationsEconomyStripeConnectWebhook: postIntegrationsEconomyStripeConnectWebhookEndpoint,
   postIntegrationsEconomySumsubWebhook: postIntegrationsEconomySumsubWebhookEndpoint,
   postNotificationsEmailEvents: postNotificationsEmailEventsEndpoint,
@@ -27164,6 +29551,7 @@ export const endpoints = {
   postPaymentsCancel: postPaymentsCancelEndpoint,
   postPaymentsRefund: postPaymentsRefundEndpoint,
   postPaymentsRetry: postPaymentsRetryEndpoint,
+  getPaymentsRetryAttempts: getPaymentsRetryAttemptsEndpoint,
   getPaymentsRecoveryMetrics: getPaymentsRecoveryMetricsEndpoint,
   getPaymentsRetryingCandidates: getPaymentsRetryingCandidatesEndpoint,
   postPaymentsSetupIntents: postPaymentsSetupIntentsEndpoint,
@@ -27197,6 +29585,22 @@ export const endpoints = {
   getPostsTagsPopular: getPostsTagsPopularEndpoint,
   getPostsTagsSearch: getPostsTagsSearchEndpoint,
   getPostsTrending: getPostsTrendingEndpoint,
+  postPricingCalculate: postPricingCalculateEndpoint,
+  postPricingPreview: postPricingPreviewEndpoint,
+  getPricingCalculations: getPricingCalculationsEndpoint,
+  postPricingValidate: postPricingValidateEndpoint,
+  getReferralsCode: getReferralsCodeEndpoint,
+  getReferralsHistory: getReferralsHistoryEndpoint,
+  getReferralsStats: getReferralsStatsEndpoint,
+  postReferralsTrackClick: postReferralsTrackClickEndpoint,
+  postReferralsTrackSignup: postReferralsTrackSignupEndpoint,
+  getRefunds: getRefundsEndpoint,
+  postRefunds: postRefundsEndpoint,
+  getRefundById: getRefundByIdEndpoint,
+  postRefundsApprove: postRefundsApproveEndpoint,
+  postRefundsReject: postRefundsRejectEndpoint,
+  getRefundsPendingApprovals: getRefundsPendingApprovalsEndpoint,
+  getRefundsStatistics: getRefundsStatisticsEndpoint,
   getReportsChurn: getReportsChurnEndpoint,
   postSlaSlis: postSlaSlisEndpoint,
   getSlaSlosForGetSlaSlos: getSlaSlosForGetSlaSlosEndpoint,
@@ -27244,7 +29648,9 @@ export const endpoints = {
   postSubscriptionsSuspend: postSubscriptionsSuspendEndpoint,
   postSubscriptionsUpgrade: postSubscriptionsUpgradeEndpoint,
   getSubscriptionsBillingHistory: getSubscriptionsBillingHistoryEndpoint,
+  getSubscriptionsBreakdown: getSubscriptionsBreakdownEndpoint,
   getSubscriptionsInvoices: getSubscriptionsInvoicesEndpoint,
+  postSubscriptionsPricingPreview: postSubscriptionsPricingPreviewEndpoint,
   getSubscriptionsUsage: getSubscriptionsUsageEndpoint,
   getTaxJurisdictionsForGetTaxJurisdictions: getTaxJurisdictionsForGetTaxJurisdictionsEndpoint,
   postTaxJurisdictions: postTaxJurisdictionsEndpoint,
@@ -27265,13 +29671,17 @@ export const endpoints = {
   postWalletUnlock: postWalletUnlockEndpoint,
   getWalletBalance: getWalletBalanceEndpoint,
   getWalletsForGetWallets: getWalletsForGetWalletsEndpoint,
+  postWalletsTransfer: postWalletsTransferEndpoint,
   getWalletsForGetWalletsByWalletId: getWalletsForGetWalletsByWalletIdEndpoint,
   deleteWallets: deleteWalletsEndpoint,
   patchWallets: patchWalletsEndpoint,
   headWallets: headWalletsEndpoint,
+  postWalletsAdjust: postWalletsAdjustEndpoint,
   postWalletsFreeze: postWalletsFreezeEndpoint,
   postWalletsUnfreeze: postWalletsUnfreezeEndpoint,
   getWalletsAuditLog: getWalletsAuditLogEndpoint,
+  getWalletsMetrics: getWalletsMetricsEndpoint,
+  getWalletsReconciliation: getWalletsReconciliationEndpoint,
   getAssetsForGetAssetsByReferenceIdByToken: getAssetsForGetAssetsByReferenceIdByTokenEndpoint,
   getE: getEEndpoint,
   getHealth: getHealthEndpoint,
@@ -27344,6 +29754,7 @@ export const endpoints = {
   getAdminAuditLogsExportProgress: getAdminAuditLogsExportProgressEndpoint,
   postAdminAuditLogsExportCsv: postAdminAuditLogsExportCsvEndpoint,
   postAdminAuditLogsExportJson: postAdminAuditLogsExportJsonEndpoint,
+  postAdminAuditLogsReplaySnapshots: postAdminAuditLogsReplaySnapshotsEndpoint,
   getAdminAuditLogsScheduledExportHistoryDownload: getAdminAuditLogsScheduledExportHistoryDownloadEndpoint,
   getAdminAuditLogsScheduledExports: getAdminAuditLogsScheduledExportsEndpoint,
   postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
@@ -27459,6 +29870,17 @@ export const endpoints = {
   getAssetsSearch: getAssetsSearchEndpoint,
   postAssetsSocialMedia: postAssetsSocialMediaEndpoint,
   getAssetsSocialMedia: getAssetsSocialMediaEndpoint,
+  postAuditQueriesExecute: postAuditQueriesExecuteEndpoint,
+  getAuditQueriesResults: getAuditQueriesResultsEndpoint,
+  postAuditQueriesValidate: postAuditQueriesValidateEndpoint,
+  getAuditQueriesSavedForGetAuditQueriesSaved: getAuditQueriesSavedForGetAuditQueriesSavedEndpoint,
+  postAuditQueriesSaved: postAuditQueriesSavedEndpoint,
+  getAuditQueriesSavedForGetAuditQueriesSavedById: getAuditQueriesSavedForGetAuditQueriesSavedByIdEndpoint,
+  putAuditQueriesSaved: putAuditQueriesSavedEndpoint,
+  deleteAuditQueriesSaved: deleteAuditQueriesSavedEndpoint,
+  postAuditQueriesSavedExecute: postAuditQueriesSavedExecuteEndpoint,
+  getAuditQueriesSavedRevisions: getAuditQueriesSavedRevisionsEndpoint,
+  getAuditQueriesTemplates: getAuditQueriesTemplatesEndpoint,
   getAuditCompliancePackagingForGetAuditCompliancePackaging: getAuditCompliancePackagingForGetAuditCompliancePackagingEndpoint,
   postAuditCompliancePackaging: postAuditCompliancePackagingEndpoint,
   getAuditCompliancePackagingForGetAuditCompliancePackagingById: getAuditCompliancePackagingForGetAuditCompliancePackagingByIdEndpoint,
@@ -27471,6 +29893,14 @@ export const endpoints = {
     getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdEndpoint,
   postAuditCompliancePackagingDocumentsReview: postAuditCompliancePackagingDocumentsReviewEndpoint,
   getAuditCompliancePackagingTemplates: getAuditCompliancePackagingTemplatesEndpoint,
+  getAuditRedactionPipeline: getAuditRedactionPipelineEndpoint,
+  getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRules: getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesEndpoint,
+  postAuditRedactionPipelineRules: postAuditRedactionPipelineRulesEndpoint,
+  getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleId: getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdEndpoint,
+  putAuditRedactionPipelineRules: putAuditRedactionPipelineRulesEndpoint,
+  deleteAuditRedactionPipelineRules: deleteAuditRedactionPipelineRulesEndpoint,
+  postAuditRedactionPipelineTest: postAuditRedactionPipelineTestEndpoint,
+  getAuditRedactionPipelineTokens: getAuditRedactionPipelineTokensEndpoint,
   getAuditRetentionPoliciesForGetAuditRetentionPolicies: getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint,
   postAuditRetentionPolicies: postAuditRetentionPoliciesEndpoint,
   getAuditRetentionPoliciesForGetAuditRetentionPoliciesById: getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint,
@@ -27510,7 +29940,7 @@ export const endpoints = {
   postAuthExternalLoginsDiscordLinkCallback: postAuthExternalLoginsDiscordLinkCallbackEndpoint,
   postAuthExternalLoginsGoogle: postAuthExternalLoginsGoogleEndpoint,
   getAuthGithubAuthorize: getAuthGithubAuthorizeEndpoint,
-  getAuthGithubCallback: getAuthGithubCallbackEndpoint,
+  postAuthGithubCallback: postAuthGithubCallbackEndpoint,
   postAuthGoogleSignIn: postAuthGoogleSignInEndpoint,
   postAuthMagicLinkConsume: postAuthMagicLinkConsumeEndpoint,
   postAuthMagicLinkRequest: postAuthMagicLinkRequestEndpoint,
@@ -27530,6 +29960,11 @@ export const endpoints = {
   getAuthOidcEndSessionUrl: getAuthOidcEndSessionUrlEndpoint,
   postAuthOidcSignInAuthorize: postAuthOidcSignInAuthorizeEndpoint,
   postAuthOidcSignInCallback: postAuthOidcSignInCallbackEndpoint,
+  postAuthOrchestratedInitiate: postAuthOrchestratedInitiateEndpoint,
+  getAuthOrchestrated: getAuthOrchestratedEndpoint,
+  postAuthOrchestratedAbandon: postAuthOrchestratedAbandonEndpoint,
+  postAuthOrchestratedComplete: postAuthOrchestratedCompleteEndpoint,
+  postAuthOrchestratedProcessStep: postAuthOrchestratedProcessStepEndpoint,
   postAuthPasswordChange: postAuthPasswordChangeEndpoint,
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,
@@ -27557,6 +29992,7 @@ export const endpoints = {
   postAuthSessionsTerminateAll: postAuthSessionsTerminateAllEndpoint,
   postAuthSessionsTerminateOthers: postAuthSessionsTerminateOthersEndpoint,
   deleteAuthSessions: deleteAuthSessionsEndpoint,
+  patchAuthSessionsName: patchAuthSessionsNameEndpoint,
   postAuthSignIn: postAuthSignInEndpoint,
   postAuthSignUp: postAuthSignUpEndpoint,
   getAuthSigningKeys: getAuthSigningKeysEndpoint,
@@ -27876,6 +30312,11 @@ export const endpoints = {
   getPermissionDelegationsCheck: getPermissionDelegationsCheckEndpoint,
   getPermissionDelegationsDelegate: getPermissionDelegationsDelegateEndpoint,
   getPermissionDelegationsDelegator: getPermissionDelegationsDelegatorEndpoint,
+  getProductCategoriesForGetProductCategories: getProductCategoriesForGetProductCategoriesEndpoint,
+  postProductCategories: postProductCategoriesEndpoint,
+  getProductCategoriesForGetProductCategoriesByCategoryId: getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint,
+  putProductCategories: putProductCategoriesEndpoint,
+  deleteProductCategories: deleteProductCategoriesEndpoint,
   getProductsForGetProducts: getProductsForGetProductsEndpoint,
   postProducts: postProductsEndpoint,
   postProductsBatchCreate: postProductsBatchCreateEndpoint,
@@ -27887,8 +30328,11 @@ export const endpoints = {
   postProductsActivate: postProductsActivateEndpoint,
   postProductsArchive: postProductsArchiveEndpoint,
   postProductsDeactivate: postProductsDeactivateEndpoint,
+  getProductsAvailability: getProductsAvailabilityEndpoint,
+  putProductsInventory: putProductsInventoryEndpoint,
   getProductsPricing: getProductsPricingEndpoint,
   putProductsPricing: putProductsPricingEndpoint,
+  getProductsRecommendations: getProductsRecommendationsEndpoint,
   getProjectsForGetProjects: getProjectsForGetProjectsEndpoint,
   postProjects: postProjectsEndpoint,
   getProjectsForGetProjectsById: getProjectsForGetProjectsByIdEndpoint,
@@ -27978,6 +30422,7 @@ export const endpoints = {
   getPromoCodesForGetPromoCodes: getPromoCodesForGetPromoCodesEndpoint,
   postPromoCodes: postPromoCodesEndpoint,
   postPromoCodesApply: postPromoCodesApplyEndpoint,
+  postPromoCodesGenerateBulk: postPromoCodesGenerateBulkEndpoint,
   postPromoCodesValidate: postPromoCodesValidateEndpoint,
   getPromoCodesForGetPromoCodesByPromoCodeId: getPromoCodesForGetPromoCodesByPromoCodeIdEndpoint,
   putPromoCodes: putPromoCodesEndpoint,
@@ -27988,6 +30433,12 @@ export const endpoints = {
   postPromoCodesDeactivate: postPromoCodesDeactivateEndpoint,
   getPromoCodesUsage: getPromoCodesUsageEndpoint,
   getPromoCodesByCode: getPromoCodesByCodeEndpoint,
+  getPromoCodesCampaignsPerformance: getPromoCodesCampaignsPerformanceEndpoint,
+  getPromoStackingRulesForGetPromoStackingRules: getPromoStackingRulesForGetPromoStackingRulesEndpoint,
+  postPromoStackingRules: postPromoStackingRulesEndpoint,
+  getPromoStackingRulesForGetPromoStackingRulesByRuleId: getPromoStackingRulesForGetPromoStackingRulesByRuleIdEndpoint,
+  putPromoStackingRules: putPromoStackingRulesEndpoint,
+  deletePromoStackingRules: deletePromoStackingRulesEndpoint,
   postRecommendationsDismiss: postRecommendationsDismissEndpoint,
   postRecommendationsViewed: postRecommendationsViewedEndpoint,
   getRecommendationsCoursesSimilar: getRecommendationsCoursesSimilarEndpoint,
