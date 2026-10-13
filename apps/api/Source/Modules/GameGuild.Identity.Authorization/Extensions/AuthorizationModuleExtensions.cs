@@ -328,6 +328,12 @@ public static class AuthorizationModuleExtensions
         // IActorContextAccessor is registered via AddActorContextIntegration()
         services.AddScoped<ILocalizationContext, LocalizationContext>();
 
+        // Template lifecycle (issues #369/#370): the instantiation command handler is
+        // consumed concretely by the dry-run preview query handler (the preview IS a
+        // DryRun execution of the command), so the concrete type needs its own
+        // registration beyond the CQRS interface scan.
+        services.AddScoped<InstantiatePermissionTemplateCommandHandler>();
+
         // CQRS Authorization Behavior
         services.AddScoped(typeof(CQRS.IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
 
