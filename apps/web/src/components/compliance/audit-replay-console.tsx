@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@game-guild/ui/components/alert';
 import { Button } from '@game-guild/ui/components/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { AlertTriangle, Loader2, Play, RotateCcw, Pause } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@game-guild/ui/components/card';
+import { Input } from '@game-guild/ui/components/input';
+import { Label } from '@game-guild/ui/components/label';
+import { AlertTriangle, Loader2, Pause, Play, RotateCcw } from 'lucide-react';
 import { importAuditReplaySnapshot, type ImportedAuditReplaySnapshot } from '@/lib/audit/replay-snapshot-import';
 
 /** Minimal admin wiring of the landed replay core (issue #169): capture a frozen range
@@ -42,7 +42,10 @@ export function AuditReplayConsole() {
     setPlaying(false);
     setPlaybackIndex(null);
     try {
-      const parameters = new URLSearchParams({ start: new Date(start + 'Z').toISOString(), end: new Date(end + 'Z').toISOString() });
+      const parameters = new URLSearchParams({
+        start: new Date(`${start}Z`).toISOString(),
+        end: new Date(`${end}Z`).toISOString(),
+      });
       const response = await fetch(`/api/audit/replay?${parameters.toString()}`, {
         credentials: 'same-origin',
         cache: 'no-store',
@@ -73,38 +76,37 @@ export function AuditReplayConsole() {
     return snapshot.timeline.events.filter((event) => event.userId?.toLowerCase().includes(needle) ?? false);
   }, [snapshot, userFilter]);
 
+  const stepSize = Math.max(1, Math.ceil(events.length / 60));
+  // Accelerated playback (v1): an interval advances the highlighted prefix. Real-time
+  // pacing and frame-accurate seeking remain open for the full investigation UI.
+  useEffect(() => {
+    if (!playing || events.length < 2) return;
+    const timer = setInterval(() => {
+      setPlaybackIndex((current) => {
+        const next = (current === null ? 0 : current) + stepSize;
+        if (next >= events.length - 1) {
+          setPlaying(false);
+          return events.length - 1;
+        }
+        return next;
+      });
+    }, 250);
+    return () => clearInterval(timer);
+  }, [playing, stepSize, events.length]);
+
   const visible = playbackIndex === null ? events : events.slice(0, playbackIndex + 1);
   const atEnd = playbackIndex !== null && playbackIndex >= events.length - 1;
-
-  const step = useCallback(() => {
-    setPlaybackIndex((current) => {
-      if (current === null) return events.length > 1 ? 1 : 0;
-      return Math.min(current + Math.max(1, Math.ceil(events.length / 60)), events.length - 1);
-    });
-  }, [events.length]);
 
   const togglePlayback = useCallback(() => {
     if (playing) {
       setPlaying(false);
       return;
     }
-    setPlaying(true);
     if (playbackIndex === null || playbackIndex >= events.length - 1) {
       setPlaybackIndex(events.length > 1 ? 1 : 0);
     }
+    setPlaying(true);
   }, [playing, playbackIndex, events.length]);
-
-  // Accelerated playback (v1): an interval advances the highlighted prefix. Real-time
-  // pacing and frame-accurate seeking remain open for the full investigation UI.
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  if (typeof window !== 'undefined') {
-    if (playing && !intervalRef.current && events.length > 1) {
-      intervalRef.current = setInterval(step, 250);
-    } else if (!playing && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -126,7 +128,7 @@ export function AuditReplayConsole() {
               <Input id="replay-end" type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Button onClick={capture} disabled={loading}>
               {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
               Capture snapshot
@@ -148,7 +150,7 @@ export function AuditReplayConsole() {
       </Card>
 
       {snapshot ? (
-        <Card>
+        <Card data-testid="replay-timeline">
           <CardHeader>
             <CardTitle>Reconstructed timeline</CardTitle>
             <CardDescription>
@@ -161,7 +163,15 @@ export function AuditReplayConsole() {
                 {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
                 {playing ? 'Pause' : 'Play'}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => { setPlaying(false); setPlaybackIndex(null); }} disabled={playbackIndex === null}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPlaying(false);
+                  setPlaybackIndex(null);
+                }}
+                disabled={playbackIndex === null}
+              >
                 <RotateCcw className="size-4" aria-hidden />
                 Reset
               </Button>
@@ -170,7 +180,11 @@ export function AuditReplayConsole() {
                   aria-label="Filter by user ID"
                   placeholder="Filter by user ID"
                   value={userFilter}
-                  onChange={(event) => { setUserFilter(event.target.value); setPlaybackIndex(null); setPlaying(false); }}
+                  onChange={(event) => {
+                    setUserFilter(event.target.value);
+                    setPlaybackIndex(null);
+                    setPlaying(false);
+                  }}
                 />
               </div>
               <span className="text-muted-foreground text-sm" data-testid="replay-position">
@@ -191,14 +205,19 @@ export function AuditReplayConsole() {
                   </span>
                 </li>
               ))}
-              {visible.length === 0 ? <li className="px-3 py-2 text-sm text-muted-foreground">No events in the current view.</li> : null}
+              {visible.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-muted-foreground">No events in the current view.</li>
+              ) : null}
             </ol>
 
             <div>
               <h3 className="mb-2 text-sm font-semibold">Session journeys</h3>
               <ul className="grid gap-2 sm:grid-cols-2" data-testid="replay-journeys">
                 {journeys.slice(0, 12).map((journey) => (
-                  <li key={`${journey.userId ?? 'anonymous'}:${journey.sessionId ?? 'no-session'}`} className="rounded-md border px-3 py-2 text-sm">
+                  <li
+                    key={`${journey.userId ?? 'anonymous'}:${journey.sessionId ?? 'no-session'}`}
+                    className="rounded-md border px-3 py-2 text-sm"
+                  >
                     <span className="font-mono text-xs">{journey.userId ?? 'anonymous'}</span>
                     <span className="text-muted-foreground"> in session </span>
                     <span className="font-mono text-xs">{journey.sessionId ?? 'no-session'}</span>
