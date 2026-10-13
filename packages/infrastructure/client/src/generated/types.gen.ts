@@ -9823,6 +9823,12 @@ export interface IdentityAuthenticationRemoveRoleFromUserInput {
   userId?: string;
 }
 
+/** Request to name or rename one of the current user's own sessions */
+export interface IdentityAuthenticationRenameSessionInput {
+  /** User-defined session name (1–64 characters, trimmed) */
+  name: string | null;
+}
+
 /** Request to send a one-time email sign-in code. */
 export interface IdentityAuthenticationRequestEmailCodeInput {
   /** Email address to send the sign-in code to. */
@@ -9983,6 +9989,12 @@ export interface IdentityAuthenticationSessionOutput {
   isTrustedDevice?: boolean;
   lastUsedAt?: string;
   location?: IdentityAuthenticationLocationInfo;
+}
+
+/** Error response for session rename validation failures */
+export interface IdentityAuthenticationSessionRenameErrorOutput {
+  /** Error message */
+  error: string | null;
 }
 
 /** Security analysis result for a session */
@@ -23391,6 +23403,7 @@ export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<Identit
 export let IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema: z.ZodType<IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
+export let IdentityAuthenticationRenameSessionInputSchema: z.ZodType<IdentityAuthenticationRenameSessionInput>;
 export let IdentityAuthenticationRequestEmailCodeInputSchema: z.ZodType<IdentityAuthenticationRequestEmailCodeInput>;
 export let IdentityAuthenticationRequestMagicLinkInputSchema: z.ZodType<IdentityAuthenticationRequestMagicLinkInput>;
 export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<IdentityAuthenticationRequestPasswordResetInput>;
@@ -23409,6 +23422,7 @@ export let IdentityAuthenticationServiceAccountAuditLogOutputSchema: z.ZodType<I
 export let IdentityAuthenticationServiceAccountCreatedOutputSchema: z.ZodType<IdentityAuthenticationServiceAccountCreatedOutput>;
 export let IdentityAuthenticationServiceAccountOutputSchema: z.ZodType<IdentityAuthenticationServiceAccountOutput>;
 export let IdentityAuthenticationSessionOutputSchema: z.ZodType<IdentityAuthenticationSessionOutput>;
+export let IdentityAuthenticationSessionRenameErrorOutputSchema: z.ZodType<IdentityAuthenticationSessionRenameErrorOutput>;
 export let IdentityAuthenticationSessionSecurityAnalysisSchema: z.ZodType<IdentityAuthenticationSessionSecurityAnalysis>;
 export let IdentityAuthenticationSessionSuccessOutputSchema: z.ZodType<IdentityAuthenticationSessionSuccessOutput>;
 export let IdentityAuthenticationSessionTerminationOutputSchema: z.ZodType<IdentityAuthenticationSessionTerminationOutput>;
@@ -33683,6 +33697,11 @@ IdentityAuthenticationRemoveRoleFromUserInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationRenameSessionInput. Request to name or rename one of the current user's own sessions */
+IdentityAuthenticationRenameSessionInputSchema = z.object({
+  name: z.string().nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationRequestEmailCodeInput. Request to send a one-time email sign-in code. */
 IdentityAuthenticationRequestEmailCodeInputSchema = z.object({
   email: z.string().email().min(1),
@@ -33829,6 +33848,11 @@ IdentityAuthenticationSessionOutputSchema = z.object({
   isTrustedDevice: z.boolean().optional(),
   lastUsedAt: z.string().datetime().optional(),
   location: z.lazy(() => IdentityAuthenticationLocationInfoSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSessionRenameErrorOutput. Error response for session rename validation failures */
+IdentityAuthenticationSessionRenameErrorOutputSchema = z.object({
+  error: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationSessionSecurityAnalysis. Security analysis result for a session */

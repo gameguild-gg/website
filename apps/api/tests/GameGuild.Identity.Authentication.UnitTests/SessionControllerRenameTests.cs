@@ -2,7 +2,6 @@ using System.Security.Claims;
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authentication.UnitTests.Infrastructure;
-using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -22,14 +21,6 @@ public class SessionControllerRenameTests
 
     public SessionControllerRenameTests()
     {
-        var actor = new Mock<IActorContextAccessor>();
-        actor.SetupGet(value => value.ActorContext).Returns(ActorContext.Anonymous with
-        {
-            ActorKind = ActorKind.User, IsAuthenticated = true, SubjectId = _userId.ToString()
-        });
-        var users = new Mock<IUserRepository>();
-        users.Setup(value => value.GetByIdAsync(_userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new User { Id = _userId });
         _controller = new SessionController(_sessionService.Object, IdentityCommandTestSender.ForSessions(_sessionService.Object));
         SetUser();
     }

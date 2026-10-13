@@ -280,7 +280,7 @@ public class SessionEnrichmentTests
         var devices = await CreateSut().GetTrustedDevicesAsync(userId);
 
         devices.Should().HaveCount(2);
-        devices.Should().OnlyContain(d => d.IsActive && (d.ExpiresAt is null || d.ExpiresAt > SystemClock.UtcNow));
+        devices.Should().OnlyContain(d => d.IsActive && (d.ExpiresAt == null || d.ExpiresAt > SystemClock.UtcNow));
     }
 
     // ── Geo-aware security analysis ─────────────────────────────────────
