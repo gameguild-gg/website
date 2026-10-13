@@ -134,7 +134,7 @@ public sealed class AuthenticationDtoPostgreSqlHttpTests(ApiPostgreSqlFixture fi
             .ReturnsAsync(new AuthenticationAnomalyResult { RiskLevel = level, IsSuspicious = level == RiskLevel.High, DetectedAnomalies = ["synthetic-risk"] });
         risk.Setup(service => service.AnalyzeBehavioralPatternsAsync(It.IsAny<Guid>(), It.IsAny<AuthenticationAttemptContext>()))
             .ReturnsAsync(new BehavioralAnalysisResult { MatchesTypicalPattern = true, RiskLevel = RiskLevel.Low });
-        return fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        return fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IAuthenticationAnomalyDetectionService>();
             services.AddSingleton(risk.Object);

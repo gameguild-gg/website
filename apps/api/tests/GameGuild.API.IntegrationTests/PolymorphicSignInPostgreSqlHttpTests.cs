@@ -10,6 +10,8 @@ using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -211,7 +213,7 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         using var factory = CreateFactory();
         var account = await SeedAsync(factory);
         using var scope = factory.Services.CreateScope();
-        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), scope.ServiceProvider.GetRequiredService<IUserRepository>(), NullLogger<PolymorphicSignInHandler>.Instance);
+        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), scope.ServiceProvider.GetRequiredService<IUserRepository>(), NullLogger<PolymorphicSignInHandler>.Instance, scope.ServiceProvider.GetRequiredService<IPasswordSignInAdmissionService>());
         var command = new PolymorphicSignInCommand { Credential = Identifier(account, type), CredentialType = type, Password = incorrect ? SyntheticPassword() : account.Password, TenantId = account.TenantId };
         if (incorrect)
         {
@@ -260,7 +262,7 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         observed.Setup(value => value.GetByIdAsync(account.User.Id, CancellationToken.None))
             .Returns(() => repository.GetByIdAsync(account.User.Id));
         // Only the interleaving is controlled; both reads, password replacement and local authentication are real.
-        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), observed.Object, NullLogger<PolymorphicSignInHandler>.Instance);
+        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), observed.Object, NullLogger<PolymorphicSignInHandler>.Instance, scope.ServiceProvider.GetRequiredService<IPasswordSignInAdmissionService>());
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(new PolymorphicSignInCommand
         {
             Credential = account.User.Username!, Password = account.Password, TenantId = account.TenantId
@@ -306,7 +308,267 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         Assert.False(await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Set<UserSession>().AnyAsync(session => session.UserId == account.User.Id));
     }
 
-    private WebApplicationFactory<Program> CreateFactory(RiskLevel level = RiskLevel.Low, ConcurrentQueue<AuthenticationAttemptContext>? attempts = null)
+    [Theory]
+    [InlineData(CredentialType.Email, "account")]
+    [InlineData(CredentialType.Username, "account")]
+    [InlineData(CredentialType.Phone, "account")]
+    [InlineData(CredentialType.Email, "ip")]
+    [InlineData(CredentialType.Username, "ip")]
+    [InlineData(CredentialType.Phone, "ip")]
+    [InlineData(CredentialType.Email, "held-account")]
+    [InlineData(CredentialType.Username, "held-account")]
+    [InlineData(CredentialType.Phone, "held-account")]
+    [InlineData(CredentialType.Email, "held-ip")]
+    [InlineData(CredentialType.Username, "held-ip")]
+    [InlineData(CredentialType.Phone, "held-ip")]
+    public async Task EveryCredentialKindHonorsAccountIpAndConcurrentAdmission(CredentialType type, string gate)
+    {
+        var addressBytes = RandomNumberGenerator.GetBytes(16);
+        addressBytes[0] = 0x20;
+        addressBytes[1] = 0x01;
+        addressBytes[2] = 0x0d;
+        addressBytes[3] = 0xb8;
+        var address = new IPAddress(addressBytes);
+        using var factory = CreateFactory(sourceAddress: address);
+        var account = await SeedAsync(factory);
+        var unrelated = $"unrelated-{Guid.NewGuid():N}@example.test";
+        if (gate is "account" or "ip")
+        {
+            using var seedScope = factory.Services.CreateScope();
+            var db = seedScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var now = DateTime.UtcNow;
+            db.Set<AuthenticationAttempt>().AddRange(Enumerable.Range(0, 3).Select(index => new AuthenticationAttempt
+            {
+                Id = Guid.NewGuid(),
+                Email = gate == "account" ? account.User.Email : unrelated,
+                IpAddress = gate == "ip" ? address.ToString() : "192.0.2.253",
+                IsSuccessful = false,
+                AttemptedAt = now.AddSeconds(-index),
+                CreatedAt = now,
+                UpdatedAt = now
+            }));
+            await db.SaveChangesAsync();
+        }
+
+        await using var lockConnection = new Npgsql.NpgsqlConnection(fixture.ConnectionString);
+        if (gate.StartsWith("held-", StringComparison.Ordinal))
+        {
+            await lockConnection.OpenAsync();
+            var identifier = gate == "held-account" ? account.User.Email : address.ToString();
+            var prefix = gate == "held-account"
+                ? "gameguild:auth:local-sign-in-lockout:v1:"
+                : "gameguild:auth:local-sign-in-lockout:ip:v1:";
+            var digest = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(prefix + identifier));
+            var key = System.Buffers.Binary.BinaryPrimitives.ReadInt64BigEndian(digest);
+            await using var hold = new Npgsql.NpgsqlCommand("SELECT pg_advisory_lock(@key)", lockConnection);
+            hold.Parameters.AddWithValue("key", key);
+            await hold.ExecuteNonQueryAsync();
+        }
+
+        using var client = factory.CreateClient();
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        using var response = await client.PostAsJsonAsync(Endpoint, new
+        {
+            credential = Identifier(account, type), credentialType = type,
+            account.Password, account.TenantId
+        });
+        await AssertGenericDenialAsync(factory, response);
+        Assert.True(elapsed.Elapsed >= TimeSpan.FromMilliseconds(400));
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+        using var verification = factory.Services.CreateScope();
+        var database = verification.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await database.Set<UserSession>().AnyAsync(session => session.UserId == account.User.Id));
+        Assert.False(await database.Set<AuthenticationAttempt>().AnyAsync(attempt => attempt.Email == account.User.Email && attempt.IsSuccessful));
+    }
+
+    [Theory]
+    [InlineData(false, false)] [InlineData(false, true)]
+    [InlineData(true, false)] [InlineData(true, true)]
+    public async Task HttpIpThresholdNormalizesMappedIpv4AcrossUnrelatedAccounts(bool polymorphic, bool mapped)
+    {
+        var host = Interlocked.Increment(ref _lockoutAcceptanceHost);
+        var normalized = new IPAddress(new byte[] { 198, 18, (byte)(host / 254), (byte)(host % 254 + 1) });
+        var sourceAddress = mapped ? normalized.MapToIPv6() : normalized;
+        var calls = new ConcurrentQueue<AuthenticationAttemptContext>();
+        using var factory = CreateFactory(attempts: calls, sourceAddress: sourceAddress);
+        var account = await SeedAsync(factory);
+        using (var seed = factory.Services.CreateScope())
+        {
+            var database = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var now = DateTime.UtcNow;
+            database.Set<AuthenticationAttempt>().AddRange(Enumerable.Range(0, 3).Select(index => new AuthenticationAttempt
+            {
+                Id = Guid.NewGuid(), Email = "lockout-ip-" + Guid.NewGuid().ToString("N") + "@example.test",
+                IpAddress = normalized.ToString(), IsSuccessful = false, AttemptedAt = now.AddSeconds(-index),
+                CreatedAt = now, UpdatedAt = now
+            }));
+            await database.SaveChangesAsync();
+        }
+        using var client = factory.CreateClient();
+        object body = polymorphic
+            ? new { credential = account.User.Email, credentialType = CredentialType.Email, account.Password, account.TenantId }
+            : new { email = account.User.Email, account.Password, account.TenantId };
+        var endpoint = polymorphic ? Endpoint : LocalSignInEndpoint();
+        using var response = await client.PostAsJsonAsync(endpoint, body);
+        await AssertGenericDenialAsync(factory, response);
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+        Assert.Empty(calls);
+        using var verification = factory.Services.CreateScope();
+        var context = verification.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await context.Set<UserSession>().AnyAsync(session => session.UserId == account.User.Id));
+        Assert.False(await context.Set<AuthenticationAttempt>().AnyAsync(attempt => attempt.Email == account.User.Email && attempt.IsSuccessful));
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task HttpAccountLockoutExpiresWhileEarlierFailuresRemainInRollingHour(bool polymorphic)
+    {
+        var bytes = RandomNumberGenerator.GetBytes(16);
+        bytes[0] = 0x20; bytes[1] = 0x01; bytes[2] = 0x0d; bytes[3] = 0xb8;
+        using var factory = CreateFactory(sourceAddress: new IPAddress(bytes));
+        var account = await SeedAsync(factory);
+        using (var seed = factory.Services.CreateScope())
+        {
+            var database = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var attemptedAt = DateTime.UtcNow.AddMinutes(-40);
+            database.Set<AuthenticationAttempt>().AddRange(Enumerable.Range(0, 3).Select(index => new AuthenticationAttempt
+            {
+                Id = Guid.NewGuid(), Email = account.User.Email, IpAddress = "192.0.2.253",
+                IsSuccessful = false, AttemptedAt = attemptedAt.AddSeconds(-index),
+                CreatedAt = attemptedAt, UpdatedAt = attemptedAt
+            }));
+            await database.SaveChangesAsync();
+        }
+        using var client = factory.CreateClient();
+        object body = polymorphic
+            ? new { credential = account.User.Email, credentialType = CredentialType.Email, account.Password, account.TenantId }
+            : new { email = account.User.Email, account.Password, account.TenantId };
+        using var response = await client.PostAsJsonAsync(polymorphic ? Endpoint : LocalSignInEndpoint(), body);
+        using var payload = await ReadAsync(response, HttpStatusCode.OK);
+        await AssertCompletedAsync(factory, account, payload.RootElement);
+        using var verification = factory.Services.CreateScope();
+        Assert.Equal(3, await verification.ServiceProvider.GetRequiredService<ApplicationDbContext>()
+            .Set<AuthenticationAttempt>().CountAsync(attempt => attempt.Email == account.User.Email && !attempt.IsSuccessful));
+    }
+
+    private static int _lockoutAcceptanceHost;
+    private static string LocalSignInEndpoint() =>
+        "/" + typeof(AuthController).GetMethod(nameof(AuthController.LocalSignIn))!
+            .GetCustomAttribute<HttpPostAttribute>()!.Template!
+            .Replace("v{version:apiVersion}", "v1", StringComparison.Ordinal);
+
+    private sealed class SourceAddressStartupFilter(IPAddress address) : IStartupFilter
+    {
+        public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next) => app =>
+        {
+            app.Use(async (context, continuation) =>
+            {
+                context.Connection.RemoteIpAddress = address;
+                await continuation(context);
+            });
+            next(app);
+        };
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task InactiveOrSuspendedAccountCannotObtainTokensOrMfaChallenge(bool localEndpoint, bool suspended)
+    {
+        using var factory = CreateFactory(level: RiskLevel.High, sourceAddress: EmailPolicySourceAddress());
+        var account = await SeedAsync(factory);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var user = await db.Set<User>().SingleAsync(value => value.Id == account.User.Id);
+            if (suspended)
+            {
+                user.Suspend();
+            }
+            else
+            {
+                user.IsActive = false;
+            }
+            await db.SaveChangesAsync();
+        }
+        using var client = factory.CreateClient();
+        using var response = await PostEmailSignInAsync(client, account, localEndpoint);
+        await AssertGenericDenialAsync(factory, response);
+        await AssertNoIssuedCredentialsAsync(factory, account.User.Id);
+    }
+
+    [Theory]
+    [InlineData(false, "global-unverified")]
+    [InlineData(false, "global-high-risk-unverified")]
+    [InlineData(false, "tenant-unverified")]
+    [InlineData(false, "global-verified")]
+    [InlineData(false, "tenant-verified")]
+    [InlineData(false, "disabled-unverified")]
+    [InlineData(false, "different-tenant-unverified")]
+    [InlineData(true, "global-unverified")]
+    [InlineData(true, "global-high-risk-unverified")]
+    [InlineData(true, "tenant-unverified")]
+    [InlineData(true, "global-verified")]
+    [InlineData(true, "tenant-verified")]
+    [InlineData(true, "disabled-unverified")]
+    [InlineData(true, "different-tenant-unverified")]
+    public async Task EmailVerificationPolicyUsesServerConfigurationAndResolvedTenant(bool localEndpoint, string scenario)
+    {
+        var tenantId = Guid.NewGuid();
+        var globalRequirement = scenario.StartsWith("global-", StringComparison.Ordinal);
+        var tenantRequirement = scenario.StartsWith("tenant-", StringComparison.Ordinal);
+        var otherTenantRequirement = scenario == "different-tenant-unverified";
+        var verified = scenario.EndsWith("-verified", StringComparison.Ordinal);
+        var expectedAllowed = verified || (!globalRequirement && !tenantRequirement);
+        var settings = new Dictionary<string, string?>
+        {
+            ["Authentication:LocalSignIn:RequireEmailVerification"] = globalRequirement ? "true" : "false"
+        };
+        if (tenantRequirement || otherTenantRequirement)
+        {
+            settings["Authentication:LocalSignIn:RequireEmailVerificationForTenants:0"] =
+                (tenantRequirement ? tenantId : Guid.NewGuid()).ToString();
+        }
+        using var factory = CreateFactory(level: scenario == "global-high-risk-unverified" ? RiskLevel.High : RiskLevel.Low, sourceAddress: EmailPolicySourceAddress(), signInPolicy: settings);
+        var account = await SeedAsync(factory, verifiedEmail: verified, tenantId: tenantId);
+        using var client = factory.CreateClient();
+        using var response = await PostEmailSignInAsync(client, account, localEndpoint);
+        if (expectedAllowed)
+        {
+            using var payload = await ReadAsync(response, HttpStatusCode.OK);
+            await AssertCompletedAsync(factory, account, payload.RootElement);
+        }
+        else
+        {
+            await AssertGenericDenialAsync(factory, response);
+            await AssertNoIssuedCredentialsAsync(factory, account.User.Id);
+        }
+    }
+
+    private static IPAddress EmailPolicySourceAddress()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(16);
+        bytes[0] = 0x20; bytes[1] = 0x01; bytes[2] = 0x0d; bytes[3] = 0xb8;
+        return new IPAddress(bytes);
+    }
+
+    private static Task<HttpResponseMessage> PostEmailSignInAsync(HttpClient client, Account account, bool localEndpoint)
+        => localEndpoint
+            ? client.PostAsJsonAsync(LocalSignInEndpoint(), new { email = account.User.Email, account.Password, account.TenantId })
+            : client.PostAsJsonAsync(Endpoint, new { credential = account.User.Email, credentialType = CredentialType.Email, account.Password, account.TenantId });
+
+    private static async Task AssertNoIssuedCredentialsAsync(WebApplicationFactory<Program> factory, Guid userId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await db.Set<UserSession>().AnyAsync(value => value.UserId == userId));
+        Assert.False(await db.Set<RefreshToken>().AnyAsync(value => value.UserId == userId));
+        Assert.False(await db.Set<SignInMfaChallenge>().AnyAsync(value => value.SubjectId == userId));
+    }
+
+    private WebApplicationFactory<Program> CreateFactory(RiskLevel level = RiskLevel.Low, ConcurrentQueue<AuthenticationAttemptContext>? attempts = null, IPAddress? sourceAddress = null, Dictionary<string, string?>? signInPolicy = null)
     {
         // Risk classification alone is controlled; CQRS, hashing, JWT, tenant checks, sessions and PostgreSQL are real.
         var risk = new Mock<IAuthenticationAnomalyDetectionService>(MockBehavior.Strict);
@@ -316,18 +578,34 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         risk.Setup(service => service.AnalyzeBehavioralPatternsAsync(It.IsAny<Guid>(), It.IsAny<AuthenticationAttemptContext>()))
             .ReturnsAsync(new BehavioralAnalysisResult { MatchesTypicalPattern = true, RiskLevel = level });
         risk.Setup(service => service.RecordSuspiciousActivityAsync(It.IsAny<SuspiciousActivity>())).Returns(Task.CompletedTask);
-        return fixture.Factory.WithWebHostBuilder(builder =>
+        return fixture.CreateFactory(builder =>
         {
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10" }));
+            if (signInPolicy is not null)
+            {
+                builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(signInPolicy));
+            }
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IAuthenticationAnomalyDetectionService>();
                 services.AddSingleton(risk.Object);
+                if (sourceAddress is not null)
+                {
+                    services.AddSingleton<IStartupFilter>(new SourceAddressStartupFilter(sourceAddress));
+                    services.RemoveAll<GameGuild.Configuration.ApplicationLayer.AuthenticationSecurityOptions>();
+                    services.AddSingleton(new GameGuild.Configuration.ApplicationLayer.AuthenticationSecurityOptions
+                    {
+                        MaxFailedAttemptsPerHour = 3,
+                        MaxAttemptsPerIpPerHour = 3,
+                        EnableIpThrottling = true,
+                        AccountLockoutDurationMinutes = 30
+                    });
+                }
             });
         });
     }
 
-    private static async Task<Account> SeedAsync(WebApplicationFactory<Program> factory, bool persist = true)
+    private static async Task<Account> SeedAsync(WebApplicationFactory<Program> factory, bool persist = true, bool verifiedEmail = true, Guid? tenantId = null)
     {
         var marker = Guid.NewGuid().ToString("N");
         var password = SyntheticPassword();
@@ -335,8 +613,11 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var user = User.CreateWithPassword($"poly-{marker}@example.test", "Synthetic credential account", hasher.HashPassword(password), $"poly-{marker}");
         user.PhoneNumber = "+1" + RandomNumberGenerator.GetInt32(100_000_000, 999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture) + RandomNumberGenerator.GetInt32(1000, 9999).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        user.VerifyEmail();
-        var tenant = Guid.NewGuid();
+        if (verifiedEmail)
+        {
+            user.VerifyEmail();
+        }
+        var tenant = tenantId ?? Guid.NewGuid();
         if (persist)
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

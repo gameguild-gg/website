@@ -31,9 +31,10 @@ public abstract class AuthenticationFlowState
     public List<AuthenticationStep> CompletedSteps { get; set; } = new List<AuthenticationStep>();
 
     /// <summary>
-    ///     Whether the flow is complete.
+    ///     Whether the flow is complete: derived, like <see cref="NextStep"/>, so a state
+    ///     whose required steps are all satisfied reads complete even before persistence.
     /// </summary>
-    public bool IsComplete { get; set; }
+    public bool IsComplete => RequiredSteps.Count > 0 && RequiredSteps.All(CompletedSteps.Contains);
 
     /// <summary>
     ///     Risk score that triggered additional steps.
@@ -66,9 +67,19 @@ public abstract class AuthenticationFlowState
     public Dictionary<string, object>? StepData { get; set; }
 
     /// <summary>
-    ///     Gets the next step to complete.
+    ///     Gets the next step to complete, or <see langword="null"/> when every required
+    ///     step is already satisfied. (A plain FirstOrDefault over the non-nullable step
+    ///     enum would return the default value <c>0</c> instead of null, so an empty
+    ///     remainder must be handled explicitly.)
     /// </summary>
-    public AuthenticationStep? NextStep { get => RequiredSteps.Except(CompletedSteps).FirstOrDefault(); }
+    public AuthenticationStep? NextStep
+    {
+        get
+        {
+            var remaining = RequiredSteps.Except(CompletedSteps).ToList();
+            return remaining.Count > 0 ? remaining[0] : null;
+        }
+    }
 
     /// <summary>
     ///     Gets whether the flow has expired.

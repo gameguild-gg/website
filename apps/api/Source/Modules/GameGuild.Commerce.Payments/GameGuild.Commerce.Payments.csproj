@@ -23,6 +23,9 @@
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj"/>
         <ProjectReference Include="..\GameGuild.Resources\GameGuild.Resources.csproj"/>
         <ProjectReference Include="..\GameGuild.Commerce\GameGuild.Commerce.csproj"/>
+        <!-- All-gateways-down alerting (issue #413) follows the existing system-alert
+             notification pattern (see GameGuild.Monitoring.SLA.AlertManager). -->
+        <ProjectReference Include="..\GameGuild.Notifications\GameGuild.Notifications.csproj"/>
     </ItemGroup>
 
 </Project>

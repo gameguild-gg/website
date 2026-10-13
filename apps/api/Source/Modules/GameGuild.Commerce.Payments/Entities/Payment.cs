@@ -1,3 +1,5 @@
+using FraudDecisionCode = GameGuild.Commerce.Payments.FraudDecision;
+using FraudReviewStateCode = GameGuild.Commerce.Payments.FraudReviewStatus;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -10,20 +12,27 @@ namespace GameGuild.Commerce.Payments;
 [Table("payments")]
 [Index(nameof(TenantId), nameof(Status))]
 [Index(nameof(SubscriptionId))]
+[Index(nameof(Status), nameof(NextRetryAt))]
 [Index(nameof(ExternalPaymentId), IsUnique = true)]
 [Index(nameof(IdempotencyKey), IsUnique = true)]
 public class Payment : EntityBase
 {
+    private const int DefaultMaxRetries = 4;
+    private const double DefaultBackoffBaseMinutes = 1.0;
+    private const double DefaultBackoffMultiplier = 5.0;
+
     private static readonly Dictionary<PaymentStatus, HashSet<PaymentStatus>> ValidTransitions = new()
     {
         { PaymentStatus.Pending, new() { PaymentStatus.Processing, PaymentStatus.Cancelled, PaymentStatus.Failed } },
         { PaymentStatus.Processing, new() { PaymentStatus.Succeeded, PaymentStatus.Failed, PaymentStatus.RequiresAction, PaymentStatus.Cancelled } },
         { PaymentStatus.RequiresAction, new() { PaymentStatus.Processing, PaymentStatus.Succeeded, PaymentStatus.Failed, PaymentStatus.Cancelled } },
-        { PaymentStatus.Succeeded, new() { PaymentStatus.Refunded, PaymentStatus.Disputed } },
+        { PaymentStatus.Succeeded, new() { PaymentStatus.Refunded, PaymentStatus.PartiallyRefunded, PaymentStatus.Disputed } },
         { PaymentStatus.Failed, new() { PaymentStatus.Pending } }, // Retry allowed
         { PaymentStatus.Cancelled, new HashSet<PaymentStatus>() }, // Terminal state
         { PaymentStatus.Refunded, new HashSet<PaymentStatus>() }, // Terminal state
-        { PaymentStatus.Disputed, new() { PaymentStatus.Succeeded, PaymentStatus.Refunded } }
+        { PaymentStatus.Disputed, new() { PaymentStatus.Succeeded, PaymentStatus.Refunded, PaymentStatus.PartiallyRefunded } },
+        // Further partial refunds allowed until the cumulative total reaches the original amount.
+        { PaymentStatus.PartiallyRefunded, new() { PaymentStatus.PartiallyRefunded, PaymentStatus.Refunded } }
     };
 
     /// <summary>Default constructor for EF Core</summary>
@@ -130,11 +139,19 @@ public class Payment : EntityBase
     /// <summary>Number of retry attempts</summary>
     public int RetryCount { get; private set; }
 
-    /// <summary>Maximum retry attempts allowed</summary>
-    public int MaxRetries { get; private set; } = 3;
+    /// <summary>Maximum retry attempts allowed; sourced from <c>Payments:Retry</c> at creation, legacy default as fallback</summary>
+    public int MaxRetries { get; private set; } = DefaultMaxRetries;
 
     /// <summary>Next retry date if failed</summary>
     public DateTime? NextRetryAt { get; private set; }
+
+    /// <summary>
+    ///     Whether the recorded failure is eligible for further retry attempts (issue #415).
+    ///     Hard declines (expired card, incorrect CVC, fraud, ...) are marked non-retriable
+    ///     immediately by the failure-code retry policy; soft declines and transient errors
+    ///     stay retriable until the retry budget is exhausted.
+    /// </summary>
+    public bool IsRetriable { get; private set; } = true;
 
     /// <summary>Refund amount if partially or fully refunded</summary>
     [Column(TypeName = "decimal(18,2)")]
@@ -155,6 +172,36 @@ public class Payment : EntityBase
     [Column(TypeName = "jsonb")]
     public string? Metadata { get; private set; }
 
+    /// <summary>Aggregate fraud score (0-100) from the pre-gateway assessment; null when never assessed.</summary>
+    public int? FraudScore { get; private set; }
+
+    /// <summary>Fraud gate decision recorded for this payment; null when never assessed.</summary>
+    public FraudDecision? FraudDecision { get; private set; }
+
+    /// <summary>Bounded human-readable reason for the recorded fraud decision.</summary>
+    [MaxLength(500)]
+    public string? FraudDecisionReason { get; private set; }
+
+    /// <summary>
+    ///     Bounded JSON evidence bundle (score, risk level, signals) backing the fraud
+    ///     decision. Internal assessment evidence only — never provider tokens.
+    /// </summary>
+    [Column(TypeName = "jsonb")]
+    public string? FraudEvidence { get; private set; }
+
+    /// <summary>Manual review state when the fraud decision was <see cref="FraudDecision.Review"/>.</summary>
+    public FraudReviewStatus? FraudReviewStatus { get; private set; }
+
+    /// <summary>Administrator who resolved the manual fraud review.</summary>
+    public Guid? FraudReviewedByUserId { get; private set; }
+
+    /// <summary>When the manual fraud review was resolved.</summary>
+    public DateTime? FraudReviewedAt { get; private set; }
+
+    /// <summary>Administrator notes recorded with the fraud review resolution.</summary>
+    [MaxLength(500)]
+    public string? FraudReviewNotes { get; private set; }
+
     /// <summary>Creates a new payment with proper validation</summary>
     public static Payment Create(
         Guid tenantId,
@@ -167,7 +214,8 @@ public class Payment : EntityBase
         Guid? invoiceId = null,
         string? externalCustomerId = null,
         string? paymentMethodId = null,
-        string? description = null)
+        string? description = null,
+        int? maxRetries = null)
     {
         if (tenantId == Guid.Empty)
         {
@@ -197,8 +245,36 @@ public class Payment : EntityBase
             ExternalCustomerId = externalCustomerId,
             PaymentMethodId = paymentMethodId,
             Description = description,
+            MaxRetries = maxRetries ?? DefaultMaxRetries,
             Status = PaymentStatus.Pending
         };
+    }
+
+    /// <summary>
+    ///     Re-attributes the payment to the gateway that actually processed it when
+    ///     failover routed the charge away from the primary gateway (issue #413). No-op
+    ///     when the provider mapping is already bound (the mapped provider stays
+    ///     authoritative) and when the payment is terminal.
+    /// </summary>
+    public void RecordProcessingProvider(string provider)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(provider);
+
+        var normalized = provider.ToLowerInvariant();
+        if (string.Equals(Provider, normalized, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (ProviderObjectId is not null || IsTerminal)
+        {
+            // A bound provider mapping is the authoritative identity of this payment's
+            // provider object; attribution must never drift away from it.
+            return;
+        }
+
+        Provider = normalized;
+        Touch();
     }
 
     /// <summary>Binds this payment to one immutable provider object and monetary leg.</summary>
@@ -320,8 +396,23 @@ public class Payment : EntityBase
             ProcessedAt.Value));
     }
 
-    /// <summary>Marks the payment as failed</summary>
-    public void MarkAsFailed(string failureReason, string? errorCode = null)
+    /// <summary>
+    ///     Marks the payment as failed. Retry-policy parameters may be supplied by the caller from
+    ///     <c>Payments:Retry</c> options (issue #403); when omitted the legacy entity defaults apply
+    ///     (max 3 retries, exponential backoff of <c>Math.Pow(5, RetryCount)</c> minutes).
+    ///     Callers that resolve a failure-code retry policy (issue #415) pass an explicit
+    ///     <paramref name="nextRetryAt" /> computed by <c>PaymentRetryPolicyResolver</c> (which may
+    ///     be <c>null</c> when the failure class is non-retriable or the budget is exhausted) and
+    ///     <paramref name="isRetriable" />; the entity itself stays free of policy logic.
+    /// </summary>
+    public void MarkAsFailed(
+        string failureReason,
+        string? errorCode = null,
+        int? maxRetries = null,
+        double? backoffBaseMinutes = null,
+        double? backoffMultiplier = null,
+        DateTime? nextRetryAt = null,
+        bool? isRetriable = null)
     {
         TransitionTo(PaymentStatus.Failed);
         FailureReason = failureReason;
@@ -329,11 +420,36 @@ public class Payment : EntityBase
         ProcessedAt = SystemClock.UtcNow;
 
         // Calculate next retry if retries remaining
-        if (RetryCount < MaxRetries)
+        var effectiveMaxRetries = maxRetries ?? MaxRetries;
+        if (maxRetries.HasValue && maxRetries.Value != MaxRetries)
         {
-            // Exponential backoff: 1 min, 5 min, 30 min, etc.
-            var delayMinutes = Math.Pow(5, RetryCount) * 1;
+            MaxRetries = maxRetries.Value;
+        }
+
+        if (isRetriable.HasValue)
+        {
+            IsRetriable = isRetriable.Value;
+        }
+
+        if (nextRetryAt.HasValue)
+        {
+            // Failure-code policy already computed the schedule (issue #415): honor it as-is,
+            // including a deliberate null for non-retriable or exhausted payments.
+            NextRetryAt = nextRetryAt.Value;
+            return;
+        }
+
+        if (IsRetriable && RetryCount < effectiveMaxRetries)
+        {
+            // Exponential backoff: legacy default is 1 min, 5 min, 25 min, etc.
+            var baseMinutes = backoffBaseMinutes ?? DefaultBackoffBaseMinutes;
+            var multiplier = backoffMultiplier ?? DefaultBackoffMultiplier;
+            var delayMinutes = baseMinutes * Math.Pow(multiplier, RetryCount);
             NextRetryAt = SystemClock.UtcNow.AddMinutes(delayMinutes);
+        }
+        else
+        {
+            NextRetryAt = null;
         }
     }
 
@@ -384,9 +500,21 @@ public class Payment : EntityBase
             throw new InvalidOperationException("Can only retry failed payments");
         }
 
-        if (RetryCount >= MaxRetries)
+        if (!CanRetry)
         {
-            throw new InvalidOperationException($"Maximum retry attempts ({MaxRetries}) reached");
+            if (MaxRetriesReached)
+            {
+                throw new InvalidOperationException($"Maximum retry attempts ({MaxRetries}) reached");
+            }
+
+            if (FraudBlocksRetry)
+            {
+                throw new InvalidOperationException(
+                    "A fraud-held payment cannot be retried; resolve the fraud review first.");
+            }
+
+            throw new InvalidOperationException(
+                "Payment is marked non-retriable for its recorded failure code");
         }
 
         RetryCount++;
@@ -395,6 +523,7 @@ public class Payment : EntityBase
         ErrorCode = null;
         NextRetryAt = null;
         ExternalTransactionId = null;
+        IsRetriable = true; // The new attempt is classified afresh when its outcome is recorded.
         if (!string.IsNullOrWhiteSpace(paymentMethodId))
         {
             PaymentMethodId = paymentMethodId;
@@ -403,12 +532,79 @@ public class Payment : EntityBase
         Touch();
     }
 
+    /// <summary>
+    ///     Pauses automatic retries for this failed payment (issue #415): the scheduled next-retry
+    ///     time is cleared so the retry queue stops picking the payment up until it is resumed.
+    /// </summary>
+    public void PauseRetryQueue()
+    {
+        if (Status != PaymentStatus.Failed)
+        {
+            throw new InvalidOperationException("Only failed payments can have their retry schedule paused");
+        }
+
+        if (NextRetryAt is null)
+        {
+            return; // Already paused, exhausted or non-retriable — idempotent.
+        }
+
+        NextRetryAt = null;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Resumes automatic retries that were previously paused for a payment-method change
+    ///     (issue #415): the payment becomes eligible again on the next retry-queue pass.
+    ///     Only payments that still have retry budget and are retriable can be resumed.
+    /// </summary>
+    public void ResumeRetryQueue(DateTime? eligibleAtUtc = null)
+    {
+        if (Status != PaymentStatus.Failed)
+        {
+            throw new InvalidOperationException("Only failed payments can have their retry schedule resumed");
+        }
+
+        if (!IsRetriable || RetryCount >= MaxRetries)
+        {
+            return; // Non-retriable or exhausted payments stay out of the queue.
+        }
+
+        NextRetryAt = eligibleAtUtc ?? SystemClock.UtcNow;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Re-points the payment at a newly confirmed payment method (issue #415). Used when a
+    ///     customer replaces their payment method mid-dunning so queued retries charge the new
+    ///     instrument instead of the failed one. Terminal payments cannot change methods.
+    /// </summary>
+    public void ApplyPaymentMethodChange(string paymentMethodId)
+    {
+        if (string.IsNullOrWhiteSpace(paymentMethodId))
+        {
+            throw new ArgumentException("Payment method id is required", nameof(paymentMethodId));
+        }
+
+        if (IsTerminal)
+        {
+            throw new InvalidOperationException($"Cannot change the payment method of a payment in status {Status}");
+        }
+
+        if (string.Equals(PaymentMethodId, paymentMethodId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        PaymentMethodId = paymentMethodId;
+        Touch();
+    }
+
     /// <summary>Processes a full or partial refund</summary>
     public void ProcessRefund(decimal refundAmount, string refundId, string reason)
     {
-        if (Status != PaymentStatus.Succeeded && Status != PaymentStatus.Disputed)
+        if (Status is not (PaymentStatus.Succeeded or PaymentStatus.Disputed or PaymentStatus.PartiallyRefunded))
         {
-            throw new InvalidOperationException($"Can only refund succeeded or disputed payments, current status: {Status}");
+            throw new InvalidOperationException($"Can only refund succeeded, disputed or partially refunded payments, current status: {Status}");
         }
 
         if (refundAmount <= 0)
@@ -426,10 +622,18 @@ public class Payment : EntityBase
         RefundReason = reason;
         RefundedAt = SystemClock.UtcNow;
 
-        // If fully refunded, transition to Refunded status
+        // If fully refunded, transition to Refunded status; otherwise PartiallyRefunded (issue #419)
         if (RefundedAmount >= Amount)
         {
             TransitionTo(PaymentStatus.Refunded);
+        }
+        else if (Status != PaymentStatus.PartiallyRefunded)
+        {
+            TransitionTo(PaymentStatus.PartiallyRefunded);
+        }
+        else
+        {
+            Touch();
         }
     }
 
@@ -447,15 +651,91 @@ public class Payment : EntityBase
     }
 
     /// <summary>
+    ///     Records the pre-gateway fraud assessment (issue #409). For
+    ///     <see cref="FraudDecision.Review"/> and <see cref="FraudDecision.Block"/> the
+    ///     payment transitions to <see cref="PaymentStatus.Failed"/> without scheduling an
+    ///     automatic retry, and Review decisions additionally enter the manual review queue.
+    /// </summary>
+    /// <param name="decision">Gate decision to record.</param>
+    /// <param name="score">Aggregate fraud score (0-100).</param>
+    /// <param name="reason">Bounded decision reason.</param>
+    /// <param name="evidenceJson">Bounded JSON evidence bundle; never provider tokens.</param>
+    public void RecordFraudAssessment(FraudDecision decision, int score, string reason, string? evidenceJson)
+    {
+        if (score is < 0 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(score), "Fraud score must be between 0 and 100.");
+        }
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
+        FraudScore = score;
+        FraudDecision = decision;
+        FraudDecisionReason = reason.Length <= 500 ? reason : reason[..500];
+        FraudEvidence = evidenceJson;
+        FraudReviewStatus = decision == FraudDecisionCode.Review ? FraudReviewStateCode.PendingReview : null;
+
+        if (decision != FraudDecisionCode.Allow)
+        {
+            TransitionTo(PaymentStatus.Failed);
+            FailureReason = $"Fraud gate {decision.ToString().ToLowerInvariant()}: {FraudDecisionReason}";
+            ErrorCode = $"fraud_{decision.ToString().ToLowerInvariant()}";
+            ProcessedAt = SystemClock.UtcNow;
+            NextRetryAt = null; // Fraud-held payments are never auto-retried.
+        }
+
+        Touch();
+    }
+
+    /// <summary>
+    ///     Resolves a pending manual fraud review (issue #409). Approving releases the fraud
+    ///     hold so the payment may be retried through the existing (manual) retry flow;
+    ///     declining keeps it failed and permanently non-retryable.
+    /// </summary>
+    /// <param name="approved">Whether the review is approved.</param>
+    /// <param name="reviewedByUserId">Administrator resolving the review.</param>
+    /// <param name="notes">Optional administrator notes (bounded).</param>
+    public void ResolveFraudReview(bool approved, Guid reviewedByUserId, string? notes = null)
+    {
+        if (reviewedByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("A reviewer identity is required to resolve a fraud review.", nameof(reviewedByUserId));
+        }
+
+        if (FraudDecision != FraudDecisionCode.Review || FraudReviewStatus != FraudReviewStateCode.PendingReview)
+        {
+            throw new InvalidOperationException(
+                $"Cannot resolve a fraud review for a payment with decision {FraudDecision} and review status {FraudReviewStatus}.");
+        }
+
+        FraudReviewStatus = approved ? FraudReviewStateCode.Approved : FraudReviewStateCode.Declined;
+        FraudReviewedByUserId = reviewedByUserId;
+        FraudReviewedAt = SystemClock.UtcNow;
+        FraudReviewNotes = string.IsNullOrWhiteSpace(notes)
+            ? null
+            : (notes.Length <= 500 ? notes : notes[..500]);
+
+        Touch();
+    }
+
+    /// <summary>
     ///     Returns a legacy external reference for compatibility reads only.
     ///     This value is not a scoped provider identity and must never authorize value movement.
     /// </summary>
     public string? ResolveUnverifiedLegacyProviderObjectId() => ExternalPaymentId ?? ExternalTransactionId;
 
-    /// <summary>Whether the payment can be retried</summary>
-    public bool CanRetry => Status == PaymentStatus.Failed && RetryCount < MaxRetries;
+    /// <summary>Whether the payment can be retried. Non-retriable failure classifications
+    /// (hard declines, issue #415) and fraud-held payments are excluded: blocked payments
+    /// never retry, and review-held payments only retry once the fraud review has been
+    /// approved (issue #409).</summary>
+    public bool CanRetry => Status == PaymentStatus.Failed && RetryCount < MaxRetries && IsRetriable && !FraudBlocksRetry;
 
-    /// <summary>Whether max retries have been reached</summary>
+    /// <summary>Whether the recorded fraud decision currently blocks retrying this payment.</summary>
+    public bool FraudBlocksRetry =>
+        FraudDecision == FraudDecisionCode.Block
+        || (FraudDecision == FraudDecisionCode.Review && FraudReviewStatus != FraudReviewStateCode.Approved);
+
+    /// <summary>Whether the retry budget is exhausted (attempts reached the persisted maximum)</summary>
     public bool MaxRetriesReached => RetryCount >= MaxRetries;
 
     /// <summary>Whether the payment is in a terminal state</summary>

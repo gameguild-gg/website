@@ -352,7 +352,7 @@ public class PromoCodeTypeEnumTests
     [Fact]
     public void PromoCodeType_ShouldHaveCorrectCount()
     {
-        // Assert
-        Enum.GetValues<PromoCodeType>().Should().HaveCount(5);
+        // Five legacy types plus FreeTrialExtension, FreeMonths and SetPrice (issue #418).
+        Enum.GetValues<PromoCodeType>().Should().HaveCount(8);
     }
 }

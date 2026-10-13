@@ -55,6 +55,36 @@ public sealed class AdminPermission : Permission
 }
 
 /// <summary>
+///     Strongly-typed permissions for SCIM provisioning administration.
+/// </summary>
+/// <remarks>
+///     Use <see cref="Keys"/> for attribute usage: [RequirePermission(ProvisioningPermission.Keys.ManageTokens)]
+///     and the static fields for runtime checks: actor.HasPermission(ProvisioningPermission.ManageTokens).
+/// </remarks>
+public sealed class ProvisioningPermission : Permission
+{
+    private ProvisioningPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Contains(':') ? key.Split(':')[1] : key,
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>Permission key constants for use in attributes.</summary>
+    public static class Keys
+    {
+        /// <summary>Issue, rotate and revoke SCIM provisioning tokens.</summary>
+        public const string ManageTokens = "provisioning:manage-tokens";
+    }
+
+    /// <summary>Issue, rotate and revoke SCIM provisioning tokens.</summary>
+    public static readonly ProvisioningPermission ManageTokens =
+        new(Keys.ManageTokens, "Manage SCIM provisioning tokens");
+}
+
+/// <summary>
 ///     Strongly-typed permissions for user operations.
 ///     Provides compile-time safety for permission checks.
 /// </summary>
@@ -691,6 +721,32 @@ public sealed class WalletsPermission : Permission
     }
 
     public static readonly WalletsPermission Admin = new(Keys.Admin, "Administer wallets across the platform");
+}
+
+/// <summary>Strongly-typed permission for payment fraud-review administration (issue #409).</summary>
+public sealed class PaymentsPermission : Permission
+{
+    private PaymentsPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: null,
+            description: description)
+    {
+    }
+
+    public static class Keys
+    {
+        /// <summary>Administer payment fraud reviews (list, approve, decline).</summary>
+        public const string Admin = "payments:admin";
+
+        /// <summary>Approve or reject refund requests waiting in the approval queue (issue #419).</summary>
+        public const string RefundApprovals = "payments:refunds:approve";
+    }
+
+    public static readonly PaymentsPermission Admin = new(Keys.Admin, "Administer payment fraud reviews");
+
+    public static readonly PaymentsPermission RefundApprovals = new(Keys.RefundApprovals, "Approve pending refund requests");
 }
 
 /// <summary>Segregated permissions for Economy control-plane and operational duties.</summary>

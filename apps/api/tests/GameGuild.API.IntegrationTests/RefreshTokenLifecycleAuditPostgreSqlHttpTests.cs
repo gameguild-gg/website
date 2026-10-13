@@ -255,7 +255,7 @@ public sealed class RefreshTokenLifecycleAuditPostgreSqlHttpTests(ApiPostgreSqlF
 
     private WebApplicationFactory<Program> CreateFactory(CommitFailure? fault = null, bool auditTransportFails = false,
         AuditStorageFailure? auditStorageFailure = null) =>
-        fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             // These existing cases exercise account containment and persisted version invalidation.
             services.PostConfigure<JwtOptions>(options => options.RefreshTokenReplayContainmentScope = RefreshTokenReplayScope.Account);

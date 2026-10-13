@@ -23,6 +23,17 @@ public interface IPasswordHasher
     /// <returns>True if password matches</returns>
     bool VerifyPassword(string hashedPassword, string providedPassword);
 
+    /// <summary>Opaque providers remain conservative; work-aware implementations override this operation.</summary>
+    PasswordVerificationResult VerifyPasswordWithWorkClassification(string hashedPassword, string providedPassword) =>
+        new PasswordVerificationResult(VerifyPassword(hashedPassword, providedPassword), false);
+
+    /// <summary>Native providers perform verification-equivalent work at their configured factor.</summary>
+    Task PerformDummyVerificationAsync() => PerformDummyVerificationAsync(CancellationToken.None);
+
+    /// <summary>Native providers perform cancellable verification-equivalent work at their configured factor.</summary>
+    Task PerformDummyVerificationAsync(CancellationToken cancellationToken) =>
+        throw new NotSupportedException("This password provider does not expose dummy credential work.");
+
     /// <summary>
     ///     Checks if a hash is malformed, unsupported or below the configured BCrypt work factor.
     /// </summary>

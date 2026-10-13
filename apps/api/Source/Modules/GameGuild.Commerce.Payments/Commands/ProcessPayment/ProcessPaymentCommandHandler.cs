@@ -1,6 +1,7 @@
 using GameGuild.CQRS;
 using GameGuild.Commerce;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -12,6 +13,9 @@ public sealed class ProcessPaymentCommandHandler(
     IPaymentGateway paymentGateway,
     IPaymentSubscriptionSyncService paymentSubscriptionSyncService,
     ISubscriptionPaymentContextService subscriptionPaymentContextService,
+    IOptions<PaymentRetryOptions> retryOptions,
+    IPaymentRetryPolicyResolver retryPolicyResolver,
+    IFraudDetectionService fraudDetectionService,
     ILogger<ProcessPaymentCommandHandler> logger) : ICommandHandler<ProcessPaymentCommand, PaymentResult>
 {
     public async Task<PaymentResult> Handle(ProcessPaymentCommand request, CancellationToken cancellationToken)
@@ -68,7 +72,7 @@ public sealed class ProcessPaymentCommandHandler(
 
         var externalCustomerId = subscription.ExternalCustomerId;
 
-        // 2. Create payment record
+        // 2. Create payment record (retry budget comes from Payments:Retry options, issue #403)
         var payment = Payment.Create(
             tenantId: subscription.TenantId,
             amount: subscription.Amount,
@@ -77,15 +81,57 @@ public sealed class ProcessPaymentCommandHandler(
             provider: paymentGateway.ProviderId,
             subscriptionId: request.SubscriptionId,
             externalCustomerId: externalCustomerId,
-            paymentMethodId: request.PaymentMethodId);
+            paymentMethodId: request.PaymentMethodId,
+            maxRetries: retryOptions.Value.MaxRetries);
 
         await paymentRepository.AddAsync(payment, cancellationToken).ConfigureAwait(false);
 
-        // 3. Mark as processing
+        // 3. Pre-gateway fraud assessment (issue #409): Review/Block hold the payment as
+        //    failed without gateway execution and without an automatic retry.
+        var fraudContext = new FraudSignalContext(
+            payment.TenantId,
+            payment.Id,
+            request.SubscriptionId,
+            externalCustomerId,
+            request.PaymentMethodId,
+            subscription.Amount,
+            subscription.Currency);
+
+        var assessment = await fraudDetectionService.AssessPaymentAsync(fraudContext, cancellationToken)
+            .ConfigureAwait(false);
+
+        payment.RecordFraudAssessment(
+            assessment.Decision,
+            assessment.Score,
+            assessment.Reason,
+            assessment.ToEvidenceJson());
+
+        await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
+
+        if (assessment.Decision != FraudDecision.Allow)
+        {
+            logger.LogWarning(
+                "Payment {PaymentId} held by fraud gate: decision {Decision}, score {Score}, reason {Reason}",
+                payment.Id, assessment.Decision, assessment.Score, assessment.Reason);
+
+            return new PaymentResult
+            {
+                TenantId = payment.TenantId,
+                Success = false,
+                PaymentId = payment.Id.ToString(),
+                Amount = new Money(payment.Amount, payment.Currency),
+                ProcessedAt = payment.ProcessedAt,
+                Status = payment.Status,
+                FailureReason = payment.FailureReason,
+                PaymentMethodId = request.PaymentMethodId
+            };
+        }
+
+        // 4. Mark as processing
         payment.MarkAsProcessing();
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
 
-        // 4. Process through payment gateway
+        // 5. Process through payment gateway
         var gatewayRequest = new GatewayPaymentRequest(
             IdempotencyKey: idempotencyKey,
             Amount: subscription.Amount,
@@ -102,9 +148,15 @@ public sealed class ProcessPaymentCommandHandler(
 
         var gatewayResult = await paymentGateway.ProcessPaymentAsync(gatewayRequest, cancellationToken)
             .ConfigureAwait(false);
-        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, paymentGateway.ProviderId, gatewayResult);
 
-        // 5. Update payment based on gateway result
+        // Failover may route the charge away from the primary gateway (issue #413):
+        // attribute the payment to the gateway that actually answered before binding
+        // the verified provider mapping. When a provider mapping is already bound the
+        // mapped provider stays authoritative (RecordProcessingProvider is a no-op).
+        payment.RecordProcessingProvider(gatewayResult.ProviderId ?? paymentGateway.ProviderId);
+        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, payment.Provider, gatewayResult);
+
+        // 6. Update payment based on gateway result
         if (gatewayResult.Success)
         {
             payment.MarkAsSucceeded(
@@ -121,12 +173,22 @@ public sealed class ProcessPaymentCommandHandler(
         }
         else
         {
+            // First-failure classification (issue #415): hard declines are marked non-retriable
+            // immediately and never enter the retry queue; everything else is scheduled by the
+            // failure-code policy on top of the Payments:Retry options.
+            var schedule = retryPolicyResolver.ComputeSchedule(gatewayResult.ErrorCode, payment.RetryCount);
+
             payment.MarkAsFailed(
                 gatewayResult.ErrorMessage ?? "Payment processing failed",
-                gatewayResult.ErrorCode);
+                gatewayResult.ErrorCode,
+                maxRetries: schedule.EffectiveMaxRetries,
+                backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier,
+                nextRetryAt: schedule.NextRetryAt,
+                isRetriable: schedule.IsRetriable);
 
-            logger.LogWarning("Payment {PaymentId} failed: {ErrorMessage} ({ErrorCode})",
-                payment.Id, gatewayResult.ErrorMessage, gatewayResult.ErrorCode);
+            logger.LogWarning("Payment {PaymentId} failed: {ErrorMessage} ({ErrorCode}, class {Classification}, retriable {IsRetriable})",
+                payment.Id, gatewayResult.ErrorMessage, gatewayResult.ErrorCode, schedule.Classification, schedule.IsRetriable);
         }
 
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
@@ -143,7 +205,7 @@ public sealed class ProcessPaymentCommandHandler(
                 cancellationToken).ConfigureAwait(false);
         }
 
-        // 6. Return result
+        // 7. Return result
         return new PaymentResult
         {
             TenantId = payment.TenantId,

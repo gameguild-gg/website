@@ -18,6 +18,15 @@ public static class DependencyInjection
     /// <returns>The configured service collection</returns>
     public static IServiceCollection AddSubscriptionsModule(this IServiceCollection services)
     {
+        // Issue #416 plan-management services: slug generation (create/full-update when the
+        // client omits the slug) and the 5-minute public plan-list cache. Both are
+        // stateless (the cache state lives in IMemoryCache), so singletons are safe and
+        // keep cache entries shared across scopes.
+        services.AddSingleton<ISubscriptionPlanSlugGenerator, SubscriptionPlanSlugGenerator>();
+        services.AddSingleton<ISubscriptionPlanListCache, SubscriptionPlanListCache>();
+        services.AddSingleton<IBillingCalculator, BillingCalculator>();
+        services.AddScoped<ISubscriptionIntervalPricingService, SubscriptionIntervalPricingService>();
+
         // Register Subscription Plan Service (required by sub-services)
         services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
@@ -36,12 +45,25 @@ public static class DependencyInjection
         services.AddScoped<ISubscriptionExternalIdService>(sp => sp.GetRequiredService<SubscriptionQueryAndExternalIdService>());
         services.AddScoped<ISubscriptionPaymentContextService>(sp => sp.GetRequiredService<SubscriptionQueryAndExternalIdService>());
 
+        // Payment-method registry coordination (issue #414): implements the cross-module
+        // contract for the Payments module (delete guard, re-pointing, checkout assignment).
+        services.AddScoped<ISubscriptionPaymentMethodCoordination, SubscriptionPaymentMethodCoordinationService>();
+
         // Register SubscriptionService as thin facade for backward compatibility
         services.AddScoped<SubscriptionService>();
 
         // Register Plan Pricing Resolver for cross-module pricing lookups (Payments module integration)
         services.AddScoped<IPlanPricingResolver, SubscriptionPlanPricingResolver>();
+
+        // Unified pricing engine seam (issue #417): expose the existing BillingCalculator
+        // proration math to the Payments-owned engine abstraction.
+        services.AddScoped<IPlanProrationCalculator, PlanProrationCalculator>();
+        services.AddScoped<IBillingCalculator, BillingCalculator>();
         services.AddScoped<IPaymentSubscriptionSyncService, PaymentSubscriptionSyncService>();
+
+        // Payment recovery lifecycle (issue #415): dunning suspension after retry exhaustion
+        // and reason-guarded reactivation after a successful recovery payment.
+        services.AddScoped<IPaymentDunningLifecycleService, PaymentDunningLifecycleService>();
 
         // Register Command Handlers (only existing ones)
         services.AddScoped<ICommandHandler<ActivateSubscriptionCommand>, ActivateSubscriptionCommandHandler>();

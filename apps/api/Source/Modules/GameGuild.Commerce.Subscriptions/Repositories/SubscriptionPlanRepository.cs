@@ -25,7 +25,9 @@ public class SubscriptionPlanRepository(IApplicationDbContext context)
 
     public async Task<IEnumerable<SubscriptionPlan>> GetActiveAsync(CancellationToken cancellationToken = default)
     {
-        return await Query.Where(p => p.DeletedAt == null).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
+        // Issue #416: "Public API only returns active, public plans" — plans archived via
+        // :archive (IsActive = false) must not leak into the public active list.
+        return await Query.Where(p => p.DeletedAt == null && p.IsActive).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<SubscriptionPlan>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -35,7 +37,9 @@ public class SubscriptionPlanRepository(IApplicationDbContext context)
 
     public async Task<IEnumerable<SubscriptionPlan>> GetFeaturedAsync(CancellationToken cancellationToken = default)
     {
-        return await Query.Where(p => p.IsFeatured && p.DeletedAt == null).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
+        // Same IsActive guard as GetActiveAsync: the featured list feeds the public pricing
+        // surface (issue #416).
+        return await Query.Where(p => p.IsFeatured && p.DeletedAt == null && p.IsActive).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<SubscriptionPlan>> SearchByNameAsync(string searchTerm, CancellationToken cancellationToken = default)
@@ -122,5 +126,48 @@ public class SubscriptionPlanRepository(IApplicationDbContext context)
             .ConfigureAwait(false);
 
         return PagedResult<SubscriptionPlan>.FromPage(items, totalCount, skip / pageSize + 1, pageSize);
+    }
+
+    /// <summary>
+    ///     Lists all interval price points configured for a plan (issue #392).
+    /// </summary>
+    public async Task<IReadOnlyList<SubscriptionPlanIntervalPrice>> GetIntervalPricesAsync(Guid planId, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<SubscriptionPlanIntervalPrice>()
+            .Where(price => price.PlanId == planId)
+            .OrderBy(price => price.Interval)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Gets the interval price point for one plan interval, when explicitly configured (issue #392).
+    /// </summary>
+    public async Task<SubscriptionPlanIntervalPrice?> GetIntervalPriceAsync(Guid planId, BillingCycle interval, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<SubscriptionPlanIntervalPrice>()
+            .FirstOrDefaultAsync(price => price.PlanId == planId && price.Interval == interval, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Adds or updates the interval price point for a plan interval (issue #392).
+    ///     The unique (PlanId, Interval) index is the convergence guard.
+    /// </summary>
+    public async Task<SubscriptionPlanIntervalPrice> UpsertIntervalPriceAsync(SubscriptionPlanIntervalPrice intervalPrice, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(intervalPrice);
+
+        var existing = await GetIntervalPriceAsync(intervalPrice.PlanId, intervalPrice.Interval, cancellationToken).ConfigureAwait(false);
+        if (existing is null)
+        {
+            await Context.Set<SubscriptionPlanIntervalPrice>().AddAsync(intervalPrice, cancellationToken).ConfigureAwait(false);
+            await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            return intervalPrice;
+        }
+
+        existing.UpdatePrice(intervalPrice.PriceInCents);
+        await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return existing;
     }
 }

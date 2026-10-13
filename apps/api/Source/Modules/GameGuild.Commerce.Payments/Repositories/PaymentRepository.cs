@@ -115,19 +115,56 @@ public class PaymentRepository(
             .ConfigureAwait(false);
     }
 
-    public async Task<IEnumerable<Payment>> GetDueForRetryAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Payment>> GetDueForRetryAsync(CancellationToken cancellationToken = default, int? take = null)
     {
         var now = SystemClock.UtcNow;
         logger.LogDebug("Getting payments due for retry at: {Now}", now);
 
-        return await Query
+        var query = Query
             .Where(p => p.Status == PaymentStatus.Failed
                         && p.NextRetryAt != null
                         && p.NextRetryAt <= now
-                        && !p.MaxRetriesReached)
-            .OrderBy(p => p.NextRetryAt)
+                        && !p.MaxRetriesReached
+                        && p.IsRetriable)
+            .OrderBy(p => p.NextRetryAt);
+
+        if (take.HasValue)
+        {
+            return await query
+                .Take(take.Value)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return await query.ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<PaymentRetryAttempt>> GetRetryAttemptsAsync(
+        Guid paymentId,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug("Getting retry attempts for payment: {PaymentId}", paymentId);
+
+        var attempts = await Context.Set<PaymentRetryAttempt>()
+            .Where(attempt => attempt.PaymentId == paymentId)
+            .OrderBy(attempt => attempt.AttemptNumber)
             .ToListAsync(cancellationToken)
-            ;
+            .ConfigureAwait(false);
+
+        return attempts;
+    }
+
+    /// <inheritdoc />
+    public async Task AddRetryAttemptAsync(
+        PaymentRetryAttempt attempt,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(attempt);
+
+        await Context.Set<PaymentRetryAttempt>().AddAsync(attempt, cancellationToken).ConfigureAwait(false);
+        await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<Payment>> GetByDateRangeAsync(

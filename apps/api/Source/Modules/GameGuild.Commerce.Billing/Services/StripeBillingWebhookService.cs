@@ -19,6 +19,7 @@ public class StripeBillingWebhookService : BillingWebhookService
     private readonly WebhookSettings _webhookSettings;
     private readonly IWebhookSecurityEventPublisher? _securityEvents;
     private readonly IBillingIntegrationEventPublisher? _billingEvents;
+    private readonly IInvoiceGenerationService? _invoiceGeneration;
 
     /// <inheritdoc />
     protected override string ProviderName => PaymentProviders.Stripe;
@@ -35,7 +36,8 @@ public class StripeBillingWebhookService : BillingWebhookService
         IOptions<BillingConfiguration>? configuration = null,
         IEnumerable<IStripeVerifiedEventConsumer>? verifiedEventConsumers = null,
         IWebhookSecurityEventPublisher? securityEvents = null,
-        IBillingIntegrationEventPublisher? billingEvents = null)
+        IBillingIntegrationEventPublisher? billingEvents = null,
+        IInvoiceGenerationService? invoiceGeneration = null)
         : base(logger, lifecycleService, queryService, billingService, externalIdService, billingEvents)
     {
         _webhookRepository = webhookRepository;
@@ -47,6 +49,7 @@ public class StripeBillingWebhookService : BillingWebhookService
         _webhookSettings = configuration?.Value.Webhook ?? new WebhookSettings();
         _securityEvents = securityEvents;
         _billingEvents = billingEvents;
+        _invoiceGeneration = invoiceGeneration;
     }
 
     /// <summary>
@@ -282,6 +285,66 @@ public class StripeBillingWebhookService : BillingWebhookService
     }
 
     /// <summary>
+    ///     Materializes the local invoice for a provider-billed cycle confirmed by
+    ///     <c>invoice.payment_succeeded</c>. Idempotent per subscription cycle; the provider
+    ///     invoice id (<see cref="VerifiedStripeWebhookEvent.ProviderObjectId"/>) is stamped via
+    ///     <see cref="Invoice.SetExternalId"/> and treated as authoritative.
+    /// </summary>
+    private async Task MaterializeProviderInvoiceAsync(
+        VerifiedStripeWebhookEvent verifiedEvent,
+        CancellationToken cancellationToken)
+    {
+        if (_invoiceGeneration is null)
+        {
+            _logger.LogWarning(
+                "Invoice generation is not configured; Stripe event {EventId} cannot materialize an invoice",
+                verifiedEvent.EventId);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(verifiedEvent.ExternalSubscriptionId) ||
+            !verifiedEvent.Amount.HasValue)
+        {
+            _logger.LogWarning(
+                "Stripe event {EventId} lacks subscription or amount context; skipping invoice materialization",
+                verifiedEvent.EventId);
+            return;
+        }
+
+        var subscription = await _subscriptionQueryService
+            .GetByExternalIdAsync(verifiedEvent.ExternalSubscriptionId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (subscription is null)
+        {
+            // ValidateSubscriptionBindingAsync already rejects invoice.* events with unknown
+            // subscriptions, so this is a defensive guard only.
+            _logger.LogWarning(
+                "Stripe event {EventId} references unknown subscription {ExternalSubscriptionId}; skipping invoice materialization",
+                verifiedEvent.EventId,
+                verifiedEvent.ExternalSubscriptionId);
+            return;
+        }
+
+        // The confirmed cycle is the one this provider charge settles: the subscription's next
+        // unprocessed cycle. Materialization precedes subscription payment-sync, so both agree on N.
+        var confirmedCycle = subscription.LastProcessedBillingCycle + 1;
+
+        await _invoiceGeneration
+            .MaterializeForConfirmedCycleAsync(
+                new ConfirmedCycleInvoiceRequest(
+                    subscription.Id,
+                    confirmedCycle,
+                    verifiedEvent.Amount.Value,
+                    verifiedEvent.Currency ?? subscription.Amount.Currency,
+                    verifiedEvent.OccurredAt.UtcDateTime,
+                    PaymentId: null,
+                    ProviderInvoiceId: verifiedEvent.ProviderObjectId),
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     ///     Routes a Stripe event to the appropriate handler based on event type.
     /// </summary>
     private async Task RouteStripeEventAsync(VerifiedStripeWebhookEvent verifiedEvent, CancellationToken cancellationToken)
@@ -311,7 +374,16 @@ public class StripeBillingWebhookService : BillingWebhookService
                 break;
 
             case "invoice.payment_succeeded":
-                await HandlePaymentSucceededAsync(webhookPayload.ToPaymentPayload()).ConfigureAwait(false);
+                // Materialize the local invoice first (idempotent per cycle, provider data authoritative):
+                // the provider already confirmed this cycle's charge, so the invoice exists even if the
+                // subscription payment-sync below needs the webhook inbox to retry.
+                await MaterializeProviderInvoiceAsync(verifiedEvent, cancellationToken).ConfigureAwait(false);
+
+                var paymentPayload = webhookPayload.ToPaymentPayload();
+                // For invoice.* events the provider object IS the invoice: its id is the authoritative
+                // provider invoice id (the payload's "invoice" property is absent on invoice objects).
+                paymentPayload.InvoiceId ??= verifiedEvent.ProviderObjectId;
+                await HandlePaymentSucceededAsync(paymentPayload).ConfigureAwait(false);
                 break;
 
             case "invoice.payment_failed":

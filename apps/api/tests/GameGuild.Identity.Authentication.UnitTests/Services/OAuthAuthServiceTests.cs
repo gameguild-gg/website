@@ -981,7 +981,8 @@ public class OAuthAuthServiceTests
         authAttempt.Setup(x => x.GetClientIpAddress(It.IsAny<HttpContext>())).Returns("127.0.0.1");
         var anomaly = new Mock<IAuthenticationAnomalyDetectionService>();
         var enumeration = new Mock<IUserEnumerationProtectionService>();
-        enumeration.Setup(x => x.AddTimingProtectionDelayAsync(It.IsAny<bool>(), It.IsAny<DateTime>())).Returns(Task.CompletedTask);
+        enumeration.Setup(x => x.BeginAuthenticationTiming()).Returns(new AuthenticationTimingScope());
+        enumeration.Setup(x => x.AddTimingProtectionDelayAsync(It.IsAny<AuthenticationTimingScope>(), It.IsAny<CredentialWorkClassification>())).Returns(Task.CompletedTask);
         var httpCtx = new Mock<IHttpContextAccessor>();
         httpCtx.Setup(x => x.HttpContext).Returns(new DefaultHttpContext());
         var publisher = new Mock<IPublisher>();
@@ -1017,7 +1018,7 @@ public class OAuthAuthServiceTests
             httpCtx.Object,
             NullLogger<LocalAuthService>.Instance,
             sender.Object,
-            sessions.Object);
+            sessions.Object, SignInMfaPreparationStub.Create());
 
         await sut.LocalSignUpAsync(new LocalSignUpRequest
         {

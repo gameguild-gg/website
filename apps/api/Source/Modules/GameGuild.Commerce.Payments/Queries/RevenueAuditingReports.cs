@@ -13,7 +13,7 @@ public sealed record GetRevenueComplianceReportQuery(
     DateTime ToUtc,
     Guid? TenantId = null) : IQuery<RevenueComplianceReport>;
 
-/// <summary>Query (issue #404): daily net-revenue trend for an inclusive period.</summary>
+/// <summary>Query (issue #404): daily net-revenue trend for an inclusive period, per currency.</summary>
 /// <param name="FromUtc">Inclusive period start (UTC).</param>
 /// <param name="ToUtc">Inclusive period end (UTC).</param>
 /// <param name="TenantId">Optional tenant scope.</param>

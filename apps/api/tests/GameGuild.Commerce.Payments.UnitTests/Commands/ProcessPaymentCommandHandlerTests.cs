@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameGuild.Commerce;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -216,6 +217,9 @@ public class ProcessPaymentCommandHandlerTests
             paymentGateway.Object,
             paymentSubscriptionSyncService.Object,
             paymentContextService.Object,
+            Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            FraudTestHelpers.AllowAllDetectionService(),
             logger);
 
         var result = await handler.Handle(
@@ -291,6 +295,9 @@ public class ProcessPaymentCommandHandlerTests
             paymentGateway.Object,
             syncService.Object,
             contextService.Object,
+            Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            FraudTestHelpers.AllowAllDetectionService(),
             Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
 
         return new PaymentHandlerFixture(

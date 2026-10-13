@@ -1,0 +1,15 @@
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [
+    {
+      "op": "replace",
+      "path": "active",
+      "value": false
+    },
+    {
+      "op": "replace",
+      "path": "displayName",
+      "value": "Barbara J. Jensen"
+    }
+  ]
+}

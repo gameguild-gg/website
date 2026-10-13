@@ -1,10 +1,12 @@
 using GameGuild.Commerce;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
 public sealed class OrderPaymentIntentService(
     IPaymentRepository payments,
-    IStripePaymentService stripe) : IOrderPaymentIntentPreparer
+    IStripePaymentService stripe,
+    IOptions<PaymentRetryOptions> retryOptions) : IOrderPaymentIntentPreparer
 {
     public async Task<OrderPaymentIntentPreparation> PrepareAsync(
         AuthoritativeOrderPaymentIntent intent,
@@ -23,7 +25,8 @@ public sealed class OrderPaymentIntentService(
             intent.Currency,
             idempotencyKey,
             orderId: intent.OrderId,
-            description: $"Payment for order {intent.OrderId}");
+            description: $"Payment for order {intent.OrderId}",
+            maxRetries: retryOptions.Value.MaxRetries);
         var payment = await payments.AddAsync(proposed, cancellationToken).ConfigureAwait(false);
         if (payment.Id != proposed.Id)
         {
@@ -47,7 +50,12 @@ public sealed class OrderPaymentIntentService(
             payment.MarkAsProcessing(setup.TransactionId);
             if (!setup.OutcomeUnknown)
             {
-                payment.MarkAsFailed(setup.ErrorMessage ?? "Stripe PaymentIntent setup failed.", setup.ErrorCode);
+                payment.MarkAsFailed(
+                    setup.ErrorMessage ?? "Stripe PaymentIntent setup failed.",
+                    setup.ErrorCode,
+                    maxRetries: retryOptions.Value.MaxRetries,
+                    backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                    backoffMultiplier: retryOptions.Value.BackoffMultiplier);
             }
 
             await payments.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);

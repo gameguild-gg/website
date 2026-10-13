@@ -7,7 +7,7 @@ namespace GameGuild.Commerce.Subscriptions;
 ///     Handler for ArchiveSubscriptionPlanCommand.
 ///     Uses Deactivate() method since the entity doesn't have dedicated archive properties.
 /// </summary>
-public sealed class ArchiveSubscriptionPlanHandler(IApplicationDbContext context)
+public sealed class ArchiveSubscriptionPlanHandler(IApplicationDbContext context, ISubscriptionPlanListCache planListCache)
     : ICommandHandler<ArchiveSubscriptionPlanCommand>
 {
     public async Task<Unit> Handle(ArchiveSubscriptionPlanCommand request, CancellationToken cancellationToken)
@@ -20,6 +20,10 @@ public sealed class ArchiveSubscriptionPlanHandler(IApplicationDbContext context
         plan.Deactivate();
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Issue #416: archived plans must leave the cached public plan lists immediately.
+        planListCache.Invalidate();
+
         return Unit.Value;
     }
 }

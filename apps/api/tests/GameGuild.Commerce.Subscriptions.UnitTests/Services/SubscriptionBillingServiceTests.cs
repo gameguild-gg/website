@@ -11,6 +11,7 @@ public sealed class SubscriptionBillingServiceTests
 
     private readonly Mock<ISubscriptionRepository> _repository = new();
     private readonly Mock<ISubscriptionPlanService> _planService = new();
+    private readonly Mock<GameGuild.Commerce.IPricingDecisionLedgerWriter> _pricingLedgerWriter = new();
     private readonly SubscriptionBillingService _service;
 
     public SubscriptionBillingServiceTests()
@@ -19,6 +20,7 @@ public sealed class SubscriptionBillingServiceTests
             _repository.Object,
             _planService.Object,
             Mock.Of<ISubscriptionNotificationService>(),
+            _pricingLedgerWriter.Object,
             Mock.Of<ILogger<SubscriptionBillingService>>());
     }
 
@@ -115,6 +117,73 @@ public sealed class SubscriptionBillingServiceTests
         _repository.Verify(
             repository => repository.UpdateAsync(It.IsAny<Subscription>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task RecordPaymentAsync_ShouldRecordTheNextExpectedCycle()
+    {
+        // Provider-confirmed payments arrive without an explicit local cycle number; the service
+        // must pass the subscription's next unprocessed cycle so the entity accepts the recording
+        // (a cycle-less recording is rejected) and Stripe invoice.payment_succeeded can complete.
+        var subscription = CreatePaidActiveSubscription(Guid.NewGuid());
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+        _repository
+            .Setup(repository => repository.UpdateAsync(subscription, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.RecordPaymentAsync(subscription.Id, 29.99m, "USD", PeriodStart.AddMonths(1));
+
+        subscription.LastProcessedBillingCycle.Should().Be(2);
+        subscription.BillingCycleCount.Should().Be(2);
+        _repository.Verify(
+            repository => repository.UpdateAsync(subscription, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessRenewalAsync_RecordsPricingDecisionLedgerEntryForTheQuote()
+    {
+        var subscription = CreatePaidActiveSubscription(Guid.NewGuid());
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        var result = await _service.ProcessRenewalAsync(subscription.Id);
+
+        result.PaymentRequired.Should().BeTrue();
+        _pricingLedgerWriter.Verify(
+            writer => writer.RecordAsync(
+                It.Is<GameGuild.Commerce.PricingDecisionRecord>(decision =>
+                    decision.DecisionType == GameGuild.Commerce.PricingDecisionType.RenewalQuote &&
+                    decision.TenantId == subscription.TenantId &&
+                    decision.Subscription == subscription.Id &&
+                    decision.BillingCycleNumber == result.RequiredBillingCycle &&
+                    decision.Breakdown.BaseAmount == subscription.Amount.Amount &&
+                    decision.Breakdown.FinalAmount == subscription.Amount.Amount &&
+                    decision.Breakdown.Currency == subscription.Amount.Currency &&
+                    !string.IsNullOrWhiteSpace(decision.IdempotencyKey)),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "every renewal quote must append one durable pricing decision (issue #400)");
+    }
+
+    [Fact]
+    public async Task ProcessRenewalAsync_DoesNotRecordLedgerEntryWhenNoQuoteIsProduced()
+    {
+        var subscription = CreatePaidActiveSubscription(Guid.NewGuid());
+        subscription.Cancel(CancellationReason.UserRequested, "no longer needed"); // PrepareRenewal fails before a price exists
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.ProcessRenewalAsync(subscription.Id);
+
+        _pricingLedgerWriter.Verify(
+            writer => writer.RecordAsync(It.IsAny<GameGuild.Commerce.PricingDecisionRecord>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "a failed renewal produces no final price and must not write a ledger row");
     }
 
     private static Subscription CreatePaidActiveSubscription(Guid id)

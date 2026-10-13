@@ -8,16 +8,16 @@ import { socialDesktopNav, socialNavigationData } from '@/components/app/social-
 import { WorkspaceCommandPalette } from '@/components/console/workspace-command-palette';
 import { PublicDesktopNav } from '@/components/app/public-website-nav';
 import type { WorkspaceUser } from '@/components/console/workspace-user-menu';
-import type { DashboardNotificationSummary } from '@/lib/dashboard-notifications';
 import { Toaster } from '@game-guild/ui/components/sonner';
 
 interface SocialAppShellProps {
   children: React.ReactNode;
-  notifications?: DashboardNotificationSummary;
+  /** Streamed Suspense slot from the layout (bell + user menu). */
+  notificationsMenu?: React.ReactNode;
   user: WorkspaceUser;
 }
 
-export function SocialAppShell({ children, notifications, user }: SocialAppShellProps): React.JSX.Element {
+export function SocialAppShell({ children, notificationsMenu, user }: SocialAppShellProps): React.JSX.Element {
   return (
     <div className="flex h-svh min-w-0 flex-1 overflow-hidden">
       <a
@@ -27,14 +27,14 @@ export function SocialAppShell({ children, notifications, user }: SocialAppShell
         Skip to main content
       </a>
       <AppShell>
-        <AppShellSidebar navigation={socialNavigationData} notifications={notifications} />
+        <AppShellSidebar navigation={socialNavigationData} />
         <AppShellInset>
           <WorkspaceCommandPalette navigation={socialNavigationData} />
           <AppShellHeader>
             <div className="flex min-w-0 items-center gap-2">
               <PublicDesktopNav items={socialDesktopNav} variant="app" />
             </div>
-            <AppShellHeaderMenu user={user} notifications={notifications} />
+            {notificationsMenu ?? <AppShellHeaderMenu user={user} />}
           </AppShellHeader>
           <AppShellContent>{children}</AppShellContent>
         </AppShellInset>

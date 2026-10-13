@@ -14,6 +14,7 @@ namespace GameGuild.Commerce.Billing;
 [Index(nameof(SubscriptionId))]
 [Index(nameof(InvoiceNumber), IsUnique = true)]
 [Index(nameof(ExternalId), IsUnique = true)]
+[Index(nameof(IdempotencyKey), IsUnique = true)]
 [Index(nameof(DueDate))]
 [Index(nameof(IssuedAt))]
 [Index(nameof(PaymentId), IsUnique = true, Name = "IX_invoices_PaymentId_Unique")]
@@ -28,11 +29,16 @@ public class Invoice : EntityBase
     ///     Creates a new draft invoice with required TenantId (fail-closed)
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when tenantId is empty</exception>
-    public Invoice(Guid tenantId, Guid subscriptionId, decimal amount, string currency = "USD")
+    public Invoice(Guid tenantId, Guid subscriptionId, decimal amount, string currency = "USD", string? idempotencyKey = null)
     {
         if (tenantId == Guid.Empty)
         {
             throw new ArgumentException("TenantId is required for financial entities", nameof(tenantId));
+        }
+
+        if (idempotencyKey is { Length: > 200 })
+        {
+            throw new ArgumentException("Idempotency key cannot exceed 200 characters", nameof(idempotencyKey));
         }
 
         TenantId = tenantId;
@@ -42,6 +48,7 @@ public class Invoice : EntityBase
         Currency = currency;
         Status = InvoiceStatus.Draft;
         InvoiceNumber = GenerateInvoiceNumber();
+        IdempotencyKey = idempotencyKey;
     }
 
     /// <summary>
@@ -56,6 +63,14 @@ public class Invoice : EntityBase
     /// </summary>
     [MaxLength(255)]
     public string? ExternalId { get; private set; }
+
+    /// <summary>
+    ///     Idempotency key identifying the subscription billing cycle this invoice materializes
+    ///     (format: subscription:{{subscriptionId}}:cycle:{{n}}:invoice). Unique index backstops
+    ///     the check-then-create materialization so a confirmed cycle can never produce two invoices.
+    /// </summary>
+    [MaxLength(200)]
+    public string? IdempotencyKey { get; private set; }
 
     /// <summary>
     ///     Related subscription ID
@@ -182,6 +197,48 @@ public class Invoice : EntityBase
     }
 
     /// <summary>
+    ///     Sets the free-form metadata JSON for this invoice.
+    ///     Only allowed while invoice is in Draft status.
+    /// </summary>
+    public void SetMetadata(string metadata)
+    {
+        EnsureMutable();
+        if (string.IsNullOrWhiteSpace(metadata))
+        {
+            throw new ArgumentException("Metadata cannot be empty", nameof(metadata));
+        }
+
+        if (metadata.Length > 4000)
+        {
+            throw new ArgumentException("Metadata cannot exceed 4000 characters", nameof(metadata));
+        }
+
+        Metadata = metadata;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Sets the description/memo (the minimal single line item label).
+    ///     Only allowed while invoice is in Draft status.
+    /// </summary>
+    public void SetDescription(string description)
+    {
+        EnsureMutable();
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException("Description cannot be empty", nameof(description));
+        }
+
+        if (description.Length > 1000)
+        {
+            throw new ArgumentException("Description cannot exceed 1000 characters", nameof(description));
+        }
+
+        Description = description;
+        Touch();
+    }
+
+    /// <summary>
     ///     Applies a discount to the invoice.
     ///     Only allowed while invoice is in Draft status.
     /// </summary>
@@ -297,6 +354,41 @@ public class Invoice : EntityBase
         Status = InvoiceStatus.Void;
         VoidedAt = SystemClock.UtcNow;
         VoidReason = reason;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Applies an account-credit tender to the invoice (issue #410 multi-tender
+    ///     settlement). Credit tenders are tracked separately from provider payments
+    ///     (<see cref="PaymentId" /> keeps identifying the provider tender); this only
+    ///     advances <see cref="AmountPaid" /> and completes the invoice when fully covered.
+    ///     Replays of the same settlement are guarded by the settlement table's unique
+    ///     idempotency key at the endpoint layer.
+    /// </summary>
+    public void ApplyAccountCredit(decimal amount, DateTime appliedAtUtc)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Credit tender amount must be positive", nameof(amount));
+        }
+
+        if (Status is InvoiceStatus.Draft or InvoiceStatus.Void or InvoiceStatus.Uncollectible)
+        {
+            throw new InvalidOperationException($"Cannot apply account credit to an invoice in status {Status}.");
+        }
+
+        if (Status == InvoiceStatus.Paid)
+        {
+            throw new InvalidOperationException("Invoice is already paid.");
+        }
+
+        AmountPaid += amount;
+        if (AmountPaid >= Total)
+        {
+            Status = InvoiceStatus.Paid;
+            PaidAt = appliedAtUtc;
+        }
+
         Touch();
     }
 

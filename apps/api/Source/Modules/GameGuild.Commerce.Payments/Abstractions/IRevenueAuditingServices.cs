@@ -35,16 +35,18 @@ public interface IRevenueReconciliationService
     Task<RevenueReconciliationRun> ReconcileAsync(RevenueReconciliationRequest request, CancellationToken cancellationToken = default);
 }
 
-/// <summary>An anomaly candidate computed by the detector before persistence.</summary>
+/// <summary>An anomaly candidate computed by the detector before persistence, for one currency.</summary>
 /// <param name="Kind">Kind of anomaly.</param>
 /// <param name="DetectedForDateUtc">UTC day (midnight) the anomaly belongs to.</param>
-/// <param name="ObservedNetRevenue">Net revenue observed for the day.</param>
-/// <param name="ExpectedNetRevenue">Baseline mean net revenue.</param>
+/// <param name="Currency">ISO-4217 currency code of the daily net revenue series the candidate was computed from. Baselines and z-scores are never mixed across currencies.</param>
+/// <param name="ObservedNetRevenue">Net revenue observed for the day, in <paramref name="Currency" />.</param>
+/// <param name="ExpectedNetRevenue">Baseline mean net revenue, in <paramref name="Currency" />.</param>
 /// <param name="ZScore">Standard score of the observation (rounded to four decimals).</param>
 /// <param name="BaselineDays">Number of baseline days used.</param>
 public sealed record RevenueAnomalyCandidate(
     RevenueAnomalyKind Kind,
     DateTime DetectedForDateUtc,
+    string Currency,
     decimal ObservedNetRevenue,
     decimal ExpectedNetRevenue,
     decimal ZScore,
@@ -53,20 +55,22 @@ public sealed record RevenueAnomalyCandidate(
 /// <summary>
 ///     Statistical anomaly detection over daily net revenue (issue #404): flags days whose
 ///     net revenue deviates from the trailing baseline by at least the configured z-score.
+///     Baselines and z-scores are computed per currency so amounts are never mixed across
+///     units.
 /// </summary>
 public interface IRevenueAnomalyService
 {
-    /// <summary>Evaluate the most recent days (per options) and return anomaly candidates without persisting them.</summary>
+    /// <summary>Evaluate the most recent days (per options) per currency and return anomaly candidates without persisting them.</summary>
     /// <param name="evaluationDateUtc">Reference "today"; evaluation covers the preceding days per options.</param>
     /// <param name="tenantId">Optional tenant scope; null evaluates the global aggregate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Anomaly candidates, oldest evaluated day first.</returns>
+    /// <returns>Anomaly candidates, oldest evaluated day first, one series per observed currency.</returns>
     Task<IReadOnlyList<RevenueAnomalyCandidate>> DetectAsync(
         DateTime evaluationDateUtc,
         Guid? tenantId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Evaluate the most recent days and persist alerts, skipping (kind, day) pairs already alerted.</summary>
+    /// <summary>Evaluate the most recent days and persist alerts, skipping (kind, day, currency) pairs already alerted.</summary>
     /// <param name="evaluationDateUtc">Reference "today"; evaluation covers the preceding days per options.</param>
     /// <param name="tenantId">Optional tenant scope; null evaluates the global aggregate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -95,12 +99,12 @@ public interface IRevenueReportService
         Guid? tenantId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Build the daily net-revenue trend for an inclusive period.</summary>
+    /// <summary>Build the daily net-revenue trend for an inclusive period, per currency.</summary>
     /// <param name="fromUtc">Inclusive period start (UTC).</param>
     /// <param name="toUtc">Inclusive period end (UTC).</param>
     /// <param name="tenantId">Optional tenant scope.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The trend report with one point per day, including zero-activity days.</returns>
+    /// <returns>The trend report with one point per (day, currency) for every observed currency, including zero-activity days, and range totals per currency.</returns>
     Task<RevenueTrendReport> GetTrendReportAsync(
         DateTime fromUtc,
         DateTime toUtc,

@@ -13,7 +13,14 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
         <PackageReference Include="AWSSDK.S3" />
-        <PackageReference Include="SixLabors.ImageSharp" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" GeneratePathProperty="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="$(PkgMagick_NET-Q8-AnyCPU)/Notice.txt"
+                 Link="third-party/Magick.NET-Notice.txt"
+                 CopyToOutputDirectory="PreserveNewest"
+                 CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>

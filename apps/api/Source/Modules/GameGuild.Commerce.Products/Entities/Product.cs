@@ -21,6 +21,7 @@ namespace GameGuild.Commerce.Products;
 [Index(nameof(Type))]
 [Index(nameof(IsPublished))]
 [Index(nameof(CreatorId))]
+[Index(nameof(CategoryId))]
 public class Product : EntityBase
 {
     /// <summary>
@@ -73,6 +74,23 @@ public class Product : EntityBase
     ///     Whether this product is visible to anonymous catalog reads.
     /// </summary>
     public bool IsPublished { get; set; } = true;
+
+    /// <summary>
+    ///     Catalog category this product is filed under (single category, v1 of the
+    ///     hierarchical catalog). <c>null</c> means uncategorized.
+    /// </summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>
+    ///     Navigation property to the catalog category.
+    /// </summary>
+    public virtual ProductCategory? Category { get; set; }
+
+    /// <summary>
+    ///     Optional per-product inventory state. <c>null</c> means stock is not
+    ///     tracked for this product (unlimited availability).
+    /// </summary>
+    public virtual ProductInventory? Inventory { get; set; }
 
     /// <summary>
     ///     Creator user ID

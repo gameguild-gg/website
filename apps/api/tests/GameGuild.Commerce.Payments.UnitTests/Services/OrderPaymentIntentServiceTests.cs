@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.Commerce;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -136,7 +137,10 @@ public sealed class OrderPaymentIntentServiceTests
         repository.Setup(item => item.GetByIdempotencyKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Payment?)null);
         var stripe = new Mock<IStripePaymentService>();
-        return (repository, stripe, new OrderPaymentIntentService(repository.Object, stripe.Object));
+        return (repository, stripe, new OrderPaymentIntentService(
+            repository.Object,
+            stripe.Object,
+            Options.Create(new PaymentRetryOptions())));
     }
 
     private static AuthoritativeOrderPaymentIntent Intent() => new(Guid.NewGuid(), Guid.NewGuid(), 45m, "USD");

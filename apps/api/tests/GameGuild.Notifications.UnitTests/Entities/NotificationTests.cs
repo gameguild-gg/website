@@ -280,6 +280,8 @@ public class NotificationTests
     [InlineData(NotificationType.MagicLink, 21)]
     [InlineData(NotificationType.TenantInvite, 22)]
     [InlineData(NotificationType.MonthlyStatement, 23)]
+    [InlineData(NotificationType.EmailCode, 24)]
+    [InlineData(NotificationType.InvoiceIssued, 25)]
     public void New_Email_Types_Should_Append_Before_Custom(NotificationType type, int value)
     {
         ((int)type).Should().Be(value);

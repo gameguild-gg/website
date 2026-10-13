@@ -23,6 +23,14 @@ namespace GameGuild.Identity.Authentication.UnitTests;
 // ════════════════════════════════════════════════════════════════════════════
 public sealed class UserEnumProtectionExtraTests
 {
+    internal static IConfiguration TestPasswordPolicyConfiguration =>
+        new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"
+            })
+            .Build();
+
     private readonly MemoryCache _cache;
     private readonly UserEnumerationProtectionService _sut;
 
@@ -86,7 +94,7 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     {
         var sut = new PolymorphicSignInHandler(
             _authService.Object, _userRepo.Object,
-            Mock.Of<ILogger<PolymorphicSignInHandler>>(), _validator.Object);
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub(), _validator.Object);
 
         var cmd = new PolymorphicSignInCommand { Credential = "a@b.c", Password = "pass" };
         _validator.Setup(v => v.ValidateAsync(cmd, It.IsAny<CancellationToken>()))
@@ -102,7 +110,7 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     {
         var sut = new PolymorphicSignInHandler(
             _authService.Object, _userRepo.Object,
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand { Credential = "user@example.com", Password = "pass" };
         _authService.Setup(a => a.LocalSignInAsync(
@@ -120,7 +128,7 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     {
         var sut = new PolymorphicSignInHandler(
             _authService.Object, _userRepo.Object,
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand { Credential = "+1234567890", Password = "pass" };
         _authService.Setup(a => a.LocalSignInAsync(
@@ -136,7 +144,7 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     {
         var sut = new PolymorphicSignInHandler(
             _authService.Object, _userRepo.Object,
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand { Credential = "johndoe", Password = "pass" };
         _authService.Setup(a => a.LocalSignInAsync(
@@ -152,7 +160,7 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     {
         var sut = new PolymorphicSignInHandler(
             _authService.Object, _userRepo.Object,
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand
         {

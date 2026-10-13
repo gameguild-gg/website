@@ -1,5 +1,6 @@
 using GameGuild.CQRS;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -9,6 +10,7 @@ namespace GameGuild.Commerce.Payments;
 public sealed class UpdatePaymentStatusCommandHandler(
     IPaymentRepository paymentRepository,
     IPaymentSubscriptionSyncService paymentSubscriptionSyncService,
+    IOptions<PaymentRetryOptions> retryOptions,
     ILogger<UpdatePaymentStatusCommandHandler> logger) : ICommandHandler<UpdatePaymentStatusCommand, bool>
 {
     public async Task<bool> Handle(UpdatePaymentStatusCommand request, CancellationToken cancellationToken)
@@ -47,7 +49,11 @@ public sealed class UpdatePaymentStatusCommandHandler(
                 break;
 
             case PaymentStatus.Failed:
-                payment.MarkAsFailed("Status updated to failed via UpdatePaymentStatusCommand");
+                payment.MarkAsFailed(
+                    "Status updated to failed via UpdatePaymentStatusCommand",
+                    maxRetries: retryOptions.Value.MaxRetries,
+                    backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                    backoffMultiplier: retryOptions.Value.BackoffMultiplier);
                 break;
 
             case PaymentStatus.RequiresAction:

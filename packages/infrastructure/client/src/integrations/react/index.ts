@@ -17,6 +17,7 @@ export { SessionContext } from './session-provider.js';
 export type { SessionContextValue } from './session-provider.js';
 export { useSession } from './use-session.js';
 export { useAuth } from './use-auth.js';
+export type { UseAuthReturn, MfaEnrollmentData } from './use-auth.js';
 export { createAuthBroadcast } from './broadcast.js';
 export type { AuthBroadcastMessage } from './broadcast.js';
 

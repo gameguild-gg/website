@@ -467,7 +467,7 @@ export class LearningCoursesProgramModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<string[], ApiError>;
@@ -678,7 +678,7 @@ export class LearningCoursesProgramModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.LearningCoursesProgramDto[], ApiError>;
@@ -693,7 +693,7 @@ export class LearningCoursesProgramModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

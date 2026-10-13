@@ -197,6 +197,8 @@ public sealed class OrderCommandHandlerTests
             Mock.Of<IProductRepository>(),
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor());
 
@@ -254,6 +256,8 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             CreatePricingDbContext(pricingVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -288,6 +292,8 @@ public sealed class OrderCommandHandlerTests
             Mock.Of<IProductRepository>(),
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
@@ -316,6 +322,8 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
@@ -365,6 +373,8 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             CreatePricingDbContext(firstVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -420,6 +430,8 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             CreatePricingDbContext(pricingVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -430,8 +442,9 @@ public sealed class OrderCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         var lineItem = order.LineItems.Should().ContainSingle().Subject;
         lineItem.UnitPriceSnapshot.Should().Be(30m);
-        lineItem.DiscountAmount.Should().Be(15m);
-        lineItem.LineTotal.Should().Be(75m);
+        // A fixed-amount code discounts once per application (engine semantics), not per unit.
+        lineItem.DiscountAmount.Should().Be(5m);
+        lineItem.LineTotal.Should().Be(85m);
         lineItem.PromoCodesApplied.Should().Contain("LESS5");
     }
 
@@ -455,6 +468,8 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
@@ -471,7 +486,9 @@ public sealed class OrderCommandHandlerTests
     public async Task CancelOrderCommandHandler_CancelsPendingOrder()
     {
         var order = OrderTestFactory.CreatePendingOrder();
-        var repository = CreateRepositoryWithOrder(order);
+        // The cancel handler loads the order with its line items so pending reservations can
+        // be released (issue #401) — the fixture must mock that load path.
+        var repository = CreateRepositoryWithOrder(order, includeLineItems: true);
         var handler = new CancelOrderCommandHandler(repository.Object);
 
         var result = await handler.Handle(new CancelOrderCommand(order.Id, "customer request"), CancellationToken.None);
@@ -501,7 +518,8 @@ public sealed class OrderCommandHandlerTests
     {
         var order = OrderTestFactory.CreatePendingOrder();
         order.MarkAsPaid("provider-ref", "card", "ext-102");
-        var repository = CreateRepositoryWithOrder(order);
+        // Same line-items load path as the happy-path cancel (issue #401).
+        var repository = CreateRepositoryWithOrder(order, includeLineItems: true);
         var handler = new CancelOrderCommandHandler(repository.Object);
 
         var result = await handler.Handle(new CancelOrderCommand(order.Id, "reason"), CancellationToken.None);

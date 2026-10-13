@@ -39,6 +39,13 @@ public static class Permissions
     public const string TenantAdmin = AdminPermission.Keys.TenantAdmin;
 
     // ========================
+    // PROVISIONING PERMISSIONS
+    // ========================
+
+    /// <summary>Manage SCIM provisioning tokens</summary>
+    public const string ProvisioningManageTokens = ProvisioningPermission.Keys.ManageTokens;
+
+    // ========================
     // USER PERMISSIONS - CRUD Operations
     // ========================
 

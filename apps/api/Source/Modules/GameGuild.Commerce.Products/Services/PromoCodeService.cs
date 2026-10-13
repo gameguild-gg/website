@@ -4,14 +4,18 @@ namespace GameGuild.Commerce.Products;
 /// Service for managing promotional codes
 /// </summary>
 public class PromoCodeService(
-    IPromoCodeRepository promoCodeRepository) : IPromoCodeService
+    IPromoCodeRepository promoCodeRepository,
+    IPromoCodeUsageRecorder usageRecorder) : IPromoCodeService
 {
     /// <inheritdoc />
     public async Task<PromoCode> CreatePromoCodeAsync(PromoCode promoCode)
     {
         ArgumentNullException.ThrowIfNull(promoCode);
 
-        // Check if code already exists
+        // Codes are stored uppercase/trimmed so every lookup path is case-insensitive.
+        promoCode.Code = PromoCodeNormalizer.Normalize(promoCode.Code) ?? promoCode.Code;
+
+        // Check if code already exists (normalized, case-insensitive)
         if (await promoCodeRepository.CodeExistsAsync(promoCode.Code).ConfigureAwait(false))
         {
             throw new InvalidOperationException($"Promo code '{promoCode.Code}' already exists");
@@ -108,7 +112,7 @@ public class PromoCodeService(
     }
 
     /// <inheritdoc />
-    public async Task<PromoCodeUse> ApplyPromoCodeAsync(string code, Guid userId, Guid transactionId)
+    public async Task<PromoCodeUse> ApplyPromoCodeAsync(string code, Guid userId, Guid transactionId, decimal orderAmount = 0, string? idempotencyKey = null)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
@@ -118,26 +122,33 @@ public class PromoCodeService(
         var promoCode = await promoCodeRepository.GetByCodeAsync(code).ConfigureAwait(false);
         if (promoCode == null)
         {
-            throw new InvalidOperationException($"Promo code '{code}' not found");
+            throw new InvalidOperationException($"Promo code '{PromoCodeNormalizer.Normalize(code)}' not found");
         }
 
         if (!promoCode.IsCurrentlyValid())
         {
-            throw new InvalidOperationException($"Promo code '{code}' is not valid");
+            throw new InvalidOperationException($"Promo code '{promoCode.Code}' is not valid");
         }
 
-        var usage = new PromoCodeUse
+        // Record the actual computed discount atomically; limit breaches fail closed.
+        var (status, usage) = await usageRecorder.RecordAsync(
+            promoCode,
+            userId,
+            promoCode.CalculateDiscount(orderAmount),
+            promoCode.Currency,
+            idempotencyKey ?? $"legacy:{transactionId}:user:{userId}:code:{promoCode.Code}",
+            orderId: transactionId).ConfigureAwait(false);
+
+        return status switch
         {
-            Id = Guid.NewGuid(),
-            PromoCodeId = promoCode.Id,
-            UserId = userId,
-            DiscountApplied = 0 // This should be calculated and passed
+            PromoUsageRecordingStatus.Recorded or PromoUsageRecordingStatus.Replay
+                => usage ?? throw new InvalidOperationException("Promo usage recording returned no usage row"),
+            PromoUsageRecordingStatus.RejectedTotalLimit => throw new InvalidOperationException(
+                $"Promo code '{promoCode.Code}' has reached its usage limit or is no longer active"),
+            PromoUsageRecordingStatus.RejectedPerUserLimit => throw new InvalidOperationException(
+                $"Promo code '{promoCode.Code}' has reached its per-user usage limit"),
+            _ => throw new InvalidOperationException($"Unexpected promo usage recording status {status}")
         };
-
-        await promoCodeRepository.RecordUsageAsync(usage).ConfigureAwait(false);
-        await promoCodeRepository.SaveChangesAsync().ConfigureAwait(false);
-
-        return usage;
     }
 
     /// <inheritdoc />

@@ -126,6 +126,8 @@ public sealed class DatabaseSeederTests
     {
         services.AddLogging();
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IPolicyVersionHistoryRepository, PolicyVersionHistoryRepository>();
+        services.AddScoped<IPolicyVersionSnapshotService, PolicyVersionSnapshotService>();
         services.AddScoped<IPolicyDefinitionRepository, PolicyDefinitionRepository>();
         services.AddScoped<PolicyDefinitionSeeder>();
     }

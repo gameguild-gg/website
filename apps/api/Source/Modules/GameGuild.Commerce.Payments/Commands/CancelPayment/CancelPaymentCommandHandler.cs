@@ -62,7 +62,9 @@ public sealed class CancelPaymentCommandHandler(
                 IdempotencyKey: $"cancel_refund_{payment.Id}_{SystemClock.UtcNow:yyyyMMddHHmmss}",
                 OriginalTransactionId: payment.ExternalTransactionId ?? payment.ExternalPaymentId,
                 Amount: payment.Amount,
-                Reason: request.CancellationReason);
+                Reason: request.CancellationReason,
+                ProviderId: payment.Provider,
+                Currency: payment.Currency);
 
             var refundResult = await paymentGateway.ProcessRefundAsync(refundRequest, cancellationToken)
                 .ConfigureAwait(false);

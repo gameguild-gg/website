@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -26,7 +27,9 @@ public sealed class PaymentsController(
     ISender sender,
     IActorContextAccessor actorContextAccessor,
     IStripeCustomerService stripeCustomerService,
-    ISubscriptionPaymentContextService subscriptionPaymentContextService) : BaseApiController
+    ISubscriptionPaymentContextService subscriptionPaymentContextService,
+    IPaymentRetryMethodChangeService retryMethodChangeService,
+    ILogger<PaymentsController> logger) : BaseApiController
 {
     /// <summary>
     ///     Retrieve all payment transactions with optional filtering
@@ -248,6 +251,11 @@ public sealed class PaymentsController(
             return BadRequest(new { error = "Subscription does not have a Stripe customer associated with it yet." });
         }
 
+        // Pause queued retries for this subscription while the payment method is swapped, so no
+        // automated retry charges the failed instrument mid-change (issue #415). If the swap
+        // fails, the retries stay paused; on success they resume against the new method.
+        await retryMethodChangeService.PauseForMethodChangeAsync(body.TenantId, body.SubscriptionId, ct).ConfigureAwait(false);
+
         var defaultPaymentMethodResult = await stripeCustomerService.SetDefaultPaymentMethodAsync(
             new GatewayDefaultPaymentMethodRequest(subscription.ExternalCustomerId, body.PaymentMethodId),
             ct).ConfigureAwait(false);
@@ -256,6 +264,12 @@ public sealed class PaymentsController(
         {
             return BadRequest(new { error = defaultPaymentMethodResult.ErrorMessage ?? "Stripe could not store the confirmed payment method for future billing." });
         }
+
+        await retryMethodChangeService.ResumeAfterMethodChangeAsync(body.TenantId, body.SubscriptionId, body.PaymentMethodId, ct).ConfigureAwait(false);
+
+        // Mirror the confirmed gateway method into the local payment-method registry
+        // (issue #414). Additive only — a registry failure must not fail the charge.
+        await UpsertLocalPaymentMethodAsync(body, ct).ConfigureAwait(false);
 
         var result = await sender.Send(
             new ProcessPaymentCommand(body.TenantId, body.SubscriptionId, subscription.Amount, body.PaymentMethodId),
@@ -399,7 +413,17 @@ public sealed class PaymentsController(
         var validationError = ValidateTenantAccess(payment.TenantId, "refund payment");
         if (validationError != null) return validationError;
 
-        var r = await sender.Send(new ProcessRefundCommand(paymentId, body.Amount ?? 0, body.Reason ?? "No reason provided"), ct).ConfigureAwait(false);
+        // Null amount means "refund everything that is left" (full refund of the remaining
+        // balance). The query result carries the net (not yet refunded) amount, so coalescing
+        // here yields a full refund instead of the historical 0 — which the domain rejected.
+        var remainingAmount = payment.Amount?.Amount ?? 0m;
+        var refundAmount = body.Amount ?? remainingAmount;
+        if (refundAmount <= 0)
+        {
+            return BadRequest(new { error = "Amount must be positive; the payment has no remaining refundable amount." });
+        }
+
+        var r = await sender.Send(new ProcessRefundCommand(paymentId, refundAmount, body.Reason ?? "No reason provided"), ct).ConfigureAwait(false);
 
         return Ok(r);
     }
@@ -449,6 +473,132 @@ public sealed class PaymentsController(
         return Ok(r);
     }
 
+    /// <summary>
+    ///     Payment success and failed-payment recovery metrics for an inclusive window.
+    /// </summary>
+    /// <param name="fromUtc">Inclusive window start (UTC)</param>
+    /// <param name="toUtc">Inclusive window end (UTC)</param>
+    /// <param name="tenantId">Optional tenant ID filter</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Success rate, retry-recovery rate, recovered amounts per currency and dunning outcomes</returns>
+    /// <remarks>
+    ///     Aggregates the recovery analytics that billing administrators need to steer retry and
+    ///     dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
+    ///     amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
+    ///     exhausted). Non-admin actors are scoped to their own tenant.
+    /// </remarks>
+    [HttpGet("recovery-metrics")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("Get payment recovery metrics for a period")]
+    [EndpointDescription(
+        "Returns payment success and failed-payment recovery metrics for an inclusive window: first-attempt success rate, retry-recovery rate, recovered amounts grouped by currency and dunning outcome counters. Non-admin actors are scoped to their own tenant."
+    )]
+    [ProducesResponseType<PaymentRecoveryMetrics>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRecoveryMetrics(
+        [FromQuery] DateTimeOffset fromUtc,
+        [FromQuery] DateTimeOffset toUtc,
+        [FromQuery] Guid? tenantId = null,
+        CancellationToken ct = default)
+    {
+        if (fromUtc > toUtc)
+        {
+            return BadRequest(new { error = "fromUtc must be earlier than or equal to toUtc" });
+        }
+
+        var actorContext = actorContextAccessor.ActorContext;
+        if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
+        {
+            var requestedTenantId = tenantId ?? actorContext.TenantId ?? Guid.Empty;
+            var validationError = ValidateTenantAccess(requestedTenantId, "read payment recovery metrics");
+            if (validationError != null) return validationError;
+
+            tenantId = actorContext.TenantId;
+        }
+
+        var metrics = await sender.Send(
+            new GetPaymentRecoveryMetricsQuery(fromUtc.UtcDateTime, toUtc.UtcDateTime, tenantId), ct).ConfigureAwait(false);
+
+        return Ok(metrics);
+    }
+
+    /// <summary>
+    ///     Failed payments that are due for a retry right now (retry-queue candidates).
+    /// </summary>
+    /// <param name="tenantId">Optional tenant ID filter</param>
+    /// <param name="take">Maximum number of candidates to return (1–100, default 50)</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Failed payments with retries remaining whose scheduled next-retry time has passed, soonest first</returns>
+    /// <remarks>
+    ///     Returns the candidate set an automated retry queue would consume (issue #403; the queue
+    ///     itself is tracked in #415): failed payments with retry budget left whose configured
+    ///     backoff has elapsed, ordered by the scheduled next-retry time. Non-admin actors are
+    ///     scoped to their own tenant.
+    /// </remarks>
+    [HttpGet("retrying-candidates")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("List failed payments due for retry")]
+    [EndpointDescription(
+        "Returns failed payments that still have retry budget left and whose scheduled next-retry time has passed, soonest first. This is the candidate set for an automated retry queue. Non-admin actors are scoped to their own tenant."
+    )]
+    [ProducesResponseType<IEnumerable<PaymentResult>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRetryingCandidates(
+        [FromQuery] Guid? tenantId = null,
+        [FromQuery] int take = 50,
+        CancellationToken ct = default)
+    {
+        var actorContext = actorContextAccessor.ActorContext;
+        if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
+        {
+            var requestedTenantId = tenantId ?? actorContext.TenantId ?? Guid.Empty;
+            var validationError = ValidateTenantAccess(requestedTenantId, "list retrying payment candidates");
+            if (validationError != null) return validationError;
+
+            tenantId = actorContext.TenantId;
+        }
+
+        var candidates = await sender.Send(new GetRetryingPaymentCandidatesQuery(tenantId, take), ct).ConfigureAwait(false);
+
+        return Ok(candidates);
+    }
+
+    /// <summary>
+    ///     Retry-attempt history for one payment (issue #415)
+    /// </summary>
+    /// <param name="paymentId">The unique identifier of the payment</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Persisted retry attempts, ordered by attempt number</returns>
+    /// <remarks>
+    ///     Every executed retry attempt — manual or dispatched by the automated retry queue — is
+    ///     persisted as a history entry recording when the attempt was scheduled and executed,
+    ///     its outcome, the gateway that ran it, and the gateway failure code and transaction
+    ///     reference when the attempt failed. Use this to audit dunning timelines and explain
+    ///     recovery outcomes.
+    /// </remarks>
+    [HttpGet("{paymentId:guid}:retry-attempts")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("Get the retry-attempt history for a payment")]
+    [EndpointDescription(
+        "Returns the persisted retry-attempt history for a payment, ordered by attempt number: scheduled and executed timestamps, outcome, gateway, failure code and gateway transaction reference per attempt."
+    )]
+    [ProducesResponseType<IEnumerable<PaymentRetryAttemptDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRetryAttempts(Guid paymentId, CancellationToken ct)
+    {
+        var payment = await sender.Send(new GetPaymentByIdQuery(paymentId), ct).ConfigureAwait(false);
+        if (payment == null) return NotFound();
+
+        var validationError = ValidateTenantAccess(payment.TenantId, "read payment retry attempts");
+        if (validationError != null) return validationError;
+
+        var attempts = await sender.Send(new GetPaymentRetryAttemptsQuery(paymentId), ct).ConfigureAwait(false);
+
+        return Ok(attempts);
+    }
+
     public sealed record ProcessPaymentRequest(Guid TenantId, Guid SubscriptionId, decimal Amount, string PaymentMethodId);
 
     public sealed record CreateSetupIntentRequest(Guid TenantId, Guid SubscriptionId, string? CustomerEmail, string? CustomerName);
@@ -462,6 +612,36 @@ public sealed class PaymentsController(
     public sealed record CancelPaymentRequest(string CancellationReason, Guid? CanceledBy = null, string? Notes = null);
 
     #region Private Methods
+
+    /// <summary>
+    ///     Mirrors a confirmed checkout payment method into the local registry (issue #414).
+    ///     Failures are logged and swallowed: the gateway state is already authoritative and
+    ///     the first charge must proceed.
+    /// </summary>
+    private async Task UpsertLocalPaymentMethodAsync(CompleteSubscriptionCheckoutRequest body, CancellationToken ct)
+    {
+        try
+        {
+            var upsertResult = await sender.Send(
+                new UpsertCheckoutPaymentMethodCommand(body.TenantId, body.SubscriptionId, body.PaymentMethodId),
+                ct).ConfigureAwait(false);
+
+            if (!upsertResult.IsSuccess)
+            {
+                logger.LogWarning(
+                    "Local payment-method registry upsert skipped for subscription {SubscriptionId}: {Reason}",
+                    body.SubscriptionId,
+                    upsertResult.Error?.Description ?? "unknown error");
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Local payment-method registry upsert failed for subscription {SubscriptionId}; checkout continues.",
+                body.SubscriptionId);
+        }
+    }
 
     /// <summary>
     ///     Validates that the authenticated user has access to the specified tenant.

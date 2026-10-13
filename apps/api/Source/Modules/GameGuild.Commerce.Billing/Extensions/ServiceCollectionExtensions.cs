@@ -34,6 +34,31 @@ public static class ServiceCollectionExtensions
 
         // Register repositories
         services.AddScoped<IBillingWebhookRepository, BillingWebhookRepository>();
+        services.AddScoped<IBillingProviderStateRepository, BillingProviderStateRepository>();
+
+        // Pricing-decision ledger (issue #400): durable append-only record of every
+        // checkout/renewal price calculation, with audit publishing, effectiveness
+        // analytics and drift verification over the recorded breakdowns.
+        services.AddScoped<GameGuild.Commerce.IPricingDecisionLedgerWriter, PricingDecisionLedgerWriter>();
+        services.AddScoped<IPricingDecisionLedgerRepository, PricingDecisionLedgerRepository>();
+
+        // Register external provider management (issue #397): the registry merges
+        // per-provider configuration health with the persisted enable/disable overrides.
+        services.AddScoped<IExternalBillingProviderRegistry, ExternalBillingProviderRegistry>();
+
+        // Named billing integration events (issue #396): publish through the durable transport.
+        services.AddScoped<IBillingIntegrationEventPublisher, BillingIntegrationEventPublisher>();
+
+        // Hosted asynchronous retry of failed webhook inbox events (issue #396).
+        services.AddScoped<IBillingWebhookRetryWorker, BillingWebhookRetryWorker>();
+        services.AddHostedService<BillingWebhookRetryBackgroundService>();
+
+        // Invoice materialization (issue #411): the production writer behind both payment-success
+        // paths (first-party charges via the Subscriptions port, provider-billed cycles via the
+        // Stripe invoice.payment_succeeded webhook) plus the invoice-issued email renderer.
+        services.AddScoped<IInvoiceGenerationService, InvoiceGenerationService>();
+        services.AddScoped<GameGuild.Commerce.Subscriptions.ISubscriptionInvoiceMaterializer, SubscriptionInvoiceMaterializer>();
+        services.AddScoped<GameGuild.Notifications.Services.Email.IEmailRenderer, Services.Email.Renderers.InvoiceIssuedEmailRenderer>();
 
         // Named billing integration events (issue #396): publish through the durable transport.
         services.AddScoped<IBillingIntegrationEventPublisher, BillingIntegrationEventPublisher>();
@@ -55,6 +80,10 @@ public static class ServiceCollectionExtensions
         // Register webhook services for each payment provider
         services.AddScoped<IBillingWebhookService, StripeBillingWebhookService>();
         services.AddScoped<StripeBillingWebhookService>();
+
+        // Stripe dispute webhook reconciliation (issue #419): consumes verified
+        // charge.dispute.* events into the payments dispute surface.
+        services.AddScoped<IStripeVerifiedEventConsumer, StripeDisputeEventConsumer>();
         services.AddScoped<PayPalBillingWebhookService>();
         services.AddScoped<ApplePayBillingWebhookService>();
         services.AddSingleton<IGooglePayWebhookVerificationService, GooglePayWebhookVerificationService>();

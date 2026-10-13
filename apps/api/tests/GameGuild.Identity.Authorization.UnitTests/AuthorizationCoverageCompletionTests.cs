@@ -1476,11 +1476,11 @@ public sealed class AuthorizationCoverageCompletionTests
         dbContext.Setup(c => c.Set<TenantSecurityVersion>()).Returns(versionSet.Object);
 
         var policy = new PolicyDefinitionEntity { PolicyName = "documents.read", PolicyVersion = 4, Version = 1 };
-        await new PolicyDefinitionRepository(dbContext.Object).UpdateAsync(policy);
+        await new PolicyDefinitionRepository(dbContext.Object, Mock.Of<IPolicyVersionSnapshotService>()).UpdateAsync(policy);
         policy.PolicyVersion.Should().Be(5);
         policySet.Verify(s => s.Update(policy), Times.Once);
 
-        await new PolicyDefinitionRepository(dbContext.Object).DeleteAsync(policy);
+        await new PolicyDefinitionRepository(dbContext.Object, Mock.Of<IPolicyVersionSnapshotService>()).DeleteAsync(policy);
         policy.DeletedAt.Should().NotBeNull();
         policySet.Verify(s => s.Update(policy), Times.Exactly(2));
 

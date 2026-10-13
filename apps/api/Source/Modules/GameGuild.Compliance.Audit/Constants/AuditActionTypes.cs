@@ -65,6 +65,15 @@ public static class AuditActionTypes
 
     public const string BulkOperation = "BulkOperation";
 
+    // PII Redaction Pipeline (issue #192)
+    public const string PiiRedactionRuleCreated = "PiiRedactionRuleCreated";
+
+    public const string PiiRedactionRuleUpdated = "PiiRedactionRuleUpdated";
+
+    public const string PiiRedactionRuleDeleted = "PiiRedactionRuleDeleted";
+
+    public const string PiiTokenResolved = "PiiTokenResolved";
+
     // Session Management
     public const string SessionCreated = "SessionCreated";
 
@@ -95,6 +104,13 @@ public static class AuditActionTypes
     public const string WebhookRateLimitExceeded = "WebhookRateLimitExceeded";
 
     public const string WebhookSourceBlocked = "WebhookSourceBlocked";
+
+    // External Billing Provider Management (issue #397 provider-management API)
+    public const string BillingProviderEnabled = "BillingProviderEnabled";
+
+    public const string BillingProviderDisabled = "BillingProviderDisabled";
+
+    public const string BillingProviderMigrationDryRun = "BillingProviderMigrationDryRun";
 
     // Tenant Operations
     public const string TenantCreated = "TenantCreated";

@@ -18,6 +18,7 @@ public sealed class AuthenticationDtoHandlerContractTests
     [InlineData("social")]
     [InlineData("google-id")]
     [InlineData("discord")]
+    [InlineData("github")]
     public async Task CurrentHandlersApplyProfileConversionAndKeepServerTokens(string flow)
     {
         using var cancellation = new CancellationTokenSource();
@@ -46,6 +47,7 @@ public sealed class AuthenticationDtoHandlerContractTests
         service.Setup(auth => auth.GoogleSignInAsync(It.Is<OAuthSignInRequest>(request => request.AccessToken == "synthetic-input-oauth" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
         service.Setup(auth => auth.GoogleIdTokenSignInAsync(It.Is<GoogleIdTokenRequest>(request => request.IdToken == "synthetic-input-id" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
         oauth.Setup(auth => auth.DiscordSignInAsync(It.Is<DiscordSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
+        oauth.Setup(auth => auth.GitHubCallbackSignInAsync(It.Is<GitHubCallbackSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
 
         var mapped = flow switch
         {
@@ -55,7 +57,7 @@ public sealed class AuthenticationDtoHandlerContractTests
                 .Handle(new LocalSignInCommand { Email = user.Email, TenantId = source.TenantId }, cancellation.Token),
             "refresh" => await new RefreshTokenHandler(service.Object, repository.Object, NullLogger<RefreshTokenHandler>.Instance, Validator<RefreshTokenCommand>())
                 .Handle(new RefreshTokenCommand { RefreshToken = "synthetic-input-refresh", TenantId = source.TenantId }, cancellation.Token),
-            "polymorphic" => await new PolymorphicSignInHandler(service.Object, repository.Object, NullLogger<PolymorphicSignInHandler>.Instance, Validator<PolymorphicSignInCommand>())
+            "polymorphic" => await new PolymorphicSignInHandler(service.Object, repository.Object, NullLogger<PolymorphicSignInHandler>.Instance, new PasswordSignInAdmissionStub(), Validator<PolymorphicSignInCommand>())
                 .Handle(new PolymorphicSignInCommand { Credential = user.Email, TenantId = source.TenantId }, cancellation.Token),
             "social" => await new SocialSignInHandler(service.Object, repository.Object, NullLogger<SocialSignInHandler>.Instance, Validator<SocialSignInCommand>())
                 .Handle(new SocialSignInCommand { Provider = SocialProvider.Google, Token = "synthetic-input-oauth", TenantId = source.TenantId }, cancellation.Token),
@@ -63,6 +65,8 @@ public sealed class AuthenticationDtoHandlerContractTests
                 .Handle(new GoogleIdTokenSignInCommand { IdToken = "synthetic-input-id", TenantId = source.TenantId }, cancellation.Token),
             "discord" => await new DiscordCallbackCommandHandler(oauth.Object, repository.Object, NullLogger<DiscordCallbackCommandHandler>.Instance, Validator<DiscordCallbackCommand>())
                 .Handle(new DiscordCallbackCommand { Code = "synthetic-input-code", TenantId = source.TenantId }, cancellation.Token),
+            "github" => await new GitHubCallbackCommandHandler(oauth.Object, repository.Object, NullLogger<GitHubCallbackCommandHandler>.Instance, Validator<GitHubCallbackCommand>())
+                .Handle(new GitHubCallbackCommand { Code = "synthetic-input-code", RedirectUri = "https://web.example.com/api/auth/callback/github", TenantId = source.TenantId }, cancellation.Token),
             _ => throw new InvalidOperationException("Unknown handler contract case.")
         };
 

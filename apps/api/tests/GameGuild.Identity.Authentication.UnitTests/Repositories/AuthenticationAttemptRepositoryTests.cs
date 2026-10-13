@@ -10,40 +10,49 @@ public class AuthenticationAttemptRepositoryTests
     [Fact]
     public async Task CreateAndLookupMethods_ShouldNormalizeEmail_AndReturnOrderedAttempts()
     {
-        await using var context = CreateContext();
-        var repository = new AuthenticationAttemptRepository(context);
-        var userId = Guid.NewGuid();
+        var recordedAt = new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
+        SystemClock.SetProvider(new FrozenTimestampClock(recordedAt));
+        try
+        {
+            await using var context = CreateContext();
+            var repository = new AuthenticationAttemptRepository(context);
+            var userId = Guid.NewGuid();
 
-        var oldest = await repository.CreateAsync(CreateAttempt(
-            email: "User@Example.com",
-            userId: userId,
-            attemptedAt: DateTime.UtcNow.AddMinutes(-10),
-            isSuccessful: false));
+            var oldest = await repository.CreateAsync(CreateAttempt(
+                email: "User@Example.com",
+                userId: userId,
+                attemptedAt: DateTime.UtcNow.AddMinutes(-10),
+                isSuccessful: false));
 
-        var newest = await repository.CreateAsync(CreateAttempt(
-            email: "user@example.com",
-            userId: userId,
-            attemptedAt: DateTime.UtcNow.AddMinutes(-2),
-            isSuccessful: true));
+            var newest = await repository.CreateAsync(CreateAttempt(
+                email: "user@example.com",
+                userId: userId,
+                attemptedAt: DateTime.UtcNow.AddMinutes(-2),
+                isSuccessful: true));
 
-        await repository.CreateAsync(CreateAttempt(
-            email: "other@example.com",
-            userId: Guid.NewGuid(),
-            attemptedAt: DateTime.UtcNow.AddMinutes(-1)));
+            await repository.CreateAsync(CreateAttempt(
+                email: "other@example.com",
+                userId: Guid.NewGuid(),
+                attemptedAt: DateTime.UtcNow.AddMinutes(-1)));
 
-        oldest.Email.Should().Be("user@example.com");
-        oldest.Id.Should().NotBe(Guid.Empty);
-        oldest.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+            oldest.Email.Should().Be("user@example.com");
+            oldest.Id.Should().NotBe(Guid.Empty);
+            oldest.UpdatedAt.Should().Be(recordedAt.UtcDateTime);
 
-        var byId = await repository.GetByIdAsync(oldest.Id);
-        var byEmail = await repository.GetByEmailAsync("USER@example.com");
-        var byUser = await repository.GetByUserIdAsync(userId, limit: 1);
+            var byId = await repository.GetByIdAsync(oldest.Id);
+            var byEmail = await repository.GetByEmailAsync("USER@example.com");
+            var byUser = await repository.GetByUserIdAsync(userId, limit: 1);
 
-        byId.Should().NotBeNull();
-        byId!.Id.Should().Be(oldest.Id);
-        byEmail.Select(attempt => attempt.Id).Should().ContainInOrder(newest.Id, oldest.Id);
-        byUser.Should().ContainSingle();
-        byUser[0].Id.Should().Be(newest.Id);
+            byId.Should().NotBeNull();
+            byId!.Id.Should().Be(oldest.Id);
+            byEmail.Select(attempt => attempt.Id).Should().ContainInOrder(newest.Id, oldest.Id);
+            byUser.Should().ContainSingle();
+            byUser[0].Id.Should().Be(newest.Id);
+        }
+        finally
+        {
+            SystemClock.Reset();
+        }
     }
 
     [Fact]
@@ -209,6 +218,11 @@ public class AuthenticationAttemptRepositoryTests
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+    }
+
+    private sealed class FrozenTimestampClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     private sealed class TestAuthenticationAttemptDbContext(DbContextOptions<TestAuthenticationAttemptDbContext> options) : DbContext(options), IApplicationDbContext

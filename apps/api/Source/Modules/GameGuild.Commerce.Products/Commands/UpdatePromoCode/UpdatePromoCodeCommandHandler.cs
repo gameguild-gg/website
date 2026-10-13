@@ -36,6 +36,9 @@ public sealed class UpdatePromoCodeCommandHandler(IPromoCodeRepository promoCode
         if (request.DiscountAmount.HasValue)
             promoCode.DiscountAmount = request.DiscountAmount.Value;
 
+        if (request.MaxDiscountAmount.HasValue)
+            promoCode.MaxDiscountAmount = request.MaxDiscountAmount.Value;
+
         if (!string.IsNullOrWhiteSpace(request.Currency))
             promoCode.Currency = request.Currency;
 
@@ -47,6 +50,15 @@ public sealed class UpdatePromoCodeCommandHandler(IPromoCodeRepository promoCode
 
         if (request.MaxUsesPerUser.HasValue)
             promoCode.MaxUsesPerUser = request.MaxUsesPerUser.Value;
+
+        if (request.FreeTrialExtensionDays.HasValue)
+            promoCode.FreeTrialExtensionDays = request.FreeTrialExtensionDays.Value;
+
+        if (request.DurationMonths.HasValue)
+            promoCode.DurationMonths = request.DurationMonths.Value;
+
+        if (request.ApplyToRenewal.HasValue)
+            promoCode.ApplyToRenewal = request.ApplyToRenewal.Value;
 
         if (request.ValidFrom.HasValue)
             promoCode.ValidFrom = request.ValidFrom.Value;
@@ -63,6 +75,9 @@ public sealed class UpdatePromoCodeCommandHandler(IPromoCodeRepository promoCode
         if (request.StackingPriority.HasValue)
             promoCode.StackingPriority = request.StackingPriority.Value;
 
+        if (request.CampaignId != null)
+            promoCode.CampaignId = string.IsNullOrWhiteSpace(request.CampaignId) ? null : request.CampaignId;
+
         if (request.ProductId.HasValue)
             promoCode.ProductId = request.ProductId.Value;
 
@@ -77,27 +92,6 @@ public sealed class UpdatePromoCodeCommandHandler(IPromoCodeRepository promoCode
             .ConfigureAwait(false);
 
         // Map to DTO
-        return new PromoCodeDto(
-            promoCode.Id,
-            promoCode.Code,
-            promoCode.Name,
-            promoCode.Description,
-            promoCode.Type,
-            promoCode.DiscountPercentage,
-            promoCode.DiscountAmount,
-            promoCode.Currency,
-            promoCode.MinimumOrderAmount,
-            promoCode.MaxUses,
-            promoCode.MaxUsesPerUser,
-            promoCode.ValidFrom,
-            promoCode.ValidUntil,
-            promoCode.IsActive,
-            promoCode.IsExclusive,
-            promoCode.StackingPriority,
-            promoCode.ProductId,
-            usageCount,
-            promoCode.CreatedAt,
-            promoCode.UpdatedAt
-        );
+        return promoCode.ToDto(usageCount);
     }
 }

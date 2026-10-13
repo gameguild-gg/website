@@ -1,0 +1,5 @@
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+  "externalId": "00gr5pljx8TkcQBZo2PxB",
+  "displayName": "SCIM Engineering"
+}

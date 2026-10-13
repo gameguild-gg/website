@@ -1,0 +1,18 @@
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "externalId": "00u5pljx8TkcQBZo2PxC",
+  "userName": "scim.jsmith",
+  "name": {
+    "givenName": "John",
+    "familyName": "Smith"
+  },
+  "displayName": "John Smith",
+  "emails": [
+    {
+      "value": "scim.jsmith@example.com",
+      "type": "work",
+      "primary": true
+    }
+  ],
+  "active": false
+}

@@ -32,7 +32,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -61,7 +61,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -88,7 +88,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -117,7 +117,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -146,7 +146,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -175,7 +175,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -357,7 +357,7 @@ export class AuthModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -372,16 +372,21 @@ export class AuthModule {
   /**
    * Handle GitHub OAuth callback
    *
-   * Handles the GitHub OAuth callback, exchanging the authorization code for tokens.
+   * Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.
    */
-  async getAuthGithubCallback(query?: { code?: string; state?: string }): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+  async postAuthGithubCallback(
+    body: Types.IdentityAuthenticationGitHubCallbackRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
     const url = '/v1/auth/github:callback';
 
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationGitHubCallbackRequestDtoSchema, body, 'request');
+
     const result = await this.client.request({
-      method: 'GET',
+      method: 'POST',
       path: url,
-      params: query,
-      requiresAuth: true,
+      body: validatedBody,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -408,7 +413,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -435,7 +440,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -464,12 +469,70 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationMagicLinkRequestResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
+   *
+   * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
+   */
+  async postAuthMfaSignInComplete(
+    body: Types.IdentityAuthenticationCompleteMfaSignInInput,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = '/v1/auth/mfa/sign-in/complete';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationCompleteMfaSignInInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Provision the first TOTP factor using only the limited first-factor challenge.
+   *
+   * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
+   */
+  async postAuthMfaSignInEnrollment(
+    body: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput,
+  ): Promise<Result<Types.IdentityAuthenticationMfaSignInEnrollmentOutput, ApiError>> {
+    const url = '/v1/auth/mfa/sign-in/enrollment';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationStartMfaSignInEnrollmentInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaSignInEnrollmentOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -488,7 +551,7 @@ export class AuthModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -545,7 +608,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -575,12 +638,134 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Initiate an orchestrated authentication flow
+   *
+   * Validates the local primary credential (identifier + password), assesses sign-in risk and returns the persisted flow state with the required challenge ladder (MFA verification, device trust, risk challenge). Expired, inactive or unknown credentials fail closed.
+   */
+  async postAuthOrchestratedInitiate(
+    body: Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationOrchestratedFlowStateOutput, ApiError>> {
+    const url = '/v1/auth/orchestrated:initiate';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOrchestratedFlowStateOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Get the current state of an orchestrated authentication flow
+   *
+   * Returns the current state of the flow. Abandoned, expired and unknown flows are not observable and return 404.
+   */
+  async getAuthOrchestrated(flowId: string): Promise<Result<Types.IdentityAuthenticationOrchestratedFlowStateOutput, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOrchestratedFlowStateOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Abandon an in-flight orchestrated authentication flow
+   *
+   * Terminates the flow; later step, completion and lookup calls fail closed.
+   */
+  async postAuthOrchestratedAbandon(flowId: string): Promise<Result<void, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}:abandon`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: false,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Complete an orchestrated authentication flow and issue tokens
+   *
+   * Issues access and refresh tokens once every required step of the flow is satisfied. Pending steps, abandoned, expired or already-unknown flows fail closed.
+   */
+  async postAuthOrchestratedComplete(flowId: string): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}:complete`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Satisfy one challenge step of an orchestrated authentication flow
+   *
+   * Verifies one challenge step (TOTP code, backup code or WebAuthn assertion) against the persisted flow and returns the updated state. Out-of-order, repeated, abandoned, expired or locked-out steps fail closed.
+   */
+  async postAuthOrchestratedProcessStep(
+    flowId: string,
+    body: Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationOrchestratedFlowStateOutput, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}:process-step`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOrchestratedFlowStateOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -633,7 +818,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -662,7 +847,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -689,7 +874,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -716,7 +901,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -743,7 +928,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -770,7 +955,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -818,7 +1003,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -847,7 +1032,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

@@ -87,6 +87,11 @@ public static class DataDependencyInjection
 
         services.AddSingleton(apiKeyLifecycleOptions);
 
+        services.AddOptions<LocalSignInPolicyOptions>()
+            .Bind(configuration.GetSection(LocalSignInPolicyOptions.SectionName))
+            .Validate(static options => options.IsValid(), "Email-verification tenant identifiers must be non-empty.")
+            .ValidateOnStart();
+
         // Configure JWT options from configuration
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
@@ -163,12 +168,19 @@ public static class DataDependencyInjection
             ?? throw new InvalidOperationException("The token revocation store must support persisted user token versions."));
 
         // MFA services - focused sub-services
+        services.AddScoped<ITotpReplayStore, PostgreSqlTotpReplayStore>();
         services.AddScoped<ITotpMfaService, TotpMfaService>();
         services.AddScoped<IBackupCodeMfaService, BackupCodeMfaService>();
         services.AddScoped<IMfaAttemptTrackingService, MfaAttemptTrackingService>();
 
         // Composite MFA service for backward compatibility
         services.AddScoped<IMfaService, MfaService>();
+        services.AddScoped<IMfaSubjectRequirementPolicy, MfaSubjectRequirementPolicy>();
+        services.AddScoped<ISignInMfaSubjectReader, PostgreSqlSignInMfaSubjectReader>();
+        services.AddScoped<ISignInMfaChallengeStore, PostgreSqlSignInMfaChallengeStore>();
+        services.AddScoped<ISessionMfaEvidenceStore, PostgreSqlSessionMfaEvidenceStore>();
+        services.AddScoped<ISignInMfaEnrollmentPort, PostgreSqlSignInMfaEnrollmentPort>();
+        services.AddScoped<ISignInMfaService, SignInMfaService>();
         services.AddScoped<IStepUpChallengeStore, PostgreSqlStepUpChallengeStore>();
         services.AddScoped<IStepUpReceiptService, StepUpReceiptService>();
         services.TryAddSingleton(TimeProvider.System);
@@ -369,6 +381,8 @@ public static class DataDependencyInjection
         // Register command handlers for local authentication
         services.AddScoped<IRequestHandler<LocalSignUpCommand, SignInResponse>, LocalSignUpHandler>();
         services.AddScoped<IRequestHandler<LocalSignInCommand, SignInResponse>, LocalSignInHandler>();
+        services.AddScoped<IRequestHandler<StartMfaSignInEnrollmentCommand, MfaSignInEnrollmentResponse>, StartMfaSignInEnrollmentHandler>();
+        services.AddScoped<IRequestHandler<CompleteMfaSignInCommand, SignInResponse>, CompleteMfaSignInHandler>();
         services.AddScoped<IRequestHandler<PolymorphicSignInCommand, SignInResponse>, PolymorphicSignInHandler>();
         services.AddScoped<IRequestHandler<RefreshTokenCommand, SignInResponse>, RefreshTokenHandler>();
         services.AddScoped<IRequestHandler<GoogleIdTokenSignInCommand, SignInResponse>, GoogleIdTokenSignInHandler>();

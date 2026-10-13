@@ -8,7 +8,7 @@ namespace GameGuild.Commerce.Payments;
 public class RevenueEventRepository(IApplicationDbContext context)
     : CommerceRepositoryBase<RevenueEvent>(context), IRevenueEventRepository
 {
-    private sealed record GroupRow(int Key, int Count, decimal Total);
+    private sealed record GroupRow(int Key, string Currency, int Count, decimal Total);
 
     public new async Task<RevenueEvent?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) { return await Entities.FirstOrDefaultAsync(e => e.Id == id, cancellationToken).ConfigureAwait(false); }
 
@@ -58,26 +58,27 @@ public class RevenueEventRepository(IApplicationDbContext context)
         List<GroupRow> rows = grouping switch
         {
             RevenueEventTotalGrouping.EventType => await query
-                .GroupBy(e => e.EventType)
-                .Select(g => new GroupRow((int)g.Key, g.Count(), g.Sum(e => e.Amount)))
+                .GroupBy(e => new { e.EventType, e.Currency })
+                .Select(g => new GroupRow((int)g.Key.EventType, g.Key.Currency, g.Count(), g.Sum(e => e.Amount)))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false),
             RevenueEventTotalGrouping.Source => await query
-                .GroupBy(e => e.Source)
-                .Select(g => new GroupRow((int)g.Key, g.Count(), g.Sum(e => e.Amount)))
+                .GroupBy(e => new { e.Source, e.Currency })
+                .Select(g => new GroupRow((int)g.Key.Source, g.Key.Currency, g.Count(), g.Sum(e => e.Amount)))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false),
             RevenueEventTotalGrouping.Status => await query
-                .GroupBy(e => e.Status)
-                .Select(g => new GroupRow((int)g.Key, g.Count(), g.Sum(e => e.Amount)))
+                .GroupBy(e => new { e.Status, e.Currency })
+                .Select(g => new GroupRow((int)g.Key.Status, g.Key.Currency, g.Count(), g.Sum(e => e.Amount)))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false),
             _ => throw new ArgumentOutOfRangeException(nameof(grouping), grouping, "Unknown revenue total grouping."),
         };
 
         return rows
-            .Select(row => new RevenueEventGroupTotal(ToKeyName(grouping, row.Key), row.Count, row.Total))
+            .Select(row => new RevenueEventGroupTotal(ToKeyName(grouping, row.Key), row.Currency, row.Count, row.Total))
             .OrderBy(total => total.Key, StringComparer.Ordinal)
+            .ThenBy(total => total.Currency, StringComparer.Ordinal)
             .ToList();
     }
 
@@ -90,14 +91,15 @@ public class RevenueEventRepository(IApplicationDbContext context)
         }
 
         var rows = await query
-            .Select(e => new { e.Timestamp, e.EventType, e.Amount })
+            .Select(e => new { e.Timestamp, e.EventType, e.Amount, e.Currency })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         return rows
-            .GroupBy(row => row.Timestamp.Date)
+            .GroupBy(row => new { row.Timestamp.Date, row.Currency })
             .Select(group => new RevenueDailyTotal(
-                group.Key,
+                group.Key.Date,
+                group.Key.Currency,
                 group.Sum(row => RevenueAuditingSigns.IsCredit(row.EventType) ? row.Amount : 0m),
                 group.Sum(row => RevenueAuditingSigns.IsDebit(row.EventType) ? row.Amount : 0m),
                 group.Sum(row =>
@@ -106,6 +108,7 @@ public class RevenueEventRepository(IApplicationDbContext context)
                     : 0m),
                 group.Count()))
             .OrderBy(total => total.DateUtc)
+            .ThenBy(total => total.Currency, StringComparer.Ordinal)
             .ToList();
     }
 

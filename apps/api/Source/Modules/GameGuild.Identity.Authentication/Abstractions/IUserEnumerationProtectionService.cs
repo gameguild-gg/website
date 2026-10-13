@@ -14,6 +14,13 @@ public interface IUserEnumerationProtectionService
     /// <param name="startTime">When the authentication attempt started</param>
     Task AddTimingProtectionDelayAsync(bool isValidUser, DateTime startTime);
 
+    /// <summary>Server-created window; the native implementation shares the monotonic origin.</summary>
+    AuthenticationTimingScope BeginAuthenticationTiming() => new();
+
+    /// <summary>Compatibility for existing custom providers; native compensation is monotonic and cancellable.</summary>
+    Task AddTimingProtectionDelayAsync(AuthenticationTimingScope timingScope, CredentialWorkClassification credentialWork) =>
+        AddTimingProtectionDelayAsync(credentialWork == CredentialWorkClassification.Completed, timingScope.Origin.StartedAtUtc);
+
     /// <summary>
     ///     Generates a consistent, generic error message that doesn't reveal if user exists.
     /// </summary>

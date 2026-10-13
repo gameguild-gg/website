@@ -36,6 +36,8 @@ public class LocalSignInRequest
     // Server-only account resolution. These internal properties cannot be bound from JSON or advertised in OpenAPI.
     internal bool CredentialResolutionFailed { get; init; }
     internal Guid? ResolvedUserId { get; init; }
+    internal AuthenticationTimingOrigin? TimingOrigin { get; init; }
+    internal AuthenticationTimingScope? TimingWindow { get; init; }
 
     /// <summary>
     ///     Alias for Email to support polymorphic sign-in scenarios

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using GameGuild.API.Integration;
 using GameGuild.Commerce.Subscriptions;
@@ -169,6 +170,7 @@ public sealed class SubscriptionLifecycleEmailHandlerTests
                         _subscriptionRepository.Object,
                         _notificationService.Object,
                         _linkBuilder.Object,
+                        Options.Create(new PaymentDunningOptions()),
                         Mock.Of<ILogger<SubscriptionPaymentFailedEmailHandler>>())
                     .Handle(
                         new SubscriptionPaymentFailedEvent(
@@ -183,6 +185,7 @@ public sealed class SubscriptionLifecycleEmailHandlerTests
                         _subscriptionRepository.Object,
                         _notificationService.Object,
                         _linkBuilder.Object,
+                        Options.Create(new PaymentDunningOptions()),
                         Mock.Of<ILogger<SubscriptionRenewalFailedEmailHandler>>())
                     .Handle(
                         new SubscriptionRenewalFailedEvent(

@@ -87,6 +87,17 @@ public class PermissionAuditService(
         }
 
         var allLogs = await _repository.GetByTenantAsync(tenantId, cancellationToken).ConfigureAwait(false);
+
+        if (fromDate.HasValue)
+        {
+            allLogs = allLogs.Where(log => log.Timestamp >= fromDate.Value).ToList();
+        }
+
+        if (toDate.HasValue)
+        {
+            allLogs = allLogs.Where(log => log.Timestamp <= toDate.Value).ToList();
+        }
+
         return limit.HasValue ? allLogs.Take(limit.Value).ToList() : allLogs;
     }
 

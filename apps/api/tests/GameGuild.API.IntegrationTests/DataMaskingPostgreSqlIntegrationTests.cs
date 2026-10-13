@@ -35,7 +35,7 @@ public sealed class DataMaskingPostgreSqlIntegrationTests(ApiPostgreSqlFixture f
         var userAId = Guid.NewGuid();
         var userBId = Guid.NewGuid();
 
-        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        using var factory = fixture.CreateFactory(builder =>
             builder.ConfigureTestServices(services =>
             {
                 services.AddAuthentication(options =>
@@ -214,6 +214,31 @@ public sealed class DataMaskingPostgreSqlIntegrationTests(ApiPostgreSqlFixture f
         public void ClearActorContext()
         {
             _actorContext = null;
+        }
+
+        public IActorContextScope BeginActorContextScope(ActorContext context)
+        {
+            ArgumentNullException.ThrowIfNull(context);
+            var previous = _actorContext;
+            SetActorContext(context);
+            return new RestoreScope(this, previous);
+        }
+
+        private sealed class RestoreScope(DataMaskingTestActorContextAccessor accessor, ActorContext? previous)
+            : IActorContextScope
+        {
+            private bool disposed;
+
+            public void Dispose()
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                accessor._actorContext = previous;
+            }
         }
     }
 }

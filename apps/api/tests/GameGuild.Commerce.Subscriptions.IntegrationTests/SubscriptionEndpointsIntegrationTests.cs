@@ -62,6 +62,9 @@ public class SubscriptionEndpointsIntegrationTests : IClassFixture<WebApplicatio
 
                 services.PostConfigure<StripeGatewayOptions>(options =>
                 {
+                    // Issue #413: gateway selection is fail-closed, so the simulated
+                    // Stripe gateway must be explicitly enabled for the charge path.
+                    options.IsEnabled = true;
                     options.UseSimulation = true;
                     options.ApiKey = string.Empty;
                 });

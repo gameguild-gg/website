@@ -159,14 +159,17 @@ public class RevenueReconciliationRepository(IApplicationDbContext context)
     }
 
     /// <inheritdoc />
-    public async Task<bool> ExistsForDayAsync(RevenueAnomalyKind kind, DateTime detectedForDateUtc, Guid? tenantId, CancellationToken cancellationToken = default)
+    public async Task<bool> ExistsForDayAsync(RevenueAnomalyKind kind, DateTime detectedForDateUtc, string currency, Guid? tenantId, CancellationToken cancellationToken = default)
     {
         // Exact tenant match: a null tenantId is the global aggregate scope and must not
         // be suppressed by (nor suppress) tenant-scoped alerts for the same day.
+        // Currency is part of the identity: a USD spike and an EUR spike on the same
+        // day are separate alerts, never duplicates of each other.
         var query = context.Set<RevenueAnomalyAlert>().AsNoTracking()
             .Where(alert => alert.DeletedAt == null
                 && alert.Kind == kind
                 && alert.DetectedForDateUtc == detectedForDateUtc
+                && alert.Currency == currency
                 && alert.TenantId == tenantId);
 
         return await query.AnyAsync(cancellationToken).ConfigureAwait(false);

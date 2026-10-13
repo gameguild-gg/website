@@ -72,16 +72,23 @@ export class AuthServiceUnavailableError extends AuthError {
  * MFA is required for this sign-in
  */
 export class MfaRequiredError extends AuthError {
+  /** Expiring first-factor bearer; never an ordinary access token. */
+  readonly mfaToken?: string;
   /** MFA session ID for continuing authentication */
   readonly mfaSessionId?: string;
   /** Available MFA methods */
   readonly availableMethods?: string[];
 
-  constructor(message = 'Multi-factor authentication required', options?: { mfaSessionId?: string; availableMethods?: string[] }) {
+  constructor(message = 'Multi-factor authentication required', options?: { mfaSessionId?: string; mfaToken?: string; availableMethods?: string[] }) {
     super(message, { type: 'MfaRequired', status: 403 });
     this.name = 'MfaRequiredError';
     this.mfaSessionId = options?.mfaSessionId;
+    this.mfaToken = options?.mfaToken;
     this.availableMethods = options?.availableMethods;
+  }
+
+  override toJSON(): ReturnType<AuthError['toJSON']> & { mfaToken?: string; availableMethods?: string[] } {
+    return { ...super.toJSON(), mfaToken: this.mfaToken, availableMethods: this.availableMethods };
   }
 }
 
