@@ -32,7 +32,7 @@ public sealed class UserMembershipsController(
     /// <param name="ct">Cancellation token</param>
     /// <returns>Membership creation result</returns>
     [HttpPost("v{version:apiVersion}/users/{userId:guid}/memberships")]
-    [Authorize(Policy = Policies.TenantAdmin)]
+    [Authorize(Policy = Policies.MembersManage)]
     [EndpointSummary("Add a tenant membership for a user")]
     [EndpointDescription("Adds the specified user to a tenant with the requested role so the user can access that workspace.")]
     [ProducesResponseType<AddTenantMemberResponse>(StatusCodes.Status201Created)]
@@ -75,7 +75,7 @@ public sealed class UserMembershipsController(
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Role update result.</returns>
     [HttpPatch("v{version:apiVersion}/users/{userId:guid}/memberships/{tenantId:guid}/role")]
-    [Authorize(Policy = Policies.TenantAdmin)]
+    [Authorize(Policy = Policies.MembersManage)]
     [EndpointSummary("Update tenant membership role")]
     [EndpointDescription("Updates the user's role in the specified tenant/workspace. Use this for console promotion/demotion flows.")]
     [ProducesResponseType<UpdateTenantMemberRoleResponse>(StatusCodes.Status200OK)]
@@ -101,7 +101,7 @@ public sealed class UserMembershipsController(
     }
 
     [HttpPost("v{version:apiVersion}/users/{userId:guid}/memberships/{tenantId:guid}:deactivate")]
-    [Authorize(Policy = Policies.TenantAdmin)]
+    [Authorize(Policy = Policies.MembersManage)]
     [EndpointSummary("Deactivate a tenant membership")]
     [EndpointDescription("Suspends access to the specified tenant without deleting membership history.")]
     [ProducesResponseType<SetTenantMembershipStatusResponse>(StatusCodes.Status200OK)]
@@ -127,7 +127,7 @@ public sealed class UserMembershipsController(
     }
 
     [HttpPost("v{version:apiVersion}/users/{userId:guid}/memberships/{tenantId:guid}:activate")]
-    [Authorize(Policy = Policies.TenantAdmin)]
+    [Authorize(Policy = Policies.MembersManage)]
     [EndpointSummary("Activate a tenant membership")]
     [EndpointDescription("Restores access to the specified tenant membership.")]
     [ProducesResponseType<SetTenantMembershipStatusResponse>(StatusCodes.Status200OK)]
@@ -154,7 +154,7 @@ public sealed class UserMembershipsController(
     ///     Resend a pending membership invite.
     /// </summary>
     [HttpPost("v{version:apiVersion}/users/{userId:guid}/memberships/{tenantId:guid}/invite:resend")]
-    [Authorize(Policy = Policies.TenantAdmin)]
+    [Authorize(Policy = Policies.MembersManage)]
     [EndpointSummary("Resend tenant membership invite")]
     [ProducesResponseType<UpdateTenantMemberInviteResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<UpdateTenantMemberInviteResponse>(StatusCodes.Status404NotFound)]
@@ -168,7 +168,7 @@ public sealed class UserMembershipsController(
     ///     Cancel a pending membership invite without deleting the audit trail.
     /// </summary>
     [HttpPost("v{version:apiVersion}/users/{userId:guid}/memberships/{tenantId:guid}/invite:cancel")]
-    [Authorize(Policy = Policies.TenantAdmin)]
+    [Authorize(Policy = Policies.MembersManage)]
     [EndpointSummary("Cancel tenant membership invite")]
     [ProducesResponseType<UpdateTenantMemberInviteResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<UpdateTenantMemberInviteResponse>(StatusCodes.Status404NotFound)]
@@ -306,8 +306,13 @@ public sealed class UserMembershipsController(
     private bool CanManageTenant(Guid tenantId)
     {
         var actor = actorContextAccessor.ActorContext;
+        // Issue #294: member management is governed by the members:manage administrative
+        // permission (granted to administrative membership roles by the role-permission
+        // providers, delegable per tenant). System administrators retain platform-wide
+        // authority; tenant actors must act within their own tenant (fail closed).
         return actor.IsSystemAdmin ||
-               actor.IsTenantAdmin && actor.TenantId.HasValue && actor.TenantId.Value == tenantId;
+               actor.TenantId.HasValue && actor.TenantId.Value == tenantId &&
+               (actor.IsTenantAdmin || actor.HasPermission(ManageMembersPermission.Keys.Manage));
     }
 
     private bool CanUpdateInvite(Guid userId, Guid tenantId, TenantMemberInviteAction action)
