@@ -60,7 +60,7 @@ public class UserMembershipsControllerTests
     }
 
     [Fact]
-    public async Task DelegatedMemberManager_ForForeignTenant_IsForbidden()
+    public async Task DelegatedMemberManager_ForForeignTenant_ShouldBeForbidden()
     {
         var tenantId = Guid.NewGuid();
         var foreignTenant = Guid.NewGuid();
