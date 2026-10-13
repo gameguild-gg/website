@@ -91,7 +91,6 @@ export async function reconstructAuditReplaySnapshot(
     path: '/v1/admin/audit-logs/replay/snapshots:reconstruct',
     body: request,
     headers: { Accept: 'application/json' },
-    responseType: 'json',
     requiresAuth: true,
     cache: 'no-store',
     ...(signal === undefined ? {} : { signal }),

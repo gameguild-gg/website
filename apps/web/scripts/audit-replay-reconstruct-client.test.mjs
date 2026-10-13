@@ -67,7 +67,7 @@ test('uses authenticated POST transport with a frozen document and validates the
   assert.equal(config.body.sha256, digest);
   assert.deepEqual(config.body.document, document());
   assert.equal(config.path, '/v1/admin/audit-logs/replay/snapshots:reconstruct');
-  assert.equal(config.method, 'POST'); assert.equal(config.responseType, 'json');
+  assert.equal(config.method, 'POST'); assert.equal(config.responseType, undefined);
   assert.equal(config.requiresAuth, true); assert.equal(config.cache, 'no-store');
   assert.equal(config.headers.Accept, 'application/json'); assert.equal(config.signal, abort.signal);
 });
