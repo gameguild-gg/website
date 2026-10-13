@@ -359,6 +359,15 @@ public static class InfrastructureLayerExtensions
         services.AddScoped<ICostTelemetryRecorder>(provider => provider.GetRequiredService<CostTelemetryContext>());
         services.AddScoped<CostTelemetryDbCommandInterceptor>();
         services.AddScoped<RefreshTokenLifecycleMetricBuffer>();
+        // The DbContext interceptor chain below resolves the PII redaction interceptor
+        // unconditionally, so its dependency chain must be composable even when the
+        // full audit module is not (unit-test service collections). TryAdd keeps the
+        // audit module's registrations authoritative when both run.
+        services.TryAddScoped<GameGuild.Compliance.Audit.IPiiRedactionRuleProvider, GameGuild.Compliance.Audit.PiiRedactionRuleProvider>();
+        services.TryAddScoped<GameGuild.Compliance.Audit.IPiiTokenSource, GameGuild.Compliance.Audit.PiiHmacTokenizer>();
+        services.TryAddScoped<GameGuild.Identity.Authentication.IEncryptionService, GameGuild.Identity.Authentication.EncryptionService>();
+        services.TryAddScoped<GameGuild.Compliance.Audit.IPiiRedactionService, GameGuild.Compliance.Audit.PiiRedactionService>();
+        services.TryAddScoped<GameGuild.Compliance.Audit.AuditLogPiiRedactionInterceptor>();
         services.AddScoped<IRefreshTokenLifecycleRecorder, RefreshTokenLifecycleRecorder>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddOptions<RefreshTokenCleanupOptions>()
