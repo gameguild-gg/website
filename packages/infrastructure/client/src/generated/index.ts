@@ -71,6 +71,8 @@ export * from './modules/access-control-permission-compliance.gen.js';
 export * from './modules/access-control-permission-approvals.gen.js';
 export * from './modules/access-control-permission-graph.gen.js';
 export * from './modules/access-control-permission-history.gen.js';
+export * from './modules/access-control-permission-templates.gen.js';
+export * from './modules/access-control-permission-simulation.gen.js';
 export * from './modules/access-control-resource-permissions.gen.js';
 export * from './modules/access-control-permission-restoration.gen.js';
 export * from './modules/access-control-permission-sync.gen.js';
