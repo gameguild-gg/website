@@ -50,6 +50,19 @@ public static class AssetsModuleExtensions
             configuration.GetSection(TenantIsolationOptions.SectionName));
         services.Configure<DownloadWindowOptions>(
             configuration.GetSection(DownloadWindowOptions.SectionName));
+        services.Configure<Openinary.OpeninaryOptions>(
+            configuration.GetSection(Openinary.OpeninaryOptions.SectionName));
+
+        // Openinary typed client: options-driven BaseUrl/timeout with a retry
+        // handler for transient failures (408/5xx) only.
+        services.AddHttpClient<Openinary.IOpeninaryClient, Openinary.OpeninaryClient>((sp, client) =>
+        {
+            var openinaryOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Openinary.OpeninaryOptions>>().Value;
+            client.BaseAddress = new Uri(openinaryOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(openinaryOptions.TimeoutSeconds);
+        })
+        .AddHttpMessageHandler<Openinary.OpeninaryRetryHandler>()
+        .Services.AddSingleton<Openinary.OpeninaryRetryHandler>();
 
         // S3 Client
         services.AddSingleton<IAmazonS3>(sp =>
