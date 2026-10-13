@@ -44,13 +44,15 @@ public class StripePaymentGateway(
     /// <inheritdoc />
     public Task<GatewayPaymentResult> GetPaymentAsync(
         string externalTransactionId,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default,
+        string? providerId = null) =>
         paymentService.GetPaymentAsync(externalTransactionId, cancellationToken);
 
     /// <inheritdoc />
     public Task<GatewayPaymentCancellationResult> CancelPaymentAsync(
         string externalTransactionId,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default,
+        string? providerId = null) =>
         paymentService.CancelPaymentAsync(externalTransactionId, cancellationToken);
 
     /// <inheritdoc />
@@ -58,6 +60,18 @@ public class StripePaymentGateway(
         GatewayRefundRequest request,
         CancellationToken cancellationToken = default) =>
         paymentService.ProcessRefundAsync(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default) =>
+        paymentService.AcceptDisputeAsync(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default) =>
+        paymentService.ChallengeDisputeAsync(request, cancellationToken);
 
     /// <inheritdoc />
     public Task<bool> ValidateWebhookSignatureAsync(

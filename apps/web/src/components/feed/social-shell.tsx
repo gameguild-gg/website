@@ -3,6 +3,7 @@ import {
   BuildStories,
   type SocialStoryPreview,
 } from "@/components/feed/build-stories";
+import { FeedSkeleton } from "@/components/feed/feed-skeleton";
 import { SocialFeedClient } from "@/components/feed/social-feed-client";
 import {
   SocialFeedTabs,
@@ -21,6 +22,7 @@ import {
   loadTrendingTags,
 } from "@/lib/feed/queries";
 import { AlertCircle } from "lucide-react";
+import { Suspense } from "react";
 
 const TAB_SCOPE: Record<SocialFeedTab, FeedScope> = {
   foryou: "for-you",
@@ -37,7 +39,21 @@ async function optional<T>(operation: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-export async function SocialShell({
+export function SocialShell({
+  tab = "foryou",
+  tag = null,
+}: {
+  tab?: SocialFeedTab;
+  tag?: string | null;
+}): React.JSX.Element {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <SocialFeed tab={tab} tag={tag} />
+    </Suspense>
+  );
+}
+
+export async function SocialFeed({
   tab = "foryou",
   tag = null,
 }: {
@@ -51,18 +67,26 @@ export async function SocialShell({
     user?.name?.trim() || user?.email?.split("@")[0] || "GameGuild member";
   const currentUserId = user?.id ?? null;
 
-  let primary;
-  let primaryError = false;
-  try {
-    primary = await loadSocialFeed({ scope, tag });
-  } catch {
-    primary = { items: [], nextCursor: null };
-    primaryError = true;
-  }
+  const emptyFeed = { items: [], nextCursor: null };
+  // Captured, not awaited: a rejection must not kill the parallel batch below.
+  const primaryPromise = loadSocialFeed({ scope, tag })
+    .then((feed) => ({ failed: false as const, feed }))
+    .catch(() => ({ failed: true as const, feed: emptyFeed }));
 
-  const [stories, currentProfile, suggestedProfiles, trendingTags, community] =
+  const [primaryResult, storiesTrack, currentProfile, suggestedProfiles, trendingTags, community] =
     await Promise.all([
-      optional(loadStories(), []),
+      primaryPromise,
+      optional(
+        loadStories().then(async (stories) => {
+          const authorProfiles = await Promise.all(
+            [...new Set(stories.map((story) => story.authorId))].map((id) =>
+              optional(loadSocialProfile(id), null),
+            ),
+          );
+          return { stories, authorProfiles };
+        }),
+        { stories: [], authorProfiles: [] },
+      ),
       currentUserId
         ? optional(loadSocialProfile(currentUserId), null)
         : Promise.resolve(null),
@@ -71,21 +95,18 @@ export async function SocialShell({
         : Promise.resolve([]),
       optional(loadTrendingTags(6), []),
       scope === "community"
-        ? Promise.resolve(primary)
-        : optional(loadSocialFeed({ scope: "community", take: 8 }), {
-            items: [],
-            nextCursor: null,
-          }),
+        ? primaryPromise.then(({ feed }) => feed)
+        : optional(loadSocialFeed({ scope: "community", take: 8 }), emptyFeed),
     ]);
 
+  const { failed: primaryError, feed: primary } = primaryResult;
+  const { stories, authorProfiles } = storiesTrack;
   const storyAuthorIds = [...new Set(stories.map((story) => story.authorId))];
   const storyProfiles = new Map<string, SocialProfile>();
-  await Promise.all(
-    storyAuthorIds.map(async (authorId) => {
-      const profile = await optional(loadSocialProfile(authorId), null);
-      if (profile) storyProfiles.set(authorId, profile);
-    }),
-  );
+  storyAuthorIds.forEach((authorId, index) => {
+    const profile = authorProfiles[index];
+    if (profile) storyProfiles.set(authorId, profile);
+  });
   const storyPreviews: SocialStoryPreview[] = stories.map((story) => {
     const profile = storyProfiles.get(story.authorId);
     const ownStory = story.authorId === currentUserId;

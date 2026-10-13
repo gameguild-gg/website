@@ -129,7 +129,7 @@ public class PaymentsRecoveryControllerTests
         var accessor = new Mock<IActorContextAccessor>();
         accessor.SetupGet(value => value.ActorContext).Returns(actorContext);
 
-        return new PaymentsController(sender, accessor.Object, Mock.Of<IStripeCustomerService>(), Mock.Of<ISubscriptionPaymentContextService>())
+        return new PaymentsController(sender, accessor.Object, Mock.Of<IStripeCustomerService>(), Mock.Of<ISubscriptionPaymentContextService>(), Mock.Of<IPaymentRetryMethodChangeService>(), Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentsController>.Instance)
         {
             ControllerContext = new ControllerContext
             {

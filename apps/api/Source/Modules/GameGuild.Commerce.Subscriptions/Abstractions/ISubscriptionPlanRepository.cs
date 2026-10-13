@@ -81,4 +81,19 @@ public interface ISubscriptionPlanRepository
     ///     Gets paginated subscription plans with search and filtering
     /// </summary>
     Task<PagedResult<SubscriptionPlan>> GetPagedAsync(int skip, int pageSize, string? searchTerm = null, bool includeDeleted = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Lists all interval price points configured for a plan (issue #392).
+    /// </summary>
+    Task<IReadOnlyList<SubscriptionPlanIntervalPrice>> GetIntervalPricesAsync(Guid planId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Gets the interval price point for one plan interval, when explicitly configured (issue #392).
+    /// </summary>
+    Task<SubscriptionPlanIntervalPrice?> GetIntervalPriceAsync(Guid planId, BillingCycle interval, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Adds or updates the interval price point for a plan interval (issue #392).
+    /// </summary>
+    Task<SubscriptionPlanIntervalPrice> UpsertIntervalPriceAsync(SubscriptionPlanIntervalPrice intervalPrice, CancellationToken cancellationToken = default);
 }

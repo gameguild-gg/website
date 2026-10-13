@@ -159,39 +159,70 @@ test("mandatory identity security selection deduplicates multiple source changes
   );
 });
 
-for (const filePath of [
-  "apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Code/CodeAssessmentTypeAdapter.cs",
-  "apps/api/tests/GameGuild.Learning.Assessments.UnitTests/CodeGradingAdapterContractTests.cs",
-  "apps/api/Source/GameGuild.API/Program.cs",
-  "apps/api/Source/Modules/GameGuild.Future/Example.cs",
-]) {
-  test("API changes retain the mandatory security suites: " + filePath, () => {
-    const selected = selectAffectedDotnetTestNames([filePath], [
-      ...availableProjects,
-      "GameGuild.Identity.Authentication.UnitTests",
-      "GameGuild.Identity.Authorization.UnitTests",
-      "GameGuild.Learning.Assessments.UnitTests",
-    ]);
-    for (const required of [
-      "GameGuild.API.UnitTests",
-      "GameGuild.Identity.Authentication.UnitTests",
-      "GameGuild.Identity.Authorization.UnitTests",
-      "GameGuild.SharedKernel.UnitTests",
-    ]) assert.ok(selected.includes(required), required);
-    assert.equal(selected.includes("GameGuild.Learning.Assessments.UnitTests"), filePath.includes("GameGuild.Learning.Assessments"));
-  });
-}
+const auditProjects = [
+  ...availableProjects,
+  "GameGuild.Audit.UnitTests",
+  "GameGuild.Identity.Authentication.UnitTests",
+  "GameGuild.Identity.Authorization.UnitTests",
+];
+const auditExpected = [
+  "GameGuild.API.UnitTests",
+  "GameGuild.Audit.UnitTests",
+  "GameGuild.Identity.Authentication.UnitTests",
+  "GameGuild.Identity.Authorization.UnitTests",
+  "GameGuild.SharedKernel.UnitTests",
+];
 
-test("non-API changes do not select API security projects", () => {
+test("audit source-only changes select the historical audit suite and mandatory security regressions", () => {
   assert.deepEqual(selectAffectedDotnetTestNames([
-    "apps/web/src/page.tsx",
-    "tools/emception/grading/toolchain-binding.mjs",
-    "docs/architecture/example.md",
-  ], availableProjects), []);
+    "apps/api/Source/Modules/GameGuild.Compliance.Audit/Services/AuditReplaySnapshot.cs",
+  ], auditProjects), auditExpected);
 });
 
-test("core security selection only includes available projects", () => {
+test("audit source and test paths deduplicate the historical project alias", () => {
   assert.deepEqual(selectAffectedDotnetTestNames([
-    "apps/api/Source/Modules/GameGuild.Learning.Assessments/Example.cs",
-  ], ["GameGuild.Learning.Assessments.UnitTests"]), ["GameGuild.Learning.Assessments.UnitTests"]);
+    "apps/api/Source/Modules/GameGuild.Compliance.Audit/Services/AuditReplaySnapshot.cs",
+    "apps/api/Source/Modules/GameGuild.Compliance.Audit/Entities/AuditLog.cs",
+    "apps/api/tests/GameGuild.Audit.UnitTests/Services/AuditReplaySnapshotTests.cs",
+  ], auditProjects), auditExpected);
+});
+
+test("audit test-only changes select the changed native suite", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/tests/GameGuild.Audit.UnitTests/Services/AuditReplaySnapshotTests.cs",
+  ], auditProjects), ["GameGuild.Audit.UnitTests"]);
+});
+
+const hostIntegrationProjects = [
+  ...availableProjects,
+  "GameGuild.API.IntegrationTests",
+  "GameGuild.Identity.Authentication.UnitTests",
+  "GameGuild.Identity.Authorization.UnitTests",
+];
+const hostIntegrationExpected = [
+  "GameGuild.API.IntegrationTests",
+  "GameGuild.API.UnitTests",
+  "GameGuild.Identity.Authentication.UnitTests",
+  "GameGuild.Identity.Authorization.UnitTests",
+  "GameGuild.SharedKernel.UnitTests",
+];
+
+test("full-host test-only changes select the HTTP project and mandatory security suites", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/tests/GameGuild.API.IntegrationTests/PolymorphicSignInPostgreSqlHttpTests.cs",
+  ], hostIntegrationProjects), hostIntegrationExpected);
+});
+
+test("multiple full-host test paths deduplicate all mandatory suites", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/tests/GameGuild.API.IntegrationTests/AuthenticationLockoutConcurrencyPostgreSqlTests.cs",
+    "apps/api/tests/GameGuild.API.IntegrationTests/PolymorphicSignInPostgreSqlHttpTests.cs",
+    "apps/api/Source/Modules/GameGuild.Identity.Authentication/Services/AuthenticationAttemptService.cs",
+  ], hostIntegrationProjects), hostIntegrationExpected);
+});
+
+test("full-host test selection only emits available projects", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/tests/GameGuild.API.IntegrationTests/ExampleTests.cs",
+  ], ["GameGuild.API.IntegrationTests"]), ["GameGuild.API.IntegrationTests"]);
 });

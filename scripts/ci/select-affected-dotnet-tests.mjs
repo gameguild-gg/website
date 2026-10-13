@@ -23,8 +23,20 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
     );
 
     if (moduleMatch?.[1]) {
-      requiresCoreFallback = true;
-      const testName = `${moduleMatch[1]}.UnitTests`;
+      // Identity and audit changes also validate shared authorization and host security invariants.
+      if (moduleMatch[1].startsWith("GameGuild.Identity.") || moduleMatch[1] === "GameGuild.Compliance.Audit") {
+        requiresCoreFallback = true;
+        for (const identityTests of [
+          "GameGuild.Identity.Authentication.UnitTests",
+          "GameGuild.Identity.Authorization.UnitTests",
+        ]) {
+          if (availableProjects.includes(identityTests)) selected.add(identityTests);
+        }
+      }
+      // The audit suite retains its historical project name.
+      const testName = moduleMatch[1] === "GameGuild.Compliance.Audit"
+        ? "GameGuild.Audit.UnitTests"
+        : `${moduleMatch[1]}.UnitTests`;
       if (availableProjects.includes(testName)) selected.add(testName);
       continue;
     }
@@ -36,6 +48,16 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
     ) {
       requiresCoreFallback = true;
       selected.add(testProjectMatch[1]);
+      // Full-host test changes retain the mandatory identity and host regressions.
+      if (testProjectMatch[1] === "GameGuild.API.IntegrationTests") {
+        requiresCoreFallback = true;
+        for (const identityTests of [
+          "GameGuild.Identity.Authentication.UnitTests",
+          "GameGuild.Identity.Authorization.UnitTests",
+        ]) {
+          if (availableProjects.includes(identityTests)) selected.add(identityTests);
+        }
+      }
       continue;
     }
 

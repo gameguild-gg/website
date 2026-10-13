@@ -65,7 +65,24 @@ describe("SocialRail", () => {
 
     expect(screen.getByRole("link", { name: /#indie dev/i })).toHaveAttribute(
       "href",
-      "/?tab=community&tag=indie%20dev",
+      "/feed?tab=community&tag=indie%20dev",
+    );
+  });
+
+  it("keeps the for-you trending tag on the default feed route without a redundant tab param", () => {
+    render(
+      <SocialRail
+        currentProfile={null}
+        sessions={[]}
+        creators={[]}
+        tags={[{ name: "indie dev", postCount: 7 }]}
+        activeTab="foryou"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /#indie dev/i })).toHaveAttribute(
+      "href",
+      "/feed?tag=indie%20dev",
     );
   });
 

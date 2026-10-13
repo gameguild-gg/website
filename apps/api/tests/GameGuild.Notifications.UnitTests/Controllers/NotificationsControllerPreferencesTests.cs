@@ -119,6 +119,20 @@ public class NotificationsControllerPreferencesTests
         monthlyStatement.Suppressible.Should().BeTrue();
         monthlyStatement.DisplayName.Should().Be("Monthly Statement");
 
+        // Issue #414: card-expiry reminders are a Billing notification (suppressible like
+        // monthly statements; delivery is re-attempted never — horizon markers persist).
+        var paymentMethodExpiring = catalog.Single(e => e.Type == "PaymentMethodExpiring");
+        paymentMethodExpiring.Category.Should().Be("Billing");
+        paymentMethodExpiring.Suppressible.Should().BeTrue();
+        paymentMethodExpiring.DisplayName.Should().Be("Payment Method Expiring");
+
+        // Issue #406: low wallet-balance alerts are a Billing notification (suppressible like
+        // card-expiry reminders; the LowBalanceAlertedAt marker persists across passes).
+        var walletBalanceBelowThreshold = catalog.Single(e => e.Type == "WalletBalanceBelowThreshold");
+        walletBalanceBelowThreshold.Category.Should().Be("Billing");
+        walletBalanceBelowThreshold.Suppressible.Should().BeTrue();
+        walletBalanceBelowThreshold.DisplayName.Should().Be("Wallet Balance Below Threshold");
+
         var courseEnrollment = catalog.Single(e => e.Type == "CourseEnrollment");
         courseEnrollment.Category.Should().Be("Learning");
     }

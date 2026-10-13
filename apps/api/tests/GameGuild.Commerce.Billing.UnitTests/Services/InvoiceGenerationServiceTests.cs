@@ -18,6 +18,7 @@ public sealed class InvoiceGenerationServiceTests
     private readonly Mock<ISubscriptionRepository> _subscriptionRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<INotificationService> _notificationService = new();
+    private readonly Mock<GameGuild.Commerce.Payments.IReferralService> _referralService = new();
     private readonly List<Invoice> _invoices = [];
     private readonly InvoiceGenerationService _service;
 
@@ -48,12 +49,18 @@ public sealed class InvoiceGenerationServiceTests
         _context
             .Setup(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
+        // Issue #410: paid invoices dispatch a referral conversion check (best effort).
+        _referralService
+            .Setup(service => service.HandleInvoicePaidAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
 
         _service = new InvoiceGenerationService(
             _context.Object,
             _subscriptionRepository.Object,
             _userRepository.Object,
             _notificationService.Object,
+            _referralService.Object,
             NullLogger<InvoiceGenerationService>.Instance);
     }
 

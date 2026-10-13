@@ -168,6 +168,62 @@ public class PaymentEndpointsIntegrationTests : IClassFixture<WebApplicationFact
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task GetRetryAttempts_ShouldReturn404_WhenPaymentDoesNotExist()
+    {
+        // Act
+        var response = await _client.GetAsync($"/api/v1/payments/{Guid.NewGuid()}:retry-attempts");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetRetryAttempts_ShouldReturn200_WithSeededHistory()
+    {
+        // Arrange: one succeeded payment for the test tenant with a persisted retry attempt.
+        Guid paymentId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var tenantId = TestAuthHandler.DefaultTenantId;
+            var payment = Payment.Create(
+                tenantId,
+                25m,
+                "USD",
+                $"idem-integration-{Guid.NewGuid():N}",
+                subscriptionId: Guid.NewGuid());
+            payment.MarkAsProcessing();
+            payment.MarkAsFailed("insufficient funds", "insufficient_funds");
+            payment.PrepareForRetry();
+            payment.MarkAsProcessing();
+            payment.MarkAsSucceeded("pi_recovered", "ch_recovered");
+            context.Set<Payment>().Add(payment);
+            context.Set<PaymentRetryAttempt>().Add(PaymentRetryAttempt.Create(
+                payment.Id,
+                attemptNumber: 1,
+                scheduledForUtc: SystemClock.UtcNow.AddHours(-1),
+                executedAtUtc: SystemClock.UtcNow,
+                outcome: PaymentStatus.Succeeded,
+                gateway: "stripe",
+                gatewayTransactionId: "ch_recovered"));
+            await context.SaveChangesAsync();
+            paymentId = payment.Id;
+        }
+
+        // Act
+        var response = await _client.GetAsync($"/api/v1/payments/{paymentId}:retry-attempts");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        // The API serializes enums as strings (JsonStringEnumConverter), so the client-side
+        // deserializer needs the same converter to read the attempt outcome.
+        var serializerOptions = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        serializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        var attempts = await response.Content.ReadFromJsonAsync<List<PaymentRetryAttemptDto>>(serializerOptions);
+        attempts.Should().ContainSingle().Which.AttemptNumber.Should().Be(1);
+    }
+
     public void Dispose()
     {
         _client?.Dispose();

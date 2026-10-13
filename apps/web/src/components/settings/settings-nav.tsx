@@ -2,12 +2,13 @@
 
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { Accessibility, Globe2, Palette, ShieldCheck, User, UserCog } from 'lucide-react';
+import { Accessibility, Globe2, Laptop, Palette, ShieldCheck, User, UserCog } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 const NAV_ITEMS = [
   { href: '/workspace/settings/profile', icon: User, labelKey: 'nav.profile' },
   { href: '/workspace/settings/account', icon: UserCog, labelKey: 'nav.account' },
+  { href: '/workspace/settings/security', icon: Laptop, labelKey: 'nav.security' },
   { href: '/workspace/settings/appearance', icon: Palette, labelKey: 'nav.appearance' },
   { href: '/workspace/settings/localization', icon: Globe2, labelKey: 'nav.localization' },
   { href: '/workspace/settings/privacy', icon: ShieldCheck, labelKey: 'nav.privacy' },

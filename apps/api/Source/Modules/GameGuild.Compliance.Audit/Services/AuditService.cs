@@ -7,7 +7,11 @@ using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Compliance.Audit;
 
-public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContextAccessor httpContextAccessor, ILogger<AuditService> logger) : IAuditService
+public sealed class AuditService(
+    IServiceScopeFactory scopeFactory,
+    IHttpContextAccessor httpContextAccessor,
+    IPiiRedactionService piiRedaction,
+    ILogger<AuditService> logger) : IAuditService
 {
     private const int MaxPersistenceAttempts = 2;
 
@@ -31,17 +35,19 @@ public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContext
                 context.Set<AuditLog>().Add(auditLog);
                 await context.SaveChangesAsync().ConfigureAwait(false);
 
-                // Log to structured logging as well for real-time monitoring
+                // Log to structured logging as well for real-time monitoring. The entity carries
+                // the redacted values at this point: the audit-sink interceptor applied the PII
+                // pipeline during SaveChangesAsync.
                 var logLevel = GetLogLevel(request.RiskLevel, request.Success);
 
                 logger.Log(
                     logLevel,
                     "Audit: {ActionType} on {ResourceType} {ResourceId} by User {UserId} - {Success}",
-                    request.ActionType,
-                    request.ResourceType,
-                    request.ResourceId,
-                    request.UserId,
-                    request.Success ? "Success" : "Failed"
+                    auditLog.ActionType,
+                    auditLog.ResourceType,
+                    auditLog.ResourceId,
+                    auditLog.UserId,
+                    auditLog.Success ? "Success" : "Failed"
                 );
 
                 return true;
@@ -57,24 +63,32 @@ public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContext
                 // Audit persistence must not break business operations, but the event may not
                 // silently vanish either (issue #346: durable audit logging). Escalate to a
                 // critical structured-log entry that carries the full audit payload so the
-                // durable logging pipeline retains the record for later reconciliation.
+                // durable logging pipeline retains the record for later reconciliation. The
+                // payload is sanitized through the PII redaction pipeline first (issue #192):
+                // the durable fallback must never be the leak that the pipeline exists to close.
+                // Sanitization itself is fail-closed — on pipeline failure protectable fields are
+                // replaced wholesale instead of passed through raw.
+                var sanitized = await piiRedaction
+                    .RedactRequestForDurableFallbackAsync(request, CancellationToken.None)
+                    .ConfigureAwait(false);
+
                 logger.LogCritical(ex,
                     "Audit log persistence FAILED after {Attempts} attempts for action {ActionType}; durable fallback payload: {AuditPayload}",
                     MaxPersistenceAttempts,
-                    request.ActionType,
+                    sanitized.ActionType,
                     JsonSerializer.Serialize(new
                     {
-                        request.ActionType,
-                        request.ResourceType,
-                        request.ResourceId,
-                        request.UserId,
-                        request.TenantId,
-                        request.Success,
-                        request.ErrorMessage,
-                        request.RiskLevel,
-                        request.Category,
-                        request.CorrelationId,
-                        request.Description
+                        sanitized.ActionType,
+                        sanitized.ResourceType,
+                        sanitized.ResourceId,
+                        sanitized.UserId,
+                        sanitized.TenantId,
+                        sanitized.Success,
+                        sanitized.ErrorMessage,
+                        sanitized.RiskLevel,
+                        sanitized.Category,
+                        sanitized.CorrelationId,
+                        sanitized.Description
                     }));
 
                 // Don't throw - audit logging should not break business operations, but the

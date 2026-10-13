@@ -53,7 +53,8 @@ public sealed class GetProductByIdQueryHandler(IProductRepository productReposit
                 p.IsSaleActive(),
                 p.GetCurrentActiveVersion()?.Id
             )).ToList() : null,
-            product.TenantId
+            product.TenantId,
+            product.CategoryId
         );
     }
 }

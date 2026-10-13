@@ -15,6 +15,8 @@ namespace GameGuild.Commerce.Products;
 /// <param name="SortBy">Sort field (Name, CreatedAt)</param>
 /// <param name="SortDirection">Sort direction (ASC, DESC)</param>
 /// <param name="TenantId">Internal tenant filter for draft ownership</param>
+/// <param name="CategoryId">Filter by category, including descendant categories (issue #401)</param>
+/// <param name="InStockOnly">Filter by real-time availability: true = in stock only, false = out of stock only (issue #401)</param>
 public sealed record GetProductsPagedQuery(
     ProductType? Type = null,
     Guid? CreatorId = null,
@@ -25,5 +27,7 @@ public sealed record GetProductsPagedQuery(
     int Take = 50,
     string SortBy = "CreatedAt",
     string SortDirection = "DESC",
-    Guid? TenantId = null
+    Guid? TenantId = null,
+    Guid? CategoryId = null,
+    bool? InStockOnly = null
 ) : IQuery<PagedResult<ProductDto>>;

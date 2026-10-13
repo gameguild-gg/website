@@ -37,6 +37,7 @@ public class LocalAuthServiceTests
     private readonly Mock<ISignInMfaService> _signInMfaMock = SignInMfaPreparationStub.CreateMock();
     private readonly IConfiguration _configuration;
     private readonly LocalAuthService _sut;
+    private readonly Mock<ILogger<LocalAuthService>> _privacyLogger = new();
 
     public LocalAuthServiceTests()
     {
@@ -111,13 +112,163 @@ public class LocalAuthServiceTests
             _anomalyDetectionMock.Object,
             _enumerationProtectionMock.Object,
             _httpContextAccessorMock.Object,
-            NullLogger<LocalAuthService>.Instance,
+            _privacyLogger.Object,
             _senderMock.Object,
             _sessionManagementServiceMock.Object,
             _signInMfaMock.Object,
             auditEventSink: _authenticationAuditEventSinkMock.Object,
             suspiciousLoginAlerts: _suspiciousLoginAlertsMock.Object
         );
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task LocalSignInAsync_LogPrivacy_RepositoryFailureKeepsGenericResponse(string channel)
+    {
+        var email = $"private-{Guid.NewGuid():N}@example.test";
+        var credential = $"Aa1!{Guid.NewGuid():N}";
+        var failure = PrivacyFailure(channel, email, credential);
+        _userRepoMock.Setup(repository => repository.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+
+        var result = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.LocalSignInAsync(new LocalSignInRequest { Email = email, Password = credential }));
+
+        result.Message.Should().Be("Authentication failed");
+        _authAttemptServiceMock.Verify(service => service.RecordFailedAttemptAsync(
+            email, null, "127.0.0.1", It.IsAny<string>(), "SystemError", It.IsAny<TimeSpan>()), Times.Once);
+        AssertPrivateErrorLogs(failure, 1, email, credential);
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task LocalSignUpAsync_LogPrivacy_RepositoryFailureStillPropagates(string channel)
+    {
+        var email = $"private-{Guid.NewGuid():N}@example.test";
+        var credential = $"Aa1!{Guid.NewGuid():N}";
+        var failure = PrivacyFailure(channel, email, credential);
+        _userRepoMock.Setup(repository => repository.ExistsByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.LocalSignUpAsync(new LocalSignUpRequest
+            {
+                Email = email, Password = credential, Username = "private-user"
+            }));
+
+        result.Should().BeSameAs(failure);
+        _userRepoMock.Verify(repository => repository.AddAsync(
+            It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
+        AssertPrivateErrorLogs(failure, 1, email, credential);
+    }
+
+    [Theory]
+    [InlineData("record-attempt", "message")]
+    [InlineData("record-attempt", "inner")]
+    [InlineData("record-attempt", "data")]
+    [InlineData("analyze-attempt", "message")]
+    [InlineData("analyze-attempt", "inner")]
+    [InlineData("analyze-attempt", "data")]
+    public async Task LocalSignInAsync_LogPrivacy_DiagnosticFailureDoesNotSkipRiskAnalysis(string failurePoint, string channel)
+    {
+        var email = $"private-{Guid.NewGuid():N}@example.test";
+        var credential = $"Aa1!{Guid.NewGuid():N}";
+        var failure = PrivacyFailure(channel, email, credential);
+        _userRepoMock.Setup(repository => repository.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _authAttemptServiceMock.Setup(service => service.RecordFailedAttemptAsync(
+            email, null, "127.0.0.1", It.IsAny<string>(), "InvalidCredentials", It.IsAny<TimeSpan>()))
+            .Returns(Task.CompletedTask);
+        _anomalyDetectionMock.Setup(service => service.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+            .ReturnsAsync(new AuthenticationAnomalyResult { RiskLevel = RiskLevel.Low });
+        if (failurePoint == "record-attempt")
+        {
+            _authAttemptServiceMock.Setup(service => service.RecordFailedAttemptAsync(
+                email, null, "127.0.0.1", It.IsAny<string>(), "InvalidCredentials", It.IsAny<TimeSpan>()))
+                .ThrowsAsync(failure);
+        }
+        else
+        {
+            _anomalyDetectionMock.Setup(service => service.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+                .ThrowsAsync(failure);
+        }
+
+        var result = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.LocalSignInAsync(new LocalSignInRequest { Email = email, Password = credential }));
+
+        result.Message.Should().Be("Authentication failed");
+        _anomalyDetectionMock.Verify(service => service.AnalyzeLoginAttemptAsync(
+            It.IsAny<AuthenticationAttemptContext>()), Times.Once);
+        _jwtTokenServiceMock.Verify(service => service.GenerateRefreshToken(), Times.Never);
+        AssertPrivateErrorLogs(failure, 1, email, credential);
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task LocalSignInAsync_LogPrivacy_SecondaryRecordingFailureKeepsGenericResponse(string channel)
+    {
+        var email = $"private-{Guid.NewGuid():N}@example.test";
+        var credential = $"Aa1!{Guid.NewGuid():N}";
+        var failure = PrivacyFailure(channel, email, credential);
+        _userRepoMock.Setup(repository => repository.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+        _authAttemptServiceMock.Setup(service => service.RecordFailedAttemptAsync(
+            email, null, "127.0.0.1", It.IsAny<string>(), "SystemError", It.IsAny<TimeSpan>()))
+            .ThrowsAsync(failure);
+
+        var result = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.LocalSignInAsync(new LocalSignInRequest { Email = email, Password = credential }));
+
+        result.Message.Should().Be("Authentication failed");
+        _jwtTokenServiceMock.Verify(service => service.GenerateRefreshToken(), Times.Never);
+        AssertPrivateErrorLogs(failure, 2, email, credential);
+    }
+
+    private static InvalidOperationException PrivacyFailure(string channel, params string[] privateValues)
+    {
+        var payload = string.Join("; ", privateValues);
+        var failure = new InvalidOperationException(
+            channel == "message" ? payload : "Repository unavailable",
+            channel == "inner" ? new Exception(payload) : null);
+        if (channel == "data")
+        {
+            failure.Data["detail"] = payload;
+        }
+        return failure;
+    }
+
+    private void AssertPrivateErrorLogs(Exception failure, int expectedCount, params string[] privateValues)
+    {
+        var entries = new List<Moq.IInvocation>();
+        foreach (var invocation in _privacyLogger.Invocations)
+        {
+            if (invocation.Method.Name == nameof(ILogger.Log) && Equals(invocation.Arguments[0], LogLevel.Error))
+            {
+                entries.Add(invocation);
+            }
+        }
+        entries.Should().HaveCount(expectedCount);
+        foreach (var entry in entries)
+        {
+            entry.Arguments[3].Should().BeNull("exception objects can carry private values in three separate channels");
+            var rendered = entry.Arguments[2].ToString()!;
+            var fields = entry.Arguments[2].Should().BeAssignableTo<IEnumerable<KeyValuePair<string, object?>>>().Subject;
+            fields.Should().Contain(pair => pair.Key == "ErrorType" && Equals(pair.Value, failure.GetType().FullName));
+            foreach (var privateValue in privateValues)
+            {
+                rendered.Should().NotContain(privateValue);
+                foreach (var field in fields)
+                {
+                    (field.Value?.ToString() ?? string.Empty).Should().NotContain(privateValue);
+                }
+            }
+        }
     }
 
     // ── LocalSignInAsync ──────────────────────────────────────
@@ -1223,6 +1374,8 @@ public class LocalAuthServiceTests
                 sessionId,
                 "replacement-hash",
                 It.IsAny<DateTime>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .Callback(() => operationOrder.Add("persist-session"))
             .ReturnsAsync(true);

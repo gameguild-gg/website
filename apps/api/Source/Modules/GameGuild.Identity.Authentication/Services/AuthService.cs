@@ -40,6 +40,9 @@ public class AuthService(
     public Task<SignInResponse> DiscordSignInAsync(DiscordSignInRequest request, CancellationToken cancellationToken = default) =>
         oauthAuthService.DiscordSignInAsync(request, cancellationToken);
 
+    public Task<SignInResponse> GitHubCallbackSignInAsync(GitHubCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        oauthAuthService.GitHubCallbackSignInAsync(request, cancellationToken);
+
     public Task<SignInResponse> OidcSignInAsync(OidcSignInRequest request, CancellationToken cancellationToken = default) =>
         oauthAuthService.OidcSignInAsync(request, cancellationToken);
 

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class RepairHardToSoftConversionRiskReservationAlias
+public partial class RepairHardToSoftConversionRiskReservationAlias : Migration
 {
     private static void InstallHardToSoftConversionRiskReservationAliasRepair(MigrationBuilder migrationBuilder)
     {

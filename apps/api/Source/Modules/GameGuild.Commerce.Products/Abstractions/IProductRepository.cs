@@ -22,7 +22,9 @@ public interface IProductRepository
         bool? isPublished = null);
 
     /// <summary>
-    /// Get a paginated list of products
+    /// Get a paginated list of products. <paramref name="categoryIds"/> filters by a
+    /// category subtree (issue #401); <paramref name="inStockOnly"/> filters by tracked
+    /// availability (true = in stock only, false = out of stock only).
     /// </summary>
     Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(
         ProductType? type = null,
@@ -35,7 +37,9 @@ public interface IProductRepository
         string sortBy = "CreatedAt",
         string sortDirection = "DESC",
         Guid? tenantId = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        IReadOnlyList<Guid>? categoryIds = null,
+        bool? inStockOnly = null);
 
     /// <summary>
     /// Add a new product

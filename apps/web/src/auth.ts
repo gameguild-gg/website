@@ -4,6 +4,7 @@ import {
   CredentialsProvider,
   GoogleProvider,
   DiscordProvider,
+  GitHubProvider,
   processSession,
   encodeSession,
   SessionStore,
@@ -14,6 +15,7 @@ import { cookies } from "next/headers";
 import { createSharedAuthCookieConfig } from "@/lib/auth/cross-domain-auth";
 import { createMagicLinkCredentialsAuthorize } from "@/lib/auth/magic-link-credentials";
 import { createEmailCodeCredentialsAuthorize } from "@/lib/auth/email-code-credentials";
+import { createWeb3CredentialsAuthorize } from "@/lib/auth/web3-credentials";
 
 const passwordCredentials = CredentialsProvider();
 const apiUrl =
@@ -24,8 +26,11 @@ const apiUrl =
 const result = GameGuildAuth({
   providers: [
     CredentialsProvider({
-      authorize: createMagicLinkCredentialsAuthorize(
-        createEmailCodeCredentialsAuthorize(passwordCredentials.authorize, apiUrl),
+      authorize: createWeb3CredentialsAuthorize(
+        createMagicLinkCredentialsAuthorize(
+          createEmailCodeCredentialsAuthorize(passwordCredentials.authorize, apiUrl),
+          apiUrl,
+        ),
         apiUrl,
       ),
     }),
@@ -42,6 +47,14 @@ const result = GameGuildAuth({
           DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? [
+          GitHubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
           }),
         ]
       : []),

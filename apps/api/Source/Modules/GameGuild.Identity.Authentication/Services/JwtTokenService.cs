@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using GameGuild;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Configuration.PresentationLayer.Authorization;
 using GameGuild.Identity.Authorization;
@@ -202,7 +203,7 @@ public sealed class JwtTokenService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error generating access token for user: {UserId}", userId);
+            logger.LogError("Error generating access token for user: {UserId}: {ErrorType}", userId, ex.GetType().FullName);
 
             throw;
         }
@@ -240,7 +241,7 @@ public sealed class JwtTokenService(
         cancellationToken.ThrowIfCancellationRequested();
         RefreshTokenLifecycleMetrics.RecordAttempt(RefreshTokenLifecycleOperation.Issued);
 
-        logger.LogInformation("Generating refresh token for user: {UserId}, Device: {DeviceId}", userId, deviceInfo.DeviceId);
+        logger.LogInformation("Generating refresh token for user: {UserId}, Device: {DeviceId}", userId, LogRedaction.Sanitize(deviceInfo.DeviceId));
 
         try
         {
@@ -307,7 +308,7 @@ public sealed class JwtTokenService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error generating refresh token for user: {UserId}", userId);
+            logger.LogError("Error generating refresh token for user: {UserId}: {ErrorType}", userId, ex.GetType().FullName);
 
             throw;
         }
@@ -329,19 +330,19 @@ public sealed class JwtTokenService(
         }
         catch (SecurityTokenExpiredException ex)
         {
-            logger.LogWarning(ex, "Token validation failed: Token expired");
+            logger.LogWarning("Token validation failed: Token expired: {ErrorType}", ex.GetType().FullName);
 
             return Task.FromResult(false);
         }
         catch (SecurityTokenException ex)
         {
-            logger.LogWarning(ex, "Token validation failed: {Message}", ex.Message);
+            logger.LogWarning("Token validation failed: {ErrorType}", ex.GetType().FullName);
 
             return Task.FromResult(false);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error validating token");
+            logger.LogError("Error validating token: {ErrorType}", ex.GetType().FullName);
 
             return Task.FromResult(false);
         }
@@ -395,7 +396,7 @@ public sealed class JwtTokenService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error extracting token payload");
+            logger.LogError("Error extracting token payload: {ErrorType}", ex.GetType().FullName);
 
             return Task.FromResult<TokenPayload?>(null);
         }
@@ -446,7 +447,7 @@ public sealed class JwtTokenService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error revoking refresh token");
+            logger.LogError("Error revoking refresh token: {ErrorType}", ex.GetType().FullName);
 
             return false;
         }
@@ -465,7 +466,7 @@ public sealed class JwtTokenService(
     {
         logger.LogInformation(
             "Generating service account token for: {ServiceAccountId}, ClientId: {ClientId}",
-            serviceAccountId, clientId);
+            LogRedaction.RedactId(serviceAccountId, "said"), LogRedaction.RedactId(clientId, "cid"));
 
         try
         {
@@ -521,15 +522,15 @@ public sealed class JwtTokenService(
 
             logger.LogInformation(
                 "Service account token generated for: {ServiceAccountId}, Expires: {ExpiresAt}",
-                serviceAccountId, expiresAt);
+                LogRedaction.RedactId(serviceAccountId, "said"), expiresAt);
 
             return Task.FromResult((tokenString, expiresAt));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Error generating service account token for: {ServiceAccountId}",
-                serviceAccountId);
+            logger.LogError(
+                "Error generating service account token for: {ServiceAccountId}: {ErrorType}",
+                LogRedaction.RedactId(serviceAccountId, "said"), ex.GetType().FullName);
 
             throw;
         }

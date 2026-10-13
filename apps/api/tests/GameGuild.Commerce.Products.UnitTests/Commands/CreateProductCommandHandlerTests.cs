@@ -16,7 +16,7 @@ public class CreateProductCommandHandlerTests
     public CreateProductCommandHandlerTests()
     {
         _mockRepository = new Mock<IProductRepository>();
-        _handler = new CreateProductCommandHandler(_mockRepository.Object);
+        _handler = new CreateProductCommandHandler(_mockRepository.Object, Mock.Of<IProductCategoryRepository>());
     }
 
     #region Happy Path Tests

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class HardenPayoutFifoEligibility
+public partial class HardenPayoutFifoEligibility : Migration
 {
     internal static void InstallHardenedPayoutFifoEligibility(MigrationBuilder migrationBuilder)
     {

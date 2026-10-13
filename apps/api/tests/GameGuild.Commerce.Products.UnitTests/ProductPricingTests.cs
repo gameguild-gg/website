@@ -73,6 +73,9 @@ public class ProductPricingTests
         var promo = CreatePromo("SAVE20", PromoCodeType.PercentageOff, percentage: 20m);
         _promoCodeRepository.Setup(r => r.GetByCodeAsync("SAVE20", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
+        _promoCodeRepository
+            .Setup(r => r.GetByCodesAsync(It.Is<IEnumerable<string>>(c => c.SequenceEqual(new[] { "SAVE20" })), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PromoCode> { promo });
 
         var result = await CreateService().CalculatePriceAsync(product, promoCodes: new[] { "SAVE20" });
 
@@ -89,6 +92,9 @@ public class ProductPricingTests
         var promo = CreatePromo("TAKE50", PromoCodeType.FixedAmountOff, amount: 50m);
         _promoCodeRepository.Setup(r => r.GetByCodeAsync("TAKE50", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
+        _promoCodeRepository
+            .Setup(r => r.GetByCodesAsync(It.Is<IEnumerable<string>>(c => c.SequenceEqual(new[] { "TAKE50" })), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PromoCode> { promo });
 
         var result = await CreateService().CalculatePriceAsync(product, promoCodes: new[] { "TAKE50" });
 
@@ -105,8 +111,21 @@ public class ProductPricingTests
             .ReturnsAsync(percentage);
         _promoCodeRepository.Setup(r => r.GetByCodeAsync("TAKE15", It.IsAny<CancellationToken>()))
             .ReturnsAsync(fixedAmount);
+        _promoCodeRepository
+            .Setup(r => r.GetByCodesAsync(It.Is<IEnumerable<string>>(c => c.SequenceEqual(new[] { "SAVE10", "TAKE15" })), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PromoCode> { percentage, fixedAmount });
 
-        var result = await CreateService().ApplyPromoCodesAsync(100m, new[] { "SAVE10", "TAKE15" });
+        // Stacking requires an active rule; sequential strategy applies codes to the
+        // already-reduced amount in priority order (ties broken alphabetically).
+        var rule = new PromoStackingRule
+        {
+            Id = Guid.NewGuid(),
+            Name = "sequential-default",
+            IsActive = true,
+            ConflictStrategy = ConflictResolutionStrategy.Sequential,
+            MaxStackableCount = 3
+        };
+        var result = await CreateService(rule).ApplyPromoCodesAsync(100m, new[] { "SAVE10", "TAKE15" });
 
         result.TotalDiscount.Should().Be(25m);
         result.FinalAmount.Should().Be(75m);
@@ -123,8 +142,20 @@ public class ProductPricingTests
             .ReturnsAsync(exclusive);
         _promoCodeRepository.Setup(r => r.GetByCodeAsync("TAKE10", It.IsAny<CancellationToken>()))
             .ReturnsAsync(later);
+        _promoCodeRepository
+            .Setup(r => r.GetByCodesAsync(It.Is<IEnumerable<string>>(c => c.SequenceEqual(new[] { "ONLYONE", "TAKE10" })), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PromoCode> { exclusive, later });
 
-        var result = await CreateService().ApplyPromoCodesAsync(100m, new[] { "ONLYONE", "TAKE10" });
+        // Exclusive codes apply alone under an active stacking rule.
+        var rule = new PromoStackingRule
+        {
+            Id = Guid.NewGuid(),
+            Name = "exclusive-guard",
+            IsActive = true,
+            ConflictStrategy = ConflictResolutionStrategy.Sequential,
+            MaxStackableCount = 3
+        };
+        var result = await CreateService(rule).ApplyPromoCodesAsync(100m, new[] { "ONLYONE", "TAKE10" });
 
         result.TotalDiscount.Should().Be(25m);
         result.FinalAmount.Should().Be(75m);
@@ -133,8 +164,19 @@ public class ProductPricingTests
             code.Code == "TAKE10" && code.Reason.Contains("exclusive", StringComparison.OrdinalIgnoreCase));
     }
 
-    private PricingEngineService CreateService()
-        => new(_productRepository.Object, _promoCodeRepository.Object);
+    private PricingEngineService CreateService(PromoStackingRule? activeRule = null)
+    {
+        var stackingRules = new Mock<IPromoStackingRuleRepository>();
+        stackingRules
+            .Setup(r => r.GetActiveRuleAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(activeRule);
+        return new PricingEngineService(
+            _productRepository.Object,
+            _promoCodeRepository.Object,
+            stackingRules.Object,
+            Mock.Of<IPricingRuleRepository>(),
+            new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
+    }
 
     private static Product CreateProductWithPricing(decimal basePrice, decimal? salePrice = null)
     {

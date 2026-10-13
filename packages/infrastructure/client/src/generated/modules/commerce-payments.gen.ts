@@ -271,6 +271,27 @@ export class CommercePaymentsModule {
   }
 
   /**
+   * Retry-attempt history for one payment (issue #415)
+   *
+   * Every executed retry attempt — manual or dispatched by the automated retry queue — is
+   * persisted as a history entry recording when the attempt was scheduled and executed,
+   * its outcome, the gateway that ran it, and the gateway failure code and transaction
+   * reference when the attempt failed. Use this to audit dunning timelines and explain
+   * recovery outcomes.
+   */
+  async getPaymentsRetryAttempts(paymentId: string): Promise<Result<Types.CommercePaymentsPaymentRetryAttemptDto[], ApiError>> {
+    const url = `/api/v1/payments/${paymentId}:retry-attempts`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    return result as Result<Types.CommercePaymentsPaymentRetryAttemptDto[], ApiError>;
+  }
+
+  /**
    * Payment success and failed-payment recovery metrics for an inclusive window.
    *
    * Aggregates the recovery analytics that billing administrators need to steer retry and

@@ -13,5 +13,7 @@ public sealed class AddFundsCommandValidator : AbstractValidator<AddFundsCommand
         RuleFor(x => x.Description).NotEmpty().WithMessage("Description is required").MaximumLength(500).WithMessage("Description cannot exceed 500 characters");
 
         RuleFor(x => x.ReferenceId).MaximumLength(100).When(x => !string.IsNullOrEmpty(x.ReferenceId)).WithMessage("Reference ID cannot exceed 100 characters");
+
+        RuleFor(x => x.Currency).Length(3).Matches("^[A-Z]{3}$").When(x => !string.IsNullOrEmpty(x.Currency)).WithMessage("Currency must be a 3-letter ISO-4217 code");
     }
 }

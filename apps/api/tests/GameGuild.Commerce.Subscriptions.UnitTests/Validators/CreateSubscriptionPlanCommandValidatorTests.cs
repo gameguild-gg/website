@@ -5,7 +5,8 @@ namespace GameGuild.Commerce.Subscriptions.UnitTests.Validators;
 
 /// <summary>
 /// Tests for CreateSubscriptionPlanCommandValidator
-/// Covers all validation rules for plan creation
+/// Covers all validation rules for plan creation (issue #416: optional slug with
+/// server-side generation, ISO 4217 currency allowlist, 3-100 character name).
 /// </summary>
 public class CreateSubscriptionPlanCommandValidatorTests
 {
@@ -13,7 +14,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
     public CreateSubscriptionPlanCommandValidatorTests()
     {
-        _validator = new CreateSubscriptionPlanCommandValidator();
+        _validator = new CreateSubscriptionPlanCommandValidator(new SubscriptionPlanSlugGenerator());
     }
 
     #region Valid Commands
@@ -43,9 +44,28 @@ public class CreateSubscriptionPlanCommandValidatorTests
     {
         // Arrange
         var command = new CreateSubscriptionPlanCommand(
-            Name: "A",
-            Slug: "a",
+            Name: "Pro",
+            Slug: "pro",
             MonthlyPriceInCents: 0,
+            Currency: "USD",
+            Description: null
+        );
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_ShouldPass_WithoutSlug_BecauseSlugIsGeneratedFromName()
+    {
+        // Arrange — issue #416: "Plan slugs are automatically generated"
+        var command = new CreateSubscriptionPlanCommand(
+            Name: "Professional Plan",
+            Slug: null,
+            MonthlyPriceInCents: 999,
             Currency: "USD",
             Description: null
         );
@@ -76,25 +96,6 @@ public class CreateSubscriptionPlanCommandValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
-    [Fact]
-    public void Validate_ShouldPass_WithEmptyDescription()
-    {
-        // Arrange
-        var command = new CreateSubscriptionPlanCommand(
-            Name: "Basic Plan",
-            Slug: "basic-plan",
-            MonthlyPriceInCents: 500,
-            Currency: "GBP",
-            Description: ""
-        );
-
-        // Act
-        var result = _validator.Validate(command);
-
-        // Assert
-        result.IsValid.Should().BeTrue();
-    }
-
     #endregion
 
     #region Name Validation
@@ -116,7 +117,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Name) &&
             e.ErrorMessage.Contains("required"));
     }
@@ -138,8 +139,46 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Name));
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenNameIsShorterThan3Characters()
+    {
+        // Arrange — issue #416: "Plan name required, 3-100 characters"
+        var command = new CreateSubscriptionPlanCommand(
+            Name: "ab",
+            Slug: "ab",
+            MonthlyPriceInCents: 999,
+            Currency: "USD",
+            Description: null
+        );
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CreateSubscriptionPlanCommand.Name) &&
+            e.ErrorMessage.Contains("between 3 and 100"));
+    }
+
+    [Fact]
+    public void Validate_ShouldPass_WhenNameIsExactly3Characters()
+    {
+        var command = new CreateSubscriptionPlanCommand(
+            Name: "abc",
+            Slug: "abc",
+            MonthlyPriceInCents: 999,
+            Currency: "USD",
+            Description: null
+        );
+
+        var result = _validator.Validate(command);
+
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -159,7 +198,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Name) &&
             e.ErrorMessage.Contains("100 characters"));
     }
@@ -183,52 +222,30 @@ public class CreateSubscriptionPlanCommandValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    [Fact]
+    public void Validate_ShouldFail_WhenSlugOmittedAndNameHasNoSlugifiableCharacters()
+    {
+        // Arrange — the generator cannot produce a slug from "---"
+        var command = new CreateSubscriptionPlanCommand(
+            Name: "---",
+            Slug: null,
+            MonthlyPriceInCents: 999,
+            Currency: "USD",
+            Description: null
+        );
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e =>
+            e.ErrorMessage.Contains("slug can be generated"));
+    }
+
     #endregion
 
     #region Slug Validation
-
-    [Fact]
-    public void Validate_ShouldFail_WhenSlugIsEmpty()
-    {
-        // Arrange
-        var command = new CreateSubscriptionPlanCommand(
-            Name: "Valid Name",
-            Slug: "",
-            MonthlyPriceInCents: 999,
-            Currency: "USD",
-            Description: null
-        );
-
-        // Act
-        var result = _validator.Validate(command);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
-            e.PropertyName == nameof(CreateSubscriptionPlanCommand.Slug) &&
-            e.ErrorMessage.Contains("required"));
-    }
-
-    [Fact]
-    public void Validate_ShouldFail_WhenSlugIsNull()
-    {
-        // Arrange
-        var command = new CreateSubscriptionPlanCommand(
-            Name: "Valid Name",
-            Slug: null!,
-            MonthlyPriceInCents: 999,
-            Currency: "USD",
-            Description: null
-        );
-
-        // Act
-        var result = _validator.Validate(command);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
-            e.PropertyName == nameof(CreateSubscriptionPlanCommand.Slug));
-    }
 
     [Fact]
     public void Validate_ShouldFail_WhenSlugExceeds50Characters()
@@ -247,7 +264,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Slug) &&
             e.ErrorMessage.Contains("50 characters"));
     }
@@ -293,7 +310,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Slug) &&
             e.ErrorMessage.Contains("lowercase letters, numbers, and hyphens"));
     }
@@ -344,7 +361,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.MonthlyPriceInCents) &&
             e.ErrorMessage.Contains("greater than or equal to 0"));
     }
@@ -376,6 +393,57 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
     #region Currency Validation
 
+    [Theory]
+    [InlineData("USD")]
+    [InlineData("EUR")]
+    [InlineData("GBP")]
+    [InlineData("JPY")]
+    [InlineData("CAD")]
+    [InlineData("AUD")]
+    public void Validate_ShouldPass_WhenCurrencyIsSupportedISO4217(string currency)
+    {
+        // Arrange
+        var command = new CreateSubscriptionPlanCommand(
+            Name: "Valid Name",
+            Slug: "valid-slug",
+            MonthlyPriceInCents: 999,
+            Currency: currency,
+            Description: null
+        );
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("XQZ")] // well-formed triplet, not a supported code
+    [InlineData("CHF")] // real ISO 4217 code outside the payment-supported allowlist
+    [InlineData("BRL")] // real ISO 4217 code outside the payment-supported allowlist
+    public void Validate_ShouldFail_WhenCurrencyIsNotPaymentSupported(string currency)
+    {
+        // Arrange — issue #416: "Currency codes validated against ISO 4217 standard" via
+        // the shared payment-supported allowlist, not just the letter-triplet format.
+        var command = new CreateSubscriptionPlanCommand(
+            Name: "Valid Name",
+            Slug: "valid-slug",
+            MonthlyPriceInCents: 999,
+            Currency: currency,
+            Description: null
+        );
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CreateSubscriptionPlanCommand.Currency) &&
+            e.ErrorMessage.Contains("supported ISO 4217"));
+    }
+
     [Fact]
     public void Validate_ShouldFail_WhenCurrencyIsEmpty()
     {
@@ -393,7 +461,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Currency) &&
             e.ErrorMessage.Contains("required"));
     }
@@ -415,7 +483,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Currency));
     }
 
@@ -439,19 +507,17 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Currency) &&
             e.ErrorMessage.Contains("3 characters"));
     }
 
     [Theory]
-    [InlineData("usd")] // lowercase
-    [InlineData("UsD")] // mixed case
-    [InlineData("123")] // numbers
+    [InlineData("usd")] // lowercase — not a supported code as written
     [InlineData("U$D")] // special chars
-    public void Validate_ShouldFail_WhenCurrencyIsNotUppercaseLetters(string currency)
+    [InlineData("123")] // numbers
+    public void Validate_ShouldFail_WhenCurrencyIsNotAWellFormedSupportedCode(string currency)
     {
-        // Arrange
         var command = new CreateSubscriptionPlanCommand(
             Name: "Valid Name",
             Slug: "valid-slug",
@@ -460,40 +526,11 @@ public class CreateSubscriptionPlanCommandValidatorTests
             Description: null
         );
 
-        // Act
         var result = _validator.Validate(command);
 
-        // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
-            e.PropertyName == nameof(CreateSubscriptionPlanCommand.Currency) &&
-            e.ErrorMessage.Contains("uppercase letters only"));
-    }
-
-    [Theory]
-    [InlineData("USD")]
-    [InlineData("EUR")]
-    [InlineData("GBP")]
-    [InlineData("JPY")]
-    [InlineData("CHF")]
-    [InlineData("CAD")]
-    [InlineData("AUD")]
-    public void Validate_ShouldPass_WhenCurrencyIsValidISO4217(string currency)
-    {
-        // Arrange
-        var command = new CreateSubscriptionPlanCommand(
-            Name: "Valid Name",
-            Slug: "valid-slug",
-            MonthlyPriceInCents: 999,
-            Currency: currency,
-            Description: null
-        );
-
-        // Act
-        var result = _validator.Validate(command);
-
-        // Assert
-        result.IsValid.Should().BeTrue();
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(CreateSubscriptionPlanCommand.Currency));
     }
 
     #endregion
@@ -517,7 +554,7 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => 
+        result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(CreateSubscriptionPlanCommand.Description) &&
             e.ErrorMessage.Contains("500 characters"));
     }
