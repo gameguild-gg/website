@@ -109,6 +109,23 @@ static char *strdup_safe(const char *s)
 }
 
 
+/* Bounded scan for the terminating byte of a caller-owned buffer. The chunk
+   limit keeps every memchr read within a fixed window, so the scan cannot
+   exceed the buffer even if the promised terminator is missing. */
+static size_t bounded_strlen(const char *s)
+{
+    enum { SCAN_CHUNK = 4096 };
+    size_t scanned = 0;
+    for (;;)
+    {
+        const char *hit = (const char *)memchr(s + scanned, '\0', SCAN_CHUNK);
+        if (hit)
+            return (size_t)(hit - s);
+        scanned += SCAN_CHUNK;
+        if (scanned < SCAN_CHUNK)
+            return SIZE_MAX;
+    }
+}
 static CURLcode copy_postfields(CurlHandle *h, const char *data)
 {
     char *copy = NULL;
@@ -125,10 +142,9 @@ static CURLcode copy_postfields(CurlHandle *h, const char *data)
         {
             /* A negative postfieldsize promises a null-terminated buffer; the
                bounded scan keeps the read length explicit instead of strlen. */
-            const char *terminator = (const char *)memchr(data, '\0', SIZE_MAX);
-            if (!terminator)
+            length = bounded_strlen(data);
+            if (length == SIZE_MAX)
                 return CURLE_OUT_OF_MEMORY;
-            length = (size_t)(terminator - data);
         }
         copy = (char *)malloc(length + 1);
         if (!copy)
@@ -500,10 +516,9 @@ CURLcode curl_easy_perform(CURL *handle)
         else
         {
             /* The postfields contract guarantees termination; scan boundedly. */
-            const char *terminator = (const char *)memchr(h->postfields, '\0', SIZE_MAX);
-            if (!terminator)
+            body_length = bounded_strlen(h->postfields);
+            if (body_length == SIZE_MAX)
                 return CURLE_BAD_FUNCTION_ARGUMENT;
-            body_length = (size_t)(terminator - h->postfields);
         }
         if (h->owned_postfields && body_length > h->owned_postfieldsize)
             return CURLE_BAD_FUNCTION_ARGUMENT;
