@@ -26,7 +26,7 @@ public class UserMembershipsControllerTests
     }
 
     [Fact]
-    public async Task DelegatedMemberManager_WithMembersManagePermission_CanManageOwnTenant()
+    public async Task DelegatedMemberManager_WithMembersManagePermission_ShouldManageOwnTenant()
     {
         var tenantId = Guid.NewGuid();
         var sender = new StubSender();
