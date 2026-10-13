@@ -221,7 +221,29 @@ public static class Permissions
     public const string EntitlementsManage = EntitlementsPermission.Keys.Manage;
 
     // ========================
-    // SYSTEM PERMISSIONS
+    // ADMINISTRATIVE PERMISSIONS (issue #294)
+    // ========================
+
+    /// <summary>Add, remove, suspend and re-role tenant members, and manage membership invites</summary>
+    public const string MembersManage = ManageMembersPermission.Keys.Manage;
+
+    /// <summary>Create, modify, delete and assign tenant roles</summary>
+    public const string RolesManage = ManageRolesPermission.Keys.Manage;
+
+    /// <summary>Read tenant settings, feature flags and system limits</summary>
+    public const string SettingsRead = ManageSettingsPermission.Keys.Read;
+
+    /// <summary>Change tenant settings, feature flags, business rules and system limits</summary>
+    public const string SettingsManage = ManageSettingsPermission.Keys.Manage;
+
+    /// <summary>Read and investigate audit logs, security events and audit statistics</summary>
+    public const string AuditRead = AuditPermission.Keys.Read;
+
+    /// <summary>Export audit logs and schedule recurring compliance exports</summary>
+    public const string AuditExport = AuditPermission.Keys.Export;
+
+    // ========================
+    // SYSTEM PERMISSIONS (issue #386)
     // ========================
 
     /// <summary>Manage global default permissions (tenantId=null)</summary>
@@ -232,6 +254,15 @@ public static class Permissions
 
     /// <summary>System wildcard (all permissions)</summary>
     public const string SystemWildcard = SystemPermission.Keys.Wildcard;
+
+    /// <summary>Manage infrastructure configuration (cache management, signing keys, provider configuration) (issue #386)</summary>
+    public const string SystemManageConfiguration = SystemConfigurationPermission.Keys.Manage;
+
+    /// <summary>Execute backup, snapshot, restore and event-recovery operations (issue #386)</summary>
+    public const string SystemBackupRestore = BackupRestorePermission.Keys.Operate;
+
+    /// <summary>Run data-migration assessments and migrations between providers (issue #386)</summary>
+    public const string SystemDataMigration = DataMigrationPermission.Keys.Operate;
 
     // ========================
     // ASSETS PERMISSIONS

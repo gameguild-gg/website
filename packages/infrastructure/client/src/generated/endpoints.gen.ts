@@ -12723,6 +12723,12 @@ export const postAdminSecurityAuditExportEndpoint = {
 
 /**
  * Get authentication attempt logs specifically.
+ *
+ * Deliberately kept on the SystemAdmin policy: the authentication-attempt surface
+ * has no tenant-scoped filter today (the request and the underlying query are
+ * platform-wide), so opening it to the Audit.Read self-service tier would leak
+ * cross-tenant authentication data. Revisit together with a tenant filter on
+ * GameGuild.Compliance.Audit.AuthenticationAuditRequest.
  */
 export interface GetAdminSecurityAuditAuthenticationInput {
   query?: {
@@ -16151,6 +16157,24 @@ export const deleteAuthSessionsEndpoint = {
   operationId: 'deleteAuthSessions' as const,
   method: 'DELETE' as const,
   path: '/v1/auth/sessions/{sessionId}' as const,
+  tags: ['AuthSessions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Name or rename one of the current user's own sessions
+ *
+ * Assigns a user-defined name to one of the current user's own active sessions. The acting user is taken from the authenticated principal, never from the body.
+ */
+export interface PatchAuthSessionsNameInput {
+  sessionId: string;
+  body?: Types.IdentityAuthenticationRenameSessionInput;
+}
+export type PatchAuthSessionsNameOutput = Types.IdentityAuthenticationSessionSuccessOutput;
+export const patchAuthSessionsNameEndpoint = {
+  operationId: 'patchAuthSessionsName' as const,
+  method: 'PATCH' as const,
+  path: '/v1/auth/sessions/{sessionId}/name' as const,
   tags: ['AuthSessions'] as const,
   requiresAuth: true,
 } as const;
@@ -29968,6 +29992,7 @@ export const endpoints = {
   postAuthSessionsTerminateAll: postAuthSessionsTerminateAllEndpoint,
   postAuthSessionsTerminateOthers: postAuthSessionsTerminateOthersEndpoint,
   deleteAuthSessions: deleteAuthSessionsEndpoint,
+  patchAuthSessionsName: patchAuthSessionsNameEndpoint,
   postAuthSignIn: postAuthSignInEndpoint,
   postAuthSignUp: postAuthSignUpEndpoint,
   getAuthSigningKeys: getAuthSigningKeysEndpoint,

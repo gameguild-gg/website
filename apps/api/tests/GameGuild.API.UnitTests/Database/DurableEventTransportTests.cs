@@ -144,7 +144,7 @@ public sealed class DurableEventTransportTests
     }
 
     [Fact]
-    public void EventTransportAdminController_RequiresSystemAdminAndVersionedAdminRoute()
+    public void EventTransportAdminController_RequiresSystemBackupRestoreAndVersionedAdminRoute()
     {
         // Given
         var controllerType = typeof(EventTransportAdminController);
@@ -156,7 +156,9 @@ public sealed class DurableEventTransportTests
             .Cast<RouteAttribute>().Single();
 
         // Then
-        authorize.Policy.Should().Be(Policies.SystemAdmin);
+        // Issue #386: dead-letter recovery and replay is a restore operation, gated by
+        // the backup/restore permission tier instead of the blanket SystemAdmin policy.
+        authorize.Policy.Should().Be(Policies.SystemBackupRestore);
         route.Template.Should().Be("v{version:apiVersion}/admin/events");
         controllerType.GetMethod(nameof(EventTransportAdminController.GetStatus)).Should().NotBeNull();
         controllerType.GetMethod(nameof(EventTransportAdminController.GetDeadLetters)).Should().NotBeNull();

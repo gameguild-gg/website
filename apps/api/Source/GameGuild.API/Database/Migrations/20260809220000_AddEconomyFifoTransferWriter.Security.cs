@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddEconomyFifoTransferWriter
+public partial class AddEconomyFifoTransferWriter : Migration
 {
     private static void InstallFifoTransferWriter(MigrationBuilder migrationBuilder)
     {

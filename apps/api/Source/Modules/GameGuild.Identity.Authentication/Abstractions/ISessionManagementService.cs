@@ -28,7 +28,13 @@ public interface ISessionManagementService
 
     Task<bool> RefreshSessionAsync(Guid sessionId, CancellationToken cancellationToken = default);
 
-    Task<bool> RefreshSessionAsync(Guid sessionId, string refreshTokenHash, DateTime expiresAt, CancellationToken cancellationToken = default);
+    Task<bool> RefreshSessionAsync(Guid sessionId, string refreshTokenHash, DateTime expiresAt, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Names or renames one of the user's own active sessions. Returns false when the name
+    ///     is empty/oversized, the session belongs to another user, or it is no longer active.
+    /// </summary>
+    Task<bool> RenameSessionAsync(Guid userId, Guid sessionId, string name, CancellationToken cancellationToken = default);
 
     Task<bool> TerminateSessionAsync(Guid sessionId, SessionTerminationReason reason, CancellationToken cancellationToken = default);
 

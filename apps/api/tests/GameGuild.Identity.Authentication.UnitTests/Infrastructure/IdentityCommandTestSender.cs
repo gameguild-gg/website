@@ -85,6 +85,7 @@ internal sealed class IdentityCommandTestSender : ISender
             RefreshUserSessionCommand command when _sessionHandler is not null => await _sessionHandler.Handle(command, cancellationToken),
             TrustDeviceCommand command when _sessionHandler is not null => await _sessionHandler.Handle(command, cancellationToken),
             RevokeTrustedDeviceCommand command when _sessionHandler is not null => await _sessionHandler.Handle(command, cancellationToken),
+            RenameSessionCommand command when _sessionHandler is not null => await _sessionHandler.Handle(command, cancellationToken),
             CreateStepUpChallengeCommand command when _stepUpHandler is not null => await _stepUpHandler.Handle(command, cancellationToken),
             BeginStepUpWebAuthnCommand command when _stepUpHandler is not null => await _stepUpHandler.Handle(command, cancellationToken),
             VerifyStepUpChallengeCommand command when _stepUpHandler is not null => await _stepUpHandler.Handle(command, cancellationToken),

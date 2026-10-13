@@ -87,7 +87,7 @@ public sealed class TenantInviteRequestedHandler(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to queue tenant invite notification for {Email}", LogRedaction.MaskEmail(notification.InviteeEmail));
+            logger.LogWarning("Failed to queue tenant invite notification {EventId} for tenant {TenantId}: {ErrorType}", notification.EventId, notification.TenantId, ex.GetType().FullName);
             throw;
         }
     }
