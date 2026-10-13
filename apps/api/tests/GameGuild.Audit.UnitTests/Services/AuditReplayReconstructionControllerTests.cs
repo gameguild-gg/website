@@ -159,12 +159,18 @@ public sealed class AuditReplayReconstructionControllerTests
         {
             Assert.IsType<ForbidResult>(result);
         }
+        else if (expectedStatus == 400)
+        {
+            var rejected = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, rejected.StatusCode);
+            Assert.IsType<ValidationProblemDetails>(rejected.Value);
+        }
         else
         {
-            var objectResult = Assert.IsType<ObjectResult>(result);
+            var objectResult = Assert.IsAssignableFrom<ObjectResult>(result);
             Assert.Equal(expectedStatus, objectResult.StatusCode);
-            Assert.False(controller.Response.Headers.ContainsKey("X-Audit-Snapshot-SHA256"));
         }
+        Assert.False(controller.Response.Headers.ContainsKey("X-Audit-Snapshot-SHA256"));
     }
 
     [Fact]

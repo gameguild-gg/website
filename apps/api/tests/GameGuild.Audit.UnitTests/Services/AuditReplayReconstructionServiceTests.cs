@@ -105,7 +105,8 @@ public sealed class AuditReplayReconstructionServiceTests
         Assert.Equal(2, reconstruction.Sessions.Count);
         var other = Assert.Single(reconstruction.Sessions, item => item.SessionId == OtherSession.ToString("D"));
         Assert.Equal([SecondUser.ToString("D")], other.UserIds);
-        Assert.Equal(3, _access.Count);
+        // Successful reconstruction: the requested audit and the completed audit.
+        Assert.Equal(2, _access.Count);
         Assert.Equal("AuditReplayReconstructionRequested", _access[0].ActionType);
         Assert.Equal("AuditReplayReconstructionCompleted", _access[^1].ActionType);
         Assert.True(_access.All(item => item.UserId == Admin && item.TenantId == Tenant));
