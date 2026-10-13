@@ -17,6 +17,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="MaxAffiliateDiscount">Updated max affiliate discount</param>
 /// <param name="AffiliateCommissionPercentage">Updated affiliate commission</param>
 /// <param name="ExpectedVersion">Expected version for optimistic concurrency</param>
+/// <param name="CategoryId">Catalog category assignment (single category, v1; null = leave unchanged)</param>
 public sealed record UpdateProductCommand(
     Guid ProductId,
     string? Name = null,
@@ -29,5 +30,6 @@ public sealed record UpdateProductCommand(
     decimal? ReferralCommissionPercentage = null,
     decimal? MaxAffiliateDiscount = null,
     decimal? AffiliateCommissionPercentage = null,
-    long? ExpectedVersion = null
+    long? ExpectedVersion = null,
+    Guid? CategoryId = null
 ) : ICommand<ProductDto>;

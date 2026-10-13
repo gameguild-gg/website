@@ -276,6 +276,14 @@ public static class InfrastructureLayerExtensions
         // Unified pricing engine seam (issue #417): the Products promo engine backs the
         // Payments-owned promo-discount abstraction; same explicit-registration reason as above.
         services.AddScoped<global::GameGuild.Commerce.Payments.IPromoDiscountCalculator, global::GameGuild.Commerce.Products.PromoDiscountCalculatorAdapter>();
+
+        // Product catalog & bundling (issue #401): the hierarchy validator, the catalog
+        // audit logger and the bundle-savings calculator do not match the
+        // I{Name}Service/Repository/Reader convention scan, so they need explicit
+        // registration for the category and recommendation flows to resolve.
+        services.AddScoped<global::GameGuild.Commerce.Products.IProductCategoryValidator, global::GameGuild.Commerce.Products.ProductCategoryValidator>();
+        services.AddScoped<global::GameGuild.Commerce.Products.IProductCatalogAuditLogger, global::GameGuild.Commerce.Products.ProductCatalogAuditLogger>();
+        services.AddScoped<global::GameGuild.Commerce.Products.IBundleSavingsCalculator, global::GameGuild.Commerce.Products.BundleSavingsCalculator>();
         logger.LogInformation("Commerce Orders Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10aa. Assets Module (S3 storage, upload/access services, asset security helpers)
@@ -370,6 +378,13 @@ public static class InfrastructureLayerExtensions
             .ValidateOnStart();
         services.AddScoped<IRefreshTokenCleanupOperation, RefreshTokenCleanupOperation>();
         services.AddHostedService<RefreshTokenCleanupWorker>();
+        // Governance audit hook (issues #188/#189): feeds captured role-hierarchy,
+        // role-assignment and permission-policy mutations into the authorization
+        // module's PermissionAuditLog surface with cascade visibility.
+        services.AddScoped<PermissionGovernanceAuditHook>();
+        services.AddScoped<IPermissionAuditHook>(provider =>
+            provider.GetRequiredService<PermissionGovernanceAuditHook>());
+
         services.AddDbContext<ApplicationDbContext>((provider, options) =>
         {
             options.AddInterceptors(provider.GetRequiredService<CostTelemetryDbCommandInterceptor>());

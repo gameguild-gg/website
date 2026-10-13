@@ -127,4 +127,47 @@ public class SubscriptionPlanRepository(IApplicationDbContext context)
 
         return PagedResult<SubscriptionPlan>.FromPage(items, totalCount, skip / pageSize + 1, pageSize);
     }
+
+    /// <summary>
+    ///     Lists all interval price points configured for a plan (issue #392).
+    /// </summary>
+    public async Task<IReadOnlyList<SubscriptionPlanIntervalPrice>> GetIntervalPricesAsync(Guid planId, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<SubscriptionPlanIntervalPrice>()
+            .Where(price => price.PlanId == planId)
+            .OrderBy(price => price.Interval)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Gets the interval price point for one plan interval, when explicitly configured (issue #392).
+    /// </summary>
+    public async Task<SubscriptionPlanIntervalPrice?> GetIntervalPriceAsync(Guid planId, BillingCycle interval, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<SubscriptionPlanIntervalPrice>()
+            .FirstOrDefaultAsync(price => price.PlanId == planId && price.Interval == interval, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Adds or updates the interval price point for a plan interval (issue #392).
+    ///     The unique (PlanId, Interval) index is the convergence guard.
+    /// </summary>
+    public async Task<SubscriptionPlanIntervalPrice> UpsertIntervalPriceAsync(SubscriptionPlanIntervalPrice intervalPrice, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(intervalPrice);
+
+        var existing = await GetIntervalPriceAsync(intervalPrice.PlanId, intervalPrice.Interval, cancellationToken).ConfigureAwait(false);
+        if (existing is null)
+        {
+            await Context.Set<SubscriptionPlanIntervalPrice>().AddAsync(intervalPrice, cancellationToken).ConfigureAwait(false);
+            await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            return intervalPrice;
+        }
+
+        existing.UpdatePrice(intervalPrice.PriceInCents);
+        await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return existing;
+    }
 }

@@ -380,6 +380,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             return false;
         }
 
+        // Policy version snapshots ARE history: capturing them here would re-record every
+        // snapshot as a permission change and recurse the audit path.
+        if (entityName == "PolicyVersionHistory")
+        {
+            return false;
+        }
+
         if (entityName.Contains("Permission", StringComparison.OrdinalIgnoreCase))
         {
             return true;
@@ -395,6 +402,35 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             return entry.State is EntityState.Added or EntityState.Deleted
                 || entry.Properties.Any(property =>
                     property.IsModified && (property.Metadata.Name is "Permissions" or "IsActive"));
+        }
+
+        // Role-hierarchy mutations (issues #188/#189): dynamic roles change effective
+        // permissions whenever their hierarchy edges or inheritance blocking change, and
+        // dynamic role assignments grant/remove every permission of a role at once.
+        if (entityName == "DynamicRole")
+        {
+            return entry.State is EntityState.Added or EntityState.Deleted
+                || entry.Properties.Any(property =>
+                    property.IsModified
+                    && (property.Metadata.Name is "ParentRoleId"
+                        or "AdditionalParentRoleIds"
+                        or "BlockedInheritedPermissions"
+                        or "Permissions"
+                        or "DenyPermissions"
+                        or "IsActive"));
+        }
+
+        if (entityName == "DynamicRoleAssignment")
+        {
+            return true;
+        }
+
+        // Permission-policy mutations (issue #188): conditional policies and policy
+        // definitions alter authorization outcomes on any change (enable/disable,
+        // priority, conditions), not only when a "Permission"-named column moves.
+        if (entityName is "ConditionalPolicy" or "PolicyDefinitionEntity")
+        {
+            return true;
         }
 
         return entry.Properties.Any(property =>

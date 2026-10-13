@@ -218,9 +218,13 @@ public sealed class SubscriptionsCoverageCompletionTests
         FluentActions.Invoking(() => new SubscriptionBillingService(repository, null!, notificationService, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, null!, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, notificationService, null!, billingLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionLifecycleService(null!, planService, lifecycleLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, null!, lifecycleLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, null!)).Should().Throw<ArgumentNullException>();
+        var intervalPricing = Mock.Of<ISubscriptionIntervalPricingService>();
+        var billingCalculator = Mock.Of<IBillingCalculator>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(null!, planService, intervalPricing, billingCalculator, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, null!, intervalPricing, billingCalculator, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, null!, billingCalculator, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, intervalPricing, null!, lifecycleLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, intervalPricing, billingCalculator, null!)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionNotificationService(null!, planService)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionNotificationService(notificationLogger, null!)).Should().Throw<ArgumentNullException>();
 

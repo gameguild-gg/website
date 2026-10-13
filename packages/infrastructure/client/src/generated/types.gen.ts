@@ -1965,6 +1965,15 @@ export interface CommerceOrdersAddOrderItemInput {
   quantity?: number;
 }
 
+/** A bundle that contains the anchor product, with the price-optimization hint. */
+export interface CommerceOrdersBundleRecommendationDto {
+  /** Bundle product ID */
+  bundleId?: string;
+  /** Bundle name */
+  name?: string | null;
+  savings?: CommerceProductsBundleSavingsHint;
+}
+
 /** Request to capture payment for an order */
 export interface CommerceOrdersCaptureOrderInput {
   paymentMethodId?: string | null;
@@ -1991,6 +2000,16 @@ export interface CommerceOrdersCompleteOrderInput {
 export interface CommerceOrdersCompleteOrderMarketplaceSettlement {
   currencyChoice?: CommerceOrdersOrderMarketplaceCurrencyChoice;
   idempotencyKey?: string | null;
+}
+
+/** Recommendation item: a product co-purchased with the anchor product. */
+export interface CommerceOrdersCoPurchaseRecommendationDto {
+  /** How many completed orders contained both products */
+  coOrderCount?: number;
+  /** Product name */
+  name?: string | null;
+  /** Recommended product ID */
+  productId?: string;
 }
 
 /** Request to create a new order */
@@ -2031,6 +2050,14 @@ export interface CommerceOrdersMarketplaceCheckoutOrderDto {
   currency?: string | null;
   orderId?: string;
   total?: number;
+}
+
+/** Optional ("complete the bundle") item for a bundle anchor product. */
+export interface CommerceOrdersOptionalBundleItemDto {
+  /** Component product name */
+  name?: string | null;
+  /** Optional component product ID */
+  productId?: string;
 }
 
 /** Order capture result including any client-side payment action. */
@@ -2107,6 +2134,23 @@ export type CommerceOrdersOrderMarketplaceCurrencyChoice = 'Hard' | 'Soft' | 'Fi
 Follows monotonic FSM - no backward economic transitions allowed. */
 export type CommerceOrdersOrderStatus =
   'Pending' | 'Processing' | 'Completed' | 'Failed' | 'Cancelled' | 'Refunded' | 'PartiallyRefunded' | 'Disputed' | 'Paid' | 'Fulfilled' | 'OnHold';
+
+/** Rule-based product recommendations (issue #401, v1): deterministic
+"frequently bought together" from completed-order co-occurrence plus
+bundle-savings hints. Machine-learning personalization is explicitly deferred
+(see docs/billing/product-catalog-bundling.md). */
+export interface CommerceOrdersProductRecommendationsDto {
+  /** Published bundles containing the anchor, with savings hints */
+  bundleSuggestions?: CommerceOrdersBundleRecommendationDto[] | null;
+  /** Whether this response was served from the recommendation cache */
+  cached?: boolean;
+  /** Optional components of the anchor (when it is a bundle) */
+  completeTheBundle?: CommerceOrdersOptionalBundleItemDto[] | null;
+  /** Products co-purchased with the anchor, ranked by co-order count */
+  frequentlyBoughtTogether?: CommerceOrdersCoPurchaseRecommendationDto[] | null;
+  /** Anchor product ID */
+  productId?: string;
+}
 
 /** Data model for Commerce Orders Set Marketplace Cart Item Quantity Input. */
 export interface CommerceOrdersSetMarketplaceCartItemQuantityInput {
@@ -4383,6 +4427,24 @@ export interface CommerceProductsBatchProductCreateItem {
   type?: CommerceProductsProductType;
 }
 
+/** Bundle-price optimization hint (issue #401): bundle price vs sum-of-parts. */
+export interface CommerceProductsBundleSavingsHint {
+  /** Bundle product ID */
+  bundleId?: string;
+  /** Effective price of the bundle itself */
+  bundlePrice?: number;
+  /** Number of priced components included */
+  componentsPriced?: number;
+  /** Currency of the comparison */
+  currency?: string | null;
+  /** SumOfParts − BundlePrice (negative when the bundle costs more) */
+  savings?: number;
+  /** Savings as a percentage of SumOfParts */
+  savingsPercentage?: number;
+  /** Sum of component effective prices (after per-item bundle discounts) */
+  sumOfParts?: number;
+}
+
 /** Request to calculate a price through the pricing engine. */
 export interface CommerceProductsCalculatePricingInput {
   customerSegment?: string | null;
@@ -4493,10 +4555,27 @@ export interface CommerceProductsCreatePricingRuleInput {
   timeStart?: string | null;
 }
 
+/** Request model for creating a product category. */
+export interface CommerceProductsCreateProductCategoryInput {
+  /** Optional metadata as a JSON object of string values (≤ 20 keys). */
+  attributesJson?: string | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Sort order. */
+  displayOrder?: number;
+  /** Display name (tenant-unique). */
+  name?: string | null;
+  /** Parent category ID (null = root). */
+  parentCategoryId?: string | null;
+  /** URL-safe identifier (tenant-unique; letters, digits, hyphens, spaces). */
+  slug?: string | null;
+}
+
 /** Request model for creating a product */
 export interface CommerceProductsCreateProductInput {
   affiliateCommissionPercentage?: number;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
   isBundle?: boolean;
@@ -4612,6 +4691,7 @@ export interface CommerceProductsGrantEntitlementInput {
 export interface CommerceProductsPatchProductInput {
   affiliateCommissionPercentage?: number | null;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -4753,6 +4833,54 @@ export interface CommerceProductsPricingRuleTierInput {
 /** Represents how a user acquired access to a product */
 export type CommerceProductsProductAcquisitionType = 'Purchase' | 'Subscription' | 'Grant' | 'PromoCode' | 'Bundle' | 'Trial' | 'Referral' | 'Free' | 'Gift';
 
+/** DTO for a product's real-time availability (issue #401). */
+export interface CommerceProductsProductAvailabilityDto {
+  /** Units sellable now (when tracked) */
+  availableQuantity?: number | null;
+  /** Whether at least one unit is available (untracked = always true) */
+  isInStock?: boolean;
+  /** Whether available stock fell to the low-stock threshold */
+  isLowStock?: boolean;
+  /** Configured low-stock threshold */
+  lowStockThreshold?: number;
+  /** Product ID */
+  productId?: string;
+  /** Units reserved by pending orders (when tracked) */
+  reservedQuantity?: number | null;
+  /** Units on hand (when tracked) */
+  stockQuantity?: number | null;
+  /** Whether stock is tracked for this product */
+  trackInventory?: boolean;
+}
+
+/** DTO for a product catalog category (issue #401). */
+export interface CommerceProductsProductCategoryDto {
+  /** Category ID */
+  id?: string;
+  /** Metadata dictionary (≤ 20 keys) */
+  attributes?: Record<string, string> | null;
+  /** Creation timestamp */
+  createdAt?: string;
+  /** Depth in the tree (root = 0) */
+  depth?: number;
+  /** Optional description */
+  description?: string | null;
+  /** Sort order */
+  displayOrder?: number;
+  /** Display name */
+  name?: string | null;
+  /** Parent category (null = root) */
+  parentCategoryId?: string | null;
+  /** Slugs from root to this category */
+  path?: string[] | null;
+  /** Non-deleted products assigned to this category (when requested) */
+  productCount?: number | null;
+  /** URL-safe identifier (tenant-unique) */
+  slug?: string | null;
+  /** Last update timestamp */
+  updatedAt?: string;
+}
+
 /** Product Data Transfer Object for API responses */
 export interface CommerceProductsProductDto {
   /** Product ID */
@@ -4761,6 +4889,8 @@ export interface CommerceProductsProductDto {
   affiliateCommissionPercentage?: number;
   /** Bundle item IDs */
   bundleItems?: string[] | null;
+  /** Catalog category ID (single category, v1) */
+  categoryId?: string | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Creator user ID */
@@ -4786,6 +4916,22 @@ export interface CommerceProductsProductDto {
   type?: CommerceProductsProductType;
   /** Last update timestamp */
   updatedAt?: string;
+}
+
+/** DTO for a product's inventory configuration (issue #401). */
+export interface CommerceProductsProductInventoryDto {
+  /** Units sellable now */
+  availableQuantity?: number;
+  /** Low-stock threshold */
+  lowStockThreshold?: number;
+  /** Product ID */
+  productId?: string;
+  /** Units reserved by pending orders */
+  reservedQuantity?: number;
+  /** Units on hand */
+  stockQuantity?: number;
+  /** Whether stock is tracked */
+  trackInventory?: boolean;
 }
 
 /** Product Pricing Data Transfer Object */
@@ -4991,6 +5137,16 @@ export interface CommerceProductsRevokeEntitlementInput {
   userId?: string;
 }
 
+/** Request model for configuring a product's inventory (issue #401) */
+export interface CommerceProductsSetProductInventoryInput {
+  /** Low-stock threshold. */
+  lowStockThreshold?: number;
+  /** Units on hand. */
+  stockQuantity?: number;
+  /** Whether stock should be tracked for this product. */
+  trackInventory?: boolean;
+}
+
 /** Data model for Commerce Products Set Product Pricing Request. */
 export interface CommerceProductsSetProductPricingInput {
   basePrice?: number;
@@ -5092,10 +5248,31 @@ export interface CommerceProductsUpdatePricingRuleInput {
   timeStart?: string | null;
 }
 
+/** Request model for updating a product category. */
+export interface CommerceProductsUpdateProductCategoryInput {
+  /** Replacement metadata JSON object (null = leave unchanged, "{}" clears). */
+  attributesJson?: string | null;
+  /** New description. */
+  description?: string | null;
+  /** New sort order. */
+  displayOrder?: number | null;
+  /** Expected version for optimistic concurrency. */
+  expectedVersion?: number | null;
+  /** New display name. */
+  name?: string | null;
+  /** New parent category ID (applied only when GameGuild.Commerce.Products.UpdateProductCategoryRequest.Reparent is true). */
+  parentCategoryId?: string | null;
+  /** Whether to apply GameGuild.Commerce.Products.UpdateProductCategoryRequest.ParentCategoryId as a reparenting. */
+  reparent?: boolean;
+  /** New slug (tenant-unique). */
+  slug?: string | null;
+}
+
 /** Request model for updating a product */
 export interface CommerceProductsUpdateProductInput {
   affiliateCommissionPercentage?: number | null;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -10747,6 +10924,15 @@ export interface IdentityAuthorizationControllersCompleteCampaignInput {
   completedBy?: string;
 }
 
+/** Body for deciding the current stage of an approval workflow. The approver
+identity is never taken from the body — it comes from the actor context. */
+export interface IdentityAuthorizationControllersDecidePermissionApprovalInput {
+  /** Gets the decision for the current stage. */
+  approve: boolean;
+  /** Gets optional notes recorded with the decision. */
+  notes?: string | null;
+}
+
 /** Data model for Identity Authorization Controllers Deny Elevation Request. */
 export interface IdentityAuthorizationControllersDenyElevationInput {
   comments?: string | null;
@@ -10785,6 +10971,20 @@ export interface IdentityAuthorizationControllersUpdateSoDRuleInput {
   isEnabled?: boolean;
   name?: string | null;
   ruleType?: IdentityAuthorizationSoDRuleType;
+}
+
+/** Command creating a multi-stage permission approval workflow (issue #188). The
+acting requester identity is resolved from the actor context, never the body. */
+export interface IdentityAuthorizationCreatePermissionApprovalCommand {
+  /** Gets the permission strings requested. */
+  permissions: string[] | null;
+  /** Gets the justification for the request. */
+  reason?: string | null;
+  /** Gets the ordered approval stage definitions. */
+  stages: IdentityAuthorizationPermissionApprovalStageDefinition[] | null;
+  /** Gets the user the permissions are requested for. */
+  subjectUserId: string;
+  tenantId?: CQRSModelsTenantId;
 }
 
 /** Request payload for declining an invitation. */
@@ -11027,6 +11227,33 @@ export interface IdentityAuthorizationHasPermissionOutput {
   userId: string;
 }
 
+/** A role-to-role inheritance edge effective at a past instant. */
+export interface IdentityAuthorizationHistoricalInheritanceEdge {
+  childRoleId?: string;
+  childRoleName?: string | null;
+  parentRoleId?: string;
+  parentRoleName?: string | null;
+}
+
+/** A resource grant effective at a past instant. */
+export interface IdentityAuthorizationHistoricalResourceGrant {
+  expiresAt?: string | null;
+  grantedAt?: string;
+  isOwner?: boolean;
+  permissions?: string[] | null;
+  resourceId?: string | null;
+  resourceType?: string | null;
+}
+
+/** A role assignment effective at a past instant, with the role's permission
+contribution expanded through the inheritance graph as of that instant. */
+export interface IdentityAuthorizationHistoricalRoleAssignment {
+  directPermissions?: string[] | null;
+  inheritedPermissions?: string[] | null;
+  roleId?: string;
+  roleName?: string | null;
+}
+
 /** Impact severity level */
 export type IdentityAuthorizationImpactSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
 
@@ -11037,6 +11264,18 @@ export interface IdentityAuthorizationImportPermissionSyncInput {
   dryRun?: boolean;
   /** Optional target tenant (null/empty = global scope, system admins only). */
   tenantId?: string | null;
+}
+
+/** One role-inheritance change event (issue #189: inheritance history tracking). */
+export interface IdentityAuthorizationInheritanceHistoryEvent {
+  affectedUserId?: string | null;
+  afterState?: string | null;
+  beforeState?: string | null;
+  description?: string | null;
+  performedBy?: string | null;
+  roleId?: string;
+  roleName?: string | null;
+  timestamp?: string;
 }
 
 /** Result of performing an invitation lifecycle action. */
@@ -11241,6 +11480,98 @@ export interface IdentityAuthorizationPermissionAnomaly {
   userId?: string;
 }
 
+/** Result of deciding the current stage of an approval workflow. */
+export interface IdentityAuthorizationPermissionApprovalDecisionResult {
+  approved?: boolean;
+  decidedStageIndex?: number;
+  decidedStageName?: string | null;
+  grantApplied?: boolean;
+  notes?: string | null;
+  workflowId?: string;
+  workflowStatus?: IdentityAuthorizationPermissionApprovalStatus;
+}
+
+/** One stage of a GameGuild.Identity.Authorization.PermissionApprovalWorkflow. */
+export interface IdentityAuthorizationPermissionApprovalStage {
+  /** Row identifier. */
+  id?: string;
+  /** When the stage was decided. */
+  decidedAt?: string | null;
+  /** Who decided this stage, when decided. */
+  decidedBy?: string | null;
+  /** Approver notes recorded with the decision. */
+  decisionNotes?: string | null;
+  /** When set, only this user may decide this stage (fail closed for everyone else). */
+  requiredApproverUserId?: string | null;
+  /** Zero-based execution order within the workflow. */
+  stageIndex?: number;
+  /** Human-readable stage name (e.g. "Line manager", "Security review"). */
+  stageName?: string | null;
+  status?: IdentityAuthorizationPermissionApprovalStageStatus;
+  /** The workflow this stage belongs to. */
+  workflowId?: string;
+}
+
+/** One stage definition supplied when creating an approval workflow. */
+export interface IdentityAuthorizationPermissionApprovalStageDefinition {
+  requiredApproverUserId?: string | null;
+  stageName?: string | null;
+}
+
+/** Lifecycle status of one GameGuild.Identity.Authorization.PermissionApprovalStage. */
+export type IdentityAuthorizationPermissionApprovalStageStatus = 'Pending' | 'Approved' | 'Rejected' | 'Skipped';
+
+/** Lifecycle status of a GameGuild.Identity.Authorization.PermissionApprovalWorkflow. */
+export type IdentityAuthorizationPermissionApprovalStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+
+/** A multi-stage permission approval workflow (issue #188: permission approval
+workflow tracking including multi-stage approval processes). */
+export interface IdentityAuthorizationPermissionApprovalWorkflow {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** When the workflow reached a terminal status (approved/rejected/cancelled), if it has. */
+  completedAt?: string | null;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Zero-based index of the stage currently awaiting a decision
+(`Stages.Count` when the workflow is complete). */
+  currentStageIndex?: number;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** The permission strings requested. */
+  permissions?: string[] | null;
+  /** Justification supplied when the workflow was created. */
+  reason?: string | null;
+  /** Who requested the workflow. */
+  requestedBy?: string;
+  /** The ordered approval stages. */
+  stages?: IdentityAuthorizationPermissionApprovalStage[] | null;
+  status?: IdentityAuthorizationPermissionApprovalStatus;
+  /** The user the permissions are requested for. */
+  subjectUserId?: string;
+  tenantId?: string | null;
+  /** Total number of stages (denormalized for reporting; equals `Stages.Count`). */
+  totalStages?: number;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
 /** Allow/deny rates for one reporting dimension value. */
 export interface IdentityAuthorizationPermissionComplianceBreakdown {
   /** Allow outcomes. */
@@ -11307,6 +11638,20 @@ export interface IdentityAuthorizationPermissionDelegation {
   updatedAt?: string | null;
   usageCount?: number;
   usageLimit?: number | null;
+}
+
+/** Effective permission state at a past instant (issue #189: time-based permission
+state reconstruction showing access rights at any point in time). */
+export interface IdentityAuthorizationPermissionHistoryAtSnapshot {
+  effectivePermissions?: string[] | null;
+  inheritanceEdges?: IdentityAuthorizationHistoricalInheritanceEdge[] | null;
+  resourceGrants?: IdentityAuthorizationHistoricalResourceGrant[] | null;
+  roleAssignments?: IdentityAuthorizationHistoricalRoleAssignment[] | null;
+  tenantDenies?: string[] | null;
+  tenantGrants?: string[] | null;
+  tenantId?: string | null;
+  timestamp?: string;
+  userId?: string;
 }
 
 /** Result of a permission restoration attempt. */
@@ -11475,6 +11820,39 @@ export interface IdentityAuthorizationPermissionUsageMetrics {
   uniqueUsers?: number;
   usageCount?: number;
 }
+
+/** The mutation that produced a policy version snapshot. */
+export type IdentityAuthorizationPolicyVersionChangeType = 'None' | 'Created' | 'Updated' | 'Deleted';
+
+/** Append-only policy snapshot persisted on every permission-policy mutation
+(issue #188: permission policy change tracking with complete version history). */
+export interface IdentityAuthorizationPolicyVersionHistory {
+  /** Row identifier. */
+  id?: string;
+  /** Who performed the mutation, when known (system/sync mutations may be null). */
+  changedBy?: string | null;
+  changeType?: IdentityAuthorizationPolicyVersionChangeType;
+  kind?: IdentityAuthorizationPolicyVersionKind;
+  /** The identifier of the snapshotted policy (a GameGuild.Identity.Authorization.ConditionalPolicy id
+or a GameGuild.Identity.Authorization.PolicyDefinitionEntity id). */
+  policyId?: string;
+  /** The policy's display name captured with the snapshot (survives policy deletion). */
+  policyName?: string | null;
+  /** Free-form reason for the change, when supplied. */
+  reason?: string | null;
+  /** When the mutation was recorded. */
+  recordedAt?: string;
+  /** Full JSON snapshot of the policy state after the change (for deletes: the
+last known state before removal). */
+  snapshotJson: string;
+  /** Tenant scope of the policy (null for global policies). */
+  tenantId?: string | null;
+  /** Monotonically increasing per-policy version number, starting at 1. */
+  version?: number;
+}
+
+/** Which policy family a GameGuild.Identity.Authorization.PolicyVersionHistory row snapshots. */
+export type IdentityAuthorizationPolicyVersionKind = 'None' | 'ConditionalPolicy' | 'PolicyDefinition';
 
 /** Command to remove deny entries from a user's permissions. */
 export interface IdentityAuthorizationRemoveDenyPermissionsCommand {
@@ -22775,21 +23153,25 @@ export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
 export let CommerceOrdersAddOrderItemInputSchema: z.ZodType<CommerceOrdersAddOrderItemInput>;
+export let CommerceOrdersBundleRecommendationDtoSchema: z.ZodType<CommerceOrdersBundleRecommendationDto>;
 export let CommerceOrdersCaptureOrderInputSchema: z.ZodType<CommerceOrdersCaptureOrderInput>;
 export let CommerceOrdersCheckoutMarketplaceCartInputSchema: z.ZodType<CommerceOrdersCheckoutMarketplaceCartInput>;
 export let CommerceOrdersCompleteOrderInputSchema: z.ZodType<CommerceOrdersCompleteOrderInput>;
 export let CommerceOrdersCompleteOrderMarketplaceSettlementSchema: z.ZodType<CommerceOrdersCompleteOrderMarketplaceSettlement>;
+export let CommerceOrdersCoPurchaseRecommendationDtoSchema: z.ZodType<CommerceOrdersCoPurchaseRecommendationDto>;
 export let CommerceOrdersCreateOrderInputSchema: z.ZodType<CommerceOrdersCreateOrderInput>;
 export let CommerceOrdersMarketplaceCartDtoSchema: z.ZodType<CommerceOrdersMarketplaceCartDto>;
 export let CommerceOrdersMarketplaceCartItemDtoSchema: z.ZodType<CommerceOrdersMarketplaceCartItemDto>;
 export let CommerceOrdersMarketplaceCartStateSchema: z.ZodType<CommerceOrdersMarketplaceCartState>;
 export let CommerceOrdersMarketplaceCheckoutDtoSchema: z.ZodType<CommerceOrdersMarketplaceCheckoutDto>;
 export let CommerceOrdersMarketplaceCheckoutOrderDtoSchema: z.ZodType<CommerceOrdersMarketplaceCheckoutOrderDto>;
+export let CommerceOrdersOptionalBundleItemDtoSchema: z.ZodType<CommerceOrdersOptionalBundleItemDto>;
 export let CommerceOrdersOrderCaptureDtoSchema: z.ZodType<CommerceOrdersOrderCaptureDto>;
 export let CommerceOrdersOrderDtoSchema: z.ZodType<CommerceOrdersOrderDto>;
 export let CommerceOrdersOrderLineItemDtoSchema: z.ZodType<CommerceOrdersOrderLineItemDto>;
 export let CommerceOrdersOrderMarketplaceCurrencyChoiceSchema: z.ZodType<CommerceOrdersOrderMarketplaceCurrencyChoice>;
 export let CommerceOrdersOrderStatusSchema: z.ZodType<CommerceOrdersOrderStatus>;
+export let CommerceOrdersProductRecommendationsDtoSchema: z.ZodType<CommerceOrdersProductRecommendationsDto>;
 export let CommerceOrdersSetMarketplaceCartItemQuantityInputSchema: z.ZodType<CommerceOrdersSetMarketplaceCartItemQuantityInput>;
 export let CommercePaymentsAccountCreditBalanceSchema: z.ZodType<CommercePaymentsAccountCreditBalance>;
 export let CommercePaymentsAccountCreditConsumptionSchema: z.ZodType<CommercePaymentsAccountCreditConsumption>;
@@ -22948,6 +23330,7 @@ export let CommerceProductsApplyPromoCodesInputSchema: z.ZodType<CommerceProduct
 export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommerceProductsAssignSupportTicketInput>;
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
+export let CommerceProductsBundleSavingsHintSchema: z.ZodType<CommerceProductsBundleSavingsHint>;
 export let CommerceProductsCalculatePricingInputSchema: z.ZodType<CommerceProductsCalculatePricingInput>;
 export let CommerceProductsCampaignExpiringCodeDtoSchema: z.ZodType<CommerceProductsCampaignExpiringCodeDto>;
 export let CommerceProductsCampaignPerformanceDtoSchema: z.ZodType<CommerceProductsCampaignPerformanceDto>;
@@ -22958,6 +23341,7 @@ export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProd
 export let CommerceProductsConflictResolutionStrategySchema: z.ZodType<CommerceProductsConflictResolutionStrategy>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
 export let CommerceProductsCreatePricingRuleInputSchema: z.ZodType<CommerceProductsCreatePricingRuleInput>;
+export let CommerceProductsCreateProductCategoryInputSchema: z.ZodType<CommerceProductsCreateProductCategoryInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
 export let CommerceProductsCreatePromoCodeInputSchema: z.ZodType<CommerceProductsCreatePromoCodeInput>;
 export let CommerceProductsCreatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsCreatePromoStackingRuleInput>;
@@ -22973,7 +23357,10 @@ export let CommerceProductsPricingRuleDtoSchema: z.ZodType<CommerceProductsPrici
 export let CommerceProductsPricingRuleTierDtoSchema: z.ZodType<CommerceProductsPricingRuleTierDto>;
 export let CommerceProductsPricingRuleTierInputSchema: z.ZodType<CommerceProductsPricingRuleTierInput>;
 export let CommerceProductsProductAcquisitionTypeSchema: z.ZodType<CommerceProductsProductAcquisitionType>;
+export let CommerceProductsProductAvailabilityDtoSchema: z.ZodType<CommerceProductsProductAvailabilityDto>;
+export let CommerceProductsProductCategoryDtoSchema: z.ZodType<CommerceProductsProductCategoryDto>;
 export let CommerceProductsProductDtoSchema: z.ZodType<CommerceProductsProductDto>;
+export let CommerceProductsProductInventoryDtoSchema: z.ZodType<CommerceProductsProductInventoryDto>;
 export let CommerceProductsProductPricingDtoSchema: z.ZodType<CommerceProductsProductPricingDto>;
 export let CommerceProductsProductTypeSchema: z.ZodType<CommerceProductsProductType>;
 export let CommerceProductsPromoCodeApplicationResultSchema: z.ZodType<CommerceProductsPromoCodeApplicationResult>;
@@ -22985,6 +23372,7 @@ export let CommerceProductsPromoStackingRuleDtoSchema: z.ZodType<CommerceProduct
 export let CommerceProductsRejectedPromoCodeSchema: z.ZodType<CommerceProductsRejectedPromoCode>;
 export let CommerceProductsResolveSupportTicketInputSchema: z.ZodType<CommerceProductsResolveSupportTicketInput>;
 export let CommerceProductsRevokeEntitlementInputSchema: z.ZodType<CommerceProductsRevokeEntitlementInput>;
+export let CommerceProductsSetProductInventoryInputSchema: z.ZodType<CommerceProductsSetProductInventoryInput>;
 export let CommerceProductsSetProductPricingInputSchema: z.ZodType<CommerceProductsSetProductPricingInput>;
 export let CommerceProductsSupportAgentDtoSchema: z.ZodType<CommerceProductsSupportAgentDto>;
 export let CommerceProductsSupportTicketDtoSchema: z.ZodType<CommerceProductsSupportTicketDto>;
@@ -22994,6 +23382,7 @@ export let CommerceProductsSupportTicketPrioritySchema: z.ZodType<CommerceProduc
 export let CommerceProductsSupportTicketStatusSchema: z.ZodType<CommerceProductsSupportTicketStatus>;
 export let CommerceProductsSupportTicketSummaryDtoSchema: z.ZodType<CommerceProductsSupportTicketSummaryDto>;
 export let CommerceProductsUpdatePricingRuleInputSchema: z.ZodType<CommerceProductsUpdatePricingRuleInput>;
+export let CommerceProductsUpdateProductCategoryInputSchema: z.ZodType<CommerceProductsUpdateProductCategoryInput>;
 export let CommerceProductsUpdateProductInputSchema: z.ZodType<CommerceProductsUpdateProductInput>;
 export let CommerceProductsUpdatePromoCodeInputSchema: z.ZodType<CommerceProductsUpdatePromoCodeInput>;
 export let CommerceProductsUpdatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsUpdatePromoStackingRuleInput>;
@@ -23547,12 +23936,14 @@ export let IdentityAuthorizationCommandsRequestJitElevationCommandSchema: z.ZodT
 export let IdentityAuthorizationControllersApproveElevationInputSchema: z.ZodType<IdentityAuthorizationControllersApproveElevationInput>;
 export let IdentityAuthorizationControllersApproveItemInputSchema: z.ZodType<IdentityAuthorizationControllersApproveItemInput>;
 export let IdentityAuthorizationControllersCompleteCampaignInputSchema: z.ZodType<IdentityAuthorizationControllersCompleteCampaignInput>;
+export let IdentityAuthorizationControllersDecidePermissionApprovalInputSchema: z.ZodType<IdentityAuthorizationControllersDecidePermissionApprovalInput>;
 export let IdentityAuthorizationControllersDenyElevationInputSchema: z.ZodType<IdentityAuthorizationControllersDenyElevationInput>;
 export let IdentityAuthorizationControllersGrantExceptionInputSchema: z.ZodType<IdentityAuthorizationControllersGrantExceptionInput>;
 export let IdentityAuthorizationControllersResolveViolationInputSchema: z.ZodType<IdentityAuthorizationControllersResolveViolationInput>;
 export let IdentityAuthorizationControllersRevokeElevationInputSchema: z.ZodType<IdentityAuthorizationControllersRevokeElevationInput>;
 export let IdentityAuthorizationControllersRevokeItemInputSchema: z.ZodType<IdentityAuthorizationControllersRevokeItemInput>;
 export let IdentityAuthorizationControllersUpdateSoDRuleInputSchema: z.ZodType<IdentityAuthorizationControllersUpdateSoDRuleInput>;
+export let IdentityAuthorizationCreatePermissionApprovalCommandSchema: z.ZodType<IdentityAuthorizationCreatePermissionApprovalCommand>;
 export let IdentityAuthorizationDeclineInvitationInputSchema: z.ZodType<IdentityAuthorizationDeclineInvitationInput>;
 export let IdentityAuthorizationDelegatedAdminScopeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScope>;
 export let IdentityAuthorizationDelegatedAdminScopeTypeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScopeType>;
@@ -23573,8 +23964,12 @@ export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<Iden
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationGraphExportFormatSchema: z.ZodType<IdentityAuthorizationGraphExportFormat>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
+export let IdentityAuthorizationHistoricalInheritanceEdgeSchema: z.ZodType<IdentityAuthorizationHistoricalInheritanceEdge>;
+export let IdentityAuthorizationHistoricalResourceGrantSchema: z.ZodType<IdentityAuthorizationHistoricalResourceGrant>;
+export let IdentityAuthorizationHistoricalRoleAssignmentSchema: z.ZodType<IdentityAuthorizationHistoricalRoleAssignment>;
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
 export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
+export let IdentityAuthorizationInheritanceHistoryEventSchema: z.ZodType<IdentityAuthorizationInheritanceHistoryEvent>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
 export let IdentityAuthorizationModelsImpactedUserSchema: z.ZodType<IdentityAuthorizationModelsImpactedUser>;
@@ -23589,9 +23984,16 @@ export let IdentityAuthorizationModelsPermissionRemovalImpactSchema: z.ZodType<I
 export let IdentityAuthorizationModelsRoleDeletionImpactSchema: z.ZodType<IdentityAuthorizationModelsRoleDeletionImpact>;
 export let IdentityAuthorizationPermissionAnalyticsReportSchema: z.ZodType<IdentityAuthorizationPermissionAnalyticsReport>;
 export let IdentityAuthorizationPermissionAnomalySchema: z.ZodType<IdentityAuthorizationPermissionAnomaly>;
+export let IdentityAuthorizationPermissionApprovalDecisionResultSchema: z.ZodType<IdentityAuthorizationPermissionApprovalDecisionResult>;
+export let IdentityAuthorizationPermissionApprovalStageSchema: z.ZodType<IdentityAuthorizationPermissionApprovalStage>;
+export let IdentityAuthorizationPermissionApprovalStageDefinitionSchema: z.ZodType<IdentityAuthorizationPermissionApprovalStageDefinition>;
+export let IdentityAuthorizationPermissionApprovalStageStatusSchema: z.ZodType<IdentityAuthorizationPermissionApprovalStageStatus>;
+export let IdentityAuthorizationPermissionApprovalStatusSchema: z.ZodType<IdentityAuthorizationPermissionApprovalStatus>;
+export let IdentityAuthorizationPermissionApprovalWorkflowSchema: z.ZodType<IdentityAuthorizationPermissionApprovalWorkflow>;
 export let IdentityAuthorizationPermissionComplianceBreakdownSchema: z.ZodType<IdentityAuthorizationPermissionComplianceBreakdown>;
 export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<IdentityAuthorizationPermissionComplianceReport>;
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
+export let IdentityAuthorizationPermissionHistoryAtSnapshotSchema: z.ZodType<IdentityAuthorizationPermissionHistoryAtSnapshot>;
 export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
 export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
 export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
@@ -23599,6 +24001,9 @@ export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthori
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
 export let IdentityAuthorizationPermissionUsageMetricsSchema: z.ZodType<IdentityAuthorizationPermissionUsageMetrics>;
+export let IdentityAuthorizationPolicyVersionChangeTypeSchema: z.ZodType<IdentityAuthorizationPolicyVersionChangeType>;
+export let IdentityAuthorizationPolicyVersionHistorySchema: z.ZodType<IdentityAuthorizationPolicyVersionHistory>;
+export let IdentityAuthorizationPolicyVersionKindSchema: z.ZodType<IdentityAuthorizationPolicyVersionKind>;
 export let IdentityAuthorizationRemoveDenyPermissionsCommandSchema: z.ZodType<IdentityAuthorizationRemoveDenyPermissionsCommand>;
 export let IdentityAuthorizationRemoveUserAccessCommandSchema: z.ZodType<IdentityAuthorizationRemoveUserAccessCommand>;
 export let IdentityAuthorizationResourceAccessPatternSchema: z.ZodType<IdentityAuthorizationResourceAccessPattern>;
@@ -26412,6 +26817,13 @@ CommerceOrdersAddOrderItemInputSchema = z.object({
   quantity: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceOrdersBundleRecommendationDto. A bundle that contains the anchor product, with the price-optimization hint. */
+CommerceOrdersBundleRecommendationDtoSchema = z.object({
+  bundleId: z.string().uuid().optional(),
+  name: z.string().nullable().optional(),
+  savings: z.lazy(() => CommerceProductsBundleSavingsHintSchema).optional(),
+});
+
 /** Zod schema for CommerceOrdersCaptureOrderInput. Request to capture payment for an order */
 CommerceOrdersCaptureOrderInputSchema = z.object({
   paymentMethodId: z.string().nullable().optional(),
@@ -26435,6 +26847,13 @@ CommerceOrdersCompleteOrderInputSchema = z.object({
 CommerceOrdersCompleteOrderMarketplaceSettlementSchema = z.object({
   currencyChoice: z.lazy(() => CommerceOrdersOrderMarketplaceCurrencyChoiceSchema).optional(),
   idempotencyKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceOrdersCoPurchaseRecommendationDto. Recommendation item: a product co-purchased with the anchor product. */
+CommerceOrdersCoPurchaseRecommendationDtoSchema = z.object({
+  coOrderCount: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrdersCreateOrderInput. Request to create a new order */
@@ -26481,6 +26900,12 @@ CommerceOrdersMarketplaceCheckoutOrderDtoSchema = z.object({
   currency: z.string().nullable().optional(),
   orderId: z.string().uuid().optional(),
   total: z.number().optional(),
+});
+
+/** Zod schema for CommerceOrdersOptionalBundleItemDto. Optional ("complete the bundle") item for a bundle anchor product. */
+CommerceOrdersOptionalBundleItemDtoSchema = z.object({
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrdersOrderCaptureDto. Order capture result including any client-side payment action. */
@@ -26574,6 +26999,27 @@ CommerceOrdersOrderStatusSchema = z.enum([
   'Fulfilled',
   'OnHold',
 ]);
+
+/** Zod schema for CommerceOrdersProductRecommendationsDto. Rule-based product recommendations (issue #401, v1): deterministic
+"frequently bought together" from completed-order co-occurrence plus
+bundle-savings hints. Machine-learning personalization is explicitly deferred
+(see docs/billing/product-catalog-bundling.md). */
+CommerceOrdersProductRecommendationsDtoSchema = z.object({
+  bundleSuggestions: z
+    .array(z.lazy(() => CommerceOrdersBundleRecommendationDtoSchema))
+    .nullable()
+    .optional(),
+  cached: z.boolean().optional(),
+  completeTheBundle: z
+    .array(z.lazy(() => CommerceOrdersOptionalBundleItemDtoSchema))
+    .nullable()
+    .optional(),
+  frequentlyBoughtTogether: z
+    .array(z.lazy(() => CommerceOrdersCoPurchaseRecommendationDtoSchema))
+    .nullable()
+    .optional(),
+  productId: z.string().uuid().optional(),
+});
 
 /** Zod schema for CommerceOrdersSetMarketplaceCartItemQuantityInput. Data model for Commerce Orders Set Marketplace Cart Item Quantity Input. */
 CommerceOrdersSetMarketplaceCartItemQuantityInputSchema = z.object({
@@ -28387,6 +28833,17 @@ CommerceProductsBatchProductCreateItemSchema = z.object({
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
 });
 
+/** Zod schema for CommerceProductsBundleSavingsHint. Bundle-price optimization hint (issue #401): bundle price vs sum-of-parts. */
+CommerceProductsBundleSavingsHintSchema = z.object({
+  bundleId: z.string().uuid().optional(),
+  bundlePrice: z.number().optional(),
+  componentsPriced: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  savings: z.number().optional(),
+  savingsPercentage: z.number().optional(),
+  sumOfParts: z.number().optional(),
+});
+
 /** Zod schema for CommerceProductsCalculatePricingInput. Request to calculate a price through the pricing engine. */
 CommerceProductsCalculatePricingInputSchema = z.object({
   customerSegment: z.string().nullable().optional(),
@@ -28487,10 +28944,21 @@ CommerceProductsCreatePricingRuleInputSchema = z.object({
   timeStart: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsCreateProductCategoryInput. Request model for creating a product category. */
+CommerceProductsCreateProductCategoryInputSchema = z.object({
+  attributesJson: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  slug: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsCreateProductInput. Request model for creating a product */
 CommerceProductsCreateProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
   isBundle: z.boolean().optional(),
@@ -28606,6 +29074,7 @@ CommerceProductsGrantEntitlementInputSchema = z.object({
 CommerceProductsPatchProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().nullable().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   expectedVersion: z.number().int().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
@@ -28707,11 +29176,40 @@ CommerceProductsPricingRuleTierInputSchema = z.object({
 /** Zod schema for CommerceProductsProductAcquisitionType. Represents how a user acquired access to a product */
 CommerceProductsProductAcquisitionTypeSchema = z.enum(['Purchase', 'Subscription', 'Grant', 'PromoCode', 'Bundle', 'Trial', 'Referral', 'Free', 'Gift']);
 
+/** Zod schema for CommerceProductsProductAvailabilityDto. DTO for a product's real-time availability (issue #401). */
+CommerceProductsProductAvailabilityDtoSchema = z.object({
+  availableQuantity: z.number().int().nullable().optional(),
+  isInStock: z.boolean().optional(),
+  isLowStock: z.boolean().optional(),
+  lowStockThreshold: z.number().int().optional(),
+  productId: z.string().uuid().optional(),
+  reservedQuantity: z.number().int().nullable().optional(),
+  stockQuantity: z.number().int().nullable().optional(),
+  trackInventory: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceProductsProductCategoryDto. DTO for a product catalog category (issue #401). */
+CommerceProductsProductCategoryDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  attributes: z.record(z.string(), z.string()).nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  depth: z.number().int().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  path: z.array(z.string()).nullable().optional(),
+  productCount: z.number().int().nullable().optional(),
+  slug: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
 /** Zod schema for CommerceProductsProductDto. Product Data Transfer Object for API responses */
 CommerceProductsProductDtoSchema = z.object({
   id: z.string().uuid().optional(),
   affiliateCommissionPercentage: z.number().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   createdAt: z.string().datetime().optional(),
   creatorId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
@@ -28728,6 +29226,16 @@ CommerceProductsProductDtoSchema = z.object({
   shortDescription: z.string().nullable().optional(),
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
   updatedAt: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommerceProductsProductInventoryDto. DTO for a product's inventory configuration (issue #401). */
+CommerceProductsProductInventoryDtoSchema = z.object({
+  availableQuantity: z.number().int().optional(),
+  lowStockThreshold: z.number().int().optional(),
+  productId: z.string().uuid().optional(),
+  reservedQuantity: z.number().int().optional(),
+  stockQuantity: z.number().int().optional(),
+  trackInventory: z.boolean().optional(),
 });
 
 /** Zod schema for CommerceProductsProductPricingDto. Product Pricing Data Transfer Object */
@@ -28878,6 +29386,13 @@ CommerceProductsRevokeEntitlementInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for CommerceProductsSetProductInventoryInput. Request model for configuring a product's inventory (issue #401) */
+CommerceProductsSetProductInventoryInputSchema = z.object({
+  lowStockThreshold: z.number().int().optional(),
+  stockQuantity: z.number().int().optional(),
+  trackInventory: z.boolean().optional(),
+});
+
 /** Zod schema for CommerceProductsSetProductPricingInput. Data model for Commerce Products Set Product Pricing Request. */
 CommerceProductsSetProductPricingInputSchema = z.object({
   basePrice: z.number().optional(),
@@ -28985,10 +29500,23 @@ CommerceProductsUpdatePricingRuleInputSchema = z.object({
   timeStart: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsUpdateProductCategoryInput. Request model for updating a product category. */
+CommerceProductsUpdateProductCategoryInputSchema = z.object({
+  attributesJson: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().nullable().optional(),
+  expectedVersion: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  reparent: z.boolean().optional(),
+  slug: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsUpdateProductInput. Request model for updating a product */
 CommerceProductsUpdateProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().nullable().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   expectedVersion: z.number().int().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
@@ -34553,6 +35081,13 @@ IdentityAuthorizationControllersCompleteCampaignInputSchema = z.object({
   completedBy: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationControllersDecidePermissionApprovalInput. Body for deciding the current stage of an approval workflow. The approver
+identity is never taken from the body — it comes from the actor context. */
+IdentityAuthorizationControllersDecidePermissionApprovalInputSchema = z.object({
+  approve: z.boolean(),
+  notes: z.string().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationControllersDenyElevationInput. Data model for Identity Authorization Controllers Deny Elevation Request. */
 IdentityAuthorizationControllersDenyElevationInputSchema = z.object({
   comments: z.string().nullable().optional(),
@@ -34591,6 +35126,16 @@ IdentityAuthorizationControllersUpdateSoDRuleInputSchema = z.object({
   isEnabled: z.boolean().optional(),
   name: z.string().nullable().optional(),
   ruleType: z.lazy(() => IdentityAuthorizationSoDRuleTypeSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthorizationCreatePermissionApprovalCommand. Command creating a multi-stage permission approval workflow (issue #188). The
+acting requester identity is resolved from the actor context, never the body. */
+IdentityAuthorizationCreatePermissionApprovalCommandSchema = z.object({
+  permissions: z.array(z.string()).nullable(),
+  reason: z.string().nullable().optional(),
+  stages: z.array(z.lazy(() => IdentityAuthorizationPermissionApprovalStageDefinitionSchema)).nullable(),
+  subjectUserId: z.string().uuid(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema).optional(),
 });
 
 /** Zod schema for IdentityAuthorizationDeclineInvitationInput. Request payload for declining an invitation. */
@@ -34775,6 +35320,33 @@ IdentityAuthorizationHasPermissionOutputSchema = z.object({
   userId: z.string().uuid(),
 });
 
+/** Zod schema for IdentityAuthorizationHistoricalInheritanceEdge. A role-to-role inheritance edge effective at a past instant. */
+IdentityAuthorizationHistoricalInheritanceEdgeSchema = z.object({
+  childRoleId: z.string().uuid().optional(),
+  childRoleName: z.string().nullable().optional(),
+  parentRoleId: z.string().uuid().optional(),
+  parentRoleName: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationHistoricalResourceGrant. A resource grant effective at a past instant. */
+IdentityAuthorizationHistoricalResourceGrantSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  grantedAt: z.string().datetime().optional(),
+  isOwner: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationHistoricalRoleAssignment. A role assignment effective at a past instant, with the role's permission
+contribution expanded through the inheritance graph as of that instant. */
+IdentityAuthorizationHistoricalRoleAssignmentSchema = z.object({
+  directPermissions: z.array(z.string()).nullable().optional(),
+  inheritedPermissions: z.array(z.string()).nullable().optional(),
+  roleId: z.string().uuid().optional(),
+  roleName: z.string().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationImpactSeverity. Impact severity level */
 IdentityAuthorizationImpactSeveritySchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
 
@@ -34783,6 +35355,18 @@ IdentityAuthorizationImportPermissionSyncInputSchema = z.object({
   document: z.lazy(() => IdentityAuthorizationExternalPermissionSyncDocumentSchema).optional(),
   dryRun: z.boolean().optional(),
   tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationInheritanceHistoryEvent. One role-inheritance change event (issue #189: inheritance history tracking). */
+IdentityAuthorizationInheritanceHistoryEventSchema = z.object({
+  affectedUserId: z.string().uuid().nullable().optional(),
+  afterState: z.string().nullable().optional(),
+  beforeState: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  performedBy: z.string().uuid().nullable().optional(),
+  roleId: z.string().uuid().optional(),
+  roleName: z.string().nullable().optional(),
+  timestamp: z.string().datetime().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
@@ -34969,6 +35553,76 @@ IdentityAuthorizationPermissionAnomalySchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionApprovalDecisionResult. Result of deciding the current stage of an approval workflow. */
+IdentityAuthorizationPermissionApprovalDecisionResultSchema = z.object({
+  approved: z.boolean().optional(),
+  decidedStageIndex: z.number().int().optional(),
+  decidedStageName: z.string().nullable().optional(),
+  grantApplied: z.boolean().optional(),
+  notes: z.string().nullable().optional(),
+  workflowId: z.string().uuid().optional(),
+  workflowStatus: z.lazy(() => IdentityAuthorizationPermissionApprovalStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionApprovalStage. One stage of a GameGuild.Identity.Authorization.PermissionApprovalWorkflow. */
+IdentityAuthorizationPermissionApprovalStageSchema = z.object({
+  id: z.string().uuid().optional(),
+  decidedAt: z.string().datetime().nullable().optional(),
+  decidedBy: z.string().uuid().nullable().optional(),
+  decisionNotes: z.string().max(2000).nullable().optional(),
+  requiredApproverUserId: z.string().uuid().nullable().optional(),
+  stageIndex: z.number().int().optional(),
+  stageName: z.string().max(200).nullable().optional(),
+  status: z.lazy(() => IdentityAuthorizationPermissionApprovalStageStatusSchema).optional(),
+  workflowId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionApprovalStageDefinition. One stage definition supplied when creating an approval workflow. */
+IdentityAuthorizationPermissionApprovalStageDefinitionSchema = z.object({
+  requiredApproverUserId: z.string().uuid().nullable().optional(),
+  stageName: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionApprovalStageStatus. Lifecycle status of one GameGuild.Identity.Authorization.PermissionApprovalStage. */
+IdentityAuthorizationPermissionApprovalStageStatusSchema = z.enum(['Pending', 'Approved', 'Rejected', 'Skipped']);
+
+/** Zod schema for IdentityAuthorizationPermissionApprovalStatus. Lifecycle status of a GameGuild.Identity.Authorization.PermissionApprovalWorkflow. */
+IdentityAuthorizationPermissionApprovalStatusSchema = z.enum(['Pending', 'Approved', 'Rejected', 'Cancelled']);
+
+/** Zod schema for IdentityAuthorizationPermissionApprovalWorkflow. A multi-stage permission approval workflow (issue #188: permission approval
+workflow tracking including multi-stage approval processes). */
+IdentityAuthorizationPermissionApprovalWorkflowSchema = z.object({
+  id: z.string().uuid().optional(),
+  completedAt: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  currentStageIndex: z.number().int().optional(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  reason: z.string().max(2000).nullable().optional(),
+  requestedBy: z.string().uuid().optional(),
+  stages: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionApprovalStageSchema))
+    .nullable()
+    .optional(),
+  status: z.lazy(() => IdentityAuthorizationPermissionApprovalStatusSchema).optional(),
+  subjectUserId: z.string().uuid().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalStages: z.number().int().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationPermissionComplianceBreakdown. Allow/deny rates for one reporting dimension value. */
 IdentityAuthorizationPermissionComplianceBreakdownSchema = z.object({
   allow: z.number().int().optional(),
@@ -35024,6 +35678,29 @@ IdentityAuthorizationPermissionDelegationSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
   usageCount: z.number().int().optional(),
   usageLimit: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionHistoryAtSnapshot. Effective permission state at a past instant (issue #189: time-based permission
+state reconstruction showing access rights at any point in time). */
+IdentityAuthorizationPermissionHistoryAtSnapshotSchema = z.object({
+  effectivePermissions: z.array(z.string()).nullable().optional(),
+  inheritanceEdges: z
+    .array(z.lazy(() => IdentityAuthorizationHistoricalInheritanceEdgeSchema))
+    .nullable()
+    .optional(),
+  resourceGrants: z
+    .array(z.lazy(() => IdentityAuthorizationHistoricalResourceGrantSchema))
+    .nullable()
+    .optional(),
+  roleAssignments: z
+    .array(z.lazy(() => IdentityAuthorizationHistoricalRoleAssignmentSchema))
+    .nullable()
+    .optional(),
+  tenantDenies: z.array(z.string()).nullable().optional(),
+  tenantGrants: z.array(z.string()).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  timestamp: z.string().datetime().optional(),
+  userId: z.string().uuid().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionRestorationResult. Result of a permission restoration attempt. */
@@ -35184,6 +35861,28 @@ IdentityAuthorizationPermissionUsageMetricsSchema = z.object({
   uniqueUsers: z.number().int().optional(),
   usageCount: z.number().int().optional(),
 });
+
+/** Zod schema for IdentityAuthorizationPolicyVersionChangeType. The mutation that produced a policy version snapshot. */
+IdentityAuthorizationPolicyVersionChangeTypeSchema = z.enum(['None', 'Created', 'Updated', 'Deleted']);
+
+/** Zod schema for IdentityAuthorizationPolicyVersionHistory. Append-only policy snapshot persisted on every permission-policy mutation
+(issue #188: permission policy change tracking with complete version history). */
+IdentityAuthorizationPolicyVersionHistorySchema = z.object({
+  id: z.string().uuid().optional(),
+  changedBy: z.string().uuid().nullable().optional(),
+  changeType: z.lazy(() => IdentityAuthorizationPolicyVersionChangeTypeSchema).optional(),
+  kind: z.lazy(() => IdentityAuthorizationPolicyVersionKindSchema).optional(),
+  policyId: z.string().uuid().optional(),
+  policyName: z.string().max(200).nullable().optional(),
+  reason: z.string().max(2000).nullable().optional(),
+  recordedAt: z.string().datetime().optional(),
+  snapshotJson: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPolicyVersionKind. Which policy family a GameGuild.Identity.Authorization.PolicyVersionHistory row snapshots. */
+IdentityAuthorizationPolicyVersionKindSchema = z.enum(['None', 'ConditionalPolicy', 'PolicyDefinition']);
 
 /** Zod schema for IdentityAuthorizationRemoveDenyPermissionsCommand. Command to remove deny entries from a user's permissions. */
 IdentityAuthorizationRemoveDenyPermissionsCommandSchema = z.object({
@@ -45536,6 +46235,10 @@ export type CommerceBillingPricingDecisionLedgerEntryDetail = CommerceBillingPri
 export { CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema as CommerceBillingPricingDecisionLedgerEntryDetailSchema };
 export type CommerceBillingPricingDecisionLedgerEntry = CommerceBillingPricingDecisionLedgerEntryDto;
 export { CommerceBillingPricingDecisionLedgerEntryDtoSchema as CommerceBillingPricingDecisionLedgerEntrySchema };
+export type CommerceOrdersBundleRecommendation = CommerceOrdersBundleRecommendationDto;
+export { CommerceOrdersBundleRecommendationDtoSchema as CommerceOrdersBundleRecommendationSchema };
+export type CommerceOrdersCoPurchaseRecommendation = CommerceOrdersCoPurchaseRecommendationDto;
+export { CommerceOrdersCoPurchaseRecommendationDtoSchema as CommerceOrdersCoPurchaseRecommendationSchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
@@ -45544,12 +46247,16 @@ export type CommerceOrdersMarketplaceCheckout = CommerceOrdersMarketplaceCheckou
 export { CommerceOrdersMarketplaceCheckoutDtoSchema as CommerceOrdersMarketplaceCheckoutSchema };
 export type CommerceOrdersMarketplaceCheckoutOrder = CommerceOrdersMarketplaceCheckoutOrderDto;
 export { CommerceOrdersMarketplaceCheckoutOrderDtoSchema as CommerceOrdersMarketplaceCheckoutOrderSchema };
+export type CommerceOrdersOptionalBundleItem = CommerceOrdersOptionalBundleItemDto;
+export { CommerceOrdersOptionalBundleItemDtoSchema as CommerceOrdersOptionalBundleItemSchema };
 export type CommerceOrdersOrderCapture = CommerceOrdersOrderCaptureDto;
 export { CommerceOrdersOrderCaptureDtoSchema as CommerceOrdersOrderCaptureSchema };
 export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
+export type CommerceOrdersProductRecommendations = CommerceOrdersProductRecommendationsDto;
+export { CommerceOrdersProductRecommendationsDtoSchema as CommerceOrdersProductRecommendationsSchema };
 export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
 export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
 export type CommercePaymentsPaymentRetryAttempt = CommercePaymentsPaymentRetryAttemptDto;
@@ -45566,8 +46273,14 @@ export type CommerceProductsPricingRule = CommerceProductsPricingRuleDto;
 export { CommerceProductsPricingRuleDtoSchema as CommerceProductsPricingRuleSchema };
 export type CommerceProductsPricingRuleTier = CommerceProductsPricingRuleTierDto;
 export { CommerceProductsPricingRuleTierDtoSchema as CommerceProductsPricingRuleTierSchema };
+export type CommerceProductsProductAvailability = CommerceProductsProductAvailabilityDto;
+export { CommerceProductsProductAvailabilityDtoSchema as CommerceProductsProductAvailabilitySchema };
+export type CommerceProductsProductCategory = CommerceProductsProductCategoryDto;
+export { CommerceProductsProductCategoryDtoSchema as CommerceProductsProductCategorySchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;
 export { CommerceProductsProductDtoSchema as CommerceProductsProductSchema };
+export type CommerceProductsProductInventory = CommerceProductsProductInventoryDto;
+export { CommerceProductsProductInventoryDtoSchema as CommerceProductsProductInventorySchema };
 export type CommerceProductsProductPricing = CommerceProductsProductPricingDto;
 export { CommerceProductsProductPricingDtoSchema as CommerceProductsProductPricingSchema };
 export type CommerceProductsPromoCode = CommerceProductsPromoCodeDto;

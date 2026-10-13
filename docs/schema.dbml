@@ -125,6 +125,66 @@ Table "AccessReviewCampaign" {
   }
 }
 
+Table "account_credit_grants" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "UserId" uuid [not null]
+  "Currency" "character varying(3)" [not null]
+  "Source" integer [not null]
+  "CreditType" integer [not null]
+  "SourceReferenceId" uuid
+  "Description" "character varying(500)" [not null]
+  "Amount" numeric(18,2) [not null]
+  "RemainingAmount" numeric(18,2) [not null]
+  "ExpiresAt" timestamp
+  "Status" integer [not null]
+  "FullyUsedAt" timestamp
+  "RevocationReason" "character varying(500)"
+  "IdempotencyKey" "character varying(200)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Checks {
+    `"Amount" > 0 AND "RemainingAmount" >= 0 AND "RemainingAmount" <= "Amount"` [name: 'ck_account_credit_grants_amounts_positive']
+    `"UserId" <> '00000000-0000-0000-0000-000000000000'::uuid` [name: 'ck_account_credit_grants_user_not_empty']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_account_credit_grants"]
+    ExpiresAt [name: "IX_account_credit_grants_ExpiresAt"]
+    (Source, SourceReferenceId) [name: "IX_account_credit_grants_Source_SourceReferenceId"]
+    (TenantId, IdempotencyKey) [unique, name: "IX_account_credit_grants_TenantId_IdempotencyKey"]
+    (TenantId, UserId, Status) [name: "IX_account_credit_grants_TenantId_UserId_Status"]
+  }
+}
+
+Table "account_credit_invoice_settlements" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "UserId" uuid [not null]
+  "InvoiceId" uuid [not null]
+  "Amount" numeric(18,2) [not null]
+  "Currency" "character varying(3)" [not null]
+  "IdempotencyKey" "character varying(200)" [not null]
+  "AppliedAt" timestamp [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Checks {
+    `"Amount" > 0` [name: 'ck_account_credit_invoice_settlements_amount_positive']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_account_credit_invoice_settlements"]
+    (TenantId, IdempotencyKey) [unique, name: "IX_account_credit_invoice_settlements_TenantId_IdempotencyKey"]
+    (TenantId, InvoiceId) [name: "IX_account_credit_invoice_settlements_TenantId_InvoiceId"]
+  }
+}
+
 Table "ai_authoring_conversations" {
   "Id" uuid [not null]
   "ProgramId" uuid [not null]
@@ -2690,6 +2750,50 @@ Table "game_jams" {
   }
 }
 
+Table "gift_subscriptions" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "GiverUserId" uuid [not null]
+  "RecipientEmail" "character varying(255)" [not null]
+  "RecipientName" "character varying(255)"
+  "RecipientUserId" uuid
+  "PlanId" uuid
+  "DurationMonths" integer [not null]
+  "Amount" numeric(18,2) [not null]
+  "Currency" "character varying(3)" [not null]
+  "PersonalMessage" "character varying(500)"
+  "DeliveryDate" timestamp
+  "Status" integer [not null]
+  "RedemptionCodeHash" "character varying(64)" [not null]
+  "RedemptionCodePrefix" "character varying(8)" [not null]
+  "PurchasedAt" timestamp [not null]
+  "DeliveredAt" timestamp
+  "RedeemedAt" timestamp
+  "ExpiresAt" timestamp [not null]
+  "ExpiredAt" timestamp
+  "PaymentId" uuid
+  "CreditGrantId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Checks {
+    `"Amount" > 0` [name: 'ck_gift_subscriptions_amount_positive']
+    `"DurationMonths" >= 1 AND "DurationMonths" <= 36` [name: 'ck_gift_subscriptions_duration_range']
+    `"GiverUserId" <> '00000000-0000-0000-0000-000000000000'::uuid` [name: 'ck_gift_subscriptions_giver_not_empty']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_gift_subscriptions"]
+    RecipientEmail [name: "IX_gift_subscriptions_RecipientEmail"]
+    RedemptionCodeHash [unique, name: "IX_gift_subscriptions_RedemptionCodeHash"]
+    (Status, ExpiresAt) [name: "IX_gift_subscriptions_Status_ExpiresAt"]
+    (TenantId, GiverUserId) [name: "IX_gift_subscriptions_TenantId_GiverUserId"]
+    (TenantId, RecipientUserId) [name: "IX_gift_subscriptions_TenantId_RecipientUserId"]
+  }
+}
+
 Table "GradingCommandReceipts" {
   "Id" uuid [not null]
   "TenantId" uuid [not null]
@@ -3429,6 +3533,7 @@ Table "payments" {
   "RetryCount" integer [not null]
   "MaxRetries" integer [not null]
   "NextRetryAt" timestamp
+  "IsRetriable" boolean [not null, default: true]
   "RefundedAmount" numeric(18,2) [not null]
   "RefundId" "character varying(255)"
   "RefundReason" "character varying(500)"
@@ -3460,8 +3565,32 @@ Table "payments" {
     IdempotencyKey [unique, name: "IX_payments_IdempotencyKey"]
     (TenantId, CreatedAt) [name: "ix_payments_open_fraud_reviews"]
     (Provider, ProviderEnvironment, ProviderAccountId, ProviderObjectId, ProviderMonetaryLeg) [unique, name: "ix_payments_provider_object_leg"]
+    (Status, NextRetryAt) [name: "IX_payments_Status_NextRetryAt"]
     SubscriptionId [name: "IX_payments_SubscriptionId"]
     (TenantId, Status) [name: "IX_payments_TenantId_Status"]
+  }
+}
+
+Table "PermissionApprovalWorkflows" {
+  "Id" uuid [not null]
+  "SubjectUserId" uuid [not null]
+  "Permissions" "text[]" [not null]
+  "Reason" "character varying(2000)"
+  "RequestedBy" uuid [not null]
+  "Status" integer [not null]
+  "CurrentStageIndex" integer [not null]
+  "TotalStages" integer [not null]
+  "CompletedAt" timestamp
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_PermissionApprovalWorkflows"]
+    SubjectUserId [name: "IX_PermissionApprovalWorkflows_Subject"]
+    (TenantId, Status) [name: "IX_PermissionApprovalWorkflows_Tenant_Status"]
   }
 }
 
@@ -3619,6 +3748,28 @@ Table "PolicyDefinitions" {
   Indexes {
     Id [pk, name: "PK_PolicyDefinitions"]
     (PolicyName, TenantId) [unique, name: "IX_PolicyDefinitions_PolicyName_TenantId"]
+  }
+}
+
+Table "PolicyVersionHistory" {
+  "Id" uuid [not null]
+  "PolicyId" uuid [not null]
+  "Kind" integer [not null]
+  "TenantId" uuid
+  "Version" integer [not null]
+  "ChangeType" integer [not null]
+  "SnapshotJson" text [not null]
+  "PolicyName" "character varying(200)"
+  "ChangedBy" uuid
+  "Reason" "character varying(2000)"
+  "RecordedAt" timestamp [not null]
+
+  Indexes {
+    Id [pk, name: "PK_PolicyVersionHistory"]
+    (PolicyId, Version) [unique, name: "IX_PolicyVersionHistory_Policy_Version"]
+    PolicyId [name: "IX_PolicyVersionHistory_PolicyId"]
+    RecordedAt [name: "IX_PolicyVersionHistory_RecordedAt"]
+    (TenantId, RecordedAt) [name: "IX_PolicyVersionHistory_Tenant_Time"]
   }
 }
 
@@ -3832,6 +3983,52 @@ Table "posts" {
   }
 }
 
+Table "pricing_decision_ledger" {
+  "Id" uuid [not null]
+  "DecisionType" "character varying(32)" [not null]
+  "OrderId" uuid
+  "OrderLineItemId" uuid
+  "PaymentId" uuid
+  "SubscriptionId" uuid
+  "BillingCycleNumber" integer
+  "ProductId" uuid
+  "Quantity" integer [not null]
+  "Currency" "character varying(3)" [not null, default: 'USD']
+  "BaseAmount" numeric(18,4) [not null]
+  "RuleAdjustmentTotal" numeric(18,4) [not null]
+  "PromoDiscountTotal" numeric(18,4) [not null]
+  "FinalAmount" numeric(18,4) [not null]
+  "BreakdownJson" jsonb [not null]
+  "AppliedPromoCodes" "character varying(512)"
+  "AppliedPricingRuleId" uuid
+  "AppliedStackingRuleName" "character varying(200)"
+  "PricingEngineVersion" "character varying(20)" [not null]
+  "ActorUserId" uuid
+  "ActorIpAddress" "character varying(45)"
+  "IdempotencyKey" "character varying(200)" [not null]
+  "DecidedAtUtc" timestamp [not null]
+  "DriftStatus" "character varying(16)" [not null]
+  "RecomputedFinalAmount" numeric(18,4)
+  "ValidatedAtUtc" timestamp
+  "DriftReason" "character varying(500)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_pricing_decision_ledger"]
+    CreatedAt [name: "ix_pricing_decision_ledger_created_at"]
+    (DriftStatus, CreatedAt) [name: "ix_pricing_decision_ledger_drift_status_created_at"]
+    IdempotencyKey [unique, name: "ix_pricing_decision_ledger_idempotency_key"]
+    OrderId [name: "ix_pricing_decision_ledger_order_id"]
+    SubscriptionId [name: "ix_pricing_decision_ledger_subscription_id"]
+    (TenantId, CreatedAt) [name: "ix_pricing_decision_ledger_tenant_created_at"]
+    TenantId [name: "ix_pricing_decision_ledger_tenant_id"]
+  }
+}
+
 Table "pricing_rules" {
   "Id" uuid [not null]
   "ProductId" uuid
@@ -3971,6 +4168,18 @@ Table "project_collaboration_teams" {
   }
 }
 
+Table "promo_code_user_usage_counters" {
+  "PromoCodeId" uuid [not null]
+  "UserId" uuid [not null]
+  "UseCount" integer [not null, default: 0]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+
+  Indexes {
+    (PromoCodeId, UserId) [pk, name: "PK_promo_code_user_usage_counters"]
+  }
+}
+
 Table "promo_stacking_rules" {
   "Id" uuid [not null]
   "Name" "character varying(200)" [not null]
@@ -3996,6 +4205,45 @@ Table "promo_stacking_rules" {
     IsActive [name: "IX_promo_stacking_rules_IsActive"]
     Name [unique, name: "IX_promo_stacking_rules_Name"]
     Priority [name: "IX_promo_stacking_rules_Priority"]
+  }
+}
+
+Table "referrals" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "ReferrerUserId" uuid [not null]
+  "ReferralCode" "character varying(32)" [not null]
+  "ReferralLink" "character varying(500)"
+  "RefereeEmail" "character varying(255)"
+  "RefereeUserId" uuid
+  "RefereeSubscriptionId" uuid
+  "ConversionInvoiceId" uuid
+  "ReferrerIpHash" "character varying(64)"
+  "RefereeIpHash" "character varying(64)"
+  "SharedAt" timestamp [not null]
+  "ClickedAt" timestamp
+  "SignupAt" timestamp
+  "ConversionAt" timestamp
+  "Status" integer [not null]
+  "FraudReason" "character varying(500)"
+  "ReferrerRewardGrantId" uuid
+  "RefereeRewardGrantId" uuid
+  "RewardIssuedAt" timestamp
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Checks {
+    `"ReferrerUserId" <> '00000000-0000-0000-0000-000000000000'::uuid` [name: 'ck_referrals_referrer_not_empty']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_referrals"]
+    (Status, ReferrerIpHash) [name: "IX_referrals_Status_ReferrerIpHash"]
+    (TenantId, RefereeUserId) [name: "IX_referrals_TenantId_RefereeUserId"]
+    (TenantId, ReferralCode) [name: "IX_referrals_TenantId_ReferralCode"]
+    (TenantId, ReferrerUserId, Status) [name: "IX_referrals_TenantId_ReferrerUserId_Status"]
   }
 }
 
@@ -5311,6 +5559,36 @@ Table "AccessReviewItem" {
     Decision [name: "IX_AccessReviewItem_Decision"]
     ReviewerId [name: "IX_AccessReviewItem_ReviewerId"]
     SubjectUserId [name: "IX_AccessReviewItem_SubjectUserId"]
+  }
+}
+
+Table "account_credit_transactions" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "UserId" uuid [not null]
+  "GrantId" uuid [not null]
+  "Type" integer [not null]
+  "Amount" numeric(18,2) [not null]
+  "RemainingAfter" numeric(18,2) [not null]
+  "Currency" "character varying(3)" [not null]
+  "Description" "character varying(500)" [not null]
+  "ReferenceId" uuid
+  "IdempotencyKey" "character varying(200)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Checks {
+    `"Amount" > 0 AND "RemainingAfter" >= 0` [name: 'ck_account_credit_transactions_amount_positive']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_account_credit_transactions"]
+    GrantId [name: "IX_account_credit_transactions_GrantId"]
+    IdempotencyKey [name: "IX_account_credit_transactions_IdempotencyKey"]
+    ReferenceId [name: "IX_account_credit_transactions_ReferenceId"]
+    (TenantId, UserId, CreatedAt) [name: "IX_account_credit_transactions_TenantId_UserId_CreatedAt"]
   }
 }
 
@@ -6868,6 +7146,120 @@ Table "page_sections" {
     PageId [name: "IX_page_sections_PageId"]
     (PageId, SortOrder) [name: "IX_page_sections_PageId_SortOrder"]
     SectionType [name: "IX_page_sections_SectionType"]
+  }
+}
+
+Table "payment_disputes" {
+  "Id" uuid [not null]
+  "PaymentId" uuid [not null]
+  "UserId" uuid [not null]
+  "Type" text [not null]
+  "Status" text [not null]
+  "Amount" numeric(18,2) [not null]
+  "Reason" "character varying(100)" [not null]
+  "Description" "character varying(2000)"
+  "ResolutionNotes" "character varying(2000)"
+  "Resolution" text
+  "ResolvedAt" timestamp
+  "ResolvedBy" uuid
+  "DueDate" timestamp
+  "GatewayDisputeId" "character varying(255)"
+  "GatewayName" "character varying(50)"
+  "EvidenceDueBy" timestamp
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_payment_disputes"]
+    CreatedAt [name: "IX_payment_disputes_CreatedAt"]
+    DueDate [name: "IX_payment_disputes_DueDate"]
+    GatewayDisputeId [unique, name: "IX_payment_disputes_GatewayDisputeId"]
+    PaymentId [name: "IX_payment_disputes_PaymentId"]
+    Status [name: "IX_payment_disputes_Status"]
+    Type [name: "IX_payment_disputes_Type"]
+    UserId [name: "IX_payment_disputes_UserId"]
+  }
+}
+
+Table "payment_retry_attempts" {
+  "Id" uuid [not null]
+  "PaymentId" uuid [not null]
+  "AttemptNumber" integer [not null]
+  "ScheduledForUtc" timestamp
+  "ExecutedAtUtc" timestamp [not null]
+  "Outcome" integer [not null]
+  "FailureCode" "character varying(100)"
+  "FailureMessage" "character varying(1000)"
+  "Gateway" "character varying(50)" [not null]
+  "GatewayTransactionId" "character varying(255)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_payment_retry_attempts"]
+    PaymentId [name: "ix_payment_retry_attempts_payment_id"]
+    (PaymentId, AttemptNumber) [unique, name: "IX_payment_retry_attempts_PaymentId_AttemptNumber"]
+  }
+}
+
+Table "refunds" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "PaymentId" uuid [not null]
+  "Amount" numeric(18,2) [not null]
+  "Currency" "character varying(3)" [not null]
+  "Reason" "character varying(100)" [not null]
+  "ReasonDetails" "character varying(1000)"
+  "Status" integer [not null]
+  "RequiresApproval" boolean [not null]
+  "IdempotencyKey" "character varying(255)" [not null]
+  "RequestedByUserId" uuid [not null]
+  "RequestedAt" timestamp [not null]
+  "DecidedByUserId" uuid
+  "DecidedAt" timestamp
+  "DecisionNotes" "character varying(1000)"
+  "GatewayRefundId" "character varying(255)"
+  "GatewayName" "character varying(50)"
+  "ProcessedAt" timestamp
+  "FailedAt" timestamp
+  "FailureReason" "character varying(1000)"
+  "AttemptCount" integer [not null]
+  "DisputeId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_refunds"]
+    CreatedAt [name: "ix_refunds_created_at"]
+    PaymentId [name: "ix_refunds_payment_id"]
+    (PaymentId, IdempotencyKey) [unique, name: "ix_refunds_payment_idempotency_key"]
+    Status [name: "ix_refunds_status"]
+    (TenantId, Status) [name: "ix_refunds_tenant_status"]
+  }
+}
+
+Table "PermissionApprovalStages" {
+  "Id" uuid [not null]
+  "WorkflowId" uuid [not null]
+  "StageIndex" integer [not null]
+  "StageName" "character varying(200)" [not null]
+  "RequiredApproverUserId" uuid
+  "Status" integer [not null]
+  "DecidedBy" uuid
+  "DecidedAt" timestamp
+  "DecisionNotes" "character varying(2000)"
+
+  Indexes {
+    Id [pk, name: "PK_PermissionApprovalStages"]
+    (WorkflowId, StageIndex) [unique, name: "IX_PermissionApprovalStages_Workflow_Index"]
   }
 }
 
@@ -8527,6 +8919,35 @@ Table "launch_pad_participant_registrations" {
   }
 }
 
+Table "dispute_evidence" {
+  "Id" uuid [not null]
+  "DisputeId" uuid [not null]
+  "EvidenceType" text [not null]
+  "Title" "character varying(200)" [not null]
+  "Description" "character varying(2000)"
+  "FileUrl" "character varying(1000)"
+  "FileName" "character varying(255)"
+  "FileSize" bigint
+  "MimeType" "character varying(100)"
+  "SubmittedAt" timestamp [not null]
+  "SubmittedBy" uuid [not null]
+  "IsFromMerchant" boolean [not null]
+  "Metadata" "character varying(2000)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_dispute_evidence"]
+    DisputeId [name: "IX_dispute_evidence_DisputeId"]
+    EvidenceType [name: "IX_dispute_evidence_EvidenceType"]
+    IsFromMerchant [name: "IX_dispute_evidence_IsFromMerchant"]
+    SubmittedAt [name: "IX_dispute_evidence_SubmittedAt"]
+  }
+}
+
 Table "learning_cohort_schedule_items" {
   "Id" uuid [not null]
   "CohortId" uuid [not null]
@@ -8799,15 +9220,21 @@ Table "promo_codes" {
   "Type" integer [not null]
   "DiscountPercentage" numeric(5,2)
   "DiscountAmount" numeric(10,2)
+  "MaxDiscountAmount" numeric(10,2)
   "Currency" "character varying(3)" [not null, default: 'USD']
   "MinimumOrderAmount" numeric(10,2)
   "MaxUses" integer
   "MaxUsesPerUser" integer
+  "CurrentUses" integer [not null]
+  "FreeTrialExtensionDays" integer
+  "DurationMonths" integer
+  "ApplyToRenewal" boolean [not null]
   "ValidFrom" timestamp
   "ValidUntil" timestamp
   "IsActive" boolean [not null]
   "IsExclusive" boolean [not null]
   "StackingPriority" integer [not null]
+  "CampaignId" "character varying(100)"
   "ProductId" uuid
   "CreatedBy" uuid [not null]
   "Version" integer [not null]
@@ -8818,9 +9245,11 @@ Table "promo_codes" {
 
   Indexes {
     Id [pk, name: "PK_promo_codes"]
+    CampaignId [name: "IX_promo_codes_CampaignId"]
     Code [unique, name: "IX_promo_codes_Code"]
     CreatedBy [name: "IX_promo_codes_CreatedBy"]
     IsActive [name: "IX_promo_codes_IsActive"]
+    (IsActive, ValidUntil) [name: "IX_promo_codes_IsActive_ValidUntil"]
     ProductId [name: "IX_promo_codes_ProductId"]
     Type [name: "IX_promo_codes_Type"]
     ValidFrom [name: "IX_promo_codes_ValidFrom"]
@@ -9488,7 +9917,12 @@ Table "promo_code_uses" {
   "Id" uuid [not null]
   "PromoCodeId" uuid [not null]
   "UserId" uuid [not null]
+  "UsedAt" timestamp [not null]
   "DiscountApplied" numeric(10,2) [not null]
+  "Currency" "character varying(3)" [not null, default: 'USD']
+  "OrderId" uuid
+  "OrderLineItemId" uuid
+  "IdempotencyKey" "character varying(200)"
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
@@ -9497,7 +9931,10 @@ Table "promo_code_uses" {
 
   Indexes {
     Id [pk, name: "PK_promo_code_uses"]
+    IdempotencyKey [unique, name: "IX_promo_code_uses_IdempotencyKey"]
     PromoCodeId [name: "IX_promo_code_uses_PromoCodeId"]
+    (PromoCodeId, UserId) [name: "IX_promo_code_uses_PromoCodeId_UserId"]
+    UsedAt [name: "IX_promo_code_uses_UsedAt"]
     UserId [name: "IX_promo_code_uses_UserId"]
   }
 }
@@ -10596,6 +11033,8 @@ Ref "FK_AcademicOutboxDeliveries_AcademicOutboxMessages_OutboxMessa~":"AcademicO
 
 Ref "FK_AccessReviewItem_AccessReviewCampaign_CampaignId":"AccessReviewCampaign"."Id" <? "AccessReviewItem"."CampaignId" [delete: cascade]
 
+Ref "FK_account_credit_transactions_account_credit_grants_GrantId":"account_credit_grants"."Id" <? "account_credit_transactions"."GrantId" [delete: restrict]
+
 Ref "FK_analytics_dashboard_widgets_analytics_dashboards_DashboardId":"analytics_dashboards"."Id" <? "analytics_dashboard_widgets"."DashboardId" [delete: cascade]
 
 Ref "FK_AssessmentTestRuns_AssessmentDefinitionRevisions_Definition~":"AssessmentDefinitionRevisions".("Id", "AssessmentId") <? "AssessmentTestRuns".("DefinitionRevisionId", "AssessmentId") [delete: restrict]
@@ -10753,6 +11192,14 @@ Ref "FK_Notifications_NotificationTemplates_TemplateId":"NotificationTemplates".
 Ref "FK_inbox_receipts_outbox_messages_EventId":"gameguild.integration"."outbox_messages"."EventId" <? "gameguild.integration"."inbox_receipts"."EventId" [delete: restrict]
 
 Ref "FK_page_sections_pages_PageId":"pages"."Id" <? "page_sections"."PageId" [delete: cascade]
+
+Ref "FK_payment_disputes_payments_PaymentId":"payments"."Id" <? "payment_disputes"."PaymentId" [delete: restrict]
+
+Ref "FK_payment_retry_attempts_payments_PaymentId":"payments"."Id" <? "payment_retry_attempts"."PaymentId" [delete: cascade]
+
+Ref "FK_refunds_payments_PaymentId":"payments"."Id" <? "refunds"."PaymentId" [delete: restrict]
+
+Ref "FK_PermissionApprovalStages_PermissionApprovalWorkflows_Workfl~":"PermissionApprovalWorkflows"."Id" <? "PermissionApprovalStages"."WorkflowId" [delete: cascade]
 
 Ref "FK_pricing_rule_tiers_pricing_rules_PricingRuleId":"pricing_rules"."Id" <? "pricing_rule_tiers"."PricingRuleId" [delete: cascade]
 
@@ -10963,6 +11410,8 @@ Ref "FK_economy_wallet_debt_events_economy_wallet_debts_WalletId":"economy_walle
 Ref "FK_launch_pad_participant_registrations_Users_UserId":"Users"."Id" <? "launch_pad_participant_registrations"."UserId" [delete: restrict]
 
 Ref "FK_launch_pad_participant_registrations_launch_pad_participant~":"launch_pad_participant_slots"."Id" <? "launch_pad_participant_registrations"."LaunchPadParticipantSlotId" [delete: cascade]
+
+Ref "FK_dispute_evidence_payment_disputes_DisputeId":"payment_disputes"."Id" <? "dispute_evidence"."DisputeId" [delete: cascade]
 
 Ref "FK_learning_cohort_schedule_items_learning_cohort_schedules_Co~":"learning_cohort_schedules"."CohortId" <? "learning_cohort_schedule_items"."CohortId" [delete: cascade]
 

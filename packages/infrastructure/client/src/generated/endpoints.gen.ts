@@ -5792,6 +5792,53 @@ export const getAuthorizationComplianceReportEndpoint = {
 } as const;
 
 /**
+ * Creates a pending multi-stage approval workflow for a tenant permission grant.
+ */
+export interface PostAuthorizationPermissionApprovalsInput {
+  body?: Types.IdentityAuthorizationCreatePermissionApprovalCommand;
+}
+export type PostAuthorizationPermissionApprovalsOutput = string;
+export const postAuthorizationPermissionApprovalsEndpoint = {
+  operationId: 'postAuthorizationPermissionApprovals' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-approvals' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Loads a workflow with its stages and decisions.
+ */
+export interface GetAuthorizationPermissionApprovalsInput {
+  id: string;
+}
+export type GetAuthorizationPermissionApprovalsOutput = Types.IdentityAuthorizationPermissionApprovalWorkflow;
+export const getAuthorizationPermissionApprovalsEndpoint = {
+  operationId: 'getAuthorizationPermissionApprovals' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-approvals/{id}' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decides the workflow's current stage. On the final approval the guarded grant
+ * executes; a rejection terminates the workflow without granting.
+ */
+export interface PostAuthorizationPermissionApprovalsDecisionsInput {
+  id: string;
+  body?: Types.IdentityAuthorizationControllersDecidePermissionApprovalInput;
+}
+export type PostAuthorizationPermissionApprovalsDecisionsOutput = Types.IdentityAuthorizationPermissionApprovalDecisionResult;
+export const postAuthorizationPermissionApprovalsDecisionsEndpoint = {
+  operationId: 'postAuthorizationPermissionApprovalsDecisions' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-approvals/{id}/decisions' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Builds the permission graph of the caller's tenant: users, dynamic roles, and
  * permission keys connected by assignment, inheritance, grant, and deny edges,
  * with a data-quality summary (cycles, unregistered keys, orphaned roles).
@@ -5840,6 +5887,63 @@ export const getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint
   method: 'GET' as const,
   path: '/api/v1/authorization/permission-graph/roles/{roleId}/permission-removal-impact/{permissionKey}' as const,
   tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the append-only version history of one permission policy (issue #188).
+ */
+export interface GetAuthorizationPermissionPoliciesVersionsInput {
+  policyId: string;
+  query?: {
+    kind?: Types.IdentityAuthorizationPolicyVersionKind;
+  };
+}
+export type GetAuthorizationPermissionPoliciesVersionsOutput = Types.IdentityAuthorizationPolicyVersionHistory[];
+export const getAuthorizationPermissionPoliciesVersionsEndpoint = {
+  operationId: 'getAuthorizationPermissionPoliciesVersions' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-policies/{policyId}/versions' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reconstructs a subject's effective permission state at a past instant
+ * (issue #189: access rights at any point in time).
+ */
+export interface GetAuthorizationPermissionsHistoryAtInput {
+  query?: {
+    timestamp?: string;
+    userId?: string;
+  };
+}
+export type GetAuthorizationPermissionsHistoryAtOutput = Types.IdentityAuthorizationPermissionHistoryAtSnapshot;
+export const getAuthorizationPermissionsHistoryAtEndpoint = {
+  operationId: 'getAuthorizationPermissionsHistoryAt' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/history/at' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists role-inheritance change events in a window (issue #189: parent-child
+ * relationship changes over time), each with the pre/post hierarchy state and
+ * the cascading effects recorded at mutation time.
+ */
+export interface GetAuthorizationPermissionsHistoryInheritanceInput {
+  query?: {
+    fromTimestamp?: string;
+    toTimestamp?: string;
+  };
+}
+export type GetAuthorizationPermissionsHistoryInheritanceOutput = Types.IdentityAuthorizationInheritanceHistoryEvent[];
+export const getAuthorizationPermissionsHistoryInheritanceEndpoint = {
+  operationId: 'getAuthorizationPermissionsHistoryInheritance' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/history/inheritance' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
   requiresAuth: true,
 } as const;
 
@@ -20601,6 +20705,86 @@ export const getPermissionDelegationsDelegatorEndpoint = {
 } as const;
 
 /**
+ * List catalog categories (optionally filtered to a subtree or the roots)
+ */
+export interface GetProductCategoriesForGetProductCategoriesInput {
+  query?: {
+    parentCategoryId?: string;
+    rootsOnly?: boolean;
+    includeProductCounts?: boolean;
+  };
+}
+export type GetProductCategoriesForGetProductCategoriesOutput = Types.CommerceProductsProductCategoryDto[];
+export const getProductCategoriesForGetProductCategoriesEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategories' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create a category
+ */
+export interface PostProductCategoriesInput {
+  body?: Types.CommerceProductsCreateProductCategoryInput;
+}
+export type PostProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const postProductCategoriesEndpoint = {
+  operationId: 'postProductCategories' as const,
+  method: 'POST' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a category by ID
+ */
+export interface GetProductCategoriesForGetProductCategoriesByCategoryIdInput {
+  categoryId: string;
+}
+export type GetProductCategoriesForGetProductCategoriesByCategoryIdOutput = Types.CommerceProductsProductCategoryDto;
+export const getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategoriesByCategoryId' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Update a category (rename, re-slug, reparent, attributes)
+ */
+export interface PutProductCategoriesInput {
+  categoryId: string;
+  body?: Types.CommerceProductsUpdateProductCategoryInput;
+}
+export type PutProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const putProductCategoriesEndpoint = {
+  operationId: 'putProductCategories' as const,
+  method: 'PUT' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a category (soft). Rejected while children or assigned products exist.
+ */
+export interface DeleteProductCategoriesInput {
+  categoryId: string;
+}
+export type DeleteProductCategoriesOutput = void;
+export const deleteProductCategoriesEndpoint = {
+  operationId: 'deleteProductCategories' as const,
+  method: 'DELETE' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get paginated list of products
  */
 export interface GetProductsForGetProductsInput {
@@ -20609,6 +20793,8 @@ export interface GetProductsForGetProductsInput {
     creatorId?: string;
     searchTerm?: string;
     isBundle?: boolean;
+    categoryId?: string;
+    inStock?: boolean;
     includeUnpublished?: boolean;
     skip?: number;
     take?: number;
@@ -20789,6 +20975,37 @@ export const postProductsDeactivateEndpoint = {
 } as const;
 
 /**
+ * Get a product's real-time availability (issue #401)
+ */
+export interface GetProductsAvailabilityInput {
+  productId: string;
+}
+export type GetProductsAvailabilityOutput = Types.CommerceProductsProductAvailabilityDto;
+export const getProductsAvailabilityEndpoint = {
+  operationId: 'getProductsAvailability' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/availability' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create or replace a product's inventory configuration (issue #401)
+ */
+export interface PutProductsInventoryInput {
+  productId: string;
+  body?: Types.CommerceProductsSetProductInventoryInput;
+}
+export type PutProductsInventoryOutput = Types.CommerceProductsProductInventoryDto;
+export const putProductsInventoryEndpoint = {
+  operationId: 'putProductsInventory' as const,
+  method: 'PUT' as const,
+  path: '/v1/products/{productId}/inventory' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get pricing options for a product
  */
 export interface GetProductsPricingInput {
@@ -20817,6 +21034,24 @@ export const putProductsPricingEndpoint = {
   path: '/v1/products/{productId}/pricing' as const,
   tags: ['CommerceProducts'] as const,
   requiresAuth: true,
+} as const;
+
+/**
+ * Get rule-based recommendations for a product
+ */
+export interface GetProductsRecommendationsInput {
+  productId: string;
+  query?: {
+    take?: number;
+  };
+}
+export type GetProductsRecommendationsOutput = Types.CommerceOrdersProductRecommendationsDto;
+export const getProductsRecommendationsEndpoint = {
+  operationId: 'getProductsRecommendations' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/recommendations' as const,
+  tags: ['CommerceOrdersProducts'] as const,
+  requiresAuth: false,
 } as const;
 
 /**
@@ -28660,9 +28895,15 @@ export const endpoints = {
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
   getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  postAuthorizationPermissionApprovals: postAuthorizationPermissionApprovalsEndpoint,
+  getAuthorizationPermissionApprovals: getAuthorizationPermissionApprovalsEndpoint,
+  postAuthorizationPermissionApprovalsDecisions: postAuthorizationPermissionApprovalsDecisionsEndpoint,
   getAuthorizationPermissionGraph: getAuthorizationPermissionGraphEndpoint,
   getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
   getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
+  getAuthorizationPermissionPoliciesVersions: getAuthorizationPermissionPoliciesVersionsEndpoint,
+  getAuthorizationPermissionsHistoryAt: getAuthorizationPermissionsHistoryAtEndpoint,
+  getAuthorizationPermissionsHistoryInheritance: getAuthorizationPermissionsHistoryInheritanceEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -29566,6 +29807,11 @@ export const endpoints = {
   getPermissionDelegationsCheck: getPermissionDelegationsCheckEndpoint,
   getPermissionDelegationsDelegate: getPermissionDelegationsDelegateEndpoint,
   getPermissionDelegationsDelegator: getPermissionDelegationsDelegatorEndpoint,
+  getProductCategoriesForGetProductCategories: getProductCategoriesForGetProductCategoriesEndpoint,
+  postProductCategories: postProductCategoriesEndpoint,
+  getProductCategoriesForGetProductCategoriesByCategoryId: getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint,
+  putProductCategories: putProductCategoriesEndpoint,
+  deleteProductCategories: deleteProductCategoriesEndpoint,
   getProductsForGetProducts: getProductsForGetProductsEndpoint,
   postProducts: postProductsEndpoint,
   postProductsBatchCreate: postProductsBatchCreateEndpoint,
@@ -29577,8 +29823,11 @@ export const endpoints = {
   postProductsActivate: postProductsActivateEndpoint,
   postProductsArchive: postProductsArchiveEndpoint,
   postProductsDeactivate: postProductsDeactivateEndpoint,
+  getProductsAvailability: getProductsAvailabilityEndpoint,
+  putProductsInventory: putProductsInventoryEndpoint,
   getProductsPricing: getProductsPricingEndpoint,
   putProductsPricing: putProductsPricingEndpoint,
+  getProductsRecommendations: getProductsRecommendationsEndpoint,
   getProjectsForGetProjects: getProjectsForGetProjectsEndpoint,
   postProjects: postProjectsEndpoint,
   getProjectsForGetProjectsById: getProjectsForGetProjectsByIdEndpoint,

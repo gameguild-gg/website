@@ -17,6 +17,8 @@ public static class ProductsModule
     {
         // Register repositories
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
+        services.AddScoped<IProductInventoryRepository, ProductInventoryRepository>();
         services.AddScoped<IProductPricingRepository, ProductPricingRepository>();
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
         services.AddScoped<IPromoStackingRuleRepository, PromoStackingRuleRepository>();
@@ -32,6 +34,10 @@ public static class ProductsModule
         services.AddScoped<IPromoCodeAuditLogger, PromoCodeAuditLogger>();
         services.AddScoped<IUserProductService, UserProductService>();
         services.AddScoped<IEntitlementService, EntitlementService>();
+        services.AddScoped<IProductCategoryValidator, ProductCategoryValidator>();
+        services.AddScoped<IProductCatalogAuditLogger, ProductCatalogAuditLogger>();
+        services.AddScoped<IProductInventoryService, ProductInventoryService>();
+        services.AddScoped<IBundleSavingsCalculator, BundleSavingsCalculator>();
 
         // Note: Order-related services are now in GameGuild.Commerce.Orders module
         // CQRS handlers are automatically registered by assembly scanning in ApplicationLayerExtensions
@@ -77,6 +83,47 @@ public static class ProductsModule
                 .WithOne(bi => bi.IncludedProduct)
                 .HasForeignKey(bi => bi.IncludedProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Catalog category assignment (issue #401): single category, restrict delete
+            // while products still reference it.
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.CategoryId);
+        });
+
+        // Hierarchical catalog categories (issue #401): self-referencing parent FK,
+        // tenant-unique slug, jsonb attributes.
+        modelBuilder.Entity<ProductCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ParentCategoryId);
+            entity.HasIndex(e => e.DisplayOrder);
+            entity.HasIndex(e => new { e.TenantId, e.Slug }).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.AttributesJson).HasColumnType("jsonb");
+            entity.HasOne(e => e.Parent)
+                .WithMany(e => e.Children)
+                .HasForeignKey(e => e.ParentCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Per-product inventory (issue #401): one-to-one with Product, untracked by default.
+        modelBuilder.Entity<ProductInventory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ProductId).IsUnique();
+            entity.HasIndex(e => e.TrackInventory);
+            entity.Property(e => e.StockQuantity);
+            entity.Property(e => e.ReservedQuantity);
+            entity.Property(e => e.LowStockThreshold);
+            entity.HasOne(e => e.Product)
+                .WithOne(p => p.Inventory)
+                .HasForeignKey<ProductInventory>(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ProductPricing>(entity =>
