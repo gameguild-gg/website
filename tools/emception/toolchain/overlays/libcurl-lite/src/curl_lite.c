@@ -123,16 +123,19 @@ static CURLcode copy_postfields(CurlHandle *h, const char *data)
         }
         else
         {
-            length = strlen(data);
-            if (length == SIZE_MAX)
+            /* A negative postfieldsize promises a null-terminated buffer; the
+               bounded scan keeps the read length explicit instead of strlen. */
+            const char *terminator = (const char *)memchr(data, '\0', SIZE_MAX);
+            if (!terminator)
                 return CURLE_OUT_OF_MEMORY;
+            length = (size_t)(terminator - data);
         }
         copy = (char *)malloc(length + 1);
         if (!copy)
             return CURLE_OUT_OF_MEMORY;
-        if (length > 0)
-            memcpy(copy, data, length);
-        copy[length] = '\0';
+        /* The terminator is inside the source buffer, so copying length + 1
+           bytes fills both the payload and the destination terminator. */
+        memcpy(copy, data, length + 1);
     }
     free(h->owned_postfields);
     h->owned_postfields = copy;
@@ -246,13 +249,14 @@ CURL *curl_easy_duphandle(CURL *handle)
     dst->custom_method = strdup_safe(src->custom_method);
     if (src->owned_postfields)
     {
-        dst->owned_postfields = (char *)malloc(src->owned_postfieldsize + 1);
+        const size_t owned_bytes = (size_t)src->owned_postfieldsize + 1;
+        dst->owned_postfields = (char *)malloc(owned_bytes);
         if (!dst->owned_postfields)
         {
             curl_easy_cleanup((CURL *)dst);
             return NULL;
         }
-        memcpy(dst->owned_postfields, src->owned_postfields, src->owned_postfieldsize + 1);
+        memcpy(dst->owned_postfields, src->owned_postfields, owned_bytes);
         dst->postfields = dst->owned_postfields;
         dst->owned_postfieldsize = src->owned_postfieldsize;
     }
@@ -495,7 +499,11 @@ CURLcode curl_easy_perform(CURL *handle)
         }
         else
         {
-            body_length = strlen(h->postfields);
+            /* The postfields contract guarantees termination; scan boundedly. */
+            const char *terminator = (const char *)memchr(h->postfields, '\0', SIZE_MAX);
+            if (!terminator)
+                return CURLE_BAD_FUNCTION_ARGUMENT;
+            body_length = (size_t)(terminator - h->postfields);
         }
         if (h->owned_postfields && body_length > h->owned_postfieldsize)
             return CURLE_BAD_FUNCTION_ARGUMENT;

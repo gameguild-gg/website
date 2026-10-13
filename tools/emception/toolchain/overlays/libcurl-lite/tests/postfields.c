@@ -54,9 +54,10 @@ static FILE *fixture_fopen(const char *name, const char *mode) {
 static size_t fixture_fwrite(const void *data, size_t size, size_t count, FILE *stream) {
     if (stream == body_fixture) {
         if (fail_body_write) return 0;
-        if (size != 1 || count > sizeof(captured_body)) return 0;
+        if (size != 1 || count > sizeof(captured_body) / sizeof(captured_body[0])) return 0;
         /* Read every byte promised by perform; ASan catches a short backing allocation. */
-        if (count > 0) memcpy(captured_body, data, count);
+        const size_t capture_bytes = count;
+        memcpy(captured_body, data, capture_bytes);
         captured_length = count;
     }
     return fwrite(data, size, count, stream);
@@ -161,11 +162,12 @@ _Static_assert((curl_off_t)-1 < 0, "curl_off_t must support the -1 length sentin
 
 static int check_owned(int large, int embedded_zero, int duplicate) {
     reset_capture();
-    unsigned char expected[3] = {'a', embedded_zero ? 0 : 'b', 'c'};
-    unsigned char *data = (unsigned char *)malloc(3);
+    enum { EXPECTED_BYTES = 3 };
+    unsigned char expected[EXPECTED_BYTES] = {'a', embedded_zero ? 0 : 'b', 'c'};
+    unsigned char *data = (unsigned char *)malloc(EXPECTED_BYTES);
     CURL *handle = create_handle();
     if (!data || !handle) { free(data); curl_easy_cleanup(handle); return 1; }
-    memcpy(data, expected, sizeof(expected));
+    memcpy(data, expected, EXPECTED_BYTES);
     if (set_length(handle, large, 3) != CURLE_OK ||
         curl_easy_setopt(handle, CURLOPT_COPYPOSTFIELDS, data) != CURLE_OK) {
         free(data); curl_easy_cleanup(handle); return 1;
