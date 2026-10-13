@@ -419,7 +419,7 @@ public sealed class PricingEngineTests
         result.Credits!.RemainingCredits.Should().Be(0m);
 
         // Quote by default: the wallet must not be debited.
-        _walletService.Verify(x => x.DeductFundsAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _walletService.Verify(x => x.DeductFundsAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -498,7 +498,7 @@ public sealed class PricingEngineTests
             RecordDecision: false));
 
         _walletService.Verify(
-            x => x.DeductFundsAsync(userId, 50m, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            x => x.DeductFundsAsync(userId, 50m, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
