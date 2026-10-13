@@ -17,7 +17,7 @@ public sealed class DiscoverOidcProvidersQueryHandler(
         var domain = ExtractDomain(request.Email);
         var providers = oidcFederationService.FindProvidersForEmailDomain(domain);
 
-        logger.LogInformation("OIDC domain discovery matched {Count} provider(s) for domain {Domain}", providers.Count, domain);
+        logger.LogInformation("OIDC domain discovery matched {Count} provider(s)", providers.Count);
 
         return Task.FromResult(new OidcDiscoverProviderResponse { Providers = providers });
     }
@@ -47,7 +47,7 @@ public sealed class GetOidcEndSessionUrlQueryHandler(
 
         if (endSessionEndpoint is null)
         {
-            logger.LogInformation("OIDC provider {Slug} does not advertise an end_session_endpoint; logout stays local", request.Slug);
+            logger.LogInformation("OIDC provider does not advertise an end_session_endpoint; logout stays local");
             return new OidcEndSessionUrlResponse { EndSessionUrl = null };
         }
 
