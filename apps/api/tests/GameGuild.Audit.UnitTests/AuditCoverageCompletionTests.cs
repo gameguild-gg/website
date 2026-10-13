@@ -245,9 +245,15 @@ public class AuditDomainCoverageCompletionTests
         var piiRule = PiiRedactionRule.Create(
             tenantId,
             "emails",
+            PiiRulePatternType.Regex,
+            @"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
+            null,
+            PiiRuleAction.Redact,
+            PiiRuleScope.FieldName,
             ["email"],
-            PiiDetectionMethod.Regex,
-            RedactionStrategy.PartialMasking);
+            100,
+            null,
+            null);
         var savedQuery = SavedAuditQuery.Create(tenantId, "failed logins", "status = failed", createdBy, true);
         savedQuery.RecordExecution(createdBy);
         var replay = AuditReplaySession.Create(
@@ -324,6 +330,7 @@ public class AuditServiceCoverageCompletionTests : IDisposable
         _service = new AuditService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             _httpContextAccessor.Object,
+            new NoopPiiRedactionService(),
             NullLogger<AuditService>.Instance);
     }
 
@@ -473,7 +480,7 @@ public class AdvancedAuditFeatureServiceCoverageTests
         var exportHistory = AuditExportHistory.Create(export.Id, tenantId);
         var policy = RetentionPolicySimulation.Create(tenantId, "retention", 365, ["Security"], 1);
         policy.UpdateStorageMetrics(1024, 100, 10);
-        var rule = PiiRedactionRule.Create(tenantId, "pii", ["email"], PiiDetectionMethod.Regex, RedactionStrategy.FullRedaction);
+        var rule = PiiRedactionRule.Create(tenantId, "pii", PiiRulePatternType.Preset, null, PiiPresetPattern.Email, PiiRuleAction.Redact, PiiRuleScope.Global, [], 100, null, null);
         var query = SavedAuditQuery.Create(tenantId, "saved", "{}", userId);
         var replay = AuditReplaySession.Create(tenantId, "replay", SystemClock.UtcNow.AddHours(-1), SystemClock.UtcNow, userId);
         var queryResult = new { Total = 1 };
@@ -496,7 +503,9 @@ public class AdvancedAuditFeatureServiceCoverageTests
         var exportService = new Mock<IScheduledExportService>();
         exportService.Setup(service => service.ExecuteExportAsync(export.Id)).ReturnsAsync(exportHistory);
         var redactionService = new Mock<IPiiRedactionService>();
-        redactionService.Setup(service => service.RedactAsync("email@example.com", tenantId)).ReturnsAsync("[redacted]");
+        redactionService
+            .Setup(service => service.RedactTextAsync("email@example.com", tenantId, PiiRedactionSource.Manual, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PiiRedactionTextResult("[redacted]", new PiiRedactionSummary(Changed: true, RedactedValueCount: 1)));
         var queryService = new Mock<IAuditQueryService>();
         queryService.Setup(service => service.ExecuteQueryAsync(query.Id, userId)).ReturnsAsync(queryResult);
         var replayService = new Mock<IAuditReplayService>();

@@ -90,6 +90,7 @@ public sealed class AuditServiceDurabilityTests : IDisposable
         return new AuditService(
             scopeFactory,
             _httpContextAccessor.Object,
+            new NoopPiiRedactionService(),
             logger ?? Mock.Of<ILogger<AuditService>>());
     }
 
