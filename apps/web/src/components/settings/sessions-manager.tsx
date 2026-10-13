@@ -3,6 +3,7 @@
 import {
   renameSessionAction,
   revokeTrustedDeviceAction,
+  terminateAllSessionsAction,
   terminateOtherSessionsAction,
   terminateSessionAction,
   trustCurrentDeviceAction,
