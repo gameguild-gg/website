@@ -8,10 +8,14 @@ namespace GameGuild.Commerce.Subscriptions;
 public class SubscriptionLifecycleService(
     ISubscriptionRepository repository,
     ISubscriptionPlanService planService,
+    ISubscriptionIntervalPricingService intervalPricingService,
+    IBillingCalculator billingCalculator,
     ILogger<SubscriptionLifecycleService> logger) : ISubscriptionLifecycleService
 {
     private readonly ISubscriptionRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     private readonly ISubscriptionPlanService _planService = planService ?? throw new ArgumentNullException(nameof(planService));
+    private readonly ISubscriptionIntervalPricingService _intervalPricingService = intervalPricingService ?? throw new ArgumentNullException(nameof(intervalPricingService));
+    private readonly IBillingCalculator _billingCalculator = billingCalculator ?? throw new ArgumentNullException(nameof(billingCalculator));
     private readonly ILogger<SubscriptionLifecycleService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     private async Task<Subscription> GetRequiredAsync(Guid subscriptionId, CancellationToken ct)
@@ -25,6 +29,13 @@ public class SubscriptionLifecycleService(
         var plan = await _planService.GetByIdAsync(planId, ct).ConfigureAwait(false);
         return plan ?? throw new InvalidOperationException($"Subscription plan {planId} not found");
     }
+
+    /// <summary>
+    ///     Resolves the interval-aware price for a cycle (issue #392): an explicit
+    ///     <see cref="SubscriptionPlanIntervalPrice" /> wins over the derived fallback.
+    /// </summary>
+    private Task<Money> GetPriceForCycleAsync(SubscriptionPlan plan, BillingCycle cycle, CancellationToken ct) =>
+        _intervalPricingService.ResolvePriceForCycleAsync(plan, cycle, ct);
 
     private static Money GetPriceForCycle(SubscriptionPlan plan, BillingCycle cycle)
     {
@@ -122,7 +133,7 @@ public class SubscriptionLifecycleService(
         if (newPlan.GetMonthlyPrice().Amount <= oldPlan.GetMonthlyPrice().Amount)
             return SubscriptionUpgradeResult.Failed("New plan is not an upgrade. Use DowngradePlanAsync instead.");
 
-        var newAmount = GetPriceForCycle(newPlan, subscription.BillingCycle);
+        var newAmount = await GetPriceForCycleAsync(newPlan, subscription.BillingCycle, cancellationToken).ConfigureAwait(false);
         var proration = subscription.ChangePlan(newPlanId, newAmount, effectiveDate);
         await _repository.UpdateAsync(subscription, cancellationToken).ConfigureAwait(false);
 
@@ -138,7 +149,7 @@ public class SubscriptionLifecycleService(
         var subscription = await GetRequiredAsync(subscriptionId, cancellationToken).ConfigureAwait(false);
         var newPlan = await GetRequiredPlanAsync(newPlanId, cancellationToken).ConfigureAwait(false);
 
-        var newAmount = GetPriceForCycle(newPlan, subscription.BillingCycle);
+        var newAmount = await GetPriceForCycleAsync(newPlan, subscription.BillingCycle, cancellationToken).ConfigureAwait(false);
         var proration = subscription.ChangePlan(newPlanId, newAmount, effectiveDate);
 
         var actualEffectiveDate = effectiveDate ?? subscription.CurrentPeriodEnd;
@@ -150,15 +161,39 @@ public class SubscriptionLifecycleService(
         return SubscriptionDowngradeResult.CreateSuccess(subscription, actualEffectiveDate, creditIssued);
     }
 
-    public async Task<Subscription> ChangeBillingCycleAsync(Guid subscriptionId, BillingCycle newBillingCycle, CancellationToken cancellationToken = default)
+    public async Task<ChangeBillingCycleResult> ChangeBillingCycleAsync(Guid subscriptionId, BillingCycle newBillingCycle, CancellationToken cancellationToken = default)
     {
         var subscription = await GetRequiredAsync(subscriptionId, cancellationToken).ConfigureAwait(false);
         var plan = await GetRequiredPlanAsync(subscription.PlanId, cancellationToken).ConfigureAwait(false);
 
-        var newAmount = GetPriceForCycle(plan, newBillingCycle);
-        subscription.ChangeBillingCycle(newBillingCycle, newAmount);
+        if (subscription.Status != SubscriptionStatus.Active)
+            return ChangeBillingCycleResult.Failed("Can only change billing cycle for active subscriptions");
 
-        return await _repository.UpdateAsync(subscription, cancellationToken).ConfigureAwait(false);
+        var oldCycle = subscription.BillingCycle;
+        var oldAmount = subscription.Amount;
+
+        if (oldCycle == newBillingCycle)
+        {
+            // Same-cycle change is a no-op: no state change, no proration.
+            return ChangeBillingCycleResult.CreateSuccess(subscription, oldCycle, oldAmount, null);
+        }
+
+        var newAmount = await GetPriceForCycleAsync(plan, newBillingCycle, cancellationToken).ConfigureAwait(false);
+
+        // Issue #392: prorate the remainder of the current period for the interval switch
+        // using the shared billing calculator, before the period dates move to the new cycle.
+        var effectiveDate = SystemClock.UtcNow;
+        var proration = _billingCalculator.CalculateProration(
+            oldAmount,
+            newAmount,
+            subscription.CurrentPeriodStart,
+            subscription.CurrentPeriodEnd,
+            effectiveDate);
+
+        subscription.ChangeBillingCycle(newBillingCycle, newAmount);
+        await _repository.UpdateAsync(subscription, cancellationToken).ConfigureAwait(false);
+
+        return ChangeBillingCycleResult.CreateSuccess(subscription, oldCycle, oldAmount, proration);
     }
 
     public async Task<Subscription> SetAutoRenewAsync(Guid subscriptionId, bool autoRenew, CancellationToken cancellationToken = default)

@@ -24,6 +24,8 @@ public static class DependencyInjection
         // keep cache entries shared across scopes.
         services.AddSingleton<ISubscriptionPlanSlugGenerator, SubscriptionPlanSlugGenerator>();
         services.AddSingleton<ISubscriptionPlanListCache, SubscriptionPlanListCache>();
+        services.AddSingleton<IBillingCalculator, BillingCalculator>();
+        services.AddScoped<ISubscriptionIntervalPricingService, SubscriptionIntervalPricingService>();
 
         // Register Subscription Plan Service (required by sub-services)
         services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
