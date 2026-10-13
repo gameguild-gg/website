@@ -40,10 +40,24 @@ public class PolicyEvaluationCommandHandlersTests
             .Setup(e => e.EvaluatePolicyAsync(It.IsAny<ConditionalPolicy>(), It.IsAny<GameGuild.Identity.Authorization.ConditionalPolicyContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ConditionalPolicy policy, GameGuild.Identity.Authorization.ConditionalPolicyContext context, CancellationToken _) =>
             {
-                // Environment conditions: RequireMfa && !IsMfaVerified => matched deny.
-                var matched = policy.EnvironmentConditions is { Length: > 0 }
-                              && policy.EnvironmentConditions.Contains("RequireMfa")
-                              && context.IsMfaVerified != true;
+                // Environment conditions: RequireMfa==true && !IsMfaVerified => matched deny.
+                // Mirrors the production evaluator's JSON-aware semantics: only an explicit
+                // boolean true requires MFA, so {"RequireMfa":false} does not match.
+                var matched = false;
+                if (policy.EnvironmentConditions is { Length: > 0 })
+                {
+                    try
+                    {
+                        using var document = System.Text.Json.JsonDocument.Parse(policy.EnvironmentConditions);
+                        matched = document.RootElement.TryGetProperty("RequireMfa", out var requireMfa)
+                                   && requireMfa.ValueKind == System.Text.Json.JsonValueKind.True
+                                   && context.IsMfaVerified != true;
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        matched = false;
+                    }
+                }
                 return matched
                     ? new GameGuild.Identity.Authorization.ConditionalPolicyResult(
                         IsAllowed: false,
