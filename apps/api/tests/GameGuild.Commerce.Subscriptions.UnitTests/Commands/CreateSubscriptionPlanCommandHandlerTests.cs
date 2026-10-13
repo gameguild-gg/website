@@ -139,7 +139,7 @@ public class CreateSubscriptionPlanCommandHandlerTests
             Description: null,
             Type: SubscriptionPlanType.Free), CancellationToken.None);
 
-        await act.Should().ThrowAsync<ArgumentException>()
+        await act.Should().ThrowAsync<SubscriptionPlanPricingRuleViolationException>()
             .WithMessage("*Free plans must have a monthly price of exactly zero*");
         _repository.Verify(r => r.AddAsync(It.IsAny<SubscriptionPlan>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -155,7 +155,7 @@ public class CreateSubscriptionPlanCommandHandlerTests
             Description: null,
             Type: SubscriptionPlanType.Paid), CancellationToken.None);
 
-        await act.Should().ThrowAsync<ArgumentException>()
+        await act.Should().ThrowAsync<SubscriptionPlanPricingRuleViolationException>()
             .WithMessage("*custom-quote sentinel*");
         _repository.Verify(r => r.AddAsync(It.IsAny<SubscriptionPlan>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -171,7 +171,7 @@ public class CreateSubscriptionPlanCommandHandlerTests
             Description: null,
             AnnualDiscountPercent: 150m), CancellationToken.None);
 
-        await act.Should().ThrowAsync<ArgumentException>()
+        await act.Should().ThrowAsync<SubscriptionPlanPricingRuleViolationException>()
             .WithMessage("*between 0 and 100*");
         _repository.Verify(r => r.AddAsync(It.IsAny<SubscriptionPlan>(), It.IsAny<CancellationToken>()), Times.Never);
     }

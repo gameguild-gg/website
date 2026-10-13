@@ -73,7 +73,7 @@ public sealed class CreateSubscriptionPlanCommandValidator : AbstractValidator<C
             failure = string.Empty;
             return true;
         }
-        catch (ArgumentException exception)
+        catch (SubscriptionPlanPricingRuleViolationException exception)
         {
             failure = exception.Message;
             return false;

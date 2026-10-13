@@ -78,7 +78,7 @@ public sealed class FullUpdateSubscriptionPlanCommandValidator : AbstractValidat
             failure = string.Empty;
             return true;
         }
-        catch (ArgumentException exception)
+        catch (SubscriptionPlanPricingRuleViolationException exception)
         {
             failure = exception.Message;
             return false;

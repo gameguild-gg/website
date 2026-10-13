@@ -25,6 +25,15 @@ public enum SubscriptionPlanType
 }
 
 /// <summary>
+///     Thrown when a plan-type pricing rule is violated (issue #416). Mapped to a 422
+///     ProblemDetails by the shared exception middleware.
+/// </summary>
+public sealed class SubscriptionPlanPricingRuleViolationException : GameGuild.DomainException
+{
+    public SubscriptionPlanPricingRuleViolationException(string message) : base(message) { }
+}
+
+/// <summary>
 ///     Fail-closed pricing rules shared by every plan write path (issue #416).
 /// </summary>
 public static class SubscriptionPlanPricingRules
@@ -52,7 +61,7 @@ public static class SubscriptionPlanPricingRules
     ///     only enterprise plans may carry the -1 custom-quote sentinel; every other price is
     ///     a non-negative concrete amount.
     /// </summary>
-    /// <exception cref="ArgumentException">Thrown with a checkout-safe message when a rule is violated.</exception>
+    /// <exception cref="SubscriptionPlanPricingRuleViolationException">Thrown with a checkout-safe message when a rule is violated.</exception>
     public static void Validate(SubscriptionPlanType type, long monthlyPriceInCents, long? annualPriceInCents)
     {
         switch (type)
@@ -60,33 +69,33 @@ public static class SubscriptionPlanPricingRules
             case SubscriptionPlanType.Free:
                 if (monthlyPriceInCents != 0)
                 {
-                    throw new ArgumentException("Free plans must have a monthly price of exactly zero.");
+                    throw new SubscriptionPlanPricingRuleViolationException("Free plans must have a monthly price of exactly zero.");
                 }
                 if (annualPriceInCents is not null and not 0)
                 {
-                    throw new ArgumentException("Free plans must have an annual price of exactly zero.");
+                    throw new SubscriptionPlanPricingRuleViolationException("Free plans must have an annual price of exactly zero.");
                 }
                 break;
 
             case SubscriptionPlanType.Enterprise:
                 if (monthlyPriceInCents < 0 && monthlyPriceInCents != CustomQuotePriceInCents)
                 {
-                    throw new ArgumentException("Enterprise plan prices must be non-negative concrete amounts or the -1 custom-quote sentinel.");
+                    throw new SubscriptionPlanPricingRuleViolationException("Enterprise plan prices must be non-negative concrete amounts or the -1 custom-quote sentinel.");
                 }
                 if (annualPriceInCents is < 0)
                 {
-                    throw new ArgumentException("Enterprise annual prices must be non-negative concrete amounts.");
+                    throw new SubscriptionPlanPricingRuleViolationException("Enterprise annual prices must be non-negative concrete amounts.");
                 }
                 break;
 
             default:
                 if (monthlyPriceInCents < 0)
                 {
-                    throw new ArgumentException("Only enterprise plans may use the -1 custom-quote sentinel; paid plans need a concrete non-negative price.");
+                    throw new SubscriptionPlanPricingRuleViolationException("Only enterprise plans may use the -1 custom-quote sentinel; paid plans need a concrete non-negative price.");
                 }
                 if (annualPriceInCents is < 0)
                 {
-                    throw new ArgumentException("Annual prices must be non-negative concrete amounts.");
+                    throw new SubscriptionPlanPricingRuleViolationException("Annual prices must be non-negative concrete amounts.");
                 }
                 break;
         }
@@ -99,7 +108,7 @@ public static class SubscriptionPlanPricingRules
     {
         if (annualDiscountPercent < 0m || annualDiscountPercent > MaximumAnnualDiscountPercent)
         {
-            throw new ArgumentException("The annual discount percentage must be between 0 and 100.");
+            throw new SubscriptionPlanPricingRuleViolationException("The annual discount percentage must be between 0 and 100.");
         }
     }
 

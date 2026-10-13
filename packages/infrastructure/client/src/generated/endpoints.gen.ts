@@ -523,6 +523,26 @@ export const getApiAuditRedactionPipelineTokensEndpoint = {
 } as const;
 
 /**
+ * Readable capture alias (issue #169): the same bounded, durably audited
+ *             selection as the POST capture, addressed by query parameters so an investigator can
+ *             link and re-fetch one frozen range. The response is never cacheable.
+ */
+export interface GetApiAuditReplaySnapshotsInput {
+  query?: {
+    start?: string;
+    end?: string;
+  };
+}
+export type GetApiAuditReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const getApiAuditReplaySnapshotsEndpoint = {
+  operationId: 'getApiAuditReplaySnapshots' as const,
+  method: 'GET' as const,
+  path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
  *
  * Null tenant context selects global-only rows. SHA256 detects content changes against
@@ -536,6 +556,27 @@ export const postApiAuditReplaySnapshotsEndpoint = {
   operationId: 'postApiAuditReplaySnapshots' as const,
   method: 'POST' as const,
   path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reconstructs the chronological incident timeline of one client-held snapshot
+ *             (issue #169). The document is revalidated against every capture invariant and its
+ *             canonical serialization must match the expected digest; otherwise nothing is returned.
+ *
+ * The reconstruction adds per-user journeys and per-session summaries. A digest
+ *             match detects content changes; it does not establish provenance, actor attribution or
+ *             source clock synchronization.
+ */
+export interface PostApiAuditReplaySnapshotsReconstructInput {
+  body?: Types.ComplianceAuditReconstructAuditReplayInput;
+}
+export type PostApiAuditReplaySnapshotsReconstructOutput = Types.ComplianceAuditAuditReplayReconstructionOutput;
+export const postApiAuditReplaySnapshotsReconstructEndpoint = {
+  operationId: 'postApiAuditReplaySnapshotsReconstruct' as const,
+  method: 'POST' as const,
+  path: '/api/audit/replay/snapshots:reconstruct' as const,
   tags: ['ComplianceAuditReplay'] as const,
   requiresAuth: true,
 } as const;
@@ -12404,6 +12445,26 @@ export const postAdminAuditLogsExportJsonEndpoint = {
 } as const;
 
 /**
+ * Readable capture alias (issue #169): the same bounded, durably audited
+ *             selection as the POST capture, addressed by query parameters so an investigator can
+ *             link and re-fetch one frozen range. The response is never cacheable.
+ */
+export interface GetAdminAuditLogsReplaySnapshotsInput {
+  query?: {
+    start?: string;
+    end?: string;
+  };
+}
+export type GetAdminAuditLogsReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const getAdminAuditLogsReplaySnapshotsEndpoint = {
+  operationId: 'getAdminAuditLogsReplaySnapshots' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
  *
  * Null tenant context selects global-only rows. SHA256 detects content changes against
@@ -12417,6 +12478,27 @@ export const postAdminAuditLogsReplaySnapshotsEndpoint = {
   operationId: 'postAdminAuditLogsReplaySnapshots' as const,
   method: 'POST' as const,
   path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reconstructs the chronological incident timeline of one client-held snapshot
+ *             (issue #169). The document is revalidated against every capture invariant and its
+ *             canonical serialization must match the expected digest; otherwise nothing is returned.
+ *
+ * The reconstruction adds per-user journeys and per-session summaries. A digest
+ *             match detects content changes; it does not establish provenance, actor attribution or
+ *             source clock synchronization.
+ */
+export interface PostAdminAuditLogsReplaySnapshotsReconstructInput {
+  body?: Types.ComplianceAuditReconstructAuditReplayInput;
+}
+export type PostAdminAuditLogsReplaySnapshotsReconstructOutput = Types.ComplianceAuditAuditReplayReconstructionOutput;
+export const postAdminAuditLogsReplaySnapshotsReconstructEndpoint = {
+  operationId: 'postAdminAuditLogsReplaySnapshotsReconstruct' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots:reconstruct' as const,
   tags: ['ComplianceAuditReplay'] as const,
   requiresAuth: true,
 } as const;
@@ -16066,6 +16148,22 @@ export const patchAuthServiceAccountsScopesEndpoint = {
   method: 'PATCH' as const,
   path: '/v1/auth/service-accounts/{serviceAccountId}/scopes' as const,
   tags: ['AuthServiceAccounts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Read the caller's current authentication state (issue #221): session validity and
+ * expiry, token version, active-session count and MFA enrollment state.
+ *
+ * Returns the caller's current session validity, session expiry, token version, active-session count and MFA enrollment state. Anonymous access is not viable: the state describes the authenticated caller's own session.
+ */
+export type GetAuthSessionStateInput = void;
+export type GetAuthSessionStateOutput = Types.IdentityAuthenticationAuthSessionStateDto;
+export const getAuthSessionStateEndpoint = {
+  operationId: 'getAuthSessionState' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/session-state' as const,
+  tags: ['Auth'] as const,
   requiresAuth: true,
 } as const;
 
@@ -28993,7 +29091,9 @@ export const endpoints = {
   deleteApiAuditRedactionPipelineRules: deleteApiAuditRedactionPipelineRulesEndpoint,
   postApiAuditRedactionPipelineTest: postApiAuditRedactionPipelineTestEndpoint,
   getApiAuditRedactionPipelineTokens: getApiAuditRedactionPipelineTokensEndpoint,
+  getApiAuditReplaySnapshots: getApiAuditReplaySnapshotsEndpoint,
   postApiAuditReplaySnapshots: postApiAuditReplaySnapshotsEndpoint,
+  postApiAuditReplaySnapshotsReconstruct: postApiAuditReplaySnapshotsReconstructEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
   postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
@@ -29754,7 +29854,9 @@ export const endpoints = {
   getAdminAuditLogsExportProgress: getAdminAuditLogsExportProgressEndpoint,
   postAdminAuditLogsExportCsv: postAdminAuditLogsExportCsvEndpoint,
   postAdminAuditLogsExportJson: postAdminAuditLogsExportJsonEndpoint,
+  getAdminAuditLogsReplaySnapshots: getAdminAuditLogsReplaySnapshotsEndpoint,
   postAdminAuditLogsReplaySnapshots: postAdminAuditLogsReplaySnapshotsEndpoint,
+  postAdminAuditLogsReplaySnapshotsReconstruct: postAdminAuditLogsReplaySnapshotsReconstructEndpoint,
   getAdminAuditLogsScheduledExportHistoryDownload: getAdminAuditLogsScheduledExportHistoryDownloadEndpoint,
   getAdminAuditLogsScheduledExports: getAdminAuditLogsScheduledExportsEndpoint,
   postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
@@ -29986,6 +30088,7 @@ export const endpoints = {
   postAuthServiceAccountsUnlock: postAuthServiceAccountsUnlockEndpoint,
   getAuthServiceAccountsAuditLog: getAuthServiceAccountsAuditLogEndpoint,
   patchAuthServiceAccountsScopes: patchAuthServiceAccountsScopesEndpoint,
+  getAuthSessionState: getAuthSessionStateEndpoint,
   getAuthSessions: getAuthSessionsEndpoint,
   getAuthSessionsAnalyzeSecurity: getAuthSessionsAnalyzeSecurityEndpoint,
   postAuthSessionsRefresh: postAuthSessionsRefreshEndpoint,

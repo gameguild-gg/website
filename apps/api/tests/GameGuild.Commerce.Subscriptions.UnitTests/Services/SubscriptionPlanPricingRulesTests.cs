@@ -16,7 +16,7 @@ public class SubscriptionPlanPricingRulesTests
     {
         var act = () => SubscriptionPlanPricingRules.Validate(SubscriptionPlanType.Free, 1, null);
 
-        act.Should().Throw<ArgumentException>().WithMessage("*Free plans must have a monthly price of exactly zero*");
+        act.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*Free plans must have a monthly price of exactly zero*");
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public class SubscriptionPlanPricingRulesTests
     {
         var act = () => SubscriptionPlanPricingRules.Validate(SubscriptionPlanType.Free, 0, 1);
 
-        act.Should().Throw<ArgumentException>().WithMessage("*Free plans must have an annual price of exactly zero*");
+        act.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*Free plans must have an annual price of exactly zero*");
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class SubscriptionPlanPricingRulesTests
     {
         var act = () => SubscriptionPlanPricingRules.Validate(SubscriptionPlanType.Enterprise, monthlyCents, null);
 
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<SubscriptionPlanPricingRuleViolationException>();
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class SubscriptionPlanPricingRulesTests
         var act = () => SubscriptionPlanPricingRules.Validate(SubscriptionPlanType.Paid,
             SubscriptionPlanPricingRules.CustomQuotePriceInCents, null);
 
-        act.Should().Throw<ArgumentException>().WithMessage("*only enterprise plans may use the -1 custom-quote sentinel*");
+        act.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*only enterprise plans may use the -1 custom-quote sentinel*");
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class SubscriptionPlanPricingRulesTests
     {
         var act = () => SubscriptionPlanPricingRules.Validate(SubscriptionPlanType.Paid, 1_999, -1);
 
-        act.Should().Throw<ArgumentException>().WithMessage("*Annual prices must be non-negative*");
+        act.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*Annual prices must be non-negative*");
     }
 
     [Theory]
@@ -78,7 +78,7 @@ public class SubscriptionPlanPricingRulesTests
     {
         var act = () => SubscriptionPlanPricingRules.ValidateAnnualDiscountPercent((decimal) percent);
 
-        act.Should().Throw<ArgumentException>().WithMessage("*between 0 and 100*");
+        act.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*between 0 and 100*");
     }
 
     [Theory]
@@ -122,7 +122,7 @@ public class SubscriptionPlanPricingRulesTests
 
         // A priced plan cannot be reclassified to free without zeroing its prices first...
         var toFree = () => plan.Reclassify(SubscriptionPlanType.Free);
-        toFree.Should().Throw<ArgumentException>().WithMessage("*Free plans must have a monthly price of exactly zero*");
+        toFree.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*Free plans must have a monthly price of exactly zero*");
         plan.Type.Should().Be(SubscriptionPlanType.Paid);
 
         // ...while a concrete price remains valid for the enterprise type.
@@ -143,9 +143,9 @@ public class SubscriptionPlanPricingRulesTests
         plan.AnnualDiscountPercent.Should().Be(15m);
 
         var invalid = () => plan.UpdatePricing(-1, null, null);
-        invalid.Should().Throw<ArgumentException>().WithMessage("*custom-quote sentinel*");
+        invalid.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*custom-quote sentinel*");
         var invalidDiscount = () => plan.UpdatePricing(2_499, null, 150m);
-        invalidDiscount.Should().Throw<ArgumentException>().WithMessage("*between 0 and 100*");
+        invalidDiscount.Should().Throw<SubscriptionPlanPricingRuleViolationException>().WithMessage("*between 0 and 100*");
     }
 
     [Fact]
