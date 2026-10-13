@@ -11896,7 +11896,14 @@ export type IdentityAuthorizationPermissionType =
   | 'SystemAdmin'
   | 'TenantAdmin'
   | 'UserManagement'
-  | 'Configure';
+  | 'Configure'
+  | 'ManageMembers'
+  | 'ManageRoles'
+  | 'ManageSettings'
+  | 'AuditAccess'
+  | 'SystemConfiguration'
+  | 'BackupRestore'
+  | 'DataMigration';
 
 /** Result of updating permissions. */
 export interface IdentityAuthorizationPermissionUpdateResult {
@@ -36044,6 +36051,13 @@ IdentityAuthorizationPermissionTypeSchema = z.enum([
   'TenantAdmin',
   'UserManagement',
   'Configure',
+  'ManageMembers',
+  'ManageRoles',
+  'ManageSettings',
+  'AuditAccess',
+  'SystemConfiguration',
+  'BackupRestore',
+  'DataMigration',
 ]);
 
 /** Zod schema for IdentityAuthorizationPermissionUpdateResult. Result of updating permissions. */
