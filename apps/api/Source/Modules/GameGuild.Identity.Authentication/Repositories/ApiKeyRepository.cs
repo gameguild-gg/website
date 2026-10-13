@@ -50,7 +50,10 @@ public class ApiKeyRepository(IApplicationDbContext context) : IApiKeyRepository
     {
         var apiKey = await ApiKeys
             .FirstOrDefaultAsync(k => k.Id == keyId && k.UserId == userId, cancellationToken).ConfigureAwait(false);
-        if (apiKey == null) return null;
+        if (apiKey == null)
+        {
+            return null;
+        }
 
         apiKey.Revoke(reason);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

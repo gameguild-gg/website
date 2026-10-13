@@ -432,7 +432,9 @@ public sealed class EncryptionServiceKeyPolicyTests
         var sample = string.Concat(Enumerable.Range(0, 100).Select(_ => SampleOne()));
 
         foreach (var c in alphabet)
+        {
             sample.Should().Contain(c.ToString(), $"alphabet character '{c}' must be selectable");
+        }
     }
 
     [Fact]

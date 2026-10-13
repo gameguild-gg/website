@@ -42,7 +42,7 @@ public class WebhookPermissionChangeNotifierTests
         }
     }
 
-    private const string Secret = "test-webhook-secret";
+    private static readonly string Secret = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
     private static WebhookPermissionChangeNotifier CreateNotifier(
         HttpMessageHandler handler,
@@ -72,6 +72,13 @@ public class WebhookPermissionChangeNotifierTests
         new[] { "tenant:read" },
         Guid.NewGuid(),
         new DateTime(2026, 10, 8, 12, 0, 0, DateTimeKind.Utc));
+
+    [Fact]
+    public void WebhookFixture_UsesFullCryptographicKeyMaterial()
+    {
+        Convert.FromHexString(Secret).Should().HaveCount(32);
+        EnabledOptions().Secret.Should().Be(Secret);
+    }
 
     [Fact]
     public async Task NotifyAsync_SkipsWhenDisabledWithoutCallingTheEndpoint()

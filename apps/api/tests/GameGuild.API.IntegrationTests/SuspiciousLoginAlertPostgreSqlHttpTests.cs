@@ -36,6 +36,19 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
     private const string Endpoint = "/v1/auth/sign-in";
 
     [Fact]
+    public void OwnerAlertFixture_UsesEphemeralPolicyCompatiblePassword()
+    {
+        var password = CreateFixturePassword();
+        Assert.StartsWith("aA7!", password);
+        Assert.Equal(44, password.Length);
+        Assert.Equal(20, Convert.FromHexString(password[4..]).Length);
+        Assert.NotEqual(password, CreateFixturePassword());
+    }
+
+    private static string CreateFixturePassword() =>
+        "aA7!" + Convert.ToHexString(RandomNumberGenerator.GetBytes(20));
+
+    [Fact]
     public async Task HighRiskStepUpSignInProducesRedactedOwnerAlertsOnceThroughActualInbox()
     {
         var clock = new AdvancingTimeProvider();
@@ -313,7 +326,7 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        var password = "aA7!" + Convert.ToHexString(RandomNumberGenerator.GetBytes(20));
+        var password = CreateFixturePassword();
         var user = User.CreateWithPassword(email, "Synthetic suspicious login owner", hasher.HashPassword(password), $"suspicious-login-{marker}");
         db.Set<User>().Add(user);
         var tenantId = Guid.NewGuid();

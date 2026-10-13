@@ -18,14 +18,29 @@ namespace GameGuild.API.UnitTests.Database;
 /// </summary>
 public sealed class PermissionBaseModelTests
 {
+    private static ApplicationDbContext CreateContext()
+        => new(new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseNpgsql("Host=localhost;Database=model_only")
+            .Options);
+
     private static IModel BuildModel()
     {
-        using var context = new ApplicationDbContext(
-            new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseNpgsql("Host=localhost;Database=model_only;Username=model;Password=model")
-                .Options);
+        using var context = CreateContext();
 
         return context.Model;
+    }
+
+    [Fact]
+    public void ModelContext_RequiresNoCredentialsAndKeepsConnectionClosed()
+    {
+        using var context = CreateContext();
+        var connection = context.Database.GetDbConnection();
+        context.Database.GetConnectionString().Should().Be("Host=localhost;Database=model_only");
+        connection.State.Should().Be(System.Data.ConnectionState.Closed);
+
+        context.Model.GetEntityTypes().Should().NotBeEmpty();
+
+        connection.State.Should().Be(System.Data.ConnectionState.Closed);
     }
 
     [Fact]
