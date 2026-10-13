@@ -174,7 +174,8 @@ public static partial class PiiRedactionEngine
                 if (rule.Action == PiiRuleAction.Tokenize)
                 {
                     var token = tokens.Tokenize(match.Value);
-                    (tokenized ??= []).Add(new PiiTokenizedMatch(token, match.Value));
+                    tokenized ??= [];
+                    tokenized.Add(new PiiTokenizedMatch(token, match.Value));
                     return token;
                 }
 
