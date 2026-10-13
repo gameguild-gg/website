@@ -57,7 +57,7 @@ public class SubscriptionService(
     public Task<SubscriptionDowngradeResult> DowngradePlanAsync(Guid subscriptionId, Guid newPlanId, DateTime? effectiveDate = null, CancellationToken cancellationToken = default)
         => _lifecycleService.DowngradePlanAsync(subscriptionId, newPlanId, effectiveDate, cancellationToken);
 
-    public Task<Subscription> ChangeBillingCycleAsync(Guid subscriptionId, BillingCycle newBillingCycle, CancellationToken cancellationToken = default)
+    public Task<ChangeBillingCycleResult> ChangeBillingCycleAsync(Guid subscriptionId, BillingCycle newBillingCycle, CancellationToken cancellationToken = default)
         => _lifecycleService.ChangeBillingCycleAsync(subscriptionId, newBillingCycle, cancellationToken);
 
     public Task<Subscription> SetAutoRenewAsync(Guid subscriptionId, bool autoRenew, CancellationToken cancellationToken = default)

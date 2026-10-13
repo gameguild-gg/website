@@ -17,7 +17,7 @@ public class UpdateProductCommandHandlerTests
     public UpdateProductCommandHandlerTests()
     {
         _mockRepository = new Mock<IProductRepository>();
-        _handler = new UpdateProductCommandHandler(_mockRepository.Object);
+        _handler = new UpdateProductCommandHandler(_mockRepository.Object, Mock.Of<IProductCategoryRepository>());
     }
 
     private static Product CreateTestProduct(Guid? id = null, string name = "Original Name")

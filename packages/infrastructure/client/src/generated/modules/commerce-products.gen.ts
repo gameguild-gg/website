@@ -23,6 +23,8 @@ export class CommerceProductsModule {
     creatorId?: string;
     searchTerm?: string;
     isBundle?: boolean;
+    categoryId?: string;
+    inStock?: boolean;
     includeUnpublished?: boolean;
     skip?: number;
     take?: number;
@@ -255,6 +257,55 @@ export class CommerceProductsModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Get a product's real-time availability (issue #401)
+   */
+  async getProductsAvailability(productId: string): Promise<Result<Types.CommerceProductsProductAvailabilityDto, ApiError>> {
+    const url = `/v1/products/${productId}/availability`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsProductAvailabilityDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Create or replace a product's inventory configuration (issue #401)
+   */
+  async putProductsInventory(
+    productId: string,
+    body: Types.CommerceProductsSetProductInventoryInput,
+  ): Promise<Result<Types.CommerceProductsProductInventoryDto, ApiError>> {
+    const url = `/v1/products/${productId}/inventory`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommerceProductsSetProductInventoryInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'PUT',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsProductInventoryDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

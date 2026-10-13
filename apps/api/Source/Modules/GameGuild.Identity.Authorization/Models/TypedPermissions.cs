@@ -723,6 +723,32 @@ public sealed class WalletsPermission : Permission
     public static readonly WalletsPermission Admin = new(Keys.Admin, "Administer wallets across the platform");
 }
 
+/// <summary>Strongly-typed permission for payment fraud-review administration (issue #409).</summary>
+public sealed class PaymentsPermission : Permission
+{
+    private PaymentsPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: null,
+            description: description)
+    {
+    }
+
+    public static class Keys
+    {
+        /// <summary>Administer payment fraud reviews (list, approve, decline).</summary>
+        public const string Admin = "payments:admin";
+
+        /// <summary>Approve or reject refund requests waiting in the approval queue (issue #419).</summary>
+        public const string RefundApprovals = "payments:refunds:approve";
+    }
+
+    public static readonly PaymentsPermission Admin = new(Keys.Admin, "Administer payment fraud reviews");
+
+    public static readonly PaymentsPermission RefundApprovals = new(Keys.RefundApprovals, "Approve pending refund requests");
+}
+
 /// <summary>Segregated permissions for Economy control-plane and operational duties.</summary>
 public sealed class EconomyPermission : Permission
 {
@@ -765,6 +791,288 @@ public sealed class EconomyPermission : Permission
     public static readonly EconomyPermission OperateBounties = new(Keys.OperateBounties, "Operate Bounty expiration and conflicts");
     public static readonly EconomyPermission OperateTreasury = new(Keys.OperateTreasury, "Operate Treasury withdrawals and reconciliation");
     public static readonly EconomyPermission ManageLegacyMigration = new(Keys.ManageLegacyMigration, "Manage tenant-scoped Economy legacy migration and cutover");
+}
+
+/// <summary>
+///     Strongly-typed administrative permissions for tenant member management (issue #294).
+/// </summary>
+/// <remarks>
+///     <para>
+///         Use <see cref="Keys"/> for attribute usage: [RequirePermission(ManageMembersPermission.Keys.Manage)]
+///     </para>
+///     <para>
+///         Use the static readonly fields for runtime checks: actor.HasPermission(ManageMembersPermission.Manage)
+///     </para>
+///     <para>
+///         Tenant-scoped administrative tier: the key governs adding, removing, suspending and
+///         re-roling tenant members and managing their membership invites. It is granted to
+///         administrative tenant membership roles by the role-permission providers and can be
+///         delegated per tenant through ordinary permission grants.
+///     </para>
+/// </remarks>
+public sealed class ManageMembersPermission : Permission
+{
+    private ManageMembersPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    /// <example>
+    ///     [RequirePermission(ManageMembersPermission.Keys.Manage)]
+    ///     public IActionResult AddMember() { }
+    /// </example>
+    public static class Keys
+    {
+        /// <summary>Add, remove, suspend and re-role tenant members, and manage membership invites</summary>
+        public const string Manage = "members:manage";
+    }
+
+    /// <summary>Add, remove, suspend and re-role tenant members, and manage membership invites</summary>
+    public static readonly ManageMembersPermission Manage =
+        new(Keys.Manage, "Add, remove, suspend and re-role tenant members, and manage membership invites");
+}
+
+/// <summary>
+///     Strongly-typed administrative permission for role administration (issue #294).
+/// </summary>
+/// <remarks>
+///     <para>
+///         Tenant-scoped administrative tier: holders may create, modify and assign roles that
+///         belong to their own tenant. Global (platform-wide) roles remain reserved for the
+///         SystemAdmin role; controllers additionally clamp non-system actors to their own
+///         tenant's roles. The key is <b>not</b> granted implicitly to tenant membership roles —
+///         it is a delegation-only capability so that tenant owners cannot edit global roles.
+///     </para>
+/// </remarks>
+public sealed class ManageRolesPermission : Permission
+{
+    private ManageRolesPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Create, modify, delete and assign tenant roles</summary>
+        public const string Manage = "roles:manage";
+    }
+
+    /// <summary>Create, modify, delete and assign tenant roles</summary>
+    public static readonly ManageRolesPermission Manage =
+        new(Keys.Manage, "Create, modify, delete and assign tenant roles");
+}
+
+/// <summary>
+///     Strongly-typed administrative permissions for tenant settings management (issue #294).
+/// </summary>
+/// <remarks>
+///     <para>
+///         Tenant-scoped administrative tier covering tenant system configuration, feature
+///         toggles, business rules and operational limits. Granted to administrative tenant
+///         membership roles by the role-permission providers; delegable per tenant.
+///     </para>
+/// </remarks>
+public sealed class ManageSettingsPermission : Permission
+{
+    private ManageSettingsPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Read tenant settings, feature flags and system limits</summary>
+        public const string Read = "settings:read";
+
+        /// <summary>Change tenant settings, feature flags, business rules and system limits</summary>
+        public const string Manage = "settings:manage";
+    }
+
+    /// <summary>Read tenant settings, feature flags and system limits</summary>
+    public static readonly ManageSettingsPermission Read =
+        new(Keys.Read, "Read tenant settings, feature flags and system limits");
+
+    /// <summary>Change tenant settings, feature flags, business rules and system limits</summary>
+    public static readonly ManageSettingsPermission Manage =
+        new(Keys.Manage, "Change tenant settings, feature flags, business rules and system limits");
+}
+
+/// <summary>
+///     Strongly-typed permissions for audit and compliance data access (issue #294).
+/// </summary>
+/// <remarks>
+///     <para>
+///         Two tiers: <see cref="Read"/> is the self-service tier granted to tenant
+///         administrators (and delegable per tenant) for reading and investigating their own
+///         tenant's audit trail; <see cref="Export"/> governs bulk compliance exports
+///         (CSV/JSON streams, scheduled exports) and is <b>not</b> granted implicitly to
+///         tenant administrators. Non-system callers are clamped to their own tenant's
+///         audit rows by the audit query controllers.
+///     </para>
+/// </remarks>
+public sealed class AuditPermission : Permission
+{
+    private AuditPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Read and investigate audit logs, security events and audit statistics</summary>
+        public const string Read = "audit:read";
+
+        /// <summary>Export audit logs and schedule recurring compliance exports</summary>
+        public const string Export = "audit:export";
+    }
+
+    /// <summary>Read and investigate audit logs, security events and audit statistics</summary>
+    public static readonly AuditPermission Read =
+        new(Keys.Read, "Read and investigate audit logs, security events and audit statistics");
+
+    /// <summary>Export audit logs and schedule recurring compliance exports</summary>
+    public static readonly AuditPermission Export =
+        new(Keys.Export, "Export audit logs and schedule recurring compliance exports");
+}
+
+/// <summary>
+///     Strongly-typed system permission for infrastructure configuration management (issue #386).
+/// </summary>
+/// <remarks>
+///     <para>
+///         System-level tier: governs platform-wide operational configuration surfaces
+///         (cache management, signing-key rotation, external billing provider configuration).
+///         SystemAdmin role holders bypass the permission lookup (platform-wide authority);
+///         delegation happens through explicit grants (typically the global-defaults row).
+///         Endpoints gated by this key are platform-scoped — there is no per-tenant clamping
+///         because the underlying operations affect every tenant.
+///     </para>
+/// </remarks>
+public sealed class SystemConfigurationPermission : Permission
+{
+    private SystemConfigurationPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Contains(':') ? key.Split(':')[1] : key,
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Manage infrastructure configuration (cache management, signing keys, provider configuration)</summary>
+        public const string Manage = "system:manage-configuration";
+    }
+
+    /// <summary>Manage infrastructure configuration (cache management, signing keys, provider configuration)</summary>
+    public static readonly SystemConfigurationPermission Manage =
+        new(Keys.Manage, "Manage infrastructure configuration (cache management, signing keys, provider configuration)");
+}
+
+/// <summary>
+///     Strongly-typed system permission for backup and restore operations (issue #386).
+/// </summary>
+/// <remarks>
+///     <para>
+///         System-level tier: governs platform recovery surfaces — audit snapshot capture and
+///         replay, and event-transport dead-letter recovery. SystemAdmin role holders bypass the
+///         permission lookup; delegation happens through explicit grants. Platform-scoped: no
+///         per-tenant clamping (recovery operations protect the whole platform).
+///     </para>
+/// </remarks>
+public sealed class BackupRestorePermission : Permission
+{
+    private BackupRestorePermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Contains(':') ? key.Split(':')[1] : key,
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Execute backup, snapshot, restore and event-recovery operations</summary>
+        public const string Operate = "system:backup-restore";
+    }
+
+    /// <summary>Execute backup, snapshot, restore and event-recovery operations</summary>
+    public static readonly BackupRestorePermission Operate =
+        new(Keys.Operate, "Execute backup, snapshot, restore and event-recovery operations");
+}
+
+/// <summary>
+///     Strongly-typed system permission for data-migration operations (issue #386).
+/// </summary>
+/// <remarks>
+///     <para>
+///         System-level tier: governs report-only and executing data-migration surfaces
+///         (e.g. billing provider migration assessments). Database schema migrations
+///         themselves run in the host's startup pipeline and are not HTTP-exposed; this key
+///         is the operational delegation point for the HTTP migration surfaces. Tenant-scoped
+///         legacy-data migration keeps its dedicated domain key
+///         (<c>economy:manage:legacy-migration</c>) — see the isolation notes in the PR.
+///     </para>
+/// </remarks>
+public sealed class DataMigrationPermission : Permission
+{
+    private DataMigrationPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Contains(':') ? key.Split(':')[1] : key,
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Run data-migration assessments and migrations between providers</summary>
+        public const string Operate = "system:data-migration";
+    }
+
+    /// <summary>Run data-migration assessments and migrations between providers</summary>
+    public static readonly DataMigrationPermission Operate =
+        new(Keys.Operate, "Run data-migration assessments and migrations between providers");
 }
 
 /// <summary>

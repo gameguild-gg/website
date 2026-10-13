@@ -19,14 +19,36 @@ public class StripePaymentService(
     private readonly Func<PaymentIntentCreateOptions, RequestOptions, CancellationToken, Task<PaymentIntent>>
         _createPaymentIntentAsync = static (createOptions, requestOptions, cancellationToken) =>
             new PaymentIntentService().CreateAsync(createOptions, requestOptions, cancellationToken);
+    private readonly Func<string, DisputeCloseOptions, RequestOptions, CancellationToken, Task<Dispute>>
+        _closeDisputeAsync = static (disputeId, closeOptions, requestOptions, cancellationToken) =>
+            new Stripe.DisputeService().CloseAsync(disputeId, closeOptions, requestOptions, cancellationToken);
+    private readonly Func<string, DisputeUpdateOptions, RequestOptions, CancellationToken, Task<Dispute>>
+        _updateDisputeAsync = static (disputeId, updateOptions, requestOptions, cancellationToken) =>
+            new Stripe.DisputeService().UpdateAsync(disputeId, updateOptions, requestOptions, cancellationToken);
 
     internal StripePaymentService(
         IOptions<StripeGatewayOptions> options,
         ILogger<StripePaymentService> logger,
-        Func<PaymentIntentCreateOptions, RequestOptions, CancellationToken, Task<PaymentIntent>> createPaymentIntentAsync)
+        Func<PaymentIntentCreateOptions, RequestOptions, CancellationToken, Task<PaymentIntent>>? createPaymentIntentAsync = null,
+        Func<string, DisputeCloseOptions, RequestOptions, CancellationToken, Task<Dispute>>? closeDisputeAsync = null,
+        Func<string, DisputeUpdateOptions, RequestOptions, CancellationToken, Task<Dispute>>? updateDisputeAsync = null)
         : this(options, logger)
     {
-        _createPaymentIntentAsync = createPaymentIntentAsync ?? throw new ArgumentNullException(nameof(createPaymentIntentAsync));
+        // The payment-intent factory is mandatory (fail-fast wiring contract asserted by
+        // StripePaymentIntentCreationTests): a null factory means the service would silently
+        // fall through to a misconfigured delegate.
+        ArgumentNullException.ThrowIfNull(createPaymentIntentAsync);
+        _createPaymentIntentAsync = createPaymentIntentAsync;
+
+        if (closeDisputeAsync is not null)
+        {
+            _closeDisputeAsync = closeDisputeAsync;
+        }
+
+        if (updateDisputeAsync is not null)
+        {
+            _updateDisputeAsync = updateDisputeAsync;
+        }
     }
 
     private static StripeGatewayOptions InitializeOptions(IOptions<StripeGatewayOptions> options)
@@ -241,6 +263,119 @@ public class StripePaymentService(
     }
 
     /// <inheritdoc />
+    public async Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.ExternalDisputeId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.IdempotencyKey);
+
+        logger.LogInformation(
+            "Accepting Stripe dispute {DisputeId} with idempotency key {IdempotencyKey} (Simulation: {IsSimulation})",
+            request.ExternalDisputeId, request.IdempotencyKey, _options.UseSimulation);
+
+        if (_options.UseSimulation)
+        {
+            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+            return new GatewayDisputeActionResult(true, null, null);
+        }
+
+        try
+        {
+            await _closeDisputeAsync(
+                    request.ExternalDisputeId,
+                    new DisputeCloseOptions(),
+                    new RequestOptions
+                    {
+                        IdempotencyKey = request.IdempotencyKey,
+                        StripeAccount = ResolveConnectedAccountId()
+                    },
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            return new GatewayDisputeActionResult(true, null, null);
+        }
+        catch (StripeException ex)
+        {
+            logger.LogError(ex,
+                "Stripe dispute accept failed for dispute {DisputeId}: {ErrorCode} - {ErrorMessage}",
+                request.ExternalDisputeId, ex.StripeError?.Code, ex.StripeError?.Message);
+            return new GatewayDisputeActionResult(
+                false,
+                ex.StripeError?.Code ?? "stripe_error",
+                ex.StripeError?.Message ?? ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error accepting Stripe dispute {DisputeId}", request.ExternalDisputeId);
+            return new GatewayDisputeActionResult(false, "unexpected_error", ex.Message);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.ExternalDisputeId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.IdempotencyKey);
+
+        logger.LogInformation(
+            "Challenging Stripe dispute {DisputeId} with idempotency key {IdempotencyKey} (Simulation: {IsSimulation})",
+            request.ExternalDisputeId, request.IdempotencyKey, _options.UseSimulation);
+
+        if (_options.UseSimulation)
+        {
+            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+            return new GatewayDisputeActionResult(true, null, null);
+        }
+
+        try
+        {
+            var updateOptions = new DisputeUpdateOptions
+            {
+                Submit = true,
+                Evidence = new DisputeEvidenceOptions
+                {
+                    UncategorizedText = string.IsNullOrWhiteSpace(request.EvidenceSummary)
+                        ? "The merchant contests this dispute; the service was delivered and the charge was authorized."
+                        : request.EvidenceSummary
+                }
+            };
+
+            await _updateDisputeAsync(
+                    request.ExternalDisputeId,
+                    updateOptions,
+                    new RequestOptions
+                    {
+                        IdempotencyKey = request.IdempotencyKey,
+                        StripeAccount = ResolveConnectedAccountId()
+                    },
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            return new GatewayDisputeActionResult(true, null, null);
+        }
+        catch (StripeException ex)
+        {
+            logger.LogError(ex,
+                "Stripe dispute challenge failed for dispute {DisputeId}: {ErrorCode} - {ErrorMessage}",
+                request.ExternalDisputeId, ex.StripeError?.Code, ex.StripeError?.Message);
+            return new GatewayDisputeActionResult(
+                false,
+                ex.StripeError?.Code ?? "stripe_error",
+                ex.StripeError?.Message ?? ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error challenging Stripe dispute {DisputeId}", request.ExternalDisputeId);
+            return new GatewayDisputeActionResult(false, "unexpected_error", ex.Message);
+        }
+    }
+
+    /// <inheritdoc />
     public Task<bool> ValidateWebhookSignatureAsync(
         string payload,
         string signature,
@@ -355,7 +490,8 @@ public class StripePaymentService(
                 exception.StripeError?.Code ?? "stripe_error",
                 exception.StripeError?.Message ?? exception.Message,
                 PaymentStatus.Failed,
-                SystemClock.UtcNow);
+                SystemClock.UtcNow,
+                FailureKind: GatewayFailureKind.TerminalDecline);
     }
 
     internal static bool IsOutcomeUnknown(StripeException exception) =>
@@ -371,7 +507,8 @@ public class StripePaymentService(
             "stripe_outcome_unknown",
             $"Payment outcome is pending provider reconciliation: {message}",
             PaymentStatus.Processing,
-            SystemClock.UtcNow);
+            SystemClock.UtcNow,
+            FailureKind: GatewayFailureKind.OutcomeUnknown);
 
     private async Task<GatewayPaymentResult> ProcessPaymentSimulatedAsync(
         CancellationToken cancellationToken)

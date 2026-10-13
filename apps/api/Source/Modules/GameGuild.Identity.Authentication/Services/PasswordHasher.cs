@@ -86,11 +86,19 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
     /// <summary>Uses the same reload-aware work factor as real BCrypt verification, with caller cancellation.</summary>
     public async Task PerformDummyVerificationAsync(CancellationToken cancellationToken)
     {
+        // Retain the public completion-only contract; the internal receipt lets native tests
+        // verify real BCrypt output and its encoded factor without comparing runner timings.
+        _ = await GenerateDummyCredentialHashAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    internal async Task<string> GenerateDummyCredentialHashAsync(CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         var workFactor = GetBCryptWorkFactor();
-        await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(DummyCredentialMaterial, workFactor), cancellationToken).ConfigureAwait(false);
+        var hash = await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(DummyCredentialMaterial, workFactor), cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         logger.LogDebug("Dummy credential work completed (BCrypt work factor: {WorkFactor})", workFactor);
+        return hash;
     }
 
     /// <summary>

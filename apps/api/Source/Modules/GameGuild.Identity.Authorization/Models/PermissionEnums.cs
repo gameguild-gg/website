@@ -57,7 +57,37 @@ public enum PermissionOperationType
     ///     sensitive permission-gated operations (e.g. monetization) leave a durable
     ///     decision trail (issue #346).
     /// </summary>
-    Check = 12
+    Check = 12,
+
+    /// <summary>
+    ///     A resource-ownership designation was transferred from one user to another
+    ///     (issue #372). The audit entry's OldValue/NewValue carry the pre/post owner-row
+    ///     snapshots and double as the transfer's restore point (the previous owner row is
+    ///     soft-revoked, never hard-deleted).
+    /// </summary>
+    TransferOwnership = 13,
+
+    /// <summary>
+    ///     A role-inheritance edge or role assignment changed (issue #188). The audit
+    ///     entry's OldValue/NewValue carry the pre/post hierarchy state plus the cascading
+    ///     effects (affected descendant roles and users) computed at mutation time.
+    /// </summary>
+    InheritanceChange = 14,
+
+    /// <summary>
+    ///     A permission policy (conditional policy or policy definition) mutated
+    ///     (issue #188). The audit entry's OldValue/NewValue carry the pre/post policy
+    ///     state; the append-only <c>PolicyVersionHistory</c> table carries the full
+    ///     version history.
+    /// </summary>
+    PolicyChange = 15,
+
+    /// <summary>
+    ///     One stage of a multi-stage permission approval workflow was decided
+    ///     (issue #188). ResourceId carries the workflow id; OldValue/NewValue carry the
+    ///     pre/post stage state including the decision and approver notes.
+    /// </summary>
+    ApprovalStage = 16
 }
 
 /// <summary>
@@ -696,6 +726,48 @@ public enum PermissionType
     ///     Permission to configure system settings and integrations
     /// </summary>
     Configure = 203,
+
+    /// <summary>
+    ///     Administrative permission to manage tenant members (add, remove, suspend, re-role)
+    ///     and membership invites (issue #294)
+    /// </summary>
+    ManageMembers = 204,
+
+    /// <summary>
+    ///     Administrative permission to create, modify, delete and assign tenant roles
+    ///     (issue #294)
+    /// </summary>
+    ManageRoles = 205,
+
+    /// <summary>
+    ///     Administrative permission to read and change tenant settings, feature flags,
+    ///     business rules and system limits (issue #294)
+    /// </summary>
+    ManageSettings = 206,
+
+    /// <summary>
+    ///     Permission to read audit logs, security events and audit statistics
+    ///     (issue #294; distinct from the content-audit <see cref="Audit"/> action)
+    /// </summary>
+    AuditAccess = 207,
+
+    /// <summary>
+    ///     System permission to manage infrastructure configuration (cache management,
+    ///     signing keys, provider configuration) (issue #386)
+    /// </summary>
+    SystemConfiguration = 208,
+
+    /// <summary>
+    ///     System permission to execute backup, snapshot, restore and event-recovery
+    ///     operations (issue #386)
+    /// </summary>
+    BackupRestore = 209,
+
+    /// <summary>
+    ///     System permission to run data-migration assessments and migrations between
+    ///     providers (issue #386)
+    /// </summary>
+    DataMigration = 210,
 
     #endregion
 }

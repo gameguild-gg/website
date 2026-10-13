@@ -92,9 +92,16 @@ internal sealed class PermissionExpirationAlertHandler(
                 recipientEmail: recipientEmail, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (result is null || result.IsFailure)
             {
+                // Only public channel labels cross the log boundary; recipient details stay in the delivery call.
+                var channelLabel = channel switch
+                {
+                    NotificationChannel.InApp => "in-app",
+                    NotificationChannel.Email => "email",
+                    _ => "other"
+                };
                 logger.LogWarning(
-                    "Failed to queue {Kind} permission-expiration alert for user {UserId} on channel {Channel}: {Error}.",
-                    notification.Kind, userId, channel, result?.Error.Description ?? "unknown error");
+                    "Failed to queue {Kind} permission-expiration alert {PermissionId} on channel {Channel}. Tenant {TenantId}.",
+                    notification.Kind, notification.PermissionId, channelLabel, notification.TenantId);
             }
         }
     }

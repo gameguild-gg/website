@@ -208,7 +208,7 @@ public class EfConfigAndExtendedCoverageTests
     [Fact]
     public void PolicyDefinitionRepository_CanBeCreated()
     {
-        var repo = new PolicyDefinitionRepository(Mock.Of<IApplicationDbContext>());
+        var repo = new PolicyDefinitionRepository(Mock.Of<IApplicationDbContext>(), Mock.Of<IPolicyVersionSnapshotService>());
         repo.Should().NotBeNull();
     }
 
@@ -254,7 +254,7 @@ public class EfConfigAndExtendedCoverageTests
     [Fact]
     public void ConditionalPolicyRepository_CanBeCreated()
     {
-        var repo = new ConditionalPolicyRepository(new Mock<DbContext>().Object);
+        var repo = new ConditionalPolicyRepository(new Mock<DbContext>().Object, Mock.Of<IPolicyVersionSnapshotService>());
         repo.Should().NotBeNull();
     }
 

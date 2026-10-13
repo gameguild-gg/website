@@ -55,7 +55,9 @@ public abstract class SubscriptionCommandHandlerBase<TCommand>(ISubscriptionRepo
 ///     Base class for subscription plan command handlers that need to fetch, validate, and save a subscription plan.
 /// </summary>
 /// <typeparam name="TCommand">The command type</typeparam>
-public abstract class SubscriptionPlanCommandHandlerBase<TCommand>(ISubscriptionPlanRepository planRepository)
+public abstract class SubscriptionPlanCommandHandlerBase<TCommand>(
+    ISubscriptionPlanRepository planRepository,
+    ISubscriptionPlanListCache planListCache)
     : ICommandHandler<TCommand>
     where TCommand : ICommand
 {
@@ -78,6 +80,10 @@ public abstract class SubscriptionPlanCommandHandlerBase<TCommand>(ISubscription
         await ExecuteAsync(plan, request, cancellationToken).ConfigureAwait(false);
 
         await PlanRepository.UpdateAsync(plan, cancellationToken).ConfigureAwait(false);
+
+        // Issue #416: "Cache invalidation on plan updates" — every plan mutation resets
+        // the cached public plan lists.
+        planListCache.Invalidate();
 
         return Unit.Value;
     }

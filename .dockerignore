@@ -44,6 +44,16 @@ apps/website/.next/
 !tsconfig.json
 !turbo.json
 
+# Analyzer severity overrides (root .editorconfig) are required by the API
+# image's publish step (SharedKernel sets TreatWarningsAsErrors=true and the
+# Sonar S-rule severities are downgraded to none only in this file).
+!.editorconfig
+
+# pnpm patchedDependencies resolve by path (pnpm-workspace.yaml `patchedDependencies`
+# + pnpm-lock.yaml reference patches/*.patch), so the pruner must see them: turbo
+# prune --docker only emits patches/ into out/json when they exist in the build context.
+!patches
+
 # Allow the packages directory and its contents, but exclude node_modules inside it
 !packages/**
 packages/**/node_modules/

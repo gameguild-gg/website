@@ -49,6 +49,26 @@ namespace GameGuild.Identity.Authorization;
 ///         (<see cref="EffectivePermissions.Throttled"/> = true) without consulting any
 ///         permission store.
 ///     </para>
+///     <para>
+///         <b>Owner override (issue #372).</b> When the context names an exact resource,
+///         an unrevoked and unexpired ownership designation for that (tenant, user,
+///         resource) tuple mints the owner's permission set — unqualified for the tenant
+///         layer and <c>{ResourceType}.{ResourceId}.{permission}</c> for the DAC resource
+///         layer — attributed <see cref="PermissionSource.Owner"/>. Precedence is
+///         configurable under <c>Authorization:OwnerOverride</c>:
+///         <c>AllowUnlessDenied</c> (default; deny-wins over owner — fail-closed),
+///         <c>AlwaysAllow</c> (owner-minted grants are non-deniable, like the static
+///         system-account wildcard) and <c>Off</c> (no override at all). Unknown mode
+///         values fail closed to <c>Off</c> with a warning. <b>Temporal precedence</b>
+///         (issue #363): the override's grants are bounded by the more restrictive of
+///         the ownership designation's own expiry and any other in-force time-bound
+///         grant contributing the same permission; the effective bound is reported on
+///         <see cref="EffectivePermissions.OwnerOverride"/> and a lapsed ownership
+///         designation applies no override. Override <em>use</em> is audited at DEBUG
+///         level (kept out of the durable audit trail to avoid decision-path noise);
+///         ownership <em>changes</em> are durable-audited by
+///         <c>TransferOwnershipCommand</c>.
+///     </para>
 /// </remarks>
 public sealed class EffectivePermissionResolverService(
     ITenantPermissionRepository tenantPermissionRepository,
@@ -60,7 +80,8 @@ public sealed class EffectivePermissionResolverService(
     IJitElevationRequestRepository? jitElevationRepository = null,
     IEnumerable<IPermissionEvaluationExtension>? evaluationExtensions = null,
     IEvaluationDenialThrottleService? denialThrottle = null,
-    IExternalAuthorizationDecisionProvider? externalDecisionProvider = null
+    IExternalAuthorizationDecisionProvider? externalDecisionProvider = null,
+    IResourceOwnershipProvider? ownershipProvider = null
 ) : IEffectivePermissionResolver
 {
     private readonly AuthorizationOptions _authOptions = authorizationOptions.Value;
@@ -190,6 +211,7 @@ public sealed class EffectivePermissionResolverService(
 
         // Layer 8: Resource grants — only when the context names this exact resource.
         // Resource grants never contribute to tenant-wide results (context isolation).
+        var inForceResourceGrants = new List<ResourceUserPermission>();
         if (context.HasResource)
         {
             var resourceGrants = await resourcePermissionService
@@ -207,12 +229,21 @@ public sealed class EffectivePermissionResolverService(
                     continue;
                 }
 
+                inForceResourceGrants.Add(grant);
                 foreach (var permission in grant.Permissions)
                 {
                     AddAllow(permission, PermissionSource.ResourceGrant);
                 }
             }
         }
+
+        // Owner-override layer (issue #372): an ownership designation for the exact
+        // context resource mints the owner's permission set for owner-scoped operations,
+        // with a configurable deny interaction (Authorization:OwnerOverride) and the
+        // temporal precedence bound (issue #363). See the class remarks for the full
+        // precedence contract.
+        var ownerOverride = await AddOwnerOverrideLayerAsync(context, allows, sources, inForceResourceGrants, ct).ConfigureAwait(false);
+        var ownerMintedPermissions = ownerOverride?.GrantedPermissions.ToList() ?? [];
 
         // Extension layer (issue #358): registered evaluation plugins run after every
         // built-in layer, ordered by Order then DI registration order. Each extension
@@ -270,7 +301,9 @@ public sealed class EffectivePermissionResolverService(
         await AddExternalAuthorizationLayerAsync(context, allows, denies, sources, ct).ConfigureAwait(false);
 
         // DENY-WINS: subtract every layer's explicit denies. Static (system-account)
-        // permissions are the only grants that survive an explicit deny.
+        // permissions are the only grants that survive an explicit deny — except under
+        // the AlwaysAllow owner-override mode (issue #372), where owner-minted grants
+        // are equally non-deniable by explicit configuration.
         var effectivePermissions = new HashSet<string>(allows, StringComparer.OrdinalIgnoreCase);
         foreach (var denied in denies)
         {
@@ -280,6 +313,16 @@ public sealed class EffectivePermissionResolverService(
                     "Attempted to deny static permission {Permission} for user {UserId} - denies cannot override static grants",
                     // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
                     denied, context.UserId);
+                continue;
+            }
+
+            if (ownerOverride is not null
+                && ownerOverride.Mode == OwnerOverrideMode.AlwaysAllow
+                && ownerMintedPermissions.Contains(denied))
+            {
+                logger.LogWarning(
+                    "Attempted to deny owner-minted permission {Permission} - the AlwaysAllow owner-override mode makes owner grants non-deniable",
+                    denied);
                 continue;
             }
 
@@ -302,7 +345,8 @@ public sealed class EffectivePermissionResolverService(
             Sources = sources,
             RoleContributions = roleContributions,
             Context = context,
-            ContextValid = true
+            ContextValid = true,
+            OwnerOverride = ownerOverride
         };
     }
 
@@ -418,6 +462,129 @@ public sealed class EffectivePermissionResolverService(
             denies.Add(permission);
         }
     }
+
+    /// <summary>
+    ///     Owner-override layer (issue #372). Applies the configured
+    ///     <c>Authorization:OwnerOverride</c> precedence mode for the exact resource in
+    ///     the resolution context:
+    ///     <list type="bullet">
+    ///         <item><c>Off</c> (also the fail-closed fallback for unknown mode values): no override.</item>
+    ///         <item><c>AllowUnlessDenied</c> (default): the owner's set is minted and stays subject to the DENY-WINS subtraction (deny-wins over owner — fail-closed).</item>
+    ///         <item><c>AlwaysAllow</c>: additionally, owner-minted grants survive explicit denies.</item>
+    ///     </list>
+    ///     Ownership must be an unrevoked designation for exactly (tenant, user, resource
+    ///     type, resource id). <b>Temporal precedence (issue #363):</b> a designation whose
+    ///     own expiry has lapsed applies no override, and the effective bound reported on
+    ///     the evaluation is the earliest expiry among the designation and every other
+    ///     in-force time-bound grant of the same resource contributing the same permission
+    ///     — the more restrictive expiry wins. Override use is audited at DEBUG level only
+    ///     (see class remarks); a null ownership provider behaves like <c>Off</c>.
+    /// </summary>
+    private async Task<OwnerOverrideEvaluation?> AddOwnerOverrideLayerAsync(
+        EffectivePermissionContext context,
+        HashSet<string> allows,
+        Dictionary<string, PermissionSource> sources,
+        IReadOnlyList<ResourceUserPermission> inForceResourceGrants,
+        CancellationToken ct)
+    {
+        if (!context.HasResource || ownershipProvider is null)
+        {
+            return null;
+        }
+
+        var ownerOptions = _authOptions.OwnerOverride ?? new OwnerOverrideOptions();
+        var mode = ownerOptions.ResolveMode();
+        if (mode == OwnerOverrideMode.Off)
+        {
+            if (!ownerOptions.IsKnownMode)
+            {
+                logger.LogWarning(
+                    "Unknown Authorization:OwnerOverride:Mode '{Mode}' - the owner override fails closed to Off in tenant {TenantId}.",
+                    ownerOptions.Mode, context.TenantId);
+            }
+
+            return null;
+        }
+
+        var ownership = await ownershipProvider
+            .GetOwnerAsync(context.TenantId, context.UserId, context.ResourceType!, context.ResourceId!, ct)
+            .ConfigureAwait(false);
+        if (ownership is null)
+        {
+            return null;
+        }
+
+        // Temporal precedence (issue #363), first half: an expired time-bound ownership
+        // designation applies no override (fail-closed), even though the row is unrevoked.
+        var now = SystemClock.UtcNow;
+        if (ownership.ExpiresAt is { } ownerExpiry && ownerExpiry <= now)
+        {
+            logger.LogDebug(
+                "Owner override suppressed on {ResourceType}/{ResourceId}: the ownership designation expired at {OwnerExpiry}.",
+                context.ResourceType, context.ResourceId, ownerExpiry);
+            return null;
+        }
+
+        // Temporal precedence (issue #363), second half: when another in-force time-bound
+        // grant of the same resource contributes a permission the override mints, the more
+        // restrictive (earlier) expiry wins for the whole override grant set.
+        DateTime? effectiveThrough = ownership.ExpiresAt;
+        foreach (var grant in inForceResourceGrants)
+        {
+            if (grant.ExpiresAt is not { } grantExpiry || grantExpiry <= now)
+            {
+                continue;
+            }
+
+            if (grant.Permissions.Any(ownerMints => ownership.OwnerPermissions.Contains(ownerMints, StringComparer.OrdinalIgnoreCase))
+                && (effectiveThrough is null || grantExpiry < effectiveThrough))
+            {
+                effectiveThrough = grantExpiry;
+            }
+        }
+
+        var minted = new List<string>();
+        foreach (var permission in ownership.OwnerPermissions.Where(IsDelegableOwnerPermission))
+        {
+            // Unqualified name: parity with the resource-grant layer's plain-name minting,
+            // so tenant-layer checks succeed for owners in a resource context.
+            if (allows.Add(permission))
+            {
+                sources[permission] = PermissionSource.Owner;
+            }
+
+            minted.Add(permission);
+
+            // Resource-qualified name: parity with the DAC resource layer
+            // ({ResourceType}.{ResourceId}.{Permission}) so owner-scoped operations
+            // resolve through IDacPermissionResolver too.
+            var qualified = $"{context.ResourceType}.{context.ResourceId}.{permission}";
+            if (allows.Add(qualified))
+            {
+                sources[qualified] = PermissionSource.Owner;
+            }
+
+            minted.Add(qualified);
+        }
+
+        // Override-use audit (issue #372): DEBUG level by design — the decision path is
+        // high-frequency and a durable entry per evaluation would drown the audit log.
+        // Durable audit coverage for ownership changes lives in TransferOwnershipCommand.
+        logger.LogDebug(
+            "Owner override applied on {ResourceType}/{ResourceId} in tenant {TenantId}: mode {Mode}, {PermissionCount} owner permissions, effective through {EffectiveThrough}.",
+            context.ResourceType, context.ResourceId, context.TenantId, mode, minted.Count,
+            effectiveThrough is null ? "indefinitely" : effectiveThrough.Value.ToString("O"));
+
+        return new OwnerOverrideEvaluation(mode, ownership.OwnerUserId, minted, effectiveThrough);
+    }
+
+    /// <summary>
+    ///     Owner overrides never mint universal wildcards: <c>admin:*</c> is a
+    ///     role-management construct and <c>*</c> is the static system-account wildcard.
+    /// </summary>
+    private static bool IsDelegableOwnerPermission(string permission) =>
+        !string.Equals(permission, "admin:*", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(permission, "*", StringComparison.Ordinal);
 
     /// <summary>
     ///     Feeds denied evaluation outcomes to the throttle (enumeration protection,

@@ -29,7 +29,28 @@ vi.mock("next/image", () => ({
     createElement("img", { ...props, alt: typeof alt === "string" ? alt : "" }),
 }));
 
-import { SocialShell } from "./social-shell";
+import { Suspense } from "react";
+import { SocialFeed, SocialShell } from "./social-shell";
+import type { SocialFeedItem } from "@/lib/feed/contracts";
+
+function postItem(id: string): SocialFeedItem {
+  return {
+    id,
+    kind: "Post",
+    createdAt: "2026-09-10T00:00:00Z",
+    author: { userId: "user-2", displayName: "Ada Builder", handle: "ada", avatarUrl: null, isVerified: false },
+    post: { content: id, mediaUrl: null, mediaType: null, visibility: "Public", isEdited: false, editedAt: null, repostedPost: null },
+    testingSession: null,
+    engagement: { reactionsCount: 0, commentsCount: 0, repostsCount: 0, viewsCount: 0 },
+    viewer: { reaction: null, isSaved: false, isFollowingAuthor: false, hasReposted: false, canEdit: false, canDelete: false },
+    tags: [],
+  };
+}
+
+async function renderResolvedFeed(props: { tab?: "foryou" | "following" | "community" | "saved" }) {
+  const feed = await SocialFeed(props);
+  return render(<Suspense fallback={<div data-testid="feed-loading-skeleton" />}>{feed}</Suspense>);
+}
 
 describe("SocialShell", () => {
   beforeEach(() => {
@@ -50,20 +71,81 @@ describe("SocialShell", () => {
     ["community", "community"],
     ["saved", "saved"],
   ] as const)("maps %s to the %s API scope", async (tab, scope) => {
-    render(await SocialShell({ tab }));
+    await renderResolvedFeed({ tab });
     expect(mocks.loadSocialFeed).toHaveBeenCalledWith({ scope, tag: null });
   });
 
   it("shows a recoverable error without substituting demo posts", async () => {
     mocks.loadSocialFeed.mockRejectedValue(new Error("offline"));
-    render(await SocialShell({ tab: "foryou" }));
+    await renderResolvedFeed({ tab: "foryou" });
     expect(screen.getByText(/feed is temporarily unavailable/i)).toBeInTheDocument();
     expect(screen.queryByTestId("post-card")).not.toBeInTheDocument();
   });
 
   it("loads moderation-aware creator suggestions for the current actor", async () => {
-    render(await SocialShell({ tab: "foryou" }));
+    await renderResolvedFeed({ tab: "foryou" });
 
     expect(mocks.loadCreatorSuggestions).toHaveBeenCalledWith("user-1", 8);
+  });
+
+  it("streams behind the FeedSkeleton fallback", async () => {
+    mocks.loadSocialFeed.mockReturnValue(new Promise(() => {}));
+
+    render(<SocialShell tab="foryou" />);
+
+    expect(screen.getByTestId("feed-loading-skeleton")).toBeInTheDocument();
+  });
+
+  it("runs the primary feed and the trending-tags rail in one parallel round", async () => {
+    const timeline: string[] = [];
+    const gate = { primary: false, tags: false };
+    const primary = async () => {
+      timeline.push("primary:start");
+      await new Promise<void>((resolve) => {
+        const tick = () => (gate.primary ? resolve() : setTimeout(tick, 0));
+        tick();
+      });
+      timeline.push("primary:end");
+      return { items: [], nextCursor: null };
+    };
+    const tags = async () => {
+      timeline.push("tags:start");
+      await new Promise<void>((resolve) => {
+        const tick = () => (gate.tags ? resolve() : setTimeout(tick, 0));
+        tick();
+      });
+      timeline.push("tags:end");
+      return [];
+    };
+    mocks.loadSocialFeed.mockImplementation(({ scope }: { scope: string }) =>
+      scope === "community" ? Promise.resolve({ items: [], nextCursor: null }) : primary(),
+    );
+    mocks.loadTrendingTags.mockImplementation(tags);
+
+    const feedPromise = SocialFeed({ tab: "foryou" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(timeline).toEqual(["primary:start", "tags:start"]);
+    gate.tags = true;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    gate.primary = true;
+    await feedPromise;
+
+    expect(timeline).toEqual(["primary:start", "tags:start", "tags:end", "primary:end"]);
+  });
+
+  it("still renders feed items when the trending-tags rail rejects", async () => {
+    mocks.loadTrendingTags.mockRejectedValue(new Error("tags down"));
+    mocks.loadSocialFeed.mockImplementation(({ scope }: { scope: string }) =>
+      Promise.resolve(
+        scope === "community"
+          ? { items: [], nextCursor: null }
+          : { items: [postItem("post-1")], nextCursor: null },
+      ),
+    );
+
+    await renderResolvedFeed({ tab: "foryou" });
+
+    expect(screen.getAllByTestId("post-card")).toHaveLength(1);
+    expect(screen.getByText("Trending now")).toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using GameGuild.Configuration.ApplicationLayer;
@@ -14,9 +15,13 @@ public sealed class SessionManagementService(
     ITrustedDeviceRepository trustedDeviceRepository,
     IRefreshTokenLineageRepository tokenLineageRepository,
     SessionOptions? sessionOptions = null,
-    IAuthenticationAuditEventSink? auditEventSink = null) : ISessionManagementService
+    IAuthenticationAuditEventSink? auditEventSink = null,
+    IUserAgentParser? userAgentParser = null,
+    IGeolocationProvider? geolocationProvider = null) : ISessionManagementService
 {
     private readonly SessionOptions _sessionOptions = sessionOptions ?? new SessionOptions();
+    private readonly IUserAgentParser _userAgentParser = userAgentParser ?? UserAgentParser.Shared;
+    private readonly IGeolocationProvider? _geolocationProvider = geolocationProvider;
 
     public async Task<UserSession> CreateSessionAsync(Guid userId, string ipAddress, string userAgent, string? deviceFingerprint = null, CancellationToken cancellationToken = default)
     {
@@ -60,6 +65,8 @@ public sealed class SessionManagementService(
             IpAddress = _sessionOptions.EnableLocationTracking ? ipAddress : "unknown",
             UserAgent = userAgent,
             DeviceFingerprint = deviceFingerprint,
+            DeviceInfo = BuildDeviceInfo(deviceFingerprint, ipAddress, userAgent),
+            Location = await ResolveSessionLocationAsync(ipAddress, cancellationToken).ConfigureAwait(false),
             CreatedAt = now,
             UpdatedAt = now,
             LastUsedAt = now,
@@ -68,6 +75,7 @@ public sealed class SessionManagementService(
         };
 
         var createdSession = await sessionRepository.CreateAsync(session, cancellationToken).ConfigureAwait(false);
+        SessionAnalyticsMetrics.RecordCreated();
         if (!string.IsNullOrWhiteSpace(refreshTokenHash))
         {
             await RequireTokenBindingAsync(userId, refreshTokenHash, createdSession.Id, cancellationToken).ConfigureAwait(false);
@@ -113,6 +121,7 @@ public sealed class SessionManagementService(
         session.TerminationReason = SessionTerminationReason.Expired.ToString();
         session.TerminatedAt = SystemClock.UtcNow;
         await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
+        SessionAnalyticsMetrics.RecordTerminated(SessionTerminationReason.Expired);
 
         return false;
     }
@@ -143,7 +152,7 @@ public sealed class SessionManagementService(
         return true;
     }
 
-    public async Task<bool> RefreshSessionAsync(Guid sessionId, string refreshTokenHash, DateTime expiresAt, CancellationToken cancellationToken = default)
+    public async Task<bool> RefreshSessionAsync(Guid sessionId, string refreshTokenHash, DateTime expiresAt, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
     {
         var session = await sessionRepository.GetByIdAsync(sessionId, cancellationToken).ConfigureAwait(false);
 
@@ -169,6 +178,7 @@ public sealed class SessionManagementService(
         session.RefreshToken = refreshTokenHash;
         session.LastUsedAt = now;
         session.ExpiresAt = effectiveExpiration;
+        await ApplyRefreshEnrichmentAsync(session, ipAddress, userAgent, cancellationToken).ConfigureAwait(false);
 
         await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
 
@@ -177,6 +187,91 @@ public sealed class SessionManagementService(
         await ForwardSessionAuditEventAsync(session, "Authentication.SessionRefreshed", cancellationToken).ConfigureAwait(false);
 
         return true;
+    }
+
+    /// <summary>
+    ///     Re-enriches device metadata (and, when the caller's IP changed, the location) during
+    ///     token rotation. The device name is preserved: it is either the original parsed label
+    ///     or a user-assigned custom name, and rotation must not reset either.
+    /// </summary>
+    private async Task ApplyRefreshEnrichmentAsync(UserSession session, string? ipAddress, string? userAgent, CancellationToken cancellationToken)
+    {
+        var agentChanged = !string.IsNullOrWhiteSpace(userAgent) &&
+                           !string.Equals(session.UserAgent, userAgent, StringComparison.Ordinal);
+        var effectiveIpAddress = string.IsNullOrWhiteSpace(ipAddress) ? session.IpAddress : ipAddress;
+        var locationChanged = _sessionOptions.EnableLocationTracking &&
+                              !string.IsNullOrWhiteSpace(ipAddress) &&
+                              !string.Equals(session.IpAddress, ipAddress, StringComparison.Ordinal);
+
+        if (agentChanged)
+        {
+            session.UserAgent = userAgent!;
+            var parsed = _userAgentParser.Parse(userAgent);
+            var existing = SessionEnrichmentJson.DeserializeDeviceInfo(session.DeviceInfo) ?? new DeviceInfo();
+            session.DeviceInfo = SessionEnrichmentJson.SerializeDeviceInfo(new DeviceInfo
+            {
+                // Preserved members: the fingerprint is stable per device and the name is user-managed.
+                Fingerprint = existing.Fingerprint,
+                DeviceName = existing.DeviceName,
+                IpAddress = effectiveIpAddress,
+                DeviceType = parsed.DeviceType,
+                OperatingSystem = parsed.OperatingSystem,
+                OsVersion = parsed.OsVersion,
+                Browser = parsed.Browser,
+                BrowserVersion = parsed.BrowserVersion,
+                UserAgent = parsed.UserAgent,
+                IsMobile = parsed.IsMobile,
+                IsBot = parsed.IsBot
+            });
+        }
+
+        if (locationChanged || (agentChanged && string.IsNullOrWhiteSpace(session.Location)))
+        {
+            session.IpAddress = effectiveIpAddress;
+            if (_sessionOptions.EnableLocationTracking)
+            {
+                var resolved = await ResolveSessionLocationAsync(effectiveIpAddress, cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(resolved))
+                {
+                    session.Location = resolved;
+                }
+            }
+        }
+    }
+
+    /// <summary>Builds the persisted device metadata JSON from the server-side user-agent parse.</summary>
+    private string? BuildDeviceInfo(string? deviceFingerprint, string ipAddress, string userAgent)
+    {
+        var parsed = _userAgentParser.Parse(userAgent);
+        if (!string.IsNullOrWhiteSpace(deviceFingerprint))
+        {
+            parsed.Fingerprint = deviceFingerprint;
+        }
+        parsed.IpAddress = ipAddress;
+        return SessionEnrichmentJson.SerializeDeviceInfo(parsed);
+    }
+
+    /// <summary>
+    ///     Resolves the coarse location for a session IP through the registered geolocation
+    ///     provider. Fail-open: enrichment must never block session persistence.
+    /// </summary>
+    private async Task<string?> ResolveSessionLocationAsync(string ipAddress, CancellationToken cancellationToken)
+    {
+        if (!_sessionOptions.EnableLocationTracking || _geolocationProvider is null || string.IsNullOrWhiteSpace(ipAddress))
+        {
+            return null;
+        }
+
+        try
+        {
+            var resolved = await _geolocationProvider.ResolveAsync(ipAddress, cancellationToken).ConfigureAwait(false);
+            return SessionEnrichmentJson.SerializeLocation(SessionEnrichmentJson.ToLocationInfo(resolved, ipAddress));
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Geolocation enrichment failed for a session IP; continuing without location");
+            return null;
+        }
     }
 
     public async Task<bool> TerminateSessionAsync(Guid sessionId, SessionTerminationReason reason, CancellationToken cancellationToken = default)
@@ -188,11 +283,16 @@ public sealed class SessionManagementService(
             return false;
         }
 
+        var wasActive = session.IsActive;
         session.IsActive = false;
         session.TerminationReason = reason.ToString();
         session.TerminatedAt = SystemClock.UtcNow;
 
         await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
+        if (wasActive)
+        {
+            SessionAnalyticsMetrics.RecordTerminated(reason);
+        }
 
         await ForwardSessionAuditEventAsync(session, "Authentication.SessionTerminated", cancellationToken, reason.ToString()).ConfigureAwait(false);
 
@@ -221,6 +321,11 @@ public sealed class SessionManagementService(
             session.TerminatedAt = SystemClock.UtcNow;
             await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
             await ForwardSessionAuditEventAsync(session, "Authentication.SessionTerminated", cancellationToken, session.TerminationReason).ConfigureAwait(false);
+        }
+
+        if (activeSessions.Count > 0)
+        {
+            SessionAnalyticsMetrics.RecordTerminated(reason, activeSessions.Count);
         }
 
         logger.LogInformation("Terminated {Count} sessions for user {UserId}. Reason: {Reason}", activeSessions.Count, userId, reason);
@@ -333,8 +438,48 @@ public sealed class SessionManagementService(
     {
         var devices = await trustedDeviceRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-        return devices.Where(d => d.IsActive).ToList();
+        var now = SystemClock.UtcNow;
+        return devices.Where(d => d.IsActive && (!d.ExpiresAt.HasValue || d.ExpiresAt.Value > now)).ToList();
     }
+
+    /// <summary>
+    ///     Names or renames one of the caller's own active sessions. The custom name is stored
+    ///     on the session's device metadata (surviving token rotation) and must remain non-empty;
+    ///     naming another user's session or an inactive session is rejected.
+    /// </summary>
+    public async Task<bool> RenameSessionAsync(Guid userId, Guid sessionId, string name, CancellationToken cancellationToken = default)
+    {
+        var trimmed = name?.Trim() ?? string.Empty;
+        if (trimmed.Length is < 1 or > MaxSessionNameLength)
+        {
+            return false;
+        }
+
+        var session = await sessionRepository.GetByIdAsync(sessionId, cancellationToken).ConfigureAwait(false);
+        if (session is not { IsActive: true } || session.UserId != userId)
+        {
+            return false;
+        }
+
+        var deviceInfo = SessionEnrichmentJson.DeserializeDeviceInfo(session.DeviceInfo) ?? _userAgentParser.Parse(session.UserAgent);
+        if (!string.IsNullOrWhiteSpace(session.DeviceFingerprint))
+        {
+            deviceInfo.Fingerprint = session.DeviceFingerprint;
+        }
+        deviceInfo.IpAddress = session.IpAddress;
+        deviceInfo.DeviceName = trimmed;
+        session.DeviceInfo = SessionEnrichmentJson.SerializeDeviceInfo(deviceInfo);
+
+        await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
+        await ForwardSessionAuditEventAsync(session, "Authentication.SessionRenamed", cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation("Session {SessionId} renamed for user {UserId}", sessionId, userId);
+
+        return true;
+    }
+
+    /// <summary>The maximum accepted length of a user-defined session name.</summary>
+    public const int MaxSessionNameLength = 64;
 
     public async Task<bool> RevokeTrustedDeviceAsync(Guid userId, Guid deviceId, CancellationToken cancellationToken = default)
     {
@@ -369,6 +514,13 @@ public sealed class SessionManagementService(
             session.TerminationReason = SessionTerminationReason.MaxSessionsExceeded.ToString();
             session.TerminatedAt = SystemClock.UtcNow;
             await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
+            await ForwardSessionAuditEventAsync(session, "Authentication.SessionTerminated", cancellationToken, session.TerminationReason).ConfigureAwait(false);
+        }
+
+        var evictedCount = sessionsToTerminate.Count();
+        if (evictedCount > 0)
+        {
+            SessionAnalyticsMetrics.RecordTerminated(SessionTerminationReason.MaxSessionsExceeded, evictedCount);
         }
     }
 
@@ -409,6 +561,7 @@ public sealed class SessionManagementService(
         session.TerminationReason = SessionTerminationReason.Expired.ToString();
         session.TerminatedAt = SystemClock.UtcNow;
         await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
+        SessionAnalyticsMetrics.RecordTerminated(SessionTerminationReason.Expired);
         await ForwardSessionAuditEventAsync(session, "Authentication.SessionTerminated", cancellationToken, session.TerminationReason).ConfigureAwait(false);
     }
 
@@ -421,23 +574,165 @@ public sealed class SessionManagementService(
 
     public async Task<SessionSecurityAnalysis> AnalyzeSessionSecurityAsync(Guid userId, string ipAddress, string userAgent, CancellationToken cancellationToken = default)
     {
+        var now = SystemClock.UtcNow;
         var recentSessions = await sessionRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
-        var activeCount = recentSessions.Count(s => s.IsActive);
+        // A default ExpiresAt means "unset/legacy": such a row is treated as not expired so
+        // the analysis keeps counting genuinely active sessions (matching IsActive alone).
+        var activeSessions = recentSessions
+            .Where(s => s.IsActive && (s.ExpiresAt == default || s.ExpiresAt > now))
+            .OrderByDescending(s => s.LastUsedAt)
+            .ToList();
+        var activeCount = activeSessions.Count;
 
-        var uniqueIps = recentSessions.Select(s => s.IpAddress).Distinct().Count();
-        var uniqueDevices = recentSessions.Select(s => s.DeviceFingerprint).Distinct().Count();
+        var uniqueIps = recentSessions.Select(s => s.IpAddress).Where(ip => !string.IsNullOrEmpty(ip)).Distinct().Count();
+        var uniqueDevices = recentSessions.Select(s => s.DeviceFingerprint).Where(fp => !string.IsNullOrEmpty(fp)).Distinct().Count();
 
-        var riskLevel = RiskLevel.Low;
+        // ── Additive risk score ─────────────────────────────────────────────
+        // The count-based tiers preserve the historical classification guarantees
+        // (>10 IPs or >5 devices ⇒ Medium; >10 active sessions ⇒ High); geo factors
+        // only fire when real location metadata is present and stack on top.
+        var riskScore = 0;
+        var riskFactors = new List<string>();
 
-        if (uniqueIps > 10 || uniqueDevices > 5)
+        if (uniqueIps > 10)
         {
-            riskLevel = RiskLevel.Medium;
+            riskScore += 30;
+            riskFactors.Add($"Multiple IPs: {uniqueIps}");
+        }
+
+        if (uniqueDevices > 5)
+        {
+            riskScore += 30;
+            riskFactors.Add($"Multiple devices: {uniqueDevices}");
         }
 
         if (activeCount > 10)
         {
-            riskLevel = RiskLevel.High;
+            riskScore += 60;
+            riskFactors.Add($"High active session count: {activeCount}");
         }
+
+        var sessionLocations = activeSessions
+            .Select(s => SessionEnrichmentJson.DeserializeLocation(s.Location))
+            .OfType<LocationInfo>()
+            .ToList();
+
+        // Concurrent location analysis: distinct populated locations among ACTIVE sessions.
+        var concurrentLocations = sessionLocations
+            .Where(l => !string.IsNullOrEmpty(l.Country))
+            .Select(l => (l.Country!, l.City ?? string.Empty))
+            .Distinct()
+            .ToList();
+        if (concurrentLocations.Count >= 2)
+        {
+            riskScore += 25;
+            riskFactors.Add($"Concurrent locations: {concurrentLocations.Count}");
+        }
+
+        // Geo-velocity analysis: implied travel speed between consecutive session uses
+        // carrying coordinates (session history first, then the current request).
+        var observations = activeSessions
+            .OrderBy(s => s.LastUsedAt)
+            .Select(s => (Moment: s.LastUsedAt, Location: SessionEnrichmentJson.DeserializeLocation(s.Location)))
+            .Where(o => o.Location is not null)
+            .Select(o => (o.Moment, Location: o.Location!))
+            .ToList();
+
+        LocationInfo? requestLocation = null;
+        if (_sessionOptions.EnableLocationTracking && _geolocationProvider is not null && !string.IsNullOrWhiteSpace(ipAddress))
+        {
+            try
+            {
+                requestLocation = SessionEnrichmentJson.ToLocationInfo(
+                    await _geolocationProvider.ResolveAsync(ipAddress, cancellationToken).ConfigureAwait(false), ipAddress);
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Geolocation resolution failed during session security analysis; continuing without it");
+            }
+        }
+
+        if (requestLocation is not null)
+        {
+            observations.Add((now, requestLocation));
+        }
+
+        double? maxVelocityKmh = null;
+        for (var i = 1; i < observations.Count; i++)
+        {
+            var speed = GeoVelocity.SpeedKmh(observations[i - 1].Location, observations[i].Location, observations[i].Moment - observations[i - 1].Moment);
+            if (speed is not { } current)
+            {
+                continue;
+            }
+
+            maxVelocityKmh = Math.Max(maxVelocityKmh ?? 0, current);
+            if (current > GeoVelocity.DefaultImpossibleTravelSpeedKmh)
+            {
+                riskScore += 35;
+                riskFactors.Add($"Impossible travel: {current:F0} km/h between consecutive sessions");
+                break;
+            }
+        }
+
+        // Per-session anomaly detection: an active session located outside the account's
+        // usual country is flagged individually. The usual-country baseline is the country
+        // of the active session matching the request IP (where the user is right now); when
+        // no session matches, a strict majority country (strictly more sessions than any
+        // other country) is required — a tie flags nothing.
+        var anomalousSessionIds = new List<string>();
+        var countriesBySession = activeSessions
+            .Select(s => (Session: s, Country: SessionEnrichmentJson.DeserializeLocation(s.Location)?.Country))
+            .Where(pair => !string.IsNullOrEmpty(pair.Country))
+            .Select(pair => (pair.Session, Country: pair.Country!))
+            .ToList();
+        string? majorityCountry = null;
+        // Where the user is right now: prefer the session whose resolved location carries
+        // the request IP (the geo record is the resolution source), falling back to the
+        // session's raw IP. Without a match, a strict majority is required.
+        var requestMatching = countriesBySession
+            .Where(pair => SessionEnrichmentJson.DeserializeLocation(pair.Session.Location)?.IpAddress is { } locationIp
+                           ? string.Equals(locationIp, ipAddress, StringComparison.Ordinal)
+                           : string.Equals(pair.Session.IpAddress, ipAddress, StringComparison.Ordinal))
+            .ToList();
+        if (requestMatching.Count > 0)
+        {
+            majorityCountry = requestMatching[0].Country;
+        }
+        else
+        {
+            var countryCounts = countriesBySession
+                .GroupBy(pair => pair.Country, StringComparer.Ordinal)
+                .Select(g => (Country: g.Key, Count: g.Count()))
+                .ToList();
+            if (countryCounts.Count > 0 &&
+                countryCounts.Max(c => c.Count) > countryCounts.Sum(c => c.Count) / 2)
+            {
+                majorityCountry = countryCounts
+                    .OrderByDescending(c => c.Count)
+                    .First().Country;
+            }
+        }
+        if (majorityCountry is not null)
+        {
+            anomalousSessionIds = countriesBySession
+                .Where(pair => !string.Equals(pair.Country, majorityCountry, StringComparison.Ordinal))
+                .Select(pair => pair.Session.Id.ToString())
+                .ToList();
+            if (anomalousSessionIds.Count > 0)
+            {
+                riskScore += 15 * Math.Min(anomalousSessionIds.Count, 2);
+                riskFactors.Add($"Sessions outside usual country ({majorityCountry}): {anomalousSessionIds.Count}");
+            }
+        }
+
+        var riskLevel = riskScore switch
+        {
+            >= 80 => RiskLevel.Critical,
+            >= 60 => RiskLevel.High,
+            >= 30 => RiskLevel.Medium,
+            _ => RiskLevel.Low
+        };
 
         return new SessionSecurityAnalysis
         {
@@ -445,8 +740,18 @@ public sealed class SessionManagementService(
             ActiveSessionCount = activeCount,
             TotalDeviceCount = uniqueDevices,
             UnusualActivityDetected = riskLevel >= RiskLevel.Medium,
+            RiskScore = riskScore,
             RiskLevel = riskLevel,
-            RiskFactors = riskLevel >= RiskLevel.Medium ? [$"Multiple IPs: {uniqueIps}", $"Multiple devices: {uniqueDevices}"] : []
+            RiskFactors = riskFactors,
+            Metadata = new Dictionary<string, string>
+            {
+                ["geo_data_available"] = sessionLocations.Count > 0 || requestLocation is not null ? "true" : "false",
+                ["concurrent_locations"] = concurrentLocations.Count.ToString(CultureInfo.InvariantCulture),
+                ["max_observed_velocity_kmh"] = maxVelocityKmh is null
+                    ? string.Empty
+                    : maxVelocityKmh.Value.ToString("F0", CultureInfo.InvariantCulture),
+                ["anomalous_session_ids"] = string.Join(",", anomalousSessionIds)
+            }
         };
     }
 

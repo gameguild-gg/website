@@ -464,7 +464,7 @@ public class OrdersInfrastructureTests
         var handlers = new object[]
         {
             new CreateOrderCommandHandler(orderRepo, actor),
-            new AddProductToOrderCommandHandler(orderRepo, productRepo, pricingRepo, promoService, dbContext, actor),
+            new AddProductToOrderCommandHandler(orderRepo, productRepo, pricingRepo, promoService, Mock.Of<IPromoCodeUsageRecorder>(), Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(), dbContext, actor),
             new CancelOrderCommandHandler(orderRepo),
             new CaptureOrderCommandHandler(orderRepo, Mock.Of<IOrderPaymentProcessor>(), actor),
             new CompleteOrderCommandHandler(orderRepo, entitlementService, dbContext, OrderTestFactory.CreatePaymentAuthority(), actor),

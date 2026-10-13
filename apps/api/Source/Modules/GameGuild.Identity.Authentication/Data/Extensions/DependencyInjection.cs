@@ -87,6 +87,11 @@ public static class DataDependencyInjection
 
         services.AddSingleton(apiKeyLifecycleOptions);
 
+        services.AddOptions<LocalSignInPolicyOptions>()
+            .Bind(configuration.GetSection(LocalSignInPolicyOptions.SectionName))
+            .Validate(static options => options.IsValid(), "Email-verification tenant identifiers must be non-empty.")
+            .ValidateOnStart();
+
         // Configure JWT options from configuration
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
@@ -125,6 +130,12 @@ public static class DataDependencyInjection
         // Core authentication services - focused sub-services
         services.AddScoped<IAuthAttemptService, AuthAttemptService>();
         services.AddScoped<ISuspiciousLoginAlertPublisher, SuspiciousLoginAlertPublisher>();
+        services.AddScoped<INewLoginAlertPublisher, NewLoginAlertPublisher>();
+        // Server-side device metadata: dependency-free user-agent parsing for every session;
+        // geolocation stays a pure abstraction (SharedKernel) with a no-op default so a host
+        // can plug in an offline GeoIP provider without touching this module.
+        services.TryAddSingleton<IUserAgentParser>(static _ => UserAgentParser.Shared);
+        services.TryAddSingleton<IGeolocationProvider>(static _ => NoOpGeolocationProvider.Instance);
         services.AddScoped<ILocalAuthService, LocalAuthService>();
         services.AddScoped<IOAuthAuthService, OAuthAuthService>();
         services.AddScoped<IPasswordService, PasswordService>();

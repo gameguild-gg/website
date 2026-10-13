@@ -77,9 +77,13 @@ public class AbacPolicyRepository(DbContext context) : IAbacPolicyRepository
 /// <summary>
 ///     EF Core repository for Conditional Policies
 /// </summary>
-public class ConditionalPolicyRepository(DbContext context) : IConditionalPolicyRepository
+public class ConditionalPolicyRepository(
+    DbContext context,
+    IPolicyVersionSnapshotService policyVersionSnapshotService) : IConditionalPolicyRepository
 {
     private readonly DbContext _context = context ?? throw new ArgumentNullException(nameof(context));
+    private readonly IPolicyVersionSnapshotService _policyVersionSnapshotService =
+        policyVersionSnapshotService ?? throw new ArgumentNullException(nameof(policyVersionSnapshotService));
     private DbSet<ConditionalPolicy> DbSet => _context.Set<ConditionalPolicy>();
 
     public async Task<ConditionalPolicy> CreateAsync(
@@ -88,6 +92,9 @@ public class ConditionalPolicyRepository(DbContext context) : IConditionalPolicy
     )
     {
         await DbSet.AddAsync(policy, cancellationToken).ConfigureAwait(false);
+        await _policyVersionSnapshotService
+            .SnapshotConditionalPolicyAsync(policy, PolicyVersionChangeType.Created, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return policy;
     }
@@ -104,6 +111,9 @@ public class ConditionalPolicyRepository(DbContext context) : IConditionalPolicy
     {
         policy.UpdatedAt = SystemClock.UtcNow;
         DbSet.Update(policy);
+        await _policyVersionSnapshotService
+            .SnapshotConditionalPolicyAsync(policy, PolicyVersionChangeType.Updated, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -113,6 +123,9 @@ public class ConditionalPolicyRepository(DbContext context) : IConditionalPolicy
         if (policy != null)
         {
             DbSet.Remove(policy);
+            await _policyVersionSnapshotService
+                .SnapshotConditionalPolicyAsync(policy, PolicyVersionChangeType.Deleted, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }

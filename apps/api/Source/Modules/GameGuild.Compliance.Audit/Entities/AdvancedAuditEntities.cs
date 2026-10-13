@@ -114,86 +114,6 @@ public sealed class RetentionPolicySimulation : EntityBase
 }
 
 /// <summary>
-/// PII redaction rule for structured log fields.
-/// </summary>
-public sealed class PiiRedactionRule : EntityBase
-{
-    public new Guid? TenantId { get; private set; }
-    public string RuleName { get; private set; } = string.Empty;
-    public string? Description { get; private set; }
-    public bool IsEnabled { get; private set; }
-    public int Priority { get; private set; }
-
-    // Field targeting
-    public string[] TargetFields { get; private set; } = Array.Empty<string>();
-    public string[] TargetEventTypes { get; private set; } = Array.Empty<string>();
-    public string? FieldPathPattern { get; private set; }
-
-    // Detection
-    public PiiDetectionMethod DetectionMethod { get; private set; }
-    public string? RegexPattern { get; private set; }
-    public PiiDataType[] PiiDataTypes { get; private set; } = Array.Empty<PiiDataType>();
-
-    // Redaction strategy
-    public RedactionStrategy RedactionStrategy { get; private set; }
-    public string? RedactionReplacement { get; private set; }
-    public int? PreserveCharacters { get; private set; }
-    public bool UseTokenization { get; private set; }
-
-    private PiiRedactionRule() { }
-
-    public static PiiRedactionRule Create(
-        Guid tenantId,
-        string ruleName,
-        string[] targetFields,
-        PiiDetectionMethod detectionMethod,
-        RedactionStrategy redactionStrategy)
-    {
-        return new PiiRedactionRule
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
-            RuleName = ruleName,
-            TargetFields = targetFields,
-            DetectionMethod = detectionMethod,
-            RedactionStrategy = redactionStrategy,
-            IsEnabled = true,
-            Priority = 100
-        };
-    }
-}
-
-public enum PiiDetectionMethod
-{
-    Regex = 0,
-    PredefinedPattern = 1,
-    MachineLearning = 2,
-    Dictionary = 3
-}
-
-public enum PiiDataType
-{
-    Email = 0,
-    Phone = 1,
-    Ssn = 2,
-    CreditCard = 3,
-    IpAddress = 4,
-    Address = 5,
-    Name = 6,
-    DateOfBirth = 7,
-    Custom = 99
-}
-
-public enum RedactionStrategy
-{
-    FullRedaction = 0,
-    PartialMasking = 1,
-    Tokenization = 2,
-    Hashing = 3,
-    Removal = 4
-}
-
-/// <summary>
 /// Saved audit query for reuse and role-based access.
 /// </summary>
 public sealed class SavedAuditQuery : EntityBase
@@ -209,9 +129,13 @@ public sealed class SavedAuditQuery : EntityBase
     public string[] AllowedRoles { get; private set; } = Array.Empty<string>();
     public Guid[] AllowedUserIds { get; private set; } = Array.Empty<Guid>();
 
+    // Change tracking: bumped on every update, mirrored into SavedAuditQueryRevision rows.
+    public int CurrentRevision { get; private set; } = 1;
+
     // Usage tracking
     public int ExecutionCount { get; private set; }
     public DateTime? LastExecutedAt { get; private set; }
+    public Guid? LastExecutedByUserId { get; private set; }
 
     private SavedAuditQuery() { }
 
@@ -220,23 +144,42 @@ public sealed class SavedAuditQuery : EntityBase
         string queryName,
         string queryDsl,
         Guid createdByUserId,
-        bool isPublic = false)
+        bool isPublic = false,
+        string? description = null)
     {
         return new SavedAuditQuery
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             QueryName = queryName,
+            Description = description,
             QueryDsl = queryDsl,
             CreatedByUserId = createdByUserId,
-            IsPublic = isPublic
+            IsPublic = isPublic,
+            CurrentRevision = 1
         };
     }
 
-    public void RecordExecution()
+    /// <summary>
+    /// Apply an update and advance the revision counter. Returns the new revision number so the
+    /// caller can persist the matching <see cref="SavedAuditQueryRevision"/> snapshot.
+    /// </summary>
+    public int UpdateDetails(string queryName, string? description, string queryDsl, bool isPublic)
+    {
+        QueryName = queryName;
+        Description = description;
+        QueryDsl = queryDsl;
+        IsPublic = isPublic;
+        CurrentRevision++;
+        UpdatedAt = SystemClock.UtcNow;
+        return CurrentRevision;
+    }
+
+    public void RecordExecution(Guid executedByUserId)
     {
         ExecutionCount++;
         LastExecutedAt = SystemClock.UtcNow;
+        LastExecutedByUserId = executedByUserId;
         UpdatedAt = SystemClock.UtcNow;
     }
 }

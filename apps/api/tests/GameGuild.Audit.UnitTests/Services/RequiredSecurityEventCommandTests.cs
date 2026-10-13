@@ -99,6 +99,7 @@ public sealed class RequiredSecurityEventCommandTests
 
         public CaptureFixture() => Logger = new SecurityEventLogger(scopeFactory.Object, new HttpContextAccessor(),
             spool.Object, Evaluator.Object, Options.Create(new SecurityEventPipelineOptions()), fallback.Object,
+            new NoopPiiRedactionService(),
             NullLogger<SecurityEventLogger>.Instance);
 
         public void AssertNoIndependentTransport()

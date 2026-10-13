@@ -33,17 +33,23 @@ public interface IPaymentGateway
 
     /// <summary>
     ///     Retrieves the provider's authoritative state for an existing payment attempt.
+    ///     <paramref name="providerId" /> routes the inquiry to the gateway that owns the
+    ///     external object when multiple gateways are registered (issue #413).
     /// </summary>
     Task<GatewayPaymentResult> GetPaymentAsync(
         string externalTransactionId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string? providerId = null);
 
     /// <summary>
     ///     Cancels a provider payment attempt before a replacement attempt may be created.
+    ///     <paramref name="providerId" /> routes the cancellation to the gateway that owns the
+    ///     external object when multiple gateways are registered (issue #413).
     /// </summary>
     Task<GatewayPaymentCancellationResult> CancelPaymentAsync(
         string externalTransactionId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string? providerId = null);
 
     /// <summary>
     ///     Processes a refund through this gateway
@@ -53,6 +59,27 @@ public interface IPaymentGateway
     /// <returns>Result of the refund processing</returns>
     Task<GatewayRefundResult> ProcessRefundAsync(
         GatewayRefundRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Accepts a gateway dispute, acknowledging it as lost so the disputed funds are
+    ///     returned to the customer (issue #419).
+    /// </summary>
+    /// <param name="request">Dispute action request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result of the dispute action</returns>
+    Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Challenges a gateway dispute by submitting the merchant evidence (issue #419).
+    /// </summary>
+    /// <param name="request">Dispute challenge request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result of the dispute action</returns>
+    Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -121,7 +148,9 @@ public sealed record GatewayPaymentResult(
     PaymentStatus Status,
     DateTime ProcessedAt,
     string? ClientActionToken = null,
-    GatewayProviderMapping? ProviderMapping = null);
+    GatewayProviderMapping? ProviderMapping = null,
+    string? ProviderId = null,
+    GatewayFailureKind FailureKind = GatewayFailureKind.NotApplicable);
 
 /// <summary>
 ///     Immutable provider identity for one payment object and monetary leg.
@@ -132,6 +161,43 @@ public sealed record GatewayProviderMapping(
     string ProviderObjectId,
     string ProviderObjectType,
     string ProviderMonetaryLeg);
+
+/// <summary>
+///     Failure classification used by the multi-gateway failover orchestration
+///     (issue #413). Adapters must classify every failed result; the fail-closed
+///     default is <see cref="NotApplicable" />, meaning "not eligible for any
+///     automated retry or failover" — an unclassified failure never reroutes.
+/// </summary>
+public enum GatewayFailureKind
+{
+    /// <summary>
+    ///     The result is not a failure, or the adapter does not classify failures.
+    ///     Never retried and never failed over (fail-closed default).
+    /// </summary>
+    NotApplicable = 0,
+
+    /// <summary>
+    ///     The gateway itself failed transiently (transport error, rate limit, 5xx)
+    ///     without confirming a provider payment object. Eligible for a same-gateway
+    ///     retry and, once that budget is spent, failover to the next-priority gateway.
+    /// </summary>
+    RetriableGatewayFailure = 1,
+
+    /// <summary>
+    ///     The gateway answered with a definitive negative (for example a card
+    ///     decline or a configuration error). Retrying — on this gateway or any
+    ///     other — is not attempted automatically.
+    /// </summary>
+    TerminalDecline = 2,
+
+    /// <summary>
+    ///     The request may have reached the gateway but the outcome could not be
+    ///     determined (timeout after send, 5xx on a confirm call). Replaying the
+    ///     charge anywhere risks a double capture, so the attempt is left for
+    ///     provider reconciliation instead of being retried or failed over.
+    /// </summary>
+    OutcomeUnknown = 3
+}
 
 /// <summary>Result of closing a provider payment attempt.</summary>
 public sealed record GatewayPaymentCancellationResult(
@@ -147,7 +213,9 @@ public sealed record GatewayRefundRequest(
     string IdempotencyKey,
     string OriginalTransactionId,
     decimal? Amount,
-    string? Reason);
+    string? Reason,
+    string? ProviderId = null,
+    string? Currency = null);
 
 /// <summary>
 ///     Result of a refund processing attempt
@@ -158,7 +226,42 @@ public sealed record GatewayRefundResult(
     decimal AmountRefunded,
     string? ErrorCode,
     string? ErrorMessage,
-    DateTime ProcessedAt);
+    DateTime ProcessedAt,
+    GatewayFailureKind FailureKind = GatewayFailureKind.NotApplicable);
+
+/// <summary>
+///     Request to accept a gateway dispute (issue #419). Accepting acknowledges the dispute
+/// as lost; the actual money movement is settled by the gateway.
+/// </summary>
+/// <param name="IdempotencyKey">Idempotency key for the gateway call.</param>
+/// <param name="ExternalDisputeId">Gateway dispute identifier.</param>
+/// <param name="ProviderId">
+///     Owner gateway for the disputed payment; dispute actions are pinned to it and never
+///     rerouted (issue #413 routing rules).
+/// </param>
+public sealed record GatewayDisputeActionRequest(
+    string IdempotencyKey,
+    string ExternalDisputeId,
+    string? ProviderId = null);
+
+/// <summary>
+///     Request to challenge a gateway dispute by submitting merchant evidence (issue #419).
+/// </summary>
+/// <param name="IdempotencyKey">Idempotency key for the gateway call.</param>
+/// <param name="ExternalDisputeId">Gateway dispute identifier.</param>
+/// <param name="EvidenceSummary">Free-text evidence bundle submitted with the challenge.</param>
+/// <param name="ProviderId">Owner gateway for the disputed payment (issue #413 routing rules).</param>
+public sealed record GatewayDisputeChallengeRequest(
+    string IdempotencyKey,
+    string ExternalDisputeId,
+    string? EvidenceSummary = null,
+    string? ProviderId = null);
+
+/// <summary>Result of a dispute accept or challenge action (issue #419).</summary>
+public sealed record GatewayDisputeActionResult(
+    bool Success,
+    string? ErrorCode,
+    string? ErrorMessage);
 
 /// <summary>
 ///     Request for creating a customer
@@ -228,5 +331,7 @@ public enum PaymentStatus
     /// <summary>Payment was refunded</summary>
     Refunded,
     /// <summary>Payment is disputed</summary>
-    Disputed
+    Disputed,
+    /// <summary>Payment was partially refunded; further refunds allowed up to the original amount (issue #419)</summary>
+    PartiallyRefunded
 }

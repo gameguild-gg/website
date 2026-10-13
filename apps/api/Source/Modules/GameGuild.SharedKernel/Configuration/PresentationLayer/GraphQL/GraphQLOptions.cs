@@ -11,6 +11,12 @@ public sealed class GraphQLOptions : BaseOptions
 
     public string Endpoint { get; set; } = "/graphql";
 
+    /// <summary>
+    ///     Schema-authorization settings for the GraphQL authorization framework
+    ///     (issue #335): permission-aware schema visibility and introspection control.
+    /// </summary>
+    public GraphQLSchemaAuthorizationOptions SchemaAuthorization { get; set; } = new();
+
     public override void Validate()
     {
         base.Validate();
@@ -23,6 +29,8 @@ public sealed class GraphQLOptions : BaseOptions
         {
             throw new InvalidOperationException("GraphQL endpoint must be an absolute application path without a query or fragment.");
         }
+
+        SchemaAuthorization.Validate();
     }
 
     public static GraphQLOptions CreateDefault() { return new GraphQLOptions(); }

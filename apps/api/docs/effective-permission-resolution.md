@@ -43,7 +43,15 @@ warning is logged. Invalid context never falls back to global defaults.
 8. **Resource grants** — `ResourceUserPermission` rows for the current user and tenant.
    They contribute **only** when the context carries the exact matching
    (`ResourceType`, `ResourceId`) pair.
-9. **External authorization decisions** (issue #146) — a registered
+9. **Owner override** (issue #372) — runs right after the resource-grant layer; see
+   [Owner override (issue #372)](#owner-override-issue-372). When the context names an
+   exact resource and the user holds an unrevoked, unexpired ownership designation for
+   that (tenant, user, resource) tuple, the owner's recorded permission set is minted
+   both unqualified (tenant-layer parity) and as
+   `{ResourceType}.{ResourceId}.{Permission}` (DAC resource-layer parity), attributed
+   `PermissionSource.Owner`. The deny interaction is configurable and the default is
+   fail-closed.
+10. **External authorization decisions** (issue #146) — a registered
    `IExternalAuthorizationDecisionProvider` (for example the OAuth2 client-credentials
    HTTP provider under `Authorization:ExternalDecision`) is consulted for every
    locally-allowed permission after all local layers and evaluation extensions. The
@@ -62,7 +70,9 @@ only while **unrevoked and unexpired**.
   removes the permission regardless of which layer granted it.
 - **Absent = deny:** a permission granted by no layer is denied (deny-by-default, #327).
   No implicit access is introduced by resolution itself.
-- **Non-deniable:** only the static system-account wildcard survives an explicit deny.
+- **Non-deniable:** only the static system-account wildcard survives an explicit deny —
+  plus, under the opt-in `AlwaysAllow` mode, owner-minted grants (issue #372). The
+  default `AllowUnlessDenied` mode keeps deny-wins over owner (fail-closed).
 - **Inheritance:** role hierarchy is honored — permissions of junior roles flow into
   senior roles through layer 2, and provider-level static role permissions through
   layer 3.
@@ -153,6 +163,65 @@ the OAuth2 client-credentials contract above. External **authentication** protoc
 (including SAML identity assertion) are a separate concern handled by the
 authentication modules, not by this layer.
 
+## Owner override (issue #372)
+
+Ownership semantics (minimal v1):
+
+- **Who is an owner.** The unrevoked `ResourceUserPermission` row flagged
+  `IsOwner = true` for the exact (tenant, user, `ResourceType`, `ResourceId`) tuple.
+  Ownership is **recorded on resource creation** through the creator auto-grant
+  (`IResourcePermissionService.GrantOwnerPermissionsOnCreationAsync`); the entity's
+  `CreatedBy => GrantedByUserId` mapping is the audit identity of the creator.
+- **How ownership moves.** Only through the explicit `TransferOwnershipCommand` —
+  guarded (current owner within their tenant, tenant admin of the resource's tenant, or
+  system admin; acting user from `IActorContextAccessor`, never the request body),
+  versioned (`ITenantSecurityVersionStore` bump for the resource's tenant) and audited
+  (`PermissionOperationType.TransferOwnership`). The outgoing owner row is
+  **soft-revoked, never hard-deleted** (soft-delete parity, aligns with the #360
+  finding), and the audit entry's `OldValue`/`NewValue` snapshots of the pre/post owner
+  rows double as the **restore point** (`OwnershipTransferResult.RestorePointAuditLogId`).
+
+### Precedence modes
+
+Configured under `Authorization:OwnerOverride:Mode` (default `AllowUnlessDenied`):
+
+| Mode | Owner grant-check on the owned resource | Explicit deny interaction |
+|---|---|---|
+| `Off` | no override at all (pre-#372 behavior; owner row keeps contributing only through the regular resource-grant layer) | denies win as usual |
+| `AllowUnlessDenied` **(default)** | short-circuits to allow for owner-scoped operations | **deny-wins over owner** — any explicit deny removes the owner-minted permission (fail-closed) |
+| `AlwaysAllow` | short-circuits to allow for owner-scoped operations | owner-minted grants are **non-deniable**, like the static system-account wildcard |
+
+- **Fail-closed on unknown modes:** an unknown, empty or null mode value is treated as
+  `Off` at evaluation time with a warning log — the override only ever widens access, so
+  an unparseable configuration can never silently grant it. Startup is deliberately not
+  crashed by a mode typo.
+- Owner overrides mint only the owner's recorded permission set (never `*` and never the
+  non-delegable `admin:*`), unqualified for the tenant layer and
+  `{ResourceType}.{ResourceId}.{Permission}` for the DAC resource layer, so
+  `IDacPermissionResolver` resource-layer checks succeed for owners.
+- **Context isolation:** ownership designations never contribute outside their exact
+  resource context or tenant; the owner override applies nothing to tenant-wide
+  resolutions without a resource.
+- **Audit levels:** override **use** is audited at DEBUG log level only (the decision
+  path is high-frequency; a durable entry per evaluation would drown the audit trail) —
+  durable audit coverage applies to ownership **changes** (the transfer command).
+
+### Temporal precedence (issue #363 companion)
+
+When an owner override and a time-bound grant conflict, **the more restrictive expiry
+wins**:
+
+- A ownership designation whose own `ExpiresAt` has lapsed applies **no** override
+  (fail-closed), even though the row is unrevoked.
+- When another in-force time-bound grant of the same resource contributes a permission
+  the override mints, the override's grants are bounded by the **earliest** expiry among
+  the designation and those grants. The bound is reported on
+  `EffectivePermissions.OwnerOverride.EffectiveThroughUtc` (`null` = indefinite); the
+  override's grants are only valid while that instant is in the future.
+
+This is the owner-dimension instantiation of the #363 temporal-precedence decision;
+DENY-WINS and most-specific-wins remain the standing general model for grant conflicts.
+
 ## Context isolation
 
 - Only grants whose `UserId`/`TenantId` match the context contribute; grants from
@@ -195,6 +264,11 @@ Focused tests: `apps/api/tests/GameGuild.Identity.Authorization.UnitTests/Servic
 inheritance, JIT elevation grants, tenant/resource context isolation,
 inactive/expired/revoked grants, invalid/missing contexts, system-account wildcard
 protection, delegable-wildcard exclusion, determinism),
+`apps/api/tests/GameGuild.Identity.Authorization.UnitTests/Services/EffectivePermissionResolverOwnerOverrideTests.cs`
+(owner-override precedence matrix per mode, fail-closed unknown modes, temporal
+precedence, DAC resource-layer parity, debug-level override-use audit),
+`apps/api/tests/GameGuild.Identity.Authorization.UnitTests/Commands/TransferOwnershipCommandHandlerTests.cs`
+(transfer authorization matrix, versioned+audited mutation, soft-delete restore point),
 `apps/api/tests/GameGuild.Identity.Authorization.UnitTests/Services/PermissionQueryServiceTests.cs`
 (fail-closed delegation of the query surface), and
 `apps/api/tests/GameGuild.Identity.Authorization.UnitTests/JitElevationEnforcementTests.cs`

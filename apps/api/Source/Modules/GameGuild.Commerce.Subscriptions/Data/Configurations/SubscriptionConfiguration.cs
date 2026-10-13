@@ -53,6 +53,13 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
 
         builder.Property(x => x.ExternalCustomerId).HasMaxLength(100);
 
+        // Local payment-method registry reference (issue #414): plain indexed column,
+        // no cross-module FK; removal safety is enforced by the Payments module.
+        builder.Property(x => x.PaymentMethodId);
+
+        builder.HasIndex(x => new { x.TenantId, x.PaymentMethodId })
+            .HasDatabaseName("ix_subscriptions_tenant_payment_method");
+
         // Configure cancellation
         builder.Property(x => x.CancelledAt);
 

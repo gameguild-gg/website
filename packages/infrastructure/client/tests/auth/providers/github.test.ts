@@ -137,6 +137,41 @@ describe('GitHubProvider', () => {
       });
     });
 
+    it('sends redirectUri and tenantId in the callback body when provided', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          accessToken: 'token',
+          userId: 'user-1',
+          email: 'test@example.com',
+        }),
+      });
+      globalThis.fetch = mockFetch;
+
+      const provider = GitHubProvider({ clientId: 'id', clientSecret: 'secret' });
+      await provider.handleCallback(
+        'http://localhost:8080',
+        'auth-code-123',
+        'state-value',
+        'https://web.example.com/api/auth/callback/github',
+        'tenant-9',
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8080/v1/auth/github:callback',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: 'auth-code-123',
+            state: 'state-value',
+            redirectUri: 'https://web.example.com/api/auth/callback/github',
+            tenantId: 'tenant-9',
+          }),
+        }),
+      );
+    });
+
     it('uses backend user values when top-level identity is absent', async () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,

@@ -92,7 +92,18 @@ public static class AuditModule
 
         // Register audit services
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IAuditReplayCaptureService, AuditReplayCaptureService>();
         services.TryAddSingleton(TimeProvider.System);
+
+        // PII redaction & tokenization pipeline (issue #192): rule cache, deterministic HMAC tokenizer,
+        // the pipeline itself, its administration surface, and the save interceptor applied at the
+        // central audit sink.
+        services.AddSingleton<IPiiRedactionRuleProvider, PiiRedactionRuleProvider>();
+        services.AddSingleton<IPiiTokenSource, PiiHmacTokenizer>();
+        services.AddScoped<IPiiRedactionService, PiiRedactionService>();
+        services.AddScoped<IPiiRedactionAdminService, PiiRedactionAdminService>();
+        services.AddScoped<AuditLogPiiRedactionInterceptor>();
+        services.AddHostedService<PiiRedactionRuleRefreshService>();
 
         // Durable security event pipeline: taxonomy-driven capture, alerting, and retention enforcement.
         services.AddSingleton<ISecurityEventSpool>(provider =>
@@ -137,6 +148,48 @@ public static class AuditModule
 
         // Register security audit aggregator facade for backward compatibility
         services.AddScoped<ISecurityAuditAggregator, SecurityAuditAggregator>();
+
+        // Audit query DSL: typed filter model, fail-closed parser, bounded executor, saved views.
+        services.AddOptions<AuditQueryDslOptions>()
+            .Configure<IConfiguration>((dslOptions, configuration) =>
+            {
+                var section = configuration.GetSection(AuditQueryDslOptions.ConfigurationSection);
+                if (int.TryParse(section["MaxPageSize"], out var maxPageSize))
+                {
+                    dslOptions.MaxPageSize = maxPageSize;
+                }
+
+                if (int.TryParse(section["MaxRowsScanned"], out var maxRowsScanned))
+                {
+                    dslOptions.MaxRowsScanned = maxRowsScanned;
+                }
+
+                if (int.TryParse(section["DefaultLookbackDays"], out var defaultLookbackDays))
+                {
+                    dslOptions.DefaultLookbackDays = defaultLookbackDays;
+                }
+
+                if (int.TryParse(section["DefaultTimeoutSeconds"], out var defaultTimeoutSeconds))
+                {
+                    dslOptions.DefaultTimeoutSeconds = defaultTimeoutSeconds;
+                }
+
+                if (int.TryParse(section["MaxTimeoutSeconds"], out var maxTimeoutSeconds))
+                {
+                    dslOptions.MaxTimeoutSeconds = maxTimeoutSeconds;
+                }
+            })
+            .Validate(
+                dslOptions => dslOptions.MaxPageSize > 0
+                              && dslOptions.MaxRowsScanned > 0
+                              && dslOptions.DefaultLookbackDays > 0
+                              && dslOptions.DefaultTimeoutSeconds > 0
+                              && dslOptions.MaxTimeoutSeconds >= dslOptions.DefaultTimeoutSeconds,
+                $"{AuditQueryDslOptions.ConfigurationSection} bounds must be positive and MaxTimeoutSeconds must cover DefaultTimeoutSeconds.");
+        services.AddSingleton<IAuditQueryDslParser, AuditQueryDslParser>();
+        services.AddScoped<IAuditQueryDslExecutor, AuditQueryDslExecutor>();
+        services.AddScoped<ISavedAuditQueryRepository, SavedAuditQueryRepository>();
+        services.AddScoped<ISavedAuditQueryService, SavedAuditQueryService>();
 
         return services;
     }

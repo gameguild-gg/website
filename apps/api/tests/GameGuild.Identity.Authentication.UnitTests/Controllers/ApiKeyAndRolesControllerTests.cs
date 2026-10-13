@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Context.Actors;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -184,7 +185,7 @@ public sealed class RolesControllerTests
                 .ContainSingle()
                 .Subject;
 
-            authorize.Policy.Should().Be("SystemAdmin");
+            authorize.Policy.Should().Be(Policies.RolesManage);
         }
     }
 
@@ -200,7 +201,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((request, _) => captured = (GetRolesQuery)request)
             .ReturnsAsync(response);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
         var tenantId = Guid.NewGuid();
 
         var result = await controller.GetAll(tenantId, includeInactive: true, CancellationToken.None);
@@ -225,7 +226,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((request, _) => captured = (GetRoleByIdQuery)request)
             .ReturnsAsync(role);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.GetById(role.Id, CancellationToken.None);
 
@@ -246,7 +247,7 @@ public sealed class RolesControllerTests
             .Setup(x => x.Send(It.IsAny<GetRoleByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDto?)null);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.GetById(roleId, CancellationToken.None);
 
@@ -273,7 +274,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((requestValue, _) => captured = (CreateRoleCommand)requestValue)
             .ReturnsAsync(role);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.Create(request, CancellationToken.None);
 
@@ -309,7 +310,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((requestValue, _) => captured = (UpdateRoleCommand)requestValue)
             .ReturnsAsync(role);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.Update(roleId, request, CancellationToken.None);
 
@@ -336,7 +337,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((requestValue, _) => captured = (DeleteRoleCommand)requestValue)
             .ReturnsAsync(true);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.Delete(roleId, CancellationToken.None);
 
@@ -358,7 +359,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((requestValue, _) => captured = (GetUserRolesQuery)requestValue)
             .ReturnsAsync(roles);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.GetUserRoles(userId, includeExpired: true, CancellationToken.None);
 
@@ -388,7 +389,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((requestValue, _) => captured = (AssignRoleToUserCommand)requestValue)
             .ReturnsAsync(userRole);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
         var assignedBy = Guid.NewGuid();
         controller.ControllerContext = new ControllerContext
         {
@@ -437,7 +438,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((requestValue, _) => captured = (BulkAssignRolesCommand)requestValue)
             .ReturnsAsync(response);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.BulkAssignRoles(command, CancellationToken.None);
 
@@ -458,7 +459,7 @@ public sealed class RolesControllerTests
             .Callback<object, CancellationToken>((requestValue, _) => captured = (RemoveRoleFromUserCommand)requestValue)
             .ReturnsAsync(true);
 
-        var controller = new RolesController(NullLogger<RolesController>.Instance, sender.Object);
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: true);
 
         var result = await controller.RemoveRoleFromUser(request, CancellationToken.None);
 
@@ -466,6 +467,142 @@ public sealed class RolesControllerTests
         captured!.UserId.Should().Be(request.UserId);
         captured.RoleId.Should().Be(request.RoleId);
         result.Should().BeOfType<NoContentResult>();
+    }
+
+    // ─── Issue #294: delegated role-administration clamping ───
+
+    [Fact]
+    public async Task Create_ByDelegatedActor_ForOwnTenant_IsAllowed()
+    {
+        var sender = new Mock<ISender>();
+        var tenantId = Guid.NewGuid();
+        var request = new CreateRoleRequest
+        {
+            Name = "Editor",
+            Description = "Editor role",
+            Permissions = ["content.edit"],
+            TenantId = tenantId
+        };
+        var role = CreateRoleDto(name: request.Name, tenantId: tenantId);
+
+        sender
+            .Setup(x => x.Send(It.IsAny<CreateRoleCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(role);
+
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: false, tenantId: tenantId,
+            permissions: [ManageRolesPermission.Keys.Manage]);
+
+        var result = await controller.Create(request, CancellationToken.None);
+
+        result.Should().BeOfType<CreatedAtActionResult>();
+    }
+
+    [Fact]
+    public async Task Create_ByDelegatedActor_ForGlobalRole_IsForbidden()
+    {
+        var sender = new Mock<ISender>();
+        var request = new CreateRoleRequest
+        {
+            Name = "Global",
+            Description = "Global role",
+            Permissions = ["users.read"],
+            TenantId = null
+        };
+
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: false, tenantId: Guid.NewGuid(),
+            permissions: [ManageRolesPermission.Keys.Manage]);
+
+        var result = await controller.Create(request, CancellationToken.None);
+
+        result.Should().BeOfType<ForbidResult>();
+        sender.Verify(x => x.Send(It.IsAny<CreateRoleCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_ByDelegatedActor_ForForeignTenantRole_IsForbidden()
+    {
+        var sender = new Mock<ISender>();
+        var foreignTenant = Guid.NewGuid();
+        var role = CreateRoleDto(tenantId: foreignTenant);
+
+        sender
+            .Setup(x => x.Send(It.IsAny<GetRoleByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(role);
+
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: false, tenantId: Guid.NewGuid(),
+            permissions: [ManageRolesPermission.Keys.Manage]);
+
+        var result = await controller.Update(role.Id, new UpdateRoleRequest { Name = "Escalated" }, CancellationToken.None);
+
+        result.Should().BeOfType<ForbidResult>();
+        sender.Verify(x => x.Send(It.IsAny<UpdateRoleCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_ByDelegatedActor_ForGlobalRole_IsForbidden()
+    {
+        var sender = new Mock<ISender>();
+        var role = CreateRoleDto(tenantId: null); // global role
+
+        sender
+            .Setup(x => x.Send(It.IsAny<GetRoleByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(role);
+
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: false, tenantId: Guid.NewGuid(),
+            permissions: [ManageRolesPermission.Keys.Manage]);
+
+        var result = await controller.Delete(role.Id, CancellationToken.None);
+
+        result.Should().BeOfType<ForbidResult>();
+        sender.Verify(x => x.Send(It.IsAny<DeleteRoleCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_ByDelegatedActor_ForOwnTenantRole_IsAllowed()
+    {
+        var sender = new Mock<ISender>();
+        var tenantId = Guid.NewGuid();
+        var role = CreateRoleDto(tenantId: tenantId);
+
+        sender
+            .Setup(x => x.Send(It.IsAny<GetRoleByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(role);
+        sender
+            .Setup(x => x.Send(It.IsAny<UpdateRoleCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(role);
+
+        var controller = CreateRolesController(sender, actorIsSystemAdmin: false, tenantId: tenantId,
+            permissions: [ManageRolesPermission.Keys.Manage]);
+
+        var result = await controller.Update(role.Id, new UpdateRoleRequest { Name = "Renamed" }, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+    }
+
+    private static RolesController CreateRolesController(
+        Mock<ISender> sender,
+        bool actorIsSystemAdmin,
+        Guid? tenantId = null,
+        string[]? permissions = null)
+    {
+        var actor = new ActorContext
+        {
+            IsAuthenticated = true,
+            ActorKind = ActorKind.User,
+            SubjectId = Guid.NewGuid().ToString(),
+            TenantId = tenantId,
+            Permissions = new HashSet<string>(permissions ?? [], StringComparer.OrdinalIgnoreCase),
+            Roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "SystemAdmin" }
+        };
+        if (!actorIsSystemAdmin)
+        {
+            actor = actor with { Roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) };
+        }
+
+        var actorContextAccessor = new Mock<IActorContextAccessor>();
+        actorContextAccessor.SetupGet(accessor => accessor.ActorContext).Returns(actor);
+
+        return new RolesController(NullLogger<RolesController>.Instance, sender.Object, actorContextAccessor.Object);
     }
 
     private static RoleDto CreateRoleDto(Guid? id = null, string name = "Admin", Guid? tenantId = null)

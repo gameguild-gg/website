@@ -40,7 +40,8 @@ public class LocalAuthService(
     TimeProvider? timeProvider = null,
     IOptions<SignInComplianceGateOptions>? complianceGateOptions = null,
     ISignInCompliancePolicy? compliancePolicy = null,
-    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null
+    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null,
+    IOptions<LocalSignInPolicyOptions>? localSignInPolicyOptions = null
 ) : ILocalAuthService
 {
     private const string ComplianceDeniedAuditAction = "Authentication.ComplianceDenied";
@@ -137,7 +138,7 @@ public class LocalAuthService(
                 catch (Exception exception)
                 {
                     // Risk analysis and central audit must still run when the local attempt service is unavailable.
-                    logger.LogError(exception, "Could not record failed authentication attempt for user {UserId}", userId);
+                    logger.LogError("Could not record failed authentication attempt for user {UserId}: {ErrorType}", userId, exception.GetType().FullName);
                 }
 
                 var failedAttemptContext = CreateAttemptContext(
@@ -213,6 +214,12 @@ public class LocalAuthService(
             await DefaultTenantMembershipProvisioner.EnsureAsync(sender, authenticatedUserId, cancellationToken).ConfigureAwait(false);
             var tenantAccessContext = await ResolveTenantAccessContextAsync(authenticatedUserId, request.TenantId, cancellationToken).ConfigureAwait(false);
             RequireActiveTenantAccess(tenantAccessContext);
+            // Evaluate server configuration using the resolved active tenant, never a caller-supplied policy.
+            var localSignInPolicy = localSignInPolicyOptions?.Value ?? new LocalSignInPolicyOptions();
+            if (localSignInPolicy.RequiresVerifiedEmail(tenantAccessContext.TenantId) && !authenticatedUser.IsEmailVerified)
+            {
+                throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
+            }
             // Sign-in compliance gate (issue #267): after credential validation and tenant
             // access are confirmed, but before any token is generated or any session is
             // created, the compliance policy decides whether the sign-in may proceed.
@@ -383,7 +390,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during authentication for user {UserId}", userId);
+            logger.LogError("Unexpected error during authentication for user {UserId}: {ErrorType}", userId, ex.GetType().FullName);
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
@@ -395,7 +402,7 @@ public class LocalAuthService(
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Could not record failed authentication attempt after a system error");
+                logger.LogError("Could not record failed authentication attempt after a system error: {ErrorType}", exception.GetType().FullName);
             }
             await CompleteTimingOnceAsync().ConfigureAwait(false);
 
@@ -454,7 +461,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not analyze failed authentication attempt for user {UserId}", attemptContext.UserId);
+            logger.LogError("Could not analyze failed authentication attempt for user {UserId}: {ErrorType}", attemptContext.UserId, exception.GetType().FullName);
             return null;
         }
     }
@@ -469,7 +476,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not analyze authentication behavior for user {UserId}", userId);
+            logger.LogError("Could not analyze authentication behavior for user {UserId}: {ErrorType}", userId, exception.GetType().FullName);
             return null;
         }
     }
@@ -541,7 +548,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not forward authentication threat event {ActionType} to SIEM", actionType);
+            logger.LogError("Could not forward authentication threat event {ActionType} to SIEM: {ErrorType}", actionType, exception.GetType().FullName);
         }
 
         if (auditEventSink is null)
@@ -580,7 +587,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not record authentication risk event {ActionType}", actionType);
+            logger.LogError("Could not record authentication risk event {ActionType}: {ErrorType}", actionType, exception.GetType().FullName);
         }
     }
 
@@ -709,7 +716,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error during user registration");
+            logger.LogError("Error during user registration: {ErrorType}", ex.GetType().FullName);
 
             throw;
         }
@@ -865,6 +872,8 @@ public class LocalAuthService(
                      sessionId,
                      replacementTokenHash,
                      refreshTokenExpiresAt,
+                     ipAddress,
+                     userAgent,
                      cancellationToken).ConfigureAwait(false))
         {
             logger.LogWarning("Refresh token session {SessionId} was no longer active for user {UserId}; invalidating sessions", sessionId, userId);
@@ -1003,7 +1012,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Sign-in compliance evaluation failed for user {UserId}", context.UserId);
+            logger.LogError("Sign-in compliance evaluation failed for user {UserId}: {ErrorType}", context.UserId, exception.GetType().FullName);
 
             return gate.FailClosed
                 ? SignInComplianceDecision.Deny(SignInComplianceReasons.EvaluationFailed)
@@ -1050,7 +1059,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not record authentication compliance event {ActionType}", actionType);
+            logger.LogError("Could not record authentication compliance event {ActionType}: {ErrorType}", actionType, exception.GetType().FullName);
         }
     }
 
