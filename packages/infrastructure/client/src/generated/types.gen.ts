@@ -1735,6 +1735,22 @@ export interface CommerceBillingInvoicePaymentRetryResult {
 /** Invoice status enumeration with monotonic transitions */
 export type CommerceBillingInvoiceStatus = 'Draft' | 'Open' | 'Paid' | 'Void' | 'PastDue' | 'Uncollectible';
 
+/** Validation outcome for one stored calculation (issue #417). */
+export interface CommerceBillingPricingCalculationValidationResult {
+  /** Ledger entry id. */
+  calculationId?: string;
+  /** Whether the recomputation diverges from the stored final. */
+  drifted?: boolean;
+  /** Final amount recomputed from the recorded breakdown. */
+  recomputedFinalAmount?: number;
+  /** Final amount as persisted. */
+  storedFinalAmount?: number;
+  /** True when the recomputation matches and no invariant is violated. */
+  valid?: boolean;
+  /** Invariant violations in fail-closed detail. */
+  violations?: string[] | null;
+}
+
 /** Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
 the drift-validation outcome (recomputed amount, reason). */
 export interface CommerceBillingPricingDecisionLedgerEntryDetailDto {
@@ -1949,6 +1965,15 @@ export interface CommerceOrdersAddOrderItemInput {
   quantity?: number;
 }
 
+/** A bundle that contains the anchor product, with the price-optimization hint. */
+export interface CommerceOrdersBundleRecommendationDto {
+  /** Bundle product ID */
+  bundleId?: string;
+  /** Bundle name */
+  name?: string | null;
+  savings?: CommerceProductsBundleSavingsHint;
+}
+
 /** Request to capture payment for an order */
 export interface CommerceOrdersCaptureOrderInput {
   paymentMethodId?: string | null;
@@ -1975,6 +2000,16 @@ export interface CommerceOrdersCompleteOrderInput {
 export interface CommerceOrdersCompleteOrderMarketplaceSettlement {
   currencyChoice?: CommerceOrdersOrderMarketplaceCurrencyChoice;
   idempotencyKey?: string | null;
+}
+
+/** Recommendation item: a product co-purchased with the anchor product. */
+export interface CommerceOrdersCoPurchaseRecommendationDto {
+  /** How many completed orders contained both products */
+  coOrderCount?: number;
+  /** Product name */
+  name?: string | null;
+  /** Recommended product ID */
+  productId?: string;
 }
 
 /** Request to create a new order */
@@ -2015,6 +2050,14 @@ export interface CommerceOrdersMarketplaceCheckoutOrderDto {
   currency?: string | null;
   orderId?: string;
   total?: number;
+}
+
+/** Optional ("complete the bundle") item for a bundle anchor product. */
+export interface CommerceOrdersOptionalBundleItemDto {
+  /** Component product name */
+  name?: string | null;
+  /** Optional component product ID */
+  productId?: string;
 }
 
 /** Order capture result including any client-side payment action. */
@@ -2091,6 +2134,23 @@ export type CommerceOrdersOrderMarketplaceCurrencyChoice = 'Hard' | 'Soft' | 'Fi
 Follows monotonic FSM - no backward economic transitions allowed. */
 export type CommerceOrdersOrderStatus =
   'Pending' | 'Processing' | 'Completed' | 'Failed' | 'Cancelled' | 'Refunded' | 'PartiallyRefunded' | 'Disputed' | 'Paid' | 'Fulfilled' | 'OnHold';
+
+/** Rule-based product recommendations (issue #401, v1): deterministic
+"frequently bought together" from completed-order co-occurrence plus
+bundle-savings hints. Machine-learning personalization is explicitly deferred
+(see docs/billing/product-catalog-bundling.md). */
+export interface CommerceOrdersProductRecommendationsDto {
+  /** Published bundles containing the anchor, with savings hints */
+  bundleSuggestions?: CommerceOrdersBundleRecommendationDto[] | null;
+  /** Whether this response was served from the recommendation cache */
+  cached?: boolean;
+  /** Optional components of the anchor (when it is a bundle) */
+  completeTheBundle?: CommerceOrdersOptionalBundleItemDto[] | null;
+  /** Products co-purchased with the anchor, ranked by co-order count */
+  frequentlyBoughtTogether?: CommerceOrdersCoPurchaseRecommendationDto[] | null;
+  /** Anchor product ID */
+  productId?: string;
+}
 
 /** Data model for Commerce Orders Set Marketplace Cart Item Quantity Input. */
 export interface CommerceOrdersSetMarketplaceCartItemQuantityInput {
@@ -2270,6 +2330,23 @@ export type CommercePaymentsAccountCreditTransactionType = 'Grant' | 'Consume' |
 /** What an account credit grant may be applied to. */
 export type CommercePaymentsAccountCreditType = 'General' | 'Subscription' | 'Addon';
 
+/** Applied discount information produced by the unified pricing engine (issue #417).
+Concrete (the abstract Payments predecessor and the Subscriptions duplicate are gone). */
+export interface CommercePaymentsAppliedDiscount {
+  amount?: Money;
+  /** Normalized discount code */
+  code?: string | null;
+  /** Human-readable description */
+  description?: string | null;
+  /** Whether this discount may stack with others (promo-engine !IsExclusive) */
+  isStackable?: boolean;
+  /** Percentage equivalent, for percentage-based codes */
+  percentage?: number;
+  /** Stacking priority (higher applies first; promo-engine StackingPriority) */
+  priority?: number;
+  type?: CommercePaymentsDiscountType;
+}
+
 /** Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 export interface CommercePaymentsBillingChargesControllerCancelBillingChargeInput {
   canceledBy?: string | null;
@@ -2329,6 +2406,13 @@ export interface CommercePaymentsCreateWalletInput {
   currency?: string | null;
 }
 
+/** Credit (wallet) application outcome inside a calculation (issue #417). */
+export interface CommercePaymentsCreditApplicationResult {
+  creditsApplied?: number;
+  creditsAvailable?: number;
+  remainingCredits?: number;
+}
+
 /** Credit totals per currency for the metrics report. */
 export interface CommercePaymentsCreditCurrencyMetrics {
   /** Sum of remaining balances of Active grants. */
@@ -2359,6 +2443,12 @@ export interface CommercePaymentsCreditMetrics {
 
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
+
+/** Discount type enumeration for applied discounts in the unified pricing engine.
+Consolidated (issue #417): the Payments and Subscriptions module duplicates are
+merged into this single definition covering every discount type the promo engine
+can apply plus wallet credits. */
+export type CommercePaymentsDiscountType = 'Percentage' | 'FixedAmount' | 'FreeMonths' | 'Credits' | 'TrialExtension' | 'SetPrice';
 
 /** Result of an accept or challenge action on a dispute. */
 export interface CommercePaymentsDisputeActionResult {
@@ -3011,6 +3101,219 @@ export interface CommercePaymentsPaymentsControllerRefundInput {
 export type CommercePaymentsPaymentStatus =
   'Pending' | 'Processing' | 'Succeeded' | 'Failed' | 'Cancelled' | 'RequiresAction' | 'Refunded' | 'Disputed' | 'PartiallyRefunded';
 
+/** Add-on priced independently of the plan (issue #417): own unit price, own quantity,
+own currency (converted to the calculation currency through the FX core when they differ). */
+export interface CommercePaymentsPricingAddOnInput {
+  /** Caller-side add-on identifier (line-item key) */
+  addOnId?: string | null;
+  /** Display name */
+  name?: string | null;
+  /** Quantity purchased */
+  quantity?: number;
+  unitPrice?: Money;
+}
+
+/** Unified pricing calculation request (issue #417). Exactly one of
+PlanId/BaseAmount must be supplied. */
+export interface CommercePaymentsPricingCalculationInput {
+  /** Independently priced add-ons */
+  addOns?: CommercePaymentsPricingAddOnInput[] | null;
+  /** Whether to apply wallet credits after tax */
+  applyCredits?: boolean;
+  /** Custom base amount (plan-less calculation) */
+  baseAmount?: number | null;
+  billingCycle?: BillingCycle;
+  /** When true, deducted from the wallet (quote-only by default) */
+  consumeCredits?: boolean;
+  /** Target currency (ISO 4217); plan/add-on amounts are converted via the FX core */
+  currency?: string | null;
+  discountScope?: CommercePaymentsPricingDiscountScope;
+  /** Effective date of the calculation (defaults to now) */
+  effectiveDate?: string | null;
+  /** Whether to run tax through ITaxCalculationService */
+  includeTax?: boolean;
+  /** Upper bound on credits to apply */
+  maxCreditUsage?: number | null;
+  /** Order correlation (ledger) */
+  orderId?: string | null;
+  /** Payment correlation (ledger) */
+  paymentId?: string | null;
+  /** Subscription plan to price (resolved via IPlanPricingResolver) */
+  planId?: string | null;
+  /** Promo codes to apply (validated + stacked by the promo engine) */
+  promoCodes?: string[] | null;
+  proration?: CommercePaymentsPricingProrationInput;
+  /** When true, appended to the pricing-decision ledger (issue #400) */
+  recordDecision?: boolean;
+  /** Subscription correlation (ledger) */
+  subscriptionId?: string | null;
+  taxInfo?: CommercePaymentsPricingTaxInfo;
+  /** Tenant correlation (audit) */
+  tenantId?: string | null;
+  /** Usage-based charges with optional progressive tiers */
+  usageCharges?: CommercePaymentsPricingUsageChargeInput[] | null;
+  /** Acting user (promo eligibility, wallet credits) */
+  userId?: string | null;
+}
+
+/** The single pricing calculation result (issue #417). Consolidates the former abstract
+Payments shape and the Subscriptions duplicate into one engine-owned model. */
+export interface CommercePaymentsPricingCalculationResult {
+  addOnsTotal?: Money;
+  amountDue?: Money;
+  /** Discounts the promo engine applied, in application order. */
+  appliedDiscounts?: CommercePaymentsAppliedDiscount[] | null;
+  basePlanPrice?: Money;
+  billingCycle?: BillingCycle;
+  /** When the calculation ran (UTC). */
+  calculatedAt?: string;
+  /** Human-readable step-by-step explanation. */
+  calculationExplanation?: string | null;
+  /** Unique calculation id (also the ledger idempotency key). */
+  calculationId?: string;
+  credits?: CommercePaymentsCreditApplicationResult;
+  creditsApplied?: Money;
+  /** Calculation currency (all Money fields). */
+  currency?: string | null;
+  /** Ledger entry id when the decision was recorded (issue #400 ledger). */
+  ledgerEntryId?: string | null;
+  /** Itemized breakdown for display and audit. */
+  lineItems?: CommercePaymentsPricingLineItem[] | null;
+  proration?: CommercePaymentsPricingProrationResult;
+  /** Net proration adjustment in the calculation currency, signed: positive = immediate
+charge, negative = credit (GameGuild.Money cannot hold negative amounts). */
+  prorationAdjustment?: number;
+  /** Requested promo codes that did not apply, with the fail-closed reason. */
+  rejectedPromoCodes?: CommercePaymentsRejectedPromoDiscount[] | null;
+  subtotal?: Money;
+  subtotalAfterDiscounts?: Money;
+  tax?: CommercePaymentsTaxCalculationResult;
+  taxAmount?: Money;
+  total?: Money;
+  totalDiscounts?: Money;
+  usageCharges?: Money;
+  /** Sticky validation notes (invariant violations never silently pass). */
+  validationErrors?: string[] | null;
+}
+
+/** Which items promo discounts apply to (issue #417 line-item scoping). */
+export type CommercePaymentsPricingDiscountScope = 'AllItems' | 'PlanOnly';
+
+/** One display/audit line of the calculation (issue #417). */
+export interface CommercePaymentsPricingLineItem {
+  amount?: Money;
+  name?: string | null;
+  quantity?: number;
+  type?: string | null;
+  unitPrice?: number;
+}
+
+/** Price-change preview request (issue #417): everything needed to show the customer what
+a plan switch costs before they confirm. The preview never records a ledger decision
+and never consumes credits. */
+export interface CommercePaymentsPricingPreviewInput {
+  billingCycle?: BillingCycle;
+  /** Target currency */
+  currency?: string | null;
+  /** Plan the subscription is on today */
+  currentPlanId?: string;
+  /** When the change would take effect (defaults to now) */
+  effectiveDate?: string | null;
+  /** Whether to include tax */
+  includeTax?: boolean;
+  /** Plan being considered */
+  newPlanId?: string;
+  /** Current billing period end */
+  periodEnd?: string;
+  /** Current billing period start */
+  periodStart?: string;
+  /** Promo codes to preview */
+  promoCodes?: string[] | null;
+  taxInfo?: CommercePaymentsPricingTaxInfo;
+  /** Acting user (promo eligibility) */
+  userId?: string | null;
+}
+
+/** Price-change preview outcome (issue #417): the immediate (prorated) charge plus the
+next-renewal amount, so the customer sees both before confirming. */
+export interface CommercePaymentsPricingPreviewResult {
+  /** Effective date the change would take place. */
+  effectiveDate?: string;
+  immediateCharge?: CommercePaymentsPricingCalculationResult;
+  nextRenewal?: CommercePaymentsPricingCalculationResult;
+  savingsFromDiscounts?: Money;
+}
+
+/** Proration inputs for a mid-cycle plan change (issue #417). The unified engine wires
+these into the existing `BillingCalculator.CalculateProration` through
+GameGuild.Commerce.Payments.IPlanProrationCalculator. */
+export interface CommercePaymentsPricingProrationInput {
+  /** Plan the subscription is on today */
+  currentPlanId?: string;
+  /** When the change takes effect (mid-cycle) */
+  effectiveDate?: string;
+  /** Plan being switched to */
+  newPlanId?: string;
+  /** Current billing period end */
+  periodEnd?: string;
+  /** Current billing period start */
+  periodStart?: string;
+}
+
+/** Proration outcome attached to a calculation (issue #417): mirrors
+`PlanChangeProration` plus the period context needed for line items. */
+export interface CommercePaymentsPricingProrationResult {
+  chargeForNew?: number;
+  creditForUnused?: number;
+  daysRemaining?: number;
+  effectiveDate?: string;
+  /** Whether the change nets to an immediate charge. */
+  isCharge?: boolean;
+  /** Whether the change nets to a credit for the customer. */
+  isCredit?: boolean;
+  netAdjustment?: number;
+  totalDays?: number;
+}
+
+/** Tax inputs for a pricing calculation (issue #417). Carried through to the existing
+GameGuild.Commerce.Payments.ITaxCalculationService — jurisdiction, customer type (B2B reverse charge),
+VAT number, tax-inclusive flag, product category, and exemptions. */
+export interface CommercePaymentsPricingTaxInfo {
+  applicableExemptions?: string[] | null;
+  customerType?: CommercePaymentsCustomerType;
+  customerVatNumber?: string | null;
+  isTaxInclusive?: boolean;
+  jurisdictionCode?: string | null;
+  productCategory?: string | null;
+}
+
+/** One usage-based charge input with optional progressive tiers (issue #417).
+Without tiers the charge is Quantity × PerUnitPrice;
+with tiers each quantity band is priced at its own per-unit price (utility-style
+progressive banding), the last open-ended band absorbing any remainder. */
+export interface CommercePaymentsPricingUsageChargeInput {
+  /** Metric name (display/line-item key) */
+  metric?: string | null;
+  /** Flat per-unit price used when no tiers are supplied */
+  perUnitPrice?: number;
+  /** Quantity consumed in the period */
+  quantity?: number;
+  /** Optional progressive tier bands */
+  tiers?: CommercePaymentsPricingUsageTier[] | null;
+}
+
+/** One progressive usage-pricing band (issue #417). Bands are half-open quantity
+intervals [MinQuantity, MaxQuantity); quantities
+beyond the highest band's maximum are priced at that band's per-unit price. */
+export interface CommercePaymentsPricingUsageTier {
+  /** Exclusive upper bound of the band (null = open-ended) */
+  maxQuantity?: number | null;
+  /** Inclusive lower bound of the band */
+  minQuantity?: number;
+  /** Per-unit price inside this band */
+  perUnitPrice?: number;
+}
+
 /** Result model for refund processing operations */
 export interface CommercePaymentsProcessRefundResult {
   /** Currency of the refunded amount */
@@ -3303,6 +3606,14 @@ export interface CommercePaymentsRefundStatistics {
 
 /** Lifecycle status of a refund request (issue #419). */
 export type CommercePaymentsRefundStatus = 'Pending' | 'Approved' | 'Rejected' | 'Processing' | 'Completed' | 'Failed';
+
+/** One rejected promo code with the fail-closed reason. */
+export interface CommercePaymentsRejectedPromoDiscount {
+  /** Requested code */
+  code?: string | null;
+  /** Why it did not apply */
+  reason?: string | null;
+}
 
 /** Result of creating a refund request. */
 export interface CommercePaymentsRequestRefundResult {
@@ -4116,6 +4427,24 @@ export interface CommerceProductsBatchProductCreateItem {
   type?: CommerceProductsProductType;
 }
 
+/** Bundle-price optimization hint (issue #401): bundle price vs sum-of-parts. */
+export interface CommerceProductsBundleSavingsHint {
+  /** Bundle product ID */
+  bundleId?: string;
+  /** Effective price of the bundle itself */
+  bundlePrice?: number;
+  /** Number of priced components included */
+  componentsPriced?: number;
+  /** Currency of the comparison */
+  currency?: string | null;
+  /** SumOfParts − BundlePrice (negative when the bundle costs more) */
+  savings?: number;
+  /** Savings as a percentage of SumOfParts */
+  savingsPercentage?: number;
+  /** Sum of component effective prices (after per-item bundle discounts) */
+  sumOfParts?: number;
+}
+
 /** Request to calculate a price through the pricing engine. */
 export interface CommerceProductsCalculatePricingInput {
   customerSegment?: string | null;
@@ -4226,10 +4555,27 @@ export interface CommerceProductsCreatePricingRuleInput {
   timeStart?: string | null;
 }
 
+/** Request model for creating a product category. */
+export interface CommerceProductsCreateProductCategoryInput {
+  /** Optional metadata as a JSON object of string values (≤ 20 keys). */
+  attributesJson?: string | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Sort order. */
+  displayOrder?: number;
+  /** Display name (tenant-unique). */
+  name?: string | null;
+  /** Parent category ID (null = root). */
+  parentCategoryId?: string | null;
+  /** URL-safe identifier (tenant-unique; letters, digits, hyphens, spaces). */
+  slug?: string | null;
+}
+
 /** Request model for creating a product */
 export interface CommerceProductsCreateProductInput {
   affiliateCommissionPercentage?: number;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
   isBundle?: boolean;
@@ -4345,6 +4691,7 @@ export interface CommerceProductsGrantEntitlementInput {
 export interface CommerceProductsPatchProductInput {
   affiliateCommissionPercentage?: number | null;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -4486,6 +4833,54 @@ export interface CommerceProductsPricingRuleTierInput {
 /** Represents how a user acquired access to a product */
 export type CommerceProductsProductAcquisitionType = 'Purchase' | 'Subscription' | 'Grant' | 'PromoCode' | 'Bundle' | 'Trial' | 'Referral' | 'Free' | 'Gift';
 
+/** DTO for a product's real-time availability (issue #401). */
+export interface CommerceProductsProductAvailabilityDto {
+  /** Units sellable now (when tracked) */
+  availableQuantity?: number | null;
+  /** Whether at least one unit is available (untracked = always true) */
+  isInStock?: boolean;
+  /** Whether available stock fell to the low-stock threshold */
+  isLowStock?: boolean;
+  /** Configured low-stock threshold */
+  lowStockThreshold?: number;
+  /** Product ID */
+  productId?: string;
+  /** Units reserved by pending orders (when tracked) */
+  reservedQuantity?: number | null;
+  /** Units on hand (when tracked) */
+  stockQuantity?: number | null;
+  /** Whether stock is tracked for this product */
+  trackInventory?: boolean;
+}
+
+/** DTO for a product catalog category (issue #401). */
+export interface CommerceProductsProductCategoryDto {
+  /** Category ID */
+  id?: string;
+  /** Metadata dictionary (≤ 20 keys) */
+  attributes?: Record<string, string> | null;
+  /** Creation timestamp */
+  createdAt?: string;
+  /** Depth in the tree (root = 0) */
+  depth?: number;
+  /** Optional description */
+  description?: string | null;
+  /** Sort order */
+  displayOrder?: number;
+  /** Display name */
+  name?: string | null;
+  /** Parent category (null = root) */
+  parentCategoryId?: string | null;
+  /** Slugs from root to this category */
+  path?: string[] | null;
+  /** Non-deleted products assigned to this category (when requested) */
+  productCount?: number | null;
+  /** URL-safe identifier (tenant-unique) */
+  slug?: string | null;
+  /** Last update timestamp */
+  updatedAt?: string;
+}
+
 /** Product Data Transfer Object for API responses */
 export interface CommerceProductsProductDto {
   /** Product ID */
@@ -4494,6 +4889,8 @@ export interface CommerceProductsProductDto {
   affiliateCommissionPercentage?: number;
   /** Bundle item IDs */
   bundleItems?: string[] | null;
+  /** Catalog category ID (single category, v1) */
+  categoryId?: string | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Creator user ID */
@@ -4519,6 +4916,22 @@ export interface CommerceProductsProductDto {
   type?: CommerceProductsProductType;
   /** Last update timestamp */
   updatedAt?: string;
+}
+
+/** DTO for a product's inventory configuration (issue #401). */
+export interface CommerceProductsProductInventoryDto {
+  /** Units sellable now */
+  availableQuantity?: number;
+  /** Low-stock threshold */
+  lowStockThreshold?: number;
+  /** Product ID */
+  productId?: string;
+  /** Units reserved by pending orders */
+  reservedQuantity?: number;
+  /** Units on hand */
+  stockQuantity?: number;
+  /** Whether stock is tracked */
+  trackInventory?: boolean;
 }
 
 /** Product Pricing Data Transfer Object */
@@ -4724,6 +5137,16 @@ export interface CommerceProductsRevokeEntitlementInput {
   userId?: string;
 }
 
+/** Request model for configuring a product's inventory (issue #401) */
+export interface CommerceProductsSetProductInventoryInput {
+  /** Low-stock threshold. */
+  lowStockThreshold?: number;
+  /** Units on hand. */
+  stockQuantity?: number;
+  /** Whether stock should be tracked for this product. */
+  trackInventory?: boolean;
+}
+
 /** Data model for Commerce Products Set Product Pricing Request. */
 export interface CommerceProductsSetProductPricingInput {
   basePrice?: number;
@@ -4825,10 +5248,31 @@ export interface CommerceProductsUpdatePricingRuleInput {
   timeStart?: string | null;
 }
 
+/** Request model for updating a product category. */
+export interface CommerceProductsUpdateProductCategoryInput {
+  /** Replacement metadata JSON object (null = leave unchanged, "{}" clears). */
+  attributesJson?: string | null;
+  /** New description. */
+  description?: string | null;
+  /** New sort order. */
+  displayOrder?: number | null;
+  /** Expected version for optimistic concurrency. */
+  expectedVersion?: number | null;
+  /** New display name. */
+  name?: string | null;
+  /** New parent category ID (applied only when GameGuild.Commerce.Products.UpdateProductCategoryRequest.Reparent is true). */
+  parentCategoryId?: string | null;
+  /** Whether to apply GameGuild.Commerce.Products.UpdateProductCategoryRequest.ParentCategoryId as a reparenting. */
+  reparent?: boolean;
+  /** New slug (tenant-unique). */
+  slug?: string | null;
+}
+
 /** Request model for updating a product */
 export interface CommerceProductsUpdateProductInput {
   affiliateCommissionPercentage?: number | null;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -4935,6 +5379,14 @@ export interface CommerceSubscriptionsCreateClientInput {
   name?: string | null;
   slug?: string | null;
   taxId?: string | null;
+}
+
+/** Request body for the subscription plan-change preview (issue #417). */
+export interface CommerceSubscriptionsPreviewSubscriptionPlanChangeInput {
+  /** Plan being considered. */
+  newPlanId?: string;
+  /** Optional promo codes to preview. */
+  promoCodes?: string[] | null;
 }
 
 /** Represents a subscription linking a tenant to a subscription plan */
@@ -22779,6 +23231,7 @@ export let CommerceBillingExternalBillingProviderStatusDtoSchema: z.ZodType<Comm
 export let CommerceBillingInvoiceAccountCreditSettlementResultSchema: z.ZodType<CommerceBillingInvoiceAccountCreditSettlementResult>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
+export let CommerceBillingPricingCalculationValidationResultSchema: z.ZodType<CommerceBillingPricingCalculationValidationResult>;
 export let CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDetailDto>;
 export let CommerceBillingPricingDecisionLedgerEntryDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDto>;
 export let CommerceBillingPricingLedgerDriftOutcomeSchema: z.ZodType<CommerceBillingPricingLedgerDriftOutcome>;
@@ -22793,21 +23246,25 @@ export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
 export let CommerceOrdersAddOrderItemInputSchema: z.ZodType<CommerceOrdersAddOrderItemInput>;
+export let CommerceOrdersBundleRecommendationDtoSchema: z.ZodType<CommerceOrdersBundleRecommendationDto>;
 export let CommerceOrdersCaptureOrderInputSchema: z.ZodType<CommerceOrdersCaptureOrderInput>;
 export let CommerceOrdersCheckoutMarketplaceCartInputSchema: z.ZodType<CommerceOrdersCheckoutMarketplaceCartInput>;
 export let CommerceOrdersCompleteOrderInputSchema: z.ZodType<CommerceOrdersCompleteOrderInput>;
 export let CommerceOrdersCompleteOrderMarketplaceSettlementSchema: z.ZodType<CommerceOrdersCompleteOrderMarketplaceSettlement>;
+export let CommerceOrdersCoPurchaseRecommendationDtoSchema: z.ZodType<CommerceOrdersCoPurchaseRecommendationDto>;
 export let CommerceOrdersCreateOrderInputSchema: z.ZodType<CommerceOrdersCreateOrderInput>;
 export let CommerceOrdersMarketplaceCartDtoSchema: z.ZodType<CommerceOrdersMarketplaceCartDto>;
 export let CommerceOrdersMarketplaceCartItemDtoSchema: z.ZodType<CommerceOrdersMarketplaceCartItemDto>;
 export let CommerceOrdersMarketplaceCartStateSchema: z.ZodType<CommerceOrdersMarketplaceCartState>;
 export let CommerceOrdersMarketplaceCheckoutDtoSchema: z.ZodType<CommerceOrdersMarketplaceCheckoutDto>;
 export let CommerceOrdersMarketplaceCheckoutOrderDtoSchema: z.ZodType<CommerceOrdersMarketplaceCheckoutOrderDto>;
+export let CommerceOrdersOptionalBundleItemDtoSchema: z.ZodType<CommerceOrdersOptionalBundleItemDto>;
 export let CommerceOrdersOrderCaptureDtoSchema: z.ZodType<CommerceOrdersOrderCaptureDto>;
 export let CommerceOrdersOrderDtoSchema: z.ZodType<CommerceOrdersOrderDto>;
 export let CommerceOrdersOrderLineItemDtoSchema: z.ZodType<CommerceOrdersOrderLineItemDto>;
 export let CommerceOrdersOrderMarketplaceCurrencyChoiceSchema: z.ZodType<CommerceOrdersOrderMarketplaceCurrencyChoice>;
 export let CommerceOrdersOrderStatusSchema: z.ZodType<CommerceOrdersOrderStatus>;
+export let CommerceOrdersProductRecommendationsDtoSchema: z.ZodType<CommerceOrdersProductRecommendationsDto>;
 export let CommerceOrdersSetMarketplaceCartItemQuantityInputSchema: z.ZodType<CommerceOrdersSetMarketplaceCartItemQuantityInput>;
 export let CommercePaymentsAccountCreditBalanceSchema: z.ZodType<CommercePaymentsAccountCreditBalance>;
 export let CommercePaymentsAccountCreditConsumptionSchema: z.ZodType<CommercePaymentsAccountCreditConsumption>;
@@ -22820,6 +23277,7 @@ export let CommercePaymentsAccountCreditSourceSchema: z.ZodType<CommercePayments
 export let CommercePaymentsAccountCreditTransactionSchema: z.ZodType<CommercePaymentsAccountCreditTransaction>;
 export let CommercePaymentsAccountCreditTransactionTypeSchema: z.ZodType<CommercePaymentsAccountCreditTransactionType>;
 export let CommercePaymentsAccountCreditTypeSchema: z.ZodType<CommercePaymentsAccountCreditType>;
+export let CommercePaymentsAppliedDiscountSchema: z.ZodType<CommercePaymentsAppliedDiscount>;
 export let CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCancelBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerCreateBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCreateBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerRefundBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerRefundBillingChargeInput>;
@@ -22827,9 +23285,11 @@ export let CommercePaymentsCalculateTaxInputSchema: z.ZodType<CommercePaymentsCa
 export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsCreateTaxJurisdictionInput>;
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
+export let CommercePaymentsCreditApplicationResultSchema: z.ZodType<CommercePaymentsCreditApplicationResult>;
 export let CommercePaymentsCreditCurrencyMetricsSchema: z.ZodType<CommercePaymentsCreditCurrencyMetrics>;
 export let CommercePaymentsCreditMetricsSchema: z.ZodType<CommercePaymentsCreditMetrics>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsDiscountTypeSchema: z.ZodType<CommercePaymentsDiscountType>;
 export let CommercePaymentsDisputeActionResultSchema: z.ZodType<CommercePaymentsDisputeActionResult>;
 export let CommercePaymentsDisputeEvidenceSchema: z.ZodType<CommercePaymentsDisputeEvidence>;
 export let CommercePaymentsDisputeListPageSchema: z.ZodType<CommercePaymentsDisputeListPage>;
@@ -22883,6 +23343,18 @@ export let CommercePaymentsPaymentsControllerCreateSetupIntentOutputSchema: z.Zo
 export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerProcessPaymentInput>;
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
+export let CommercePaymentsPricingAddOnInputSchema: z.ZodType<CommercePaymentsPricingAddOnInput>;
+export let CommercePaymentsPricingCalculationInputSchema: z.ZodType<CommercePaymentsPricingCalculationInput>;
+export let CommercePaymentsPricingCalculationResultSchema: z.ZodType<CommercePaymentsPricingCalculationResult>;
+export let CommercePaymentsPricingDiscountScopeSchema: z.ZodType<CommercePaymentsPricingDiscountScope>;
+export let CommercePaymentsPricingLineItemSchema: z.ZodType<CommercePaymentsPricingLineItem>;
+export let CommercePaymentsPricingPreviewInputSchema: z.ZodType<CommercePaymentsPricingPreviewInput>;
+export let CommercePaymentsPricingPreviewResultSchema: z.ZodType<CommercePaymentsPricingPreviewResult>;
+export let CommercePaymentsPricingProrationInputSchema: z.ZodType<CommercePaymentsPricingProrationInput>;
+export let CommercePaymentsPricingProrationResultSchema: z.ZodType<CommercePaymentsPricingProrationResult>;
+export let CommercePaymentsPricingTaxInfoSchema: z.ZodType<CommercePaymentsPricingTaxInfo>;
+export let CommercePaymentsPricingUsageChargeInputSchema: z.ZodType<CommercePaymentsPricingUsageChargeInput>;
+export let CommercePaymentsPricingUsageTierSchema: z.ZodType<CommercePaymentsPricingUsageTier>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
 export let CommercePaymentsReferralSchema: z.ZodType<CommercePaymentsReferral>;
 export let CommercePaymentsReferralFunnelMetricsSchema: z.ZodType<CommercePaymentsReferralFunnelMetrics>;
@@ -22901,6 +23373,7 @@ export let CommercePaymentsRefundsControllerRefundDecisionInputSchema: z.ZodType
 export let CommercePaymentsRefundsControllerRequestRefundHttpInputSchema: z.ZodType<CommercePaymentsRefundsControllerRequestRefundHttpInput>;
 export let CommercePaymentsRefundStatisticsSchema: z.ZodType<CommercePaymentsRefundStatistics>;
 export let CommercePaymentsRefundStatusSchema: z.ZodType<CommercePaymentsRefundStatus>;
+export let CommercePaymentsRejectedPromoDiscountSchema: z.ZodType<CommercePaymentsRejectedPromoDiscount>;
 export let CommercePaymentsRequestRefundResultSchema: z.ZodType<CommercePaymentsRequestRefundResult>;
 export let CommercePaymentsRevenueAnomalyAlertSchema: z.ZodType<CommercePaymentsRevenueAnomalyAlert>;
 export let CommercePaymentsRevenueAnomalyKindSchema: z.ZodType<CommercePaymentsRevenueAnomalyKind>;
@@ -22950,6 +23423,7 @@ export let CommerceProductsApplyPromoCodesInputSchema: z.ZodType<CommerceProduct
 export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommerceProductsAssignSupportTicketInput>;
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
+export let CommerceProductsBundleSavingsHintSchema: z.ZodType<CommerceProductsBundleSavingsHint>;
 export let CommerceProductsCalculatePricingInputSchema: z.ZodType<CommerceProductsCalculatePricingInput>;
 export let CommerceProductsCampaignExpiringCodeDtoSchema: z.ZodType<CommerceProductsCampaignExpiringCodeDto>;
 export let CommerceProductsCampaignPerformanceDtoSchema: z.ZodType<CommerceProductsCampaignPerformanceDto>;
@@ -22960,6 +23434,7 @@ export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProd
 export let CommerceProductsConflictResolutionStrategySchema: z.ZodType<CommerceProductsConflictResolutionStrategy>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
 export let CommerceProductsCreatePricingRuleInputSchema: z.ZodType<CommerceProductsCreatePricingRuleInput>;
+export let CommerceProductsCreateProductCategoryInputSchema: z.ZodType<CommerceProductsCreateProductCategoryInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
 export let CommerceProductsCreatePromoCodeInputSchema: z.ZodType<CommerceProductsCreatePromoCodeInput>;
 export let CommerceProductsCreatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsCreatePromoStackingRuleInput>;
@@ -22975,7 +23450,10 @@ export let CommerceProductsPricingRuleDtoSchema: z.ZodType<CommerceProductsPrici
 export let CommerceProductsPricingRuleTierDtoSchema: z.ZodType<CommerceProductsPricingRuleTierDto>;
 export let CommerceProductsPricingRuleTierInputSchema: z.ZodType<CommerceProductsPricingRuleTierInput>;
 export let CommerceProductsProductAcquisitionTypeSchema: z.ZodType<CommerceProductsProductAcquisitionType>;
+export let CommerceProductsProductAvailabilityDtoSchema: z.ZodType<CommerceProductsProductAvailabilityDto>;
+export let CommerceProductsProductCategoryDtoSchema: z.ZodType<CommerceProductsProductCategoryDto>;
 export let CommerceProductsProductDtoSchema: z.ZodType<CommerceProductsProductDto>;
+export let CommerceProductsProductInventoryDtoSchema: z.ZodType<CommerceProductsProductInventoryDto>;
 export let CommerceProductsProductPricingDtoSchema: z.ZodType<CommerceProductsProductPricingDto>;
 export let CommerceProductsProductTypeSchema: z.ZodType<CommerceProductsProductType>;
 export let CommerceProductsPromoCodeApplicationResultSchema: z.ZodType<CommerceProductsPromoCodeApplicationResult>;
@@ -22987,6 +23465,7 @@ export let CommerceProductsPromoStackingRuleDtoSchema: z.ZodType<CommerceProduct
 export let CommerceProductsRejectedPromoCodeSchema: z.ZodType<CommerceProductsRejectedPromoCode>;
 export let CommerceProductsResolveSupportTicketInputSchema: z.ZodType<CommerceProductsResolveSupportTicketInput>;
 export let CommerceProductsRevokeEntitlementInputSchema: z.ZodType<CommerceProductsRevokeEntitlementInput>;
+export let CommerceProductsSetProductInventoryInputSchema: z.ZodType<CommerceProductsSetProductInventoryInput>;
 export let CommerceProductsSetProductPricingInputSchema: z.ZodType<CommerceProductsSetProductPricingInput>;
 export let CommerceProductsSupportAgentDtoSchema: z.ZodType<CommerceProductsSupportAgentDto>;
 export let CommerceProductsSupportTicketDtoSchema: z.ZodType<CommerceProductsSupportTicketDto>;
@@ -22996,6 +23475,7 @@ export let CommerceProductsSupportTicketPrioritySchema: z.ZodType<CommerceProduc
 export let CommerceProductsSupportTicketStatusSchema: z.ZodType<CommerceProductsSupportTicketStatus>;
 export let CommerceProductsSupportTicketSummaryDtoSchema: z.ZodType<CommerceProductsSupportTicketSummaryDto>;
 export let CommerceProductsUpdatePricingRuleInputSchema: z.ZodType<CommerceProductsUpdatePricingRuleInput>;
+export let CommerceProductsUpdateProductCategoryInputSchema: z.ZodType<CommerceProductsUpdateProductCategoryInput>;
 export let CommerceProductsUpdateProductInputSchema: z.ZodType<CommerceProductsUpdateProductInput>;
 export let CommerceProductsUpdatePromoCodeInputSchema: z.ZodType<CommerceProductsUpdatePromoCodeInput>;
 export let CommerceProductsUpdatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsUpdatePromoStackingRuleInput>;
@@ -23006,6 +23486,7 @@ export let CommerceSubscriptionsBillingSubscriptionsControllerCreateBillingSubsc
 export let CommerceSubscriptionsCancellationReasonSchema: z.ZodType<CommerceSubscriptionsCancellationReason>;
 export let CommerceSubscriptionsClientModulesOutputSchema: z.ZodType<CommerceSubscriptionsClientModulesOutput>;
 export let CommerceSubscriptionsCreateClientInputSchema: z.ZodType<CommerceSubscriptionsCreateClientInput>;
+export let CommerceSubscriptionsPreviewSubscriptionPlanChangeInputSchema: z.ZodType<CommerceSubscriptionsPreviewSubscriptionPlanChangeInput>;
 export let CommerceSubscriptionsSubscriptionSchema: z.ZodType<CommerceSubscriptionsSubscription>;
 export let CommerceSubscriptionsSubscriptionChurnReportDtoSchema: z.ZodType<CommerceSubscriptionsSubscriptionChurnReportDto>;
 export let CommerceSubscriptionsSubscriptionDowngradeResultSchema: z.ZodType<CommerceSubscriptionsSubscriptionDowngradeResult>;
@@ -26271,6 +26752,16 @@ CommerceBillingInvoicePaymentRetryResultSchema = z.object({
 /** Zod schema for CommerceBillingInvoiceStatus. Invoice status enumeration with monotonic transitions */
 CommerceBillingInvoiceStatusSchema = z.enum(['Draft', 'Open', 'Paid', 'Void', 'PastDue', 'Uncollectible']);
 
+/** Zod schema for CommerceBillingPricingCalculationValidationResult. Validation outcome for one stored calculation (issue #417). */
+CommerceBillingPricingCalculationValidationResultSchema = z.object({
+  calculationId: z.string().uuid().optional(),
+  drifted: z.boolean().optional(),
+  recomputedFinalAmount: z.number().optional(),
+  storedFinalAmount: z.number().optional(),
+  valid: z.boolean().optional(),
+  violations: z.array(z.string()).nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingPricingDecisionLedgerEntryDetailDto. Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
 the drift-validation outcome (recomputed amount, reason). */
 CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema = z.object({
@@ -26430,6 +26921,13 @@ CommerceOrdersAddOrderItemInputSchema = z.object({
   quantity: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceOrdersBundleRecommendationDto. A bundle that contains the anchor product, with the price-optimization hint. */
+CommerceOrdersBundleRecommendationDtoSchema = z.object({
+  bundleId: z.string().uuid().optional(),
+  name: z.string().nullable().optional(),
+  savings: z.lazy(() => CommerceProductsBundleSavingsHintSchema).optional(),
+});
+
 /** Zod schema for CommerceOrdersCaptureOrderInput. Request to capture payment for an order */
 CommerceOrdersCaptureOrderInputSchema = z.object({
   paymentMethodId: z.string().nullable().optional(),
@@ -26453,6 +26951,13 @@ CommerceOrdersCompleteOrderInputSchema = z.object({
 CommerceOrdersCompleteOrderMarketplaceSettlementSchema = z.object({
   currencyChoice: z.lazy(() => CommerceOrdersOrderMarketplaceCurrencyChoiceSchema).optional(),
   idempotencyKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceOrdersCoPurchaseRecommendationDto. Recommendation item: a product co-purchased with the anchor product. */
+CommerceOrdersCoPurchaseRecommendationDtoSchema = z.object({
+  coOrderCount: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrdersCreateOrderInput. Request to create a new order */
@@ -26499,6 +27004,12 @@ CommerceOrdersMarketplaceCheckoutOrderDtoSchema = z.object({
   currency: z.string().nullable().optional(),
   orderId: z.string().uuid().optional(),
   total: z.number().optional(),
+});
+
+/** Zod schema for CommerceOrdersOptionalBundleItemDto. Optional ("complete the bundle") item for a bundle anchor product. */
+CommerceOrdersOptionalBundleItemDtoSchema = z.object({
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrdersOrderCaptureDto. Order capture result including any client-side payment action. */
@@ -26592,6 +27103,27 @@ CommerceOrdersOrderStatusSchema = z.enum([
   'Fulfilled',
   'OnHold',
 ]);
+
+/** Zod schema for CommerceOrdersProductRecommendationsDto. Rule-based product recommendations (issue #401, v1): deterministic
+"frequently bought together" from completed-order co-occurrence plus
+bundle-savings hints. Machine-learning personalization is explicitly deferred
+(see docs/billing/product-catalog-bundling.md). */
+CommerceOrdersProductRecommendationsDtoSchema = z.object({
+  bundleSuggestions: z
+    .array(z.lazy(() => CommerceOrdersBundleRecommendationDtoSchema))
+    .nullable()
+    .optional(),
+  cached: z.boolean().optional(),
+  completeTheBundle: z
+    .array(z.lazy(() => CommerceOrdersOptionalBundleItemDtoSchema))
+    .nullable()
+    .optional(),
+  frequentlyBoughtTogether: z
+    .array(z.lazy(() => CommerceOrdersCoPurchaseRecommendationDtoSchema))
+    .nullable()
+    .optional(),
+  productId: z.string().uuid().optional(),
+});
 
 /** Zod schema for CommerceOrdersSetMarketplaceCartItemQuantityInput. Data model for Commerce Orders Set Marketplace Cart Item Quantity Input. */
 CommerceOrdersSetMarketplaceCartItemQuantityInputSchema = z.object({
@@ -26722,6 +27254,18 @@ CommercePaymentsAccountCreditTransactionTypeSchema = z.enum(['Grant', 'Consume',
 /** Zod schema for CommercePaymentsAccountCreditType. What an account credit grant may be applied to. */
 CommercePaymentsAccountCreditTypeSchema = z.enum(['General', 'Subscription', 'Addon']);
 
+/** Zod schema for CommercePaymentsAppliedDiscount. Applied discount information produced by the unified pricing engine (issue #417).
+Concrete (the abstract Payments predecessor and the Subscriptions duplicate are gone). */
+CommercePaymentsAppliedDiscountSchema = z.object({
+  amount: z.lazy(() => MoneySchema).optional(),
+  code: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  isStackable: z.boolean().optional(),
+  percentage: z.number().optional(),
+  priority: z.number().int().optional(),
+  type: z.lazy(() => CommercePaymentsDiscountTypeSchema).optional(),
+});
+
 /** Zod schema for CommercePaymentsBillingChargesControllerCancelBillingChargeInput. Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema = z.object({
   canceledBy: z.string().uuid().nullable().optional(),
@@ -26781,6 +27325,13 @@ CommercePaymentsCreateWalletInputSchema = z.object({
   currency: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommercePaymentsCreditApplicationResult. Credit (wallet) application outcome inside a calculation (issue #417). */
+CommercePaymentsCreditApplicationResultSchema = z.object({
+  creditsApplied: z.number().optional(),
+  creditsAvailable: z.number().optional(),
+  remainingCredits: z.number().optional(),
+});
+
 /** Zod schema for CommercePaymentsCreditCurrencyMetrics. Credit totals per currency for the metrics report. */
 CommercePaymentsCreditCurrencyMetricsSchema = z.object({
   activeBalance: z.number().optional(),
@@ -26804,6 +27355,12 @@ CommercePaymentsCreditMetricsSchema = z.object({
 
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
+
+/** Zod schema for CommercePaymentsDiscountType. Discount type enumeration for applied discounts in the unified pricing engine.
+Consolidated (issue #417): the Payments and Subscriptions module duplicates are
+merged into this single definition covering every discount type the promo engine
+can apply plus wallet credits. */
+CommercePaymentsDiscountTypeSchema = z.enum(['Percentage', 'FixedAmount', 'FreeMonths', 'Credits', 'TrialExtension', 'SetPrice']);
 
 /** Zod schema for CommercePaymentsDisputeActionResult. Result of an accept or challenge action on a dispute. */
 CommercePaymentsDisputeActionResultSchema = z.object({
@@ -27348,6 +27905,182 @@ CommercePaymentsPaymentStatusSchema = z.enum([
   'PartiallyRefunded',
 ]);
 
+/** Zod schema for CommercePaymentsPricingAddOnInput. Add-on priced independently of the plan (issue #417): own unit price, own quantity,
+own currency (converted to the calculation currency through the FX core when they differ). */
+CommercePaymentsPricingAddOnInputSchema = z.object({
+  addOnId: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  quantity: z.number().int().optional(),
+  unitPrice: z.lazy(() => MoneySchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingCalculationInput. Unified pricing calculation request (issue #417). Exactly one of
+PlanId/BaseAmount must be supplied. */
+CommercePaymentsPricingCalculationInputSchema = z.object({
+  addOns: z
+    .array(z.lazy(() => CommercePaymentsPricingAddOnInputSchema))
+    .nullable()
+    .optional(),
+  applyCredits: z.boolean().optional(),
+  baseAmount: z.number().nullable().optional(),
+  billingCycle: z.lazy(() => BillingCycleSchema).optional(),
+  consumeCredits: z.boolean().optional(),
+  currency: z.string().nullable().optional(),
+  discountScope: z.lazy(() => CommercePaymentsPricingDiscountScopeSchema).optional(),
+  effectiveDate: z.string().datetime().nullable().optional(),
+  includeTax: z.boolean().optional(),
+  maxCreditUsage: z.number().nullable().optional(),
+  orderId: z.string().uuid().nullable().optional(),
+  paymentId: z.string().uuid().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
+  proration: z.lazy(() => CommercePaymentsPricingProrationInputSchema).optional(),
+  recordDecision: z.boolean().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  taxInfo: z.lazy(() => CommercePaymentsPricingTaxInfoSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  usageCharges: z
+    .array(z.lazy(() => CommercePaymentsPricingUsageChargeInputSchema))
+    .nullable()
+    .optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingCalculationResult. The single pricing calculation result (issue #417). Consolidates the former abstract
+Payments shape and the Subscriptions duplicate into one engine-owned model. */
+CommercePaymentsPricingCalculationResultSchema = z.object({
+  addOnsTotal: z.lazy(() => MoneySchema).optional(),
+  amountDue: z.lazy(() => MoneySchema).optional(),
+  appliedDiscounts: z
+    .array(z.lazy(() => CommercePaymentsAppliedDiscountSchema))
+    .nullable()
+    .optional(),
+  basePlanPrice: z.lazy(() => MoneySchema).optional(),
+  billingCycle: z.lazy(() => BillingCycleSchema).optional(),
+  calculatedAt: z.string().datetime().optional(),
+  calculationExplanation: z.string().nullable().optional(),
+  calculationId: z.string().uuid().optional(),
+  credits: z.lazy(() => CommercePaymentsCreditApplicationResultSchema).optional(),
+  creditsApplied: z.lazy(() => MoneySchema).optional(),
+  currency: z.string().nullable().optional(),
+  ledgerEntryId: z.string().uuid().nullable().optional(),
+  lineItems: z
+    .array(z.lazy(() => CommercePaymentsPricingLineItemSchema))
+    .nullable()
+    .optional(),
+  proration: z.lazy(() => CommercePaymentsPricingProrationResultSchema).optional(),
+  prorationAdjustment: z.number().optional(),
+  rejectedPromoCodes: z
+    .array(z.lazy(() => CommercePaymentsRejectedPromoDiscountSchema))
+    .nullable()
+    .optional(),
+  subtotal: z.lazy(() => MoneySchema).optional(),
+  subtotalAfterDiscounts: z.lazy(() => MoneySchema).optional(),
+  tax: z.lazy(() => CommercePaymentsTaxCalculationResultSchema).optional(),
+  taxAmount: z.lazy(() => MoneySchema).optional(),
+  total: z.lazy(() => MoneySchema).optional(),
+  totalDiscounts: z.lazy(() => MoneySchema).optional(),
+  usageCharges: z.lazy(() => MoneySchema).optional(),
+  validationErrors: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingDiscountScope. Which items promo discounts apply to (issue #417 line-item scoping). */
+CommercePaymentsPricingDiscountScopeSchema = z.enum(['AllItems', 'PlanOnly']);
+
+/** Zod schema for CommercePaymentsPricingLineItem. One display/audit line of the calculation (issue #417). */
+CommercePaymentsPricingLineItemSchema = z.object({
+  amount: z.lazy(() => MoneySchema).optional(),
+  name: z.string().nullable().optional(),
+  quantity: z.number().optional(),
+  type: z.string().nullable().optional(),
+  unitPrice: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingPreviewInput. Price-change preview request (issue #417): everything needed to show the customer what
+a plan switch costs before they confirm. The preview never records a ledger decision
+and never consumes credits. */
+CommercePaymentsPricingPreviewInputSchema = z.object({
+  billingCycle: z.lazy(() => BillingCycleSchema).optional(),
+  currency: z.string().nullable().optional(),
+  currentPlanId: z.string().uuid().optional(),
+  effectiveDate: z.string().datetime().nullable().optional(),
+  includeTax: z.boolean().optional(),
+  newPlanId: z.string().uuid().optional(),
+  periodEnd: z.string().datetime().optional(),
+  periodStart: z.string().datetime().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
+  taxInfo: z.lazy(() => CommercePaymentsPricingTaxInfoSchema).optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingPreviewResult. Price-change preview outcome (issue #417): the immediate (prorated) charge plus the
+next-renewal amount, so the customer sees both before confirming. */
+CommercePaymentsPricingPreviewResultSchema = z.object({
+  effectiveDate: z.string().datetime().optional(),
+  immediateCharge: z.lazy(() => CommercePaymentsPricingCalculationResultSchema).optional(),
+  nextRenewal: z.lazy(() => CommercePaymentsPricingCalculationResultSchema).optional(),
+  savingsFromDiscounts: z.lazy(() => MoneySchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingProrationInput. Proration inputs for a mid-cycle plan change (issue #417). The unified engine wires
+these into the existing `BillingCalculator.CalculateProration` through
+GameGuild.Commerce.Payments.IPlanProrationCalculator. */
+CommercePaymentsPricingProrationInputSchema = z.object({
+  currentPlanId: z.string().uuid().optional(),
+  effectiveDate: z.string().datetime().optional(),
+  newPlanId: z.string().uuid().optional(),
+  periodEnd: z.string().datetime().optional(),
+  periodStart: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingProrationResult. Proration outcome attached to a calculation (issue #417): mirrors
+`PlanChangeProration` plus the period context needed for line items. */
+CommercePaymentsPricingProrationResultSchema = z.object({
+  chargeForNew: z.number().optional(),
+  creditForUnused: z.number().optional(),
+  daysRemaining: z.number().int().optional(),
+  effectiveDate: z.string().datetime().optional(),
+  isCharge: z.boolean().optional(),
+  isCredit: z.boolean().optional(),
+  netAdjustment: z.number().optional(),
+  totalDays: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingTaxInfo. Tax inputs for a pricing calculation (issue #417). Carried through to the existing
+GameGuild.Commerce.Payments.ITaxCalculationService — jurisdiction, customer type (B2B reverse charge),
+VAT number, tax-inclusive flag, product category, and exemptions. */
+CommercePaymentsPricingTaxInfoSchema = z.object({
+  applicableExemptions: z.array(z.string()).nullable().optional(),
+  customerType: z.lazy(() => CommercePaymentsCustomerTypeSchema).optional(),
+  customerVatNumber: z.string().nullable().optional(),
+  isTaxInclusive: z.boolean().optional(),
+  jurisdictionCode: z.string().nullable().optional(),
+  productCategory: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingUsageChargeInput. One usage-based charge input with optional progressive tiers (issue #417).
+Without tiers the charge is Quantity × PerUnitPrice;
+with tiers each quantity band is priced at its own per-unit price (utility-style
+progressive banding), the last open-ended band absorbing any remainder. */
+CommercePaymentsPricingUsageChargeInputSchema = z.object({
+  metric: z.string().nullable().optional(),
+  perUnitPrice: z.number().optional(),
+  quantity: z.number().optional(),
+  tiers: z
+    .array(z.lazy(() => CommercePaymentsPricingUsageTierSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingUsageTier. One progressive usage-pricing band (issue #417). Bands are half-open quantity
+intervals [MinQuantity, MaxQuantity); quantities
+beyond the highest band's maximum are priced at that band's per-unit price. */
+CommercePaymentsPricingUsageTierSchema = z.object({
+  maxQuantity: z.number().nullable().optional(),
+  minQuantity: z.number().optional(),
+  perUnitPrice: z.number().optional(),
+});
+
 /** Zod schema for CommercePaymentsProcessRefundResult. Result model for refund processing operations */
 CommercePaymentsProcessRefundResultSchema = z.object({
   currency: z.string().nullable(),
@@ -27549,6 +28282,12 @@ CommercePaymentsRefundStatisticsSchema = z.object({
 
 /** Zod schema for CommercePaymentsRefundStatus. Lifecycle status of a refund request (issue #419). */
 CommercePaymentsRefundStatusSchema = z.enum(['Pending', 'Approved', 'Rejected', 'Processing', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRejectedPromoDiscount. One rejected promo code with the fail-closed reason. */
+CommercePaymentsRejectedPromoDiscountSchema = z.object({
+  code: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+});
 
 /** Zod schema for CommercePaymentsRequestRefundResult. Result of creating a refund request. */
 CommercePaymentsRequestRefundResultSchema = z.object({
@@ -28198,6 +28937,17 @@ CommerceProductsBatchProductCreateItemSchema = z.object({
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
 });
 
+/** Zod schema for CommerceProductsBundleSavingsHint. Bundle-price optimization hint (issue #401): bundle price vs sum-of-parts. */
+CommerceProductsBundleSavingsHintSchema = z.object({
+  bundleId: z.string().uuid().optional(),
+  bundlePrice: z.number().optional(),
+  componentsPriced: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  savings: z.number().optional(),
+  savingsPercentage: z.number().optional(),
+  sumOfParts: z.number().optional(),
+});
+
 /** Zod schema for CommerceProductsCalculatePricingInput. Request to calculate a price through the pricing engine. */
 CommerceProductsCalculatePricingInputSchema = z.object({
   customerSegment: z.string().nullable().optional(),
@@ -28298,10 +29048,21 @@ CommerceProductsCreatePricingRuleInputSchema = z.object({
   timeStart: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsCreateProductCategoryInput. Request model for creating a product category. */
+CommerceProductsCreateProductCategoryInputSchema = z.object({
+  attributesJson: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  slug: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsCreateProductInput. Request model for creating a product */
 CommerceProductsCreateProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
   isBundle: z.boolean().optional(),
@@ -28417,6 +29178,7 @@ CommerceProductsGrantEntitlementInputSchema = z.object({
 CommerceProductsPatchProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().nullable().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   expectedVersion: z.number().int().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
@@ -28518,11 +29280,40 @@ CommerceProductsPricingRuleTierInputSchema = z.object({
 /** Zod schema for CommerceProductsProductAcquisitionType. Represents how a user acquired access to a product */
 CommerceProductsProductAcquisitionTypeSchema = z.enum(['Purchase', 'Subscription', 'Grant', 'PromoCode', 'Bundle', 'Trial', 'Referral', 'Free', 'Gift']);
 
+/** Zod schema for CommerceProductsProductAvailabilityDto. DTO for a product's real-time availability (issue #401). */
+CommerceProductsProductAvailabilityDtoSchema = z.object({
+  availableQuantity: z.number().int().nullable().optional(),
+  isInStock: z.boolean().optional(),
+  isLowStock: z.boolean().optional(),
+  lowStockThreshold: z.number().int().optional(),
+  productId: z.string().uuid().optional(),
+  reservedQuantity: z.number().int().nullable().optional(),
+  stockQuantity: z.number().int().nullable().optional(),
+  trackInventory: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceProductsProductCategoryDto. DTO for a product catalog category (issue #401). */
+CommerceProductsProductCategoryDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  attributes: z.record(z.string(), z.string()).nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  depth: z.number().int().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  path: z.array(z.string()).nullable().optional(),
+  productCount: z.number().int().nullable().optional(),
+  slug: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
 /** Zod schema for CommerceProductsProductDto. Product Data Transfer Object for API responses */
 CommerceProductsProductDtoSchema = z.object({
   id: z.string().uuid().optional(),
   affiliateCommissionPercentage: z.number().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   createdAt: z.string().datetime().optional(),
   creatorId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
@@ -28539,6 +29330,16 @@ CommerceProductsProductDtoSchema = z.object({
   shortDescription: z.string().nullable().optional(),
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
   updatedAt: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommerceProductsProductInventoryDto. DTO for a product's inventory configuration (issue #401). */
+CommerceProductsProductInventoryDtoSchema = z.object({
+  availableQuantity: z.number().int().optional(),
+  lowStockThreshold: z.number().int().optional(),
+  productId: z.string().uuid().optional(),
+  reservedQuantity: z.number().int().optional(),
+  stockQuantity: z.number().int().optional(),
+  trackInventory: z.boolean().optional(),
 });
 
 /** Zod schema for CommerceProductsProductPricingDto. Product Pricing Data Transfer Object */
@@ -28689,6 +29490,13 @@ CommerceProductsRevokeEntitlementInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for CommerceProductsSetProductInventoryInput. Request model for configuring a product's inventory (issue #401) */
+CommerceProductsSetProductInventoryInputSchema = z.object({
+  lowStockThreshold: z.number().int().optional(),
+  stockQuantity: z.number().int().optional(),
+  trackInventory: z.boolean().optional(),
+});
+
 /** Zod schema for CommerceProductsSetProductPricingInput. Data model for Commerce Products Set Product Pricing Request. */
 CommerceProductsSetProductPricingInputSchema = z.object({
   basePrice: z.number().optional(),
@@ -28796,10 +29604,23 @@ CommerceProductsUpdatePricingRuleInputSchema = z.object({
   timeStart: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsUpdateProductCategoryInput. Request model for updating a product category. */
+CommerceProductsUpdateProductCategoryInputSchema = z.object({
+  attributesJson: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().nullable().optional(),
+  expectedVersion: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  reparent: z.boolean().optional(),
+  slug: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsUpdateProductInput. Request model for updating a product */
 CommerceProductsUpdateProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().nullable().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   expectedVersion: z.number().int().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
@@ -28914,6 +29735,12 @@ CommerceSubscriptionsCreateClientInputSchema = z.object({
   name: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
   taxId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceSubscriptionsPreviewSubscriptionPlanChangeInput. Request body for the subscription plan-change preview (issue #417). */
+CommerceSubscriptionsPreviewSubscriptionPlanChangeInputSchema = z.object({
+  newPlanId: z.string().uuid().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for CommerceSubscriptionsSubscription. Represents a subscription linking a tenant to a subscription plan */
@@ -45608,6 +46435,10 @@ export type CommerceBillingPricingDecisionLedgerEntryDetail = CommerceBillingPri
 export { CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema as CommerceBillingPricingDecisionLedgerEntryDetailSchema };
 export type CommerceBillingPricingDecisionLedgerEntry = CommerceBillingPricingDecisionLedgerEntryDto;
 export { CommerceBillingPricingDecisionLedgerEntryDtoSchema as CommerceBillingPricingDecisionLedgerEntrySchema };
+export type CommerceOrdersBundleRecommendation = CommerceOrdersBundleRecommendationDto;
+export { CommerceOrdersBundleRecommendationDtoSchema as CommerceOrdersBundleRecommendationSchema };
+export type CommerceOrdersCoPurchaseRecommendation = CommerceOrdersCoPurchaseRecommendationDto;
+export { CommerceOrdersCoPurchaseRecommendationDtoSchema as CommerceOrdersCoPurchaseRecommendationSchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
@@ -45616,12 +46447,16 @@ export type CommerceOrdersMarketplaceCheckout = CommerceOrdersMarketplaceCheckou
 export { CommerceOrdersMarketplaceCheckoutDtoSchema as CommerceOrdersMarketplaceCheckoutSchema };
 export type CommerceOrdersMarketplaceCheckoutOrder = CommerceOrdersMarketplaceCheckoutOrderDto;
 export { CommerceOrdersMarketplaceCheckoutOrderDtoSchema as CommerceOrdersMarketplaceCheckoutOrderSchema };
+export type CommerceOrdersOptionalBundleItem = CommerceOrdersOptionalBundleItemDto;
+export { CommerceOrdersOptionalBundleItemDtoSchema as CommerceOrdersOptionalBundleItemSchema };
 export type CommerceOrdersOrderCapture = CommerceOrdersOrderCaptureDto;
 export { CommerceOrdersOrderCaptureDtoSchema as CommerceOrdersOrderCaptureSchema };
 export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
+export type CommerceOrdersProductRecommendations = CommerceOrdersProductRecommendationsDto;
+export { CommerceOrdersProductRecommendationsDtoSchema as CommerceOrdersProductRecommendationsSchema };
 export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
 export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
 export type CommercePaymentsPaymentRetryAttempt = CommercePaymentsPaymentRetryAttemptDto;
@@ -45638,8 +46473,14 @@ export type CommerceProductsPricingRule = CommerceProductsPricingRuleDto;
 export { CommerceProductsPricingRuleDtoSchema as CommerceProductsPricingRuleSchema };
 export type CommerceProductsPricingRuleTier = CommerceProductsPricingRuleTierDto;
 export { CommerceProductsPricingRuleTierDtoSchema as CommerceProductsPricingRuleTierSchema };
+export type CommerceProductsProductAvailability = CommerceProductsProductAvailabilityDto;
+export { CommerceProductsProductAvailabilityDtoSchema as CommerceProductsProductAvailabilitySchema };
+export type CommerceProductsProductCategory = CommerceProductsProductCategoryDto;
+export { CommerceProductsProductCategoryDtoSchema as CommerceProductsProductCategorySchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;
 export { CommerceProductsProductDtoSchema as CommerceProductsProductSchema };
+export type CommerceProductsProductInventory = CommerceProductsProductInventoryDto;
+export { CommerceProductsProductInventoryDtoSchema as CommerceProductsProductInventorySchema };
 export type CommerceProductsProductPricing = CommerceProductsProductPricingDto;
 export { CommerceProductsProductPricingDtoSchema as CommerceProductsProductPricingSchema };
 export type CommerceProductsPromoCode = CommerceProductsPromoCodeDto;

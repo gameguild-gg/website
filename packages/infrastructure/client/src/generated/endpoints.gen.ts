@@ -9337,6 +9337,77 @@ export const getPostsTrendingEndpoint = {
 } as const;
 
 /**
+ * Run a full pricing calculation through the unified engine: base plan or custom
+ * amount, add-ons, usage tiers, promo discounts, proration, tax, credits, currency —
+ * itemized, explained, self-validated, and recorded in the pricing-decision ledger.
+ *
+ * Calculates a full price (base, add-ons, usage tiers, discounts, proration, tax, credits) through the single centralized pricing engine and records the decision for audit.
+ */
+export interface PostPricingCalculateInput {
+  body?: Types.CommercePaymentsPricingCalculationInput;
+}
+export type PostPricingCalculateOutput = Types.CommercePaymentsPricingCalculationResult;
+export const postPricingCalculateEndpoint = {
+  operationId: 'postPricingCalculate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/:calculate' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview a plan change before finalizing: the immediate prorated charge and the
+ * next-renewal amount side by side. Read-only — no ledger decision, no credit spend.
+ *
+ * Previews what a plan change costs before it is applied: the immediate prorated charge and the next renewal amount, with discounts, tax, and an itemized breakdown.
+ */
+export interface PostPricingPreviewInput {
+  body?: Types.CommercePaymentsPricingPreviewInput;
+}
+export type PostPricingPreviewOutput = Types.CommercePaymentsPricingPreviewResult;
+export const postPricingPreviewEndpoint = {
+  operationId: 'postPricingPreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/:preview' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a stored price calculation by id
+ *
+ * Retrieves one recorded pricing calculation from the pricing-decision ledger, including the full itemized breakdown (base, add-ons, usage, discounts, proration, tax, credits) that produced the final amount.
+ */
+export interface GetPricingCalculationsInput {
+  calculationId: string;
+}
+export type GetPricingCalculationsOutput = Types.CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export const getPricingCalculationsEndpoint = {
+  operationId: 'getPricingCalculations' as const,
+  method: 'GET' as const,
+  path: '/api/v1/pricing/calculations/{calculationId}' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate the accuracy of a stored price calculation
+ *
+ * Re-validates one stored pricing calculation: recomputes the final amount from the recorded breakdown and checks the calculation invariants — totals match line items, discounts do not exceed the subtotal, tax rates are plausible, proration stays within the plan price, and no rounding drift accumulated.
+ */
+export interface PostPricingValidateInput {
+  calculationId: string;
+}
+export type PostPricingValidateOutput = Types.CommerceBillingPricingCalculationValidationResult;
+export const postPricingValidateEndpoint = {
+  operationId: 'postPricingValidate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/validate/{calculationId}' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Gets the caller's referral code and trackable link, creating them on first use.
  *
  * Returns the calling user's opaque unique referral code and the trackable share link built from it (AccountCredits:ReferralLinkBaseUrl base). Idempotent: every call returns the same per-user code.
@@ -10396,6 +10467,26 @@ export const getSubscriptionsBillingHistoryEndpoint = {
 } as const;
 
 /**
+ * Get the current price breakdown of a subscription (issue #417)
+ *
+ * Returns the itemized price breakdown of a subscription's current plan through the unified pricing engine: base plan, discounts, totals and a calculation explanation.
+ */
+export interface GetSubscriptionsBreakdownInput {
+  subscriptionId: string;
+  query?: {
+    promoCode?: string;
+  };
+}
+export type GetSubscriptionsBreakdownOutput = Types.CommercePaymentsPricingCalculationResult;
+export const getSubscriptionsBreakdownEndpoint = {
+  operationId: 'getSubscriptionsBreakdown' as const,
+  method: 'GET' as const,
+  path: '/api/v1/subscriptions/{subscriptionId}/breakdown' as const,
+  tags: ['CommerceSubscriptions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get subscription invoices
  *
  * Retrieves the invoice history for a specific subscription.
@@ -10412,6 +10503,24 @@ export const getSubscriptionsInvoicesEndpoint = {
   operationId: 'getSubscriptionsInvoices' as const,
   method: 'GET' as const,
   path: '/api/v1/subscriptions/{subscriptionId}/invoices' as const,
+  tags: ['CommerceSubscriptions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview a plan change for a subscription before finalizing (issue #417)
+ *
+ * Previews what switching this subscription to a new plan costs before anything is applied: the immediate prorated charge and the next renewal amount, using the subscription's real billing period.
+ */
+export interface PostSubscriptionsPricingPreviewInput {
+  subscriptionId: string;
+  body?: Types.CommerceSubscriptionsPreviewSubscriptionPlanChangeInput;
+}
+export type PostSubscriptionsPricingPreviewOutput = Types.CommercePaymentsPricingPreviewResult;
+export const postSubscriptionsPricingPreviewEndpoint = {
+  operationId: 'postSubscriptionsPricingPreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/subscriptions/{subscriptionId}/pricing:preview' as const,
   tags: ['CommerceSubscriptions'] as const,
   requiresAuth: true,
 } as const;
@@ -20856,6 +20965,86 @@ export const getPermissionDelegationsDelegatorEndpoint = {
 } as const;
 
 /**
+ * List catalog categories (optionally filtered to a subtree or the roots)
+ */
+export interface GetProductCategoriesForGetProductCategoriesInput {
+  query?: {
+    parentCategoryId?: string;
+    rootsOnly?: boolean;
+    includeProductCounts?: boolean;
+  };
+}
+export type GetProductCategoriesForGetProductCategoriesOutput = Types.CommerceProductsProductCategoryDto[];
+export const getProductCategoriesForGetProductCategoriesEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategories' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create a category
+ */
+export interface PostProductCategoriesInput {
+  body?: Types.CommerceProductsCreateProductCategoryInput;
+}
+export type PostProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const postProductCategoriesEndpoint = {
+  operationId: 'postProductCategories' as const,
+  method: 'POST' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a category by ID
+ */
+export interface GetProductCategoriesForGetProductCategoriesByCategoryIdInput {
+  categoryId: string;
+}
+export type GetProductCategoriesForGetProductCategoriesByCategoryIdOutput = Types.CommerceProductsProductCategoryDto;
+export const getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategoriesByCategoryId' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Update a category (rename, re-slug, reparent, attributes)
+ */
+export interface PutProductCategoriesInput {
+  categoryId: string;
+  body?: Types.CommerceProductsUpdateProductCategoryInput;
+}
+export type PutProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const putProductCategoriesEndpoint = {
+  operationId: 'putProductCategories' as const,
+  method: 'PUT' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a category (soft). Rejected while children or assigned products exist.
+ */
+export interface DeleteProductCategoriesInput {
+  categoryId: string;
+}
+export type DeleteProductCategoriesOutput = void;
+export const deleteProductCategoriesEndpoint = {
+  operationId: 'deleteProductCategories' as const,
+  method: 'DELETE' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get paginated list of products
  */
 export interface GetProductsForGetProductsInput {
@@ -20864,6 +21053,8 @@ export interface GetProductsForGetProductsInput {
     creatorId?: string;
     searchTerm?: string;
     isBundle?: boolean;
+    categoryId?: string;
+    inStock?: boolean;
     includeUnpublished?: boolean;
     skip?: number;
     take?: number;
@@ -21044,6 +21235,37 @@ export const postProductsDeactivateEndpoint = {
 } as const;
 
 /**
+ * Get a product's real-time availability (issue #401)
+ */
+export interface GetProductsAvailabilityInput {
+  productId: string;
+}
+export type GetProductsAvailabilityOutput = Types.CommerceProductsProductAvailabilityDto;
+export const getProductsAvailabilityEndpoint = {
+  operationId: 'getProductsAvailability' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/availability' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create or replace a product's inventory configuration (issue #401)
+ */
+export interface PutProductsInventoryInput {
+  productId: string;
+  body?: Types.CommerceProductsSetProductInventoryInput;
+}
+export type PutProductsInventoryOutput = Types.CommerceProductsProductInventoryDto;
+export const putProductsInventoryEndpoint = {
+  operationId: 'putProductsInventory' as const,
+  method: 'PUT' as const,
+  path: '/v1/products/{productId}/inventory' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get pricing options for a product
  */
 export interface GetProductsPricingInput {
@@ -21072,6 +21294,24 @@ export const putProductsPricingEndpoint = {
   path: '/v1/products/{productId}/pricing' as const,
   tags: ['CommerceProducts'] as const,
   requiresAuth: true,
+} as const;
+
+/**
+ * Get rule-based recommendations for a product
+ */
+export interface GetProductsRecommendationsInput {
+  productId: string;
+  query?: {
+    take?: number;
+  };
+}
+export type GetProductsRecommendationsOutput = Types.CommerceOrdersProductRecommendationsDto;
+export const getProductsRecommendationsEndpoint = {
+  operationId: 'getProductsRecommendations' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/recommendations' as const,
+  tags: ['CommerceOrdersProducts'] as const,
+  requiresAuth: false,
 } as const;
 
 /**
@@ -29118,6 +29358,10 @@ export const endpoints = {
   getPostsTagsPopular: getPostsTagsPopularEndpoint,
   getPostsTagsSearch: getPostsTagsSearchEndpoint,
   getPostsTrending: getPostsTrendingEndpoint,
+  postPricingCalculate: postPricingCalculateEndpoint,
+  postPricingPreview: postPricingPreviewEndpoint,
+  getPricingCalculations: getPricingCalculationsEndpoint,
+  postPricingValidate: postPricingValidateEndpoint,
   getReferralsCode: getReferralsCodeEndpoint,
   getReferralsHistory: getReferralsHistoryEndpoint,
   getReferralsStats: getReferralsStatsEndpoint,
@@ -29177,7 +29421,9 @@ export const endpoints = {
   postSubscriptionsSuspend: postSubscriptionsSuspendEndpoint,
   postSubscriptionsUpgrade: postSubscriptionsUpgradeEndpoint,
   getSubscriptionsBillingHistory: getSubscriptionsBillingHistoryEndpoint,
+  getSubscriptionsBreakdown: getSubscriptionsBreakdownEndpoint,
   getSubscriptionsInvoices: getSubscriptionsInvoicesEndpoint,
+  postSubscriptionsPricingPreview: postSubscriptionsPricingPreviewEndpoint,
   getSubscriptionsUsage: getSubscriptionsUsageEndpoint,
   getTaxJurisdictionsForGetTaxJurisdictions: getTaxJurisdictionsForGetTaxJurisdictionsEndpoint,
   postTaxJurisdictions: postTaxJurisdictionsEndpoint,
@@ -29838,6 +30084,11 @@ export const endpoints = {
   getPermissionDelegationsCheck: getPermissionDelegationsCheckEndpoint,
   getPermissionDelegationsDelegate: getPermissionDelegationsDelegateEndpoint,
   getPermissionDelegationsDelegator: getPermissionDelegationsDelegatorEndpoint,
+  getProductCategoriesForGetProductCategories: getProductCategoriesForGetProductCategoriesEndpoint,
+  postProductCategories: postProductCategoriesEndpoint,
+  getProductCategoriesForGetProductCategoriesByCategoryId: getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint,
+  putProductCategories: putProductCategoriesEndpoint,
+  deleteProductCategories: deleteProductCategoriesEndpoint,
   getProductsForGetProducts: getProductsForGetProductsEndpoint,
   postProducts: postProductsEndpoint,
   postProductsBatchCreate: postProductsBatchCreateEndpoint,
@@ -29849,8 +30100,11 @@ export const endpoints = {
   postProductsActivate: postProductsActivateEndpoint,
   postProductsArchive: postProductsArchiveEndpoint,
   postProductsDeactivate: postProductsDeactivateEndpoint,
+  getProductsAvailability: getProductsAvailabilityEndpoint,
+  putProductsInventory: putProductsInventoryEndpoint,
   getProductsPricing: getProductsPricingEndpoint,
   putProductsPricing: putProductsPricingEndpoint,
+  getProductsRecommendations: getProductsRecommendationsEndpoint,
   getProjectsForGetProjects: getProjectsForGetProjectsEndpoint,
   postProjects: postProjectsEndpoint,
   getProjectsForGetProjectsById: getProjectsForGetProjectsByIdEndpoint,

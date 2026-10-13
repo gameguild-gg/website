@@ -143,14 +143,14 @@ public class ModuleAndInfrastructureTests
     [Fact]
     public void CreateProductCommandHandler_Ctor()
     {
-        var h = new CreateProductCommandHandler(Mock.Of<IProductRepository>());
+        var h = new CreateProductCommandHandler(Mock.Of<IProductRepository>(), Mock.Of<IProductCategoryRepository>());
         h.Should().NotBeNull();
     }
 
     [Fact]
     public void UpdateProductCommandHandler_Ctor()
     {
-        var h = new UpdateProductCommandHandler(Mock.Of<IProductRepository>());
+        var h = new UpdateProductCommandHandler(Mock.Of<IProductRepository>(), Mock.Of<IProductCategoryRepository>());
         h.Should().NotBeNull();
     }
 
@@ -251,7 +251,7 @@ public class ModuleAndInfrastructureTests
     [Fact]
     public void PatchProductHandler_Ctor()
     {
-        var h = new PatchProductHandler(Mock.Of<IProductRepository>());
+        var h = new PatchProductHandler(Mock.Of<IProductRepository>(), Mock.Of<IProductCategoryRepository>());
         h.Should().NotBeNull();
     }
 
@@ -295,7 +295,7 @@ public class ModuleAndInfrastructureTests
     [Fact]
     public void GetProductsPagedQueryHandler_Ctor()
     {
-        var h = new GetProductsPagedQueryHandler(Mock.Of<IProductRepository>());
+        var h = new GetProductsPagedQueryHandler(Mock.Of<IProductRepository>(), Mock.Of<IProductCategoryRepository>());
         h.Should().NotBeNull();
     }
 
