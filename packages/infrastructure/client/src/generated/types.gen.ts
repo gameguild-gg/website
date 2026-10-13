@@ -1735,6 +1735,22 @@ export interface CommerceBillingInvoicePaymentRetryResult {
 /** Invoice status enumeration with monotonic transitions */
 export type CommerceBillingInvoiceStatus = 'Draft' | 'Open' | 'Paid' | 'Void' | 'PastDue' | 'Uncollectible';
 
+/** Validation outcome for one stored calculation (issue #417). */
+export interface CommerceBillingPricingCalculationValidationResult {
+  /** Ledger entry id. */
+  calculationId?: string;
+  /** Whether the recomputation diverges from the stored final. */
+  drifted?: boolean;
+  /** Final amount recomputed from the recorded breakdown. */
+  recomputedFinalAmount?: number;
+  /** Final amount as persisted. */
+  storedFinalAmount?: number;
+  /** True when the recomputation matches and no invariant is violated. */
+  valid?: boolean;
+  /** Invariant violations in fail-closed detail. */
+  violations?: string[] | null;
+}
+
 /** Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
 the drift-validation outcome (recomputed amount, reason). */
 export interface CommerceBillingPricingDecisionLedgerEntryDetailDto {
@@ -2314,6 +2330,23 @@ export type CommercePaymentsAccountCreditTransactionType = 'Grant' | 'Consume' |
 /** What an account credit grant may be applied to. */
 export type CommercePaymentsAccountCreditType = 'General' | 'Subscription' | 'Addon';
 
+/** Applied discount information produced by the unified pricing engine (issue #417).
+Concrete (the abstract Payments predecessor and the Subscriptions duplicate are gone). */
+export interface CommercePaymentsAppliedDiscount {
+  amount?: Money;
+  /** Normalized discount code */
+  code?: string | null;
+  /** Human-readable description */
+  description?: string | null;
+  /** Whether this discount may stack with others (promo-engine !IsExclusive) */
+  isStackable?: boolean;
+  /** Percentage equivalent, for percentage-based codes */
+  percentage?: number;
+  /** Stacking priority (higher applies first; promo-engine StackingPriority) */
+  priority?: number;
+  type?: CommercePaymentsDiscountType;
+}
+
 /** Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 export interface CommercePaymentsBillingChargesControllerCancelBillingChargeInput {
   canceledBy?: string | null;
@@ -2373,6 +2406,13 @@ export interface CommercePaymentsCreateWalletInput {
   currency?: string | null;
 }
 
+/** Credit (wallet) application outcome inside a calculation (issue #417). */
+export interface CommercePaymentsCreditApplicationResult {
+  creditsApplied?: number;
+  creditsAvailable?: number;
+  remainingCredits?: number;
+}
+
 /** Credit totals per currency for the metrics report. */
 export interface CommercePaymentsCreditCurrencyMetrics {
   /** Sum of remaining balances of Active grants. */
@@ -2403,6 +2443,12 @@ export interface CommercePaymentsCreditMetrics {
 
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
+
+/** Discount type enumeration for applied discounts in the unified pricing engine.
+Consolidated (issue #417): the Payments and Subscriptions module duplicates are
+merged into this single definition covering every discount type the promo engine
+can apply plus wallet credits. */
+export type CommercePaymentsDiscountType = 'Percentage' | 'FixedAmount' | 'FreeMonths' | 'Credits' | 'TrialExtension' | 'SetPrice';
 
 /** Result of an accept or challenge action on a dispute. */
 export interface CommercePaymentsDisputeActionResult {
@@ -3055,6 +3101,219 @@ export interface CommercePaymentsPaymentsControllerRefundInput {
 export type CommercePaymentsPaymentStatus =
   'Pending' | 'Processing' | 'Succeeded' | 'Failed' | 'Cancelled' | 'RequiresAction' | 'Refunded' | 'Disputed' | 'PartiallyRefunded';
 
+/** Add-on priced independently of the plan (issue #417): own unit price, own quantity,
+own currency (converted to the calculation currency through the FX core when they differ). */
+export interface CommercePaymentsPricingAddOnInput {
+  /** Caller-side add-on identifier (line-item key) */
+  addOnId?: string | null;
+  /** Display name */
+  name?: string | null;
+  /** Quantity purchased */
+  quantity?: number;
+  unitPrice?: Money;
+}
+
+/** Unified pricing calculation request (issue #417). Exactly one of
+PlanId/BaseAmount must be supplied. */
+export interface CommercePaymentsPricingCalculationInput {
+  /** Independently priced add-ons */
+  addOns?: CommercePaymentsPricingAddOnInput[] | null;
+  /** Whether to apply wallet credits after tax */
+  applyCredits?: boolean;
+  /** Custom base amount (plan-less calculation) */
+  baseAmount?: number | null;
+  billingCycle?: BillingCycle;
+  /** When true, deducted from the wallet (quote-only by default) */
+  consumeCredits?: boolean;
+  /** Target currency (ISO 4217); plan/add-on amounts are converted via the FX core */
+  currency?: string | null;
+  discountScope?: CommercePaymentsPricingDiscountScope;
+  /** Effective date of the calculation (defaults to now) */
+  effectiveDate?: string | null;
+  /** Whether to run tax through ITaxCalculationService */
+  includeTax?: boolean;
+  /** Upper bound on credits to apply */
+  maxCreditUsage?: number | null;
+  /** Order correlation (ledger) */
+  orderId?: string | null;
+  /** Payment correlation (ledger) */
+  paymentId?: string | null;
+  /** Subscription plan to price (resolved via IPlanPricingResolver) */
+  planId?: string | null;
+  /** Promo codes to apply (validated + stacked by the promo engine) */
+  promoCodes?: string[] | null;
+  proration?: CommercePaymentsPricingProrationInput;
+  /** When true, appended to the pricing-decision ledger (issue #400) */
+  recordDecision?: boolean;
+  /** Subscription correlation (ledger) */
+  subscriptionId?: string | null;
+  taxInfo?: CommercePaymentsPricingTaxInfo;
+  /** Tenant correlation (audit) */
+  tenantId?: string | null;
+  /** Usage-based charges with optional progressive tiers */
+  usageCharges?: CommercePaymentsPricingUsageChargeInput[] | null;
+  /** Acting user (promo eligibility, wallet credits) */
+  userId?: string | null;
+}
+
+/** The single pricing calculation result (issue #417). Consolidates the former abstract
+Payments shape and the Subscriptions duplicate into one engine-owned model. */
+export interface CommercePaymentsPricingCalculationResult {
+  addOnsTotal?: Money;
+  amountDue?: Money;
+  /** Discounts the promo engine applied, in application order. */
+  appliedDiscounts?: CommercePaymentsAppliedDiscount[] | null;
+  basePlanPrice?: Money;
+  billingCycle?: BillingCycle;
+  /** When the calculation ran (UTC). */
+  calculatedAt?: string;
+  /** Human-readable step-by-step explanation. */
+  calculationExplanation?: string | null;
+  /** Unique calculation id (also the ledger idempotency key). */
+  calculationId?: string;
+  credits?: CommercePaymentsCreditApplicationResult;
+  creditsApplied?: Money;
+  /** Calculation currency (all Money fields). */
+  currency?: string | null;
+  /** Ledger entry id when the decision was recorded (issue #400 ledger). */
+  ledgerEntryId?: string | null;
+  /** Itemized breakdown for display and audit. */
+  lineItems?: CommercePaymentsPricingLineItem[] | null;
+  proration?: CommercePaymentsPricingProrationResult;
+  /** Net proration adjustment in the calculation currency, signed: positive = immediate
+charge, negative = credit (GameGuild.Money cannot hold negative amounts). */
+  prorationAdjustment?: number;
+  /** Requested promo codes that did not apply, with the fail-closed reason. */
+  rejectedPromoCodes?: CommercePaymentsRejectedPromoDiscount[] | null;
+  subtotal?: Money;
+  subtotalAfterDiscounts?: Money;
+  tax?: CommercePaymentsTaxCalculationResult;
+  taxAmount?: Money;
+  total?: Money;
+  totalDiscounts?: Money;
+  usageCharges?: Money;
+  /** Sticky validation notes (invariant violations never silently pass). */
+  validationErrors?: string[] | null;
+}
+
+/** Which items promo discounts apply to (issue #417 line-item scoping). */
+export type CommercePaymentsPricingDiscountScope = 'AllItems' | 'PlanOnly';
+
+/** One display/audit line of the calculation (issue #417). */
+export interface CommercePaymentsPricingLineItem {
+  amount?: Money;
+  name?: string | null;
+  quantity?: number;
+  type?: string | null;
+  unitPrice?: number;
+}
+
+/** Price-change preview request (issue #417): everything needed to show the customer what
+a plan switch costs before they confirm. The preview never records a ledger decision
+and never consumes credits. */
+export interface CommercePaymentsPricingPreviewInput {
+  billingCycle?: BillingCycle;
+  /** Target currency */
+  currency?: string | null;
+  /** Plan the subscription is on today */
+  currentPlanId?: string;
+  /** When the change would take effect (defaults to now) */
+  effectiveDate?: string | null;
+  /** Whether to include tax */
+  includeTax?: boolean;
+  /** Plan being considered */
+  newPlanId?: string;
+  /** Current billing period end */
+  periodEnd?: string;
+  /** Current billing period start */
+  periodStart?: string;
+  /** Promo codes to preview */
+  promoCodes?: string[] | null;
+  taxInfo?: CommercePaymentsPricingTaxInfo;
+  /** Acting user (promo eligibility) */
+  userId?: string | null;
+}
+
+/** Price-change preview outcome (issue #417): the immediate (prorated) charge plus the
+next-renewal amount, so the customer sees both before confirming. */
+export interface CommercePaymentsPricingPreviewResult {
+  /** Effective date the change would take place. */
+  effectiveDate?: string;
+  immediateCharge?: CommercePaymentsPricingCalculationResult;
+  nextRenewal?: CommercePaymentsPricingCalculationResult;
+  savingsFromDiscounts?: Money;
+}
+
+/** Proration inputs for a mid-cycle plan change (issue #417). The unified engine wires
+these into the existing `BillingCalculator.CalculateProration` through
+GameGuild.Commerce.Payments.IPlanProrationCalculator. */
+export interface CommercePaymentsPricingProrationInput {
+  /** Plan the subscription is on today */
+  currentPlanId?: string;
+  /** When the change takes effect (mid-cycle) */
+  effectiveDate?: string;
+  /** Plan being switched to */
+  newPlanId?: string;
+  /** Current billing period end */
+  periodEnd?: string;
+  /** Current billing period start */
+  periodStart?: string;
+}
+
+/** Proration outcome attached to a calculation (issue #417): mirrors
+`PlanChangeProration` plus the period context needed for line items. */
+export interface CommercePaymentsPricingProrationResult {
+  chargeForNew?: number;
+  creditForUnused?: number;
+  daysRemaining?: number;
+  effectiveDate?: string;
+  /** Whether the change nets to an immediate charge. */
+  isCharge?: boolean;
+  /** Whether the change nets to a credit for the customer. */
+  isCredit?: boolean;
+  netAdjustment?: number;
+  totalDays?: number;
+}
+
+/** Tax inputs for a pricing calculation (issue #417). Carried through to the existing
+GameGuild.Commerce.Payments.ITaxCalculationService — jurisdiction, customer type (B2B reverse charge),
+VAT number, tax-inclusive flag, product category, and exemptions. */
+export interface CommercePaymentsPricingTaxInfo {
+  applicableExemptions?: string[] | null;
+  customerType?: CommercePaymentsCustomerType;
+  customerVatNumber?: string | null;
+  isTaxInclusive?: boolean;
+  jurisdictionCode?: string | null;
+  productCategory?: string | null;
+}
+
+/** One usage-based charge input with optional progressive tiers (issue #417).
+Without tiers the charge is Quantity × PerUnitPrice;
+with tiers each quantity band is priced at its own per-unit price (utility-style
+progressive banding), the last open-ended band absorbing any remainder. */
+export interface CommercePaymentsPricingUsageChargeInput {
+  /** Metric name (display/line-item key) */
+  metric?: string | null;
+  /** Flat per-unit price used when no tiers are supplied */
+  perUnitPrice?: number;
+  /** Quantity consumed in the period */
+  quantity?: number;
+  /** Optional progressive tier bands */
+  tiers?: CommercePaymentsPricingUsageTier[] | null;
+}
+
+/** One progressive usage-pricing band (issue #417). Bands are half-open quantity
+intervals [MinQuantity, MaxQuantity); quantities
+beyond the highest band's maximum are priced at that band's per-unit price. */
+export interface CommercePaymentsPricingUsageTier {
+  /** Exclusive upper bound of the band (null = open-ended) */
+  maxQuantity?: number | null;
+  /** Inclusive lower bound of the band */
+  minQuantity?: number;
+  /** Per-unit price inside this band */
+  perUnitPrice?: number;
+}
+
 /** Result model for refund processing operations */
 export interface CommercePaymentsProcessRefundResult {
   /** Currency of the refunded amount */
@@ -3347,6 +3606,14 @@ export interface CommercePaymentsRefundStatistics {
 
 /** Lifecycle status of a refund request (issue #419). */
 export type CommercePaymentsRefundStatus = 'Pending' | 'Approved' | 'Rejected' | 'Processing' | 'Completed' | 'Failed';
+
+/** One rejected promo code with the fail-closed reason. */
+export interface CommercePaymentsRejectedPromoDiscount {
+  /** Requested code */
+  code?: string | null;
+  /** Why it did not apply */
+  reason?: string | null;
+}
 
 /** Result of creating a refund request. */
 export interface CommercePaymentsRequestRefundResult {
@@ -5112,6 +5379,14 @@ export interface CommerceSubscriptionsCreateClientInput {
   name?: string | null;
   slug?: string | null;
   taxId?: string | null;
+}
+
+/** Request body for the subscription plan-change preview (issue #417). */
+export interface CommerceSubscriptionsPreviewSubscriptionPlanChangeInput {
+  /** Plan being considered. */
+  newPlanId?: string;
+  /** Optional promo codes to preview. */
+  promoCodes?: string[] | null;
 }
 
 /** Represents a subscription linking a tenant to a subscription plan */
@@ -22863,6 +23138,7 @@ export let CommerceBillingExternalBillingProviderStatusDtoSchema: z.ZodType<Comm
 export let CommerceBillingInvoiceAccountCreditSettlementResultSchema: z.ZodType<CommerceBillingInvoiceAccountCreditSettlementResult>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
+export let CommerceBillingPricingCalculationValidationResultSchema: z.ZodType<CommerceBillingPricingCalculationValidationResult>;
 export let CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDetailDto>;
 export let CommerceBillingPricingDecisionLedgerEntryDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDto>;
 export let CommerceBillingPricingLedgerDriftOutcomeSchema: z.ZodType<CommerceBillingPricingLedgerDriftOutcome>;
@@ -22908,6 +23184,7 @@ export let CommercePaymentsAccountCreditSourceSchema: z.ZodType<CommercePayments
 export let CommercePaymentsAccountCreditTransactionSchema: z.ZodType<CommercePaymentsAccountCreditTransaction>;
 export let CommercePaymentsAccountCreditTransactionTypeSchema: z.ZodType<CommercePaymentsAccountCreditTransactionType>;
 export let CommercePaymentsAccountCreditTypeSchema: z.ZodType<CommercePaymentsAccountCreditType>;
+export let CommercePaymentsAppliedDiscountSchema: z.ZodType<CommercePaymentsAppliedDiscount>;
 export let CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCancelBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerCreateBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCreateBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerRefundBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerRefundBillingChargeInput>;
@@ -22915,9 +23192,11 @@ export let CommercePaymentsCalculateTaxInputSchema: z.ZodType<CommercePaymentsCa
 export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsCreateTaxJurisdictionInput>;
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
+export let CommercePaymentsCreditApplicationResultSchema: z.ZodType<CommercePaymentsCreditApplicationResult>;
 export let CommercePaymentsCreditCurrencyMetricsSchema: z.ZodType<CommercePaymentsCreditCurrencyMetrics>;
 export let CommercePaymentsCreditMetricsSchema: z.ZodType<CommercePaymentsCreditMetrics>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsDiscountTypeSchema: z.ZodType<CommercePaymentsDiscountType>;
 export let CommercePaymentsDisputeActionResultSchema: z.ZodType<CommercePaymentsDisputeActionResult>;
 export let CommercePaymentsDisputeEvidenceSchema: z.ZodType<CommercePaymentsDisputeEvidence>;
 export let CommercePaymentsDisputeListPageSchema: z.ZodType<CommercePaymentsDisputeListPage>;
@@ -22971,6 +23250,18 @@ export let CommercePaymentsPaymentsControllerCreateSetupIntentOutputSchema: z.Zo
 export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerProcessPaymentInput>;
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
+export let CommercePaymentsPricingAddOnInputSchema: z.ZodType<CommercePaymentsPricingAddOnInput>;
+export let CommercePaymentsPricingCalculationInputSchema: z.ZodType<CommercePaymentsPricingCalculationInput>;
+export let CommercePaymentsPricingCalculationResultSchema: z.ZodType<CommercePaymentsPricingCalculationResult>;
+export let CommercePaymentsPricingDiscountScopeSchema: z.ZodType<CommercePaymentsPricingDiscountScope>;
+export let CommercePaymentsPricingLineItemSchema: z.ZodType<CommercePaymentsPricingLineItem>;
+export let CommercePaymentsPricingPreviewInputSchema: z.ZodType<CommercePaymentsPricingPreviewInput>;
+export let CommercePaymentsPricingPreviewResultSchema: z.ZodType<CommercePaymentsPricingPreviewResult>;
+export let CommercePaymentsPricingProrationInputSchema: z.ZodType<CommercePaymentsPricingProrationInput>;
+export let CommercePaymentsPricingProrationResultSchema: z.ZodType<CommercePaymentsPricingProrationResult>;
+export let CommercePaymentsPricingTaxInfoSchema: z.ZodType<CommercePaymentsPricingTaxInfo>;
+export let CommercePaymentsPricingUsageChargeInputSchema: z.ZodType<CommercePaymentsPricingUsageChargeInput>;
+export let CommercePaymentsPricingUsageTierSchema: z.ZodType<CommercePaymentsPricingUsageTier>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
 export let CommercePaymentsReferralSchema: z.ZodType<CommercePaymentsReferral>;
 export let CommercePaymentsReferralFunnelMetricsSchema: z.ZodType<CommercePaymentsReferralFunnelMetrics>;
@@ -22989,6 +23280,7 @@ export let CommercePaymentsRefundsControllerRefundDecisionInputSchema: z.ZodType
 export let CommercePaymentsRefundsControllerRequestRefundHttpInputSchema: z.ZodType<CommercePaymentsRefundsControllerRequestRefundHttpInput>;
 export let CommercePaymentsRefundStatisticsSchema: z.ZodType<CommercePaymentsRefundStatistics>;
 export let CommercePaymentsRefundStatusSchema: z.ZodType<CommercePaymentsRefundStatus>;
+export let CommercePaymentsRejectedPromoDiscountSchema: z.ZodType<CommercePaymentsRejectedPromoDiscount>;
 export let CommercePaymentsRequestRefundResultSchema: z.ZodType<CommercePaymentsRequestRefundResult>;
 export let CommercePaymentsRevenueAnomalyAlertSchema: z.ZodType<CommercePaymentsRevenueAnomalyAlert>;
 export let CommercePaymentsRevenueAnomalyKindSchema: z.ZodType<CommercePaymentsRevenueAnomalyKind>;
@@ -23101,6 +23393,7 @@ export let CommerceSubscriptionsBillingSubscriptionsControllerCreateBillingSubsc
 export let CommerceSubscriptionsCancellationReasonSchema: z.ZodType<CommerceSubscriptionsCancellationReason>;
 export let CommerceSubscriptionsClientModulesOutputSchema: z.ZodType<CommerceSubscriptionsClientModulesOutput>;
 export let CommerceSubscriptionsCreateClientInputSchema: z.ZodType<CommerceSubscriptionsCreateClientInput>;
+export let CommerceSubscriptionsPreviewSubscriptionPlanChangeInputSchema: z.ZodType<CommerceSubscriptionsPreviewSubscriptionPlanChangeInput>;
 export let CommerceSubscriptionsSubscriptionSchema: z.ZodType<CommerceSubscriptionsSubscription>;
 export let CommerceSubscriptionsSubscriptionChurnReportDtoSchema: z.ZodType<CommerceSubscriptionsSubscriptionChurnReportDto>;
 export let CommerceSubscriptionsSubscriptionDowngradeResultSchema: z.ZodType<CommerceSubscriptionsSubscriptionDowngradeResult>;
@@ -26355,6 +26648,16 @@ CommerceBillingInvoicePaymentRetryResultSchema = z.object({
 /** Zod schema for CommerceBillingInvoiceStatus. Invoice status enumeration with monotonic transitions */
 CommerceBillingInvoiceStatusSchema = z.enum(['Draft', 'Open', 'Paid', 'Void', 'PastDue', 'Uncollectible']);
 
+/** Zod schema for CommerceBillingPricingCalculationValidationResult. Validation outcome for one stored calculation (issue #417). */
+CommerceBillingPricingCalculationValidationResultSchema = z.object({
+  calculationId: z.string().uuid().optional(),
+  drifted: z.boolean().optional(),
+  recomputedFinalAmount: z.number().optional(),
+  storedFinalAmount: z.number().optional(),
+  valid: z.boolean().optional(),
+  violations: z.array(z.string()).nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingPricingDecisionLedgerEntryDetailDto. Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
 the drift-validation outcome (recomputed amount, reason). */
 CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema = z.object({
@@ -26847,6 +27150,18 @@ CommercePaymentsAccountCreditTransactionTypeSchema = z.enum(['Grant', 'Consume',
 /** Zod schema for CommercePaymentsAccountCreditType. What an account credit grant may be applied to. */
 CommercePaymentsAccountCreditTypeSchema = z.enum(['General', 'Subscription', 'Addon']);
 
+/** Zod schema for CommercePaymentsAppliedDiscount. Applied discount information produced by the unified pricing engine (issue #417).
+Concrete (the abstract Payments predecessor and the Subscriptions duplicate are gone). */
+CommercePaymentsAppliedDiscountSchema = z.object({
+  amount: z.lazy(() => MoneySchema).optional(),
+  code: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  isStackable: z.boolean().optional(),
+  percentage: z.number().optional(),
+  priority: z.number().int().optional(),
+  type: z.lazy(() => CommercePaymentsDiscountTypeSchema).optional(),
+});
+
 /** Zod schema for CommercePaymentsBillingChargesControllerCancelBillingChargeInput. Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema = z.object({
   canceledBy: z.string().uuid().nullable().optional(),
@@ -26906,6 +27221,13 @@ CommercePaymentsCreateWalletInputSchema = z.object({
   currency: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommercePaymentsCreditApplicationResult. Credit (wallet) application outcome inside a calculation (issue #417). */
+CommercePaymentsCreditApplicationResultSchema = z.object({
+  creditsApplied: z.number().optional(),
+  creditsAvailable: z.number().optional(),
+  remainingCredits: z.number().optional(),
+});
+
 /** Zod schema for CommercePaymentsCreditCurrencyMetrics. Credit totals per currency for the metrics report. */
 CommercePaymentsCreditCurrencyMetricsSchema = z.object({
   activeBalance: z.number().optional(),
@@ -26929,6 +27251,12 @@ CommercePaymentsCreditMetricsSchema = z.object({
 
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
+
+/** Zod schema for CommercePaymentsDiscountType. Discount type enumeration for applied discounts in the unified pricing engine.
+Consolidated (issue #417): the Payments and Subscriptions module duplicates are
+merged into this single definition covering every discount type the promo engine
+can apply plus wallet credits. */
+CommercePaymentsDiscountTypeSchema = z.enum(['Percentage', 'FixedAmount', 'FreeMonths', 'Credits', 'TrialExtension', 'SetPrice']);
 
 /** Zod schema for CommercePaymentsDisputeActionResult. Result of an accept or challenge action on a dispute. */
 CommercePaymentsDisputeActionResultSchema = z.object({
@@ -27473,6 +27801,182 @@ CommercePaymentsPaymentStatusSchema = z.enum([
   'PartiallyRefunded',
 ]);
 
+/** Zod schema for CommercePaymentsPricingAddOnInput. Add-on priced independently of the plan (issue #417): own unit price, own quantity,
+own currency (converted to the calculation currency through the FX core when they differ). */
+CommercePaymentsPricingAddOnInputSchema = z.object({
+  addOnId: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  quantity: z.number().int().optional(),
+  unitPrice: z.lazy(() => MoneySchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingCalculationInput. Unified pricing calculation request (issue #417). Exactly one of
+PlanId/BaseAmount must be supplied. */
+CommercePaymentsPricingCalculationInputSchema = z.object({
+  addOns: z
+    .array(z.lazy(() => CommercePaymentsPricingAddOnInputSchema))
+    .nullable()
+    .optional(),
+  applyCredits: z.boolean().optional(),
+  baseAmount: z.number().nullable().optional(),
+  billingCycle: z.lazy(() => BillingCycleSchema).optional(),
+  consumeCredits: z.boolean().optional(),
+  currency: z.string().nullable().optional(),
+  discountScope: z.lazy(() => CommercePaymentsPricingDiscountScopeSchema).optional(),
+  effectiveDate: z.string().datetime().nullable().optional(),
+  includeTax: z.boolean().optional(),
+  maxCreditUsage: z.number().nullable().optional(),
+  orderId: z.string().uuid().nullable().optional(),
+  paymentId: z.string().uuid().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
+  proration: z.lazy(() => CommercePaymentsPricingProrationInputSchema).optional(),
+  recordDecision: z.boolean().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  taxInfo: z.lazy(() => CommercePaymentsPricingTaxInfoSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  usageCharges: z
+    .array(z.lazy(() => CommercePaymentsPricingUsageChargeInputSchema))
+    .nullable()
+    .optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingCalculationResult. The single pricing calculation result (issue #417). Consolidates the former abstract
+Payments shape and the Subscriptions duplicate into one engine-owned model. */
+CommercePaymentsPricingCalculationResultSchema = z.object({
+  addOnsTotal: z.lazy(() => MoneySchema).optional(),
+  amountDue: z.lazy(() => MoneySchema).optional(),
+  appliedDiscounts: z
+    .array(z.lazy(() => CommercePaymentsAppliedDiscountSchema))
+    .nullable()
+    .optional(),
+  basePlanPrice: z.lazy(() => MoneySchema).optional(),
+  billingCycle: z.lazy(() => BillingCycleSchema).optional(),
+  calculatedAt: z.string().datetime().optional(),
+  calculationExplanation: z.string().nullable().optional(),
+  calculationId: z.string().uuid().optional(),
+  credits: z.lazy(() => CommercePaymentsCreditApplicationResultSchema).optional(),
+  creditsApplied: z.lazy(() => MoneySchema).optional(),
+  currency: z.string().nullable().optional(),
+  ledgerEntryId: z.string().uuid().nullable().optional(),
+  lineItems: z
+    .array(z.lazy(() => CommercePaymentsPricingLineItemSchema))
+    .nullable()
+    .optional(),
+  proration: z.lazy(() => CommercePaymentsPricingProrationResultSchema).optional(),
+  prorationAdjustment: z.number().optional(),
+  rejectedPromoCodes: z
+    .array(z.lazy(() => CommercePaymentsRejectedPromoDiscountSchema))
+    .nullable()
+    .optional(),
+  subtotal: z.lazy(() => MoneySchema).optional(),
+  subtotalAfterDiscounts: z.lazy(() => MoneySchema).optional(),
+  tax: z.lazy(() => CommercePaymentsTaxCalculationResultSchema).optional(),
+  taxAmount: z.lazy(() => MoneySchema).optional(),
+  total: z.lazy(() => MoneySchema).optional(),
+  totalDiscounts: z.lazy(() => MoneySchema).optional(),
+  usageCharges: z.lazy(() => MoneySchema).optional(),
+  validationErrors: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingDiscountScope. Which items promo discounts apply to (issue #417 line-item scoping). */
+CommercePaymentsPricingDiscountScopeSchema = z.enum(['AllItems', 'PlanOnly']);
+
+/** Zod schema for CommercePaymentsPricingLineItem. One display/audit line of the calculation (issue #417). */
+CommercePaymentsPricingLineItemSchema = z.object({
+  amount: z.lazy(() => MoneySchema).optional(),
+  name: z.string().nullable().optional(),
+  quantity: z.number().optional(),
+  type: z.string().nullable().optional(),
+  unitPrice: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingPreviewInput. Price-change preview request (issue #417): everything needed to show the customer what
+a plan switch costs before they confirm. The preview never records a ledger decision
+and never consumes credits. */
+CommercePaymentsPricingPreviewInputSchema = z.object({
+  billingCycle: z.lazy(() => BillingCycleSchema).optional(),
+  currency: z.string().nullable().optional(),
+  currentPlanId: z.string().uuid().optional(),
+  effectiveDate: z.string().datetime().nullable().optional(),
+  includeTax: z.boolean().optional(),
+  newPlanId: z.string().uuid().optional(),
+  periodEnd: z.string().datetime().optional(),
+  periodStart: z.string().datetime().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
+  taxInfo: z.lazy(() => CommercePaymentsPricingTaxInfoSchema).optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingPreviewResult. Price-change preview outcome (issue #417): the immediate (prorated) charge plus the
+next-renewal amount, so the customer sees both before confirming. */
+CommercePaymentsPricingPreviewResultSchema = z.object({
+  effectiveDate: z.string().datetime().optional(),
+  immediateCharge: z.lazy(() => CommercePaymentsPricingCalculationResultSchema).optional(),
+  nextRenewal: z.lazy(() => CommercePaymentsPricingCalculationResultSchema).optional(),
+  savingsFromDiscounts: z.lazy(() => MoneySchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingProrationInput. Proration inputs for a mid-cycle plan change (issue #417). The unified engine wires
+these into the existing `BillingCalculator.CalculateProration` through
+GameGuild.Commerce.Payments.IPlanProrationCalculator. */
+CommercePaymentsPricingProrationInputSchema = z.object({
+  currentPlanId: z.string().uuid().optional(),
+  effectiveDate: z.string().datetime().optional(),
+  newPlanId: z.string().uuid().optional(),
+  periodEnd: z.string().datetime().optional(),
+  periodStart: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingProrationResult. Proration outcome attached to a calculation (issue #417): mirrors
+`PlanChangeProration` plus the period context needed for line items. */
+CommercePaymentsPricingProrationResultSchema = z.object({
+  chargeForNew: z.number().optional(),
+  creditForUnused: z.number().optional(),
+  daysRemaining: z.number().int().optional(),
+  effectiveDate: z.string().datetime().optional(),
+  isCharge: z.boolean().optional(),
+  isCredit: z.boolean().optional(),
+  netAdjustment: z.number().optional(),
+  totalDays: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingTaxInfo. Tax inputs for a pricing calculation (issue #417). Carried through to the existing
+GameGuild.Commerce.Payments.ITaxCalculationService — jurisdiction, customer type (B2B reverse charge),
+VAT number, tax-inclusive flag, product category, and exemptions. */
+CommercePaymentsPricingTaxInfoSchema = z.object({
+  applicableExemptions: z.array(z.string()).nullable().optional(),
+  customerType: z.lazy(() => CommercePaymentsCustomerTypeSchema).optional(),
+  customerVatNumber: z.string().nullable().optional(),
+  isTaxInclusive: z.boolean().optional(),
+  jurisdictionCode: z.string().nullable().optional(),
+  productCategory: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingUsageChargeInput. One usage-based charge input with optional progressive tiers (issue #417).
+Without tiers the charge is Quantity × PerUnitPrice;
+with tiers each quantity band is priced at its own per-unit price (utility-style
+progressive banding), the last open-ended band absorbing any remainder. */
+CommercePaymentsPricingUsageChargeInputSchema = z.object({
+  metric: z.string().nullable().optional(),
+  perUnitPrice: z.number().optional(),
+  quantity: z.number().optional(),
+  tiers: z
+    .array(z.lazy(() => CommercePaymentsPricingUsageTierSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for CommercePaymentsPricingUsageTier. One progressive usage-pricing band (issue #417). Bands are half-open quantity
+intervals [MinQuantity, MaxQuantity); quantities
+beyond the highest band's maximum are priced at that band's per-unit price. */
+CommercePaymentsPricingUsageTierSchema = z.object({
+  maxQuantity: z.number().nullable().optional(),
+  minQuantity: z.number().optional(),
+  perUnitPrice: z.number().optional(),
+});
+
 /** Zod schema for CommercePaymentsProcessRefundResult. Result model for refund processing operations */
 CommercePaymentsProcessRefundResultSchema = z.object({
   currency: z.string().nullable(),
@@ -27674,6 +28178,12 @@ CommercePaymentsRefundStatisticsSchema = z.object({
 
 /** Zod schema for CommercePaymentsRefundStatus. Lifecycle status of a refund request (issue #419). */
 CommercePaymentsRefundStatusSchema = z.enum(['Pending', 'Approved', 'Rejected', 'Processing', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRejectedPromoDiscount. One rejected promo code with the fail-closed reason. */
+CommercePaymentsRejectedPromoDiscountSchema = z.object({
+  code: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+});
 
 /** Zod schema for CommercePaymentsRequestRefundResult. Result of creating a refund request. */
 CommercePaymentsRequestRefundResultSchema = z.object({
@@ -29121,6 +29631,12 @@ CommerceSubscriptionsCreateClientInputSchema = z.object({
   name: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
   taxId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceSubscriptionsPreviewSubscriptionPlanChangeInput. Request body for the subscription plan-change preview (issue #417). */
+CommerceSubscriptionsPreviewSubscriptionPlanChangeInputSchema = z.object({
+  newPlanId: z.string().uuid().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for CommerceSubscriptionsSubscription. Represents a subscription linking a tenant to a subscription plan */
