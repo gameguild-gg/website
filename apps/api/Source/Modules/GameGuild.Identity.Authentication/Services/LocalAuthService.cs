@@ -138,7 +138,7 @@ public class LocalAuthService(
                 catch (Exception exception)
                 {
                     // Risk analysis and central audit must still run when the local attempt service is unavailable.
-                    logger.LogError(exception, "Could not record failed authentication attempt for user {UserId}", userId);
+                    logger.LogError("Could not record failed authentication attempt for user {UserId}: {ErrorType}", userId, exception.GetType().FullName);
                 }
 
                 var failedAttemptContext = CreateAttemptContext(
@@ -390,7 +390,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during authentication for user {UserId}", userId);
+            logger.LogError("Unexpected error during authentication for user {UserId}: {ErrorType}", userId, ex.GetType().FullName);
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
@@ -402,7 +402,7 @@ public class LocalAuthService(
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Could not record failed authentication attempt after a system error");
+                logger.LogError("Could not record failed authentication attempt after a system error: {ErrorType}", exception.GetType().FullName);
             }
             await CompleteTimingOnceAsync().ConfigureAwait(false);
 
@@ -461,7 +461,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not analyze failed authentication attempt for user {UserId}", attemptContext.UserId);
+            logger.LogError("Could not analyze failed authentication attempt for user {UserId}: {ErrorType}", attemptContext.UserId, exception.GetType().FullName);
             return null;
         }
     }
@@ -476,7 +476,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not analyze authentication behavior for user {UserId}", userId);
+            logger.LogError("Could not analyze authentication behavior for user {UserId}: {ErrorType}", userId, exception.GetType().FullName);
             return null;
         }
     }
@@ -548,7 +548,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not forward authentication threat event {ActionType} to SIEM", actionType);
+            logger.LogError("Could not forward authentication threat event {ActionType} to SIEM: {ErrorType}", actionType, exception.GetType().FullName);
         }
 
         if (auditEventSink is null)
@@ -587,7 +587,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not record authentication risk event {ActionType}", actionType);
+            logger.LogError("Could not record authentication risk event {ActionType}: {ErrorType}", actionType, exception.GetType().FullName);
         }
     }
 
@@ -716,7 +716,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error during user registration");
+            logger.LogError("Error during user registration: {ErrorType}", ex.GetType().FullName);
 
             throw;
         }
@@ -1012,7 +1012,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Sign-in compliance evaluation failed for user {UserId}", context.UserId);
+            logger.LogError("Sign-in compliance evaluation failed for user {UserId}: {ErrorType}", context.UserId, exception.GetType().FullName);
 
             return gate.FailClosed
                 ? SignInComplianceDecision.Deny(SignInComplianceReasons.EvaluationFailed)
@@ -1059,7 +1059,7 @@ public class LocalAuthService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Could not record authentication compliance event {ActionType}", actionType);
+            logger.LogError("Could not record authentication compliance event {ActionType}: {ErrorType}", actionType, exception.GetType().FullName);
         }
     }
 
