@@ -183,6 +183,7 @@ public static class DataDependencyInjection
         services.AddScoped<ISignInMfaService, SignInMfaService>();
         services.AddScoped<IStepUpChallengeStore, PostgreSqlStepUpChallengeStore>();
         services.AddScoped<IStepUpReceiptService, StepUpReceiptService>();
+        services.AddScoped<IMfaRecoveryRequestStore, PostgreSqlMfaRecoveryRequestStore>();
         services.TryAddSingleton(TimeProvider.System);
 
         // Session management
@@ -371,6 +372,9 @@ public static class DataDependencyInjection
         services.AddScoped<FluentValidation.IValidator<RefreshTokenCommand>, RefreshTokenCommandValidator>();
         services.AddScoped<FluentValidation.IValidator<RevokeTokenCommand>, RevokeTokenCommandValidator>();
         services.AddScoped<FluentValidation.IValidator<GoogleIdTokenSignInCommand>, GoogleIdTokenSignInCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<RequestMfaRecoveryCommand>, RequestMfaRecoveryCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<ContinueMfaRecoveryCommand>, ContinueMfaRecoveryCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<ConfirmMfaRecoveryCommand>, ConfirmMfaRecoveryCommandValidator>();
     }
 
     /// <summary>
@@ -381,7 +385,6 @@ public static class DataDependencyInjection
         // Register command handlers for local authentication
         services.AddScoped<IRequestHandler<LocalSignUpCommand, SignInResponse>, LocalSignUpHandler>();
         services.AddScoped<IRequestHandler<LocalSignInCommand, SignInResponse>, LocalSignInHandler>();
-        services.AddScoped<IRequestHandler<StartMfaSignInEnrollmentCommand, MfaSignInEnrollmentResponse>, StartMfaSignInEnrollmentHandler>();
         services.AddScoped<IRequestHandler<CompleteMfaSignInCommand, SignInResponse>, CompleteMfaSignInHandler>();
         services.AddScoped<IRequestHandler<PolymorphicSignInCommand, SignInResponse>, PolymorphicSignInHandler>();
         services.AddScoped<IRequestHandler<RefreshTokenCommand, SignInResponse>, RefreshTokenHandler>();
@@ -395,6 +398,9 @@ public static class DataDependencyInjection
         services.AddScoped<IRequestHandler<ConsumeMagicLinkCommand, SignInResponse>, ConsumeMagicLinkCommandHandler>();
         services.AddScoped<IRequestHandler<RequestEmailCodeCommand, EmailCodeRequestResult>, RequestEmailCodeCommandHandler>();
         services.AddScoped<IRequestHandler<ConsumeEmailCodeCommand, SignInResponse>, ConsumeEmailCodeCommandHandler>();
+        services.AddScoped<IRequestHandler<RequestMfaRecoveryCommand, MfaRecoveryRequestResult>, RequestMfaRecoveryCommandHandler>();
+        services.AddScoped<IRequestHandler<ContinueMfaRecoveryCommand, MfaRecoveryContinueResult>, ContinueMfaRecoveryCommandHandler>();
+        services.AddScoped<IRequestHandler<ConfirmMfaRecoveryCommand, MfaRecoveryConfirmResult>, ConfirmMfaRecoveryCommandHandler>();
         
         // Logout handler with immediate token revocation
         services.AddScoped<IRequestHandler<LogoutCommand, LogoutResponse>, LogoutHandler>();

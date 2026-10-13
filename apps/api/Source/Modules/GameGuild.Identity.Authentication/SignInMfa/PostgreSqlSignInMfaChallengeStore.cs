@@ -48,29 +48,6 @@ public sealed class PostgreSqlSignInMfaChallengeStore(IApplicationDbContext cont
         return changed == 1;
     }
 
-    public async Task<bool> TryBindEnrollmentAsync(string tokenHash, SignInMfaChallengeBinding binding, Guid configurationId,
-        string secretFingerprint, DateTimeOffset now, CancellationToken cancellationToken)
-    {
-        RequireDigest(tokenHash);
-        ArgumentNullException.ThrowIfNull(binding);
-        binding.Validate();
-        RequireDigest(secretFingerprint);
-        if (configurationId == Guid.Empty || binding.Purpose != SignInMfaPurpose.EnrollFactor || now.Offset != TimeSpan.Zero)
-        {
-            throw new ArgumentException("A current enrollment binding is required.");
-        }
-        var changed = await Challenges.Where(challenge => challenge.TokenHash == tokenHash &&
-                challenge.SubjectId == binding.SubjectId && challenge.TenantId == binding.TenantId &&
-                challenge.SubjectTokenVersion == binding.SubjectTokenVersion && challenge.PolicyFingerprint == binding.PolicyFingerprint &&
-                challenge.Purpose == binding.Purpose && challenge.CreatedAt <= now && challenge.ExpiresAt > now &&
-                challenge.ConsumedAt == null && challenge.RevokedAt == null && challenge.EnrollmentConfigurationId == null &&
-                challenge.EnrollmentSecretFingerprint == null && challenge.EnrollmentInitializedAt == null)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(challenge => challenge.EnrollmentConfigurationId, configurationId)
-                .SetProperty(challenge => challenge.EnrollmentSecretFingerprint, secretFingerprint)
-                .SetProperty(challenge => challenge.EnrollmentInitializedAt, now), cancellationToken).ConfigureAwait(false);
-        return changed == 1;
-    }
-
     public Task<int> RevokeSubjectAsync(Guid subjectId, DateTimeOffset now, CancellationToken cancellationToken)
     {
         if (subjectId == Guid.Empty) { throw new ArgumentException("A subject is required.", nameof(subjectId)); }

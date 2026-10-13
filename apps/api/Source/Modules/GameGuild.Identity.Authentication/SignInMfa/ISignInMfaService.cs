@@ -13,8 +13,6 @@ public interface ISignInMfaService
     Task<SignInResponse> BeginAsync(Guid verifiedSubjectId, int verifiedTokenVersion, Guid? requestedTenantId,
         DeviceInfo deviceInfo, SignInFirstFactor firstFactor, bool requiresRiskStepUp, CancellationToken cancellationToken);
 
-    Task<MfaSignInEnrollmentResponse> StartEnrollmentAsync(string bearer, DeviceInfo deviceInfo, CancellationToken cancellationToken);
-
     Task<SignInResponse> CompleteCodeAsync(string bearer, string code, MfaMethod method,
         DeviceInfo deviceInfo, CancellationToken cancellationToken);
 
