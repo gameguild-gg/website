@@ -372,7 +372,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserId", "Timestamp");
 
-                    b.ToTable("analytics_events");
+                    b.ToTable("analytics_events", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Analytics.Dashboard", b =>
@@ -419,7 +419,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("analytics_dashboards");
+                    b.ToTable("analytics_dashboards", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Analytics.DashboardWidget", b =>
@@ -467,7 +467,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("DashboardId");
 
-                    b.ToTable("analytics_dashboard_widgets");
+                    b.ToTable("analytics_dashboard_widgets", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Analytics.KpiDefinition", b =>
@@ -522,7 +522,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("analytics_kpi_definitions");
+                    b.ToTable("analytics_kpi_definitions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Assets.AssetContent", b =>
@@ -1360,7 +1360,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex(new[] { "PaymentId" }, "IX_invoices_PaymentId_Unique")
                         .IsUnique();
 
-                    b.ToTable("invoices");
+                    b.ToTable("invoices", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Orders.MarketplaceCart", b =>
@@ -1400,7 +1400,7 @@ namespace GameGuild.API.Database.Migrations
                         .IsUnique()
                         .HasFilter("\"State\" = 0 AND \"DeletedAt\" IS NULL");
 
-                    b.ToTable("marketplace_carts");
+                    b.ToTable("marketplace_carts", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Orders.MarketplaceCartItem", b =>
@@ -1453,7 +1453,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("CartId", "ProductPricingVersionId")
                         .IsUnique();
 
-                    b.ToTable("marketplace_cart_items");
+                    b.ToTable("marketplace_cart_items", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Orders.Order", b =>
@@ -1574,7 +1574,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("orders");
+                    b.ToTable("orders", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Orders.OrderAuditLog", b =>
@@ -1640,7 +1640,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("order_audit_logs");
+                    b.ToTable("order_audit_logs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Orders.OrderLineItem", b =>
@@ -1742,220 +1742,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserProductId");
 
-                    b.ToTable("order_line_items");
-                });
-
-            modelBuilder.Entity("GameGuild.Commerce.Payments.AccountCreditGrant", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CreditType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("FullyUsedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<decimal>("RemainingAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("RevocationReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("Source")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("SourceReferenceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpiresAt");
-
-                    b.HasIndex("Source", "SourceReferenceId");
-
-                    b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "UserId", "Status");
-
-                    b.ToTable("account_credit_grants", t =>
-                        {
-                            t.HasCheckConstraint("ck_account_credit_grants_amounts_positive", "\"Amount\" > 0 AND \"RemainingAmount\" >= 0 AND \"RemainingAmount\" <= \"Amount\"");
-
-                            t.HasCheckConstraint("ck_account_credit_grants_user_not_empty", "\"UserId\" <> '00000000-0000-0000-0000-000000000000'::uuid");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Commerce.Payments.AccountCreditInvoiceSettlement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("AppliedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "InvoiceId");
-
-                    b.ToTable("account_credit_invoice_settlements", t =>
-                        {
-                            t.HasCheckConstraint("ck_account_credit_invoice_settlements_amount_positive", "\"Amount\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Commerce.Payments.AccountCreditTransaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("GrantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid?>("ReferenceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("RemainingAfter")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GrantId");
-
-                    b.HasIndex("IdempotencyKey");
-
-                    b.HasIndex("ReferenceId");
-
-                    b.HasIndex("TenantId", "UserId", "CreatedAt");
-
-                    b.ToTable("account_credit_transactions", t =>
-                        {
-                            t.HasCheckConstraint("ck_account_credit_transactions_amount_positive", "\"Amount\" > 0 AND \"RemainingAfter\" >= 0");
-                        });
+                    b.ToTable("order_line_items", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.DisputeEvidence", b =>
@@ -2034,122 +1821,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("SubmittedAt");
 
-                    b.ToTable("dispute_evidence");
-                });
-
-            modelBuilder.Entity("GameGuild.Commerce.Payments.GiftSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreditGrantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DurationMonths")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("ExpiredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("GiverUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("PaymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PersonalMessage")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid?>("PlanId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("PurchasedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("RecipientEmail")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("RecipientName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<Guid?>("RecipientUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RedeemedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("RedemptionCodeHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("RedemptionCodePrefix")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RecipientEmail");
-
-                    b.HasIndex("RedemptionCodeHash")
-                        .IsUnique();
-
-                    b.HasIndex("Status", "ExpiresAt");
-
-                    b.HasIndex("TenantId", "GiverUserId");
-
-                    b.HasIndex("TenantId", "RecipientUserId");
-
-                    b.ToTable("gift_subscriptions", t =>
-                        {
-                            t.HasCheckConstraint("ck_gift_subscriptions_amount_positive", "\"Amount\" > 0");
-
-                            t.HasCheckConstraint("ck_gift_subscriptions_duration_range", "\"DurationMonths\" >= 1 AND \"DurationMonths\" <= 36");
-
-                            t.HasCheckConstraint("ck_gift_subscriptions_giver_not_empty", "\"GiverUserId\" <> '00000000-0000-0000-0000-000000000000'::uuid");
-                        });
+                    b.ToTable("dispute_evidence", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.Payment", b =>
@@ -2454,7 +2126,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("payment_disputes");
+                    b.ToTable("payment_disputes", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentMethod", b =>
@@ -2564,7 +2236,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId", "UserId", "IsDefault");
 
-                    b.ToTable("payment_methods");
+                    b.ToTable("payment_methods", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentRetryAttempt", b =>
@@ -2629,107 +2301,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("PaymentId", "AttemptNumber")
                         .IsUnique();
 
-                    b.ToTable("payment_retry_attempts");
-                });
-
-
-            modelBuilder.Entity("GameGuild.Commerce.Payments.Referral", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("ClickedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ConversionAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ConversionInvoiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FraudReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("RefereeEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("RefereeIpHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid?>("RefereeRewardGrantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("RefereeSubscriptionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("RefereeUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReferralCode")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("ReferralLink")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("ReferrerIpHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid?>("ReferrerRewardGrantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ReferrerUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RewardIssuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("SharedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("SignupAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Status", "ReferrerIpHash");
-
-                    b.HasIndex("TenantId", "RefereeUserId");
-
-                    b.HasIndex("TenantId", "ReferralCode");
-
-                    b.HasIndex("TenantId", "ReferrerUserId", "Status");
-
-                    b.ToTable("referrals", t =>
-                        {
-                            t.HasCheckConstraint("ck_referrals_referrer_not_empty", "\"ReferrerUserId\" <> '00000000-0000-0000-0000-000000000000'::uuid");
-                        });
+                    b.ToTable("payment_retry_attempts", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.Refund", b =>
@@ -2919,7 +2491,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("revenue_anomaly_alerts");
+                    b.ToTable("revenue_anomaly_alerts", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueEvent", b =>
@@ -3003,7 +2575,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("revenue_events");
+                    b.ToTable("revenue_events", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueReconciliationDiscrepancy", b =>
@@ -3072,7 +2644,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("RunId");
 
-                    b.ToTable("revenue_reconciliation_discrepancies");
+                    b.ToTable("revenue_reconciliation_discrepancies", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueReconciliationRun", b =>
@@ -3152,7 +2724,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("revenue_reconciliation_runs");
+                    b.ToTable("revenue_reconciliation_runs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.TaxJurisdiction", b =>
@@ -3434,9 +3006,6 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<DateTime?>("LowBalanceAlertedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<decimal?>("MonthlyLimit")
                         .HasColumnType("decimal(18,2)");
 
@@ -3459,10 +3028,10 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.HasIndex("UserId", "Currency")
+                    b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("user_wallets", t =>
+                    b.ToTable("user_wallets", null, t =>
                         {
                             t.HasCheckConstraint("CK_UserWallet_Balance_NonNegative", "\"Balance\" >= 0");
 
@@ -3539,7 +3108,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("wallet_transactions");
+                    b.ToTable("wallet_transactions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.PricingDecisionLedgerEntry", b =>
@@ -3795,7 +3364,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("StartDate");
 
-                    b.ToTable("pricing_rules");
+                    b.ToTable("pricing_rules", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.PricingRuleTier", b =>
@@ -3843,7 +3412,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("PricingRuleId");
 
-                    b.ToTable("pricing_rule_tiers");
+                    b.ToTable("pricing_rule_tiers", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PricingTier", b =>
@@ -3911,7 +3480,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("pricing_tiers");
+                    b.ToTable("pricing_tiers", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.Product", b =>
@@ -3975,7 +3544,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.ProductBundleItem", b =>
@@ -4027,7 +3596,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("BundleProductId", "IncludedProductId")
                         .IsUnique();
 
-                    b.ToTable("product_bundle_items");
+                    b.ToTable("product_bundle_items", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.ProductCommissionConfig", b =>
@@ -4086,7 +3655,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("ProductId")
                         .IsUnique();
 
-                    b.ToTable("product_commission_configs");
+                    b.ToTable("product_commission_configs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.ProductPricing", b =>
@@ -4158,7 +3727,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("SaleStartDate");
 
-                    b.ToTable("product_pricing");
+                    b.ToTable("product_pricing", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.ProductPricingVersion", b =>
@@ -4226,7 +3795,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("ProductPricingId", "PriceVersion")
                         .IsUnique();
 
-                    b.ToTable("product_pricing_versions");
+                    b.ToTable("product_pricing_versions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.ProductSubscriptionPlan", b =>
@@ -4303,7 +3872,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("product_subscription_plans");
+                    b.ToTable("product_subscription_plans", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PromoCode", b =>
@@ -4431,7 +4000,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("IsActive", "ValidUntil");
 
-                    b.ToTable("promo_codes");
+                    b.ToTable("promo_codes", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PromoCodeUse", b =>
@@ -4499,7 +4068,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("PromoCodeId", "UserId");
 
-                    b.ToTable("promo_code_uses");
+                    b.ToTable("promo_code_uses", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PromoCodeUserUsageCounter", b =>
@@ -4523,7 +4092,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasKey("PromoCodeId", "UserId");
 
-                    b.ToTable("promo_code_user_usage_counters");
+                    b.ToTable("promo_code_user_usage_counters", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PromoStackingRule", b =>
@@ -4599,7 +4168,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Priority");
 
-                    b.ToTable("promo_stacking_rules");
+                    b.ToTable("promo_stacking_rules", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.SupportTicket", b =>
@@ -4700,7 +4269,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId", "Status");
 
-                    b.ToTable("SupportTickets");
+                    b.ToTable("SupportTickets", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.SupportTicketMessage", b =>
@@ -4757,7 +4326,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId", "TicketId");
 
-                    b.ToTable("SupportTicketMessages");
+                    b.ToTable("SupportTicketMessages", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.UserProduct", b =>
@@ -4859,7 +4428,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId", "ProductId")
                         .IsUnique();
 
-                    b.ToTable("user_products");
+                    b.ToTable("user_products", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Subscriptions.Subscription", b =>
@@ -5003,7 +4572,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId", "Status");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Subscriptions.SubscriptionInvoiceReadModel", b =>
@@ -5648,35 +5217,22 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("ComplianceSealedPackages", (string)null);
                 });
 
-<<<<<<< HEAD
             modelBuilder.Entity("GameGuild.Compliance.Audit.PiiRedactionOperation", b =>
-=======
-            modelBuilder.Entity("GameGuild.Compliance.Audit.SavedAuditQuery", b =>
->>>>>>> origin/develop
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-<<<<<<< HEAD
                     b.Property<DateTime>("AppliedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.PrimitiveCollection<Guid[]>("AppliedRuleIds")
-=======
-                    b.PrimitiveCollection<string[]>("AllowedRoles")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.PrimitiveCollection<Guid[]>("AllowedUserIds")
->>>>>>> origin/develop
                         .IsRequired()
                         .HasColumnType("uuid[]");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-<<<<<<< HEAD
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -5730,14 +5286,6 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
 
-=======
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("CurrentRevision")
-                        .HasColumnType("integer");
-
->>>>>>> origin/develop
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -5745,7 +5293,6 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-<<<<<<< HEAD
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean");
 
@@ -5772,30 +5319,10 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("RuleName")
-=======
-                    b.Property<int>("ExecutionCount")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsPublic")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastExecutedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("LastExecutedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("QueryDsl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("QueryName")
->>>>>>> origin/develop
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-<<<<<<< HEAD
                     b.Property<int>("Scope")
                         .HasColumnType("integer");
 
@@ -5803,63 +5330,38 @@ namespace GameGuild.API.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-=======
->>>>>>> origin/develop
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-<<<<<<< HEAD
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uuid");
 
-=======
->>>>>>> origin/develop
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-<<<<<<< HEAD
                     b.HasIndex("TenantId", "IsEnabled");
 
                     b.ToTable("PiiRedactionRules", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Audit.PiiTokenVaultEntry", b =>
-=======
-                    b.HasIndex("IsPublic");
-
-                    b.HasIndex("TenantId", "CreatedByUserId");
-
-                    b.HasIndex("TenantId", "QueryName");
-
-                    b.ToTable("SavedAuditQueries", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Compliance.Audit.SavedAuditQueryRevision", b =>
->>>>>>> origin/develop
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-<<<<<<< HEAD
-=======
-                    b.Property<Guid>("ChangedByUserId")
-                        .HasColumnType("uuid");
-
->>>>>>> origin/develop
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-<<<<<<< HEAD
                     b.Property<string>("EncryptedValue")
                         .IsRequired()
                         .HasColumnType("text");
@@ -5876,37 +5378,11 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(40)");
 
                     b.Property<Guid?>("SourceRuleId")
-=======
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<bool>("IsCreation")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPublic")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("QueryDsl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("QueryName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<int>("Revision")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SavedAuditQueryId")
->>>>>>> origin/develop
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
-<<<<<<< HEAD
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -5918,32 +5394,18 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<long>("UseCount")
                         .HasColumnType("bigint");
 
-=======
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
->>>>>>> origin/develop
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-<<<<<<< HEAD
                     b.HasIndex("TenantId");
 
                     b.HasIndex("ScopeKey", "Token")
                         .IsUnique();
 
                     b.ToTable("PiiTokenVaultEntries", (string)null);
-=======
-                    b.HasIndex("SavedAuditQueryId");
-
-                    b.HasIndex("SavedAuditQueryId", "Revision")
-                        .IsUnique();
-
-                    b.ToTable("SavedAuditQueryRevisions", (string)null);
->>>>>>> origin/develop
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Audit.ScheduledAuditExport", b =>
@@ -6509,7 +5971,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("PolicyType");
 
-                    b.ToTable("consent_policies");
+                    b.ToTable("consent_policies", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Consent.DataSubjectRequest", b =>
@@ -6572,7 +6034,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("data_subject_requests");
+                    b.ToTable("data_subject_requests", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Consent.PolicyVersion", b =>
@@ -6631,7 +6093,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("VersionNumber");
 
-                    b.ToTable("consent_policy_versions");
+                    b.ToTable("consent_policy_versions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Consent.UserConsent", b =>
@@ -6694,7 +6156,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId", "PolicyVersionId")
                         .IsUnique();
 
-                    b.ToTable("user_consents");
+                    b.ToTable("user_consents", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.FERPA.FerpaDirectoryInformationPolicy", b =>
@@ -6738,7 +6200,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId")
                         .IsUnique();
 
-                    b.ToTable("ferpa_directory_information_policies");
+                    b.ToTable("ferpa_directory_information_policies", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.FERPA.FerpaDisclosureConsent", b =>
@@ -6799,7 +6261,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("StudentUserId", "Recipient", "Scope");
 
-                    b.ToTable("ferpa_disclosure_consents");
+                    b.ToTable("ferpa_disclosure_consents", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.FERPA.FerpaDisclosureLog", b =>
@@ -6858,7 +6320,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("StudentUserId");
 
-                    b.ToTable("ferpa_disclosure_logs");
+                    b.ToTable("ferpa_disclosure_logs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.FERPA.FerpaEducationRecord", b =>
@@ -6926,7 +6388,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("ferpa_education_records");
+                    b.ToTable("ferpa_education_records", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.FERPA.FerpaInspectionRequest", b =>
@@ -6987,7 +6449,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("StudentUserId");
 
-                    b.ToTable("ferpa_inspection_requests");
+                    b.ToTable("ferpa_inspection_requests", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.FinancialCrime.FinancialCrimeCaseEventRow", b =>
@@ -7651,7 +7113,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("content_resources");
+                    b.ToTable("content_resources", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Content.Pages.MarketingLead", b =>
@@ -7737,7 +7199,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Status", "CreatedAt");
 
-                    b.ToTable("marketing_leads");
+                    b.ToTable("marketing_leads", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Content.Pages.Page", b =>
@@ -7871,7 +7333,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("pages");
+                    b.ToTable("pages", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Content.Pages.PageSection", b =>
@@ -7933,7 +7395,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("PageId", "SortOrder");
 
-                    b.ToTable("page_sections");
+                    b.ToTable("page_sections", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Features.CapabilityAuditLog", b =>
@@ -17014,7 +16476,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("AbacPolicy");
+                    b.ToTable("AbacPolicy", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.AccessControlListEntry", b =>
@@ -17092,7 +16554,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId", "ResourceType", "ResourceId", "PrincipalType", "PrincipalId")
                         .IsUnique();
 
-                    b.ToTable("AccessControlListEntries");
+                    b.ToTable("AccessControlListEntries", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.AccessReviewCampaign", b =>
@@ -17177,7 +16639,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("StartDate", "EndDate");
 
-                    b.ToTable("AccessReviewCampaign");
+                    b.ToTable("AccessReviewCampaign", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.AccessReviewItem", b =>
@@ -17245,7 +16707,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("SubjectUserId");
 
-                    b.ToTable("AccessReviewItem");
+                    b.ToTable("AccessReviewItem", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.ConditionalPolicy", b =>
@@ -17316,7 +16778,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("ConditionalPolicy");
+                    b.ToTable("ConditionalPolicy", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.DataMaskingRule", b =>
@@ -17394,7 +16856,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("DataMaskingRule");
+                    b.ToTable("DataMaskingRule", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.DelegatedAdminScope", b =>
@@ -17485,7 +16947,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("StartsAt", "ExpiresAt");
 
-                    b.ToTable("DelegatedAdminScope");
+                    b.ToTable("DelegatedAdminScope", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.DynamicRole", b =>
@@ -17579,7 +17041,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId", "Name")
                         .IsUnique();
 
-                    b.ToTable("DynamicRole");
+                    b.ToTable("DynamicRole", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.DynamicRoleAssignment", b =>
@@ -17641,7 +17103,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId", "RoleId", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("DynamicRoleAssignment");
+                    b.ToTable("DynamicRoleAssignment", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.JitElevationRequest", b =>
@@ -17724,7 +17186,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("JitElevationRequest");
+                    b.ToTable("JitElevationRequest", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionAuditLog", b =>
@@ -17869,7 +17331,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("PermissionDelegation");
+                    b.ToTable("PermissionDelegation", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionEvaluationLogEntry", b =>
@@ -17937,7 +17399,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex(new[] { "EvaluatedAtUtc" }, "IX_PermissionEvaluationLogs_Time");
 
-                    b.ToTable("PermissionEvaluationLogs");
+                    b.ToTable("PermissionEvaluationLogs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionTemplate", b =>
@@ -18000,7 +17462,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex(new[] { "Name" }, "IX_PermissionTemplates_Name")
                         .IsUnique();
 
-                    b.ToTable("PermissionTemplates");
+                    b.ToTable("PermissionTemplates", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.PolicyDefinitionEntity", b =>
@@ -18084,7 +17546,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("PolicyName", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("PolicyDefinitions");
+                    b.ToTable("PolicyDefinitions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.ResourceInvitation", b =>
@@ -18178,7 +17640,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId", "ResourceType", "ResourceId");
 
-                    b.ToTable("ResourceInvitation");
+                    b.ToTable("ResourceInvitation", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.ResourceUserPermission", b =>
@@ -18264,7 +17726,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId", "UserId", "ResourceType", "ResourceId");
 
-                    b.ToTable("ResourceUserPermission");
+                    b.ToTable("ResourceUserPermission", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.SoDRule", b =>
@@ -18338,7 +17800,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("SoDRule");
+                    b.ToTable("SoDRule", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.SoDViolation", b =>
@@ -18415,7 +17877,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SoDViolation");
+                    b.ToTable("SoDViolation", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.TenantPermission", b =>
@@ -18488,7 +17950,7 @@ namespace GameGuild.API.Database.Migrations
                         .IsUnique()
                         .HasFilter("\"DeletedAt\" IS NULL");
 
-                    b.ToTable("TenantPermissions");
+                    b.ToTable("TenantPermissions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.TenantSecurityVersion", b =>
@@ -18528,7 +17990,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId")
                         .IsUnique();
 
-                    b.ToTable("TenantSecurityVersions");
+                    b.ToTable("TenantSecurityVersions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Provisioning.ScimGroupMapping", b =>
@@ -18810,7 +18272,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("Tenants");
+                    b.ToTable("Tenants", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Tenants.TenantAuditLog", b =>
@@ -18937,7 +18399,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TopLevelDomain", "Subdomain")
                         .IsUnique();
 
-                    b.ToTable("TenantDomains");
+                    b.ToTable("TenantDomains", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Tenants.TenantMember", b =>
@@ -19001,7 +18463,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("TenantMembers");
+                    b.ToTable("TenantMembers", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Tenants.TenantMetadata", b =>
@@ -19087,7 +18549,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("TenantMetadata");
+                    b.ToTable("TenantMetadata", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Tenants.TenantSettings", b =>
@@ -19168,7 +18630,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId")
                         .IsUnique();
 
-                    b.ToTable("TenantSettings");
+                    b.ToTable("TenantSettings", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Tenants.TenantStatistics", b =>
@@ -19228,7 +18690,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId")
                         .IsUnique();
 
-                    b.ToTable("TenantStatistics");
+                    b.ToTable("TenantStatistics", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Tenants.UsageTracking", b =>
@@ -19282,7 +18744,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId", "Date");
 
-                    b.ToTable("UsageTracking");
+                    b.ToTable("UsageTracking", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Users.User", b =>
@@ -19360,7 +18822,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Users.UserMetadata", b =>
@@ -19412,7 +18874,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserMetadata");
+                    b.ToTable("UserMetadata", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Users.UserNotification", b =>
@@ -19511,7 +18973,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("UserId", "Type", "IsRead");
 
-                    b.ToTable("UserNotifications");
+                    b.ToTable("UserNotifications", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Users.UserPreferences", b =>
@@ -19569,7 +19031,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserPreferences");
+                    b.ToTable("UserPreferences", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Users.UserProfile", b =>
@@ -19647,7 +19109,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserProfiles");
+                    b.ToTable("UserProfiles", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.LaunchPad.LaunchChecklistItem", b =>
@@ -21918,7 +21380,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("CertificateId", "TagProficiencyId")
                         .IsUnique();
 
-                    b.ToTable("certificate_tags");
+                    b.ToTable("certificate_tags", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Learning.Certificates.CertificateTemplate", b =>
@@ -22290,7 +21752,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("StudentId", "ContentInteractionId")
                         .IsUnique();
 
-                    b.ToTable("activity_grades", t =>
+                    b.ToTable("activity_grades", null, t =>
                         {
                             t.HasCheckConstraint("CK_activity_grades_MaxPoints_Canonical", "\"MaxPoints\" IS NULL OR (\"MaxPoints\" >= 0)");
 
@@ -22695,7 +22157,7 @@ namespace GameGuild.API.Database.Migrations
                         .HasDatabaseName("IX_content_interactions_UserId_ContentId")
                         .HasFilter("\"SubmittedAt\" IS NULL AND \"DeletedAt\" IS NULL");
 
-                    b.ToTable("content_interactions", t =>
+                    b.ToTable("content_interactions", null, t =>
                         {
                             t.HasCheckConstraint("CK_content_interactions_BestScore_Canonical", "\"BestScore\" IS NULL OR (\"BestScore\" >= 0)");
 
@@ -22759,7 +22221,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("InteractionId", "OccurredAt");
 
-                    b.ToTable("content_interaction_events", t =>
+                    b.ToTable("content_interaction_events", null, t =>
                         {
                             t.HasCheckConstraint("CK_content_interaction_events_DurationSeconds_Positive", "\"DurationSeconds\" IS NULL OR \"DurationSeconds\" > 0");
 
@@ -22968,7 +22430,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("ProductId", "ProgramId")
                         .IsUnique();
 
-                    b.ToTable("product_programs");
+                    b.ToTable("product_programs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Learning.Courses.Program", b =>
@@ -23069,7 +22531,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("programs", t =>
+                    b.ToTable("programs", null, t =>
                         {
                             t.HasCheckConstraint("CK_programs_PassingScore_Canonical", "\"PassingScore\" >= 0 AND \"PassingScore\" <= 10000");
                         });
@@ -23163,7 +22625,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("program_contents", t =>
+                    b.ToTable("program_contents", null, t =>
                         {
                             t.HasCheckConstraint("CK_program_contents_LessonFormat", "((\"Type\" IN (0, 1)) AND \"LessonFormat\" IN (0, 1, 2, 3, 4, 5)) OR ((\"Type\" NOT IN (0, 1)) AND \"LessonFormat\" IS NULL)");
                         });
@@ -23517,7 +22979,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId", "ProgramId")
                         .IsUnique();
 
-                    b.ToTable("program_users", t =>
+                    b.ToTable("program_users", null, t =>
                         {
                             t.HasCheckConstraint("CK_program_users_CompletionPercentage_Canonical", "\"CompletionPercentage\" >= 0 AND \"CompletionPercentage\" <= 10000");
 
@@ -23593,7 +23055,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId", "ProgramId")
                         .IsUnique();
 
-                    b.ToTable("program_wishlists");
+                    b.ToTable("program_wishlists", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Learning.Enrollments.Enrollment", b =>
@@ -24806,7 +24268,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("languages");
+                    b.ToTable("languages", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Localization.ResourceLocalization", b =>
@@ -24870,7 +24332,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("ResourceId", "FieldName", "LanguageId")
                         .IsUnique();
 
-                    b.ToTable("resource_localizations");
+                    b.ToTable("resource_localizations", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Monitoring.SLA.ServiceLevelIndicator", b =>
@@ -25172,7 +24634,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("SnsMessageId")
                         .IsUnique();
 
-                    b.ToTable("EmailDeliveryEvents");
+                    b.ToTable("EmailDeliveryEvents", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Notifications.EmailSuppression", b =>
@@ -25225,7 +24687,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("EmailAddress")
                         .IsUnique();
 
-                    b.ToTable("EmailSuppressions");
+                    b.ToTable("EmailSuppressions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Notifications.Notification", b =>
@@ -25358,7 +24820,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Channel", "DeliveryStatus", "NextAttemptAt");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Notifications.NotificationPreference", b =>
@@ -25438,7 +24900,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("NotificationPreferences");
+                    b.ToTable("NotificationPreferences", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Notifications.NotificationTemplate", b =>
@@ -25532,7 +24994,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("NotificationTemplates");
+                    b.ToTable("NotificationTemplates", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.ProjectWork.ProjectBoard", b =>
@@ -26225,7 +25687,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex(new[] { "UserId" }, "IX_ProjectCollaborators_User");
 
-                    b.ToTable("ProjectCollaborators");
+                    b.ToTable("ProjectCollaborators", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Projects.ProjectFeedback", b =>
@@ -26319,7 +25781,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex(new[] { "UserId" }, "IX_ProjectFeedbacks_User");
 
-                    b.ToTable("ProjectFeedbacks");
+                    b.ToTable("ProjectFeedbacks", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Projects.ProjectFollower", b =>
@@ -26382,7 +25844,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex(new[] { "UserId" }, "IX_ProjectFollowers_User");
 
-                    b.ToTable("ProjectFollowers");
+                    b.ToTable("ProjectFollowers", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Projects.ProjectInvitation", b =>
@@ -26542,7 +26004,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex(new[] { "FinalScore" }, "IX_ProjectJamSubmissions_Score");
 
-                    b.ToTable("ProjectJamSubmissions");
+                    b.ToTable("ProjectJamSubmissions", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Projects.ProjectMemberAllocation", b =>
@@ -30144,7 +29606,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("social_profile_portfolio_items");
+                    b.ToTable("social_profile_portfolio_items", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Social.Profiles.ProfileSkill", b =>
@@ -30192,7 +29654,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("ProfileId", "Name")
                         .IsUnique();
 
-                    b.ToTable("social_profile_skills");
+                    b.ToTable("social_profile_skills", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Social.Profiles.SocialProfile", b =>
@@ -30309,7 +29771,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Visibility");
 
-                    b.ToTable("social_profiles");
+                    b.ToTable("social_profiles", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Social.Reactions.Reaction", b =>
@@ -30418,7 +29880,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("Name", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("tags");
+                    b.ToTable("tags", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Tags.TagProficiency", b =>
@@ -30479,7 +29941,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("tag_proficiencies");
+                    b.ToTable("tag_proficiencies", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Tags.TagRelationship", b =>
@@ -30531,7 +29993,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("SourceId", "TargetId")
                         .IsUnique();
 
-                    b.ToTable("tag_relationships", t =>
+                    b.ToTable("tag_relationships", null, t =>
                         {
                             t.HasCheckConstraint("CK_TagRelationships_NoSelfReference", "\"SourceId\" != \"TargetId\"");
                         });
@@ -32568,7 +32030,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataProtectionKeys");
+                    b.ToTable("DataProtectionKeys", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.API.Eventing.InboxReceipt", b =>
@@ -32714,15 +32176,6 @@ namespace GameGuild.API.Database.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("UserProduct");
-                });
-
-            modelBuilder.Entity("GameGuild.Commerce.Payments.AccountCreditTransaction", b =>
-                {
-                    b.HasOne("GameGuild.Commerce.Payments.AccountCreditGrant", null)
-                        .WithMany()
-                        .HasForeignKey("GrantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.DisputeEvidence", b =>
@@ -33016,7 +32469,7 @@ namespace GameGuild.API.Database.Migrations
 
                             b1.HasKey("SubscriptionId");
 
-                            b1.ToTable("Subscriptions");
+                            b1.ToTable("Subscriptions", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("SubscriptionId");
