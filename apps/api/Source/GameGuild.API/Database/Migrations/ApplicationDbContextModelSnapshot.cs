@@ -4738,6 +4738,51 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("SubscriptionPlans", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Subscriptions.SubscriptionPlanIntervalPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Interval")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("PriceInCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId")
+                        .HasDatabaseName("ix_subscription_plan_interval_prices_plan_id");
+
+                    b.HasIndex("PlanId", "Interval")
+                        .IsUnique()
+                        .HasDatabaseName("ix_subscription_plan_interval_prices_plan_interval");
+
+                    b.ToTable("SubscriptionPlanIntervalPrices", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Compliance.Audit.AuditDataAccessObservation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -17189,6 +17234,111 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("JitElevationRequest", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionApprovalStage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DecidedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DecisionNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("RequiredApproverUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("StageIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StageName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkflowId", "StageIndex")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PermissionApprovalStages_Workflow_Index");
+
+                    b.ToTable("PermissionApprovalStages", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionApprovalWorkflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentStageIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.PrimitiveCollection<string[]>("Permissions")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SubjectUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TotalStages")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectUserId")
+                        .HasDatabaseName("IX_PermissionApprovalWorkflows_Subject");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("IX_PermissionApprovalWorkflows_Tenant_Status");
+
+                    b.HasIndex(new[] { "SubjectUserId" }, "IX_PermissionApprovalWorkflows_Subject");
+
+                    b.HasIndex(new[] { "TenantId", "Status" }, "IX_PermissionApprovalWorkflows_Tenant_Status");
+
+                    b.ToTable("PermissionApprovalWorkflows", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionAuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -17547,6 +17697,61 @@ namespace GameGuild.API.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("PolicyDefinitions", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PolicyVersionHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ChangeType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PolicyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PolicyName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecordedAt")
+                        .HasDatabaseName("IX_PolicyVersionHistory_RecordedAt");
+
+                    b.HasIndex("PolicyId", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PolicyVersionHistory_Policy_Version");
+
+                    b.HasIndex(new[] { "PolicyId" }, "IX_PolicyVersionHistory_PolicyId");
+
+                    b.HasIndex(new[] { "TenantId", "RecordedAt" }, "IX_PolicyVersionHistory_Tenant_Time");
+
+                    b.ToTable("PolicyVersionHistory", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.ResourceInvitation", b =>
@@ -32481,6 +32686,15 @@ namespace GameGuild.API.Database.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Subscriptions.SubscriptionPlanIntervalPrice", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.Subscriptions.SubscriptionPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("GameGuild.Compliance.Audit.AuditExportHistory", b =>
                 {
                     b.HasOne("GameGuild.Compliance.Audit.ScheduledAuditExport", null)
@@ -33506,6 +33720,15 @@ namespace GameGuild.API.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionApprovalStage", b =>
+                {
+                    b.HasOne("GameGuild.Identity.Authorization.PermissionApprovalWorkflow", null)
+                        .WithMany("Stages")
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.SoDViolation", b =>
@@ -35369,6 +35592,11 @@ namespace GameGuild.API.Database.Migrations
             modelBuilder.Entity("GameGuild.Identity.Authorization.DynamicRole", b =>
                 {
                     b.Navigation("ChildRoles");
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionApprovalWorkflow", b =>
+                {
+                    b.Navigation("Stages");
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.SoDRule", b =>

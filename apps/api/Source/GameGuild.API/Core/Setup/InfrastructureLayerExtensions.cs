@@ -367,6 +367,13 @@ public static class InfrastructureLayerExtensions
             .ValidateOnStart();
         services.AddScoped<IRefreshTokenCleanupOperation, RefreshTokenCleanupOperation>();
         services.AddHostedService<RefreshTokenCleanupWorker>();
+        // Governance audit hook (issues #188/#189): feeds captured role-hierarchy,
+        // role-assignment and permission-policy mutations into the authorization
+        // module's PermissionAuditLog surface with cascade visibility.
+        services.AddScoped<PermissionGovernanceAuditHook>();
+        services.AddScoped<IPermissionAuditHook>(provider =>
+            provider.GetRequiredService<PermissionGovernanceAuditHook>());
+
         services.AddDbContext<ApplicationDbContext>((provider, options) =>
         {
             options.AddInterceptors(provider.GetRequiredService<CostTelemetryDbCommandInterceptor>());
