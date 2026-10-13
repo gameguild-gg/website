@@ -34,7 +34,7 @@ export function useAuthState(): UseAuthStateResult {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<void> => {
     setError(null);
     setLoading(true);
     try {
@@ -57,9 +57,36 @@ export function useAuthState(): UseAuthStateResult {
     }
   }, []);
 
+  // Initial synchronization with the session-state endpoint. All state updates happen
+  // after the first await, never synchronously during the effect body.
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response: Response = await fetch('/api/auth/session-state', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        const body: unknown = await response.json();
+        if (cancelled) return;
+        if (!response.ok || typeof body !== 'object' || body === null) {
+          const message = (body as { error?: unknown; detail?: unknown }).error
+            ?? (body as { detail?: unknown }).detail;
+          throw new Error(typeof message === 'string' ? message : `Session state unavailable (${response.status}).`);
+        }
+        setState(body as AuthSessionState);
+      } catch (cause) {
+        if (cancelled) return;
+        setState(null);
+        setError(cause instanceof Error ? cause.message : 'Session state unavailable.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return { state, error, loading, refresh: load };
 }

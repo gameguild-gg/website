@@ -109,7 +109,7 @@ export async function reconstructAuditReplaySnapshot(
   if (receipt === null || receipt.toLowerCase() !== imported.sha256) {
     throw new TypeError('Audit replay reconstruction did not confirm the snapshot digest.');
   }
-  return validateReconstruction(data as unknown, imported);
+  return validateReconstruction(data, imported);
 }
 
 function validateReconstruction(

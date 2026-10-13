@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@game-guild/ui/components/alert';
 import { Button } from '@game-guild/ui/components/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@game-guild/ui/components/card';
@@ -26,9 +26,8 @@ function defaultWindow(): { start: string; end: string } {
 }
 
 export function AuditReplayConsole() {
-  const initial = useRef(defaultWindow());
-  const [start, setStart] = useState(initial.current.start);
-  const [end, setEnd] = useState(initial.current.end);
+  const [range, setRange] = useState(defaultWindow);
+  const { start, end } = range;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<ImportedAuditReplaySnapshot | null>(null);
@@ -121,15 +120,30 @@ export function AuditReplayConsole() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="replay-start">Start (UTC)</Label>
-              <Input id="replay-start" type="datetime-local" value={start} onChange={(event) => setStart(event.target.value)} />
+              <Input
+                id="replay-start"
+                type="datetime-local"
+                value={start}
+                onChange={(event) => setRange((current) => ({ ...current, start: event.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="replay-end">End (UTC)</Label>
-              <Input id="replay-end" type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
+              <Input
+                id="replay-end"
+                type="datetime-local"
+                value={end}
+                onChange={(event) => setRange((current) => ({ ...current, end: event.target.value }))}
+              />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={capture} disabled={loading}>
+            <Button
+              onClick={() => {
+                void capture();
+              }}
+              disabled={loading}
+            >
               {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
               Capture snapshot
             </Button>

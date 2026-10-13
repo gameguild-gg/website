@@ -11,7 +11,8 @@ import { auth } from '@/auth';
 export default async function AuditReplayPage({
   params,
 }: { params: Promise<{ locale: string }> }): Promise<React.JSX.Element> {
-  const [{ locale }, session] = await Promise.all([params, auth()]);
+  const { locale } = await params;
+  const session = await auth();
   if (!session || typeof session === 'function') {
     redirect({ href: { pathname: '/sign-in', query: { callbackUrl: '/console/compliance/audit-replay' } }, locale });
     throw new Error('Unauthenticated console access');

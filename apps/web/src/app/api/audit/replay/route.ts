@@ -15,10 +15,11 @@ function apiBaseUrl(): string {
  * them before building any timeline.
  */
 export async function GET(request: NextRequest): Promise<Response> {
-  const { token, tenantId } = await getRequestAuthContext();
+  const { token, tenantId } = (await getRequestAuthContext()) as { token: string | null; tenantId: string | null };
   if (!token) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const start = request.nextUrl.searchParams.get("start")?.trim();
-  const end = request.nextUrl.searchParams.get("end")?.trim();
+  const parameters = new URL(request.url).searchParams;
+  const start = parameters.get("start")?.trim();
+  const end = parameters.get("end")?.trim();
   if (!start || !end) {
     return NextResponse.json({ error: "start and end are required ISO-8601 UTC timestamps." }, { status: 400 });
   }
