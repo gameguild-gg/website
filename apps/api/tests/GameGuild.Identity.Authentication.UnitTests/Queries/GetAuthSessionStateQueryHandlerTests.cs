@@ -32,13 +32,19 @@ public class GetAuthSessionStateQueryHandlerTests
     }
 
     private static ClaimsPrincipal Principal(
-        Guid? userId, Guid? sessionId, string? tokenVersion = "3", bool mfaVerified = true)
+        Guid? userId, Guid? sessionId, string? tokenVersion = "3", bool mfaVerified = true, bool withIssuedAt = true)
     {
         var claims = new List<Claim>();
         if (userId.HasValue) { claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.Value.ToString("D"))); }
         if (sessionId.HasValue) { claims.Add(new Claim(JwtClaimTypes.SessionId, sessionId.Value.ToString("D"))); }
         if (tokenVersion is not null) { claims.Add(new Claim("token_version", tokenVersion)); }
         if (mfaVerified) { claims.Add(new Claim(ClaimNames.MfaVerified, "true")); }
+        if (withIssuedAt)
+        {
+            claims.Add(new Claim(
+                "iat",
+                new DateTimeOffset(SystemClock.UtcNow.AddMinutes(-5)).ToUnixTimeSeconds().ToString()));
+        }
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "unit-test", ClaimTypes.NameIdentifier, null));
     }
 
@@ -68,6 +74,8 @@ public class GetAuthSessionStateQueryHandlerTests
         SetupSessions([session, ActiveSession(Guid.NewGuid())], session);
         _mfaConfigurations.Setup(repository => repository.GetByUserIdAsync(User, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserMfaConfiguration { IsEnabled = true });
+        _tokenRevocations.Setup(service => service.IsUserTokenRevokedAsync(User, It.IsAny<DateTime>(), 3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         var state = await _handler.Handle(new GetAuthSessionStateQuery(), CancellationToken.None);
 
@@ -78,9 +86,41 @@ public class GetAuthSessionStateQueryHandlerTests
         state.SessionLastUsedAtUtc.Should().Be(session.LastUsedAt);
         state.SessionTerminationReason.Should().BeNull();
         state.TokenVersion.Should().Be(3);
+        state.TokenRevoked.Should().BeFalse();
         state.ActiveSessionCount.Should().Be(2);
         state.MfaEnrolled.Should().BeTrue();
         state.MfaVerifiedInCurrentToken.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TokensBelowTheRevocationBoundaryAreReportedRevoked()
+    {
+        var session = ActiveSession(Session);
+        SetupSessions([session], session);
+        _tokenRevocations.Setup(service => service.IsUserTokenRevokedAsync(User, It.IsAny<DateTime>(), 3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var state = await _handler.Handle(new GetAuthSessionStateQuery(), CancellationToken.None);
+
+        state.TokenRevoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TokensWithoutAnIssuedAtClaimReportNoRevocationVerdict()
+    {
+        var accessor = new Mock<IHttpContextAccessor>();
+        accessor.SetupGet(instance => instance.HttpContext)
+            .Returns(new DefaultHttpContext { User = Principal(User, Session, withIssuedAt: false) });
+        var handler = new GetAuthSessionStateQueryHandler(
+            accessor.Object, _sessions.Object, _mfaConfigurations.Object, _tokenRevocations.Object);
+        var session = ActiveSession(Session);
+        SetupSessions([session], session);
+
+        var state = await handler.Handle(new GetAuthSessionStateQuery(), CancellationToken.None);
+
+        state.TokenRevoked.Should().BeNull();
+        _tokenRevocations.Verify(service => service.IsUserTokenRevokedAsync(
+            It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

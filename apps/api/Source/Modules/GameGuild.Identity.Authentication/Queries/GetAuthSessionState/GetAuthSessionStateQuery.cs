@@ -15,7 +15,8 @@ public sealed record GetAuthSessionStateQuery : IQuery<AuthSessionStateDto>;
 /// <summary>
 ///     The v1 session-state projection (issue #221). <see cref="SessionValid" /> is false when the
 ///     token is not session-bound or the bound session row is expired, terminated or missing —
-///     the surface reports that state instead of trusting the token alone.
+///     the surface reports that state instead of trusting the token alone. <see cref="TokenRevoked" />
+///     is null when the token carries no issued-at claim, so no revocation verdict is claimed.
 /// </summary>
 public sealed record AuthSessionStateDto(
     Guid UserId,
@@ -25,6 +26,7 @@ public sealed record AuthSessionStateDto(
     DateTime? SessionLastUsedAtUtc,
     string? SessionTerminationReason,
     int? TokenVersion,
+    bool? TokenRevoked,
     int ActiveSessionCount,
     bool MfaEnrolled,
     bool MfaVerifiedInCurrentToken);
@@ -67,6 +69,17 @@ public sealed class GetAuthSessionStateQueryHandler(
 
         var mfa = await mfaConfigurations.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
+        // The versioned revocation service only issues a verdict for tokens that state when
+        // they were issued; without an issued-at claim the surface stays silent (null) instead
+        // of claiming the token is live.
+        bool? tokenRevoked = null;
+        var issuedAt = ClaimsExtractor.GetIssuedAtDateTime(user);
+        if (issuedAt.HasValue)
+        {
+            tokenRevoked = await tokenRevocations.IsUserTokenRevokedAsync(userId, issuedAt.Value, tokenVersion, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         return new AuthSessionStateDto(
             userId,
             session?.Id,
@@ -75,6 +88,7 @@ public sealed class GetAuthSessionStateQueryHandler(
             session?.LastUsedAt,
             session?.TerminationReason,
             tokenVersion,
+            tokenRevoked,
             activeSessions.Count,
             mfa?.IsEnabled ?? false,
             ClaimsExtractor.IsMfaVerified(user));
