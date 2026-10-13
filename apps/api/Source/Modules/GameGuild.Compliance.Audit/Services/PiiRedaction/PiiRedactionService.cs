@@ -216,9 +216,9 @@ public sealed class PiiRedactionService(
         }
 
         counter.Record(outcome);
-        if (outcome.Action == PiiRuleAction.Tokenize && outcome.Value is not null)
+        if (outcome.Action == PiiRuleAction.Tokenize)
         {
-            StageVaultEntries(context, tenantId, value, outcome.Value, outcome.AppliedRuleId);
+            StageTokenizedMatches(context, tenantId, outcome);
         }
 
         return outcome.Value;
@@ -263,9 +263,9 @@ public sealed class PiiRedactionService(
                     return value;
                 }
                 counter.Record(outcome);
-                if (outcome.Action == PiiRuleAction.Tokenize && outcome.Value is not null)
+                if (outcome.Action == PiiRuleAction.Tokenize)
                 {
-                    StageVaultEntries(context, tenantId, text, outcome.Value, outcome.AppliedRuleId);
+                    StageTokenizedMatches(context, tenantId, outcome);
                 }
                 return JsonValue.Create(outcome.Value);
             }
@@ -350,8 +350,21 @@ public sealed class PiiRedactionService(
         entry.Metadata = entry.Metadata is null ? null : JsonSerializer.Serialize(new { PiiRedaction = PiiRedactionFailClosed.Marker });
     }
 
+    /// <summary>
+    /// Stages one vault row per tokenized match: the deterministic token maps back to exactly the
+    /// original PII value it replaced (not the whole surrounding field), so detokenization during an
+    /// investigation recovers the precise PII value.
+    /// </summary>
+    private void StageTokenizedMatches(IApplicationDbContext context, Guid? tenantId, PiiValueOutcome outcome)
+    {
+        foreach (var match in outcome.Tokens)
+        {
+            StageVaultEntry(context, tenantId, match.Original, match.Token, outcome.AppliedRuleId);
+        }
+    }
+
     /// <summary>Stages the token vault row for a tokenized original, encrypted with the platform key.</summary>
-    private void StageVaultEntries(IApplicationDbContext context, Guid? tenantId, string originalValue, string tokenizedValue, Guid? ruleId)
+    private void StageVaultEntry(IApplicationDbContext context, Guid? tenantId, string originalValue, string token, Guid? ruleId)
     {
         try
         {
@@ -359,14 +372,14 @@ public sealed class PiiRedactionService(
 
             var scopeKey = PiiRedactionRuleProvider.ScopeKey(tenantId);
             var existing = context.Set<PiiTokenVaultEntry>().Local
-                .FirstOrDefault(entry => entry.Token == tokenizedValue && entry.ScopeKey == scopeKey);
+                .FirstOrDefault(entry => entry.Token == token && entry.ScopeKey == scopeKey);
             if (existing is not null)
             {
                 existing.RecordReuse();
                 return;
             }
 
-            context.Set<PiiTokenVaultEntry>().Add(PiiTokenVaultEntry.Create(tenantId, tokenizedValue, encrypted, ruleId));
+            context.Set<PiiTokenVaultEntry>().Add(PiiTokenVaultEntry.Create(tenantId, token, encrypted, ruleId));
         }
         catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
         {

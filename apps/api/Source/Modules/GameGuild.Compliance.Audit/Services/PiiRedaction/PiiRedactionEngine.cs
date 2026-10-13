@@ -121,8 +121,8 @@ public static partial class PiiRedactionEngine
                 continue;
             }
 
-            var replaced = ReplaceMatches(rule, value, tokens, out var matchCount);
-            return new PiiValueOutcome(replaced, rule.RuleId, rule.Action, matchCount);
+            var replaced = ReplaceMatches(rule, value, tokens);
+            return new PiiValueOutcome(replaced.Value, rule.RuleId, rule.Action, replaced.MatchCount, replaced.TokenizedMatches);
         }
 
         return PiiValueOutcome.Unchanged;
@@ -158,11 +158,12 @@ public static partial class PiiRedactionEngine
         }
     }
 
-    private static string ReplaceMatches(CompiledPiiRule rule, string value, IPiiTokenSource tokens, out int matchCount)
+    private static ReplaceResult ReplaceMatches(CompiledPiiRule rule, string value, IPiiTokenSource tokens)
     {
         try
         {
             var count = 0;
+            List<PiiTokenizedMatch>? tokenized = null;
             var result = rule.Matcher.Replace(value, match =>
             {
                 if (!IsValidPresetMatch(rule, match.Value))
@@ -170,17 +171,31 @@ public static partial class PiiRedactionEngine
                     return match.Value;
                 }
                 count++;
-                return rule.Action == PiiRuleAction.Tokenize ? tokens.Tokenize(match.Value) : rule.Replacement;
+                if (rule.Action == PiiRuleAction.Tokenize)
+                {
+                    var token = tokens.Tokenize(match.Value);
+                    (tokenized ??= []).Add(new PiiTokenizedMatch(token, match.Value));
+                    return token;
+                }
+
+                return rule.Replacement;
             });
-            matchCount = count;
-            return result;
+            return new ReplaceResult(result, count, tokenized);
         }
         catch (RegexMatchTimeoutException)
         {
-            matchCount = 1;
-            return rule.Action == PiiRuleAction.Tokenize ? tokens.Tokenize(value) : rule.Replacement;
+            // Catastrophic-backtracking defence: transform the whole value.
+            if (rule.Action == PiiRuleAction.Tokenize)
+            {
+                var wholeValueToken = tokens.Tokenize(value);
+                return new ReplaceResult(wholeValueToken, 1, [new PiiTokenizedMatch(wholeValueToken, value)]);
+            }
+
+            return new ReplaceResult(rule.Replacement, 1, null);
         }
     }
+
+    private readonly record struct ReplaceResult(string Value, int MatchCount, List<PiiTokenizedMatch>? TokenizedMatches);
 
     /// <summary>Preset-specific semantic validation that trims false positives the regexes alone would keep.</summary>
     internal static bool IsValidPresetMatch(CompiledPiiRule rule, string candidate) => rule.Preset switch
@@ -244,16 +259,23 @@ public interface IPiiTokenSource
 /// <param name="AppliedRuleId">Rule that fired, when any.</param>
 /// <param name="Action">Action of the fired rule.</param>
 /// <param name="MatchCount">Number of matches replaced within the value.</param>
+/// <param name="TokenizedMatches">Per-match token/original pairs for tokenize-action rules; the vault maps each deterministic token back to exactly the PII value it replaced.</param>
 public sealed record PiiValueOutcome(
     string? Value = null,
     Guid? AppliedRuleId = null,
     PiiRuleAction? Action = null,
-    int MatchCount = 0)
+    int MatchCount = 0,
+    IReadOnlyList<PiiTokenizedMatch>? TokenizedMatches = null)
 {
     public static readonly PiiValueOutcome Unchanged = new();
 
     public bool Changed => Value is not null && MatchCount > 0;
+
+    public IReadOnlyList<PiiTokenizedMatch> Tokens => TokenizedMatches ?? [];
 }
+
+/// <summary>One tokenized match: the deterministic token emitted and the original PII value it replaced.</summary>
+public sealed record PiiTokenizedMatch(string Token, string Original);
 
 /// <summary>
 /// Deterministic HMAC tokenizer for PII values (issue #192). Tokens are stable across processes and
