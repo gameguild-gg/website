@@ -210,7 +210,6 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.HasIndex(execution => new { execution.TenantId, execution.ExecutedAtUtc });
         });
 
-<<<<<<< HEAD
         modelBuilder.Entity<PiiRedactionRule>(entity =>
         {
             entity.ToTable("PiiRedactionRules");
@@ -251,7 +250,8 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.Property(operation => operation.FailureReason).HasMaxLength(1000);
             entity.HasIndex(operation => new { operation.TenantId, operation.AppliedAt });
             entity.HasIndex(operation => new { operation.TenantId, operation.FailClosed });
-=======
+        });
+
         modelBuilder.Entity<SavedAuditQuery>(entity =>
         {
             entity.ToTable("SavedAuditQueries");
@@ -280,7 +280,6 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.Property(revision => revision.QueryDsl).HasColumnType("text").IsRequired();
             entity.HasIndex(revision => revision.SavedAuditQueryId);
             entity.HasIndex(revision => new { revision.SavedAuditQueryId, revision.Revision }).IsUnique();
->>>>>>> origin/develop
         });
     }
 }
