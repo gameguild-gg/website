@@ -328,6 +328,22 @@ describe("SignInForm MFA", () => {
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
   });
+
+  it("gives challenge buttons explicit light-on-dark text (light-mode contrast)", () => {
+    mockAuth.mfaChallenge = {
+      mfaToken: "x".repeat(43),
+      availableMethods: ["TOTP"],
+    };
+    renderWithUser(<SignInForm />);
+
+    // Dark card + light-mode variant tokens = white-on-white without these overrides.
+    expect(
+      screen.getByRole("button", { name: "Set up authenticator" }),
+    ).toHaveClass("text-white");
+    expect(
+      screen.getByRole("button", { name: "Start sign-in again" }),
+    ).toHaveClass("text-slate-200");
+  });
 });
 
 describe('SignInForm providers slot composition', () => {

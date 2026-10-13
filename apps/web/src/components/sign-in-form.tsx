@@ -197,6 +197,7 @@ export function SignInForm({
                     type="button"
                     variant="outline"
                     disabled={isLoading}
+                    className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
                     onClick={() => {
                       void handleMfaEnrollment();
                     }}
@@ -246,6 +247,7 @@ export function SignInForm({
                   type="button"
                   variant="ghost"
                   disabled={isLoading}
+                  className="text-slate-200 hover:bg-white/10 hover:text-white"
                   onClick={() => {
                     clearMfa();
                     setEnrollment(null);
