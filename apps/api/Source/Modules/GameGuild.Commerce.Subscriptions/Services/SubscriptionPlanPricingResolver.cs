@@ -8,24 +8,29 @@ namespace GameGuild.Commerce.Subscriptions;
 /// </summary>
 /// <remarks>
 ///     This implementation follows the Adapter pattern, translating between the Subscriptions
-///     module's domain model and the Payments module's pricing abstraction.
+///     module's domain model and the Payments module's pricing abstraction. Interval prices
+///     resolve through <see cref="ISubscriptionIntervalPricingService"/> so every pricing surface
+///     (preview, checkout, renewal) derives the same numbers, including the plan-level annual
+///     discount (issue #416).
 /// </remarks>
-public sealed class SubscriptionPlanPricingResolver : IPlanPricingResolver
+public sealed class SubscriptionPlanPricingResolver(
+    ISubscriptionPlanService planService,
+    ISubscriptionIntervalPricingService intervalPricingService) : IPlanPricingResolver
 {
-    private readonly ISubscriptionPlanService _planService;
-
-    public SubscriptionPlanPricingResolver(ISubscriptionPlanService planService)
-    {
-        _planService = planService ?? throw new ArgumentNullException(nameof(planService));
-    }
-
     /// <inheritdoc />
     public async Task<Money?> GetPlanMonthlyPriceAsync(Guid planId, CancellationToken cancellationToken = default)
     {
-        var plan = await _planService.GetByIdAsync(planId, cancellationToken).ConfigureAwait(false);
-        
+        var plan = await planService.GetByIdAsync(planId, cancellationToken).ConfigureAwait(false);
+
         if (plan is null)
             return null;
+
+        // Issue #416: an enterprise plan still carrying the -1 custom-quote sentinel has no
+        // billable monthly price; fail closed with a clear domain error instead of a negative amount.
+        if (plan.RequiresCustomQuote())
+        {
+            throw new SubscriptionPlanCustomQuotePendingException(planId);
+        }
 
         return CentsToMoney(plan.MonthlyPriceInCents, plan.Currency);
     }
@@ -33,32 +38,27 @@ public sealed class SubscriptionPlanPricingResolver : IPlanPricingResolver
     /// <inheritdoc />
     public async Task<Money?> GetPlanPriceAsync(Guid planId, BillingCycle billingCycle, CancellationToken cancellationToken = default)
     {
-        var plan = await _planService.GetByIdAsync(planId, cancellationToken).ConfigureAwait(false);
-        
+        var plan = await planService.GetByIdAsync(planId, cancellationToken).ConfigureAwait(false);
+
         if (plan is null)
             return null;
 
-        var priceInCents = billingCycle switch
+        if (plan.RequiresCustomQuote())
         {
-            BillingCycle.Annually => plan.AnnualPriceInCents ?? plan.MonthlyPriceInCents * 12,
-            BillingCycle.SemiAnnually => plan.MonthlyPriceInCents * 6,
-            BillingCycle.Quarterly => plan.MonthlyPriceInCents * 3,
-            BillingCycle.Monthly => plan.MonthlyPriceInCents,
-            BillingCycle.Weekly => plan.MonthlyPriceInCents / 4, // Approximate weekly from monthly
-            BillingCycle.Biannually => plan.MonthlyPriceInCents * 24,
-            _ => plan.MonthlyPriceInCents
-        };
+            throw new SubscriptionPlanCustomQuotePendingException(planId);
+        }
 
-        return CentsToMoney(priceInCents, plan.Currency);
+        return await intervalPricingService.ResolvePriceForCycleAsync(plan, billingCycle, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task<bool> PlanExistsAsync(Guid planId, CancellationToken cancellationToken = default)
     {
-        var plan = await _planService.GetByIdAsync(planId, cancellationToken).ConfigureAwait(false);
+        var plan = await planService.GetByIdAsync(planId, cancellationToken).ConfigureAwait(false);
         return plan is not null;
     }
-    
+
     /// <summary>
     ///     Converts cents to Money value object.
     /// </summary>

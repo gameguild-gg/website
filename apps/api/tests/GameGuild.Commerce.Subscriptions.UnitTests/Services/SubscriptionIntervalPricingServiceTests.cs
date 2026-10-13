@@ -51,6 +51,47 @@ public class SubscriptionIntervalPricingServiceTests
         price.Amount.Should().Be(expectedCents / 100m);
     }
 
+    /// <summary>Issue #416: the derived annual price applies the plan-level annual discount
+    /// (tenths of a percent) to twelve monthly prices; 0 keeps the historical behavior.</summary>
+    [Theory]
+    [InlineData(1_000, 0, 12_000)]
+    [InlineData(1_000, 100, 10_800)]   // 10.0% off
+    [InlineData(1_000, 250, 9_000)]    // 25.0% off
+    [InlineData(1_000, 1_000, 0)]      // a fully discounted year prices at zero
+    [InlineData(999, 100, 10_789)]     // 11.988 -> 10.7892 rounds away from zero to 10.789
+    [InlineData(0, 250, 0)]            // nothing to discount on a zero-priced plan
+    public async Task ResolvePrice_AnnualFallback_AppliesPlanLevelAnnualDiscount(long monthlyCents, int discountTenthsOfPercent, int expectedCents)
+    {
+        var plan = CreatePlan(monthlyCents: monthlyCents);
+        plan.AnnualDiscountPercent = discountTenthsOfPercent / 10m;
+
+        var price = await _service.ResolvePriceForCycleAsync(plan, BillingCycle.Annually);
+
+        price.Amount.Should().Be(expectedCents / 100m);
+    }
+
+    [Fact]
+    public async Task ResolvePrice_AnnualFallback_ExplicitAnnualPrice_WinsOverPlanLevelDiscount()
+    {
+        var plan = CreatePlan(annualCents: 100_000);
+        plan.AnnualDiscountPercent = 50m;
+
+        var price = await _service.ResolvePriceForCycleAsync(plan, BillingCycle.Annually);
+
+        price.Amount.Should().Be(1_000m); // explicit annual price, not the discounted derivation
+    }
+
+    [Fact]
+    public async Task ResolvePrice_AnnualFallback_PropagatesEnterpriseCustomQuoteSentinel()
+    {
+        var plan = CreatePlan(monthlyCents: SubscriptionPlanPricingRules.CustomQuotePriceInCents);
+        plan.Type = SubscriptionPlanType.Enterprise;
+
+        var price = await _service.ResolvePriceForCycleAsync(plan, BillingCycle.Annually);
+
+        price.Amount.Should().Be(SubscriptionPlanPricingRules.CustomQuotePriceInCents / 100m);
+    }
+
     [Fact]
     public async Task ResolvePrice_AnnualFallback_PrefersExplicitAnnualPriceOverTwelveMonthly()
     {

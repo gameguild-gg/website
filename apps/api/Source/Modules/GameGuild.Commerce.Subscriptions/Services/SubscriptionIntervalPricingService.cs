@@ -114,7 +114,11 @@ public sealed class SubscriptionIntervalPricingService(ISubscriptionPlanReposito
     internal static long DeriveFallbackPriceInCents(SubscriptionPlan plan, BillingCycle cycle) => cycle switch
     {
         BillingCycle.Monthly => plan.MonthlyPriceInCents,
-        BillingCycle.Annually => plan.AnnualPriceInCents ?? plan.MonthlyPriceInCents * 12,
+        // Issue #416: the derived annual price applies the plan-level annual discount
+        // (default 0 keeps the historical monthly x 12 behavior). The enterprise -1
+        // custom-quote sentinel propagates unchanged until a concrete price is set.
+        BillingCycle.Annually => SubscriptionPlanPricingRules.DeriveAnnualPriceInCents(
+            plan.MonthlyPriceInCents, plan.AnnualPriceInCents, plan.AnnualDiscountPercent),
         BillingCycle.Quarterly => plan.MonthlyPriceInCents * 3,
         BillingCycle.SemiAnnually => plan.MonthlyPriceInCents * 6,
         BillingCycle.Biannually => plan.MonthlyPriceInCents * 24,
