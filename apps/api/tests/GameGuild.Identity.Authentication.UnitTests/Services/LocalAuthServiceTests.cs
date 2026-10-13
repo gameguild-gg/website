@@ -1223,6 +1223,8 @@ public class LocalAuthServiceTests
                 sessionId,
                 "replacement-hash",
                 It.IsAny<DateTime>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .Callback(() => operationOrder.Add("persist-session"))
             .ReturnsAsync(true);
