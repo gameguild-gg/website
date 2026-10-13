@@ -44,7 +44,7 @@ test("selects the test project matching a changed API module", () => {
       ["apps/api/Source/Modules/GameGuild.TestingLab/TestingEvent.cs"],
       availableProjects,
     ),
-    ["GameGuild.API.UnitTests", "GameGuild.SharedKernel.UnitTests", "GameGuild.TestingLab.UnitTests"],
+    ["GameGuild.TestingLab.UnitTests"],
   );
 });
 
@@ -58,7 +58,7 @@ test("selects multiple module tests without duplicates", () => {
       ],
       availableProjects,
     ),
-    ["GameGuild.API.UnitTests", "GameGuild.Projects.UnitTests", "GameGuild.SharedKernel.UnitTests", "GameGuild.TestingLab.UnitTests"],
+    ["GameGuild.Projects.UnitTests", "GameGuild.TestingLab.UnitTests"],
   );
 });
 
@@ -72,13 +72,13 @@ test("falls back to core tests for API infrastructure changes", () => {
   );
 });
 
-test("test-only API changes retain the matching project and core security coverage", () => {
+test("ignores API test-only changes for deployment test selection", () => {
   assert.deepEqual(
     selectAffectedDotnetTestNames(
       ["apps/api/tests/GameGuild.Projects.UnitTests/ProjectTests.cs"],
       availableProjects,
     ),
-    ["GameGuild.API.UnitTests", "GameGuild.Projects.UnitTests", "GameGuild.SharedKernel.UnitTests"],
+    ["GameGuild.Projects.UnitTests"],
   );
 });
 
@@ -93,7 +93,7 @@ test("selects the matching integration test project for a changed test", () => {
         "GameGuild.Identity.Authentication.IntegrationTests",
       ],
     ),
-    ["GameGuild.API.UnitTests", "GameGuild.Identity.Authentication.IntegrationTests", "GameGuild.SharedKernel.UnitTests"],
+    ["GameGuild.Identity.Authentication.IntegrationTests"],
   );
 });
 

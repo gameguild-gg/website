@@ -46,7 +46,6 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
       !testProjectMatch[1].endsWith("PerformanceTests") &&
       availableProjects.includes(testProjectMatch[1])
     ) {
-      requiresCoreFallback = true;
       selected.add(testProjectMatch[1]);
       // Full-host test changes retain the mandatory identity and host regressions.
       if (testProjectMatch[1] === "GameGuild.API.IntegrationTests") {
@@ -65,12 +64,7 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
   }
 
   if (requiresCoreFallback) {
-    for (const fallback of [
-      "GameGuild.API.UnitTests",
-      "GameGuild.Identity.Authentication.UnitTests",
-      "GameGuild.Identity.Authorization.UnitTests",
-      "GameGuild.SharedKernel.UnitTests",
-    ]) {
+    for (const fallback of ["GameGuild.API.UnitTests", "GameGuild.SharedKernel.UnitTests"]) {
       if (availableProjects.includes(fallback)) selected.add(fallback);
     }
   }
