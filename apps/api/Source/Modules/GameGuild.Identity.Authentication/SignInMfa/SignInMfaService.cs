@@ -15,6 +15,7 @@ public sealed class SignInMfaService(
     IAuthenticationAuditEventSink audit,
     ISessionMfaEvidenceStore sessionEvidence,
     ISignInMfaEnrollmentPort enrollment,
+    IMfaRecoveryRequestStore recoveryRequests,
     TimeProvider? timeProvider = null) : ISignInMfaService
 {
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
@@ -115,6 +116,14 @@ public sealed class SignInMfaService(
             return Denied();
         }
         var proof = SignInMfaProof.FromVerifiedChallenge(challenge, method, _time.GetUtcNow());
+        // A successful second factor proves the user still controls their MFA; any live
+        // lost-device recovery request is obsolete and is cancelled before issuance.
+        var liveRecovery = await recoveryRequests.FindLiveByUserAsync(current.User.Id.ToString(), cancellationToken).ConfigureAwait(false);
+        if (liveRecovery is not null)
+        {
+            liveRecovery.Status = MfaRecoveryRequestStatus.Cancelled;
+            await recoveryRequests.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
         var result = await IssueAsync(current.User, challenge.TenantId, deviceInfo, cancellationToken, proof).ConfigureAwait(false);
         if (completingEnrollment)
         {
