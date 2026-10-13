@@ -22,7 +22,8 @@ public sealed class AddProductToOrderCommandHandler(
     IPromoCodeUsageRecorder promoUsageRecorder,
     GameGuild.Commerce.IPricingDecisionLedgerWriter pricingLedgerWriter,
     IApplicationDbContext dbContext,
-    IActorContextAccessor actorContextAccessor)
+    IActorContextAccessor actorContextAccessor,
+    IProductInventoryService? inventoryService = null)
     : ICommandHandler<AddProductToOrderCommand, Result<Order>>
 {
     public async Task<Result<Order>> Handle(
@@ -148,6 +149,15 @@ public sealed class AddProductToOrderCommandHandler(
         {
             return Result.Failure<Order>(
                 Error.Validation("Orders.InvalidPrice", "Discounts must leave a positive authoritative line total."));
+        }
+
+        // Inventory reservation (issue #401): fail-closed on insufficient tracked stock.
+        // Untracked products (the default for digital goods) skip reservation entirely.
+        if (inventoryService is not null &&
+            !await inventoryService.TryReserveAsync(request.ProductId, request.Quantity, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure<Order>(
+                Error.Conflict("Orders.OutOfStock", $"Product {request.ProductId} has insufficient stock for {request.Quantity} unit(s)."));
         }
 
         // Add line item with price snapshot

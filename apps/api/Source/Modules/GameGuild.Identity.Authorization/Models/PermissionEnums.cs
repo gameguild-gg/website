@@ -57,7 +57,37 @@ public enum PermissionOperationType
     ///     sensitive permission-gated operations (e.g. monetization) leave a durable
     ///     decision trail (issue #346).
     /// </summary>
-    Check = 12
+    Check = 12,
+
+    /// <summary>
+    ///     A resource-ownership designation was transferred from one user to another
+    ///     (issue #372). The audit entry's OldValue/NewValue carry the pre/post owner-row
+    ///     snapshots and double as the transfer's restore point (the previous owner row is
+    ///     soft-revoked, never hard-deleted).
+    /// </summary>
+    TransferOwnership = 13,
+
+    /// <summary>
+    ///     A role-inheritance edge or role assignment changed (issue #188). The audit
+    ///     entry's OldValue/NewValue carry the pre/post hierarchy state plus the cascading
+    ///     effects (affected descendant roles and users) computed at mutation time.
+    /// </summary>
+    InheritanceChange = 14,
+
+    /// <summary>
+    ///     A permission policy (conditional policy or policy definition) mutated
+    ///     (issue #188). The audit entry's OldValue/NewValue carry the pre/post policy
+    ///     state; the append-only <c>PolicyVersionHistory</c> table carries the full
+    ///     version history.
+    /// </summary>
+    PolicyChange = 15,
+
+    /// <summary>
+    ///     One stage of a multi-stage permission approval workflow was decided
+    ///     (issue #188). ResourceId carries the workflow id; OldValue/NewValue carry the
+    ///     pre/post stage state including the decision and approver notes.
+    /// </summary>
+    ApprovalStage = 16
 }
 
 /// <summary>

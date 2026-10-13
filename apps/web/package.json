@@ -60,6 +60,7 @@
     "@game-guild/quiz-content": "workspace:*",
     "@game-guild/quiz-surface": "workspace:*",
     "@game-guild/ui": "workspace:^",
+    "@game-guild/web3": "workspace:*",
     "@isomorphic-git/lightning-fs": "^4.10.3",
     "@lexical/clipboard": "^0.52.0",
     "@lexical/code": "^0.52.0",

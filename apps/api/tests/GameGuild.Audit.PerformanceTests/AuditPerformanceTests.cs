@@ -51,6 +51,7 @@ public class AuditPerformanceTests : IDisposable
         _auditService = new AuditService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             _mockHttpContextAccessor.Object,
+            new NoopPiiRedactionService(),
             _mockLogger.Object);
     }
 
@@ -388,4 +389,17 @@ public class AuditPerformanceTests : IDisposable
         _serviceProvider.Dispose();
         _context.Dispose();
     }
+}
+
+/// <summary>No-op redaction pipeline for performance tests (no rule evaluation).</summary>
+public sealed class NoopPiiRedactionService : IPiiRedactionService
+{
+    public Task<PiiRedactionSummary> ApplyToAuditLogAsync(AuditLog entry, IApplicationDbContext context, CancellationToken cancellationToken) =>
+        Task.FromResult(new PiiRedactionSummary());
+
+    public Task<CreateAuditLogRequest> RedactRequestForDurableFallbackAsync(CreateAuditLogRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult(request);
+
+    public Task<PiiRedactionTextResult> RedactTextAsync(string content, Guid? tenantId, PiiRedactionSource source, IApplicationDbContext? context, CancellationToken cancellationToken) =>
+        Task.FromResult(new PiiRedactionTextResult(content, new PiiRedactionSummary()));
 }

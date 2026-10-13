@@ -14,44 +14,45 @@ namespace GameGuild.Commerce.Payments.UnitTests;
 [Collection(StripeProcessConfigurationCollection.Name)]
 public sealed class PaymentsCoverageCompletionTests
 {
-    [Theory]
-    [InlineData(" PERCENT25 ", 25, DiscountType.Percentage)]
-    [InlineData("FIXED5", 5, DiscountType.FixedAmount)]
-    [InlineData("OFF5", 5, DiscountType.FixedAmount)]
-    public async Task CalculatePricing_ShouldApplyRemainingDiscountFormats(string code, decimal expectedDiscount, DiscountType type)
+    [Fact]
+    public async Task CalculatePricing_ShouldDelegateToUnifiedPricingEngine()
     {
-        var handler = CreatePricingHandler(100m);
+        // Issue #417: the handler is a thin delegation to IPricingEngine — the string-parsing
+        // stub (SAVE20/FIXED5 prefixes, zeroed add-ons and tax) is retired.
+        var engine = new Mock<IPricingEngine>();
+        engine
+            .Setup(x => x.CalculateAsync(It.IsAny<PricingCalculationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PricingCalculationResult { BasePlanPrice = new Money(100m, "USD"), Total = new Money(100m, "USD") });
 
-        var result = await handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null, code), CancellationToken.None);
+        var handler = new CalculatePricingQueryHandler(engine.Object);
 
-        result.Discount.Amount.Should().Be(expectedDiscount);
-        result.AppliedDiscounts.Should().ContainSingle(discount => discount.Type == type);
-    }
+        var result = await handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null), CancellationToken.None);
 
-    [Theory]
-    [InlineData(" ")]
-    [InlineData("SAVE0")]
-    [InlineData("SAVE101")]
-    [InlineData("FIXED0")]
-    [InlineData("UNKNOWN10")]
-    public async Task CalculatePricing_ShouldRejectInvalidDiscountFormats(string code)
-    {
-        var handler = CreatePricingHandler(100m);
-
-        var act = () => handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null, code), CancellationToken.None);
-
-        await act.Should().ThrowAsync<Exception>();
+        result.Total.Amount.Should().Be(100m);
+        engine.Verify(
+            x => x.CalculateAsync(
+                It.Is<PricingCalculationRequest>(request => !request.RecordDecision && !request.ApplyCredits && !request.IncludeTax),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task CalculatePricing_FixedDiscount_ShouldCapAtBasePriceAndHandleZeroBasePercentage()
+    public async Task CalculatePricing_ShouldForwardTrimmedDiscountCodeToEngine()
     {
-        var handler = CreatePricingHandler(0m);
+        var engine = new Mock<IPricingEngine>();
+        engine
+            .Setup(x => x.CalculateAsync(It.IsAny<PricingCalculationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PricingCalculationResult());
 
-        var result = await handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null, "FIXED5"), CancellationToken.None);
+        var handler = new CalculatePricingQueryHandler(engine.Object);
 
-        result.Discount.Amount.Should().Be(0m);
-        result.AppliedDiscounts.Single().Percentage.Should().Be(0m);
+        await handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null, " WELCOME10 "), CancellationToken.None);
+
+        engine.Verify(
+            x => x.CalculateAsync(
+                It.Is<PricingCalculationRequest>(request => request.PromoCodes!.Count == 1 && request.PromoCodes[0] == "WELCOME10"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -334,16 +335,6 @@ public sealed class PaymentsCoverageCompletionTests
             .TaxDescription.Should().BeEmpty();
         InvokePrivateInstance<TaxCalculationResult>(service, "CalculateTax", exclusiveRequest, jurisdiction, rateWithDescription, exclusiveRule)
             .TaxAmount.Should().Be(19m);
-    }
-
-    private static CalculatePricingQueryHandler CreatePricingHandler(decimal baseAmount)
-    {
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        resolver.Setup(x => x.GetPlanMonthlyPriceAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Money(baseAmount, "USD"));
-        return new CalculatePricingQueryHandler(resolver.Object);
     }
 
     private static Payment CreatePayment()

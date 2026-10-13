@@ -61,9 +61,10 @@ public interface ISubscriptionLifecycleService
     Task<SubscriptionDowngradeResult> DowngradePlanAsync(Guid subscriptionId, Guid newPlanId, DateTime? effectiveDate = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Changes billing cycle
+    ///     Changes billing cycle with interval-aware pricing and proration of the
+    ///     current period (issue #392).
     /// </summary>
-    Task<Subscription> ChangeBillingCycleAsync(Guid subscriptionId, BillingCycle newBillingCycle, CancellationToken cancellationToken = default);
+    Task<ChangeBillingCycleResult> ChangeBillingCycleAsync(Guid subscriptionId, BillingCycle newBillingCycle, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Sets auto-renewal preference

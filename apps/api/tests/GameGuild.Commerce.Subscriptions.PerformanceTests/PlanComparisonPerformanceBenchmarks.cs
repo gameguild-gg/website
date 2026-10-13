@@ -41,6 +41,16 @@ public class PlanComparisonPerformanceBenchmarks
 
     private sealed class InMemoryPlanRepository(SubscriptionPlan[] plans) : ISubscriptionPlanRepository
     {
+        // Issue #392 interval price points (not exercised by these benchmarks).
+        public Task<SubscriptionPlanIntervalPrice?> GetIntervalPriceAsync(Guid planId, BillingCycle interval, CancellationToken cancellationToken = default)
+            => Task.FromResult<SubscriptionPlanIntervalPrice?>(null);
+
+        public Task<IReadOnlyList<SubscriptionPlanIntervalPrice>> GetIntervalPricesAsync(Guid planId, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<SubscriptionPlanIntervalPrice>>([]);
+
+        public Task<SubscriptionPlanIntervalPrice> UpsertIntervalPriceAsync(SubscriptionPlanIntervalPrice intervalPrice, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException("Interval price points are not part of these benchmarks.");
+
         public Task<SubscriptionPlan?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
             Task.FromResult(plans.FirstOrDefault(plan => plan.Id == id));
 

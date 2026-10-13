@@ -127,6 +127,35 @@ export class CommercePaymentsWalletsModule {
   }
 
   /**
+   * Wallet-to-wallet transfer (issue #406): moves funds between two same-currency wallets
+   * through the audited TransferFunds command. A duplicate ReferenceId replays
+   * idempotently.
+   */
+  async postWalletsTransfer(
+    body: Types.CommercePaymentsModelsTransferWalletsInput,
+  ): Promise<Result<Types.CommercePaymentsModelsTransferWalletsOutput, ApiError>> {
+    const url = '/api/v1/wallets:transfer';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommercePaymentsModelsTransferWalletsInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsModelsTransferWalletsOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Get wallet by ID
    */
   async getWalletsForGetWalletsByWalletId(walletId: string): Promise<Result<void, ApiError>> {
@@ -191,6 +220,36 @@ export class CommercePaymentsWalletsModule {
   }
 
   /**
+   * Administrative balance adjustment (issue #406): credits or debits a wallet through
+   * the audited AddFunds/DeductFunds commands. A duplicate ReferenceId replays
+   * idempotently and returns the original transaction.
+   */
+  async postWalletsAdjust(
+    walletId: string,
+    body: Types.CommercePaymentsModelsAdjustWalletInput,
+  ): Promise<Result<Types.CommercePaymentsWalletTransaction, ApiError>> {
+    const url = `/api/v1/wallets/${walletId}:adjust`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommercePaymentsModelsAdjustWalletInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsWalletTransactionSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Freeze wallet
    */
   async postWalletsFreeze(walletId: string, body: Types.CommercePaymentsModelsFreezeWalletInput): Promise<Result<void, ApiError>> {
@@ -238,6 +297,52 @@ export class CommercePaymentsWalletsModule {
     });
 
     return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Wallet balance analytics (issue #406): total balances by currency, active/frozen
+   * wallet counts and completed transaction volume by type and day.
+   */
+  async getWalletsMetrics(query?: { days?: number }): Promise<Result<Types.CommercePaymentsWalletMetricsOutput, ApiError>> {
+    const url = '/api/v1/wallets/metrics';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsWalletMetricsOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Report-only balance reconciliation (issue #406): per wallet, verifies Balance against
+   * the latest BalanceAfter and the signed sum of completed transactions. Never mutates state.
+   */
+  async getWalletsReconciliation(query?: { walletId?: string }): Promise<Result<Types.CommercePaymentsWalletReconciliationReportOutput, ApiError>> {
+    const url = '/api/v1/wallets/reconciliation';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsWalletReconciliationReportOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 }
 

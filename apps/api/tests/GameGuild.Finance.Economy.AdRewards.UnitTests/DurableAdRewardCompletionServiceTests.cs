@@ -530,6 +530,30 @@ public sealed class DurableAdRewardCompletionServiceTests
         public ActorContext ActorContext { get; private set; } = ActorContext.Anonymous;
         public void SetActorContext(ActorContext context) => ActorContext = context;
         public void ClearActorContext() => ActorContext = ActorContext.Anonymous;
+
+        public IActorContextScope BeginActorContextScope(ActorContext context)
+        {
+            var previous = ActorContext;
+            SetActorContext(context);
+            return new RestoreScope(this, previous);
+        }
+
+        private sealed class RestoreScope(TestActorContextAccessor accessor, ActorContext previous) : IActorContextScope
+        {
+            private bool disposed;
+
+            public void Dispose()
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                accessor.ActorContext = previous;
+            }
+        }
+
     }
 
     private sealed class JurisdictionResolver : IEconomyJurisdictionResolver

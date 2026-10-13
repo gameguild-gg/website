@@ -58,6 +58,7 @@ public sealed class SecurityEventLogger(
     ISecurityAlertRuleEvaluator alertEvaluator,
     IOptions<SecurityEventPipelineOptions> options,
     IAuditService fallbackAuditService,
+    IPiiRedactionService piiRedaction,
     ILogger<SecurityEventLogger> logger) : ISecurityEventLogger
 {
     private static readonly JsonSerializerOptions PayloadJsonOptions = new(JsonSerializerDefaults.Web);
@@ -202,7 +203,13 @@ public sealed class SecurityEventLogger(
         {
             try
             {
-                var payload = JsonSerializer.Serialize(request, PayloadJsonOptions);
+                // Sanitize through the PII redaction pipeline (issue #192) before the payload touches
+                // disk; sanitization itself is fail-closed, so a rule-store outage cannot leak PII
+                // into the spool.
+                var sanitized = await piiRedaction
+                    .RedactRequestForDurableFallbackAsync(request, cancellationToken)
+                    .ConfigureAwait(false);
+                var payload = JsonSerializer.Serialize(sanitized, PayloadJsonOptions);
                 spool.Append(new SecurityEventSpoolRecord(eventId, SystemClock.UtcNow, payload));
                 logger.LogError(
                     lastError,
@@ -218,7 +225,9 @@ public sealed class SecurityEventLogger(
                     spoolException,
                     "Security event {ActionType} was NOT captured durably: persistence failed and spooling failed. Event payload: {Payload}",
                     request.ActionType,
-                    JsonSerializer.Serialize(request, PayloadJsonOptions));
+                    JsonSerializer.Serialize(
+                        await piiRedaction.RedactRequestForDurableFallbackAsync(request, cancellationToken).ConfigureAwait(false),
+                        PayloadJsonOptions));
                 return new SecurityEventCaptureResult(SecurityEventCaptureOutcome.SpoolingDisabled, classification, eventId, spoolException.Message);
             }
         }
@@ -227,7 +236,9 @@ public sealed class SecurityEventLogger(
             lastError,
             "Security event {ActionType} was NOT captured durably: persistence failed and spooling is disabled. Event payload: {Payload}",
             request.ActionType,
-            JsonSerializer.Serialize(request, PayloadJsonOptions));
+            JsonSerializer.Serialize(
+                await piiRedaction.RedactRequestForDurableFallbackAsync(request, cancellationToken).ConfigureAwait(false),
+                PayloadJsonOptions));
         return new SecurityEventCaptureResult(SecurityEventCaptureOutcome.SpoolingDisabled, classification, eventId, lastError?.Message);
     }
 

@@ -37,7 +37,9 @@ public class ProductRepository(IApplicationDbContext context)
         string sortBy = "CreatedAt",
         string sortDirection = "DESC",
         Guid? tenantId = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlyList<Guid>? categoryIds = null,
+        bool? inStockOnly = null)
     {
         var query = Query;
 
@@ -65,6 +67,29 @@ public class ProductRepository(IApplicationDbContext context)
 
         if (tenantId.HasValue)
             query = query.Where(p => p.TenantId == tenantId.Value);
+
+        // Category subtree filter (issue #401): the caller resolves the category plus
+        // its descendants, so this stays a single translatable IN clause.
+        if (categoryIds is { Count: > 0 })
+        {
+            var categoryIdList = categoryIds;
+            query = query.Where(p => p.CategoryId != null && categoryIdList.Contains(p.CategoryId.Value));
+        }
+
+        // Real-time availability filter (issue #401): products without tracked inventory
+        // are always in stock; tracked ones need sellable units (on hand minus reserved).
+        if (inStockOnly.HasValue)
+        {
+            query = inStockOnly.Value
+                ? query.Where(p =>
+                    p.Inventory == null ||
+                    !p.Inventory.TrackInventory ||
+                    p.Inventory.StockQuantity - p.Inventory.ReservedQuantity > 0)
+                : query.Where(p =>
+                    p.Inventory != null &&
+                    p.Inventory.TrackInventory &&
+                    p.Inventory.StockQuantity - p.Inventory.ReservedQuantity <= 0);
+        }
 
         // Get total count before pagination
         var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
