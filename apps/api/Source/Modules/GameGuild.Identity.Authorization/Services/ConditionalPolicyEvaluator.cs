@@ -15,6 +15,17 @@ public interface IConditionalPolicyEvaluator
     Task<ConditionalPolicyResult> EvaluateAsync(
         ConditionalPolicyContext context,
         CancellationToken ct = default);
+
+    /// <summary>
+    ///     Evaluates one in-memory <see cref="ConditionalPolicy"/> against a context
+    ///     without consulting any repository (issue #374: what-if rule testing and
+    ///     simulation). The policy is never persisted — this overload exists exactly for
+    ///     hypothetical inputs.
+    /// </summary>
+    Task<ConditionalPolicyResult> EvaluatePolicyAsync(
+        ConditionalPolicy policy,
+        ConditionalPolicyContext context,
+        CancellationToken ct = default);
 }
 
 /// <summary>
@@ -113,6 +124,36 @@ public class ConditionalPolicyEvaluator(
 
         // No deny policy matched
         return new ConditionalPolicyResult(IsAllowed: true, Details: details);
+    }
+
+    /// <summary>
+    ///     Evaluates one in-memory policy (issue #374 what-if testing/simulation): same
+    ///     applicability filters and condition semantics as <see cref="EvaluateAsync"/>,
+    ///     but with the policy supplied by the caller instead of loaded from the
+    ///     repository. The policy is never persisted.
+    /// </summary>
+    public Task<ConditionalPolicyResult> EvaluatePolicyAsync(
+        ConditionalPolicy policy,
+        ConditionalPolicyContext context,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(policy);
+
+        var details = new List<PolicyEvaluationDetail>();
+        var conditionsMet = IsApplicable(policy, context) && EvaluateConditions(policy, context);
+        details.Add(new PolicyEvaluationDetail(policy.Id, policy.Name, policy.Action, conditionsMet));
+
+        if (conditionsMet && policy.Action == PolicyAction.Deny)
+        {
+            return Task.FromResult(new ConditionalPolicyResult(
+                IsAllowed: false,
+                DeniedByPolicyId: policy.Id,
+                DeniedByPolicyName: policy.Name,
+                DenialReason: $"Access denied by policy: {policy.Name}",
+                Details: details));
+        }
+
+        return Task.FromResult(new ConditionalPolicyResult(IsAllowed: true, Details: details));
     }
 
     private static bool IsApplicable(ConditionalPolicy policy, ConditionalPolicyContext context)
