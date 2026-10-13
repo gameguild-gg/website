@@ -14,7 +14,9 @@ export const isUnrecognizedChainError = (error: unknown): boolean => {
   // names the chain (e.g. Torus/older MetaMask builds).
   if (
     providerError.code === -32603 &&
-    /unrecognized chain|chain.*not.*(added|found)/i.test(providerError.message)
+    /unrecognized chain|chain (?:is )?not (?:yet )?(?:added|found)/i.test(
+      providerError.message,
+    )
   ) {
     return true;
   }
