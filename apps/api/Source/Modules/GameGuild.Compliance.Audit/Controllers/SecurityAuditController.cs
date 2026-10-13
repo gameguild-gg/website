@@ -76,8 +76,15 @@ public class SecurityAuditController(
     /// <summary>
     ///     Get authentication attempt logs specifically.
     /// </summary>
+    /// <remarks>
+    ///     Deliberately kept on the SystemAdmin policy: the authentication-attempt surface
+    ///     has no tenant-scoped filter today (the request and the underlying query are
+    ///     platform-wide), so opening it to the Audit.Read self-service tier would leak
+    ///     cross-tenant authentication data. Revisit together with a tenant filter on
+    ///     <see cref="AuthenticationAuditRequest"/>.
+    /// </remarks>
     [HttpGet("authentication")]
-    [Authorize(Policy = Policies.AuditRead)]
+    [Authorize(Policy = Policies.SystemAdmin)]
     [ProducesResponseType(typeof(AuthenticationAuditResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthenticationAuditResponse>> GetAuthenticationLogs(
         [FromQuery] AuthenticationAuditRequest request,
@@ -86,10 +93,6 @@ public class SecurityAuditController(
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue)
             return Unauthorized("User not authenticated");
-
-        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
-            return Forbid();
-        request.TenantId = tenantScope;
 
         await auditService.LogAdminActionAsync(
             adminUserId.Value,

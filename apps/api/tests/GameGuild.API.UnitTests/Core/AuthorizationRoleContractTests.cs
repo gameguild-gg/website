@@ -167,7 +167,9 @@ public sealed class AuthorizationRoleContractTests
 
     [Theory]
     [InlineData(nameof(SecurityAuditController.GetSecurityAuditLogs), "Audit.Read")]
-    [InlineData(nameof(SecurityAuditController.GetAuthenticationLogs), "Audit.Read")]
+    // GetAuthenticationLogs intentionally stays on SystemAdmin: the authentication-attempt
+    // surface has no tenant-scoped filter, so it cannot join the tenant-clamped tier.
+    [InlineData(nameof(SecurityAuditController.GetAuthenticationLogs), "SystemAdmin")]
     [InlineData(nameof(SecurityAuditController.GetPermissionLogs), "Audit.Read")]
     [InlineData(nameof(SecurityAuditController.GetSecurityDashboard), "Audit.Read")]
     [InlineData(nameof(SecurityAuditController.ExportSecurityAuditLogs), "Audit.Export")]

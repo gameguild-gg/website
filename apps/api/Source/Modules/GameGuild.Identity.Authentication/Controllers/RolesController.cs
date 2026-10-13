@@ -244,7 +244,7 @@ public class RolesController(
         var guard = await ForbidForeignRoleAsync(command.RoleId, cancellationToken).ConfigureAwait(false);
         if (guard is not null)
         {
-            return guard;
+            return new ActionResult<BulkRoleAssignmentResult>(guard);
         }
 
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
@@ -301,7 +301,7 @@ public class RolesController(
     ///     non-system actors. Unknown roles are passed through so the underlying command
     ///     produces its own not-found semantics.
     /// </summary>
-    private async Task<IActionResult?> ForbidForeignRoleAsync(Guid roleId, CancellationToken cancellationToken)
+    private async Task<ActionResult?> ForbidForeignRoleAsync(Guid roleId, CancellationToken cancellationToken)
     {
         var actor = actorContextAccessor.ActorContext;
         if (actor.IsSystemAdmin)
