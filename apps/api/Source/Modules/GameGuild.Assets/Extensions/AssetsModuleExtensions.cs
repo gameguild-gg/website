@@ -129,6 +129,7 @@ public static class AssetsModuleExtensions
         services.AddScoped<IRequestHandler<ReviewReportCommand, ReviewReportResponse?>, ReviewReportHandler>();
         services.AddScoped<IRequestHandler<RunAssetRetentionCommand, AssetRetentionRunResponse>, RunAssetRetentionHandler>();
         services.AddScoped<IRequestHandler<SetAssetLegalHoldCommand, AssetLegalHoldResponse?>, SetAssetLegalHoldHandler>();
+        services.AddScoped<IRequestHandler<RebindAssetParentCommand, RebindAssetParentResponse?>, RebindAssetParentHandler>();
 
         services.AddScoped<IRequestHandler<GetAssetQuery, AssetDto?>, GetAssetHandler>();
         services.AddScoped<IRequestHandler<GetAssetPreviewQuery, AssetPreviewResponse?>, GetAssetPreviewHandler>();
