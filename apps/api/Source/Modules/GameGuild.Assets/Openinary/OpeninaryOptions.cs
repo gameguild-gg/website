@@ -23,8 +23,9 @@ public class OpeninaryOptions
     /// <summary>
     /// Folder prefix applied by callers when composing upload folders
     /// (configuration value — never hardcoded in client code).
+    /// Empty by default; deploy configuration supplies any product-specific prefix.
     /// </summary>
-    public string FolderPrefix { get; set; } = "gg/";
+    public string FolderPrefix { get; set; } = "";
 
     /// <summary>
     /// Maximum accepted file size in megabytes.

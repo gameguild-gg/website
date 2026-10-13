@@ -263,6 +263,7 @@ public sealed class OpeninaryClientTests
         var options = provider.GetRequiredService<IOptions<OpeninaryOptions>>().Value;
         Assert.Equal(OpeninaryOptions.DefaultBaseUrl, options.BaseUrl);
         Assert.Equal(string.Empty, options.ApiKey);
+        Assert.Equal(string.Empty, options.FolderPrefix);
         Assert.Equal(50, options.MaxFileMb);
         Assert.Equal(120, options.TimeoutSeconds);
     }
