@@ -115,7 +115,7 @@ describe('SessionsManager', () => {
     mocks.renameSession.mockResolvedValue({ success: true, status: 'success' });
     render(<SessionsManager data={makeData()} locale="en-US" />);
 
-    await user.click(screen.getAllByRole('button', { name: 'settings.security.rename.trigger' })[0]);
+    await user.click(screen.getAllByRole('button', { name: 'settings.security.rename.aria' })[0]);
     const input = screen.getByTestId(`rename-input-${CURRENT_SESSION_ID}`);
     await user.clear(input);
     await user.type(input, 'Main desktop');
@@ -131,7 +131,7 @@ describe('SessionsManager', () => {
     const user = userEvent.setup();
     render(<SessionsManager data={makeData()} locale="en-US" />);
 
-    await user.click(screen.getAllByRole('button', { name: 'settings.security.rename.trigger' })[0]);
+    await user.click(screen.getAllByRole('button', { name: 'settings.security.rename.aria' })[0]);
     await user.clear(screen.getByTestId(`rename-input-${CURRENT_SESSION_ID}`));
     await user.click(screen.getByTestId(`rename-save-${CURRENT_SESSION_ID}`));
 
@@ -145,7 +145,10 @@ describe('SessionsManager', () => {
     mocks.revokeTrustedDevice.mockResolvedValue({ success: true, status: 'success' });
     render(<SessionsManager data={makeData()} locale="en-US" />);
 
-    await user.click(screen.getByRole('button', { name: 'settings.security.sessions.terminateAria.iOS' }));
+    // The terminate button exposes an aria-label (which wins over the visible text), and the
+    // identity translation mock does not interpolate the {name} placeholder, so the accessible
+    // name is the bare key.
+    await user.click(screen.getByRole('button', { name: 'settings.security.sessions.terminateAria' }));
     await waitFor(() => expect(mocks.terminateSession).toHaveBeenCalledWith(OTHER_SESSION_ID));
 
     await user.click(screen.getByRole('button', { name: 'settings.security.trustedDevices.revoke' }));
