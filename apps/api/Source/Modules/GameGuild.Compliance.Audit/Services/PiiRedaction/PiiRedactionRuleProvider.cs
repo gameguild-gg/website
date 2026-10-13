@@ -234,9 +234,10 @@ public sealed class PiiRedactionRuleProvider(
 /// A refresh failure only logs — the provider serves stale snapshots until one succeeds.
 /// </summary>
 public sealed class PiiRedactionRuleRefreshService(
-    IPiiRedactionRuleProvider provider) : BackgroundService
+    IPiiRedactionRuleProvider provider,
+    TimeSpan? refreshInterval = null) : BackgroundService
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
+    private readonly TimeSpan _interval = refreshInterval ?? TimeSpan.FromSeconds(30);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -253,7 +254,7 @@ public sealed class PiiRedactionRuleRefreshService(
 
             try
             {
-                await Task.Delay(Interval, stoppingToken).ConfigureAwait(false);
+                await Task.Delay(_interval, stoppingToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

@@ -35,10 +35,11 @@ public sealed record CompiledPiiRule
 }
 
 /// <summary>
-/// Deterministic PII matcher and transformation engine. Pure and synchronous: given an ordered rule
-/// set and a value, produce the transformed value plus a summary of what fired. Rules must be ordered
-/// most-specific-first (field-name rules before global rules, then ascending priority) — the provider
-/// guarantees that order and the first matching rule wins, so a value is never double-transformed.
+/// Deterministic PII matcher and transformation engine. Pure and synchronous: given a rule
+/// set and a value, produce the transformed value plus a summary of what fired. Rules are applied
+/// most-specific-first (field-name rules before global rules, then ascending priority) — the engine
+/// applies that precedence ordering itself so it holds even when a caller passes an unordered set,
+/// and the first matching rule wins, so a value is never double-transformed.
 /// Fail-closed for per-value matcher errors: a throwing or timing-out rule transforms the whole value
 /// instead of passing it through.
 /// </summary>
@@ -97,7 +98,7 @@ public static partial class PiiRedactionEngine
     }
 
     /// <summary>
-    /// Applies the ordered rule set to a single value under a field name. The first rule (in the
+    /// Applies the rule set to a single value under a field name. The first rule (in the
     /// most-specific-first order documented on this class) whose matcher fires wins and its action
     /// applies to every match inside the value.
     /// </summary>
@@ -108,7 +109,7 @@ public static partial class PiiRedactionEngine
             return PiiValueOutcome.Unchanged;
         }
 
-        foreach (var rule in rules)
+        foreach (var rule in OrderByPrecedence(rules))
         {
             if (rule.Scope == PiiRuleScope.FieldName && !rule.TargetFields.Contains(fieldName, StringComparer.OrdinalIgnoreCase))
             {
@@ -126,6 +127,16 @@ public static partial class PiiRedactionEngine
 
         return PiiValueOutcome.Unchanged;
     }
+
+    /// <summary>
+    /// Most-specific-first precedence: field-name rules before global rules, then ascending priority
+    /// (lower applies first). Stable, so equally ranked rules keep their input order — defense in
+    /// depth over the ordering the rule provider already guarantees.
+    /// </summary>
+    private static IEnumerable<CompiledPiiRule> OrderByPrecedence(IReadOnlyList<CompiledPiiRule> rules) =>
+        rules
+            .OrderBy(rule => rule.Scope == PiiRuleScope.Global ? 1 : 0)
+            .ThenBy(rule => rule.Priority);
 
     private static bool HasValidMatch(CompiledPiiRule rule, string value)
     {

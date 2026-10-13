@@ -319,6 +319,9 @@ public class PiiRedactionServiceTests : IDisposable
         entry.Description.Should().Contain(PiiHmacTokenizer.TokenPrefix);
         entry.Description.Should().NotContain("john@example.com");
 
+        // Vault and operation rows are staged on the context; persisting them makes them queryable.
+        await _context.SaveChangesAsync();
+
         var vaultEntry = await _context.Set<PiiTokenVaultEntry>().SingleAsync();
         vaultEntry.EncryptedValue.Should().NotBe("john@example.com");
         vaultEntry.SourceRuleId.Should().Be(rule.Id);
@@ -369,6 +372,9 @@ public class PiiRedactionServiceTests : IDisposable
         entry.UserAgent.Should().Be(PiiRedactionFailClosed.Marker);
         entry.ResourceId.Should().Be(PiiRedactionFailClosed.Marker);
         entry.Metadata.Should().NotContain("john@example.com");
+
+        // The fail-closed operation trail is staged on the context; persist it before querying.
+        await _context.SaveChangesAsync();
 
         var operation = await _context.Set<PiiRedactionOperation>().SingleAsync();
         operation.FailClosed.Should().BeTrue();

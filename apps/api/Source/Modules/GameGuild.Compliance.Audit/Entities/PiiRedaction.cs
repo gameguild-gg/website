@@ -122,9 +122,10 @@ public sealed class PiiRedactionRule : EntityBase
     }
 
     /// <summary>
-    /// Validates the rule shape: regex rules need a compilable pattern, preset rules need a preset,
-    /// and field-name rules need at least one target field. Returns the errors keyed by field name;
-    /// an empty result means the rule can be compiled by the pipeline.
+    /// Validates the rule shape: regex rules need a compilable pattern (and any supplied regex must
+    /// compile regardless of pattern type), preset rules need a preset, and field-name rules need at
+    /// least one target field. Returns the errors keyed by field name; an empty result means the rule
+    /// can be compiled by the pipeline.
     /// </summary>
     public static IReadOnlyDictionary<string, string[]> Validate(
         string ruleName,
@@ -146,25 +147,28 @@ public sealed class PiiRedactionRule : EntityBase
             errors["ruleName"] = ["Rule names are limited to 200 characters."];
         }
 
-        if (patternType == PiiRulePatternType.Regex)
+        if (string.IsNullOrWhiteSpace(regexPattern))
         {
-            if (string.IsNullOrWhiteSpace(regexPattern))
+            if (patternType == PiiRulePatternType.Regex)
             {
                 errors["regexPattern"] = ["A regular expression is required for regex rules."];
             }
-            else
+        }
+        else
+        {
+            // Any supplied pattern must compile regardless of the rule's pattern type: a stray,
+            // un-compilable regex on a preset rule is rejected instead of silently ignored.
+            try
             {
-                try
-                {
-                    _ = new Regex(regexPattern, RegexOptions.Compiled, TimeSpan.FromMilliseconds(500));
-                }
-                catch (ArgumentException exception)
-                {
-                    errors["regexPattern"] = [$"The regular expression is invalid: {exception.Message}"];
-                }
+                _ = new Regex(regexPattern, RegexOptions.Compiled, TimeSpan.FromMilliseconds(500));
+            }
+            catch (ArgumentException exception)
+            {
+                errors["regexPattern"] = [$"The regular expression is invalid: {exception.Message}"];
             }
         }
-        else if (patternType == PiiRulePatternType.Preset && preset is null)
+
+        if (patternType == PiiRulePatternType.Preset && preset is null)
         {
             errors["preset"] = ["A preset pattern is required for preset rules."];
         }
