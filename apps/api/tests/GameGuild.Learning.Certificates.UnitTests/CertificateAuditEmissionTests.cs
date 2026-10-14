@@ -136,6 +136,7 @@ public class CertificateAuditEmissionTests
             {
                 product.HasKey(entity => entity.Id);
                 product.Ignore(entity => entity.BundleItems);
+                product.Ignore(entity => entity.IncludedInBundles);
             });
             modelBuilder.Entity<User>(user =>
             {
