@@ -611,13 +611,15 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
             var trimmed = candidate.Trim();
 
             // Guid-shaped values are normalized to the canonical dotted form so engine
-            // resource ids match the GraphQL middleware's formatting.
+            // resource ids match the GraphQL middleware's formatting. Candidates that
+            // are not Guid-shaped are skipped rather than returned: a later candidate
+            // (for example the query string under RouteOrQuery) may still carry the
+            // real id, and requests without any Guid-shaped id resolve to null so the
+            // caller fails closed with resource_id_unavailable.
             if (Guid.TryParse(trimmed, out var guid))
             {
                 return guid.ToString("D");
             }
-
-            return trimmed;
         }
 
         return null;
