@@ -84,5 +84,12 @@ public class EnrollmentAuditEmissionTests
     {
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
             => Database.BeginTransactionAsync(cancellationToken);
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Declare the entity explicitly: EnsureCreated finalizes the model, after which
+            // Set<Enrollment>() can no longer register it by convention.
+            modelBuilder.Entity<Enrollment>(enrollment => enrollment.HasKey(entity => entity.Id));
+        }
     }
 }

@@ -149,6 +149,24 @@ public class ContentPagesMutationAuditTests
     {
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
             => Database.BeginTransactionAsync(cancellationToken);
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Page>(page =>
+            {
+                page.HasKey(entity => entity.Id);
+                page.Ignore(entity => entity.Sections);
+                page.Ignore(entity => entity.ChildPages);
+                page.Ignore(entity => entity.ParentPage);
+            });
+            modelBuilder.Entity<PageSection>(section =>
+            {
+                section.HasKey(entity => entity.Id);
+                section.Ignore(entity => entity.Page);
+            });
+            modelBuilder.Entity<ContentResource>(resource => resource.HasKey(entity => entity.Id));
+            modelBuilder.Entity<MarketingLead>(lead => lead.HasKey(entity => entity.Id));
+        }
     }
 }
 
