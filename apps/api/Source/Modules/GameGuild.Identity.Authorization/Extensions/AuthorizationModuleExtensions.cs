@@ -370,6 +370,12 @@ public static class AuthorizationModuleExtensions
         // Resource Permissions
         services.AddScoped<IResourcePermissionService, ResourcePermissionService>();
 
+        // Resource ownership (issue #372): read-side ownership lookup feeding the
+        // effective-permission resolver's owner-override layer. Ownership is recorded on
+        // creation (creator auto-grant) and moves only through the guarded, versioned and
+        // audited TransferOwnershipCommand.
+        services.AddScoped<IResourceOwnershipProvider, ResourceOwnershipService>();
+
         // Advanced repositories
         services.AddScoped<IAbacPolicyRepository, AbacPolicyRepository>();
         services.AddScoped<IConditionalPolicyRepository, ConditionalPolicyRepository>();
@@ -380,6 +386,11 @@ public static class AuthorizationModuleExtensions
         services.AddScoped<IPermissionTemplateVersionRepository, PermissionTemplateVersionRepository>();
         services.AddScoped<IPermissionTemplateMigrationRepository, PermissionTemplateMigrationRepository>();
         services.AddScoped<IPolicyRegistryAuditLogRepository, PolicyRegistryAuditLogRepository>();
+
+        // Governance history (issues #188/#189): append-only policy version snapshots on
+        // every permission-policy mutation.
+        services.AddScoped<IPolicyVersionHistoryRepository, PolicyVersionHistoryRepository>();
+        services.AddScoped<IPolicyVersionSnapshotService, PolicyVersionSnapshotService>();
 
         // Central policy registry: signed policy bundles (fail-closed verification)
         services.AddScoped<IPolicyBundleSignatureService, PolicyBundleSignatureService>();
@@ -416,6 +427,19 @@ public static class AuthorizationModuleExtensions
         // Multi-parent role inheritance engine (issue #358): cycle detection, selective
         // blocking and configurable traversal rules for RBAC hierarchy resolution.
         services.AddScoped<IRoleInheritanceEngine, RoleInheritanceEngine>();
+
+        // Governance auditing (issues #188/#189): cascading-effect visibility for
+        // role-hierarchy mutations, role-assignment and policy-change audit entries.
+        services.AddScoped<IRoleHierarchyAuditService, RoleHierarchyAuditService>();
+
+        // Point-in-time permission history reconstruction (issue #189) from the audit
+        // log plus grant tables; fails closed on unprovable instants.
+        services.AddScoped<IPermissionHistoryReconstructionService, PermissionHistoryReconstructionService>();
+
+        // Multi-stage permission approval workflows (issue #188): each stage decision is
+        // audited; the final approval executes the guarded grant flow.
+        services.AddScoped<IPermissionApprovalRepository, PermissionApprovalRepository>();
+        services.AddScoped<IPermissionApprovalService, PermissionApprovalService>();
 
         // Layer 2: Unified effective-permission resolver (DENY-WINS, fail-closed).
         // Single resolution contract for authorization entry points and permission-query

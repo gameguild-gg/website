@@ -65,6 +65,15 @@ public static class AuditActionTypes
 
     public const string BulkOperation = "BulkOperation";
 
+    // PII Redaction Pipeline (issue #192)
+    public const string PiiRedactionRuleCreated = "PiiRedactionRuleCreated";
+
+    public const string PiiRedactionRuleUpdated = "PiiRedactionRuleUpdated";
+
+    public const string PiiRedactionRuleDeleted = "PiiRedactionRuleDeleted";
+
+    public const string PiiTokenResolved = "PiiTokenResolved";
+
     // Session Management
     public const string SessionCreated = "SessionCreated";
 

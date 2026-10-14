@@ -6,7 +6,7 @@ namespace GameGuild.Commerce.Payments;
 
 /// <summary>Entity representing a user's wallet</summary>
 [Table("user_wallets")]
-[Index(nameof(UserId), IsUnique = true)]
+[Index(nameof(UserId), nameof(Currency), IsUnique = true)]
 [Index(nameof(Currency))]
 [Index(nameof(IsActive))]
 public class UserWallet : EntityBase
@@ -52,11 +52,21 @@ public class UserWallet : EntityBase
     [Column(TypeName = "decimal(18,2)")]
     public decimal? MonthlyLimit { get; set; }
 
+    /// <summary>
+    ///     Timestamp of the last low-balance threshold notification issued for this wallet
+    ///     (issue #406). Null when the wallet is above the configured threshold or was never
+    ///     alerted; cleared again once the balance returns to or above the threshold so a
+    ///     subsequent dip re-triggers the notice.
+    /// </summary>
+    public DateTime? LowBalanceAlertedAt { get; set; }
+
     /// <summary>Navigation property to wallet transactions</summary>
     public virtual ICollection<WalletTransaction> Transactions { get; set; } = new List<WalletTransaction>();
 
     /// <summary>Add funds to the wallet</summary>
-    public void AddFunds(decimal amount, string description, string? referenceId = null)
+    /// <returns>The ledger transaction appended by this credit (issue #406: callers must
+    /// register it with the repository explicitly — see <see cref="IWalletRepository.AddTransaction"/>).</returns>
+    public WalletTransaction AddFunds(decimal amount, string description, string? referenceId = null)
     {
         if (!IsActive) throw new InvalidOperationException("Wallet is not active");
         if (IsLocked) throw new InvalidOperationException($"Wallet is locked: {LockReason}");
@@ -71,6 +81,7 @@ public class UserWallet : EntityBase
         };
 
         Transactions.Add(transaction);
+        return transaction;
     }
 
     /// <summary>
@@ -78,8 +89,10 @@ public class UserWallet : EntityBase
     /// The EntityBase.Version property is automatically checked on save via EF Core
     /// ConcurrencyCheck, preventing double-spend in concurrent scenarios.
     /// </summary>
+    /// <returns>The ledger transaction appended by this debit (issue #406: callers must
+    /// register it with the repository explicitly — see <see cref="IWalletRepository.AddTransaction"/>).</returns>
     /// <exception cref="InvalidOperationException">Thrown if wallet is inactive, locked, or has insufficient funds</exception>
-    public void DeductFunds(decimal amount, string description, string? referenceId = null)
+    public WalletTransaction DeductFunds(decimal amount, string description, string? referenceId = null)
     {
         if (!IsActive) throw new InvalidOperationException("Wallet is not active");
         if (IsLocked) throw new InvalidOperationException($"Wallet is locked: {LockReason}");
@@ -99,6 +112,7 @@ public class UserWallet : EntityBase
         };
 
         Transactions.Add(transaction);
+        return transaction;
     }
 
     /// <summary>Lock the wallet</summary>

@@ -101,6 +101,18 @@ public static class PaymentsModule
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IRevenueAuditService, RevenueAuditService>();
         services.AddScoped<ITaxCalculationService, TaxCalculationService>();
+
+        // Unified pricing engine (issue #417): the single calculation path for base plan,
+        // add-ons, usage tiers, discounts, proration, tax, credits and currency. Its
+        // cross-module seams (proration, promo resolution) are Payments-owned abstractions
+        // implemented by the Subscriptions and Products modules respectively.
+        services.AddScoped<IPricingEngine, PricingEngine>();
+
+        // Fail-closed FX default (issue #417): no quotations configured, so cross-currency
+        // conversions throw instead of guessing — same-currency requests stay exact identity.
+        // Host configuration can Replace this with operator-entered or pinned rates.
+        services.AddManualExchangeRates([]);
+        services.AddCurrencyConversion();
         services.AddScoped<IWalletService, WalletService>();
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentProcessor, OrderPaymentService>());
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentAuthority, OrderPaymentService>());
@@ -114,6 +126,15 @@ public static class PaymentsModule
             .Bind(configuration.GetSection(PaymentMethodExpiryOptions.SectionName))
             .ValidateOnStart();
         services.AddHostedService<PaymentMethodExpiryMonitorBackgroundService>();
+
+        // Wallet operations (issue #406): low-balance threshold alerts through the
+        // Notifications module, following the payment-method expiry monitor pattern.
+        services.AddSingleton<IValidateOptions<WalletsOptions>, WalletsOptionsValidator>();
+        services.AddOptions<WalletsOptions>()
+            .Bind(configuration.GetSection(WalletsOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IWalletBalanceAlertMonitor, WalletBalanceAlertMonitor>();
+        services.AddHostedService<WalletBalanceAlertMonitorBackgroundService>();
 
         // Register payment gateway and sub-services
         services.AddSingleton<IValidateOptions<StripeGatewayOptions>, StripeGatewayOptionsValidator>();

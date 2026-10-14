@@ -15,8 +15,11 @@ public static class PricingDecisionType
     /// <summary>Order-level promo application that produced a final payable amount.</summary>
     public const string OrderPromoApply = "OrderPromoApply";
 
+    /// <summary>Unified pricing-engine quote (issue #417): one full plan-level calculation.</summary>
+    public const string CalculationQuote = "CalculationQuote";
+
     /// <summary>All recognized decision types.</summary>
-    public static readonly IReadOnlyList<string> All = [CheckoutLineItem, RenewalQuote, OrderPromoApply];
+    public static readonly IReadOnlyList<string> All = [CheckoutLineItem, RenewalQuote, OrderPromoApply, CalculationQuote];
 }
 
 /// <summary>Drift-validation outcomes stamped on ledger entries.</summary>
@@ -86,19 +89,24 @@ public sealed record CapApplication(
 /// <see cref="PricingDecisionLedgerEntry.BreakdownJson"/>. The drift validator
 /// recomputes the final amount from these parts (see <see cref="PricingDecisionBreakdown.RecomputeFinalAmount"/>).
 /// </summary>
-/// <param name="Version">Breakdown schema version (currently 1).</param>
+/// <param name="Version">Breakdown schema version: 1 = checkout/renewal decisions (issue #400); 2 adds the unified-engine plan-level fields (issue #417).</param>
 /// <param name="Currency">Currency of all amounts.</param>
 /// <param name="Quantity">Quantity priced.</param>
 /// <param name="BaseUnitPrice">List or sale unit price used as the baseline.</param>
 /// <param name="SaleUnitPrice">Sale unit price, when a sale was active.</param>
 /// <param name="SaleActive">Whether the sale price was used as the baseline.</param>
-/// <param name="BaseAmount">Baseline total = effective unit price × quantity.</param>
+/// <param name="BaseAmount">Baseline total. Version 1: effective unit price × quantity. Version 2: base plan + add-ons + usage (the discountable subtotal).</param>
 /// <param name="RuleAdjustments">Pricing-rule adjustments applied after the base.</param>
 /// <param name="RuleAdjustmentTotal">Sum of rule adjustment totals.</param>
 /// <param name="PromoApplications">Promo code applications applied after the rules.</param>
 /// <param name="PromoDiscountTotal">Sum of promo application amounts.</param>
 /// <param name="Caps">Caps evaluated during resolution (with before/after amounts).</param>
-/// <param name="FinalAmount">Final committed price.</param>
+/// <param name="FinalAmount">Final committed price (Version 2: the amount due after proration, tax, and credits).</param>
+/// <param name="AddOnsAmount">Version 2: add-ons total (already included in BaseAmount).</param>
+/// <param name="UsageAmount">Version 2: usage charges total (already included in BaseAmount).</param>
+/// <param name="ProrationAdjustment">Version 2: signed net proration adjustment (negative = credit).</param>
+/// <param name="TaxAmount">Version 2: tax applied after discounts and proration.</param>
+/// <param name="CreditsApplied">Version 2: wallet credits applied against the total.</param>
 public sealed record PricingDecisionBreakdown(
     int Version = 1,
     string Currency = "USD",
@@ -112,7 +120,12 @@ public sealed record PricingDecisionBreakdown(
     List<PromoApplicationBreakdown> PromoApplications = null!,
     decimal PromoDiscountTotal = 0,
     List<CapApplication> Caps = null!,
-    decimal FinalAmount = 0)
+    decimal FinalAmount = 0,
+    decimal AddOnsAmount = 0,
+    decimal UsageAmount = 0,
+    decimal ProrationAdjustment = 0,
+    decimal TaxAmount = 0,
+    decimal CreditsApplied = 0)
 {
     /// <summary>JSON serializer settings used for the breakdown document (round-trip stable).</summary>
     public static readonly JsonSerializerOptions SerializerOptions = new()
@@ -156,6 +169,9 @@ public sealed record PricingDecisionBreakdown(
     /// engine's arithmetic: sequential subtraction (base → rules → promos → caps) with
     /// two-decimal rounding at each stage and a zero floor. Used by drift validation to
     /// flag entries whose stored <c>FinalAmount</c> no longer follows from their parts.
+    /// Version 2 documents (issue #417) additionally fold in the signed proration
+    /// adjustment, tax, and wallet credits; Version 1 entries keep their original
+    /// arithmetic untouched.
     /// </summary>
     public decimal RecomputeFinalAmount()
     {
@@ -170,7 +186,19 @@ public sealed record PricingDecisionBreakdown(
         var capReduction = Caps?.Sum(cap => Math.Max(0, cap.AmountAfterCap - cap.AmountBeforeCap)) ?? 0;
         capReduction = Math.Round(capReduction, 2, MidpointRounding.AwayFromZero);
 
-        return Round(afterPromos + capReduction);
+        var afterCaps = Round(afterPromos + capReduction);
+
+        if (Version >= 2)
+        {
+            // Version 2 (unified pricing engine, issue #417): proration (signed) + tax − credits.
+            var proration = Math.Round(ProrationAdjustment, 2, MidpointRounding.AwayFromZero);
+            var tax = Math.Round(TaxAmount, 2, MidpointRounding.AwayFromZero);
+            var credits = Math.Round(CreditsApplied, 2, MidpointRounding.AwayFromZero);
+
+            return Round(afterCaps + proration + tax - credits);
+        }
+
+        return afterCaps;
 
         static decimal Round(decimal value) =>
             value <= 0 ? 0 : Math.Round(value, 2, MidpointRounding.AwayFromZero);

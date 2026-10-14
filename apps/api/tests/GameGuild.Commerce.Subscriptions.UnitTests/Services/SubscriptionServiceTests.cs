@@ -298,7 +298,8 @@ public class SubscriptionServiceTests
         // Arrange
         var subscriptionId = Guid.NewGuid();
         var newBillingCycle = BillingCycle.Annually;
-        var expected = CreateTestSubscription();
+        var subscription = CreateTestSubscription();
+        var expected = ChangeBillingCycleResult.CreateSuccess(subscription, BillingCycle.Monthly, new Money(10m, "USD"), null);
 
         _mockLifecycle
             .Setup(s => s.ChangeBillingCycleAsync(subscriptionId, newBillingCycle, It.IsAny<CancellationToken>()))

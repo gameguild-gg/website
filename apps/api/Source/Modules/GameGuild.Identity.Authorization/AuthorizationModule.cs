@@ -93,5 +93,11 @@ public class AuthorizationModule : ModuleBase
 
         // Permission evaluation log (issues #359/#358): durable compliance reporting source
         modelBuilder.ApplyConfiguration(new PermissionEvaluationLogEntryConfiguration());
+
+        // Governance history (issues #188/#189): append-only policy snapshots and
+        // multi-stage permission approval workflows
+        modelBuilder.ApplyConfiguration(new PolicyVersionHistoryConfiguration());
+        modelBuilder.ApplyConfiguration(new PermissionApprovalWorkflowConfiguration());
+        modelBuilder.ApplyConfiguration(new PermissionApprovalStageConfiguration());
     }
 }
