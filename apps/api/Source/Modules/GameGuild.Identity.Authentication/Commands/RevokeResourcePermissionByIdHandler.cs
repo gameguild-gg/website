@@ -17,9 +17,17 @@ public sealed class RevokeResourcePermissionByIdHandler(IApplicationDbContext co
 
         // Soft delete preserves the permission history for compliance (#360); the
         // grant conveys nothing while deleted (deactivated + DeletedAt) and remains
-        // restorable.
+        // restorable. A never-persisted row (Version == 0) has no history to preserve
+        // and is removed instead.
         grant.IsActive = false;
-        grant.SoftDelete();
+        if (grant.IsNew)
+        {
+            context.Set<GenericResourcePermission>().Remove(grant);
+        }
+        else
+        {
+            grant.SoftDelete();
+        }
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return Unit.Value;

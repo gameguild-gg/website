@@ -264,9 +264,18 @@ public class PermissionService(
         {
             // Soft delete preserves the permission history for compliance (#360); the
             // grant conveys nothing while deleted (deactivated + DeletedAt) and remains
-            // restorable. A later grant of the same scope creates a fresh row.
+            // restorable. A later grant of the same scope creates a fresh row; a
+            // never-persisted row (Version == 0, e.g. an unsaved graph) has no history
+            // to preserve and is removed instead.
             grant.IsActive = false;
-            grant.SoftDelete();
+            if (grant.IsNew)
+            {
+                context.Set<ContentTypePermission>().Remove(grant);
+            }
+            else
+            {
+                grant.SoftDelete();
+            }
         }
 
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -398,9 +407,18 @@ public class PermissionService(
 
         // Soft delete preserves the permission history for compliance (#360); the
         // grant conveys nothing while deleted (deactivated + DeletedAt) and remains
-        // restorable. A later grant of the same scope creates a fresh row.
+        // restorable. A later grant of the same scope creates a fresh row; a
+        // never-persisted row (Version == 0, e.g. an unsaved graph) has no history to
+        // preserve and is removed instead.
         grant.IsActive = false;
-        grant.SoftDelete();
+        if (grant.IsNew)
+        {
+            context.Set<TPermission>().Remove(grant);
+        }
+        else
+        {
+            grant.SoftDelete();
+        }
         await context.SaveChangesAsync().ConfigureAwait(false);
 
         await TrackMutationAsync(
