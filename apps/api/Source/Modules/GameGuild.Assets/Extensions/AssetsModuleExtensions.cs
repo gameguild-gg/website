@@ -52,6 +52,8 @@ public static class AssetsModuleExtensions
             configuration.GetSection(DownloadWindowOptions.SectionName));
         services.Configure<Openinary.OpeninaryOptions>(
             configuration.GetSection(Openinary.OpeninaryOptions.SectionName));
+        services.Configure<AutoModerationOptions>(
+            configuration.GetSection(AutoModerationOptions.SectionName));
 
         // Openinary typed client: options-driven BaseUrl/timeout with a retry
         // handler for transient failures (408/5xx) only.
@@ -124,6 +126,12 @@ public static class AssetsModuleExtensions
         services.AddHostedService<BackgroundServices.VirusScanBackgroundService>();
         services.AddHostedService<BackgroundServices.AssetGarbageCollectionService>();
         services.AddHostedService<BackgroundServices.TransformedAssetCleanupService>();
+        // Fail-closed default: the composition root replaces it with the
+        // product's vision-model adapter; without one, every classification
+        // fails closed into NeedsReview (never auto-approve).
+        services.TryAddScoped<IAssetModerationClassifier, UnresolvedModerationClassifier>();
+        services.AddScoped<BackgroundServices.IAssetModerationProcessor, BackgroundServices.ModerationClassificationProcessor>();
+        services.AddHostedService<BackgroundServices.ModerationClassificationWorker>();
         services.AddScoped<IAssetGarbageCollectionService, AssetGarbageCollectionService>();
         services.AddScoped<ITenantAssetValidationService, TenantAssetValidationService>();
         services.AddScoped<IDownloadWindowService, DownloadWindowService>();

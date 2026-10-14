@@ -403,6 +403,9 @@ internal sealed class FakeOpeninaryClient : IOpeninaryClient
 
     public Task InvalidateAsync(string path, CancellationToken cancellationToken) => Task.CompletedTask;
 
+    public Task<byte[]> DownloadAsync(string path, CancellationToken cancellationToken) =>
+        Task.FromResult<byte[]>([]);
+
     public Task<OpeninaryFileMetadata> GetMetadataAsync(string path, CancellationToken cancellationToken)
     {
         MetadataCalls++;

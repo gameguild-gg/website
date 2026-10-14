@@ -186,6 +186,10 @@ public sealed class AssetLibraryReferenceCountingTests : IDisposable
 
         public Task<IReadOnlyList<AssetContent>> GetPendingModerationAsync(int limit = 100, CancellationToken ct = default) => throw new NotSupportedException();
 
+        public Task<bool> TryBeginModerationAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<IReadOnlyList<AssetContent>> GetPendingModerationQueueAsync(int limit = 100, CancellationToken ct = default) => throw new NotSupportedException();
+
         public Task<IReadOnlyList<AssetContent>> GetGarbageCollectionCandidatesAsync(TimeSpan gracePeriod, int limit = 100, CancellationToken ct = default) => throw new NotSupportedException();
 
         public Task<List<AssetContent>> GetMarkedForDeletionAsync(DateTime cutoffDate, int limit = 100, CancellationToken ct = default) => throw new NotSupportedException();

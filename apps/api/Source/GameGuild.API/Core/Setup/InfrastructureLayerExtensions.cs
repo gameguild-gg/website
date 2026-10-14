@@ -292,6 +292,16 @@ public static class InfrastructureLayerExtensions
         // Replace the Assets module's fail-closed default with this product's
         // commerce-backed order validation (paid-download windows).
         services.AddScoped<Assets.Security.IOrderValidationService, Security.CommerceOrderValidationService>();
+        // Replace the module's fail-closed moderation classifier with the
+        // product's LiteLLM (qwen vision lane) adapter.
+        services.Configure<Security.ModerationClassifierOptions>(
+            configuration.GetSection(Security.ModerationClassifierOptions.SectionName));
+        services.AddHttpClient<Assets.IAssetModerationClassifier, Security.LitellmModerationClassifier>((sp, client) =>
+        {
+            var classifierOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Security.ModerationClassifierOptions>>().Value;
+            client.BaseAddress = new Uri(classifierOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(classifierOptions.TimeoutSeconds);
+        });
         logger.LogInformation("Assets Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10b. Commerce Subscriptions Module (must be registered before Billing since Billing depends on it)

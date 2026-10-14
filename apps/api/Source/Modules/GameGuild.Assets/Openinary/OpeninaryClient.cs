@@ -86,6 +86,15 @@ public sealed class OpeninaryClient : IOpeninaryClient
         return new OpeninaryFileMetadata(payload.Path, payload.Size, payload.CreatedAt, payload.UpdatedAt);
     }
 
+    public async Task<byte[]> DownloadAsync(string path, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"download/{EscapePath(path)}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
     private async Task SendExpectSuccessAsync(
         HttpMethod method, string relativeUrl, CancellationToken cancellationToken)
     {

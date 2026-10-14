@@ -535,4 +535,7 @@ internal sealed class DisabledOpeninaryClient : IOpeninaryClient
 
     public Task<OpeninaryFileMetadata> GetMetadataAsync(string path, CancellationToken cancellationToken) =>
         throw new NotSupportedException("Openinary is not configured");
+
+    public Task<byte[]> DownloadAsync(string path, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("Openinary is not configured");
 }

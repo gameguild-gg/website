@@ -29,4 +29,9 @@ public interface IOpeninaryClient
     /// Gets storage metadata for the stored file.
     /// </summary>
     Task<OpeninaryFileMetadata> GetMetadataAsync(string path, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Downloads the original stored file bytes (public download route).
+    /// </summary>
+    Task<byte[]> DownloadAsync(string path, CancellationToken cancellationToken);
 }
