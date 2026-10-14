@@ -32,7 +32,7 @@ public sealed class ComplianceEvidencePackagingServiceTests
                 It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid?>(),
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<AuditEventMetadata>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Success(new TamperEvidentAuditLog()));
+            .ReturnsAsync(Result.Success<TamperEvidentAuditLog>(null!));
     }
 
     private void SetActor(string role, bool authenticated = true, bool tenant = true) =>

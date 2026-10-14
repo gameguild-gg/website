@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.Compliance.Audit;
 using GameGuild.Content.Pages;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning;
@@ -97,7 +98,7 @@ public sealed class CentralModuleAuditEventSinksTests
 
         var act = () => sink.RecordAsync(new ContentPagesAuditEvent("Content.Pages.PageCreated", "Page", "page-1"), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().Which.Should().Be(failure);
+        (await act.Should().ThrowAsync<InvalidOperationException>()).Which.Should().Be(failure);
     }
 
     [Fact]

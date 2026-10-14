@@ -2,6 +2,9 @@ using System.Text.Json;
 using GameGuild.Compliance.Audit;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
+
+// The host's own GameGuild.API.Program shadows the course entity inside this namespace.
+using CourseProgram = GameGuild.Learning.Courses.Program;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -25,7 +28,7 @@ public sealed class LearningCoursesMutationAuditInterceptor(
     /// <summary>Course entities whose mutations are audited, mapped to their audit resource type.</summary>
     private static readonly IReadOnlyDictionary<Type, string> AuditedEntityTypes = new Dictionary<Type, string>
     {
-        [typeof(Program)] = "Program",
+        [typeof(CourseProgram)] = "Program",
         [typeof(ProgramContent)] = "ProgramContent",
         [typeof(ProgramUser)] = "ProgramUser",
         [typeof(ProgramEnrollment)] = "ProgramEnrollment",

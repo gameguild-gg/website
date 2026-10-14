@@ -4,6 +4,7 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Teams;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Moq;
 using Xunit;
 
 namespace GameGuild.API.UnitTests.Teams;
@@ -42,9 +43,9 @@ public sealed class TeamEndpointCommandAuditTests
         await handler.Handle(new UpdateTeamEndpointCommand(team), CancellationToken.None);
         var member = team.AddMember(Guid.NewGuid(), TeamMemberAuthority.Member);
         await handler.Handle(new AddTeamMemberEndpointCommand(member, IsNew: true), CancellationToken.None);
-        member.Authority = TeamMemberAuthority.Maintainer;
+        member.Authority = TeamMemberAuthority.Manager;
         await handler.Handle(new ChangeTeamMemberEndpointCommand(member), CancellationToken.None);
-        var invitation = TeamInvitation.Create(_tenantId, team.Id, _actorId, InvitedEmail: "invitee@example.com", TeamMemberAuthority.Member, token: "invitation-token", ExpiresAt: SystemClock.UtcNow.AddDays(3));
+        var invitation = TeamInvitation.Create(_tenantId, team.Id, _actorId, "invitee@example.com", TeamMemberAuthority.Member, "invitation-token", SystemClock.UtcNow.AddDays(3));
         await handler.Handle(new CreateTeamInvitationEndpointCommand(invitation), CancellationToken.None);
         await handler.Handle(new RevokeTeamInvitationEndpointCommand(invitation), CancellationToken.None);
         var acceptedMember = team.AddMember(Guid.NewGuid(), TeamMemberAuthority.Member);

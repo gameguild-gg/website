@@ -3,6 +3,10 @@ using GameGuild.API.Core.Compliance;
 using GameGuild.Compliance.Audit;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
+using Moq;
+
+// The host's own GameGuild.API.Program shadows the course entity inside this namespace.
+using CourseProgram = GameGuild.Learning.Courses.Program;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -38,8 +42,8 @@ public sealed class LearningCoursesMutationAuditInterceptorTests
     {
         await using var context = CreateContext(ActorAccessor(), Mock.Of<IHttpContextAccessor>());
 
-        var program = new Program { Title = "Audited Course", Slug = "audited-course", TenantId = _tenantId };
-        context.Set<Program>().Add(program);
+        var program = new CourseProgram { Title = "Audited Course", Slug = "audited-course", TenantId = _tenantId };
+        context.Set<CourseProgram>().Add(program);
         await context.SaveChangesAsync();
 
         var auditRow = await context.Set<AuditLog>().AsNoTracking().SingleAsync();
@@ -77,11 +81,11 @@ public sealed class LearningCoursesMutationAuditInterceptorTests
         actors.SetupGet(accessor => accessor.ActorContext).Throws(new InvalidOperationException("Synthetic audit enrichment failure."));
         await using var context = CreateContext(actors.Object, Mock.Of<IHttpContextAccessor>());
 
-        context.Set<Program>().Add(new Program { Title = "Must Not Exist", Slug = "must-not-exist" });
+        context.Set<CourseProgram>().Add(new CourseProgram { Title = "Must Not Exist", Slug = "must-not-exist" });
         var act = () => context.SaveChangesAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        (await context.Set<Program>().AsNoTracking().CountAsync()).Should().Be(0);
+        (await context.Set<CourseProgram>().AsNoTracking().CountAsync()).Should().Be(0);
         (await context.Set<AuditLog>().AsNoTracking().CountAsync()).Should().Be(0);
     }
 
