@@ -11104,6 +11104,28 @@ export interface IdentityAuthorizationCommandsRequestJitElevationCommand {
   tenantId?: string | null;
 }
 
+/** Response row for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+export interface IdentityAuthorizationContentTypePermissionGrantDto {
+  /** Gets the grant row id. */
+  id: string;
+  /** Gets the content type name. */
+  contentTypeName: string | null;
+  /** Gets the denied permission entries. */
+  denyPermissions: string[] | null;
+  /** Gets the optional expiration instant. */
+  expiresAt?: string | null;
+  /** Gets when the row was granted. */
+  grantedAt?: string;
+  /** Gets whether the row is active. */
+  isActive?: boolean;
+  /** Gets the allowed permission entries. */
+  permissions: string[] | null;
+  /** Gets the tenant scope. */
+  tenantId: string;
+  /** Gets the grant subject (null = tenant default). */
+  userId?: string | null;
+}
+
 /** Data model for Identity Authorization Controllers Approve Elevation Request. */
 export interface IdentityAuthorizationControllersApproveElevationInput {
   comments?: string | null;
@@ -11242,6 +11264,20 @@ export interface IdentityAuthorizationDelegatedAdminScope {
 /** Type of delegated admin scope */
 export type IdentityAuthorizationDelegatedAdminScopeType = 'None' | 'Department' | 'Team' | 'Role' | 'Resource' | 'Custom';
 
+/** Adds explicit DENY-WINS entries to a content-type grant row. Guarded like the
+grant command. */
+export interface IdentityAuthorizationDenyContentTypePermissionGrantCommand {
+  /** Gets the content type name. */
+  contentTypeName: string | null;
+  /** Gets the permissions to deny. */
+  permissions: string[] | null;
+  /** Gets the optional reason (audit trail). */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+  /** Gets the deny subject (null addresses the tenant default row). */
+  userId?: string | null;
+}
+
 /** Command to deny tenant-level permissions from a user.
 Denied permissions take precedence over allowed permissions (DENY-WINS). */
 export interface IdentityAuthorizationDenyTenantPermissionCommand {
@@ -11364,6 +11400,14 @@ export interface IdentityAuthorizationExternalRoleDefinition {
   priority?: number;
 }
 
+/** Response envelope for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+export interface IdentityAuthorizationGetContentTypePermissionGrantsOutput {
+  /** Gets the matching grant rows. */
+  grants: IdentityAuthorizationContentTypePermissionGrantDto[] | null;
+  /** Gets the tenant scope. */
+  tenantId: string;
+}
+
 /** Response containing grants that are about to expire in a tenant. */
 export interface IdentityAuthorizationGetExpiringTenantPermissionsOutput {
   /** Gets the grants expiring within the requested window, ordered by expiration instant. */
@@ -11409,6 +11453,25 @@ export interface IdentityAuthorizationGetTenantPermissionsOutput {
   tenantId: string;
   /** Gets the user ID. */
   userId: string;
+}
+
+/**     Grants content-type scoped permissions (layer 2 of the 3-layer DAC model,
+issues #360/#365). Guarded: only system administrators or tenant administrators of
+the target tenant may grant; versioned and audited inside
+GameGuild.Identity.Authorization.IContentTypePermissionGrantService. */
+export interface IdentityAuthorizationGrantContentTypePermissionGrantCommand {
+  /** Gets the content type name (e.g. `Project`). */
+  contentTypeName: string | null;
+  /** Gets the optional expiration instant. */
+  expiresAt?: string | null;
+  /** Gets the permissions to grant (e.g. ["Read", "Write"]). */
+  permissions: string[] | null;
+  /** Gets the optional reason (audit trail). */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+  /** Gets the grant subject. Null edits the tenant default row (every user of the
+tenant for this content type). */
+  userId?: string | null;
 }
 
 /** Command to grant tenant-level permissions to a user. */
@@ -12375,6 +12438,18 @@ export interface IdentityAuthorizationResourceUser {
   resourceType: string | null;
   /** Gets the user ID. */
   userId: string;
+}
+
+/** Revokes content-type scoped permissions. Guarded like the grant command; the row
+is soft-deleted once its payload is empty (permission history preservation). */
+export interface IdentityAuthorizationRevokeContentTypePermissionGrantCommand {
+  /** Gets the content type name. */
+  contentTypeName: string | null;
+  /** Gets the permissions to revoke. */
+  permissions: string[] | null;
+  tenantId: CQRSModelsTenantId;
+  /** Gets the grant subject (null addresses the tenant default row). */
+  userId?: string | null;
 }
 
 /** Command to revoke tenant-level permissions from a user. */
@@ -24449,6 +24524,7 @@ export let IdentityAuthorizationCommandsCreateSoDRuleCommandSchema: z.ZodType<Id
 export let IdentityAuthorizationCommandsDelegatePermissionsCommandSchema: z.ZodType<IdentityAuthorizationCommandsDelegatePermissionsCommand>;
 export let IdentityAuthorizationCommandsGrantDelegatedAdminCommandSchema: z.ZodType<IdentityAuthorizationCommandsGrantDelegatedAdminCommand>;
 export let IdentityAuthorizationCommandsRequestJitElevationCommandSchema: z.ZodType<IdentityAuthorizationCommandsRequestJitElevationCommand>;
+export let IdentityAuthorizationContentTypePermissionGrantDtoSchema: z.ZodType<IdentityAuthorizationContentTypePermissionGrantDto>;
 export let IdentityAuthorizationControllersApproveElevationInputSchema: z.ZodType<IdentityAuthorizationControllersApproveElevationInput>;
 export let IdentityAuthorizationControllersApproveItemInputSchema: z.ZodType<IdentityAuthorizationControllersApproveItemInput>;
 export let IdentityAuthorizationControllersCompleteCampaignInputSchema: z.ZodType<IdentityAuthorizationControllersCompleteCampaignInput>;
@@ -24464,6 +24540,7 @@ export let IdentityAuthorizationCreatePermissionTemplateCommandSchema: z.ZodType
 export let IdentityAuthorizationDeclineInvitationInputSchema: z.ZodType<IdentityAuthorizationDeclineInvitationInput>;
 export let IdentityAuthorizationDelegatedAdminScopeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScope>;
 export let IdentityAuthorizationDelegatedAdminScopeTypeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScopeType>;
+export let IdentityAuthorizationDenyContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationDenyContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationDenyTenantPermissionCommand>;
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
@@ -24473,11 +24550,13 @@ export let IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema: z
 export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
 export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
 export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
+export let IdentityAuthorizationGetContentTypePermissionGrantsOutputSchema: z.ZodType<IdentityAuthorizationGetContentTypePermissionGrantsOutput>;
 export let IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetExpiringTenantPermissionsOutput>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
 export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetTenantPermissionsOutput>;
+export let IdentityAuthorizationGrantContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationGrantContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationGraphExportFormatSchema: z.ZodType<IdentityAuthorizationGraphExportFormat>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
@@ -24538,6 +24617,7 @@ export let IdentityAuthorizationRemoveUserAccessCommandSchema: z.ZodType<Identit
 export let IdentityAuthorizationResourceAccessPatternSchema: z.ZodType<IdentityAuthorizationResourceAccessPattern>;
 export let IdentityAuthorizationResourceInvitationDtoSchema: z.ZodType<IdentityAuthorizationResourceInvitationDto>;
 export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizationResourceUser>;
+export let IdentityAuthorizationRevokeContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationRevokeContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
 export let IdentityAuthorizationRollbackMigrationInputSchema: z.ZodType<IdentityAuthorizationRollbackMigrationInput>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
@@ -35804,6 +35884,19 @@ IdentityAuthorizationCommandsRequestJitElevationCommandSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationContentTypePermissionGrantDto. Response row for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+IdentityAuthorizationContentTypePermissionGrantDtoSchema = z.object({
+  id: z.string().uuid(),
+  contentTypeName: z.string().nullable(),
+  denyPermissions: z.array(z.string()).nullable(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  grantedAt: z.string().datetime().optional(),
+  isActive: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable(),
+  tenantId: z.string().uuid(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationControllersApproveElevationInput. Data model for Identity Authorization Controllers Approve Elevation Request. */
 IdentityAuthorizationControllersApproveElevationInputSchema = z.object({
   comments: z.string().nullable().optional(),
@@ -35926,6 +36019,16 @@ IdentityAuthorizationDelegatedAdminScopeSchema = z.object({
 /** Zod schema for IdentityAuthorizationDelegatedAdminScopeType. Type of delegated admin scope */
 IdentityAuthorizationDelegatedAdminScopeTypeSchema = z.enum(['None', 'Department', 'Team', 'Role', 'Resource', 'Custom']);
 
+/** Zod schema for IdentityAuthorizationDenyContentTypePermissionGrantCommand. Adds explicit DENY-WINS entries to a content-type grant row. Guarded like the
+grant command. */
+IdentityAuthorizationDenyContentTypePermissionGrantCommandSchema = z.object({
+  contentTypeName: z.string().nullable(),
+  permissions: z.array(z.string()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+  userId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationDenyTenantPermissionCommand. Command to deny tenant-level permissions from a user.
 Denied permissions take precedence over allowed permissions (DENY-WINS). */
 IdentityAuthorizationDenyTenantPermissionCommandSchema = z.object({
@@ -36014,6 +36117,12 @@ IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
   priority: z.number().int().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationGetContentTypePermissionGrantsOutput. Response envelope for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+IdentityAuthorizationGetContentTypePermissionGrantsOutputSchema = z.object({
+  grants: z.array(z.lazy(() => IdentityAuthorizationContentTypePermissionGrantDtoSchema)).nullable(),
+  tenantId: z.string().uuid(),
+});
+
 /** Zod schema for IdentityAuthorizationGetExpiringTenantPermissionsOutput. Response containing grants that are about to expire in a tenant. */
 IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema = z.object({
   expiring: z.array(z.lazy(() => IdentityAuthorizationExpiringTenantPermissionSchema)).nullable(),
@@ -36047,6 +36156,19 @@ IdentityAuthorizationGetTenantPermissionsOutputSchema = z.object({
   permissions: z.array(z.string()).nullable(),
   tenantId: z.string().uuid(),
   userId: z.string().uuid(),
+});
+
+/** Zod schema for IdentityAuthorizationGrantContentTypePermissionGrantCommand.     Grants content-type scoped permissions (layer 2 of the 3-layer DAC model,
+issues #360/#365). Guarded: only system administrators or tenant administrators of
+the target tenant may grant; versioned and audited inside
+GameGuild.Identity.Authorization.IContentTypePermissionGrantService. */
+IdentityAuthorizationGrantContentTypePermissionGrantCommandSchema = z.object({
+  contentTypeName: z.string().nullable(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  permissions: z.array(z.string()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+  userId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationGrantTenantPermissionCommand. Command to grant tenant-level permissions to a user. */
@@ -36832,6 +36954,15 @@ IdentityAuthorizationResourceUserSchema = z.object({
   resourceId: z.string().nullable(),
   resourceType: z.string().nullable(),
   userId: z.string().uuid(),
+});
+
+/** Zod schema for IdentityAuthorizationRevokeContentTypePermissionGrantCommand. Revokes content-type scoped permissions. Guarded like the grant command; the row
+is soft-deleted once its payload is empty (permission history preservation). */
+IdentityAuthorizationRevokeContentTypePermissionGrantCommandSchema = z.object({
+  contentTypeName: z.string().nullable(),
+  permissions: z.array(z.string()).nullable(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+  userId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationRevokeTenantPermissionCommand. Command to revoke tenant-level permissions from a user. */
@@ -47331,6 +47462,8 @@ export type IdentityAuthenticationProcessOrchestratedAuthenticationStepRequest =
 export { IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema as IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
+export type IdentityAuthorizationContentTypePermissionGrant = IdentityAuthorizationContentTypePermissionGrantDto;
+export { IdentityAuthorizationContentTypePermissionGrantDtoSchema as IdentityAuthorizationContentTypePermissionGrantSchema };
 export type IdentityAuthorizationEffectivePermission = IdentityAuthorizationEffectivePermissionDto;
 export { IdentityAuthorizationEffectivePermissionDtoSchema as IdentityAuthorizationEffectivePermissionSchema };
 export type IdentityAuthorizationResourceInvitation = IdentityAuthorizationResourceInvitationDto;

@@ -5963,6 +5963,110 @@ export const getAuthorizationComplianceReportEndpoint = {
 } as const;
 
 /**
+ * Lists the content-type grant rows of one tenant, optionally narrowed to one
+ * content type.
+ */
+export interface GetAuthorizationContentTypesGrantsInput {
+  tenantId: string;
+  query?: {
+    contentType?: string;
+  };
+}
+export type GetAuthorizationContentTypesGrantsOutput = Types.IdentityAuthorizationGetContentTypePermissionGrantsOutput;
+export const getAuthorizationContentTypesGrantsEndpoint = {
+  operationId: 'getAuthorizationContentTypesGrants' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/content-types/{tenantId}/grants' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Soft-deletes one content-type grant row by id (tenant-isolated).
+ */
+export interface DeleteAuthorizationContentTypesGrantsInput {
+  tenantId: string;
+  grantId: string;
+}
+export type DeleteAuthorizationContentTypesGrantsOutput = void;
+export const deleteAuthorizationContentTypesGrantsEndpoint = {
+  operationId: 'deleteAuthorizationContentTypesGrants' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/authorization/content-types/{tenantId}/grants/{grantId}' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Checks whether a user holds a content-type scoped permission, resolved through
+ * the canonical effective-permission engine (tenant → content-type → resource,
+ * DENY-WINS, deny-by-default).
+ */
+export interface GetAuthorizationContentTypesHasPermissionInput {
+  tenantId: string;
+  query?: {
+    contentType?: string;
+    permission?: string;
+    userId?: string;
+  };
+}
+export type GetAuthorizationContentTypesHasPermissionOutput = Record<string, unknown>;
+export const getAuthorizationContentTypesHasPermissionEndpoint = {
+  operationId: 'getAuthorizationContentTypesHasPermission' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/content-types/{tenantId}/has-permission' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Adds explicit DENY-WINS entries to a content-type grant row.
+ */
+export interface PostAuthorizationContentTypesDeniesInput {
+  body?: Types.IdentityAuthorizationDenyContentTypePermissionGrantCommand;
+}
+export type PostAuthorizationContentTypesDeniesOutput = Record<string, unknown>;
+export const postAuthorizationContentTypesDeniesEndpoint = {
+  operationId: 'postAuthorizationContentTypesDenies' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/content-types/denies' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Grants content-type scoped permissions to a user (null user = the tenant
+ * default row for the content type).
+ */
+export interface PostAuthorizationContentTypesGrantsInput {
+  body?: Types.IdentityAuthorizationGrantContentTypePermissionGrantCommand;
+}
+export type PostAuthorizationContentTypesGrantsOutput = Record<string, unknown>;
+export const postAuthorizationContentTypesGrantsEndpoint = {
+  operationId: 'postAuthorizationContentTypesGrants' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/content-types/grants' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revokes content-type scoped permissions from a user (the row is soft-deleted
+ * once its payload is empty).
+ */
+export interface PostAuthorizationContentTypesGrantsRevokeInput {
+  body?: Types.IdentityAuthorizationRevokeContentTypePermissionGrantCommand;
+}
+export type PostAuthorizationContentTypesGrantsRevokeOutput = Record<string, unknown>;
+export const postAuthorizationContentTypesGrantsRevokeEndpoint = {
+  operationId: 'postAuthorizationContentTypesGrantsRevoke' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/content-types/grants:revoke' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Creates a pending multi-stage approval workflow for a tenant permission grant.
  */
 export interface PostAuthorizationPermissionApprovalsInput {
@@ -29480,6 +29584,12 @@ export const endpoints = {
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
   getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  getAuthorizationContentTypesGrants: getAuthorizationContentTypesGrantsEndpoint,
+  deleteAuthorizationContentTypesGrants: deleteAuthorizationContentTypesGrantsEndpoint,
+  getAuthorizationContentTypesHasPermission: getAuthorizationContentTypesHasPermissionEndpoint,
+  postAuthorizationContentTypesDenies: postAuthorizationContentTypesDeniesEndpoint,
+  postAuthorizationContentTypesGrants: postAuthorizationContentTypesGrantsEndpoint,
+  postAuthorizationContentTypesGrantsRevoke: postAuthorizationContentTypesGrantsRevokeEndpoint,
   postAuthorizationPermissionApprovals: postAuthorizationPermissionApprovalsEndpoint,
   getAuthorizationPermissionApprovals: getAuthorizationPermissionApprovalsEndpoint,
   postAuthorizationPermissionApprovalsDecisions: postAuthorizationPermissionApprovalsDecisionsEndpoint,
