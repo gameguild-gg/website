@@ -56,8 +56,13 @@ public class ContentPagesMutationAuditTests
             "Content.Pages.PageSectionUpdated",
             "Content.Pages.PageSectionsReordered",
             "Content.Pages.PageSectionDeleted");
-        sink.Events.Where(auditEvent => auditEvent.ActionType.StartsWith("Content.Pages.PageSection", StringComparison.Ordinal))
+        // The reorder event is a page-level operation; the section-scoped events carry the section id.
+        sink.Events.Where(auditEvent => auditEvent.ActionType is "Content.Pages.PageSectionCreated"
+                or "Content.Pages.PageSectionUpdated"
+                or "Content.Pages.PageSectionDeleted")
             .Should().OnlyContain(auditEvent => auditEvent.ResourceId == section.Id.ToString());
+        sink.Events.Single(auditEvent => auditEvent.ActionType == "Content.Pages.PageSectionsReordered")
+            .ResourceId.Should().Be(page.Id.ToString());
     }
 
     [Fact]
