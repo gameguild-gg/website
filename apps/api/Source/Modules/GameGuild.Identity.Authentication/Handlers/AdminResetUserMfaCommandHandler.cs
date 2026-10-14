@@ -39,7 +39,7 @@ public sealed class AdminResetUserMfaCommandHandler(
         }
 
         var user = await userRepository.GetByIdAsync(request.UserId, cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException($"User {request.UserId} not found");
+            ?? throw new EntityNotFoundException("User", request.UserId);
 
         EnsureAuthorized(actor, user.TenantId);
 

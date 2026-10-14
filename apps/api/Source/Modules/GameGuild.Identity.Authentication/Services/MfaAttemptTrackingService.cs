@@ -180,7 +180,7 @@ public sealed class MfaAttemptTrackingService(
         {
             logger.LogError(ex, "Error disabling MFA for user: {UserId}", userId);
 
-            return false;
+            throw;
         }
     }
 

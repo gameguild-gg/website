@@ -96,7 +96,14 @@ public sealed class RequestMfaRecoveryCommandHandler(
                 RequestTokenHash = MfaRecoveryTokens.Hash(requestToken)
             };
 
-            await recoveryStore.AddAsync(recovery, cancellationToken).ConfigureAwait(false);
+            try 
+            {
+                await recoveryStore.AddAsync(recovery, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex.Message.Contains("duplicate key") or ex.Message.Contains("unique constraint"))
+            {
+                logger.LogWarning("MFA recovery request race detected for user {UserId}. Treating as success.", user.Id);
+            }
 
             await SendRecoveryStartedEmailAsync(user.Email, requestToken, recovery.CooldownEndsAt, cancellationToken).ConfigureAwait(false);
             logger.LogInformation("MFA recovery request opened for user {UserId}", user.Id);
