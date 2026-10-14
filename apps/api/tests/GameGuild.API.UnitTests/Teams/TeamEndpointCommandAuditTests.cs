@@ -54,7 +54,7 @@ public sealed class TeamEndpointCommandAuditTests
         await handler.Handle(new ArchiveTeamEndpointCommand(team), CancellationToken.None);
         team.Restore();
         await handler.Handle(new RestoreTeamEndpointCommand(team), CancellationToken.None);
-        team.RemoveMember(team.Members.Single(member => member.UserId != _actorId).UserId);
+        team.RemoveMember(acceptedMember.UserId);
         await handler.Handle(new RemoveTeamMemberEndpointCommand(team), CancellationToken.None);
 
         sink.Events.Select(auditEvent => auditEvent.ActionType).Should().Equal(

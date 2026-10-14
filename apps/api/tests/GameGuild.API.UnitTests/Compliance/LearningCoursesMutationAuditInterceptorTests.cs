@@ -111,9 +111,22 @@ public sealed class LearningCoursesMutationAuditInterceptorTests
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // The production model configuration carries the ScoreValue/PercentValue converters
-            // that a bare entity configuration would miss.
-            new CoursesModelConfiguration().Configure(modelBuilder);
+            // Focused model: only the audited entity, its PercentValue converter, and the audit row.
+            // Applying the production Courses configuration would pull cross-module entities
+            // (commerce products) whose relationships are configured on the application context.
+            modelBuilder.Entity<CourseProgram>(program =>
+            {
+                program.HasKey(entity => entity.Id);
+                program.Ignore(entity => entity.ProgramContents);
+                program.Ignore(entity => entity.ProgramUsers);
+                program.Ignore(entity => entity.ProgramRatings);
+                program.Ignore(entity => entity.ProgramWishlists);
+                program.Property(entity => entity.PassingScore)
+                    .HasConversion(
+                        value => value.Units,
+                        units => GameGuild.Learning.Grading.Contracts.PercentValue.FromUnits(units))
+                    .HasColumnType("integer");
+            });
             modelBuilder.Entity<AuditLog>(entity => entity.HasKey(auditLog => auditLog.Id));
             modelBuilder.Entity<PageAuditProbe>(entity => entity.HasKey(probe => probe.Id));
         }
