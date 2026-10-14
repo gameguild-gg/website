@@ -150,6 +150,23 @@ public class ContentPagesMutationAuditTests
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
             => Database.BeginTransactionAsync(cancellationToken);
 
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // Mirrors ApplicationDbContext: entity versions increment on every save so
+            // soft-deleting a persisted entity is allowed.
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                if (entry.Entity is EntityBase<Guid> &&
+                    entry.State is EntityState.Added or EntityState.Modified)
+                {
+                    entry.Property(nameof(EntityBase<Guid>.Version)).CurrentValue =
+                        (int)entry.Property(nameof(EntityBase<Guid>.Version)).CurrentValue! + 1;
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Page>(page =>
