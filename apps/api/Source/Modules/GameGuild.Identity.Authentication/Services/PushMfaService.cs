@@ -30,7 +30,13 @@ public sealed class PushMfaService(
     /// <inheritdoc />
     public async Task<bool> RegisterDeviceAsync(Guid userId, string deviceToken, CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(deviceToken);
+        // Malformed tokens (empty, too short, too long) are a rejection, not an exception: the
+        // caller surface treats registration as idempotent-or-refused.
+        if (string.IsNullOrWhiteSpace(deviceToken))
+        {
+            return false;
+        }
+
         var trimmed = deviceToken.Trim();
         if (trimmed.Length < 16 || trimmed.Length > 512)
         {

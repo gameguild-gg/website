@@ -20,12 +20,15 @@ public sealed class DistributedCacheWebAuthnSessionStoreTests
     private DistributedCacheWebAuthnSessionStore CreateStore() =>
         new(Cache, NullLogger<DistributedCacheWebAuthnSessionStore>.Instance);
 
+    private static string Base64Url(byte[] bytes) =>
+        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
     private static Fido2NetLib.CredentialCreateOptions RegistrationOptions(Guid userId, byte challenge) =>
         Fido2NetLib.CredentialCreateOptions.FromJson($$"""
             {
-                "challenge": "{{Convert.ToBase64String([challenge])}}",
+                "challenge": "{{Base64Url([challenge])}}",
                 "rp": { "id": "localhost", "name": "GameGuild" },
-                "user": { "id": "{{Convert.ToBase64String(userId.ToByteArray())}}", "name": "user@example.com", "displayName": "User" },
+                "user": { "id": "{{Base64Url(userId.ToByteArray())}}", "name": "user@example.com", "displayName": "User" },
                 "pubKeyCredParams": [ { "type": "public-key", "alg": -7 } ],
                 "timeout": 60000,
                 "attestation": "none"
@@ -35,7 +38,7 @@ public sealed class DistributedCacheWebAuthnSessionStoreTests
     private static Fido2NetLib.AssertionOptions AssertionOptions(byte challenge) =>
         Fido2NetLib.AssertionOptions.FromJson($$"""
             {
-                "challenge": "{{Convert.ToBase64String([challenge])}}",
+                "challenge": "{{Base64Url([challenge])}}",
                 "timeout": 30000,
                 "allowCredentials": [],
                 "userVerification": "preferred"
