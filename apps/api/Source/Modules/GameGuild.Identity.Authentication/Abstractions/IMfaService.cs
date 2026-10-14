@@ -14,7 +14,11 @@ public interface IMfaService
 
     Task<MfaVerificationResult> VerifyMfaAsync(Guid userId, string code, MfaMethod method = MfaMethod.Totp, CancellationToken cancellationToken = default);
 
-    Task<bool> DisableMfaAsync(Guid userId, string confirmationCode, CancellationToken cancellationToken = default);
+    /// <summary>
+    ///     Disables MFA after re-verifying the account password (issue #244). The confirmation
+    ///     parameter is the account password, not an MFA code.
+    /// </summary>
+    Task<bool> DisableMfaAsync(Guid userId, string password, CancellationToken cancellationToken = default);
 
     Task<string[ ]> GenerateBackupCodesAsync(Guid userId, CancellationToken cancellationToken = default);
 

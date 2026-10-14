@@ -819,6 +819,7 @@ public sealed class ZeroCoverageInstantiationTests
             Mock.Of<IFido2>(),
             Mock.Of<IWebAuthnCredentialRepository>(),
             Mock.Of<IUserRepository>(),
+            Mock.Of<IWebAuthnSessionStore>(),
             Mock.Of<ILogger<WebAuthnAuthenticationSubService>>());
         sut.Should().NotBeNull();
     }
