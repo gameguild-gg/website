@@ -29,12 +29,17 @@ public sealed class FullUpdateSubscriptionPlanCommandValidator : AbstractValidat
             .When(x => string.IsNullOrEmpty(x.Slug))
             .WithMessage("Name must contain at least one letter or digit so a slug can be generated (or provide an explicit slug)");
 
-        RuleFor(x => x.MonthlyPriceInCents)
-            .GreaterThanOrEqualTo(0).WithMessage("MonthlyPriceInCents must be greater than or equal to 0");
+        // Issue #416: plan-type pricing invariants — free plans are priced at zero and only
+        // enterprise plans may carry the -1 custom-quote sentinel (validated against the
+        // effective type, which defaults to Paid when the request omits it).
+        RuleFor(x => x)
+            .Must(command => TryValidatePricing(command, out _))
+            .WithMessage("Free plans must be priced at zero; only enterprise plans may use the -1 custom-quote sentinel");
 
-        RuleFor(x => x.AnnualPriceInCents)
-            .GreaterThanOrEqualTo(0).WithMessage("AnnualPriceInCents must be greater than or equal to 0")
-            .When(x => x.AnnualPriceInCents.HasValue);
+        RuleFor(x => x.AnnualDiscountPercent)
+            .InclusiveBetween(0m, SubscriptionPlanPricingRules.MaximumAnnualDiscountPercent)
+            .When(x => x.AnnualDiscountPercent.HasValue)
+            .WithMessage("AnnualDiscountPercent must be between 0 and 100");
 
         RuleFor(x => x.MaxUsers)
             .GreaterThanOrEqualTo(0).WithMessage("MaxUsers must be greater than or equal to 0")
@@ -63,5 +68,20 @@ public sealed class FullUpdateSubscriptionPlanCommandValidator : AbstractValidat
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters")
             .When(x => !string.IsNullOrEmpty(x.Description));
+    }
+
+    private static bool TryValidatePricing(FullUpdateSubscriptionPlanCommand command, out string failure)
+    {
+        try
+        {
+            SubscriptionPlanPricingRules.Validate(command.Type ?? SubscriptionPlanType.Paid, command.MonthlyPriceInCents, command.AnnualPriceInCents);
+            failure = string.Empty;
+            return true;
+        }
+        catch (SubscriptionPlanPricingRuleViolationException exception)
+        {
+            failure = exception.Message;
+            return false;
+        }
     }
 }
