@@ -1,13 +1,15 @@
+import { MfaMethodsManager } from '@/components/settings/mfa-methods-manager';
 import { SessionsManager } from '@/components/settings/sessions-manager';
+import { loadMfaData } from '@/lib/auth/mfa-actions';
 import { loadSessionsData } from '@/lib/auth/sessions-actions';
 import { getTranslations } from 'next-intl/server';
 import React from 'react';
 
 /**
- * Settings → Security: session management (issue #278).
+ * Settings → Security: session management (issue #278) and MFA method management (issue #244).
  *
- * Server-rendered session, security-analysis, and trusted-device data; the client
- * manager performs renames, terminations, and trust mutations through server actions.
+ * Server-rendered session, security-analysis, trusted-device, MFA-configuration, method and
+ * recovery-code data; the client managers perform mutations through server actions.
  */
 export default async function SecuritySettingsPage({
   params,
@@ -15,7 +17,11 @@ export default async function SecuritySettingsPage({
   params: Promise<{ locale: string }>;
 }): Promise<React.JSX.Element> {
   const { locale } = await params;
-  const [t, data] = await Promise.all([getTranslations({ locale, namespace: 'settings.security' }), loadSessionsData()]);
+  const [t, sessions, mfa] = await Promise.all([
+    getTranslations({ locale, namespace: 'settings.security' }),
+    loadSessionsData(),
+    loadMfaData(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -23,7 +29,8 @@ export default async function SecuritySettingsPage({
         <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground">{t('description')}</p>
       </header>
-      <SessionsManager data={data} locale={locale} />
+      <MfaMethodsManager data={mfa} />
+      <SessionsManager data={sessions} locale={locale} />
     </div>
   );
 }
