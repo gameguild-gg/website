@@ -38,20 +38,20 @@ public sealed class TeamEndpointCommandHandler(
         return SaveWithAuditAsync(
             "Teams.TeamCreated", "Team", request.Team.Id, request.Team.TenantId,
             $"Team '{request.Team.Name}' created",
-            new { request.Team.Slug, request.Team.Visibility.ToString(), request.Team.IsPersonal, MemberCount = request.Team.Members.Count }, ct);
+            new { request.Team.Slug, Visibility = request.Team.Visibility.ToString(), request.Team.IsPersonal, MemberCount = request.Team.Members.Count }, ct);
     }
 
     public Task<Unit> Handle(UpdateTeamEndpointCommand request, CancellationToken ct) => SaveWithAuditAsync(
         "Teams.TeamUpdated", "Team", request.Team.Id, request.Team.TenantId,
-        $"Team '{request.Team.Name}' updated", new { request.Team.Slug, request.Team.Visibility.ToString() }, ct);
+        $"Team '{request.Team.Name}' updated", new { request.Team.Slug, Visibility = request.Team.Visibility.ToString() }, ct);
 
     public Task<Unit> Handle(ArchiveTeamEndpointCommand request, CancellationToken ct) => SaveWithAuditAsync(
         "Teams.TeamArchived", "Team", request.Team.Id, request.Team.TenantId,
-        $"Team '{request.Team.Name}' archived", new { request.Team.Status.ToString() }, ct);
+        $"Team '{request.Team.Name}' archived", new { Status = request.Team.Status.ToString() }, ct);
 
     public Task<Unit> Handle(RestoreTeamEndpointCommand request, CancellationToken ct) => SaveWithAuditAsync(
         "Teams.TeamRestored", "Team", request.Team.Id, request.Team.TenantId,
-        $"Team '{request.Team.Name}' restored", new { request.Team.Status.ToString() }, ct);
+        $"Team '{request.Team.Name}' restored", new { Status = request.Team.Status.ToString() }, ct);
 
     public Task<Unit> Handle(AddTeamMemberEndpointCommand request, CancellationToken ct)
     {

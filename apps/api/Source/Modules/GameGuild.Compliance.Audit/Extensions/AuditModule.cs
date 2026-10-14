@@ -129,13 +129,11 @@ public static class AuditModule
         services.AddScoped<IScimProvisioningAuditSink, CentralScimProvisioningAuditEventSink>();
         // Central bridges for the module audit sinks (issues #180/#181/#184): content pages,
         // learning, and teams mutations are required audit events recorded transactionally.
+        // The learning-courses entity interceptor lives in the host composition root because
+        // referencing Learning.Courses from here would close a dependency cycle.
         services.AddScoped<GameGuild.Content.Pages.IContentPagesAuditEventSink, CentralContentPagesAuditEventSink>();
         services.AddScoped<GameGuild.Learning.ILearningAuditEventSink, CentralLearningAuditEventSink>();
         services.AddScoped<GameGuild.Teams.ITeamsAuditEventSink, CentralTeamsAuditEventSink>();
-        // Entity-level audit coverage for every learning-course mutation command: the interceptor
-        // adds the audit row to the same save batch as the mutation (attached to the DbContext
-        // options by the host composition root).
-        services.AddScoped<LearningCoursesMutationAuditInterceptor>();
         services.AddScoped<IAuditActionTypeSearchService, AuditActionTypeSearchService>();
         services.AddSingleton<IAuditExportProgressTracker, DistributedAuditExportProgressTracker>();
         services.AddScoped<IAuditExportCronSchedule, AuditExportCronSchedule>();

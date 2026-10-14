@@ -95,7 +95,7 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
                     "Learning.Certificates.CertificateIssued", "Certificate", certificate.Id.ToString(),
                     ActingUserId ?? userId, certificate.TenantId ?? tenantId,
                     $"Certificate {certificate.CertificateNumber} issued",
-                    Metadata: new { certificate.CertificateNumber, TemplateId = templateId, EnrollmentId = enrollmentId, CourseId = courseId })).ConfigureAwait(false);
+                    Metadata: new { certificate.CertificateNumber, TemplateId = templateId, EnrollmentId = enrollmentId, CourseId = courseId }), CancellationToken.None).ConfigureAwait(false);
                 await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
             }
             finally
@@ -253,7 +253,7 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
                     "Learning.Certificates.CertificateRevoked", "Certificate", certificate.Id.ToString(),
                     ActingUserId, certificate.TenantId,
                     $"Certificate {certificate.CertificateNumber} revoked",
-                    Metadata: new { certificate.CertificateNumber, Reason = reason })).ConfigureAwait(false);
+                    Metadata: new { certificate.CertificateNumber, Reason = reason }), CancellationToken.None).ConfigureAwait(false);
                 await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
             }
             finally

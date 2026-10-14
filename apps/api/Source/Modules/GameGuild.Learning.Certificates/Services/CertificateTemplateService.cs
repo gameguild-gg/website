@@ -33,7 +33,7 @@ public class CertificateTemplateService(
                     "Learning.Certificates.TemplateCreated", "CertificateTemplate", template.Id.ToString(),
                     ActingUserId, template.TenantId ?? tenantId,
                     $"Certificate template '{template.Name}' created",
-                    Metadata: new { template.CourseId, template.IsActive, template.IsDefault })).ConfigureAwait(false);
+                    Metadata: new { template.CourseId, template.IsActive, template.IsDefault }), CancellationToken.None).ConfigureAwait(false);
                 await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
             }
             finally
@@ -81,7 +81,7 @@ public class CertificateTemplateService(
                     "Learning.Certificates.TemplateUpdated", "CertificateTemplate", template.Id.ToString(),
                     ActingUserId, template.TenantId,
                     $"Certificate template '{template.Name}' updated",
-                    Metadata: new { template.CourseId, template.IsActive, template.IsDefault } )).ConfigureAwait(false);
+                    Metadata: new { template.CourseId, template.IsActive, template.IsDefault }), CancellationToken.None).ConfigureAwait(false);
                 await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
             }
             finally
@@ -122,7 +122,7 @@ public class CertificateTemplateService(
                     "Learning.Certificates.TemplateDeleted", "CertificateTemplate", template.Id.ToString(),
                     ActingUserId, template.TenantId,
                     $"Certificate template '{template.Name}' deleted",
-                    Metadata: new { template.CourseId })).ConfigureAwait(false);
+                    Metadata: new { template.CourseId }), CancellationToken.None).ConfigureAwait(false);
                 await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
             }
             finally
@@ -185,7 +185,7 @@ public class CertificateTemplateService(
                     "Learning.Certificates.TemplateDefaultChanged", "CertificateTemplate", templateId.ToString(),
                     ActingUserId, template.TenantId,
                     $"Certificate template '{template.Name}' set as default for course {courseId}",
-                    Metadata: new { CourseId = courseId, TemplateId = templateId })).ConfigureAwait(false);
+                    Metadata: new { CourseId = courseId, TemplateId = templateId }), CancellationToken.None).ConfigureAwait(false);
                 await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
             }
             finally

@@ -1,26 +1,27 @@
+using System.Text.Json;
+using GameGuild.Compliance.Audit;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace GameGuild.Compliance.Audit;
+namespace GameGuild.API.Core.Compliance;
 
 /// <summary>
 /// Covers every learning-course mutation command with a central audit event. The courses module
 /// persists through dozens of command handlers and write services on the shared context, so the
 /// emission point is the shared save itself: each save that mutates an audited course entity also
-/// adds the matching audit row, and both land in the same save batch. The batch is one transaction,
-/// so an audit-row failure fails the whole save — the mutation cannot commit without its audit
-/// event (fail closed). This is the entity-level counterpart of the module audit sinks used by the
-/// smaller modules; it automatically covers commands added later.
+/// adds the matching central <see cref="AuditLog"/> row, and both land in the same save batch. The
+/// batch is one transaction, so an audit-row failure fails the whole save — the mutation cannot
+/// commit without its audit event (fail closed). Commands added later are covered automatically.
+/// This bridge lives in the host composition root because the audit module cannot reference
+/// Learning.Courses (that would close a project-reference cycle through Commerce.Products).
 /// </summary>
 public sealed class LearningCoursesMutationAuditInterceptor(
     IActorContextAccessor actors,
     IHttpContextAccessor httpContextAccessor) : SaveChangesInterceptor
 {
-    private const string ModuleAuditSource = "learning.courses";
-
     /// <summary>Course entities whose mutations are audited, mapped to their audit resource type.</summary>
     private static readonly IReadOnlyDictionary<Type, string> AuditedEntityTypes = new Dictionary<Type, string>
     {
@@ -63,8 +64,7 @@ public sealed class LearningCoursesMutationAuditInterceptor(
 
         // Acting identity and tenant come from the ambient actor context, never from the payload.
         var actor = actors.ActorContext;
-        var actorUserId = actor.SubjectIdAsGuid;
-        var actorTenantId = actor.TenantId;
+        var httpContext = httpContextAccessor.HttpContext;
         foreach (var entry in context.ChangeTracker.Entries())
         {
             if (entry.Entity is AuditLog)
@@ -89,23 +89,61 @@ public sealed class LearningCoursesMutationAuditInterceptor(
                 continue;
             }
 
-            var entityTenantId = entry.Entity is ITenantScoped tenantScoped ? tenantScoped.TenantId : null;
+            var entityTenantId = entry.Entity is GameGuild.CQRS.ITenantScoped tenantScoped ? tenantScoped.TenantId : null;
             var resourceId = entry.Properties.FirstOrDefault(property => property.Metadata.IsPrimaryKey())?.CurrentValue?.ToString();
-            var request = new CreateAuditLogRequest
+            // A failure while building or adding the audit row throws and fails the owning save,
+            // rolling the mutation back with it.
+            context.Set<AuditLog>().Add(new AuditLog
             {
+                Id = Guid.NewGuid(),
                 ActionType = $"Learning.Courses.{resourceType}{actionSuffix}",
                 ResourceType = resourceType,
                 ResourceId = resourceId,
-                UserId = actorUserId,
-                TenantId = entityTenantId ?? actorTenantId,
+                UserId = actor.SubjectIdAsGuid,
+                TenantId = entityTenantId ?? actor.TenantId,
+                IpAddress = ClientIpAddress(httpContext),
+                UserAgent = httpContext?.Request.Headers.UserAgent.ToString(),
+                SessionId = SessionId(httpContext),
                 Description = $"Course {resourceType.ToLowerInvariant()} {actionSuffix.ToLowerInvariant()} through the learning module",
-                Metadata = new { State = actionSuffix },
+                Metadata = JsonSerializer.Serialize(new { State = actionSuffix }),
+                Success = true,
                 RiskLevel = AuditRiskLevel.Low,
-                Category = AuditCategory.Data
-            };
-            // AuditLogEntryFactory.Create is the central mapping used by every audit sink; a
-            // failure here throws and fails the owning save, rolling the mutation back.
-            context.Set<AuditLog>().Add(AuditLogEntryFactory.Create(request, httpContextAccessor.HttpContext));
+                Category = AuditCategory.Data,
+                CorrelationId = httpContext?.Request.Headers["X-Correlation-ID"].FirstOrDefault()
+            });
         }
+    }
+
+    private static string? ClientIpAddress(HttpContext? httpContext)
+    {
+        if (httpContext is null)
+        {
+            return null;
+        }
+
+        var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(forwardedFor))
+        {
+            return forwardedFor.Split(',')[0].Trim();
+        }
+
+        var realIp = httpContext.Request.Headers["X-Real-IP"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(realIp))
+        {
+            return realIp;
+        }
+
+        return httpContext.Connection.RemoteIpAddress?.ToString();
+    }
+
+    private static Guid? SessionId(HttpContext? httpContext)
+    {
+        if (httpContext is null)
+        {
+            return null;
+        }
+
+        var sessionIdValue = httpContext.User.FindFirst("session_id")?.Value;
+        return Guid.TryParse(sessionIdValue, out var sessionId) ? sessionId : null;
     }
 }
