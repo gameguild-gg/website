@@ -183,6 +183,60 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("ai_prompt_templates", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.API.Database.EntityChangeAuditRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AfterValues")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("BeforeValues")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ChangeKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId")
+                        .HasDatabaseName("ix_entity_change_audit_correlation");
+
+                    b.HasIndex("OccurredAtUtc")
+                        .HasDatabaseName("ix_entity_change_audit_time");
+
+                    b.HasIndex("EntityName", "KeyId", "OccurredAtUtc")
+                        .HasDatabaseName("ix_entity_change_audit_entity");
+
+                    b.ToTable("entity_change_audit_records", "gameguild.audit");
+                });
+
             modelBuilder.Entity("GameGuild.API.Eventing.InboxReceipt", b =>
                 {
                     b.Property<Guid>("EventId")
@@ -5991,6 +6045,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.ToTable("PiiTokenVaultEntries", (string)null);
                 });
+
             modelBuilder.Entity("GameGuild.Compliance.Audit.SavedAuditQuery", b =>
                 {
                     b.Property<Guid>("Id")
