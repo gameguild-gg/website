@@ -126,6 +126,9 @@ public class CertificateAuditEmissionTests
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             new CertificatesModelConfiguration().Configure(modelBuilder);
+            // The Program entity carries PercentValue/ScoreValue properties that need
+            // the production model configuration's value converters on SQLite.
+            new GameGuild.Learning.Courses.CoursesModelConfiguration().Configure(modelBuilder);
             modelBuilder.Entity<User>(user =>
             {
                 user.HasKey(entity => entity.Id);
