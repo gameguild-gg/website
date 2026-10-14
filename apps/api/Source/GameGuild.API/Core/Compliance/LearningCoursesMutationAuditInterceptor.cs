@@ -68,7 +68,10 @@ public sealed class LearningCoursesMutationAuditInterceptor(
         // Acting identity and tenant come from the ambient actor context, never from the payload.
         var actor = actors.ActorContext;
         var httpContext = httpContextAccessor?.HttpContext;
-        foreach (var entry in context.ChangeTracker.Entries())
+        // Materialize first: adding AuditLog rows below mutates the change tracker,
+        // which would otherwise invalidate the enumeration mid-loop.
+        var entries = context.ChangeTracker.Entries().ToList();
+        foreach (var entry in entries)
         {
             if (entry.Entity is AuditLog)
             {
