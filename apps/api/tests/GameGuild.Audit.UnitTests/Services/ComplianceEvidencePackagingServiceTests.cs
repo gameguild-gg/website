@@ -18,6 +18,7 @@ public sealed class ComplianceEvidencePackagingServiceTests
     private readonly Mock<IComplianceFrameworkCatalog> _catalog = new();
     private readonly Mock<IComplianceEvidenceDataSource> _source = new();
     private readonly Mock<IAuditService> _audit = new();
+    private readonly Mock<ITamperEvidentAuditService> _tamperEvidence = new();
     private static readonly DateTime Start = new(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime End = Start.AddDays(1);
     private static readonly DateTime Now = new(2026, 10, 3, 20, 0, 0, DateTimeKind.Utc);
@@ -27,6 +28,11 @@ public sealed class ComplianceEvidencePackagingServiceTests
         SetActor("TenantAdmin");
         _catalog.Setup(item => item.Find("test-v1")).Returns(Template());
         _catalog.Setup(item => item.GetTemplates()).Returns([Template()]);
+        _tamperEvidence.Setup(item => item.CreateAuditLogAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<AuditEventMetadata>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success(new TamperEvidentAuditLog()));
     }
 
     private void SetActor(string role, bool authenticated = true, bool tenant = true) =>
@@ -47,7 +53,7 @@ public sealed class ComplianceEvidencePackagingServiceTests
         }
         var engine = new ComplianceEvidenceValidationEngine();
         return new(_actors.Object, _repository.Object, _catalog.Object, _source.Object, engine,
-            new ComplianceArtifactBuilder(engine, new EcdsaCryptographicSigningService(Options.Create(options))), _audit.Object, new FixedTime());
+            new ComplianceArtifactBuilder(engine, new EcdsaCryptographicSigningService(Options.Create(options))), _audit.Object, _tamperEvidence.Object, new FixedTime());
     }
 
     [Theory]
@@ -211,6 +217,64 @@ public sealed class ComplianceEvidencePackagingServiceTests
         saved.ManifestJson = "{}";
         Assert.False((await service.VerifyPackageAsync(saved.Id, default))!.IsValid);
         await Assert.ThrowsAsync<CompliancePackagingIntegrityException>(() => service.DownloadPackageAsync(saved.Id, default));
+    }
+
+    [Fact]
+    public async Task Prepare_writes_the_seal_through_the_tamper_evident_hash_chain()
+    {
+        var service = Service();
+        var document = Document();
+        document.Review = ComplianceDocumentReview.Approved;
+        document.ReviewedByUserId = _user;
+        document.ReviewedAtUtc = Now;
+        document.Revision = 2;
+        _repository.Setup(item => item.GetDocumentsAsync(_tenant, It.IsAny<IReadOnlyList<Guid>>(), default)).ReturnsAsync([document]);
+        _source.Setup(item => item.CaptureAsync(_tenant, Start, End, It.IsAny<IReadOnlyList<ComplianceEvidenceKind>>(), default)).ReturnsAsync([Dataset()]);
+        ComplianceSealedPackage? saved = null;
+        _repository.Setup(item => item.AddPackageAsync(It.IsAny<ComplianceSealedPackage>(), default))
+            .Callback<ComplianceSealedPackage, CancellationToken>((package, _) => saved = package).Returns(Task.CompletedTask);
+
+        var prepared = await service.CreatePackageAsync(Request(document), default);
+
+        Assert.NotNull(prepared);
+        Assert.NotNull(saved);
+        _tamperEvidence.Verify(item => item.CreateAuditLogAsync(
+            _tenant,
+            _user,
+            "ComplianceEvidencePackageSealed",
+            "ComplianceSealedPackage",
+            saved.Id,
+            null,
+            It.Is<string?>(snapshot => snapshot.Contains(saved.ArtifactSha256) && snapshot.Contains(saved.SigningKeyId)),
+            saved.ArtifactSha256,
+            "High",
+            It.IsAny<string>(),
+            "compliance-packaging",
+            It.Is<AuditEventMetadata>(metadata => metadata.CorrelationId == saved.Id.ToString()),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Prepare_fails_closed_when_the_tamper_evident_chain_row_cannot_be_written()
+    {
+        var service = Service();
+        var document = Document();
+        document.Review = ComplianceDocumentReview.Approved;
+        document.ReviewedByUserId = _user;
+        document.ReviewedAtUtc = Now;
+        document.Revision = 2;
+        _repository.Setup(item => item.GetDocumentsAsync(_tenant, It.IsAny<IReadOnlyList<Guid>>(), default)).ReturnsAsync([document]);
+        _source.Setup(item => item.CaptureAsync(_tenant, Start, End, It.IsAny<IReadOnlyList<ComplianceEvidenceKind>>(), default)).ReturnsAsync([Dataset()]);
+        _repository.Setup(item => item.AddPackageAsync(It.IsAny<ComplianceSealedPackage>(), default)).Returns(Task.CompletedTask);
+        _tamperEvidence.Setup(item => item.CreateAuditLogAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<AuditEventMetadata>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure<TamperEvidentAuditLog>(Error.Failure("Audit.ChainWrite", "synthetic chain write failure")));
+
+        await Assert.ThrowsAsync<CompliancePackagingIntegrityException>(() => service.CreatePackageAsync(Request(document), default));
+        // The bundle was persisted but is reported as an integrity failure, never as sealed evidence.
+        _audit.Verify(item => item.LogAsync(It.Is<CreateAuditLogRequest>(entry => entry.ActionType == "ComplianceEvidencePackagePrepared")), Times.Never);
     }
 
     [Fact]

@@ -175,7 +175,7 @@ public sealed class EnrollmentServiceTests
         repository
             .Setup(repo => repo.GetActiveAsync(existing.CourseId, existing.UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var dto = await service.EnrollAsync(new EnrollUserCommand(existing.CourseId, existing.UserId, Guid.NewGuid()));
 
@@ -199,7 +199,7 @@ public sealed class EnrollmentServiceTests
             .Setup(repo => repo.AddAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Callback<Enrollment, CancellationToken>((enrollment, _) => captured = enrollment)
             .Returns(Task.CompletedTask);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var dto = await service.EnrollAsync(new EnrollUserCommand(courseId, userId, cohortId));
 
@@ -217,7 +217,7 @@ public sealed class EnrollmentServiceTests
         repository
             .Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Enrollment?)null);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var dto = await service.UpdateProgressAsync(Guid.NewGuid(), 64);
 
@@ -230,7 +230,7 @@ public sealed class EnrollmentServiceTests
     {
         var enrollment = Enrollment.Create(Guid.NewGuid(), Guid.NewGuid());
         var repository = MockRepositoryWithEnrollment(enrollment);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var dto = await service.UpdateProgressAsync(enrollment.Id, 64);
 
@@ -250,7 +250,7 @@ public sealed class EnrollmentServiceTests
     {
         var enrollment = Enrollment.Create(Guid.NewGuid(), Guid.NewGuid());
         var repository = MockRepositoryWithEnrollment(enrollment);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var dto = await service.SetStatusAsync(enrollment.Id, requestedStatus);
 
@@ -277,7 +277,7 @@ public sealed class EnrollmentServiceTests
         repository
             .Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Enrollment?)null);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var dto = await service.SetStatusAsync(Guid.NewGuid(), EnrollmentStatus.Active);
 
@@ -290,7 +290,7 @@ public sealed class EnrollmentServiceTests
     {
         var enrollment = Enrollment.Create(Guid.NewGuid(), Guid.NewGuid());
         var repository = MockRepositoryWithEnrollment(enrollment);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var act = () => service.SetStatusAsync(enrollment.Id, (EnrollmentStatus)999);
 
@@ -309,7 +309,7 @@ public sealed class EnrollmentServiceTests
         repository
             .Setup(repo => repo.GetByCourseAsync(enrollment.CourseId, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync([enrollment]);
-        var service = new EnrollmentService(repository.Object);
+        var service = new EnrollmentService(repository.Object, Mock.Of<IApplicationDbContext>(), new NoopLearningAuditEventSink());
 
         var get = await service.GetAsync(enrollment.Id);
         var missing = await service.GetAsync(Guid.NewGuid());
