@@ -401,6 +401,10 @@ public static class InfrastructureLayerExtensions
             // Central audit-sink integration for the PII redaction pipeline (issue #192): every
             // AuditLog entity passes through the redaction rules before persistence.
             options.AddInterceptors(provider.GetRequiredService<AuditLogPiiRedactionInterceptor>());
+            // Universal audit coverage for learning-course mutations (issues #180/#181/#184):
+            // every save that mutates an audited course entity also records its audit row in the
+            // same save batch, so the mutation cannot commit without its audit event.
+            options.AddInterceptors(provider.GetRequiredService<GameGuild.Compliance.Audit.LearningCoursesMutationAuditInterceptor>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

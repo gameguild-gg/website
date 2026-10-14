@@ -1,4 +1,5 @@
 using GameGuild.Identity.Users;
+using GameGuild.Learning;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Learning.Courses;
 using Microsoft.EntityFrameworkCore;
@@ -14,16 +15,24 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
     private readonly IApplicationDbContext _context;
     private readonly ILogger<CertificateService> _logger;
     private readonly ICertificateAnchoring _certificateAnchoring;
+    private readonly ILearningAuditEventSink _auditSink;
+    private readonly IRequestContextAccessor? _requestContextAccessor;
 
     public CertificateService(
         IApplicationDbContext context,
         ILogger<CertificateService> logger,
-        ICertificateAnchoring? certificateAnchoring = null)
+        ILearningAuditEventSink auditSink,
+        ICertificateAnchoring? certificateAnchoring = null,
+        IRequestContextAccessor? requestContextAccessor = null)
     {
         _context = context;
         _logger = logger;
+        _auditSink = auditSink ?? throw new ArgumentNullException(nameof(auditSink));
         _certificateAnchoring = certificateAnchoring ?? NoOpCertificateAnchoring.Instance;
+        _requestContextAccessor = requestContextAccessor;
     }
+
+    private Guid? ActingUserId => _requestContextAccessor?.CurrentUserId;
 
     public async Task<Result<Certificate>> IssueCertificateAsync(
         Guid templateId,
@@ -76,7 +85,26 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
                 courseName);
 
             _context.Set<Certificate>().Add(certificate);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            // The certificate and its audit event share one transaction; an audit emission
+            // failure surfaces as a failed issuance with the row rolled back (fail closed).
+            var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await _auditSink.RecordAsync(new LearningAuditEvent(
+                    "Learning.Certificates.CertificateIssued", "Certificate", certificate.Id.ToString(),
+                    ActingUserId ?? userId, certificate.TenantId ?? tenantId,
+                    $"Certificate {certificate.CertificateNumber} issued",
+                    Metadata: new { certificate.CertificateNumber, TemplateId = templateId, EnrollmentId = enrollmentId, CourseId = courseId })).ConfigureAwait(false);
+                await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync().ConfigureAwait(false);
+                }
+            }
 
             _logger.LogInformation(
                 "Certificate issued: {CertificateNumber} to user {UserId} for course {CourseId}",
@@ -215,7 +243,26 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
 
             certificate.Revoke(reason);
             _context.Set<Certificate>().Update(certificate);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            // Same fail-closed contract as issuance: a revocation whose audit event cannot be
+            // persisted rolls back instead of revoking silently.
+            var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await _auditSink.RecordAsync(new LearningAuditEvent(
+                    "Learning.Certificates.CertificateRevoked", "Certificate", certificate.Id.ToString(),
+                    ActingUserId, certificate.TenantId,
+                    $"Certificate {certificate.CertificateNumber} revoked",
+                    Metadata: new { certificate.CertificateNumber, Reason = reason })).ConfigureAwait(false);
+                await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync().ConfigureAwait(false);
+                }
+            }
 
             _logger.LogInformation(
                 "Certificate revoked: {CertificateNumber} - Reason: {Reason}",

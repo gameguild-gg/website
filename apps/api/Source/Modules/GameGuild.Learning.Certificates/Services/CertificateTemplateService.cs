@@ -1,3 +1,4 @@
+using GameGuild.Learning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -6,23 +7,42 @@ namespace GameGuild.Learning.Certificates;
 /// <summary>
 /// Service implementation for certificate template management
 /// </summary>
-public class CertificateTemplateService : ICertificateTemplateService
+public class CertificateTemplateService(
+    IApplicationDbContext context,
+    ILogger<CertificateTemplateService> logger,
+    ILearningAuditEventSink auditSink,
+    IRequestContextAccessor? requestContextAccessor = null) : ICertificateTemplateService
 {
-    private readonly IApplicationDbContext _context;
-    private readonly ILogger<CertificateTemplateService> _logger;
-
-    public CertificateTemplateService(IApplicationDbContext context, ILogger<CertificateTemplateService> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
+    private readonly IApplicationDbContext _context = context;
+    private readonly ILogger<CertificateTemplateService> _logger = logger;
+    private readonly ILearningAuditEventSink _auditSink = auditSink ?? throw new ArgumentNullException(nameof(auditSink));
+    private Guid? ActingUserId => requestContextAccessor?.CurrentUserId;
 
     public async Task<Result<CertificateTemplate>> CreateTemplateAsync(CertificateTemplate template, Guid? tenantId = null)
     {
         try
         {
             _context.Set<CertificateTemplate>().Add(template);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            // Template mutations follow the same fail-closed contract as certificates: the row
+            // and its audit event commit together or not at all.
+            var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await _auditSink.RecordAsync(new LearningAuditEvent(
+                    "Learning.Certificates.TemplateCreated", "CertificateTemplate", template.Id.ToString(),
+                    ActingUserId, template.TenantId ?? tenantId,
+                    $"Certificate template '{template.Name}' created",
+                    Metadata: new { template.CourseId, template.IsActive, template.IsDefault })).ConfigureAwait(false);
+                await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync().ConfigureAwait(false);
+                }
+            }
 
             _logger.LogInformation("Certificate template created: {TemplateId} for course {CourseId}", template.Id, template.CourseId);
 
@@ -53,7 +73,24 @@ public class CertificateTemplateService : ICertificateTemplateService
         try
         {
             _context.Set<CertificateTemplate>().Update(template);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await _auditSink.RecordAsync(new LearningAuditEvent(
+                    "Learning.Certificates.TemplateUpdated", "CertificateTemplate", template.Id.ToString(),
+                    ActingUserId, template.TenantId,
+                    $"Certificate template '{template.Name}' updated",
+                    Metadata: new { template.CourseId, template.IsActive, template.IsDefault } )).ConfigureAwait(false);
+                await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync().ConfigureAwait(false);
+                }
+            }
 
             _logger.LogInformation("Certificate template updated: {TemplateId}", template.Id);
 
@@ -77,7 +114,24 @@ public class CertificateTemplateService : ICertificateTemplateService
             }
 
             _context.Set<CertificateTemplate>().Remove(template);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await _auditSink.RecordAsync(new LearningAuditEvent(
+                    "Learning.Certificates.TemplateDeleted", "CertificateTemplate", template.Id.ToString(),
+                    ActingUserId, template.TenantId,
+                    $"Certificate template '{template.Name}' deleted",
+                    Metadata: new { template.CourseId })).ConfigureAwait(false);
+                await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync().ConfigureAwait(false);
+                }
+            }
 
             _logger.LogInformation("Certificate template deleted: {TemplateId}", id);
 
@@ -123,7 +177,24 @@ public class CertificateTemplateService : ICertificateTemplateService
                 courseTemplate.SetDefault(courseTemplate.Id == templateId);
             }
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                await _auditSink.RecordAsync(new LearningAuditEvent(
+                    "Learning.Certificates.TemplateDefaultChanged", "CertificateTemplate", templateId.ToString(),
+                    ActingUserId, template.TenantId,
+                    $"Certificate template '{template.Name}' set as default for course {courseId}",
+                    Metadata: new { CourseId = courseId, TemplateId = templateId })).ConfigureAwait(false);
+                await transaction.CommitAuditedMutationAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync().ConfigureAwait(false);
+                }
+            }
 
             _logger.LogInformation("Set default certificate template: {TemplateId} for course {CourseId}", templateId, courseId);
 
