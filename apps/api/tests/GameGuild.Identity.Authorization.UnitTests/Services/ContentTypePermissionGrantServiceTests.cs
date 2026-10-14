@@ -23,6 +23,13 @@ public class ContentTypePermissionGrantServiceTests
     private readonly Guid _tenantId = Guid.NewGuid();
     private readonly Guid _adminId = Guid.NewGuid();
 
+    public ContentTypePermissionGrantServiceTests()
+    {
+        // The actor is available to every handler built directly against the accessor
+        // (command-guard tests do not go through CreateSut).
+        _actorAccessor.SetupGet(a => a.ActorContext).Returns(AdminActor());
+    }
+
     private ContentTypePermissionGrantService CreateSut(ActorContext? actor = null)
     {
         _actorAccessor.SetupGet(a => a.ActorContext).Returns(actor ?? AdminActor());
