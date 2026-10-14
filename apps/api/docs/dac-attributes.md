@@ -38,6 +38,12 @@ the second, independent gate on dispatched commands.
 | `RequireContentTypePermissionAttribute<TResource>(perm)` | Content-type | Legacy marker, now resolver-backed. |
 | `RequiresPermissionAttribute("perm")` / `RequirePermissionAttribute` | Tenant | Simple permission check through the engine. |
 
+The **legacy marker attributes** (`RequireResourcePermissionAttribute<TPermission,TResource>`
+and `RequireContentTypePermissionAttribute<TResource>`) predate the filter and were inert
+while it was disabled; they are enforced — through the same scoped-store paths — only
+when `Controllers:EnforceLegacyPermissionMarkers` is enabled (default off, because their
+surfaces are governed by their own capability checks).
+
 Multiple attributes on one action (or across action + controller) compose with **AND
 logic** — the stricter conjunction always governs (most-specific wins). Denials produce a
 structured `403` ProblemDetails with a stable machine `reason`; the failing attribute and

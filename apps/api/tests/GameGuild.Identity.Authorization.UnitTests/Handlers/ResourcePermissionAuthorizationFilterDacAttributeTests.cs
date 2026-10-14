@@ -49,7 +49,8 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
     private AuthorizationFilterContext CreateFilterContext(
         TypeInfo controllerType,
         string actionName,
-        Action<HttpContext>? configureHttpContext = null)
+        Action<HttpContext>? configureHttpContext = null,
+        bool enforceLegacyMarkers = false)
     {
         _actorAccessor.SetupGet(a => a.ActorContext).Returns(AuthenticatedActor());
 
@@ -57,6 +58,11 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
         services.AddSingleton(_actorAccessor.Object);
         services.AddSingleton(_permissionQuery.Object);
         services.AddSingleton(_dacResolver.Object);
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(
+            new GameGuild.Configuration.PresentationLayer.Controllers.ControllersOptions
+            {
+                EnforceLegacyPermissionMarkers = enforceLegacyMarkers
+            }));
         var httpContext = new DefaultHttpContext { RequestServices = services.BuildServiceProvider() };
         configureHttpContext?.Invoke(httpContext);
         httpContext.SetEndpoint(new Endpoint(
@@ -156,7 +162,10 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
             .Setup(r => r.HasPermissionAsync(It.IsAny<DacPermissionQuery>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<DacPermissionQuery, string, CancellationToken>((query, _, _) => seen = query)
             .ReturnsAsync(true);
-        var context = CreateFilterContext(typeof(ProbeController).GetTypeInfo(), nameof(ProbeController.LegacyContentTypeGated));
+        var context = CreateFilterContext(
+            typeof(ProbeController).GetTypeInfo(),
+            nameof(ProbeController.LegacyContentTypeGated),
+            enforceLegacyMarkers: true);
 
         await CreateFilter().OnAuthorizationAsync(context);
 
@@ -237,7 +246,8 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
             .ReturnsAsync(true);
         var context = CreateFilterContext(
             typeof(ProbeController).GetTypeInfo(),
-            nameof(ProbeController.LegacyResourceGated));
+            nameof(ProbeController.LegacyResourceGated),
+            enforceLegacyMarkers: true);
         context.HttpContext.Request.RouteValues["id"] = resourceGuid.ToString();
 
         await CreateFilter().OnAuthorizationAsync(context);
@@ -263,12 +273,31 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
             && query.ResourceType == "ProjectResource");
         var context = CreateFilterContext(
             typeof(ProbeController).GetTypeInfo(),
-            nameof(ProbeController.LegacyResourceGated));
+            nameof(ProbeController.LegacyResourceGated),
+            enforceLegacyMarkers: true);
         context.HttpContext.Request.RouteValues["id"] = Guid.NewGuid().ToString();
 
         await CreateFilter().OnAuthorizationAsync(context);
 
         context.Result.Should().BeNull("the owner-override mint satisfied the declarative resource gate");
+    }
+
+    [Fact]
+    public async Task LegacyContentTypeMarker_IsInertWithoutTheCompatSwitch()
+    {
+        SetupDacResolution((_, _) => false);
+        var context = CreateFilterContext(
+            typeof(ProbeController).GetTypeInfo(),
+            nameof(ProbeController.LegacyContentTypeGated),
+            enforceLegacyMarkers: false);
+
+        await CreateFilter().OnAuthorizationAsync(context);
+
+        // Compat: without Controllers:EnforceLegacyPermissionMarkers the legacy markers
+        // stay inert (their surfaces keep their own capability checks); the resolver is
+        // never consulted for them.
+        context.Result.Should().BeNull();
+        _dacResolver.VerifyNoOtherCalls();
     }
 
     // ── Extensibility + conditional application ────────────────────────────

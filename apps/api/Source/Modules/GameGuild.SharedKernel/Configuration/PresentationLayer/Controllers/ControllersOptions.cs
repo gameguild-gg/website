@@ -25,6 +25,18 @@ public sealed class ControllersOptions : BaseOptions
     public bool EnablePermissionAuthorizationFilter { get; set; } = true;
 
     /// <summary>
+    ///     Whether the endpoint DAC permission filter also enforces the legacy
+    ///     resource/content-type marker attributes
+    ///     (<c>RequireResourcePermissionAttribute&lt;TPermission,TResource&gt;</c>,
+    ///     <c>RequireContentTypePermissionAttribute&lt;TResource&gt;</c>). Default:
+    ///     <b>disabled</b> — those markers predate the filter and were inert while the
+    ///     filter was disabled, so their surfaces are governed by their own capability
+    ///     checks; enabling this switch enforces the markers through the scoped grant
+    ///     stores (content-type layer / resource context with owner override).
+    /// </summary>
+    public bool EnforceLegacyPermissionMarkers { get; set; }
+
+    /// <summary>
     ///     The property naming policy for JSON serialization (e.g., "CamelCase")
     /// </summary>
     public string JsonPropertyNamingPolicy { get; set; } = "CamelCase";

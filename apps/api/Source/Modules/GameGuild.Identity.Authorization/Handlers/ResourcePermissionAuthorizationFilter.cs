@@ -1,3 +1,4 @@
+using GameGuild.Configuration.PresentationLayer.Controllers;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Identity.Authorization;
 
@@ -74,6 +76,29 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
             return;
         }
 
+        // Compat switch: the legacy resource/content-type markers predate the filter and
+        // were inert while the filter was disabled; their surfaces are governed by their
+        // own capability checks. They are enforced (through the scoped grant stores) only
+        // when explicitly enabled.
+        var enforceLegacyMarkers = context.HttpContext.RequestServices
+            .GetService<IOptions<ControllersOptions>>()
+            ?.Value.EnforceLegacyPermissionMarkers == true;
+
+        // Get all permission attributes from action and controller (action first, then
+        // controller: AND across everything, most-specific requirement governs).
+        var attributes = GetPermissionAttributes(actionDescriptor, enforceLegacyMarkers).ToArray();
+
+        // Scope of the filter (fail-closed but non-invasive): endpoints without any DAC
+        // permission attribute declare no requirement here — their authorization decision
+        // remains entirely with the transport/principal-level [Authorize] policies (for
+        // example machine-token schemes whose principal is not an ActorContext user).
+        // The filter enforces declared requirements only; it never widens or narrows a
+        // decision it was not asked to make.
+        if (attributes.Length == 0)
+        {
+            return;
+        }
+
         var actorContextAccessor = context.HttpContext.RequestServices.GetService<IActorContextAccessor>();
         var permissionQueryService = context.HttpContext.RequestServices.GetService<IPermissionQueryService>();
         if (actorContextAccessor == null || permissionQueryService == null)
@@ -102,10 +127,6 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
         {
             return;
         }
-
-        // Get all permission attributes from action and controller (action first, then
-        // controller: AND across everything, most-specific requirement governs).
-        var attributes = GetPermissionAttributes(actionDescriptor);
 
         foreach (var attr in attributes)
         {
@@ -234,28 +255,36 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
         }
     }
 
-    private static IEnumerable<Attribute> GetPermissionAttributes(ControllerActionDescriptor actionDescriptor)
+    private static IEnumerable<Attribute> GetPermissionAttributes(
+        ControllerActionDescriptor actionDescriptor,
+        bool enforceLegacyMarkers)
     {
         // Get attributes from action method
         var methodAttributes = actionDescriptor.MethodInfo
             .GetCustomAttributes(true)
             .OfType<Attribute>()
-            .Where(IsPermissionAttribute);
+            .Where(attribute => IsPermissionAttribute(attribute, enforceLegacyMarkers));
 
         // Get attributes from controller class
         var controllerAttributes = actionDescriptor.ControllerTypeInfo
             .GetCustomAttributes(true)
             .OfType<Attribute>()
-            .Where(IsPermissionAttribute);
+            .Where(attribute => IsPermissionAttribute(attribute, enforceLegacyMarkers));
 
         return methodAttributes.Concat(controllerAttributes);
     }
 
-    private static bool IsPermissionAttribute(Attribute attr)
+    private static bool IsPermissionAttribute(Attribute attr, bool enforceLegacyMarkers)
     {
+        // Legacy markers participate only under the compat switch (see collection site).
+        var isLegacyMarker = attr is IResourcePermissionMarker or IContentTypePermissionMarker;
+        if (isLegacyMarker && !enforceLegacyMarkers)
+        {
+            return false;
+        }
+
         return attr is IDacPermissionAttribute
-            || attr is IResourcePermissionMarker
-            || attr is IContentTypePermissionMarker
+            || isLegacyMarker
             || attr is RequireTenantPermissionAttribute
             || attr is RequiresPermissionAttribute
             || attr is RequirePermissionAttribute;
