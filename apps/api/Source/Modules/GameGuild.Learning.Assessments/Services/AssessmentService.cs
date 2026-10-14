@@ -1,6 +1,8 @@
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentValidation;
+using GameGuild.Assets;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
 using GameGuild.Learning.Assessments.Grading.Contracts;
@@ -1005,6 +1007,9 @@ public class AssessmentService : IAssessmentService
         return Result.Success(submission);
     }
     public async Task<Result<AssessmentSubmission>> SubmitAsync(Guid submissionId, SubmitAssessmentRequest? request = null)
+        => await SubmitAsyncInternal(submissionId, request, CancellationToken.None);
+
+    private async Task<Result<AssessmentSubmission>> SubmitAsyncInternal(Guid submissionId, SubmitAssessmentRequest? request, CancellationToken cancellationToken)
     {
         try
         {
@@ -1041,6 +1046,12 @@ public class AssessmentService : IAssessmentService
             if (request != null)
             {
                 submission.SetPayload(request, assessment.SubmissionModalities);
+            }
+
+            var assetGateError = await ValidateSubmissionManagedAssetsAsync(submission, assessment, cancellationToken).ConfigureAwait(false);
+            if (assetGateError is not null)
+            {
+                return Result.Failure<AssessmentSubmission>(assetGateError);
             }
 
             submission.Submit(isLate, submittedAt);
@@ -1236,6 +1247,71 @@ public class AssessmentService : IAssessmentService
 
     private static bool UsesGradingRuntime(Assessment assessment) =>
         assessment.ContentId.HasValue && assessment.ReviewMethods != ReviewMethods.None;
+
+    private async Task<Error?> ValidateSubmissionManagedAssetsAsync(
+        AssessmentSubmission submission, Assessment assessment, CancellationToken cancellationToken)
+    {
+        // FilePayload stores the raw assetReferenceId GUID (frontend uploadAssessmentFile →
+        // buildAssessmentPayload). Managed asset ids named by any payload are gated.
+        var payloadIds = ExtractManagedAssetIds(submission);
+        if (payloadIds.Count == 0)
+        {
+            return null;
+        }
+
+        var references = await _context.Set<AssetReference>()
+            .Include(r => r.Content)
+            .Where(r => r.DeletedAt == null && payloadIds.Contains(r.Id))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (var id in payloadIds)
+        {
+            var reference = references.FirstOrDefault(r => r.Id == id);
+            if (reference is null)
+            {
+                var claimed = id.ToString();
+                var isBareClaim = submission.FilePayload == claimed
+                    || submission.TextPayload == claimed
+                    || submission.UrlPayload == claimed
+                    || submission.CodePayload == claimed
+                    || submission.MediaPayload == claimed
+                    || submission.ProjectPayload == claimed;
+                if (!isBareClaim)
+                    continue;
+                return Error.Validation("Submission.AssetNotFound",
+                    $"Submission references managed media asset {id} which is not available.");
+            }
+
+            if (reference.Content?.IsSafeToServe != true)
+            {
+                return Error.Validation("Submission.AssetNotSafe",
+                    $"Submission media asset {id} has not completed security review and cannot be accepted.");
+            }
+        }
+
+        return null;
+    }
+
+    private static readonly Regex GuidPattern = new(
+        @"(?<id>[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static HashSet<Guid> ExtractManagedAssetIds(AssessmentSubmission submission)
+    {
+        var ids = new HashSet<Guid>();
+        foreach (var payload in new[] { submission.TextPayload, submission.FilePayload, submission.UrlPayload, submission.CodePayload, submission.MediaPayload, submission.ProjectPayload })
+        {
+            if (string.IsNullOrWhiteSpace(payload))
+                continue;
+            foreach (Match match in GuidPattern.Matches(payload))
+            {
+                if (Guid.TryParse(match.Groups["id"].Value, out var id))
+                    ids.Add(id);
+            }
+        }
+        return ids;
+    }
 
     private bool TryGetProjectionActor(out Guid actorId)
     {
