@@ -36,7 +36,7 @@ public sealed class SignInMfaMigrationPostgreSqlTests(ApiPostgreSqlFixture fixtu
         var preferredMethod = MfaMethod.Totp.ToString();
         var now = DateTime.UtcNow;
         await db.Database.ExecuteSqlAsync($"""
-            INSERT INTO gameguild.authentication.user_mfa_configuration
+            INSERT INTO "gameguild.authentication".user_mfa_configuration
                 (id, user_id, is_enabled, is_setup_complete, preferred_method, failed_attempts, created_at, updated_at)
             VALUES ({enrollmentId}, {Guid.NewGuid()}, {true}, {true}, {preferredMethod}, {0}, {now}, {now})
             """);
@@ -44,7 +44,7 @@ public sealed class SignInMfaMigrationPostgreSqlTests(ApiPostgreSqlFixture fixtu
         Assert.Empty(await db.Set<SignInMfaChallenge>().AsNoTracking().Select(row => row.Id).ToListAsync());
         await AssertReplayStateEmptyAsync(db);
         Assert.True(await db.Database.SqlQuery<bool>($"""
-            SELECT is_setup_complete AS "Value" FROM gameguild.authentication.user_mfa_configuration WHERE id = {enrollmentId}
+            SELECT is_setup_complete AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {enrollmentId}
             """).SingleAsync());
 
         await migrator.MigrateAsync(predecessor);
@@ -55,7 +55,7 @@ public sealed class SignInMfaMigrationPostgreSqlTests(ApiPostgreSqlFixture fixtu
             """).SingleAsync();
         Assert.Equal(0, tableCount);
         Assert.True(await db.Database.SqlQuery<bool>($"""
-            SELECT is_enabled AS "Value" FROM gameguild.authentication.user_mfa_configuration WHERE id = {enrollmentId}
+            SELECT is_enabled AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {enrollmentId}
             """).SingleAsync());
 
         await migrator.MigrateAsync(migration);
@@ -69,7 +69,7 @@ public sealed class SignInMfaMigrationPostgreSqlTests(ApiPostgreSqlFixture fixtu
     private static async Task AssertReplayStateEmptyAsync(ApplicationDbContext db)
     {
         var replayStates = await db.Database.SqlQueryRaw<int>("""
-            SELECT COUNT(*)::int AS "Value" FROM gameguild.authentication.totp_replay_state
+            SELECT COUNT(*)::int AS "Value" FROM "gameguild.authentication".totp_replay_state
             """).SingleAsync();
         Assert.Equal(0, replayStates);
     }
