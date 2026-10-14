@@ -26,7 +26,7 @@ test("documentation and CI changes do not deploy runtime services", () => {
       ".github/workflows/pr-verify.yml",
       "scripts/ci/classify-release-changes.mjs",
     ]),
-    expectedEmptyClassification,
+    { ...expectedEmptyClassification, economyCritical: true },
   );
 });
 

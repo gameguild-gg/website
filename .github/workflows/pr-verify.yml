@@ -287,7 +287,9 @@ jobs:
     needs: classify
     if: needs.classify.outputs.economyCritical == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Whole-solution regression runs in parallel below; release surfaces retain
+    # their complete coverage, provider, OpenAPI, frontend, and browser checks.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -295,9 +297,9 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - uses: ./.github/actions/setup-playwright
-      - name: Run complete Economy release profile
+      - name: Run Economy release surfaces
         env:
-          ECONOMY_GATE_PROFILE: full
+          ECONOMY_GATE_PROFILE: release
           ECONOMY_WHOLE_SOLUTION_JOBS: "2"
           ECONOMY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: bash scripts/ci/verify-economy.sh
@@ -307,6 +309,38 @@ jobs:
         with:
           name: economy-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results
+          if-no-files-found: error
+
+  economy-regression:
+    name: Economy regression (${{ matrix.shard }})
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      # Keep every shard's evidence when another shard fails.
+      fail-fast: false
+      matrix:
+        shard: [api-integration, api-unit, remaining]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-node-workspace
+      - uses: ./.github/actions/setup-dotnet
+      - name: Run whole-solution regression shard
+        env:
+          ECONOMY_GATE_PROFILE: regression
+          ECONOMY_REGRESSION_SHARD: ${{ matrix.shard }}
+          ECONOMY_WHOLE_SOLUTION_JOBS: "2"
+          ECONOMY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash scripts/ci/verify-economy.sh
+      - name: Upload regression evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-regression-${{ matrix.shard }}-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/economy
           if-no-files-found: error
 
   required-gate:
@@ -322,6 +356,7 @@ jobs:
         openapi,
         migration,
         economy,
+        economy-regression,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -338,6 +373,8 @@ jobs:
           OPENAPI: ${{ needs.openapi.result }}
           MIGRATION: ${{ needs.migration.result }}
           ECONOMY: ${{ needs.economy.result }}
+          ECONOMY_REGRESSION: ${{ needs.economy-regression.result }}
+          ECONOMY_SELECTED: ${{ needs.classify.outputs.economyCritical }}
         run: |
           node - <<'NODE'
           const gates = {
@@ -349,10 +386,18 @@ jobs:
             openapi: process.env.OPENAPI,
             migration: process.env.MIGRATION,
             economy: process.env.ECONOMY,
+            'economy-regression': process.env.ECONOMY_REGRESSION,
           };
           const failed = Object.entries(gates)
             .filter(([, result]) => result === 'failure' || result === 'cancelled')
             .map(([name, result]) => `${name}=${result}`);
+          if (process.env.ECONOMY_SELECTED === 'true') {
+            for (const name of ['economy', 'economy-regression']) {
+              if (gates[name] !== 'success' && !failed.some(item => item.startsWith(`${name}=`))) {
+                failed.push(`${name}=${gates[name]}`);
+              }
+            }
+          }
           if (failed.length) {
             console.error(`Required PR gates failed: ${failed.join(', ')}`);
             process.exit(1);
