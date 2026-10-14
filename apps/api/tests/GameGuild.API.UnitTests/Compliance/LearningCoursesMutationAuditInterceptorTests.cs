@@ -111,7 +111,9 @@ public sealed class LearningCoursesMutationAuditInterceptorTests
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfiguration(new ProgramConfiguration());
+            // The production model configuration carries the ScoreValue/PercentValue converters
+            // that a bare entity configuration would miss.
+            new CoursesModelConfiguration().Configure(modelBuilder);
             modelBuilder.Entity<AuditLog>(entity => entity.HasKey(auditLog => auditLog.Id));
             modelBuilder.Entity<PageAuditProbe>(entity => entity.HasKey(probe => probe.Id));
         }

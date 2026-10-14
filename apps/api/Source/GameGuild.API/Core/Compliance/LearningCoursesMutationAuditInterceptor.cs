@@ -23,7 +23,7 @@ namespace GameGuild.API.Core.Compliance;
 /// </summary>
 public sealed class LearningCoursesMutationAuditInterceptor(
     IActorContextAccessor actors,
-    IHttpContextAccessor httpContextAccessor) : SaveChangesInterceptor
+    IHttpContextAccessor? httpContextAccessor = null) : SaveChangesInterceptor
 {
     /// <summary>Course entities whose mutations are audited, mapped to their audit resource type.</summary>
     private static readonly IReadOnlyDictionary<Type, string> AuditedEntityTypes = new Dictionary<Type, string>

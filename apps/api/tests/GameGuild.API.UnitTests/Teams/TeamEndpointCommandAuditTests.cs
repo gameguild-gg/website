@@ -102,6 +102,28 @@ public sealed class TeamEndpointCommandAuditTests
     {
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
             => Database.BeginTransactionAsync(cancellationToken);
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Team>(team =>
+            {
+                team.HasKey(entity => entity.Id);
+                // Cross-module navigations (identity users) stay out of this focused context.
+                team.Ignore(entity => entity.Members);
+                team.Ignore(entity => entity.Invitations);
+            });
+            modelBuilder.Entity<TeamMember>(member =>
+            {
+                member.HasKey(entity => entity.Id);
+                member.Ignore(entity => entity.Team);
+                member.Ignore(entity => entity.User);
+            });
+            modelBuilder.Entity<TeamInvitation>(invitation =>
+            {
+                invitation.HasKey(entity => entity.Id);
+                invitation.Ignore(entity => entity.Team);
+            });
+        }
     }
 }
 
