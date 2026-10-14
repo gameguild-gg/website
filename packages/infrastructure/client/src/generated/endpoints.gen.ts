@@ -15529,6 +15529,57 @@ export const getAuthMfaMethodsEndpoint = {
 } as const;
 
 /**
+ * Issue a push MFA approval challenge
+ *
+ * Issues a push approval challenge to the enrolled device. The challenge must be approved within the TTL; on timeout the sign-in flow falls back to TOTP.
+ */
+export interface PostAuthMfaPushChallengeInput {
+  body?: Types.IdentityAuthenticationPushMfaChallengeInput;
+}
+export type PostAuthMfaPushChallengeOutput = Types.IdentityAuthenticationPushMfaChallengeOutput;
+export const postAuthMfaPushChallengeEndpoint = {
+  operationId: 'postAuthMfaPushChallenge' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/push:challenge' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Register the mobile device for push MFA
+ *
+ * Registers (or replaces) the mobile device registration token used to deliver push MFA approval challenges.
+ */
+export interface PostAuthMfaPushRegisterDeviceInput {
+  body?: Types.IdentityAuthenticationPushMfaDeviceInput;
+}
+export type PostAuthMfaPushRegisterDeviceOutput = Types.IdentityAuthenticationMfaSuccessOutput;
+export const postAuthMfaPushRegisterDeviceEndpoint = {
+  operationId: 'postAuthMfaPushRegisterDevice' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/push:register-device' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Respond to a push MFA challenge from the device
+ *
+ * Records the device's approve/deny decision for a pending, unexpired challenge. Only a pending challenge accepts a response; everything else fails closed.
+ */
+export interface PostAuthMfaPushRespondInput {
+  body?: Types.IdentityAuthenticationPushMfaRespondInput;
+}
+export type PostAuthMfaPushRespondOutput = Types.IdentityAuthenticationMfaSuccessOutput;
+export const postAuthMfaPushRespondEndpoint = {
+  operationId: 'postAuthMfaPushRespond' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/push:respond' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
  *
  * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
@@ -15563,9 +15614,26 @@ export const postAuthMfaSignInEnrollmentEndpoint = {
 } as const;
 
 /**
+ * Send a fresh SMS sign-in code to the enrolled phone
+ *
+ * Sends a fresh verification code to the enrolled phone before MFA verification. Generic failure payload; throttled to one code per minute per user.
+ */
+export interface PostAuthMfaSmsChallengeInput {
+  body?: Types.IdentityAuthenticationSmsMfaChallengeInput;
+}
+export type PostAuthMfaSmsChallengeOutput = Types.IdentityAuthenticationSmsMfaSetupOutput;
+export const postAuthMfaSmsChallengeEndpoint = {
+  operationId: 'postAuthMfaSmsChallenge' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sms:challenge' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Complete SMS MFA setup by verifying the code
  *
- * Completes SMS MFA setup by verifying the code sent to the user's phone.
+ * Completes SMS MFA setup by verifying the code sent to the user's phone, enrolling the verified number as an SMS factor.
  */
 export interface PostAuthMfaSmsCompleteInput {
   body?: Types.IdentityAuthenticationCompleteMfaSetupInput;
@@ -15582,7 +15650,7 @@ export const postAuthMfaSmsCompleteEndpoint = {
 /**
  * Initiate SMS-based MFA setup
  *
- * Initiates SMS-based MFA setup by sending a verification code to the provided phone number.
+ * Initiates SMS-based MFA setup by sending a verification code to the provided phone number. Delivery rides the SMS notification channel; codes are six digits, single-use, and expire in ten minutes.
  */
 export interface PostAuthMfaSmsSetupInput {
   body?: Types.IdentityAuthenticationSmsMfaSetupInput;
@@ -30051,8 +30119,12 @@ export const endpoints = {
   getAuthMfaBackupCodes: getAuthMfaBackupCodesEndpoint,
   postAuthMfaBackupCodesRegenerate: postAuthMfaBackupCodesRegenerateEndpoint,
   getAuthMfaMethods: getAuthMfaMethodsEndpoint,
+  postAuthMfaPushChallenge: postAuthMfaPushChallengeEndpoint,
+  postAuthMfaPushRegisterDevice: postAuthMfaPushRegisterDeviceEndpoint,
+  postAuthMfaPushRespond: postAuthMfaPushRespondEndpoint,
   postAuthMfaSignInComplete: postAuthMfaSignInCompleteEndpoint,
   postAuthMfaSignInEnrollment: postAuthMfaSignInEnrollmentEndpoint,
+  postAuthMfaSmsChallenge: postAuthMfaSmsChallengeEndpoint,
   postAuthMfaSmsComplete: postAuthMfaSmsCompleteEndpoint,
   postAuthMfaSmsSetup: postAuthMfaSmsSetupEndpoint,
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,

@@ -135,9 +135,123 @@ export class AuthMultiFactorModule {
   }
 
   /**
+   * Issue a push MFA approval challenge
+   *
+   * Issues a push approval challenge to the enrolled device. The challenge must be approved within the TTL; on timeout the sign-in flow falls back to TOTP.
+   */
+  async postAuthMfaPushChallenge(
+    body: Types.IdentityAuthenticationPushMfaChallengeInput,
+  ): Promise<Result<Types.IdentityAuthenticationPushMfaChallengeOutput, ApiError>> {
+    const url = '/v1/auth/mfa/push:challenge';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationPushMfaChallengeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationPushMfaChallengeOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Register the mobile device for push MFA
+   *
+   * Registers (or replaces) the mobile device registration token used to deliver push MFA approval challenges.
+   */
+  async postAuthMfaPushRegisterDevice(
+    body: Types.IdentityAuthenticationPushMfaDeviceInput,
+  ): Promise<Result<Types.IdentityAuthenticationMfaSuccessOutput, ApiError>> {
+    const url = '/v1/auth/mfa/push:register-device';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationPushMfaDeviceInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaSuccessOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Respond to a push MFA challenge from the device
+   *
+   * Records the device's approve/deny decision for a pending, unexpired challenge. Only a pending challenge accepts a response; everything else fails closed.
+   */
+  async postAuthMfaPushRespond(body: Types.IdentityAuthenticationPushMfaRespondInput): Promise<Result<Types.IdentityAuthenticationMfaSuccessOutput, ApiError>> {
+    const url = '/v1/auth/mfa/push:respond';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationPushMfaRespondInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaSuccessOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Send a fresh SMS sign-in code to the enrolled phone
+   *
+   * Sends a fresh verification code to the enrolled phone before MFA verification. Generic failure payload; throttled to one code per minute per user.
+   */
+  async postAuthMfaSmsChallenge(
+    body: Types.IdentityAuthenticationSmsMfaChallengeInput,
+  ): Promise<Result<Types.IdentityAuthenticationSmsMfaSetupOutput, ApiError>> {
+    const url = '/v1/auth/mfa/sms:challenge';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationSmsMfaChallengeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSmsMfaSetupOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Complete SMS MFA setup by verifying the code
    *
-   * Completes SMS MFA setup by verifying the code sent to the user's phone.
+   * Completes SMS MFA setup by verifying the code sent to the user's phone, enrolling the verified number as an SMS factor.
    */
   async postAuthMfaSmsComplete(
     body: Types.IdentityAuthenticationCompleteMfaSetupInput,
@@ -166,7 +280,7 @@ export class AuthMultiFactorModule {
   /**
    * Initiate SMS-based MFA setup
    *
-   * Initiates SMS-based MFA setup by sending a verification code to the provided phone number.
+   * Initiates SMS-based MFA setup by sending a verification code to the provided phone number. Delivery rides the SMS notification channel; codes are six digits, single-use, and expire in ten minutes.
    */
   async postAuthMfaSmsSetup(body: Types.IdentityAuthenticationSmsMfaSetupInput): Promise<Result<Types.IdentityAuthenticationSmsMfaSetupOutput, ApiError>> {
     const url = '/v1/auth/mfa/sms:setup';
