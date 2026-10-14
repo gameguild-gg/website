@@ -17,6 +17,7 @@ vi.mock('next-intl', () => ({
       navLabel: 'Settings sections',
       'nav.profile': 'Profile',
       'nav.account': 'Account',
+      'nav.security': 'Security',
       'nav.appearance': 'Appearance',
       'nav.localization': 'Language & region',
       'nav.privacy': 'Privacy',
@@ -31,7 +32,7 @@ describe('SettingsNav', () => {
     render(<SettingsNav />);
 
     expect(screen.getByRole('navigation', { name: 'Settings sections' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(6);
+    expect(screen.getAllByRole('link')).toHaveLength(7);
     expect(screen.getByRole('link', { name: 'Accessibility' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -39,6 +40,15 @@ describe('SettingsNav', () => {
     expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute(
       'href',
       '/workspace/settings/profile',
+    );
+  });
+
+  it('links to the security section', () => {
+    render(<SettingsNav />);
+
+    expect(screen.getByRole('link', { name: 'Security' })).toHaveAttribute(
+      'href',
+      '/workspace/settings/security',
     );
   });
 });

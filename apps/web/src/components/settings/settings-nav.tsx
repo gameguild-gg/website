@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 const NAV_ITEMS = [
   { href: '/workspace/settings/profile', icon: User, labelKey: 'nav.profile' },
   { href: '/workspace/settings/account', icon: UserCog, labelKey: 'nav.account' },
+  { href: '/workspace/settings/security', icon: ShieldCheck, labelKey: 'nav.security' },
   { href: '/workspace/settings/appearance', icon: Palette, labelKey: 'nav.appearance' },
   { href: '/workspace/settings/localization', icon: Globe2, labelKey: 'nav.localization' },
   { href: '/workspace/settings/privacy', icon: ShieldCheck, labelKey: 'nav.privacy' },
