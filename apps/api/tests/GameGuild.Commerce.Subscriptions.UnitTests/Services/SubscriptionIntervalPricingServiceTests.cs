@@ -89,7 +89,9 @@ public class SubscriptionIntervalPricingServiceTests
 
         var price = await _service.ResolvePriceForCycleAsync(plan, BillingCycle.Annually);
 
-        price.Amount.Should().Be(SubscriptionPlanPricingRules.CustomQuotePriceInCents / 100m);
+        // The sentinel (-1) is clamped to zero at the interval-pricing layer: it is
+        // never a billable amount; the resolver layer surfaces the custom-quote state.
+        price.Amount.Should().Be(0m);
     }
 
     [Fact]

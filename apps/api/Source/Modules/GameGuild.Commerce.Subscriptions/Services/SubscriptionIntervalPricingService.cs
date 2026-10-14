@@ -126,6 +126,18 @@ public sealed class SubscriptionIntervalPricingService(ISubscriptionPlanReposito
         _ => plan.MonthlyPriceInCents
     };
 
-    private static Money DeriveFallbackPrice(SubscriptionPlan plan, BillingCycle cycle) =>
-        new(DeriveFallbackPriceInCents(plan, cycle) / 100m, plan.Currency);
+    private static Money DeriveFallbackPrice(SubscriptionPlan plan, BillingCycle cycle)
+    {
+        var cents = DeriveFallbackPriceInCents(plan, cycle);
+
+        // The enterprise custom-quote sentinel is never a billable amount; clamp it to
+        // zero so the Money value object's non-negative invariant holds (the resolver
+        // layer surfaces the sentinel as a "no billable price" signal upstream).
+        if (cents < 0)
+        {
+            cents = 0;
+        }
+
+        return new Money(cents / 100m, plan.Currency);
+    }
 }

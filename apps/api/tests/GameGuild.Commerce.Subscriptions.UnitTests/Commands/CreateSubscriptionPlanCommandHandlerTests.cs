@@ -152,7 +152,7 @@ public class CreateSubscriptionPlanCommandHandlerTests
     {
         var act = () => CreateHandler().Handle(new CreateSubscriptionPlanCommand(
             "Misconfigured",
-            Slug: null,
+            Slug: "misconfigured",
             MonthlyPriceInCents: SubscriptionPlanPricingRules.CustomQuotePriceInCents,
             Currency: "USD",
             Description: null,
@@ -168,7 +168,7 @@ public class CreateSubscriptionPlanCommandHandlerTests
     {
         var act = () => CreateHandler().Handle(new CreateSubscriptionPlanCommand(
             "Studio",
-            Slug: null,
+            Slug: "studio",
             MonthlyPriceInCents: 4_999,
             Currency: "USD",
             Description: null,
