@@ -12,10 +12,14 @@ public sealed class RevokeContentTypePermissionByIdHandler(IApplicationDbContext
     public async Task<Unit> Handle(RevokeContentTypePermissionByIdCommand request, CancellationToken cancellationToken)
     {
         var grant = await context.Set<ContentTypePermission>()
-            .FirstOrDefaultAsync(g => g.Id == request.GrantId, cancellationToken)
+            .FirstOrDefaultAsync(g => g.Id == request.GrantId && g.DeletedAt == null, cancellationToken)
             ?? throw new InvalidOperationException($"Content type permission grant {request.GrantId} not found");
 
-        context.Set<ContentTypePermission>().Remove(grant);
+        // Soft delete preserves the permission history for compliance (#360); the
+        // grant conveys nothing while deleted (deactivated + DeletedAt) and remains
+        // restorable.
+        grant.IsActive = false;
+        grant.SoftDelete();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return Unit.Value;

@@ -262,7 +262,11 @@ public class PermissionService(
         var removed = !grant.GetPermissionsAsEnum().Any();
         if (removed)
         {
-            context.Set<ContentTypePermission>().Remove(grant);
+            // Soft delete preserves the permission history for compliance (#360); the
+            // grant conveys nothing while deleted (deactivated + DeletedAt) and remains
+            // restorable. A later grant of the same scope creates a fresh row.
+            grant.IsActive = false;
+            grant.SoftDelete();
         }
 
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -392,7 +396,11 @@ public class PermissionService(
             return;
         }
 
-        context.Set<TPermission>().Remove(grant);
+        // Soft delete preserves the permission history for compliance (#360); the
+        // grant conveys nothing while deleted (deactivated + DeletedAt) and remains
+        // restorable. A later grant of the same scope creates a fresh row.
+        grant.IsActive = false;
+        grant.SoftDelete();
         await context.SaveChangesAsync().ConfigureAwait(false);
 
         await TrackMutationAsync(
@@ -1443,7 +1451,8 @@ public class PermissionService(
             .FirstOrDefaultAsync(p =>
                 p.UserId == userId &&
                 p.TenantId == tenantId &&
-                p.ContentTypeName == contentTypeName);
+                p.ContentTypeName == contentTypeName &&
+                p.DeletedAt == null);
 
     private Task<TPermission?> GetResourceGrantAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
@@ -1451,7 +1460,8 @@ public class PermissionService(
             .FirstOrDefaultAsync(p =>
                 p.UserId == userId &&
                 p.TenantId == tenantId &&
-                p.ResourceId == resourceId);
+                p.ResourceId == resourceId &&
+                p.DeletedAt == null);
 
     /// <summary>
     ///     SECURITY: records a permission mutation — bumps the tenant security version so

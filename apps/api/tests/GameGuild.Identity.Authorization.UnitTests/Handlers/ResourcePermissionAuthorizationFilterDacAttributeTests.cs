@@ -311,6 +311,34 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
         context.Result.Should().BeOfType<ObjectResult>("the fail-closed default applies the requirement");
     }
 
+    // ── Precedence: controller-level and action-level requirements all apply ──
+
+    [Fact]
+    public async Task ControllerLevelAndActionLevelRequirements_AllApply_AndMostSpecificGoverns()
+    {
+        // The controller requires tenant:base; the action additionally requires tenant:action.
+        // Granting only the controller-level permission must deny (action requirement
+        // governs); granting both must pass.
+        SetupDacResolution((query, permission) => permission == "tenant:base");
+        var context = CreateFilterContext(
+            typeof(PrecedenceProbeController).GetTypeInfo(),
+            nameof(PrecedenceProbeController.Action));
+
+        await CreateFilter().OnAuthorizationAsync(context);
+
+        context.Result.Should().BeOfType<ObjectResult>(
+            "the stricter conjunction (controller AND action) governs");
+
+        SetupDacResolution((query, permission) => permission is "tenant:base" or "tenant:action");
+        context = CreateFilterContext(
+            typeof(PrecedenceProbeController).GetTypeInfo(),
+            nameof(PrecedenceProbeController.Action));
+
+        await CreateFilter().OnAuthorizationAsync(context);
+
+        context.Result.Should().BeNull("both requirements are satisfied");
+    }
+
     // ── Fail-closed ────────────────────────────────────────────────────────
 
     [Fact]
@@ -385,6 +413,15 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
 
         [ConditionalDacPermission("custom:gate")]
         public void ConditionallyGated()
+        {
+        }
+    }
+
+    [RequireDacPermission("tenant:base")]
+    private sealed class PrecedenceProbeController
+    {
+        [RequireDacPermission("tenant:action")]
+        public void Action()
         {
         }
     }
