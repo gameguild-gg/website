@@ -29,6 +29,7 @@
         <ProjectReference Include="..\GameGuild.AI\GameGuild.AI.csproj" />
         <ProjectReference Include="..\GameGuild.Finance.Economy.AiCredits\GameGuild.Finance.Economy.AiCredits.csproj" />
         <ProjectReference Include="..\GameGuild.Resources\GameGuild.Resources.csproj" />
+        <ProjectReference Include="..\GameGuild.Assets\GameGuild.Assets.csproj" />
     </ItemGroup>
 
 </Project>
