@@ -8850,6 +8850,16 @@ export interface GameJamsSubmitJamEntryInput {
   userId?: string;
 }
 
+/** Data model for Identity Authentication Admin Reset User Mfa Response. */
+export interface IdentityAuthenticationAdminResetUserMfaOutput {
+  /** Whether a live (Pending/AwaitingConfirmation) recovery request was cancelled. */
+  liveRecoveryCancelled: boolean;
+  message: string | null;
+  /** Whether MFA was enabled and has now been disabled. */
+  mfaWasEnabled: boolean;
+  success: boolean;
+}
+
 /** Data model for Identity Authentication Api Key Dto. */
 export interface IdentityAuthenticationApiKeyDto {
   id?: string;
@@ -9110,7 +9120,8 @@ export interface IdentityAuthenticationDeviceInfo {
 
 /** Request to disable MFA */
 export interface IdentityAuthenticationDisableMfaInput {
-  password: string;
+  /** TOTP confirmation code */
+  code: string;
 }
 
 /** Request to initiate Discord OAuth sign-in */
@@ -9370,22 +9381,54 @@ export interface IdentityAuthenticationMfaMethodsOutput {
   methods: IdentityAuthenticationMfaMethodInfo[] | null;
 }
 
+/** Data model for Identity Authentication Mfa Recovery Confirm Request. */
+export interface IdentityAuthenticationMfaRecoveryConfirmInput {
+  /** Confirmation token from the second recovery email. */
+  confirmationToken: string | null;
+}
+
+/** Data model for Identity Authentication Mfa Recovery Confirm Response. */
+export interface IdentityAuthenticationMfaRecoveryConfirmOutput {
+  message: string | null;
+  success: boolean;
+}
+
+/** Data model for Identity Authentication Mfa Recovery Continue Request. */
+export interface IdentityAuthenticationMfaRecoveryContinueInput {
+  /** Request token from the first recovery email. */
+  requestToken: string | null;
+}
+
+/** Data model for Identity Authentication Mfa Recovery Continue Response. */
+export interface IdentityAuthenticationMfaRecoveryContinueOutput {
+  message: string | null;
+  /** Seconds remaining in the cooling-off window when the request is too early. */
+  retryAfterSeconds?: number | null;
+  success: boolean;
+}
+
+/** Data model for Identity Authentication Mfa Recovery Request Request. */
+export interface IdentityAuthenticationMfaRecoveryRequestInput {
+  /** Email of the account to recover. */
+  email: string | null;
+}
+
+/** Data model for Identity Authentication Mfa Recovery Request Response. */
+export interface IdentityAuthenticationMfaRecoveryRequestOutput {
+  message: string | null;
+  success: boolean;
+}
+
 /** Response of MFA setup operation */
 export interface IdentityAuthenticationMfaSetupOutput {
   backupCodes?: string[] | null;
   errorMessage?: string | null;
+  /** When the pending TOTP setup session expires */
+  expiresAt?: string;
   isSuccess?: boolean;
   qrCodeData?: string | null;
   qrCodeUri?: string | null;
   secretKey?: string | null;
-}
-
-/** Provisioning data only; this response never grants an authenticated session. */
-export interface IdentityAuthenticationMfaSignInEnrollmentOutput {
-  expiresAt?: string;
-  qrCodeUri?: string | null;
-  secretKey?: string | null;
-  success?: boolean;
 }
 
 /** Success response for MFA operations */
@@ -9831,11 +9874,6 @@ export interface IdentityAuthenticationSmsMfaSetupOutput {
   message: string | null;
   /** Masked phone number for confirmation */
   phoneNumberMasked: string | null;
-}
-
-/** Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
-export interface IdentityAuthenticationStartMfaSignInEnrollmentInput {
-  mfaToken: string;
 }
 
 /** Data model for Identity Authentication Step Up Challenge Response. */
@@ -22835,6 +22873,7 @@ export let GameJamsJamStatusSchema: z.ZodType<GameJamsJamStatus>;
 export let GameJamsJamSubmissionDtoSchema: z.ZodType<GameJamsJamSubmissionDto>;
 export let GameJamsScoreJamSubmissionInputSchema: z.ZodType<GameJamsScoreJamSubmissionInput>;
 export let GameJamsSubmitJamEntryInputSchema: z.ZodType<GameJamsSubmitJamEntryInput>;
+export let IdentityAuthenticationAdminResetUserMfaOutputSchema: z.ZodType<IdentityAuthenticationAdminResetUserMfaOutput>;
 export let IdentityAuthenticationApiKeyDtoSchema: z.ZodType<IdentityAuthenticationApiKeyDto>;
 export let IdentityAuthenticationAssignRoleToUserInputSchema: z.ZodType<IdentityAuthenticationAssignRoleToUserInput>;
 export let IdentityAuthenticationAuthenticationStepSchema: z.ZodType<IdentityAuthenticationAuthenticationStep>;
@@ -22890,8 +22929,13 @@ export let IdentityAuthenticationMfaErrorOutputSchema: z.ZodType<IdentityAuthent
 export let IdentityAuthenticationMfaMethodSchema: z.ZodType<IdentityAuthenticationMfaMethod>;
 export let IdentityAuthenticationMfaMethodInfoSchema: z.ZodType<IdentityAuthenticationMfaMethodInfo>;
 export let IdentityAuthenticationMfaMethodsOutputSchema: z.ZodType<IdentityAuthenticationMfaMethodsOutput>;
+export let IdentityAuthenticationMfaRecoveryConfirmInputSchema: z.ZodType<IdentityAuthenticationMfaRecoveryConfirmInput>;
+export let IdentityAuthenticationMfaRecoveryConfirmOutputSchema: z.ZodType<IdentityAuthenticationMfaRecoveryConfirmOutput>;
+export let IdentityAuthenticationMfaRecoveryContinueInputSchema: z.ZodType<IdentityAuthenticationMfaRecoveryContinueInput>;
+export let IdentityAuthenticationMfaRecoveryContinueOutputSchema: z.ZodType<IdentityAuthenticationMfaRecoveryContinueOutput>;
+export let IdentityAuthenticationMfaRecoveryRequestInputSchema: z.ZodType<IdentityAuthenticationMfaRecoveryRequestInput>;
+export let IdentityAuthenticationMfaRecoveryRequestOutputSchema: z.ZodType<IdentityAuthenticationMfaRecoveryRequestOutput>;
 export let IdentityAuthenticationMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationMfaSetupOutput>;
-export let IdentityAuthenticationMfaSignInEnrollmentOutputSchema: z.ZodType<IdentityAuthenticationMfaSignInEnrollmentOutput>;
 export let IdentityAuthenticationMfaSuccessOutputSchema: z.ZodType<IdentityAuthenticationMfaSuccessOutput>;
 export let IdentityAuthenticationMfaVerificationOutputSchema: z.ZodType<IdentityAuthenticationMfaVerificationOutput>;
 export let IdentityAuthenticationOAuth2ErrorOutputSchema: z.ZodType<IdentityAuthenticationOAuth2ErrorOutput>;
@@ -22935,7 +22979,6 @@ export let IdentityAuthenticationSessionTerminationOutputSchema: z.ZodType<Ident
 export let IdentityAuthenticationSignInOutputSchema: z.ZodType<IdentityAuthenticationSignInOutput>;
 export let IdentityAuthenticationSmsMfaSetupInputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupInput>;
 export let IdentityAuthenticationSmsMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupOutput>;
-export let IdentityAuthenticationStartMfaSignInEnrollmentInputSchema: z.ZodType<IdentityAuthenticationStartMfaSignInEnrollmentInput>;
 export let IdentityAuthenticationStepUpChallengeOutputSchema: z.ZodType<IdentityAuthenticationStepUpChallengeOutput>;
 export let IdentityAuthenticationStepUpReceiptOutputSchema: z.ZodType<IdentityAuthenticationStepUpReceiptOutput>;
 export let IdentityAuthenticationTrustDeviceInputSchema: z.ZodType<IdentityAuthenticationTrustDeviceInput>;
@@ -32400,6 +32443,14 @@ GameJamsSubmitJamEntryInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationAdminResetUserMfaOutput. Data model for Identity Authentication Admin Reset User Mfa Response. */
+IdentityAuthenticationAdminResetUserMfaOutputSchema = z.object({
+  liveRecoveryCancelled: z.boolean(),
+  message: z.string().nullable(),
+  mfaWasEnabled: z.boolean(),
+  success: z.boolean(),
+});
+
 /** Zod schema for IdentityAuthenticationApiKeyDto. Data model for Identity Authentication Api Key Dto. */
 IdentityAuthenticationApiKeyDtoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -32623,7 +32674,7 @@ IdentityAuthenticationDeviceInfoSchema = z.object({
 
 /** Zod schema for IdentityAuthenticationDisableMfaInput. Request to disable MFA */
 IdentityAuthenticationDisableMfaInputSchema = z.object({
-  password: z.string().min(1),
+  code: z.string().min(1),
 });
 
 /** Zod schema for IdentityAuthenticationDiscordAuthorizeInput. Request to initiate Discord OAuth sign-in */
@@ -32824,22 +32875,49 @@ IdentityAuthenticationMfaMethodsOutputSchema = z.object({
   methods: z.array(z.lazy(() => IdentityAuthenticationMfaMethodInfoSchema)).nullable(),
 });
 
+/** Zod schema for IdentityAuthenticationMfaRecoveryConfirmInput. Data model for Identity Authentication Mfa Recovery Confirm Request. */
+IdentityAuthenticationMfaRecoveryConfirmInputSchema = z.object({
+  confirmationToken: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationMfaRecoveryConfirmOutput. Data model for Identity Authentication Mfa Recovery Confirm Response. */
+IdentityAuthenticationMfaRecoveryConfirmOutputSchema = z.object({
+  message: z.string().nullable(),
+  success: z.boolean(),
+});
+
+/** Zod schema for IdentityAuthenticationMfaRecoveryContinueInput. Data model for Identity Authentication Mfa Recovery Continue Request. */
+IdentityAuthenticationMfaRecoveryContinueInputSchema = z.object({
+  requestToken: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationMfaRecoveryContinueOutput. Data model for Identity Authentication Mfa Recovery Continue Response. */
+IdentityAuthenticationMfaRecoveryContinueOutputSchema = z.object({
+  message: z.string().nullable(),
+  retryAfterSeconds: z.number().int().nullable().optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for IdentityAuthenticationMfaRecoveryRequestInput. Data model for Identity Authentication Mfa Recovery Request Request. */
+IdentityAuthenticationMfaRecoveryRequestInputSchema = z.object({
+  email: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationMfaRecoveryRequestOutput. Data model for Identity Authentication Mfa Recovery Request Response. */
+IdentityAuthenticationMfaRecoveryRequestOutputSchema = z.object({
+  message: z.string().nullable(),
+  success: z.boolean(),
+});
+
 /** Zod schema for IdentityAuthenticationMfaSetupOutput. Response of MFA setup operation */
 IdentityAuthenticationMfaSetupOutputSchema = z.object({
   backupCodes: z.array(z.string()).nullable().optional(),
   errorMessage: z.string().nullable().optional(),
+  expiresAt: z.string().datetime().optional(),
   isSuccess: z.boolean().optional(),
   qrCodeData: z.string().nullable().optional(),
   qrCodeUri: z.string().nullable().optional(),
   secretKey: z.string().nullable().optional(),
-});
-
-/** Zod schema for IdentityAuthenticationMfaSignInEnrollmentOutput. Provisioning data only; this response never grants an authenticated session. */
-IdentityAuthenticationMfaSignInEnrollmentOutputSchema = z.object({
-  expiresAt: z.string().datetime().optional(),
-  qrCodeUri: z.string().nullable().optional(),
-  secretKey: z.string().nullable().optional(),
-  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationMfaSuccessOutput. Success response for MFA operations */
@@ -33204,11 +33282,6 @@ IdentityAuthenticationSmsMfaSetupOutputSchema = z.object({
   expiresInSeconds: z.number().int(),
   message: z.string().nullable(),
   phoneNumberMasked: z.string().nullable(),
-});
-
-/** Zod schema for IdentityAuthenticationStartMfaSignInEnrollmentInput. Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
-IdentityAuthenticationStartMfaSignInEnrollmentInputSchema = z.object({
-  mfaToken: z.string().min(43).max(43),
 });
 
 /** Zod schema for IdentityAuthenticationStepUpChallengeOutput. Data model for Identity Authentication Step Up Challenge Response. */
