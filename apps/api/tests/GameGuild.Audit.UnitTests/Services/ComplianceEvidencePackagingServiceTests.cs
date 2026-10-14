@@ -238,19 +238,20 @@ public sealed class ComplianceEvidencePackagingServiceTests
 
         Assert.NotNull(prepared);
         Assert.NotNull(saved);
+        var sealedPackage = saved!;
         _tamperEvidence.Verify(item => item.CreateAuditLogAsync(
             _tenant,
             _user,
             "ComplianceEvidencePackageSealed",
             "ComplianceSealedPackage",
-            saved.Id,
+            sealedPackage.Id,
             null,
-            It.Is<string?>(snapshot => snapshot.Contains(saved.ArtifactSha256) && snapshot.Contains(saved.SigningKeyId)),
-            saved.ArtifactSha256,
+            It.Is<string?>(snapshot => snapshot != null && snapshot.Contains(sealedPackage.ArtifactSha256) && snapshot.Contains(sealedPackage.SigningKeyId)),
+            sealedPackage.ArtifactSha256,
             "High",
             It.IsAny<string>(),
             "compliance-packaging",
-            It.Is<AuditEventMetadata>(metadata => metadata.CorrelationId == saved.Id.ToString()),
+            It.Is<AuditEventMetadata>(metadata => metadata.CorrelationId == sealedPackage.Id.ToString()),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
