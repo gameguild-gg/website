@@ -6,6 +6,7 @@ using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Authoring;
+using GameGuild.Learning.Assessments.Grading.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -159,6 +160,53 @@ public class GradingQueueTests
         eve.AssignmentScore.Should().Be(Score(50));
         queue.Items.Single(i => i.DisplayName == "Carol").Status.Should().Be(SubmissionStatus.Late);
         queue.Items.Single(i => i.DisplayName == "Carol").IsLate.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CanonicalReviewStage_DrivesInstructorWorkInsteadOfSubmissionStatus()
+    {
+        await using var db = CreateContext();
+        var assessment = await SeedAssessmentAsync(db);
+        var (_, selfReviewSubmission) = await SeedRowAsync(
+            db, assessment.Id, "Alice", 1, SubmissionStatus.Submitted);
+        var (_, instructorReviewSubmission) = await SeedRowAsync(
+            db, assessment.Id, "Bob", 1, SubmissionStatus.Submitted);
+        var revision = AssessmentDefinitionRevision.Create(
+            null,
+            assessment.Id,
+            1,
+            "{}",
+            "{}",
+            Guid.NewGuid());
+        db.Add(revision);
+        SeedCanonicalReviewWork(
+            db,
+            revision.Id,
+            selfReviewSubmission.Id,
+            ReviewMethod.SelfReview,
+            awaitInstructor: false);
+        SeedCanonicalReviewWork(
+            db,
+            revision.Id,
+            instructorReviewSubmission.Id,
+            ReviewMethod.InstructorReview,
+            awaitInstructor: true);
+        await db.SaveChangesAsync();
+
+        var result = await CreateController(db, instructorId: Guid.NewGuid())
+            .GetGradingQueue(assessment.Id);
+
+        var queue = result.Result.Should().BeOfType<OkObjectResult>().Subject.Value
+            .Should().BeOfType<GradingQueueDto>().Subject;
+        queue.NeedsGrading.Should().Be(1);
+        var selfReview = queue.Items.Single(value => value.SubmissionId == selfReviewSubmission.Id);
+        selfReview.ActiveReviewMethod.Should().Be(ReviewMethod.SelfReview);
+        selfReview.ActiveReviewStageStatus.Should().Be(ReviewStageStatusV1.AwaitingEvidence);
+        selfReview.RequiresStaffReview.Should().BeFalse();
+        var instructorReview = queue.Items.Single(value => value.SubmissionId == instructorReviewSubmission.Id);
+        instructorReview.ActiveReviewMethod.Should().Be(ReviewMethod.InstructorReview);
+        instructorReview.ActiveReviewStageStatus.Should().Be(ReviewStageStatusV1.AwaitingInstructorResolution);
+        instructorReview.RequiresStaffReview.Should().BeTrue();
     }
 
     [Fact]
@@ -409,6 +457,38 @@ public class GradingQueueTests
             RubricCriterion.Create(rubric.Id, "Mechanics", Score(40), 2));
         assessment.AssignRubric(rubric.Id);
         db.Update(assessment);
+    }
+
+    private static void SeedCanonicalReviewWork(
+        TestGradingQueueDbContext db,
+        Guid revisionId,
+        Guid submissionId,
+        ReviewMethod method,
+        bool awaitInstructor)
+    {
+        var execution = GradingExecution.CreateOfficial(null, revisionId, submissionId);
+        var round = GradeRound.Create(null, execution.Id, 1, Score(100), "initial");
+        var stage = ReviewStage.Create(
+            null,
+            round.Id,
+            1,
+            new AssessmentReviewStageManifestV1(method, $"{method.ToString().ToLowerInvariant()}.v1", "1"));
+        execution.SetActiveRound(round.Id);
+        execution.AwaitReview();
+        round.Start();
+        stage.Start(SystemClock.UtcNow);
+        if (awaitInstructor)
+        {
+            stage.AwaitInstructorResolution();
+            round.AwaitInstructorResolution();
+        }
+        else
+        {
+            stage.AwaitEvidence();
+            round.AwaitEvidence();
+        }
+
+        db.AddRange(execution, round, stage);
     }
 
     private static TestGradingQueueDbContext CreateContext()

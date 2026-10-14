@@ -64,8 +64,15 @@ public static class AssessmentsModule
         services.AddSingleton<IAssessmentTypeAdapterResolver, AssessmentTypeAdapterResolver>();
         services.AddSingleton<IAssessmentExecutionPolicyResolver, AssessmentExecutionPolicyResolver>();
         services.AddSingleton<IReviewStageHandlerResolver, ReviewStageHandlerResolver>();
+        services.AddSingleton<IAIReviewProviderRegistry, AIReviewProviderRegistry>();
         services.AddSingleton<InstructorReviewStageHandler>();
         services.AddSingleton<IReviewStageHandler>(provider => provider.GetRequiredService<InstructorReviewStageHandler>());
+        services.AddSingleton<SelfReviewStageHandler>();
+        services.AddSingleton<IReviewStageHandler>(provider => provider.GetRequiredService<SelfReviewStageHandler>());
+        services.AddSingleton<PeerReviewStageHandler>();
+        services.AddSingleton<IReviewStageHandler>(provider => provider.GetRequiredService<PeerReviewStageHandler>());
+        services.AddSingleton<AIReviewStageHandler>();
+        services.AddSingleton<IReviewStageHandler>(provider => provider.GetRequiredService<AIReviewStageHandler>());
         services.AddScoped<IAssessmentAuthoringService, AssessmentAuthoringService>();
         services.AddScoped<IAssessmentGradebookProjectionService, AssessmentGradebookProjectionService>();
         services.AddScoped<IAssessmentLearnerResultProjectionService, AssessmentLearnerResultProjectionService>();
@@ -74,12 +81,21 @@ public static class AssessmentsModule
         services.AddScoped<IGradingExecutionOrchestrator, GradingExecutionOrchestrator>();
         services.AddScoped<IAssessmentGradingRuntimeService, AssessmentGradingRuntimeService>();
         services.AddScoped<IGradeReleaseService, GradeReleaseService>();
+        services.AddScoped<IGradeResultReleaseScheduleService, GradeResultReleaseScheduleService>();
+        services.AddScoped<IReviewStageDeadlineProcessor, ReviewStageDeadlineProcessor>();
         services.AddScoped<IAcademicOutboxConsumer, ImmediateGradeReleaseConsumer>();
+        services.AddScoped<IAcademicOutboxConsumer, ScheduledGradeReleaseRequestConsumer>();
+        services.AddScoped<IAcademicOutboxConsumer, AIReviewRequestConsumer>();
+        services.AddScoped<IAcademicOutboxConsumer, GradeReleaseNotificationConsumer>();
+        services.AddScoped<IAcademicOutboxConsumer, GradeReleasePassbackConsumer>();
         services.AddScoped<IAcademicOutboxWriter, AcademicOutboxWriter>();
         services.AddSingleton<IAcademicOutboxDispatcher, AcademicOutboxDispatcher>();
+        services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IAssessmentExecutableVersionPreflight, AssessmentExecutableVersionPreflight>();
         services.AddHostedService<AssessmentExecutableVersionPreflightHostedService>();
         services.AddHostedService<AcademicOutboxBackgroundService>();
+        services.AddHostedService<ReviewStageDeadlineBackgroundService>();
+        services.AddHostedService<ScheduledGradeReleaseBackgroundService>();
 
         return services;
     }

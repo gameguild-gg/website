@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildReviewWorkflow,
   hasReviewMethod,
+  isPrimaryReviewMethodAvailable,
   readReviewWorkflow,
   REVIEW_METHOD_FLAGS,
 } from "./assessment-grading-methods";
@@ -33,5 +34,13 @@ describe("assessment grading method helpers", () => {
     expect(hasReviewMethod(methods, "InstructorReview")).toBe(true);
     expect(hasReviewMethod(methods, "AIReview")).toBe(false);
     expect(buildReviewWorkflow("InstructorReview", true)).toBe(8);
+  });
+
+  it("keeps implemented human reviews available and AI review unavailable without a provider", () => {
+    expect(isPrimaryReviewMethodAvailable("AutomatedReview")).toBe(true);
+    expect(isPrimaryReviewMethodAvailable("InstructorReview")).toBe(true);
+    expect(isPrimaryReviewMethodAvailable("SelfReview")).toBe(true);
+    expect(isPrimaryReviewMethodAvailable("PeerReview")).toBe(true);
+    expect(isPrimaryReviewMethodAvailable("AIReview")).toBe(false);
   });
 });

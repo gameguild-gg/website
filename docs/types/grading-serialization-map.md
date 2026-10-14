@@ -35,6 +35,11 @@ Learning.Assessments.Grading <--- Learning.Assessments.QuizAdapter
 | Hash canonico | [`canonical-json.ts`](../../packages/features/grading/src/canonical-json.ts) | [`CanonicalJson.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Contracts/CanonicalJson.cs) |
 | Registry | [`capabilities.ts`](../../packages/features/grading/src/capabilities.ts) | [`ReviewCapabilityRegistry.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Capabilities/ReviewCapabilityRegistry.cs) |
 | Portas do runtime | tipos acima | [`ExecutionPorts.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Abstractions/ExecutionPorts.cs) |
+| Views e comandos do runtime | [`types.ts`](../../packages/features/grading/src/types.ts) | [`GradingRuntimeContracts.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Runtime/GradingRuntimeContracts.cs) |
+| Lifecycle de stages | contratos acima | [`GradingExecutionOrchestrator.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Runtime/GradingExecutionOrchestrator.cs) e handlers em [`Runtime`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Runtime) |
+| Persistencia do runtime | nao aplicavel | [`GradingEntities.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Persistence/GradingEntities.cs) e [`GradingPersistenceModelConfiguration.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Persistence/GradingPersistenceModelConfiguration.cs) |
+| Claims peer | views genericas em `types.ts` | [`IPeerReviewAssignmentService.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Services/IPeerReviewAssignmentService.cs) e [`PeerReviewAssignmentService.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Services/PeerReviewAssignmentService.cs) |
+| Release e consumers | views genericas em `types.ts` | [`GradeResultReleaseScheduleService.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Runtime/GradeResultReleaseScheduleService.cs), [`GradeReleaseConsumers.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Runtime/GradeReleaseConsumers.cs) e [`AcademicOutbox.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Persistence/AcademicOutbox.cs) |
 | Adapter agregado de quiz | [`adapter.ts`](../../packages/features/grading-adapter-quiz/src/adapter.ts) | [`QuizAssessmentTypeAdapter.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizAssessmentTypeAdapter.cs) |
 | Contrato do adapter quiz | [`contracts.ts`](../../packages/features/grading-adapter-quiz/src/contracts.ts) | [`QuizAdapterContracts.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizAdapterContracts.cs) |
 | Detalhes internos do adapter | [`items.ts`](../../packages/features/grading-adapter-quiz/src/items.ts), [`responses.ts`](../../packages/features/grading-adapter-quiz/src/responses.ts), [`delivery.ts`](../../packages/features/grading-adapter-quiz/src/delivery.ts) e [`evaluation.ts`](../../packages/features/grading-adapter-quiz/src/evaluation.ts) | [`QuizItemProjector.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizItemProjector.cs), [`QuizAnswerDecoder.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizAnswerDecoder.cs), [`QuizDeliveryGenerator.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizDeliveryGenerator.cs) e [`QuizDeterministicReviewAlgorithm.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizDeterministicReviewAlgorithm.cs) |
@@ -208,26 +213,129 @@ feedback opcional, evidencias e identidade versionada do reviewer.
 proporcao de pares corretos e Ordering parcial usa proporcao de posicoes
 absolutas corretas.
 
+## Lifecycle de review e evidencias
+
+Todos os metodos usam a mesma porta `IReviewStageHandler`:
+
+```text
+StartAsync
+  -> Completed
+  -> AwaitingEvidence
+  -> AwaitingInstructorResolution
+  -> RetryableFailure
+  -> TerminalFailure
+
+AcceptEvidenceAsync -> mesma uniao de transicoes
+TryCompleteAsync    -> mesma uniao de transicoes
+```
+
+`GradingExecutionOrchestrator` e a unica autoridade para ordenar stages,
+persistir transicoes, abrir/finalizar rounds e produzir o resultado. Cada
+handler valida somente a evidencia do seu metodo. Nao existe branch de quiz no
+orquestrador nem runtime separado para um review.
+
+`ReviewEvidence` persiste payload JCS, hash, schema, produtor exclusivo
+(`ProducedByActorId` ou `ProducedByService`) e stage. Um regrade de
+`SelfReview` ou `PeerReview` cria uma evidencia do tipo
+`review-evidence-reference`, com `SourceReviewEvidenceId` e o hash da evidencia
+final anterior. Isso preserva proveniencia sem registrar outra acao humana.
+
+## Self review
+
+`SelfReviewEvidenceV1` possui `schemaVersion: 1`, itens com `itemId`,
+`ScoreValue` e feedback opcional, alem de feedback global opcional. Score e
+evidencia continuam separados da resposta do assessment.
+
+`SelfReviewRuntimeStateV1` e a view compartilhada por test run e tentativa
+oficial. Ela expoe somente o estado necessario para resume: stage, status,
+instrucoes, exigencia de feedback, versao do draft, draft atual, ator da ultima
+mutacao e evidencia final. Em sujeito coletivo existe um unico draft versionado
+e uma unica evidencia final para o snapshot de participantes.
+
+## Peer review
+
+`PeerReviewClaim` e a autoridade de atribuicao. Ele referencia somente o
+`ReviewStage`; assessment, round, execution e submission alvo sao derivados
+desse relacionamento. A identidade e exclusiva: `ReviewerUserId` em
+`OfficialSubmission` ou `ReviewerTestRunSubjectId` em `AuthorTest`.
+
+Estados persistidos: `assigned | submitted | expired | cancelled`. Lease,
+deadline do stage, cota do reviewer, minimo de evidencias e agregacao sao
+independentes. A projecao learner-facing omite a identidade do reviewee e do
+reviewer por shape; a projecao de equipe preserva a identidade para auditoria.
+`PeerReviewClaimView` transporta internamente os JSONs canonicos de delivery e
+response da execucao. Depois de validar ownership e capability, o
+`AnonymousReviewSubmissionDto` expoe esses dois envelopes sem IDs de usuario,
+score calculado ou feedback docente. O workspace de quiz interpreta os
+envelopes por `@game-guild/grading-adapter-quiz` e renderiza somente a entrega
+learner-safe e a resposta submetida; o core de grading continua sem importar
+quiz.
+
+Submits, retomadas e operacoes docentes peer usam o mesmo advisory lock por
+`GradingExecution`. Extensao, reatribuicao e resolucao de insuficiencia usam
+`GradingCommandReceipt` com ator, idempotency key e request hash; replay igual
+reutiliza o outcome e replay divergente falha fechado.
+Insuficiencia nao produz zero: o stage entra em
+`AwaitingInstructorResolution` ate uma operacao explicita de extensao,
+reatribuicao ou resolucao docente.
+
+## AI review
+
+`AIReviewProviderRequestV1` congela request ID, execution, round, stage,
+contexto, hash do snapshot, snapshot, delivery, response, resultado anterior e
+identidade do provider/policy. A outbox e gravada antes da chamada externa.
+
+`AIReviewProviderResponseV1` repete a correlacao autoritativa e acrescenta
+modelo e versao. `RequestId` e a chave de idempotencia. O modulo de Assessments
+declara `IAIReviewProvider`; provider concreto e credenciais sao compostos fora
+dele. Sem provider compativel, publish falha fechado e a UI nao oferece o
+metodo.
+
+## Release e efeitos
+
+`GradeResultReleaseSchedule` possui um registro por `GradeRound`, instante UTC,
+estado `scheduled | cancelled | released`, versao de concorrencia e produtor
+exclusivo actor/service. Ele e operacional e mutavel; `GradeResultRelease`
+continua sendo o fato final append-only. O worker de vencimento chama o mesmo
+caso de uso de release e nao escreve o fato final diretamente.
+
+Eventos `GradeResultFinalized` e `GradeResultReleased` saem pela outbox
+academica. Cada consumer confirma independentemente por `(EventId,
+ConsumerKey)`. Gradebook/progresso, notificacao e passback nao recalculam o
+resultado e uma falha posterior nao desfaz consumers ja confirmados.
+
 ## Contextos e capabilities
 
 `AuthorTest` e `OfficialSubmission` sao independentes. Registry e manifest
-resolvem `(kind, key, version, context)` exatamente. O adapter quiz registra
-neste marco apenas `AuthorTest`, permitindo teste do instrutor sem afirmar
-prontidao academica oficial.
+resolvem `(kind, key, version, context)` exatamente. O adapter quiz e os
+handlers implementados registram ambos os contextos. `AuthorTest` usa sujeitos
+sinteticos e nunca cria enrollment, submission academica, gradebook, progresso,
+notificacao ou passback. `OfficialSubmission` usa a tentativa e o sujeito
+congelados e pode produzir efeitos somente depois da finalizacao/release
+definidos pela policy.
 
 Na API, [`AssessmentExecutionComponentResolver.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Capabilities/AssessmentExecutionComponentResolver.cs)
 resolve o adapter agregado e os handlers genericos. O core nunca resolve nem
 registra projector, gerador, decoder ou algoritmo especifico de quiz de forma
 independente. O adapter resolvido deve coincidir com a identidade fixada no
-manifest.
+manifest. `AIReview` so registra uma capability publicavel quando o registry
+possui provider compativel para o contexto e a policy congelados.
 
 ## Persistencia e invariantes
 
-No corte aprovado nao havera migration incremental, backfill, dual-read ou
-preservacao legacy. Bancos descartaveis nascerao do baseline limpo. JSON que
-participa de hash sera persistido como texto/bytes canonicos. Scores e
-percentuais relacionais usam colunas `integer` em unidades de escala `100`. O
-payload generico antigo sera removido, nao mantido como alias.
+O schema atual e produzido pela cadeia historica de migrations. A Parte 4 nao
+edita nem remove migrations anteriores e acrescenta dois passos incrementais:
+
+1. `AddReviewEvidenceReuseReference`: adiciona a autorreferencia opcional e seu
+   indice em `ReviewEvidence`;
+2. `AddPeerReviewClaimsAndReleaseSchedules`: adiciona
+   `ReviewStage.EvidenceDeadlineAt`, `PeerReviewClaims` e
+   `GradeResultReleaseSchedules`, com FKs, checks e indices de lease/vencimento.
+
+`AssessmentPeerReview` foi preservado por seguranca de upgrade, mas nao e uma
+segunda autoridade do runtime novo. JSON que participa de hash e persistido
+como texto/bytes canonicos. Scores e percentuais relacionais usam colunas
+`integer` em unidades de escala `100`; nenhum calculo academico usa decimal.
 
 Regras de manutencao:
 
@@ -240,3 +348,8 @@ Regras de manutencao:
    no banco; decimal humano existe apenas na borda de entrada/apresentacao.
 7. Versao, campo ou shape desconhecido falha fechado.
 8. Capability em `AuthorTest` nao implica `OfficialSubmission`.
+9. Evidencia humana reutilizada referencia a origem; nao e copiada como nova
+   acao do usuario.
+10. Claim peer pertence ao stage, e schedule de release pertence ao round.
+11. Consumer de efeito observa evento canonico; nunca executa review nem
+    recalcula nota.

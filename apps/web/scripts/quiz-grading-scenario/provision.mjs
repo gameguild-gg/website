@@ -43,7 +43,21 @@ export async function prepareScenario({
     manifest.environment.webBaseUrl,
   );
   onProgress("Creating or authenticating the isolated personas.");
-  const sessions = await ensurePersonas(manifest);
+  let sessions;
+  try {
+    sessions = await ensurePersonas(manifest);
+  } catch (error) {
+    const recovered = await recoverRecreatedLocalEnvironment(
+      manifest,
+      scenarioKey,
+      apiBaseUrl,
+      webBaseUrl,
+      onProgress,
+    );
+    if (!recovered) throw error;
+    manifest = recovered.manifest;
+    sessions = recovered.sessions;
+  }
   await assertExistingCourseStillExists(manifest, sessions.instructor);
 
   if (checkpointIndex(manifest.checkpoint) >= checkpointIndex(checkpoint)) {
@@ -105,6 +119,46 @@ async function ensurePersonas(manifest) {
     await persist(manifest);
   }
   return sessions;
+}
+
+async function recoverRecreatedLocalEnvironment(
+  manifest,
+  scenarioKey,
+  apiBaseUrl,
+  webBaseUrl,
+  onProgress,
+) {
+  const previousTenantId = manifest.environment.tenantId;
+  if (!previousTenantId) return null;
+
+  const probe = createManifest({
+    definitionKey: scenarioKey,
+    apiBaseUrl,
+    webBaseUrl,
+  });
+  let currentInstructor;
+  try {
+    currentInstructor = await authenticatePersona(probe, "instructor");
+  } catch {
+    return null;
+  }
+
+  const currentTenantId = currentInstructor.identity.tenantId;
+  if (!currentTenantId || currentTenantId === previousTenantId) return null;
+
+  onProgress(
+    "The local database uses a new tenant; replacing the stale scenario manifest.",
+  );
+  const replacement = createManifest({
+    definitionKey: scenarioKey,
+    apiBaseUrl,
+    webBaseUrl,
+  });
+  await persist(replacement);
+  return {
+    manifest: replacement,
+    sessions: await ensurePersonas(replacement),
+  };
 }
 
 async function assertExistingCourseStillExists(manifest, instructor) {
