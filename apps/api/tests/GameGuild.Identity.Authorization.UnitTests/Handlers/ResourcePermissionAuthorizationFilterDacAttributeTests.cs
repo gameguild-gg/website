@@ -144,7 +144,7 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
 
         context.Result.Should().BeNull();
         seen.Should().NotBeNull();
-        seen!.ContentType.Should().Be("Course");
+        seen!.ContentType.Should().Be("CourseResource");
         seen.Layer.Should().Be(PermissionLayer.ContentType);
     }
 
@@ -164,7 +164,7 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
         seen.Should().NotBeNull();
         // The legacy marker no longer builds a tenant-composite name: it routes through
         // the resolver's content-type path with the type name as content type.
-        seen!.ContentType.Should().Be("Course");
+        seen!.ContentType.Should().Be("CourseResource");
         seen.Layer.Should().Be(PermissionLayer.Auto);
     }
 
@@ -188,7 +188,7 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
 
         context.Result.Should().BeNull();
         seen.Should().NotBeNull();
-        seen!.ResourceType.Should().Be("Project");
+        seen!.ResourceType.Should().Be("ProjectResource");
         seen.ResourceId.Should().Be(resourceGuid.ToString("D"));
         seen.Layer.Should().Be(PermissionLayer.Resource);
     }
@@ -244,7 +244,7 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
 
         context.Result.Should().BeNull();
         seen.Should().NotBeNull();
-        seen!.ResourceType.Should().Be("Project");
+        seen!.ResourceType.Should().Be("ProjectResource");
         seen.ResourceId.Should().Be(resourceGuid.ToString("D"));
         // The legacy resource marker resolves through the Auto layer, which activates
         // the owner-override engine for the exact resource (issues #372/#364).
@@ -260,7 +260,7 @@ public class ResourcePermissionAuthorizationFilterDacAttributeTests
             query.Layer == PermissionLayer.Auto
             && query.HasResource
             && permission == "Read"
-            && query.ResourceType == "Project");
+            && query.ResourceType == "ProjectResource");
         var context = CreateFilterContext(
             typeof(ProbeController).GetTypeInfo(),
             nameof(ProbeController.LegacyResourceGated));
