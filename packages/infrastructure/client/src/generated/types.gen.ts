@@ -5584,6 +5584,10 @@ export interface CommerceSubscriptionsSubscriptionPlan {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
+  /** Plan-level annual billing discount in percent (issue #416). Applied when deriving the
+annual price (`monthly x 12`) for plans without an explicit annual price or interval
+price point. The default of 0 keeps the derived price unchanged. */
+  annualDiscountPercent?: number;
   /** Annual price in the smallest currency unit (with potential discount) */
   annualPriceInCents?: number | null;
   /** Timestamp when the entity was created.
@@ -5638,6 +5642,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   tenantId?: string | null;
   /** Trial period in days (0 = no trial) */
   trialPeriodDays?: number;
+  type?: CommerceSubscriptionsSubscriptionPlanType;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
   updatedAt: string;
@@ -5688,6 +5693,7 @@ export interface CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdate
 
 /** Data model for Commerce Subscriptions Subscription Plan Operations Controller+Update Pricing Request. */
 export interface CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdatePricingInput {
+  annualDiscountPercent?: number | null;
   annualPriceInCents?: number | null;
   monthlyPriceInCents?: number;
 }
@@ -5707,15 +5713,25 @@ export interface CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlan
 
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Create Plan Request. */
 export interface CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInput {
+  annualDiscountPercent?: number;
   currency?: string | null;
   description?: string | null;
+  features?: string | null;
+  hasAdvancedAnalytics?: boolean | null;
+  hasCustomBranding?: boolean | null;
+  hasPrioritySupport?: boolean | null;
+  maxApiCallsPerMonth?: number | null;
+  maxStorageMb?: number | null;
+  maxUsers?: number | null;
   monthlyPriceInCents?: number;
   name?: string | null;
   slug?: string | null;
+  type?: CommerceSubscriptionsSubscriptionPlanType;
 }
 
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Put Subscription Plan Request. */
 export interface CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInput {
+  annualDiscountPercent?: number | null;
   annualPriceInCents?: number | null;
   description?: string | null;
   features?: string | null;
@@ -5730,7 +5746,12 @@ export interface CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscrip
   slug?: string | null;
   sortOrder?: number | null;
   trialPeriodDays?: number | null;
+  type?: CommerceSubscriptionsSubscriptionPlanType;
 }
+
+/** Commercial classification of a subscription plan (issue #416). Trial offers are not a
+type: every type can carry `TrialPeriodDays` configuration. */
+export type CommerceSubscriptionsSubscriptionPlanType = 'Free' | 'Paid' | 'Enterprise';
 
 /** Request to create a subscription */
 export interface CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput {
@@ -6111,6 +6132,43 @@ export interface ComplianceAuditAuditRelatedAction {
   correlationCount?: number;
 }
 
+/** Reconstructed timeline of one verified snapshot (issue #169): chronological events,
+            per-user journeys and per-session summaries. The digest is repeated in a response header. */
+export interface ComplianceAuditAuditReplayReconstructionOutput {
+  capturedAtUtc?: string | null;
+  endUtc?: string | null;
+  events?: ComplianceAuditAuditReplaySnapshotEvent[] | null;
+  failedCount?: number;
+  sessions?: ComplianceAuditAuditReplaySessionSummary[] | null;
+  sha256?: string | null;
+  startUtc?: string | null;
+  tenantId?: string | null;
+  totalCount?: number;
+  users?: ComplianceAuditAuditReplayUserJourney[] | null;
+}
+
+/** Per-session summary: the parallel activity of one session and the subjects seen in it. */
+export interface ComplianceAuditAuditReplaySessionSummary {
+  eventCount?: number;
+  failedCount?: number;
+  firstAtUtc?: string | null;
+  lastAtUtc?: string | null;
+  sessionId?: string | null;
+  userIds?: string[] | null;
+}
+
+/** Client-held snapshot document posted for reconstruction (issue #169).
+            Field order mirrors the canonical capture document so the reconstructed bytes are deterministic. */
+export interface ComplianceAuditAuditReplaySnapshotDocument {
+  capturedAtUtc?: string | null;
+  endUtc?: string | null;
+  events?: ComplianceAuditAuditReplaySnapshotEvent[] | null;
+  schemaVersion?: number;
+  startUtc?: string | null;
+  tenantId?: string | null;
+  totalCount?: number;
+}
+
 /** Safe event fields shared with the Web replay core. UserId may identify a subject;
             it must not be presented as verified attribution without additional source evidence. */
 export interface ComplianceAuditAuditReplaySnapshotEvent {
@@ -6135,6 +6193,16 @@ export interface ComplianceAuditAuditReplaySnapshotOutput {
   startUtc?: string | null;
   tenantId?: string | null;
   totalCount?: number;
+}
+
+/** Per-user journey: chronological activity of one subject across the captured window. */
+export interface ComplianceAuditAuditReplayUserJourney {
+  eventCount?: number;
+  failedCount?: number;
+  firstSeenAtUtc?: string | null;
+  lastSeenAtUtc?: string | null;
+  sessionIds?: string[] | null;
+  userId?: string | null;
 }
 
 /** Data model for Compliance Audit Audit Resource Context. */
@@ -6767,6 +6835,12 @@ export interface ComplianceAuditPiiTokenResolutionOutput {
   token?: string | null;
   useCount?: number;
   value?: string | null;
+}
+
+/** Client-held snapshot plus the digest it was captured with (issue #169). */
+export interface ComplianceAuditReconstructAuditReplayInput {
+  document?: ComplianceAuditAuditReplaySnapshotDocument;
+  sha256?: string | null;
 }
 
 /** Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
@@ -9680,6 +9754,24 @@ export interface IdentityAuthenticationAssignRoleToUserInput {
 
 /** Multi-step authentication flow steps */
 export type IdentityAuthenticationAuthenticationStep = 'PrimaryCredential' | 'MfaVerification' | 'DeviceTrust' | 'RiskChallenge';
+
+/** The v1 session-state projection (issue #221). GameGuild.Identity.Authentication.AuthSessionStateDto.SessionValid is false when the
+token is not session-bound or the bound session row is expired, terminated or missing —
+the surface reports that state instead of trusting the token alone. GameGuild.Identity.Authentication.AuthSessionStateDto.TokenRevoked
+is null when the token carries no issued-at claim, so no revocation verdict is claimed. */
+export interface IdentityAuthenticationAuthSessionStateDto {
+  activeSessionCount?: number;
+  mfaEnrolled?: boolean;
+  mfaVerifiedInCurrentToken?: boolean;
+  sessionExpiresAtUtc?: string | null;
+  sessionId?: string | null;
+  sessionLastUsedAtUtc?: string | null;
+  sessionTerminationReason?: string | null;
+  sessionValid?: boolean;
+  tokenRevoked?: boolean | null;
+  tokenVersion?: number | null;
+  userId?: string;
+}
 
 /** Backup codes response */
 export interface IdentityAuthenticationBackupCodesOutput {
@@ -23824,6 +23916,7 @@ export let CommerceSubscriptionsSubscriptionPlanOperationsControllerValidateLimi
 export let CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInput>;
 export let CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInput>;
 export let CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInput>;
+export let CommerceSubscriptionsSubscriptionPlanTypeSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlanType>;
 export let CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput>;
 export let CommerceSubscriptionsSubscriptionsControllerPatchSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionsControllerPatchSubscriptionInput>;
 export let CommerceSubscriptionsSubscriptionsControllerPutSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionsControllerPutSubscriptionInput>;
@@ -23866,8 +23959,12 @@ export let ComplianceAuditAuditQueryTemplateSchema: z.ZodType<ComplianceAuditAud
 export let ComplianceAuditAuditQueryValidateApiInputSchema: z.ZodType<ComplianceAuditAuditQueryValidateApiInput>;
 export let ComplianceAuditAuditQueryValidationOutputSchema: z.ZodType<ComplianceAuditAuditQueryValidationOutput>;
 export let ComplianceAuditAuditRelatedActionSchema: z.ZodType<ComplianceAuditAuditRelatedAction>;
+export let ComplianceAuditAuditReplayReconstructionOutputSchema: z.ZodType<ComplianceAuditAuditReplayReconstructionOutput>;
+export let ComplianceAuditAuditReplaySessionSummarySchema: z.ZodType<ComplianceAuditAuditReplaySessionSummary>;
+export let ComplianceAuditAuditReplaySnapshotDocumentSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotDocument>;
 export let ComplianceAuditAuditReplaySnapshotEventSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotEvent>;
 export let ComplianceAuditAuditReplaySnapshotOutputSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotOutput>;
+export let ComplianceAuditAuditReplayUserJourneySchema: z.ZodType<ComplianceAuditAuditReplayUserJourney>;
 export let ComplianceAuditAuditResourceContextSchema: z.ZodType<ComplianceAuditAuditResourceContext>;
 export let ComplianceAuditAuditRetentionComplianceViolationSchema: z.ZodType<ComplianceAuditAuditRetentionComplianceViolation>;
 export let ComplianceAuditAuditRetentionConfigurationOutputSchema: z.ZodType<ComplianceAuditAuditRetentionConfigurationOutput>;
@@ -23934,6 +24031,7 @@ export let ComplianceAuditPiiRuleActionSchema: z.ZodType<ComplianceAuditPiiRuleA
 export let ComplianceAuditPiiRulePatternTypeSchema: z.ZodType<ComplianceAuditPiiRulePatternType>;
 export let ComplianceAuditPiiRuleScopeSchema: z.ZodType<ComplianceAuditPiiRuleScope>;
 export let ComplianceAuditPiiTokenResolutionOutputSchema: z.ZodType<ComplianceAuditPiiTokenResolutionOutput>;
+export let ComplianceAuditReconstructAuditReplayInputSchema: z.ZodType<ComplianceAuditReconstructAuditReplayInput>;
 export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
@@ -24214,6 +24312,7 @@ export let GameJamsSubmitJamEntryInputSchema: z.ZodType<GameJamsSubmitJamEntryIn
 export let IdentityAuthenticationApiKeyDtoSchema: z.ZodType<IdentityAuthenticationApiKeyDto>;
 export let IdentityAuthenticationAssignRoleToUserInputSchema: z.ZodType<IdentityAuthenticationAssignRoleToUserInput>;
 export let IdentityAuthenticationAuthenticationStepSchema: z.ZodType<IdentityAuthenticationAuthenticationStep>;
+export let IdentityAuthenticationAuthSessionStateDtoSchema: z.ZodType<IdentityAuthenticationAuthSessionStateDto>;
 export let IdentityAuthenticationBackupCodesOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesOutput>;
 export let IdentityAuthenticationBackupCodesStatusOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesStatusOutput>;
 export let IdentityAuthenticationBeginWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationBeginWebAuthnAuthenticationInput>;
@@ -30223,6 +30322,7 @@ CommerceSubscriptionsSubscriptionNotificationsControllerResendSubscriptionNotifi
 /** Zod schema for CommerceSubscriptionsSubscriptionPlan. Represents a subscription plan that defines features, limits, and pricing for tenants */
 CommerceSubscriptionsSubscriptionPlanSchema = z.object({
   id: z.string().uuid().optional(),
+  annualDiscountPercent: z.number().optional(),
   annualPriceInCents: z.number().int().nullable().optional(),
   createdAt: z.string().datetime(),
   currency: z.string().min(1).max(3),
@@ -30260,6 +30360,7 @@ CommerceSubscriptionsSubscriptionPlanSchema = z.object({
     .optional(),
   tenantId: z.string().uuid().nullable().optional(),
   trialPeriodDays: z.number().int().optional(),
+  type: z.lazy(() => CommerceSubscriptionsSubscriptionPlanTypeSchema).optional(),
   updatedAt: z.string().datetime(),
   version: z.number().int().optional(),
 });
@@ -30305,6 +30406,7 @@ CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdateLimitsInputSchema
 
 /** Zod schema for CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdatePricingInput. Data model for Commerce Subscriptions Subscription Plan Operations Controller+Update Pricing Request. */
 CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdatePricingInputSchema = z.object({
+  annualDiscountPercent: z.number().nullable().optional(),
   annualPriceInCents: z.number().int().nullable().optional(),
   monthlyPriceInCents: z.number().int().optional(),
 });
@@ -30324,15 +30426,25 @@ CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInputSchema = z.
 
 /** Zod schema for CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInput. Data model for Commerce Subscriptions Subscription Plans Crud Controller+Create Plan Request. */
 CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInputSchema = z.object({
+  annualDiscountPercent: z.number().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  features: z.string().nullable().optional(),
+  hasAdvancedAnalytics: z.boolean().nullable().optional(),
+  hasCustomBranding: z.boolean().nullable().optional(),
+  hasPrioritySupport: z.boolean().nullable().optional(),
+  maxApiCallsPerMonth: z.number().int().nullable().optional(),
+  maxStorageMb: z.number().int().nullable().optional(),
+  maxUsers: z.number().int().nullable().optional(),
   monthlyPriceInCents: z.number().int().optional(),
   name: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
+  type: z.lazy(() => CommerceSubscriptionsSubscriptionPlanTypeSchema).optional(),
 });
 
 /** Zod schema for CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInput. Data model for Commerce Subscriptions Subscription Plans Crud Controller+Put Subscription Plan Request. */
 CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSchema = z.object({
+  annualDiscountPercent: z.number().nullable().optional(),
   annualPriceInCents: z.number().int().nullable().optional(),
   description: z.string().nullable().optional(),
   features: z.string().nullable().optional(),
@@ -30347,7 +30459,12 @@ CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSche
   slug: z.string().nullable().optional(),
   sortOrder: z.number().int().nullable().optional(),
   trialPeriodDays: z.number().int().nullable().optional(),
+  type: z.lazy(() => CommerceSubscriptionsSubscriptionPlanTypeSchema).optional(),
 });
+
+/** Zod schema for CommerceSubscriptionsSubscriptionPlanType. Commercial classification of a subscription plan (issue #416). Trial offers are not a
+type: every type can carry `TrialPeriodDays` configuration. */
+CommerceSubscriptionsSubscriptionPlanTypeSchema = z.enum(['Free', 'Paid', 'Enterprise']);
 
 /** Zod schema for CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput. Request to create a subscription */
 CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInputSchema = z.object({
@@ -30732,6 +30849,55 @@ ComplianceAuditAuditRelatedActionSchema = z.object({
   correlationCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditAuditReplayReconstructionOutput. Reconstructed timeline of one verified snapshot (issue #169): chronological events,
+            per-user journeys and per-session summaries. The digest is repeated in a response header. */
+ComplianceAuditAuditReplayReconstructionOutputSchema = z.object({
+  capturedAtUtc: z.string().nullable().optional(),
+  endUtc: z.string().nullable().optional(),
+  events: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySnapshotEventSchema))
+    .nullable()
+    .optional(),
+  failedCount: z.number().int().optional(),
+  sessions: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySessionSummarySchema))
+    .nullable()
+    .optional(),
+  sha256: z.string().nullable().optional(),
+  startUtc: z.string().nullable().optional(),
+  tenantId: z.string().nullable().optional(),
+  totalCount: z.number().int().optional(),
+  users: z
+    .array(z.lazy(() => ComplianceAuditAuditReplayUserJourneySchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySessionSummary. Per-session summary: the parallel activity of one session and the subjects seen in it. */
+ComplianceAuditAuditReplaySessionSummarySchema = z.object({
+  eventCount: z.number().int().optional(),
+  failedCount: z.number().int().optional(),
+  firstAtUtc: z.string().nullable().optional(),
+  lastAtUtc: z.string().nullable().optional(),
+  sessionId: z.string().nullable().optional(),
+  userIds: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySnapshotDocument. Client-held snapshot document posted for reconstruction (issue #169).
+            Field order mirrors the canonical capture document so the reconstructed bytes are deterministic. */
+ComplianceAuditAuditReplaySnapshotDocumentSchema = z.object({
+  capturedAtUtc: z.string().nullable().optional(),
+  endUtc: z.string().nullable().optional(),
+  events: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySnapshotEventSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.number().int().optional(),
+  startUtc: z.string().nullable().optional(),
+  tenantId: z.string().nullable().optional(),
+  totalCount: z.number().int().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditReplaySnapshotEvent. Safe event fields shared with the Web replay core. UserId may identify a subject;
             it must not be presented as verified attribution without additional source evidence. */
 ComplianceAuditAuditReplaySnapshotEventSchema = z.object({
@@ -30759,6 +30925,16 @@ ComplianceAuditAuditReplaySnapshotOutputSchema = z.object({
   startUtc: z.string().nullable().optional(),
   tenantId: z.string().nullable().optional(),
   totalCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplayUserJourney. Per-user journey: chronological activity of one subject across the captured window. */
+ComplianceAuditAuditReplayUserJourneySchema = z.object({
+  eventCount: z.number().int().optional(),
+  failedCount: z.number().int().optional(),
+  firstSeenAtUtc: z.string().nullable().optional(),
+  lastSeenAtUtc: z.string().nullable().optional(),
+  sessionIds: z.array(z.string()).nullable().optional(),
+  userId: z.string().nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditAuditResourceContext. Data model for Compliance Audit Audit Resource Context. */
@@ -31432,6 +31608,12 @@ ComplianceAuditPiiTokenResolutionOutputSchema = z.object({
   token: z.string().nullable().optional(),
   useCount: z.number().int().optional(),
   value: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditReconstructAuditReplayInput. Client-held snapshot plus the digest it was captured with (issue #169). */
+ComplianceAuditReconstructAuditReplayInputSchema = z.object({
+  document: z.lazy(() => ComplianceAuditAuditReplaySnapshotDocumentSchema).optional(),
+  sha256: z.string().nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditResolveSecurityAlertInput. Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
@@ -34480,6 +34662,24 @@ IdentityAuthenticationAssignRoleToUserInputSchema = z.object({
 
 /** Zod schema for IdentityAuthenticationAuthenticationStep. Multi-step authentication flow steps */
 IdentityAuthenticationAuthenticationStepSchema = z.enum(['PrimaryCredential', 'MfaVerification', 'DeviceTrust', 'RiskChallenge']);
+
+/** Zod schema for IdentityAuthenticationAuthSessionStateDto. The v1 session-state projection (issue #221). GameGuild.Identity.Authentication.AuthSessionStateDto.SessionValid is false when the
+token is not session-bound or the bound session row is expired, terminated or missing —
+the surface reports that state instead of trusting the token alone. GameGuild.Identity.Authentication.AuthSessionStateDto.TokenRevoked
+is null when the token carries no issued-at claim, so no revocation verdict is claimed. */
+IdentityAuthenticationAuthSessionStateDtoSchema = z.object({
+  activeSessionCount: z.number().int().optional(),
+  mfaEnrolled: z.boolean().optional(),
+  mfaVerifiedInCurrentToken: z.boolean().optional(),
+  sessionExpiresAtUtc: z.string().datetime().nullable().optional(),
+  sessionId: z.string().uuid().nullable().optional(),
+  sessionLastUsedAtUtc: z.string().datetime().nullable().optional(),
+  sessionTerminationReason: z.string().nullable().optional(),
+  sessionValid: z.boolean().optional(),
+  tokenRevoked: z.boolean().nullable().optional(),
+  tokenVersion: z.number().int().nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
 
 /** Zod schema for IdentityAuthenticationBackupCodesOutput. Backup codes response */
 IdentityAuthenticationBackupCodesOutputSchema = z.object({
@@ -47111,6 +47311,8 @@ export type GameJamsJamSubmission = GameJamsJamSubmissionDto;
 export { GameJamsJamSubmissionDtoSchema as GameJamsJamSubmissionSchema };
 export type IdentityAuthenticationApiKey = IdentityAuthenticationApiKeyDto;
 export { IdentityAuthenticationApiKeyDtoSchema as IdentityAuthenticationApiKeySchema };
+export type IdentityAuthenticationAuthSessionState = IdentityAuthenticationAuthSessionStateDto;
+export { IdentityAuthenticationAuthSessionStateDtoSchema as IdentityAuthenticationAuthSessionStateSchema };
 export type IdentityAuthenticationDiscordCallbackRequest = IdentityAuthenticationDiscordCallbackRequestDto;
 export { IdentityAuthenticationDiscordCallbackRequestDtoSchema as IdentityAuthenticationDiscordCallbackRequestSchema };
 export type IdentityAuthenticationGitHubCallbackRequest = IdentityAuthenticationGitHubCallbackRequestDto;

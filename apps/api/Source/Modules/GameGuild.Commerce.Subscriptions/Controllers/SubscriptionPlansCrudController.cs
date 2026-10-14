@@ -35,7 +35,21 @@ public sealed class SubscriptionPlansCrudController(ISender sender, IActorContex
     public async Task<IActionResult> CreateSubscriptionPlan([FromBody] CreatePlanRequest body, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(body);
-        var id = await sender.Send(new CreateSubscriptionPlanCommand(body.Name, body.Slug, body.MonthlyPriceInCents, body.Currency, body.Description), ct).ConfigureAwait(false);
+        var id = await sender.Send(new CreateSubscriptionPlanCommand(
+            body.Name,
+            body.Slug,
+            body.MonthlyPriceInCents,
+            body.Currency,
+            body.Description,
+            body.Type,
+            body.AnnualDiscountPercent,
+            body.Features,
+            body.MaxUsers,
+            body.MaxStorageMb,
+            body.MaxApiCallsPerMonth,
+            body.HasPrioritySupport,
+            body.HasAdvancedAnalytics,
+            body.HasCustomBranding), ct).ConfigureAwait(false);
 
         return CreatedAtAction(nameof(GetSubscriptionPlanById), new { planId = id }, new { id, body.Name, body.Slug });
     }
@@ -242,6 +256,8 @@ public sealed class SubscriptionPlansCrudController(ISender sender, IActorContex
             body.Description,
             body.MonthlyPriceInCents,
             body.AnnualPriceInCents,
+            body.Type,
+            body.AnnualDiscountPercent,
             body.MaxUsers,
             body.MaxStorageMb,
             body.MaxApiCallsPerMonth,
@@ -258,8 +274,24 @@ public sealed class SubscriptionPlansCrudController(ISender sender, IActorContex
 
     #region Request Records
 
-    // POST /subscription-plans — slug optional: generated from the name when omitted (issue #416)
-    public sealed record CreatePlanRequest(string Name, string? Slug = null, long MonthlyPriceInCents = 0, string Currency = "USD", string? Description = null);
+    // POST /subscription-plans — slug optional: generated from the name when omitted; the payload
+    // carries the full initial contract (issue #416): plan type, annual-discount derivation,
+    // features and limits. Later adjustments use the PATCH-by-concern endpoints.
+    public sealed record CreatePlanRequest(
+        string Name,
+        string? Slug = null,
+        long MonthlyPriceInCents = 0,
+        string Currency = "USD",
+        string? Description = null,
+        SubscriptionPlanType Type = SubscriptionPlanType.Paid,
+        decimal AnnualDiscountPercent = 0m,
+        string? Features = null,
+        int? MaxUsers = null,
+        long? MaxStorageMb = null,
+        long? MaxApiCallsPerMonth = null,
+        bool? HasPrioritySupport = null,
+        bool? HasAdvancedAnalytics = null,
+        bool? HasCustomBranding = null);
 
     // POST /subscription-plans:compare
     public sealed record ComparePlansRequest(Guid BasePlanId, List<Guid> ComparePlanIds);
@@ -272,6 +304,8 @@ public sealed class SubscriptionPlansCrudController(ISender sender, IActorContex
         string? Description,
         long MonthlyPriceInCents,
         long? AnnualPriceInCents,
+        SubscriptionPlanType? Type,
+        decimal? AnnualDiscountPercent,
         int? MaxUsers,
         long? MaxStorageMb,
         long? MaxApiCallsPerMonth,

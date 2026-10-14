@@ -133,7 +133,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     public async Task<IActionResult> UpdateSubscriptionPlanPricing(Guid planId, [FromBody] UpdatePricingRequest body, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(body);
-        await sender.Send(new UpdateSubscriptionPlanPricingCommand(planId, body.MonthlyPriceInCents, body.AnnualPriceInCents), ct).ConfigureAwait(false);
+        await sender.Send(new UpdateSubscriptionPlanPricingCommand(planId, body.MonthlyPriceInCents, body.AnnualPriceInCents, body.AnnualDiscountPercent), ct).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -313,7 +313,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     // PATCH style updates separated by concern
     public sealed record UpdateDetailsRequest(Guid PlanId, string Name, string? Description, int? SortOrder);
 
-    public sealed record UpdatePricingRequest(long MonthlyPriceInCents, long? AnnualPriceInCents);
+    public sealed record UpdatePricingRequest(long MonthlyPriceInCents, long? AnnualPriceInCents = null, decimal? AnnualDiscountPercent = null);
 
     public sealed record UpdateLimitsRequest(int? MaxUsers, long? MaxStorageMb, long? MaxApiCallsPerMonth);
 
