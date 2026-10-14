@@ -100,7 +100,7 @@ public sealed class RequestMfaRecoveryCommandHandler(
             {
                 await recoveryStore.AddAsync(recovery, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex.Message.Contains("duplicate key") or ex.Message.Contains("unique constraint"))
+            catch (Exception ex) when (ex.Message.Contains("duplicate key") || ex.Message.Contains("unique constraint"))
             {
                 logger.LogWarning("MFA recovery request race detected for user {UserId}. Treating as success.", user.Id);
             }
