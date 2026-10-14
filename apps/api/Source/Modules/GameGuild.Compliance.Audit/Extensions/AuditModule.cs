@@ -128,6 +128,13 @@ public static class AuditModule
         services.AddScoped<IAuthenticationAuditEventSink, CentralAuthenticationAuditEventSink>();
         services.AddScoped<IApiKeyAuditEventSink, CentralApiKeyAuditEventSink>();
         services.AddScoped<IScimProvisioningAuditSink, CentralScimProvisioningAuditEventSink>();
+        // Central bridges for the module audit sinks (issues #180/#181/#184): content pages,
+        // learning, and teams mutations are required audit events recorded transactionally.
+        // The learning-courses entity interceptor lives in the host composition root because
+        // referencing Learning.Courses from here would close a dependency cycle.
+        services.AddScoped<GameGuild.Content.Pages.IContentPagesAuditEventSink, CentralContentPagesAuditEventSink>();
+        services.AddScoped<GameGuild.Learning.ILearningAuditEventSink, CentralLearningAuditEventSink>();
+        services.AddScoped<GameGuild.Teams.ITeamsAuditEventSink, CentralTeamsAuditEventSink>();
         services.AddScoped<IAuditActionTypeSearchService, AuditActionTypeSearchService>();
         services.AddSingleton<IAuditExportProgressTracker, DistributedAuditExportProgressTracker>();
         services.AddScoped<IAuditExportCronSchedule, AuditExportCronSchedule>();
