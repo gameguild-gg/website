@@ -10242,7 +10242,7 @@ export interface IdentityAuthenticationMfaErrorOutput {
 }
 
 /** Supported MFA methods */
-export type IdentityAuthenticationMfaMethod = 'Totp' | 'BackupCode' | 'Sms' | 'Email' | 'WebAuthn';
+export type IdentityAuthenticationMfaMethod = 'Totp' | 'BackupCode' | 'Sms' | 'Email' | 'WebAuthn' | 'Push';
 
 /** Information about an MFA method */
 export interface IdentityAuthenticationMfaMethodInfo {
@@ -10446,6 +10446,34 @@ export interface IdentityAuthenticationProcessOrchestratedAuthenticationStepRequ
   totpCode?: string | null;
   /** Serialized WebAuthn assertion, when satisfying the step with a passkey/security key. */
   webAuthnAssertion?: string | null;
+}
+
+/** Request to issue a push MFA challenge */
+export interface IdentityAuthenticationPushMfaChallengeInput {
+  /** User identifier whose enrolled device receives the challenge */
+  userId: string;
+}
+
+/** Response carrying an issued push challenge */
+export interface IdentityAuthenticationPushMfaChallengeOutput {
+  /** Opaque challenge identifier the device answers with */
+  challengeId: string | null;
+  /** Seconds until the challenge expires (fallback to TOTP on timeout) */
+  expiresInSeconds: number;
+}
+
+/** Request to register a push MFA device */
+export interface IdentityAuthenticationPushMfaDeviceInput {
+  /** Device registration token from the mobile platform (FCM/APNs) */
+  deviceToken: string | null;
+}
+
+/** Device's answer to a push MFA challenge */
+export interface IdentityAuthenticationPushMfaRespondInput {
+  /** true to approve the sign-in, false to deny it */
+  approved: boolean;
+  /** Opaque challenge identifier from the push payload */
+  challengeId: string | null;
 }
 
 /** Request DTO for refreshing tokens */
@@ -10723,6 +10751,12 @@ identity provider for this sign-in. Null for non-federated flows. */
   user?: IdentityAuthenticationUserDto;
   /** User ID */
   userId?: string;
+}
+
+/** Request for an SMS sign-in challenge */
+export interface IdentityAuthenticationSmsMfaChallengeInput {
+  /** User identifier whose enrolled phone receives the code */
+  userId: string;
 }
 
 /** Request to setup SMS MFA */
@@ -24459,6 +24493,10 @@ export let IdentityAuthenticationPasswordResetResultSchema: z.ZodType<IdentityAu
 export let IdentityAuthenticationPatchServiceAccountInputSchema: z.ZodType<IdentityAuthenticationPatchServiceAccountInput>;
 export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<IdentityAuthenticationPolymorphicSignInInput>;
 export let IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema: z.ZodType<IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto>;
+export let IdentityAuthenticationPushMfaChallengeInputSchema: z.ZodType<IdentityAuthenticationPushMfaChallengeInput>;
+export let IdentityAuthenticationPushMfaChallengeOutputSchema: z.ZodType<IdentityAuthenticationPushMfaChallengeOutput>;
+export let IdentityAuthenticationPushMfaDeviceInputSchema: z.ZodType<IdentityAuthenticationPushMfaDeviceInput>;
+export let IdentityAuthenticationPushMfaRespondInputSchema: z.ZodType<IdentityAuthenticationPushMfaRespondInput>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
 export let IdentityAuthenticationRenameSessionInputSchema: z.ZodType<IdentityAuthenticationRenameSessionInput>;
@@ -24485,6 +24523,7 @@ export let IdentityAuthenticationSessionSecurityAnalysisSchema: z.ZodType<Identi
 export let IdentityAuthenticationSessionSuccessOutputSchema: z.ZodType<IdentityAuthenticationSessionSuccessOutput>;
 export let IdentityAuthenticationSessionTerminationOutputSchema: z.ZodType<IdentityAuthenticationSessionTerminationOutput>;
 export let IdentityAuthenticationSignInOutputSchema: z.ZodType<IdentityAuthenticationSignInOutput>;
+export let IdentityAuthenticationSmsMfaChallengeInputSchema: z.ZodType<IdentityAuthenticationSmsMfaChallengeInput>;
 export let IdentityAuthenticationSmsMfaSetupInputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupInput>;
 export let IdentityAuthenticationSmsMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupOutput>;
 export let IdentityAuthenticationStartMfaSignInEnrollmentInputSchema: z.ZodType<IdentityAuthenticationStartMfaSignInEnrollmentInput>;
@@ -35142,7 +35181,7 @@ IdentityAuthenticationMfaErrorOutputSchema = z.object({
 });
 
 /** Zod schema for IdentityAuthenticationMfaMethod. Supported MFA methods */
-IdentityAuthenticationMfaMethodSchema = z.enum(['Totp', 'BackupCode', 'Sms', 'Email', 'WebAuthn']);
+IdentityAuthenticationMfaMethodSchema = z.enum(['Totp', 'BackupCode', 'Sms', 'Email', 'WebAuthn', 'Push']);
 
 /** Zod schema for IdentityAuthenticationMfaMethodInfo. Information about an MFA method */
 IdentityAuthenticationMfaMethodInfoSchema = z.object({
@@ -35306,6 +35345,28 @@ IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema = z.
   step: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema),
   totpCode: z.string().nullable().optional(),
   webAuthnAssertion: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationPushMfaChallengeInput. Request to issue a push MFA challenge */
+IdentityAuthenticationPushMfaChallengeInputSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+/** Zod schema for IdentityAuthenticationPushMfaChallengeOutput. Response carrying an issued push challenge */
+IdentityAuthenticationPushMfaChallengeOutputSchema = z.object({
+  challengeId: z.string().nullable(),
+  expiresInSeconds: z.number().int(),
+});
+
+/** Zod schema for IdentityAuthenticationPushMfaDeviceInput. Request to register a push MFA device */
+IdentityAuthenticationPushMfaDeviceInputSchema = z.object({
+  deviceToken: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationPushMfaRespondInput. Device's answer to a push MFA challenge */
+IdentityAuthenticationPushMfaRespondInputSchema = z.object({
+  approved: z.boolean(),
+  challengeId: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationRefreshTokenInput. Request DTO for refreshing tokens */
@@ -35538,6 +35599,11 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
   user: z.lazy(() => IdentityAuthenticationUserDtoSchema).optional(),
   userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSmsMfaChallengeInput. Request for an SMS sign-in challenge */
+IdentityAuthenticationSmsMfaChallengeInputSchema = z.object({
+  userId: z.string().uuid(),
 });
 
 /** Zod schema for IdentityAuthenticationSmsMfaSetupInput. Request to setup SMS MFA */

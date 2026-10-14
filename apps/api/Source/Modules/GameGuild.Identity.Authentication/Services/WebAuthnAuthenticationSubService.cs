@@ -14,6 +14,7 @@ public class WebAuthnAuthenticationSubService(
     IFido2 fido2,
     IWebAuthnCredentialRepository credentialRepository,
     IUserRepository userRepository,
+    IWebAuthnSessionStore sessionStore,
     ILogger<WebAuthnAuthenticationSubService> logger,
     IAuthenticationAuditEventSink? auditEventSink,
     IHttpContextAccessor? httpContextAccessor) : IWebAuthnAuthenticationService
@@ -22,8 +23,9 @@ public class WebAuthnAuthenticationSubService(
         IFido2 fido2,
         IWebAuthnCredentialRepository credentialRepository,
         IUserRepository userRepository,
+        IWebAuthnSessionStore sessionStore,
         ILogger<WebAuthnAuthenticationSubService> logger)
-        : this(fido2, credentialRepository, userRepository, logger, null, null)
+        : this(fido2, credentialRepository, userRepository, sessionStore, logger, null, null)
     {
     }
 
@@ -83,13 +85,14 @@ public class WebAuthnAuthenticationSubService(
                 UserVerification = UserVerificationRequirement.Preferred
             });
 
-            // Store session
-            var sessionId = WebAuthnSessionStore.Store(new WebAuthnSessionStore.WebAuthnSession
+            // Store session (distributed challenge store, issue #234): keyed by user when known,
+            // single guest slot for discoverable-credential flows.
+            var sessionId = await sessionStore.StoreAssertionSessionAsync(new WebAuthnSession
             {
                 UserId = userId,
                 Challenge = options.Challenge,
                 AssertionOptions = options
-            });
+            }, cancellationToken).ConfigureAwait(false);
 
             await RecordAuthenticationEventAsync(
                 "Authentication.ChallengeIssued",
@@ -165,8 +168,10 @@ public class WebAuthnAuthenticationSubService(
 
             resolvedUserId = storedCredential.UserId;
 
-            // Find matching session
-            var session = WebAuthnSessionStore.FindFirst(s => s.AssertionOptions != null);
+            // Find matching session: the credential owner's assertion session when present, else
+            // the guest slot issued for discoverable-credential flows.
+            var session = await sessionStore.FindAssertionSessionAsync(storedCredential.UserId, cancellationToken).ConfigureAwait(false)
+                ?? await sessionStore.FindGuestAssertionSessionAsync(cancellationToken).ConfigureAwait(false);
             if (session?.AssertionOptions == null)
             {
                 await RecordAuthenticationEventAsync(
@@ -196,7 +201,8 @@ public class WebAuthnAuthenticationSubService(
             }, cancellationToken);
 
             // Remove the session
-            WebAuthnSessionStore.RemoveFirst(s => s.AssertionOptions != null);
+            await sessionStore.RemoveAssertionSessionAsync(storedCredential.UserId, cancellationToken).ConfigureAwait(false);
+            await sessionStore.RemoveGuestAssertionSessionAsync(cancellationToken).ConfigureAwait(false);
 
             // Update the credential's signature counter
             await credentialRepository.UpdateSignatureCounterAsync(

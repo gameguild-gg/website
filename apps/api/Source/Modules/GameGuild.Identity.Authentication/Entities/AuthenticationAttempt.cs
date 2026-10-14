@@ -62,6 +62,20 @@ public class AuthenticationAttempt
     public string? Location { get; set; }
 
     /// <summary>
+    ///     ISO country code resolved from the attempt IP by the geolocation provider (issue #242);
+    ///     null when no provider resolved the address (Unknown).
+    /// </summary>
+    [MaxLength(8)]
+    public string? Country { get; set; }
+
+    /// <summary>
+    ///     City resolved from the attempt IP by the geolocation provider (issue #242);
+    ///     null when no provider resolved the address (Unknown).
+    /// </summary>
+    [MaxLength(100)]
+    public string? City { get; set; }
+
+    /// <summary>
     ///     Device fingerprint hash for device tracking
     /// </summary>
     [MaxLength(64)]

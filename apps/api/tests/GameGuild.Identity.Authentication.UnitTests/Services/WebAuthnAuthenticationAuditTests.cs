@@ -28,6 +28,7 @@ public sealed class WebAuthnAuthenticationAuditTests
             Mock.Of<IFido2>(),
             credentialRepository.Object,
             Mock.Of<IUserRepository>(),
+            Mock.Of<IWebAuthnSessionStore>(),
             NullLogger<WebAuthnAuthenticationSubService>.Instance,
             auditSink.Object,
             httpContextAccessor.Object);
@@ -60,6 +61,7 @@ public sealed class WebAuthnAuthenticationAuditTests
             Mock.Of<IFido2>(),
             Mock.Of<IWebAuthnCredentialRepository>(),
             Mock.Of<IUserRepository>(),
+            Mock.Of<IWebAuthnSessionStore>(),
             NullLogger<WebAuthnAuthenticationSubService>.Instance,
             auditSink.Object,
             Mock.Of<IHttpContextAccessor>());

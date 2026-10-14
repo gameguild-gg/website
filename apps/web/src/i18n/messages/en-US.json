@@ -236,6 +236,61 @@
         "trustCurrentDescription": "Mark the device you are using now as trusted.",
         "trustCurrentButton": "Trust",
         "trustedCurrent": "This device is now trusted."
+      },
+      "mfa": {
+        "title": "Multi-factor authentication",
+        "description": "Manage your enrolled sign-in factors and recovery codes.",
+        "status": {
+          "label": "MFA status",
+          "enabled": "Enabled since {date}. Your account requires a second factor at sign-in.",
+          "disabled": "Disabled. Your account is protected by your password only.",
+          "badgeEnabled": "Protected",
+          "badgeDisabled": "Not protected"
+        },
+        "methods": {
+          "enrolled": "Enrolled",
+          "available": "Available",
+          "unavailable": "Unavailable",
+          "cancel": "Cancel"
+        },
+        "totp": {
+          "start": "Add authenticator app",
+          "started": "Scan the code in your authenticator app, then enter the current code.",
+          "scan": "Scan this secret with your authenticator app (Google Authenticator, Authy, 1Password), then enter the six-digit code it shows.",
+          "codeLabel": "Authenticator code",
+          "complete": "Verify and enroll",
+          "completed": "Authenticator app enrolled."
+        },
+        "sms": {
+          "start": "Add SMS codes",
+          "unavailable": "SMS delivery is not configured on this platform.",
+          "phoneLabel": "Phone number (international format)",
+          "send": "Send code",
+          "sent": "Code sent to {phone}.",
+          "codeLabel": "SMS code",
+          "complete": "Verify and enroll",
+          "completed": "SMS codes enrolled."
+        },
+        "recovery": {
+          "title": "Recovery codes",
+          "description": "Single-use codes for emergency access when your other factors are unavailable.",
+          "none": "No recovery codes on file. Generate a set and store it somewhere safe.",
+          "remaining": "{remaining} of {total} codes remaining.",
+          "generate": "Generate codes",
+          "regenerate": "Regenerate codes",
+          "regenerated": "New recovery codes generated. Previous codes are now invalid.",
+          "freshWarning": "These codes are shown only once. Store them somewhere safe now.",
+          "hide": "I saved my codes"
+        },
+        "disable": {
+          "title": "Disable MFA",
+          "description": "Enter your account password to turn off multi-factor authentication. All enrolled factors and recovery codes are removed.",
+          "passwordLabel": "Account password",
+          "cancel": "Cancel",
+          "confirm": "Disable MFA",
+          "success": "Multi-factor authentication disabled.",
+          "wrongPassword": "Password verification failed. MFA stays enabled."
+        }
       }
     }
   },

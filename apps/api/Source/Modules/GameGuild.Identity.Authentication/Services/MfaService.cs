@@ -1,17 +1,23 @@
 using GameGuild.Configuration.ApplicationLayer;
+using GameGuild.Identity.Users;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
 
 /// <summary>
-///     MFA orchestrator that coordinates TOTP, backup-code, and attempt-tracking sub-services.
-///     Kept for backward compatibility with code that depends on IMfaService.
+///     MFA orchestrator that coordinates TOTP, backup-code, SMS-OTP, push-challenge and
+///     attempt-tracking sub-services. Kept for backward compatibility with code that depends
+///     on IMfaService.
 /// </summary>
 public sealed class MfaService(
     ILogger<MfaService> logger,
     ITotpMfaService totpMfaService,
     IBackupCodeMfaService backupCodeMfaService,
     IMfaAttemptTrackingService attemptTrackingService,
+    IUserRepository userRepository,
+    IPasswordHasher passwordHasher,
+    ISmsMfaService? smsMfaService = null,
+    IPushMfaService? pushMfaService = null,
     MfaOptions? mfaOptions = null) : IMfaService
 {
     private readonly MfaOptions _mfaOptions = mfaOptions ?? new MfaOptions();
@@ -23,6 +29,7 @@ public sealed class MfaService(
     /// <inheritdoc />
     public async Task<MfaSetupResult> InitiateMfaSetupAsync(Guid userId, string userEmail, CancellationToken cancellationToken = default)
     {
+        MfaEnrollmentMetrics.RecordEnrollment(MfaMethod.Totp, "started");
         (var qrCodeUri, var secretKey) = await totpMfaService.SetupTotpAsync(userId, userEmail, cancellationToken).ConfigureAwait(false);
 
         // Generate backup codes during setup
@@ -50,6 +57,7 @@ public sealed class MfaService(
     public async Task<MfaVerificationResult> CompleteMfaSetupAsync(Guid userId, string totpCode, CancellationToken cancellationToken = default)
     {
         var isValid = await totpMfaService.VerifyTotpAsync(userId, totpCode, null, cancellationToken).ConfigureAwait(false);
+        MfaEnrollmentMetrics.RecordEnrollment(MfaMethod.Totp, isValid ? "enrolled" : "verify-failed");
 
         return new MfaVerificationResult { Success = isValid, Message = isValid ? "MFA setup completed successfully" : "Invalid TOTP code" };
     }
@@ -63,9 +71,27 @@ public sealed class MfaService(
 
             if (method == MfaMethod.Totp) { isValid = await totpMfaService.VerifyTotpAsync(userId, code, null, cancellationToken).ConfigureAwait(false); }
             else if (method == MfaMethod.BackupCode) { isValid = await backupCodeMfaService.VerifyBackupCodeAsync(userId, code, null, cancellationToken).ConfigureAwait(false); }
+            else if (method == MfaMethod.Sms)
+            {
+                if (smsMfaService is null) { isValid = false; }
+                else { isValid = await smsMfaService.VerifyCodeAsync(userId, code, cancellationToken).ConfigureAwait(false); }
+            }
+            else if (method == MfaMethod.Push)
+            {
+                // Push verification is challenge-id driven (no typed code); delegate to the
+                // push service which resolves the user's outstanding challenge and its TTL.
+                if (pushMfaService is null) { isValid = false; }
+                else { return await pushMfaService.VerifyAsync(userId, cancellationToken).ConfigureAwait(false); }
+            }
             else { isValid = false; }
 
-            return new MfaVerificationResult { Success = isValid, RequiresAdditionalVerification = false, Message = isValid ? "MFA verification successful" : "Invalid MFA code" };
+            MfaEnrollmentMetrics.RecordVerification(method, isValid);
+            return new MfaVerificationResult
+            {
+                Success = isValid,
+                RequiresAdditionalVerification = false,
+                Message = isValid ? "MFA verification successful" : "Invalid MFA code"
+            };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex)
@@ -77,14 +103,33 @@ public sealed class MfaService(
     }
 
     /// <inheritdoc />
-    public async Task<bool> DisableMfaAsync(Guid userId, string confirmationCode, CancellationToken cancellationToken = default)
+    public async Task<bool> DisableMfaAsync(Guid userId, string password, CancellationToken cancellationToken = default)
     {
-        // Verify the confirmation code before disabling
-        var verificationResult = await VerifyMfaAsync(userId, confirmationCode, MfaMethod.Totp, cancellationToken).ConfigureAwait(false);
+        // Password re-verification before disabling (issue #244): possession of a live TOTP code
+        // alone must not be enough to strip the account's factors — the primary credential is
+        // required, and passwordless accounts (no stored hash) cannot disable MFA this way.
+        var user = await userRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (user?.PasswordHash is not { } passwordHash)
+        {
+            logger.LogWarning("MFA disable refused for user {UserId}: no password credential on file", userId);
+            MfaEnrollmentMetrics.RecordEnrollment(MfaMethod.Totp, "disable-refused");
+            return false;
+        }
 
-        if (!verificationResult.Success) { return false; }
+        if (!passwordHasher.VerifyPassword(passwordHash, password))
+        {
+            logger.LogWarning("MFA disable refused for user {UserId}: password verification failed", userId);
+            MfaEnrollmentMetrics.RecordEnrollment(MfaMethod.Totp, "disable-refused");
+            return false;
+        }
 
-        return await attemptTrackingService.DisableMfaAsync(userId, cancellationToken).ConfigureAwait(false);
+        var disabled = await attemptTrackingService.DisableMfaAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (disabled)
+        {
+            MfaEnrollmentMetrics.RecordEnrollment(MfaMethod.Totp, "disabled");
+        }
+
+        return disabled;
     }
 
     /// <inheritdoc />
