@@ -79,8 +79,11 @@ public class FullUpdateSubscriptionPlanCommandValidatorTests
         var result = _validator.Validate(ValidCommand() with { MonthlyPriceInCents = monthlyPriceInCents });
 
         result.IsValid.Should().BeFalse();
+        // The sentinel rule is a command-level Must() — the error carries the sentinel message,
+        // not a per-property name. Assert on the message text matching the pricing invariants.
         result.Errors.Should().Contain(e =>
-            e.PropertyName == nameof(FullUpdateSubscriptionPlanCommand.MonthlyPriceInCents));
+            e.ErrorMessage.Contains("custom-quote sentinel") ||
+            e.ErrorMessage.Contains("non-negative"));
     }
 
     [Fact]

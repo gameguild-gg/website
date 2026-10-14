@@ -103,11 +103,11 @@ public class SubscriptionPlanPricingRulesTests
     }
 
     [Theory]
-    [InlineData(1_000, null, 0, 12_000)]      // default discount: monthly x 12 unchanged
-    [InlineData(1_000, null, 20, 9_600)]      // 20% annual discount
-    [InlineData(1_000, 11_000, 20, 11_000)]   // explicit annual price always wins
-    [InlineData(0, null, 50, 0)]              // zero stays zero
-    [InlineData(-1, null, 50, -1)]            // the enterprise sentinel propagates unchanged
+    [InlineData(1_000L, null, 0, 12_000L)]      // default discount: monthly x 12 unchanged
+    [InlineData(1_000L, null, 20, 9_600L)]      // 20% annual discount
+    [InlineData(1_000L, 11_000L, 20, 11_000L)]   // explicit annual price always wins
+    [InlineData(0L, null, 50, 0L)]              // zero stays zero
+    [InlineData(-1L, null, 50, -1L)]            // the enterprise sentinel propagates unchanged
     public void DeriveAnnualPriceAppliesDiscountWithStablePrecedence(
         long monthlyCents, long? annualCents, decimal discountPercent, long expectedCents)
     {
