@@ -5,12 +5,15 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import net from "node:net";
+import { resolveDevelopmentDataProtectionEnvironment } from "./dev-data-protection.mjs";
 import { registerDevProcess } from "./dev-runtime.mjs";
 import { resolvePnpmProcess } from "../apps/web/scripts/pnpm-process.mjs";
 
 registerDevProcess("dev-fast");
 
 const API_PORT = 8080;
+const API_HEALTH_URL = `http://localhost:${API_PORT}/health`;
+const DEFAULT_API_STARTUP_TIMEOUT_MS = 10 * 60 * 1000;
 const runtimeEnv = process.env;
 
 function loadEnv(file) {
@@ -97,6 +100,56 @@ function assertPortFree(port) {
   });
 }
 
+async function waitForApiHealth(
+  url,
+  timeoutMs = Number(
+    process.env.DEV_API_STARTUP_TIMEOUT_MS ?? DEFAULT_API_STARTUP_TIMEOUT_MS,
+  ),
+) {
+  const deadline = Date.now() + timeoutMs;
+  let nextProgressAt = Date.now() + 30_000;
+  let lastFailure = "no response";
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(2_000),
+      });
+      if (response.ok) {
+        console.log(`[dev:fast] API ready at ${url}`);
+        return;
+      }
+      lastFailure = `HTTP ${response.status}`;
+    } catch (error) {
+      lastFailure = error instanceof Error ? error.message : String(error);
+    }
+    if (Date.now() >= nextProgressAt) {
+      console.log(
+        `[dev:fast] API is still starting (${lastFailure}); continuing to wait`,
+      );
+      nextProgressAt = Date.now() + 30_000;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  throw new Error(
+    `API did not become healthy at ${url} within ${timeoutMs}ms (${lastFailure})`,
+  );
+}
+
+function rejectWhenChildExits(child, label) {
+  return new Promise((_, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code, signal) => {
+      reject(
+        new Error(
+          `${label} exited before becoming ready (${signal ?? `exit ${code ?? "unknown"}`})`,
+        ),
+      );
+    });
+  });
+}
+
 const compose = run("docker", [
   "compose",
   "-f",
@@ -111,6 +164,12 @@ if (composeCode !== 0) process.exit(composeCode ?? 1);
 await assertPortFree(API_PORT);
 
 console.log("[dev:fast] starting API and preparing the web application");
+const apiEnvironment = resolveDevelopmentDataProtectionEnvironment({
+  environment: {
+    ...process.env,
+    ...loadEnv(".env"),
+  },
+});
 const api = spawn(
   "dotnet",
   [
@@ -125,8 +184,7 @@ const api = spawn(
     stdio: "inherit",
     detached: process.platform !== "win32",
     env: {
-      ...process.env,
-      ...loadEnv(".env"),
+      ...apiEnvironment,
       DOTNET_USE_POLLING_FILE_WATCHER: "true",
     },
   },
@@ -140,6 +198,10 @@ const preparation = [
     preparationChildren[0],
     "generated client runtime build",
   ),
+  Promise.race([
+    waitForApiHealth(API_HEALTH_URL),
+    rejectWhenChildExits(api, "API process"),
+  ]),
 ];
 
 if (!existsSync("apps/web/public/emception/manifest.json")) {

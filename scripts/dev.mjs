@@ -10,6 +10,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import net from 'node:net';
+import { resolveDevelopmentDataProtectionEnvironment } from './dev-data-protection.mjs';
 
 const API_PORT = 8080;
 
@@ -92,6 +93,12 @@ await assertPortFree(API_PORT);
 // generate:watch polls the spec every 10s and retries until the API is up,
 // build:watch waits for regen output, web hot-reloads on client changes.
 console.log('[dev] starting API, web, client generate:watch, client build:watch');
+const apiEnvironment = resolveDevelopmentDataProtectionEnvironment({
+  environment: {
+    ...process.env,
+    ...loadEnv('.env'),
+  },
+});
 const api = spawn(
   'dotnet',
   ['watch', '--project', 'apps/api/Source/GameGuild.API/GameGuild.API.csproj', 'run', '--urls', 'http://localhost:8080'],
@@ -99,8 +106,7 @@ const api = spawn(
     stdio: 'inherit',
     detached: process.platform !== 'win32',
     env: {
-      ...process.env,
-      ...loadEnv('.env'),
+      ...apiEnvironment,
       // Polling watcher: FSEvents-backed watchers crash dotnet watch on
       // macOS 26 (fatal PAL_SEHException + infinite watcher-recreate loop).
       DOTNET_USE_POLLING_FILE_WATCHER: 'true',
