@@ -393,6 +393,10 @@ public static class InfrastructureLayerExtensions
         services.AddScoped<PermissionGovernanceAuditHook>();
         services.AddScoped<IPermissionAuditHook>(provider =>
             provider.GetRequiredService<PermissionGovernanceAuditHook>());
+        // Universal audit coverage for learning-course mutations (issues #180/#181/#184): the
+        // host owns this bridge because the audit module cannot reference Learning.Courses
+        // without closing a project-reference cycle.
+        services.AddScoped<LearningCoursesMutationAuditInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((provider, options) =>
         {
@@ -401,6 +405,10 @@ public static class InfrastructureLayerExtensions
             // Central audit-sink integration for the PII redaction pipeline (issue #192): every
             // AuditLog entity passes through the redaction rules before persistence.
             options.AddInterceptors(provider.GetRequiredService<AuditLogPiiRedactionInterceptor>());
+            // Universal audit coverage for learning-course mutations: every save that mutates an
+            // audited course entity also records its audit row in the same save batch, so the
+            // mutation cannot commit without its audit event.
+            options.AddInterceptors(provider.GetRequiredService<LearningCoursesMutationAuditInterceptor>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

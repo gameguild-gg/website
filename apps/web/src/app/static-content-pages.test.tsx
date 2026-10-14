@@ -39,6 +39,7 @@ vi.mock('@/lib/projects/public-projects', () => ({
 import LicensesPage from './[locale]/(legal)/legal/licenses/page';
 import FerpaWaiverPage from './[locale]/(legal)/legal/ferpa-waiver/page';
 import AcademicHonestyPage from './[locale]/(legal)/legal/academic-honesty/page';
+import AboutPage from './[locale]/(public)/about/page';
 import RoadmapPage from './[locale]/(public)/about/(project)/roadmap/page';
 import ContributorsPage from './[locale]/(public)/about/(project)/contributors/page';
 import HomeLayout from './[locale]/(public)/layout';
@@ -90,6 +91,21 @@ describe('static legal and project pages', () => {
     expect(screen.getAllByText(/plagiarism/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/assessment/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/under reconstruction/i)).not.toBeInTheDocument();
+  });
+
+  it('renders institutional content on the about page', async () => {
+    render(await AboutPage({} as PageProps<'/[locale]/about'>));
+
+    expect(screen.getByRole('heading', { level: 1, name: /the home of game creators/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/learn, build, and ship together/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: /how gameguild is built/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /the team/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /gameguild-gg github organization/i })).toHaveAttribute(
+      'href',
+      'https://github.com/gameguild-gg',
+    );
+    expect(screen.getAllByText(/open development/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: /contact form/i })).toBeInTheDocument();
   });
 
   it('renders the roadmap with day-zero product tracks', async () => {

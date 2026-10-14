@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Content.Pages;
 
 /// <summary>EF Core implementation of <see cref="IMarketingLeadService"/>.</summary>
-public sealed class MarketingLeadService(IApplicationDbContext db) : IMarketingLeadService
+public sealed class MarketingLeadService(
+    IApplicationDbContext db,
+    IContentPagesAuditEventSink auditSink) : IMarketingLeadService
 {
     public async Task<MarketingLead> CreateAsync(CreateMarketingLeadDto dto, CancellationToken ct = default)
     {
@@ -24,7 +26,13 @@ public sealed class MarketingLeadService(IApplicationDbContext db) : IMarketingL
         };
 
         db.Set<MarketingLead>().Add(lead);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        // The submission payload may carry personal data (name, email, company), so the audit
+        // event records only the shape of the submission, never the submitted values.
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.MarketingLeadCreated", "MarketingLead", lead.Id.ToString(), null, lead.TenantId,
+                "Marketing lead captured", Metadata: new { lead.Source, lead.Topic, lead.Plan, lead.Locale, lead.PagePath }), token),
+            ct).ConfigureAwait(false);
         return lead;
     }
 
