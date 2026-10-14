@@ -22,6 +22,9 @@ public class CertificatesModuleAndServiceTests
         var services = new ServiceCollection();
         services.AddScoped<IApplicationDbContext>(_ => Mock.Of<IApplicationDbContext>());
         services.AddScoped(typeof(ILogger<>), typeof(NullLogger<>));
+        // The CertificateService constructor takes ILearningAuditEventSink, registered by
+        // the Audit module in the composed host; provide a no-op for the isolated test.
+        services.AddScoped<GameGuild.Learning.ILearningAuditEventSink>(_ => new NoOpAuditSink());
 
         services.AddCertificatesModule();
 
@@ -151,4 +154,10 @@ public class CertificatesModuleAndServiceTests
             });
         }
     }
+}
+
+file sealed class NoOpAuditSink : GameGuild.Learning.ILearningAuditEventSink
+{
+    public Task RecordAsync(GameGuild.Learning.LearningAuditEvent auditEvent, CancellationToken cancellationToken)
+        => Task.CompletedTask;
 }

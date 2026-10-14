@@ -129,6 +129,14 @@ public class CertificateAuditEmissionTests
             // The Program entity carries PercentValue/ScoreValue properties that need
             // the production model configuration's value converters on SQLite.
             new GameGuild.Learning.Courses.CoursesModelConfiguration().Configure(modelBuilder);
+            // The CoursesModelConfiguration pulls in Product via Program relationships;
+            // the Commerce Product entity has navigations (BundleItems) that need the
+            // Commerce module's configuration or must be ignored for the isolated test.
+            modelBuilder.Entity<GameGuild.Commerce.Products.Product>(product =>
+            {
+                product.HasKey(entity => entity.Id);
+                product.Ignore(entity => entity.BundleItems);
+            });
             modelBuilder.Entity<User>(user =>
             {
                 user.HasKey(entity => entity.Id);
