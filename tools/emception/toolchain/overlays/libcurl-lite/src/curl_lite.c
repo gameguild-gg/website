@@ -146,12 +146,13 @@ static CURLcode copy_postfields(CurlHandle *h, const char *data)
             if (length == SIZE_MAX)
                 return CURLE_OUT_OF_MEMORY;
         }
+        /* An explicit size does not promise a terminator in the source buffer:
+           the caller may pass exactly `length` heap bytes. */
         copy = (char *)malloc(length + 1);
         if (!copy)
             return CURLE_OUT_OF_MEMORY;
-        /* The terminator is inside the source buffer, so copying length + 1
-           bytes fills both the payload and the destination terminator. */
-        memcpy(copy, data, length + 1);
+        memcpy(copy, data, length);
+        copy[length] = '\0';
     }
     free(h->owned_postfields);
     h->owned_postfields = copy;
