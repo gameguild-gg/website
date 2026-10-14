@@ -401,6 +401,94 @@ public sealed class GraphQLAuthorizeDirectiveTests
         roleAttribution.ResolveCount.Should().Be(1, "role attribution resolves once per request");
     }
 
+    // ─── Content-type scoped @authorize (issues #360/#365/#320) ───
+
+    [Fact]
+    public async Task Authorize_ContentTypeGrant_SatisfiesContentTypeScopedField()
+    {
+        var engine = new GraphQLFakeEffectivePermissionResolver()
+            .WithContentTypePermissions("Course", PermissionType.Read);
+        var counters = new GraphQLAuthorizeCounters();
+        await using var app = await CreateApplicationAsync(engine, counters);
+        using var client = app.GetTestClient();
+
+        using var response = await client.SendAsync(CreateRequest("{ contentTypeGuarded }"));
+        var body = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, body);
+        JsonDocument.Parse(body).RootElement.GetProperty("data").GetProperty("contentTypeGuarded")
+            .GetString().Should().Be("allowed");
+        engine.ReceivedContexts.Should().Contain(context =>
+            context.HasContentType && context.ContentType == "Course" && !context.HasResource);
+    }
+
+    [Fact]
+    public async Task Authorize_WithoutContentTypeGrant_DeniesContentTypeScopedField()
+    {
+        var engine = new GraphQLFakeEffectivePermissionResolver();
+        var counters = new GraphQLAuthorizeCounters();
+        await using var app = await CreateApplicationAsync(engine, counters);
+        using var client = app.GetTestClient();
+
+        using var response = await client.SendAsync(CreateRequest("{ contentTypeGuarded }"));
+        var body = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, body);
+        body.Should().Contain("AUTHORIZATION_DENIED", "the content-type scoped field is denied fail-closed");
+        counters.ResolverCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Authorize_TenantLayerGrant_SatisfiesContentTypeScopedField()
+    {
+        // Inheritance: a tenant-layer grant satisfies a content-type scoped rule.
+        var engine = new GraphQLFakeEffectivePermissionResolver()
+            .WithTenantPermissions(PermissionType.Read);
+        var counters = new GraphQLAuthorizeCounters();
+        await using var app = await CreateApplicationAsync(engine, counters);
+        using var client = app.GetTestClient();
+
+        using var response = await client.SendAsync(CreateRequest("{ contentTypeGuarded }"));
+        var body = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, body);
+        JsonDocument.Parse(body).RootElement.GetProperty("data").GetProperty("contentTypeGuarded")
+            .GetString().Should().Be("allowed");
+    }
+
+    [Fact]
+    public async Task Authorize_ContentTypeGrantOfAnotherType_DoesNotSatisfyTheField()
+    {
+        var engine = new GraphQLFakeEffectivePermissionResolver()
+            .WithContentTypePermissions("Project", PermissionType.Read);
+        var counters = new GraphQLAuthorizeCounters();
+        await using var app = await CreateApplicationAsync(engine, counters);
+        using var client = app.GetTestClient();
+
+        using var response = await client.SendAsync(CreateRequest("{ contentTypeGuarded }"));
+        var body = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, body);
+        body.Should().Contain("AUTHORIZATION_DENIED", "a Project content-type grant never unlocks a Course field");
+        counters.ResolverCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Authorize_ContentTypeAllOf_RequiresEveryKey()
+    {
+        var engine = new GraphQLFakeEffectivePermissionResolver()
+            .WithContentTypePermissions("Course", PermissionType.Read);
+        var counters = new GraphQLAuthorizeCounters();
+        await using var app = await CreateApplicationAsync(engine, counters);
+        using var client = app.GetTestClient();
+
+        using var response = await client.SendAsync(CreateRequest("{ contentTypeAllOf }"));
+        var body = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, body);
+        body.Should().Contain("AUTHORIZATION_DENIED", "Read alone does not satisfy the AND composition with Edit");
+    }
+
     [Fact]
     public async Task Authorize_StillAllowsWhenEvaluationLoggingFails()
     {
@@ -563,6 +651,7 @@ public sealed class GraphQLAuthorizeDirectiveTests
     {
         private readonly HashSet<string> _tenantPermissions = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<(string ResourceType, Guid ResourceId, string Permission)> _resourcePermissions = new();
+        private readonly HashSet<(string ContentType, string Permission)> _contentTypePermissions = new();
         private readonly List<(string ResourceType, Guid ResourceId, string Permission, bool Lapsed)> _ownerOverrides = [];
 
         private readonly ConcurrentQueue<EffectivePermissionContext> _receivedContexts = new();
@@ -579,6 +668,18 @@ public sealed class GraphQLAuthorizeDirectiveTests
             foreach (var permission in permissions)
             {
                 _tenantPermissions.Add(permission.ToString());
+            }
+
+            return this;
+        }
+
+        public GraphQLFakeEffectivePermissionResolver WithContentTypePermissions(
+            string contentType,
+            params PermissionType[] permissions)
+        {
+            foreach (var permission in permissions)
+            {
+                _contentTypePermissions.Add((contentType, permission.ToString()));
             }
 
             return this;
@@ -633,6 +734,21 @@ public sealed class GraphQLAuthorizeDirectiveTests
                     string.Equals(context.ResourceId, resourceId.ToString("D"), StringComparison.OrdinalIgnoreCase))
                 {
                     permissions.Add(permission);
+                }
+            }
+
+            // Content-type layer (issues #360/#365): a content-type grant mints the
+            // content-type qualified name {ContentType}.{Permission} for matching
+            // contexts (explicit content type or the resource's own type).
+            foreach (var (contentType, permission) in _contentTypePermissions)
+            {
+                var applies = (context.HasContentType
+                        && string.Equals(context.ContentType, contentType, StringComparison.OrdinalIgnoreCase))
+                    || (context.HasResource
+                        && string.Equals(context.ResourceType, contentType, StringComparison.OrdinalIgnoreCase));
+                if (applies)
+                {
+                    permissions.Add($"{contentType}.{permission}");
                 }
             }
 
@@ -820,6 +936,12 @@ public sealed class GraphQLAuthorizeDirectiveTests
             ResourceType = "Project",
             ResourceIdArgumentName = "id")]
         public string? Resource(Guid id) => counters.Resolve();
+
+        [GraphQLAuthorize(PermissionType.Read, ContentType = "Course")]
+        public string? ContentTypeGuarded() => counters.Resolve();
+
+        [GraphQLAuthorize(PermissionType.Read, PermissionType.Edit, ContentType = "Course")]
+        public string? ContentTypeAllOf() => counters.Resolve();
 
         [GraphQLAuthorize(PermissionType.Read)]
         public string? CachedFirst() => counters.Resolve();

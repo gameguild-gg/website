@@ -322,7 +322,12 @@ public static class AuthorizationModuleExtensions
         
         // Repositories
         services.AddScoped<ITenantPermissionRepository, TenantPermissionRepository>();
+        services.AddScoped<IContentTypePermissionGrantRepository, ContentTypePermissionGrantRepository>();
         services.AddScoped<IPermissionAuditLogRepository, PermissionAuditLogRepository>();
+
+        // Content-type grant layer (issues #360/#365): scoped grant CRUD with the
+        // guarded + versioned + audited mutation contract.
+        services.AddScoped<IContentTypePermissionGrantService, ContentTypePermissionGrantService>();
 
         // Actor context is the primary identity abstraction
         // IActorContextAccessor is registered via AddActorContextIntegration()
