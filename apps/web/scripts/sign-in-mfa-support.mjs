@@ -42,14 +42,11 @@ export function createMfaSignInContinuation({
     const { mfaToken } = firstFactor;
     if (typeof mfaToken !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(mfaToken))
       throw new Error("Sign-in did not provide a valid limited MFA challenge");
-    let secret = secrets.get(accountKey);
-    if (!secret) {
-      const setup = await send("enrollment", { mfaToken });
-      if (setup.success !== true || typeof setup.secretKey !== "string")
-        throw new Error("Limited authenticator enrollment did not complete");
-      secret = setup.secretKey;
-      secrets.set(accountKey, secret);
-    }
+    const secret = secrets.get(accountKey);
+    if (!secret)
+      throw new Error(
+        "No authenticator secret provisioned for this account — enroll 2FA in settings before sign-in",
+      );
     let counter = Math.floor(now() / 30000);
     while (counter <= (usedCounters.get(accountKey) ?? -1)) {
       await wait(Math.max(1, (counter + 1) * 30000 - now()));

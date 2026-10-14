@@ -37,22 +37,22 @@ test("ordinary sign-in remains unchanged without requesting MFA", async () => {
     response,
   );
 });
-test("enrollment and completion send only server-bound challenge data", async () => {
+test("completion sends only server-bound challenge data", async () => {
   const calls = [];
-  const continuation = createMfaSignInContinuation({ now: () => 59000 });
+  const continuation = createMfaSignInContinuation({
+    secrets: new Map([["account", rfc6238PublicTestKey]]),
+    now: () => 59000,
+  });
   const response = await continuation(
     { requiresMfa: true, mfaToken, tenantId: "untrusted", userId: "untrusted" },
     async (action, body) => {
       calls.push({ action, body });
-      return action === "enrollment"
-        ? { success: true, secretKey: rfc6238PublicTestKey }
-        : { accessToken: "verified" };
+      return { accessToken: "verified" };
     },
     "account",
   );
   assert.deepEqual(response, { accessToken: "verified" });
   assert.deepEqual(calls, [
-    { action: "enrollment", body: { mfaToken } },
     { action: "complete", body: { mfaToken, method: "Totp", code: "287082" } },
   ]);
 });
@@ -78,18 +78,18 @@ test("second sign-in waits for a new counter instead of bypassing replay protect
   assert.deepEqual(waits, [1000]);
   assert.notEqual(codes[0], codes[1]);
 });
-test("denied enrollment or completion never returns an authenticated response", async () => {
-  await assert.rejects(
-    createMfaSignInContinuation()(
-      { requiresMfa: true, mfaToken },
-      async () => ({ success: false }),
-      "account",
-    ),
-  );
+test("denied completion or a missing secret never returns an authenticated response", async () => {
   await assert.rejects(
     createMfaSignInContinuation({ secrets: new Map([["account", rfc6238PublicTestKey]]) })(
       { requiresMfa: true, mfaToken },
       async () => ({ error: "Denied" }),
+      "account",
+    ),
+  );
+  await assert.rejects(
+    createMfaSignInContinuation()(
+      { requiresMfa: true, mfaToken },
+      async () => ({ success: true }),
       "account",
     ),
   );
@@ -107,5 +107,4 @@ test("SignInForm keeps void callbacks without obsolete promise suppressions", as
   );
   assert.match(form, /onSubmit=\{\(event\) => \{\s+void handleMfaSubmit\(event\);\s+\}\}/);
   assert.match(form, /onSubmit=\{\(event\) => \{\s+void handleSubmit\(event\);\s+\}\}/);
-  assert.match(form, /onClick=\{\(\) => \{\s+void handleMfaEnrollment\(\);\s+\}\}/);
 });

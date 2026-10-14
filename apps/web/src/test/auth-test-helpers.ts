@@ -16,8 +16,6 @@ import { vi } from "vitest";
 
 export interface MockUseAuthReturn {
   mfaChallenge: { mfaToken: string; availableMethods: string[] } | null;
-  startMfaEnrollment: ReturnType<typeof vi.fn>;
-  mfaEnrollmentBackupCodes: string[] | null;
   clearMfa: ReturnType<typeof vi.fn>;
   signIn: ReturnType<typeof vi.fn>;
   signUp: ReturnType<typeof vi.fn>;
@@ -36,8 +34,6 @@ export function createMockUseAuth(
 ): MockUseAuthReturn {
   return {
     mfaChallenge: null,
-    startMfaEnrollment: vi.fn(),
-    mfaEnrollmentBackupCodes: null,
     clearMfa: vi.fn(),
     signIn: vi.fn().mockResolvedValue(undefined),
     signUp: vi.fn().mockResolvedValue(undefined),
