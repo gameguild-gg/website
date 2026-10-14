@@ -16,9 +16,13 @@ public sealed class ControllersOptions : BaseOptions
     public bool UseKebabCaseRoutes { get; set; } = true;
 
     /// <summary>
-    ///     Whether to enable global permission authorization filter
+    ///     Whether to enable the global DAC permission authorization filter
+    ///     (<c>ResourcePermissionAuthorizationFilter</c>). Default: <b>enabled</b>
+    ///     (issues #300/#320) — endpoint permission attributes are enforced at the filter
+    ///     level through the canonical effective-permission engine (fail-closed); the
+    ///     CQRS <c>[AuthorizeRequest]</c> behavior remains the second, independent gate.
     /// </summary>
-    public bool EnablePermissionAuthorizationFilter { get; set; }
+    public bool EnablePermissionAuthorizationFilter { get; set; } = true;
 
     /// <summary>
     ///     The property naming policy for JSON serialization (e.g., "CamelCase")
