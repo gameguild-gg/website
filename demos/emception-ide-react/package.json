@@ -22,7 +22,7 @@
         "emception": "4.4.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
-        "react-resizable-panels": "^4.14.2"
+        "react-resizable-panels": "^4.14.4"
     },
     "devDependencies": {
         "@types/react": "^19",
