@@ -264,7 +264,7 @@ public sealed record CodeExecutionReceipt(IReadOnlyList<bool> Passed, string Rec
 public sealed record CodeToolchainIdentity(string ArtifactVersion, string RuntimeAbi, string ToolchainLockHash)
 {
     public static CodeToolchainIdentity Version1 { get; } = new("4.4.0", "emception-browser-v1", "eb7e07aacb067ae32910fbebcb3762902da756b1a7ce64746f14f77a25057720");
-    public static CodeToolchainIdentity Version2 { get; } = new("4.4.1", "emception-browser-v1", "528714d0222d45733e816c5e1c7b2491ac3d6cc6834a15d8bf33b2b60086ca1c");
+    public static CodeToolchainIdentity Version2 { get; } = new("4.4.1", "emception-browser-v1", "aa2603a1e78c3af6a666d3f2c8f0411e6e953d73e046a5e2bfe546ff96df9752");
 
     public static CodeToolchainIdentity ForAdapterVersion(string version) => version switch
     {

@@ -9,7 +9,7 @@ export const CODE_TOOLCHAIN_V1 = Object.freeze({
 export const CODE_TOOLCHAIN_V2 = Object.freeze({
   artifactVersion: '4.4.1',
   runtimeAbi: 'emception-browser-v1',
-  toolchainLockHash: '528714d0222d45733e816c5e1c7b2491ac3d6cc6834a15d8bf33b2b60086ca1c',
+  toolchainLockHash: 'aa2603a1e78c3af6a666d3f2c8f0411e6e953d73e046a5e2bfe546ff96df9752',
 });
 
 export function requireFrozenCodeToolchain(binding, manifest) {
