@@ -503,6 +503,9 @@ public sealed class EnrollmentInfrastructureTests
         var services = new ServiceCollection();
         services.AddDbContext<EnrollmentTestDbContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<EnrollmentTestDbContext>());
+        // The module's EnrollmentService takes ILearningAuditEventSink, registered by the
+        // Audit module in the composed host; provide a no-op for the module-isolated test.
+        services.AddScoped<GameGuild.Learning.ILearningAuditEventSink>(_ => new NoOpLearningAuditSink());
 
         services.AddLearningEnrollmentsModule();
 
@@ -556,4 +559,14 @@ internal sealed class EnrollmentTestDbContext(DbContextOptions<EnrollmentTestDbC
     {
         throw new NotSupportedException();
     }
+}
+
+/// <summary>
+///     Module-isolated DI tests don't compose the Audit module (which registers the real sink);
+///     this no-op lets the module's service graph resolve without pulling in the audit host.
+/// </summary>
+file sealed class NoOpLearningAuditSink : GameGuild.Learning.ILearningAuditEventSink
+{
+    public Task RecordAsync(GameGuild.Learning.LearningAuditEvent auditEvent, CancellationToken cancellationToken)
+        => Task.CompletedTask;
 }
