@@ -14,6 +14,7 @@ registerDevProcess("dev-fast");
 const API_PORT = 8080;
 const API_HEALTH_URL = `http://localhost:${API_PORT}/health`;
 const DEFAULT_API_STARTUP_TIMEOUT_MS = 10 * 60 * 1000;
+const CHILD_SHUTDOWN_GRACE_MS = 4_000;
 const runtimeEnv = process.env;
 
 function loadEnv(file) {
@@ -37,7 +38,9 @@ function run(cmd, args, options = {}) {
       ? resolvePnpmProcess(args, { env: runtimeEnv })
       : { command: cmd, args };
   return spawn(invocation.command, invocation.args, {
-    stdio: "inherit",
+    // The orchestrator owns Ctrl+C. Detached children must not read from the
+    // parent TTY or an orphaned watcher can consume input after shutdown.
+    stdio: ["ignore", "inherit", "inherit"],
     detached: process.platform !== "win32",
     env: runtimeEnv,
     ...options,
@@ -62,28 +65,57 @@ function waitForSuccessfulExit(child, label) {
   });
 }
 
-function killTree(child) {
-  if (child.exitCode !== null) return;
+function killTree(child, signal = "SIGTERM") {
+  if (!child?.pid) return;
   if (process.platform === "win32") {
+    if (child.exitCode !== null) return;
     spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
       shell: false,
       windowsHide: true,
     });
   } else {
     try {
-      process.kill(-child.pid, "SIGTERM");
-    } catch {
-      // The process group has already exited.
+      process.kill(-child.pid, signal);
+    } catch (error) {
+      if (error?.code !== "ESRCH") throw error;
     }
   }
 }
 
 function spawnReaper(pgid) {
-  spawn("sh", ["-c", `sleep 4; kill -9 -- -${pgid} 2>/dev/null; true`], {
-    detached: true,
-    stdio: "ignore",
-  }).unref();
+  const source = `
+    const pgid = Number(process.argv[1]);
+    const delayMs = Number(process.argv[2]);
+    setTimeout(() => {
+      try {
+        process.kill(-pgid, "SIGKILL");
+      } catch (error) {
+        if (error?.code !== "ESRCH") process.exitCode = 1;
+      }
+    }, delayMs);
+  `;
+  spawn(
+    process.execPath,
+    ["--eval", source, String(pgid), String(CHILD_SHUTDOWN_GRACE_MS)],
+    {
+      detached: true,
+      stdio: "ignore",
+    },
+  ).unref();
 }
+
+function restoreTerminal() {
+  if (process.stdin.isTTY && typeof process.stdin.setRawMode === "function") {
+    try {
+      process.stdin.setRawMode(false);
+    } catch {
+      // The terminal may already have been detached by the invoking shell.
+    }
+  }
+  if (process.stdout.isTTY) process.stdout.write("\u001B[?25h");
+}
+
+process.once("exit", restoreTerminal);
 
 function assertPortFree(port) {
   return new Promise((resolve) => {
@@ -181,7 +213,7 @@ const api = spawn(
     "http://localhost:8080",
   ],
   {
-    stdio: "inherit",
+    stdio: ["ignore", "inherit", "inherit"],
     detached: process.platform !== "win32",
     env: {
       ...apiEnvironment,
@@ -237,23 +269,70 @@ if (!existsSync("apps/web/public/langs/quickjs-asyncify.wasm.gz")) {
 
 let web = null;
 let shuttingDown = false;
-const shutdown = (exitCode = 0) => {
+let shutdownTreeRoots = [];
+
+function treeIsAlive(child) {
+  if (!child?.pid) return false;
+  if (process.platform === "win32") return child.exitCode === null;
+
+  try {
+    process.kill(-child.pid, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === "ESRCH") return false;
+    if (error?.code === "EPERM") return true;
+    throw error;
+  }
+}
+
+async function waitForTreesToExit(children, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let remaining = children.filter(treeIsAlive);
+
+  while (remaining.length > 0 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    remaining = remaining.filter(treeIsAlive);
+  }
+  return remaining;
+}
+
+const shutdown = async (exitCode = 0, signal = "SIGTERM") => {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log("\n[dev:fast] shutting down...");
-  const treeRoots = [api, ...preparationChildren, ...(web ? [web] : [])];
-  for (const child of treeRoots) killTree(child);
+  restoreTerminal();
+  shutdownTreeRoots = [
+    api,
+    ...preparationChildren,
+    ...(web ? [web] : []),
+  ].filter(treeIsAlive);
+  for (const child of shutdownTreeRoots) killTree(child, signal);
   if (process.platform !== "win32") {
-    for (const child of treeRoots) {
+    for (const child of shutdownTreeRoots) {
       if (child.pid) spawnReaper(child.pid);
     }
   }
-  setTimeout(() => process.exit(exitCode), 6000);
+
+  const remaining = await waitForTreesToExit(
+    shutdownTreeRoots,
+    CHILD_SHUTDOWN_GRACE_MS,
+  );
+  for (const child of remaining) killTree(child, "SIGKILL");
+  await waitForTreesToExit(remaining, 1_000);
+  restoreTerminal();
+  process.exit(exitCode);
 };
 
-const onSignal = () => (shuttingDown ? process.exit(0) : shutdown());
-process.on("SIGINT", onSignal);
-process.on("SIGTERM", onSignal);
+const onSignal = (signal) => {
+  if (shuttingDown) {
+    for (const child of shutdownTreeRoots) killTree(child, "SIGKILL");
+    restoreTerminal();
+    process.exit(0);
+  }
+  void shutdown(0, signal);
+};
+process.on("SIGINT", () => onSignal("SIGINT"));
+process.on("SIGTERM", () => onSignal("SIGTERM"));
 
 try {
   await Promise.all(preparation);
@@ -261,7 +340,7 @@ try {
   console.error(
     `[dev:fast] ${error instanceof Error ? error.message : String(error)}`,
   );
-  shutdown(1);
+  void shutdown(1);
   await new Promise(() => {});
 }
 
@@ -271,5 +350,5 @@ console.log(
 );
 
 web.on("exit", (code) => {
-  shutdown(code ?? 0);
+  void shutdown(code ?? 0);
 });
