@@ -61,7 +61,12 @@ public class SubscriptionLifecycleService(
         int? trialDays = null,
         CancellationToken cancellationToken = default)
     {
-        await GetRequiredPlanAsync(planId, cancellationToken).ConfigureAwait(false);
+        // Issue #416: fail closed — a custom-quote-pending enterprise plan cannot start a subscription.
+        var newPlan = await GetRequiredPlanAsync(planId, cancellationToken).ConfigureAwait(false);
+        if (newPlan.RequiresCustomQuote())
+        {
+            throw new SubscriptionPlanCustomQuotePendingException(planId);
+        }
 
         var effectiveStartDate = startDate ?? SystemClock.UtcNow;
         DateTime? trialEndDate = trialDays.HasValue ? effectiveStartDate.AddDays(trialDays.Value) : null;
