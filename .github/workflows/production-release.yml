@@ -242,7 +242,7 @@ jobs:
           MIGRATION_REQUIRED: ${{ needs.prepare.outputs.migration }}
           PREVIOUS_MANIFEST: previous-state/release-manifest.json
         run: bash scripts/deploy/promote-candidates.sh
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: release-plan-${{ needs.prepare.outputs.releaseSha }}
           path: artifacts/release
@@ -348,7 +348,7 @@ jobs:
             -H 'Content-Type: application/json' \
             --data '{"purge_everything":true}')
           jq -e '.success == true' <<<"$response" >/dev/null
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: production-release-${{ needs.prepare.outputs.releaseSha }}
