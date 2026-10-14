@@ -185,6 +185,17 @@ public sealed class SignInMfaServiceTests
     }
 
     [Fact]
+    public async Task SuccessfulTotpCompletionCancelsPendingLiveRecoveryRequest()
+    {
+        // Pending (pre-cooldown) is the other live state alongside AwaitingConfirmation covered above.
+        var fixture = new FlowFixture { LiveRecovery = new MfaRecoveryRequest { Id = Guid.NewGuid(), UserId = "recovery-user", Status = MfaRecoveryRequestStatus.Pending } };
+        var result = await fixture.CompleteAsync(method: MfaMethod.Totp);
+        Assert.Same(fixture.Issued, result);
+        Assert.Equal(MfaRecoveryRequestStatus.Cancelled, fixture.LiveRecovery.Status);
+        Assert.Equal("recovery-user", fixture.CancelledRecoveryUserId);
+    }
+
+    [Fact]
     public async Task FailedVerificationLeavesRecoveryRequestsUntouched()
     {
         var fixture = new FlowFixture { VerificationSuccess = false, LiveRecovery = new MfaRecoveryRequest { UserId = "recovery-user", Status = MfaRecoveryRequestStatus.Pending } };

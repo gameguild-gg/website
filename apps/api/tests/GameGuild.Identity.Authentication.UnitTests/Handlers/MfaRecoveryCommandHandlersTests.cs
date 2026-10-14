@@ -183,6 +183,103 @@ public sealed class MfaRecoveryCommandHandlersTests
     }
 
     [Fact]
+    public async Task RequestMfaRecoveryCommandHandler_UnknownEmailReturnsSamePayloadAsKnownEmail()
+    {
+        var user = CreateUser("enumeration-safe@test.com");
+        var (users, tracking, store, email, cache, config) = CreateMocks();
+        users.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        users.Setup(r => r.GetByEmailAsync("ghost@test.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        tracking.Setup(t => t.GetMfaStatusAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        store.Setup(s => s.FindLiveByUserAsync(user.Id.ToString(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MfaRecoveryRequest?)null);
+        store.Setup(s => s.AddAsync(It.IsAny<MfaRecoveryRequest>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var handler = CreateRequestHandler(users, tracking, store, email, cache, config);
+        var known = await handler.Handle(new RequestMfaRecoveryCommand { Email = user.Email }, CancellationToken.None);
+        var unknown = await handler.Handle(new RequestMfaRecoveryCommand { Email = "ghost@test.com" }, CancellationToken.None);
+
+        // Enumeration safety: the wire payload (Success + Message map 1:1 to the 200 body) is identical.
+        unknown.Should().BeEquivalentTo(known);
+    }
+
+    [Fact]
+    public async Task ContinueMfaRecoveryCommandHandler_RequestOlderThanRetentionIsExpiredOnTouchAndDenied()
+    {
+        var (users, _, store, email, _, config) = CreateMocks();
+        var now = SystemClock.UtcNow;
+        var recovery = new MfaRecoveryRequest
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid().ToString(),
+            TenantId = Guid.NewGuid().ToString(),
+            RequestedAt = now.AddDays(-31),
+            CooldownEndsAt = now.AddDays(-24),
+            Status = MfaRecoveryRequestStatus.Pending,
+            RequestTokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("request-token"))).ToLowerInvariant()
+        };
+        store.Setup(s => s.ExpireOlderThanAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .Callback<DateTimeOffset, CancellationToken>((_, _) => recovery.Status = MfaRecoveryRequestStatus.Expired)
+            .ReturnsAsync(1);
+        // Mirrors the store contract: only Pending/AwaitingConfirmation rows are live.
+        store.Setup(s => s.FindLiveByRequestTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(() => Task.FromResult(recovery.Status is MfaRecoveryRequestStatus.Pending or MfaRecoveryRequestStatus.AwaitingConfirmation
+                ? recovery
+                : null));
+
+        var handler = new ContinueMfaRecoveryCommandHandler(store.Object, users.Object, email.Object, config,
+            NullLogger<ContinueMfaRecoveryCommandHandler>.Instance);
+        var result = await handler.Handle(new ContinueMfaRecoveryCommand { RequestToken = "request-token" }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.RetryAfterSeconds.Should().BeNull();
+        result.Message.Should().Be("Invalid or expired recovery request.");
+        recovery.Status.Should().Be(MfaRecoveryRequestStatus.Expired);
+        store.Verify(s => s.ExpireOlderThanAsync(
+            It.Is<DateTimeOffset>(cutoff => Math.Abs((cutoff - now.AddDays(-30)).TotalSeconds) < 60),
+            It.IsAny<CancellationToken>()), Times.Once);
+        email.Verify(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ConfirmMfaRecoveryCommandHandler_SecondConfirmWithSameTokenIsDenied()
+    {
+        var (_, tracking, store, _, _, _) = CreateMocks();
+        var userId = Guid.NewGuid();
+        var confirmationTokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("confirmation-token"))).ToLowerInvariant();
+        var recovery = new MfaRecoveryRequest
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId.ToString(),
+            TenantId = Guid.NewGuid().ToString(),
+            RequestedAt = SystemClock.UtcNow.AddDays(-8),
+            CooldownEndsAt = SystemClock.UtcNow.AddDays(-1),
+            Status = MfaRecoveryRequestStatus.AwaitingConfirmation,
+            RequestTokenHash = new string('a', 64),
+            ConfirmationTokenHash = confirmationTokenHash,
+            ConfirmationTokenExpiresAt = SystemClock.UtcNow.AddMinutes(30)
+        };
+        // Mirrors the store contract: only AwaitingConfirmation rows match a confirmation token.
+        store.Setup(s => s.FindAwaitingByConfirmationTokenHashAsync(confirmationTokenHash, It.IsAny<CancellationToken>()))
+            .Returns(() => Task.FromResult(recovery.Status == MfaRecoveryRequestStatus.AwaitingConfirmation ? recovery : null));
+        store.Setup(s => s.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        tracking.Setup(t => t.DisableMfaAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var handler = new ConfirmMfaRecoveryCommandHandler(store.Object, tracking.Object,
+            NullLogger<ConfirmMfaRecoveryCommandHandler>.Instance);
+        var first = await handler.Handle(new ConfirmMfaRecoveryCommand { ConfirmationToken = "confirmation-token" }, CancellationToken.None);
+        var second = await handler.Handle(new ConfirmMfaRecoveryCommand { ConfirmationToken = "confirmation-token" }, CancellationToken.None);
+
+        first.Success.Should().BeTrue();
+        second.Success.Should().BeFalse();
+        second.Message.Should().Be("Invalid or expired recovery confirmation.");
+        tracking.Verify(t => t.DisableMfaAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task ConfirmMfaRecoveryCommandHandler_HappyPathMarksCompletedAndDisablesMfa()
     {
         var (_, tracking, store, _, _, _) = CreateMocks();

@@ -63,10 +63,11 @@ public sealed class RequestMfaRecoveryCommandHandler(
 
         MfaRecoveryRequestResult ApplyRateLimit(MfaRecoveryRequestResult result)
         {
+            // The host cache sets SizeLimit; every entry must carry a size (mirrors EmailVerificationService).
             memoryCache.Set(rateLimitKey, SystemClock.UtcNow, new MemoryCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = MfaRecoveryTokens.EmailRateLimit
-            });
+            }.SetSize(1));
             return result;
         }
 
