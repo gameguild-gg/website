@@ -4,7 +4,6 @@ import { getToken } from '@/auth';
 import {
   createServerClient,
   GeneratedApi,
-  type IdentityAuthenticationBackupCodesOutput,
   type IdentityAuthenticationBackupCodesStatusOutput,
   type IdentityAuthenticationMfaConfigurationOutput,
   type IdentityAuthenticationMfaMethodsOutput,

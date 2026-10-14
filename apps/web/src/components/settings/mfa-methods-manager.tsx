@@ -220,7 +220,7 @@ export function MfaMethodsManager({ data }: { data: MfaPageData }) {
 
           <div className="flex flex-wrap gap-2">
             {!totp?.isEnabled && (
-              <Button onClick={handleStartTotp} disabled={busy} data-testid="mfa-totp-start">
+              <Button onClick={() => void handleStartTotp()} disabled={busy} data-testid="mfa-totp-start">
                 {t('totp.start')}
               </Button>
             )}
@@ -257,7 +257,7 @@ export function MfaMethodsManager({ data }: { data: MfaPageData }) {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleCompleteTotp} disabled={busy || code.length < 6}>
+                <Button onClick={() => void handleCompleteTotp()} disabled={busy || code.length < 6}>
                   {t('totp.complete')}
                 </Button>
                 <Button variant="ghost" onClick={() => setMethodState({ kind: 'idle' })} disabled={busy}>
@@ -280,7 +280,7 @@ export function MfaMethodsManager({ data }: { data: MfaPageData }) {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleStartSms} disabled={busy || phone.trim().length < 9}>
+                <Button onClick={() => void handleStartSms()} disabled={busy || phone.trim().length < 9}>
                   {t('sms.send')}
                 </Button>
                 <Button variant="ghost" onClick={() => setMethodState({ kind: 'idle' })} disabled={busy}>
@@ -298,7 +298,7 @@ export function MfaMethodsManager({ data }: { data: MfaPageData }) {
                     autoComplete="one-time-code"
                     placeholder="123456"
                   />
-                  <Button onClick={handleCompleteSms} disabled={busy || code.length < 6}>
+                  <Button onClick={() => void handleCompleteSms()} disabled={busy || code.length < 6}>
                     {t('sms.complete')}
                   </Button>
                 </div>
@@ -338,7 +338,7 @@ export function MfaMethodsManager({ data }: { data: MfaPageData }) {
               </Button>
             </div>
           ) : (
-            <Button variant="outline" onClick={handleRegenerate} disabled={busy} data-testid="mfa-recovery-regenerate">
+            <Button variant="outline" onClick={() => void handleRegenerate()} disabled={busy} data-testid="mfa-recovery-regenerate">
               {backupCode?.isEnabled ? t('recovery.regenerate') : t('recovery.generate')}
             </Button>
           )}
@@ -363,7 +363,7 @@ export function MfaMethodsManager({ data }: { data: MfaPageData }) {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPassword('')}>{t('disable.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDisable} disabled={busy || password.length === 0} data-testid="mfa-disable-confirm">
+            <AlertDialogAction onClick={() => void handleDisable()} disabled={busy || password.length === 0} data-testid="mfa-disable-confirm">
               {t('disable.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
