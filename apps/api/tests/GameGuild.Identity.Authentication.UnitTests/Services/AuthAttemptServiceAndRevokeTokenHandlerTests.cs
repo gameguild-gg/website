@@ -25,7 +25,7 @@ public sealed class AuthAttemptServiceSuccessPathTests
             .Callback<AuthenticationAttempt, CancellationToken>((attempt, _) => captured = attempt)
             .ReturnsAsync((AuthenticationAttempt attempt, CancellationToken _) => attempt);
 
-        var sut = new AuthAttemptService(repository.Object, enumerationProtection.Object, logger, auditEventSink.Object);
+        var sut = new AuthAttemptService(repository.Object, enumerationProtection.Object, logger, geolocationProvider: null, auditEventSink: auditEventSink.Object);
 
         await sut.RecordFailedAttemptAsync(
             "user@example.com",
@@ -66,7 +66,8 @@ public sealed class AuthAttemptServiceSuccessPathTests
             repository.Object,
             Mock.Of<IUserEnumerationProtectionService>(),
             NullLogger<AuthAttemptService>.Instance,
-            auditEventSink.Object);
+            geolocationProvider: null,
+            auditEventSink: auditEventSink.Object);
 
         var userId = Guid.NewGuid();
 
@@ -110,7 +111,8 @@ public sealed class AuthAttemptServiceSuccessPathTests
             repository.Object,
             Mock.Of<IUserEnumerationProtectionService>(),
             NullLogger<AuthAttemptService>.Instance,
-            auditEventSink.Object);
+            geolocationProvider: null,
+            auditEventSink: auditEventSink.Object);
         var userId = Guid.NewGuid();
 
         await sut.RecordSuccessfulAttemptAsync(
@@ -145,7 +147,8 @@ public sealed class AuthAttemptServiceSuccessPathTests
             repository.Object,
             enumerationProtection.Object,
             NullLogger<AuthAttemptService>.Instance,
-            auditEventSink.Object);
+            geolocationProvider: null,
+            auditEventSink: auditEventSink.Object);
 
         await sut.RecordFailedAttemptAsync(
             "user@example.com",
@@ -186,7 +189,8 @@ public sealed class AuthAttemptServiceSuccessPathTests
             repository.Object,
             enumerationProtection.Object,
             NullLogger<AuthAttemptService>.Instance,
-            auditEventSink.Object);
+            geolocationProvider: null,
+            auditEventSink: auditEventSink.Object);
 
         await sut.RecordFailedAttemptAsync(
             "user@example.com",

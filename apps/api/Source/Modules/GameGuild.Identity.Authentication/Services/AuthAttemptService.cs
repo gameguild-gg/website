@@ -7,12 +7,15 @@ using Microsoft.Extensions.Logging;
 namespace GameGuild.Identity.Authentication;
 
 /// <summary>
-/// Login attempt recording and IP address extraction
+/// Login attempt recording and IP address extraction. When a geolocation provider is
+/// registered (issue #242), forensics records are enriched with the coarse country/city of
+/// the attempt IP; enrichment failures degrade to Unknown rather than failing the pipeline.
 /// </summary>
 public class AuthAttemptService(
     IAuthenticationAttemptRepository authenticationAttemptRepository,
     IUserEnumerationProtectionService enumerationProtection,
     ILogger<AuthAttemptService> logger,
+    IGeolocationProvider? geolocationProvider = null,
     IAuthenticationAuditEventSink? auditEventSink = null
 ) : IAuthAttemptService
 {
@@ -37,6 +40,7 @@ public class AuthAttemptService(
             AttemptedAt = SystemClock.UtcNow,
             ProcessingTime = processingTime
         };
+        await EnrichWithGeolocationAsync(attempt).ConfigureAwait(false);
 
         try
         {
@@ -72,6 +76,7 @@ public class AuthAttemptService(
             AttemptedAt = SystemClock.UtcNow,
             ProcessingTime = processingTime
         };
+        await EnrichWithGeolocationAsync(attempt).ConfigureAwait(false);
 
         try
         {
@@ -121,6 +126,37 @@ public class AuthAttemptService(
         }
 
         return address.ToString();
+    }
+
+    /// <summary>
+    ///     Enriches the forensics record with the coarse location of the attempt IP (issue #242).
+    ///     Fail-closed: no provider, unresolvable/private addresses and provider failures all
+    ///     leave the location Unknown; the attempt itself is always recorded.
+    /// </summary>
+    private async Task EnrichWithGeolocationAsync(AuthenticationAttempt attempt)
+    {
+        if (geolocationProvider is null || attempt.IpAddress is not (not null and not "Unknown"))
+        {
+            return;
+        }
+
+        try
+        {
+            var resolved = await geolocationProvider.ResolveAsync(attempt.IpAddress, CancellationToken.None).ConfigureAwait(false);
+            if (resolved is null)
+            {
+                return;
+            }
+
+            attempt.Location = string.Join(", ", new[] { resolved.City, resolved.Country }.Where(part => !string.IsNullOrWhiteSpace(part)));
+            attempt.Country = resolved.CountryCode;
+            attempt.City = resolved.City;
+        }
+        catch (Exception ex)
+        {
+            // Enrichment must never fail the login-forensics pipeline.
+            logger.LogWarning(ex, "Geolocation enrichment failed for IP {IpAddress}; recording without location", attempt.IpAddress);
+        }
     }
 
     private void LogLoginAuditEvent(AuthenticationAttempt attempt)
@@ -196,7 +232,7 @@ public class AuthAttemptService(
                 attempt.SessionId,
                 attempt.TenantId,
                 attempt.FailureReason,
-                new { attempt.ProcessingTime, attempt.IsSuspicious, attempt.RiskScore, attempt.CorrelationId }),
+                new { attempt.ProcessingTime, attempt.IsSuspicious, attempt.RiskScore, attempt.CorrelationId, attempt.Country, attempt.City }),
                 CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception exception)
