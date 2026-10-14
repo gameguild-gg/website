@@ -131,9 +131,12 @@ public class CreateSubscriptionPlanCommandHandlerTests
     [Fact]
     public async Task Handle_FailsClosed_WhenFreePlanIsPriced()
     {
+        // Explicit slug: the mock repository reports every slug as taken, so the
+        // auto-generation path would exhaust suffixes and fail on the slug — not
+        // the pricing invariant under test.
         var act = () => CreateHandler().Handle(new CreateSubscriptionPlanCommand(
             "Free Tier",
-            Slug: null,
+            Slug: "free-tier",
             MonthlyPriceInCents: 999,
             Currency: "USD",
             Description: null,
