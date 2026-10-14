@@ -38,7 +38,7 @@ public class PermissionBulkServiceTests
         _grantServiceMock
             .Setup(x => x.GrantTenantPermissionAsync(
                 It.IsAny<Guid?>(), tenantId, permissions, It.IsAny<Guid?>(), null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid? uid, Guid? tid, string[] p, Guid? g, DateTime? e, string? r, CancellationToken _) =>
+            .ReturnsAsync((Guid? uid, Guid? tid, string[] p, Guid? _, DateTime? _, string? _, CancellationToken _) =>
                 new TenantPermission { UserId = uid, TenantId = tid, Permissions = p });
 
         var results = await _sut.BulkGrantTenantPermissionAsync(userIds, tenantId, permissions);
