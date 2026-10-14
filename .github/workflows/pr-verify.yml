@@ -284,12 +284,12 @@ jobs:
 
   economy:
     name: Economy Release Gate
-    needs: classify
+    needs: [classify, economy-api, economy-client]
     if: needs.classify.outputs.economyCritical == 'true'
     runs-on: ubuntu-latest
-    # Whole-solution regression runs in parallel below; release surfaces retain
-    # their complete coverage, provider, OpenAPI, frontend, and browser checks.
-    timeout-minutes: 40
+    # Reuse the same-run API/client outputs. Coverage and regression remain
+    # required independent jobs; this lane verifies OpenAPI/web/browser surfaces.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -297,10 +297,18 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - uses: ./.github/actions/setup-playwright
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: economy-api-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/economy-inputs/api
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: economy-client-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/economy-inputs/client
       - name: Run Economy release surfaces
         env:
-          ECONOMY_GATE_PROFILE: release
-          ECONOMY_WHOLE_SOLUTION_JOBS: "2"
+          ECONOMY_GATE_PROFILE: browser
+          ECONOMY_INPUT_ROOT: ${{ runner.temp }}/economy-inputs
           ECONOMY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: bash scripts/ci/verify-economy.sh
       - name: Upload Economy evidence
@@ -308,7 +316,88 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: economy-${{ github.event.pull_request.head.sha }}
-          path: artifacts/test-results
+          path: |
+            artifacts/test-results
+            !artifacts/test-results/economy/publish/**
+          if-no-files-found: error
+
+  economy-api:
+    name: Economy API publish
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-node-workspace
+      - uses: ./.github/actions/setup-dotnet
+      - name: Publish warning-clean API for browser verification
+        env:
+          ECONOMY_GATE_PROFILE: api-bundle
+        run: bash scripts/ci/verify-economy.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-api-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/economy-bundles/api
+          if-no-files-found: error
+          compression-level: 0
+      - name: Upload API producer evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-api-evidence-${{ github.event.pull_request.head.sha }}
+          path: |
+            artifacts/test-results/economy
+            !artifacts/test-results/economy/publish/**
+          if-no-files-found: error
+
+  economy-client:
+    name: Economy client tests and build
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-node-workspace
+      - name: Test and build complete client for browser verification
+        env:
+          ECONOMY_GATE_PROFILE: client-bundle
+        run: bash scripts/ci/verify-economy.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-client-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/economy-bundles/client
+          if-no-files-found: error
+          compression-level: 0
+      - name: Upload client producer evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-client-evidence-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/economy
+          if-no-files-found: error
+
+  economy-coverage:
+    name: Economy coverage and provider contracts
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-node-workspace
+      - uses: ./.github/actions/setup-dotnet
+      - name: Build full solution and verify complete Economy coverage
+        env:
+          ECONOMY_GATE_PROFILE: coverage
+        run: bash scripts/ci/verify-economy.sh
+      - name: Upload Economy coverage and provider evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-coverage-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/economy
           if-no-files-found: error
 
   economy-regression:
@@ -316,12 +405,12 @@ jobs:
     needs: classify
     if: needs.classify.outputs.economyCritical == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 20
     strategy:
       # Keep every shard's evidence when another shard fails.
       fail-fast: false
       matrix:
-        shard: [api-integration, api-unit, remaining]
+        shard: [api-integration-1, api-integration-2, api-integration-3, api-integration-4, api-unit, remaining-1, remaining-2]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -356,6 +445,9 @@ jobs:
         openapi,
         migration,
         economy,
+        economy-api,
+        economy-client,
+        economy-coverage,
         economy-regression,
       ]
     runs-on: ubuntu-latest
@@ -373,6 +465,9 @@ jobs:
           OPENAPI: ${{ needs.openapi.result }}
           MIGRATION: ${{ needs.migration.result }}
           ECONOMY: ${{ needs.economy.result }}
+          ECONOMY_API: ${{ needs.economy-api.result }}
+          ECONOMY_CLIENT: ${{ needs.economy-client.result }}
+          ECONOMY_COVERAGE: ${{ needs.economy-coverage.result }}
           ECONOMY_REGRESSION: ${{ needs.economy-regression.result }}
           ECONOMY_SELECTED: ${{ needs.classify.outputs.economyCritical }}
         run: |
@@ -386,13 +481,16 @@ jobs:
             openapi: process.env.OPENAPI,
             migration: process.env.MIGRATION,
             economy: process.env.ECONOMY,
+            'economy-api': process.env.ECONOMY_API,
+            'economy-client': process.env.ECONOMY_CLIENT,
+            'economy-coverage': process.env.ECONOMY_COVERAGE,
             'economy-regression': process.env.ECONOMY_REGRESSION,
           };
           const failed = Object.entries(gates)
             .filter(([, result]) => result === 'failure' || result === 'cancelled')
             .map(([name, result]) => `${name}=${result}`);
           if (process.env.ECONOMY_SELECTED === 'true') {
-            for (const name of ['economy', 'economy-regression']) {
+            for (const name of ['economy', 'economy-api', 'economy-client', 'economy-coverage', 'economy-regression']) {
               if (gates[name] !== 'success' && !failed.some(item => item.startsWith(`${name}=`))) {
                 failed.push(`${name}=${gates[name]}`);
               }

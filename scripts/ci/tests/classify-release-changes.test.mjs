@@ -25,6 +25,8 @@ test("documentation and CI changes do not deploy runtime services", () => {
       "docs/deployment-smoke.md",
       ".github/workflows/pr-verify.yml",
       "scripts/ci/classify-release-changes.mjs",
+      "scripts/ci/economy-artifacts.sh",
+      "scripts/ci/economy-integration-shards.json",
     ]),
     { ...expectedEmptyClassification, economyCritical: true },
   );

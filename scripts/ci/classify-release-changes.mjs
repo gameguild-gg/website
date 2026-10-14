@@ -91,6 +91,8 @@ export function classifyReleaseChanges(filePaths) {
         "scripts/ci/verify-economy.sh",
         "scripts/ci/economy-gate.sh",
         "scripts/ci/economy-projects.json",
+        "scripts/ci/economy-artifacts.sh",
+        "scripts/ci/economy-integration-shards.json",
         "scripts/ci/classify-release-changes.mjs",
         "scripts/ci/tests/verify-economy.sh",
         "scripts/ci/tests/classify-release-changes.test.mjs",
