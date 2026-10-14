@@ -50,6 +50,21 @@ public sealed class PostgreSqlMfaRecoveryRequestStore(IApplicationDbContext cont
                 cancellationToken);
     }
 
+    public async Task<MfaRecoveryRequest?> CancelLiveByUserAsync(string userId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        var request = await FindLiveByUserAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (request is null)
+        {
+            return null;
+        }
+
+        request.Status = MfaRecoveryRequestStatus.Cancelled;
+        request.ConsumedAt = SystemClock.UtcNow;
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return request;
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

@@ -375,6 +375,7 @@ public static class DataDependencyInjection
         services.AddScoped<FluentValidation.IValidator<RequestMfaRecoveryCommand>, RequestMfaRecoveryCommandValidator>();
         services.AddScoped<FluentValidation.IValidator<ContinueMfaRecoveryCommand>, ContinueMfaRecoveryCommandValidator>();
         services.AddScoped<FluentValidation.IValidator<ConfirmMfaRecoveryCommand>, ConfirmMfaRecoveryCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<AdminResetUserMfaCommand>, AdminResetUserMfaCommandValidator>();
     }
 
     /// <summary>
@@ -401,6 +402,7 @@ public static class DataDependencyInjection
         services.AddScoped<IRequestHandler<RequestMfaRecoveryCommand, MfaRecoveryRequestResult>, RequestMfaRecoveryCommandHandler>();
         services.AddScoped<IRequestHandler<ContinueMfaRecoveryCommand, MfaRecoveryContinueResult>, ContinueMfaRecoveryCommandHandler>();
         services.AddScoped<IRequestHandler<ConfirmMfaRecoveryCommand, MfaRecoveryConfirmResult>, ConfirmMfaRecoveryCommandHandler>();
+        services.AddScoped<IRequestHandler<AdminResetUserMfaCommand, AdminResetUserMfaResult>, AdminResetUserMfaCommandHandler>();
         
         // Logout handler with immediate token revocation
         services.AddScoped<IRequestHandler<LogoutCommand, LogoutResponse>, LogoutHandler>();

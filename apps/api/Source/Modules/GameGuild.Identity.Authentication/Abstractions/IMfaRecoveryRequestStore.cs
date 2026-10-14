@@ -24,5 +24,11 @@ public interface IMfaRecoveryRequestStore
     /// </summary>
     Task<int> ExpireOlderThanAsync(DateTimeOffset cutoff, CancellationToken cancellationToken);
 
+    /// <summary>
+    ///     Marks the user's live (Pending/AwaitingConfirmation) request as Cancelled.
+    ///     Returns the cancelled request, or null when no live request exists.
+    /// </summary>
+    Task<MfaRecoveryRequest?> CancelLiveByUserAsync(string userId, CancellationToken cancellationToken);
+
     /// <summary>Persistently stores all tracked changes.</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken);}
