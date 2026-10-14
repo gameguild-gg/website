@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameGuild.API.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261014103122_AddContentTypePermissionGrants")]
+    [Migration("20261014110000_AddContentTypePermissionGrants")]
     partial class AddContentTypePermissionGrants
     {
         /// <inheritdoc />
