@@ -93,6 +93,7 @@ public static class AuditModule
         // Register audit services
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IAuditReplayCaptureService, AuditReplayCaptureService>();
+        services.AddScoped<IAuditReplayReconstructionService, AuditReplayReconstructionService>();
         services.TryAddSingleton(TimeProvider.System);
 
         // PII redaction & tokenization pipeline (issue #192): rule cache, deterministic HMAC tokenizer,
