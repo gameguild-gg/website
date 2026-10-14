@@ -178,6 +178,12 @@ public static class DataDependencyInjection
         services.AddScoped<ITotpMfaService, TotpMfaService>();
         services.AddScoped<IBackupCodeMfaService, BackupCodeMfaService>();
         services.AddScoped<IMfaAttemptTrackingService, MfaAttemptTrackingService>();
+        // SMS OTP factor (issue #244): code lifecycle + delivery through the Notifications SMS
+        // channel; the provider port (ISmsSender) is host-configured, fail-closed NoOp default.
+        services.AddScoped<ISmsMfaService, SmsMfaService>();
+        // Push approval factor, v1 contract (issue #259): challenge state in IDistributedCache
+        // (Redis path in production, mirroring the token revocation store).
+        services.AddScoped<IPushMfaService, PushMfaService>();
 
         // Composite MFA service for backward compatibility
         services.AddScoped<IMfaService, MfaService>();
@@ -225,6 +231,9 @@ public static class DataDependencyInjection
 
         // Register WebAuthn repository and sub-services
         services.AddScoped<IWebAuthnCredentialRepository, WebAuthnCredentialRepository>();
+        // Distributed challenge store (issue #234): IDistributedCache-backed (Redis in
+        // production), so ceremonies started on one instance complete on another.
+        services.AddScoped<IWebAuthnSessionStore, DistributedCacheWebAuthnSessionStore>();
         services.AddScoped<IWebAuthnRegistrationService, WebAuthnRegistrationService>();
         services.AddScoped<IWebAuthnAuthenticationService, WebAuthnAuthenticationSubService>();
         services.AddScoped<IWebAuthnCredentialManagementService, WebAuthnCredentialManagementService>();

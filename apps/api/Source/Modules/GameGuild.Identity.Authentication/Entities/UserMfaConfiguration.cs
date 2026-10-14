@@ -67,6 +67,19 @@ public class UserMfaConfiguration
     /// <summary>Fixed deadline for a new enrollment; failed attempts cannot extend it.</summary>
     public DateTime? SetupExpiresAt { get; set; }
 
+    /// <summary>
+    ///     Verified phone number (E.164) enrolled for SMS OTP delivery (issue #244). Null when SMS MFA is not enrolled.
+    /// </summary>
+    [MaxLength(32)]
+    public string? SmsPhoneNumber { get; set; }
+
+    /// <summary>
+    ///     Mobile push device registration token enrolled for push MFA challenges (issue #259).
+    ///     Null when no device is enrolled.
+    /// </summary>
+    [MaxLength(512)]
+    public string? PushDeviceToken { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

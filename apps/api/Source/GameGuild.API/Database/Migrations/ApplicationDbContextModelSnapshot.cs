@@ -15567,9 +15567,17 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime>("AttemptedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("CorrelationId")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -16819,6 +16827,12 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("preferred_method");
 
+                    b.Property<string>("PushDeviceToken")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("push_device_token");
+
                     b.Property<string>("QrCodeSetupData")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
@@ -16828,6 +16842,12 @@ namespace GameGuild.API.Database.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("setup_expires_at");
+
+                    b.Property<string>("SmsPhoneNumber")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("sms_phone_number");
 
                     b.Property<string>("TotpSecretKey")
                         .IsConcurrencyToken()
