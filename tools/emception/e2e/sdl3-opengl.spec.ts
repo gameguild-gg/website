@@ -13,7 +13,8 @@
  * Allow generous timeouts (up to 15 minutes) for the wasm-ld link step.
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import type { Page } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Helpers
