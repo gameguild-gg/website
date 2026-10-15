@@ -5,6 +5,7 @@ using GameGuild.Learning.Enrollments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Assessments.Grading.Persistence;
 using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments;
@@ -62,20 +63,34 @@ public class TasksService(
             : await context.Set<AssessmentSubmission>()
                 .Where(s => assessmentIds.Contains(s.AssessmentId) && s.DeletedAt == null)
                 .ToListAsync().ConfigureAwait(false);
+        var reviewWork = await CanonicalReviewWorkProjection
+            .LoadAsync(context, submissions.Select(value => value.Id).ToArray())
+            .ConfigureAwait(false);
 
+        var now = SystemClock.UtcNow;
         var actorReviews = assessmentIds.Count == 0
             ? []
-            : await context.Set<AssessmentPeerReview>()
-                .Where(r => r.ReviewerUserId == actorUserId &&
-                            r.DeletedAt == null &&
-                            assessmentIds.Contains(r.AssessmentId))
+            : await (
+                    from claim in context.Set<PeerReviewClaim>().AsNoTracking()
+                    join stage in context.Set<ReviewStage>().AsNoTracking() on claim.ReviewStageId equals stage.Id
+                    join round in context.Set<GradeRound>().AsNoTracking() on stage.GradeRoundId equals round.Id
+                    join execution in context.Set<GradingExecution>().AsNoTracking() on round.GradingExecutionId equals execution.Id
+                    join revision in context.Set<AssessmentDefinitionRevision>().AsNoTracking() on execution.DefinitionRevisionId equals revision.Id
+                    where claim.ReviewerUserId == actorUserId &&
+                          assessmentIds.Contains(revision.AssessmentId) &&
+                          execution.ExecutionContext == ReviewExecutionContext.OfficialSubmission &&
+                          (claim.Status == PeerReviewClaimStatus.Submitted ||
+                           claim.Status == PeerReviewClaimStatus.Assigned && claim.LeaseExpiresAt > now)
+                    select new { revision.AssessmentId, claim.Status })
                 .ToListAsync().ConfigureAwait(false);
 
         var items = new List<TaskItemDto>();
 
         foreach (var assessment in assessments.Where(a => managedCourses.ContainsKey(a.CourseId)))
         {
-            var pending = CountPendingGradeTargets(submissions.Where(s => s.AssessmentId == assessment.Id));
+            var pending = CountPendingGradeTargets(
+                submissions.Where(s => s.AssessmentId == assessment.Id),
+                reviewWork);
             if (pending > 0)
             {
                 items.Add(new TaskItemDto(
@@ -129,7 +144,7 @@ public class TasksService(
                         assessment.Title,
                         // Reviews run to the assessment close — same asymmetry as the todo-8 read endpoints.
                         assessment.DueAt ?? assessment.AvailableUntil ?? assessment.LateSubmissionDeadline,
-                        ReviewsCompleted: reviews.Count(r => r.Status == PeerReviewStatus.Submitted),
+                        ReviewsCompleted: reviews.Count(r => r.Status == PeerReviewClaimStatus.Submitted),
                         ReviewsRequired: reviewsRequired));
                 }
             }
@@ -146,7 +161,9 @@ public class TasksService(
     /// rows never count, and a stale ungraded attempt under a newer graded one does not either.
     /// Shared with the submit-notification hook (AssessmentService).
     /// </summary>
-    internal static int CountPendingGradeTargets(IEnumerable<AssessmentSubmission> rows) =>
+    internal static int CountPendingGradeTargets(
+        IEnumerable<AssessmentSubmission> rows,
+        IReadOnlyDictionary<Guid, CanonicalReviewWorkState>? reviewWork = null) =>
         rows.GroupBy(r => r.CourseGroupId.HasValue
                 ? ("group", r.CourseGroupId.Value)
                 : ("user", r.UserId))
@@ -156,9 +173,17 @@ public class TasksService(
                     .GroupBy(r => r.AttemptNumber)
                     .Where(g => g.Any(r => r.Status != SubmissionStatus.InProgress))
                     .ToList();
-                return gradeableAttempts.Count > 0 &&
-                       gradeableAttempts.Single(g => g.Key == gradeableAttempts.Max(a => a.Key))
-                           .Any(r => r.Status is SubmissionStatus.Submitted or SubmissionStatus.Late);
+                if (gradeableAttempts.Count == 0)
+                {
+                    return false;
+                }
+
+                var latest = gradeableAttempts
+                    .Single(g => g.Key == gradeableAttempts.Max(a => a.Key))
+                    .First(r => r.Status != SubmissionStatus.InProgress);
+                return reviewWork is not null && reviewWork.TryGetValue(latest.Id, out var work)
+                    ? work.RequiresStaffReview
+                    : latest.Status is SubmissionStatus.Submitted or SubmissionStatus.Late;
             });
 
     private async Task<Dictionary<Guid, string>> GetManagedCoursesAsync(Guid actorUserId, Guid? tenantId, bool isSystemAdmin)

@@ -17,7 +17,7 @@ namespace GameGuild.Learning.Lti.Tests;
 
 /// <summary>
 /// AGS score passback tests: request shape asserted against an HttpMessageHandler double,
-/// no-op without mapping, and failures never propagate to the grading caller.
+/// no-op without mapping, and technical failures propagate to the academic outbox.
 /// </summary>
 public class AgsScoreServiceTests
 {
@@ -75,8 +75,13 @@ public class AgsScoreServiceTests
     [Fact]
     public async Task PostScore_WithoutLineItemMapping_MakesNoHttpCall()
     {
-        await CreateService().PostScoreIfMappedAsync(_assessmentId, _userId, ScoreValue.FromUnits(85), ScoreValue.FromUnits(100));
+        var outcome = await CreateService().PostScoreIfMappedAsync(
+            _assessmentId,
+            _userId,
+            ScoreValue.FromUnits(85),
+            ScoreValue.FromUnits(100));
 
+        outcome.Should().Be(LtiScorePassbackOutcome.NotMapped);
         _handler.Requests.Should().BeEmpty();
     }
 
@@ -88,8 +93,13 @@ public class AgsScoreServiceTests
             "https://canvas.test/api/lti/courses/1/line_items/9", ScoreValue.FromUnits(100)));
         _db.SaveChanges();
 
-        await CreateService().PostScoreIfMappedAsync(_assessmentId, _userId, ScoreValue.FromUnits(85), ScoreValue.FromUnits(100));
+        var outcome = await CreateService().PostScoreIfMappedAsync(
+            _assessmentId,
+            _userId,
+            ScoreValue.FromUnits(85),
+            ScoreValue.FromUnits(100));
 
+        outcome.Should().Be(LtiScorePassbackOutcome.UserNotMapped);
         _handler.Requests.Should().BeEmpty();
     }
 
@@ -102,9 +112,10 @@ public class AgsScoreServiceTests
     {
         SeedMapping(maxScoreUnits: maximumUnits);
 
-        await CreateService().PostScoreIfMappedAsync(
+        var outcome = await CreateService().PostScoreIfMappedAsync(
             _assessmentId, _userId, ScoreValue.FromUnits(scoreUnits), ScoreValue.FromUnits(maximumUnits));
 
+        outcome.Should().Be(LtiScorePassbackOutcome.Delivered);
         _handler.Requests.Should().HaveCount(2);
 
         // 1. platform access token: client_credentials + private_key_jwt at AuthTokenUrl
@@ -143,7 +154,7 @@ public class AgsScoreServiceTests
     }
 
     [Fact]
-    public async Task PostScore_WhenPlatformReturns500_DoesNotThrow()
+    public async Task PostScore_WhenPlatformReturns500_PropagatesForOutboxRetry()
     {
         SeedMapping();
         var failing = new CapturingHandler(request =>
@@ -152,7 +163,8 @@ public class AgsScoreServiceTests
 
         var act = () => service.PostScoreIfMappedAsync(_assessmentId, _userId, ScoreValue.FromUnits(85), ScoreValue.FromUnits(100));
 
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<HttpRequestException>()
+            .WithMessage("LTI AGS token request returned 500.");
         failing.Requests.Should().HaveCountGreaterThanOrEqualTo(1);
     }
 

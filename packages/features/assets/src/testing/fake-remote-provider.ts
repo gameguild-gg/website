@@ -95,17 +95,17 @@ export class FakeRemoteAssetProvider implements RemoteAssetProvider {
   async delete(record: AssetRecord): Promise<void> {
     this.values.delete(record.uri);
   }
-  
+
   async rename(id: string, displayName: string, context: AssetProviderContext): Promise<AssetRecord> {
     if (context.signal?.aborted) throw new DOMException("Aborted", "AbortError");
     const uri = createAssetUri(id);
     const value = this.values.get(uri);
     if (!value) throw new Error(`Remote asset not found: ${uri}`);
-    
+
     value.record.name = displayName;
     return structuredClone(value.record);
   }
-  
+
   seed(uri: AssetUri, download: AssetDownload): void {
     this.values.set(uri, download);
   }

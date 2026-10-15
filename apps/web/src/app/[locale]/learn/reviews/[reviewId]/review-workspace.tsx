@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { LearningAssessmentsAnonymousReviewSubmission, LearningAssessmentsRubricCriterion } from '@game-guild/client';
+import { parseQuizAnswerEnvelope, QUIZ_ASSESSMENT_TYPE_ADAPTER } from '@game-guild/grading-adapter-quiz';
+import { createEmptyQuizAnswer, parseQuizLearnerEntry, type QuizAnswer, type QuizLearnerEntry } from '@game-guild/quiz';
+import { QuizPlayer } from '@game-guild/quiz-surface/player';
 import { Badge } from '@game-guild/ui/components/badge';
 import { Button } from '@game-guild/ui/components/button';
 import { Input } from '@game-guild/ui/components/input';
@@ -18,6 +21,12 @@ import { useRouter } from '@/i18n/navigation';
 interface CriterionState {
   points: string;
   comment: string;
+}
+
+interface CanonicalQuizReviewItem {
+  itemId: string;
+  entry: QuizLearnerEntry;
+  answer: QuizAnswer;
 }
 
 function parsePointInput(value: string): { points: number; units: number } | null {
@@ -76,6 +85,10 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }): React.JSX.E
 
 function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymousReviewSubmission; onDone: () => void }): React.JSX.Element {
   const criteria = useMemo(() => sortedCriteria(review.rubric), [review.rubric]);
+  const canonicalQuizItems = useMemo(
+    () => readCanonicalQuizSubmission(review.deliveryCanonicalJson, review.responseEnvelopeCanonicalJson),
+    [review.deliveryCanonicalJson, review.responseEnvelopeCanonicalJson],
+  );
   const rubricMode = (review.rubric?.criteria?.length ?? 0) > 0;
   const maxScoreUnits = parseScoreValue(review.assessment?.maxScore ?? 10_000);
   const maxScore = scoreUnitsToPoints(maxScoreUnits);
@@ -181,6 +194,7 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
       </header>
 
       <section data-testid="peer-submission" className="space-y-4">
+        {canonicalQuizItems && <CanonicalQuizSubmission items={canonicalQuizItems} />}
         {review.textPayload && <TextViewer text={review.textPayload} />}
         {review.urlPayload && <UrlViewer url={review.urlPayload} />}
         {review.filePayload && <FileViewer payload={review.filePayload} />}
@@ -190,9 +204,12 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
             {review.codePayload}
           </pre>
         )}
-        {!review.textPayload && !review.urlPayload && !review.filePayload && !review.mediaPayload && !review.codePayload && (
-          <p className="text-sm text-muted-foreground">This submission has no viewable payload.</p>
-        )}
+        {!canonicalQuizItems &&
+          !review.textPayload &&
+          !review.urlPayload &&
+          !review.filePayload &&
+          !review.mediaPayload &&
+          !review.codePayload && <p className="text-sm text-muted-foreground">This submission has no viewable payload.</p>}
       </section>
 
       {rubricMode ? (
@@ -305,4 +322,68 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
       </Button>
     </div>
   );
+}
+
+function CanonicalQuizSubmission({ items }: { items: CanonicalQuizReviewItem[] }): React.JSX.Element {
+  return (
+    <div data-testid="canonical-quiz-submission" className="space-y-4">
+      {items.map((item, index) => (
+        <div key={item.itemId} className="space-y-2 rounded-md border p-4">
+          <p className="text-sm font-medium text-muted-foreground">Question {index + 1}</p>
+          <QuizPlayer
+            entry={item.entry}
+            answer={item.answer}
+            onAnswerChange={() => undefined}
+            onSubmit={() => undefined}
+            submissionResult={{ status: 'pending', feedback: 'Anonymous response' }}
+            disabled
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function readCanonicalQuizSubmission(
+  deliveryCanonicalJson: string | null | undefined,
+  responseEnvelopeCanonicalJson: string | null | undefined,
+): CanonicalQuizReviewItem[] | null {
+  if (!deliveryCanonicalJson || !responseEnvelopeCanonicalJson) return null;
+
+  try {
+    const delivery = asRecord(JSON.parse(deliveryCanonicalJson));
+    const itemBindings = asRecord(delivery?.items);
+    const itemOrder = delivery?.itemOrder;
+    if (delivery?.schemaVersion !== 1 || !itemBindings || !Array.isArray(itemOrder)) return null;
+
+    const response = parseQuizAnswerEnvelope(JSON.parse(responseEnvelopeCanonicalJson));
+    const seen = new Set<string>();
+    const items = itemOrder.map((value) => {
+      if (typeof value !== 'string' || !value || seen.has(value)) throw new TypeError('Invalid quiz delivery order.');
+      seen.add(value);
+      const binding = asRecord(itemBindings[value]);
+      const learnerPayload = asRecord(binding?.learnerPayload);
+      if (
+        binding?.adapterKey !== QUIZ_ASSESSMENT_TYPE_ADAPTER.key ||
+        binding.adapterVersion !== QUIZ_ASSESSMENT_TYPE_ADAPTER.version ||
+        learnerPayload?.itemId !== value
+      ) {
+        throw new TypeError(`Unsupported quiz delivery for item ${value}.`);
+      }
+
+      const entry = parseQuizLearnerEntry(learnerPayload.entry);
+      const answer = response.payload.answers[value] ?? createEmptyQuizAnswer(entry.type);
+      if (answer.type !== entry.type) throw new TypeError(`Quiz answer for item ${value} is mismatched.`);
+      return { itemId: value, entry, answer };
+    });
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
 }

@@ -3,7 +3,7 @@
 This guide covers the infrastructure and operational requirements for the Openinary asset CDN and moderation integration.
 
 ## File Size Limits
-The system supports files up to 100MB. 
+The system supports files up to 100MB.
 - **IMPORTANT:** If `Assets__Openinary__MaxFileMb` is increased beyond 50MB, this change **must** be applied to the Openinary server configuration first.
 - **Action:** Request limit increase via Devtron (Owner Ops) before enabling uploads > 50MB in the API.
 

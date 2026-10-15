@@ -35,6 +35,10 @@ public sealed class GradingPersistenceModelConfiguration : IModelConfiguration
         new(value => FormatDeliveryStatus(value), value => ParseDeliveryStatus(value));
     private static readonly ValueConverter<GradeResultReleaseStatus, string> ReleaseStatusConverter =
         new(value => FormatReleaseStatus(value), value => ParseReleaseStatus(value));
+    private static readonly ValueConverter<PeerReviewClaimStatus, string> PeerClaimStatusConverter =
+        new(value => FormatPeerClaimStatus(value), value => ParsePeerClaimStatus(value));
+    private static readonly ValueConverter<GradeResultReleaseScheduleStatus, string> ReleaseScheduleStatusConverter =
+        new(value => FormatReleaseScheduleStatus(value), value => ParseReleaseScheduleStatus(value));
 
     public void Configure(ModelBuilder modelBuilder)
     {
@@ -256,6 +260,7 @@ public sealed class GradingPersistenceModelConfiguration : IModelConfiguration
             });
             entity.HasKey(value => value.Id);
             entity.HasIndex(value => new { value.GradeRoundId, value.Sequence }).IsUnique();
+            entity.HasIndex(value => new { value.Status, value.EvidenceDeadlineAt });
             entity.Property(value => value.ReviewMethod).HasConversion(ReviewMethodConverter).HasMaxLength(32);
             entity.Property(value => value.Status).HasConversion(StageStatusConverter).HasMaxLength(48);
             entity.Property(value => value.HandlerKey).HasMaxLength(128).IsRequired();
@@ -310,6 +315,7 @@ public sealed class GradingPersistenceModelConfiguration : IModelConfiguration
             });
             entity.HasKey(value => value.Id);
             entity.HasIndex(value => new { value.ReviewStageId, value.EvidenceKey }).IsUnique();
+            entity.HasIndex(value => value.SourceReviewEvidenceId);
             entity.Property(value => value.EvidenceKey).HasMaxLength(160).IsRequired();
             entity.Property(value => value.ItemId).HasMaxLength(200);
             entity.Property(value => value.EvidenceType).HasMaxLength(128).IsRequired();
@@ -322,6 +328,56 @@ public sealed class GradingPersistenceModelConfiguration : IModelConfiguration
                 .WithMany()
                 .HasForeignKey(value => value.ReviewStageId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<ReviewEvidence>()
+                .WithMany()
+                .HasForeignKey(value => value.SourceReviewEvidenceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PeerReviewClaim>(entity =>
+        {
+            entity.ToTable("PeerReviewClaims", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_PeerReviewClaims_Reviewer",
+                    "num_nonnulls(\"ReviewerUserId\", \"ReviewerTestRunSubjectId\") = 1");
+                table.HasCheckConstraint(
+                    "CK_PeerReviewClaims_Status",
+                    "\"Status\" IN ('assigned', 'submitted', 'expired', 'cancelled')");
+                table.HasCheckConstraint(
+                    "CK_PeerReviewClaims_Lease",
+                    "\"LeaseExpiresAt\" > \"ClaimedAt\"");
+                table.HasCheckConstraint(
+                    "CK_PeerReviewClaims_Submission",
+                    "(\"Status\" = 'submitted') = (\"ReviewEvidenceId\" IS NOT NULL AND \"SubmittedAt\" IS NOT NULL)");
+            });
+            entity.HasKey(value => value.Id);
+            entity.Property(value => value.Status)
+                .HasConversion(PeerClaimStatusConverter)
+                .HasMaxLength(24)
+                .IsConcurrencyToken();
+            entity.HasIndex(value => new { value.Status, value.LeaseExpiresAt });
+            entity.HasIndex(value => new { value.ReviewStageId, value.ReviewerUserId })
+                .IsUnique()
+                .HasFilter("\"ReviewerUserId\" IS NOT NULL AND \"Status\" IN ('assigned', 'submitted')");
+            entity.HasIndex(value => new { value.ReviewStageId, value.ReviewerTestRunSubjectId })
+                .IsUnique()
+                .HasFilter("\"ReviewerTestRunSubjectId\" IS NOT NULL AND \"Status\" IN ('assigned', 'submitted')");
+            entity.HasIndex(value => value.ReviewEvidenceId)
+                .IsUnique()
+                .HasFilter("\"ReviewEvidenceId\" IS NOT NULL");
+            entity.HasOne<ReviewStage>()
+                .WithMany()
+                .HasForeignKey(value => value.ReviewStageId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<AssessmentTestRunSubject>()
+                .WithMany()
+                .HasForeignKey(value => value.ReviewerTestRunSubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ReviewEvidence>()
+                .WithMany()
+                .HasForeignKey(value => value.ReviewEvidenceId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -359,6 +415,38 @@ public sealed class GradingPersistenceModelConfiguration : IModelConfiguration
                 .WithMany()
                 .HasForeignKey(value => new { value.GradingExecutionId, value.ExecutionContext })
                 .HasPrincipalKey(value => new { value.Id, value.ExecutionContext })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<GradeResultReleaseSchedule>(entity =>
+        {
+            entity.ToTable("GradeResultReleaseSchedules", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_GradeResultReleaseSchedules_Status",
+                    "\"Status\" IN ('scheduled', 'cancelled', 'released')");
+                table.HasCheckConstraint(
+                    "CK_GradeResultReleaseSchedules_Producer",
+                    "num_nonnulls(\"ScheduledByActorId\", \"ScheduledByService\") = 1");
+                table.HasCheckConstraint(
+                    "CK_GradeResultReleaseSchedules_Cancellation",
+                    "(\"Status\" = 'cancelled') = (\"CancelledByActorId\" IS NOT NULL AND \"CancellationReason\" IS NOT NULL AND \"CancelledAt\" IS NOT NULL)");
+                table.HasCheckConstraint(
+                    "CK_GradeResultReleaseSchedules_Release",
+                    "(\"Status\" = 'released') = (\"ReleasedAt\" IS NOT NULL)");
+            });
+            entity.HasKey(value => value.Id);
+            entity.HasIndex(value => value.GradeRoundId).IsUnique();
+            entity.HasIndex(value => new { value.Status, value.ScheduledFor });
+            entity.Property(value => value.Status)
+                .HasConversion(ReleaseScheduleStatusConverter)
+                .HasMaxLength(24)
+                .IsConcurrencyToken();
+            entity.Property(value => value.ScheduledByService).HasMaxLength(160);
+            entity.Property(value => value.CancellationReason).HasColumnType("text");
+            entity.HasOne<GradeRound>()
+                .WithMany()
+                .HasForeignKey(value => value.GradeRoundId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -660,5 +748,39 @@ public sealed class GradingPersistenceModelConfiguration : IModelConfiguration
     {
         "released" => GradeResultReleaseStatus.Released,
         _ => throw new InvalidOperationException($"Unknown grade release status '{value}'."),
+    };
+
+    private static string FormatPeerClaimStatus(PeerReviewClaimStatus value) => value switch
+    {
+        PeerReviewClaimStatus.Assigned => "assigned",
+        PeerReviewClaimStatus.Submitted => "submitted",
+        PeerReviewClaimStatus.Expired => "expired",
+        PeerReviewClaimStatus.Cancelled => "cancelled",
+        _ => throw new ArgumentOutOfRangeException(nameof(value)),
+    };
+
+    private static PeerReviewClaimStatus ParsePeerClaimStatus(string value) => value switch
+    {
+        "assigned" => PeerReviewClaimStatus.Assigned,
+        "submitted" => PeerReviewClaimStatus.Submitted,
+        "expired" => PeerReviewClaimStatus.Expired,
+        "cancelled" => PeerReviewClaimStatus.Cancelled,
+        _ => throw new InvalidOperationException($"Unknown peer-review claim status '{value}'."),
+    };
+
+    private static string FormatReleaseScheduleStatus(GradeResultReleaseScheduleStatus value) => value switch
+    {
+        GradeResultReleaseScheduleStatus.Scheduled => "scheduled",
+        GradeResultReleaseScheduleStatus.Cancelled => "cancelled",
+        GradeResultReleaseScheduleStatus.Released => "released",
+        _ => throw new ArgumentOutOfRangeException(nameof(value)),
+    };
+
+    private static GradeResultReleaseScheduleStatus ParseReleaseScheduleStatus(string value) => value switch
+    {
+        "scheduled" => GradeResultReleaseScheduleStatus.Scheduled,
+        "cancelled" => GradeResultReleaseScheduleStatus.Cancelled,
+        "released" => GradeResultReleaseScheduleStatus.Released,
+        _ => throw new InvalidOperationException($"Unknown grade release schedule status '{value}'."),
     };
 }

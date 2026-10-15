@@ -293,7 +293,9 @@ public sealed class CodeAutomatedReviewStageHandler(CodeAssessmentTypeAdapter ad
     public string? ProviderPolicyVersion => null;
     public IReadOnlySet<ReviewExecutionContext> Contexts => adapter.Contexts;
 
-    public ValueTask<GradeResultV1> ExecuteAsync(ReviewStageRequest request, CancellationToken cancellationToken)
+    public async ValueTask<ReviewStageTransitionV1> StartAsync(
+        ReviewStageRequest request,
+        CancellationToken cancellationToken)
     {
         GradingContractValidator.ValidateBindings(request.ExecutionSnapshotHash, request.Snapshot, request.Delivery, request.Response);
         if (request.Snapshot.Manifest.Items.Any(item => item.AdapterKey != adapter.Key || item.AdapterVersion != Version))
@@ -303,8 +305,23 @@ public sealed class CodeAutomatedReviewStageHandler(CodeAssessmentTypeAdapter ad
 
         var projections = request.Snapshot.Manifest.Items.Select(item => request.Snapshot.ItemProjections[item.ItemId]).ToArray();
         var response = adapter.DecodeResponse(request.Response, projections);
-        return adapter.EvaluateDeterministicAsync(new DeterministicReviewRequest(projections, request.Delivery, response, Key, Version), cancellationToken);
+        var result = await adapter.EvaluateDeterministicAsync(
+            new DeterministicReviewRequest(projections, request.Delivery, response, Key, Version),
+            cancellationToken).ConfigureAwait(false);
+        return ReviewStageTransitionV1.Completed(result);
     }
+
+    public ValueTask<ReviewStageTransitionV1> AcceptEvidenceAsync(
+        ReviewStageRequest request,
+        ReviewStageEvidenceV1 evidence,
+        CancellationToken cancellationToken) =>
+        ValueTask.FromException<ReviewStageTransitionV1>(
+            new InvalidOperationException("AutomatedReview does not accept external evidence."));
+
+    public ValueTask<ReviewStageTransitionV1> TryCompleteAsync(
+        ReviewStageRequest request,
+        IReadOnlyList<ReviewStageEvidenceV1> evidence,
+        CancellationToken cancellationToken) => StartAsync(request, cancellationToken);
 }
 
 public sealed class CodeCapabilityRegistration : IReviewCapabilityRegistration

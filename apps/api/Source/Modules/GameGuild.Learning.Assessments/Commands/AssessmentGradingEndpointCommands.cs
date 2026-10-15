@@ -72,7 +72,13 @@ public sealed record ResolveAssessmentTestRunEndpointCommand(
     Guid TestRunId,
     Guid ActorId,
     InstructorReviewResolutionV1 Resolution,
-    string IdempotencyKey) : ICommand<AssessmentTestRunViewV1>;
+    string IdempotencyKey,
+    Guid? SubjectId = null) : ICommand<AssessmentTestRunViewV1>;
+
+public sealed record SubmitAssessmentTestSelfReviewEndpointCommand(
+    Guid TestRunId,
+    Guid ActorId,
+    SubmitSelfReviewCommand Command) : ICommand<AssessmentTestRunViewV1>;
 
 public sealed record RestartAssessmentTestRunEndpointCommand(
     Guid TestRunId,
@@ -91,6 +97,16 @@ public sealed record SaveCollectiveRuntimeDraftEndpointCommand(
     Guid SubmissionId,
     Guid ActorId,
     SaveCollectiveAssessmentDraftCommand Command) : ICommand<AssessmentSubmissionViewV1>;
+
+public sealed record SaveCollectiveRuntimeSelfReviewDraftEndpointCommand(
+    Guid SubmissionId,
+    Guid ActorId,
+    SaveCollectiveSelfReviewDraftCommand Command) : ICommand<AssessmentSubmissionViewV1>;
+
+public sealed record SubmitRuntimeSelfReviewEndpointCommand(
+    Guid SubmissionId,
+    Guid ActorId,
+    SubmitSelfReviewCommand Command) : ICommand<AssessmentSubmissionViewV1>;
 
 public sealed record SubmitRuntimeSubmissionEndpointCommand(
     Guid SubmissionId,
@@ -112,10 +128,13 @@ public sealed class AssessmentGradingRuntimeEndpointCommandHandler(IAssessmentGr
     ICommandHandler<StartAssessmentTestRunEndpointCommand, AssessmentTestRunViewV1>,
     ICommandHandler<SubmitAssessmentTestRunEndpointCommand, AssessmentTestRunViewV1>,
     ICommandHandler<ResolveAssessmentTestRunEndpointCommand, AssessmentTestRunViewV1>,
+    ICommandHandler<SubmitAssessmentTestSelfReviewEndpointCommand, AssessmentTestRunViewV1>,
     ICommandHandler<RestartAssessmentTestRunEndpointCommand, AssessmentTestRunViewV1>,
     ICommandHandler<StartIndividualRuntimeSubmissionEndpointCommand, AssessmentSubmissionViewV1>,
     ICommandHandler<StartCollectiveRuntimeSubmissionEndpointCommand, AssessmentSubmissionViewV1>,
     ICommandHandler<SaveCollectiveRuntimeDraftEndpointCommand, AssessmentSubmissionViewV1>,
+    ICommandHandler<SaveCollectiveRuntimeSelfReviewDraftEndpointCommand, AssessmentSubmissionViewV1>,
+    ICommandHandler<SubmitRuntimeSelfReviewEndpointCommand, AssessmentSubmissionViewV1>,
     ICommandHandler<SubmitRuntimeSubmissionEndpointCommand, AssessmentSubmissionViewV1>,
     ICommandHandler<ResolveRuntimeInstructorReviewEndpointCommand, AssessmentSubmissionViewV1>,
     ICommandHandler<RegradeRuntimeSubmissionEndpointCommand, AssessmentSubmissionViewV1>
@@ -138,6 +157,16 @@ public sealed class AssessmentGradingRuntimeEndpointCommandHandler(IAssessmentGr
             request.ActorId,
             request.Resolution,
             request.IdempotencyKey,
+            request.SubjectId,
+            cancellationToken);
+
+    public Task<AssessmentTestRunViewV1> Handle(
+        SubmitAssessmentTestSelfReviewEndpointCommand request,
+        CancellationToken cancellationToken) =>
+        service.SubmitTestSelfReviewAsync(
+            request.TestRunId,
+            request.ActorId,
+            request.Command,
             cancellationToken);
 
     public Task<AssessmentTestRunViewV1> Handle(
@@ -163,6 +192,24 @@ public sealed class AssessmentGradingRuntimeEndpointCommandHandler(IAssessmentGr
         SaveCollectiveRuntimeDraftEndpointCommand request,
         CancellationToken cancellationToken) =>
         service.SaveCollectiveDraftAsync(
+            request.SubmissionId,
+            request.ActorId,
+            request.Command,
+            cancellationToken);
+
+    public Task<AssessmentSubmissionViewV1> Handle(
+        SaveCollectiveRuntimeSelfReviewDraftEndpointCommand request,
+        CancellationToken cancellationToken) =>
+        service.SaveCollectiveSelfReviewDraftAsync(
+            request.SubmissionId,
+            request.ActorId,
+            request.Command,
+            cancellationToken);
+
+    public Task<AssessmentSubmissionViewV1> Handle(
+        SubmitRuntimeSelfReviewEndpointCommand request,
+        CancellationToken cancellationToken) =>
+        service.SubmitOfficialSelfReviewAsync(
             request.SubmissionId,
             request.ActorId,
             request.Command,
@@ -202,8 +249,22 @@ public sealed record ReleaseRuntimeSubmissionEndpointCommand(
     Guid ActorId,
     ReleaseGradeResultCommand Command) : ICommand<GradeResultReleaseResponse>;
 
-public sealed class GradeReleaseEndpointCommandHandler(IGradeReleaseService service) :
-    ICommandHandler<ReleaseRuntimeSubmissionEndpointCommand, GradeResultReleaseResponse>
+public sealed record ScheduleRuntimeSubmissionReleaseEndpointCommand(
+    Guid SubmissionId,
+    Guid ActorId,
+    ScheduleGradeResultReleaseCommand Command) : ICommand<GradeResultReleaseScheduleViewV1>;
+
+public sealed record CancelRuntimeSubmissionReleaseScheduleEndpointCommand(
+    Guid SubmissionId,
+    Guid ActorId,
+    CancelScheduledGradeResultReleaseCommand Command) : ICommand<GradeResultReleaseScheduleViewV1>;
+
+public sealed class GradeReleaseEndpointCommandHandler(
+    IGradeReleaseService service,
+    IGradeResultReleaseScheduleService scheduleService) :
+    ICommandHandler<ReleaseRuntimeSubmissionEndpointCommand, GradeResultReleaseResponse>,
+    ICommandHandler<ScheduleRuntimeSubmissionReleaseEndpointCommand, GradeResultReleaseScheduleViewV1>,
+    ICommandHandler<CancelRuntimeSubmissionReleaseScheduleEndpointCommand, GradeResultReleaseScheduleViewV1>
 {
     public async Task<GradeResultReleaseResponse> Handle(
         ReleaseRuntimeSubmissionEndpointCommand request,
@@ -221,4 +282,31 @@ public sealed class GradeReleaseEndpointCommandHandler(IGradeReleaseService serv
 
         return new GradeResultReleaseResponse(release.Id, release.GradeRoundId, release.ReleasedAt);
     }
+
+    public Task<GradeResultReleaseScheduleViewV1> Handle(
+        ScheduleRuntimeSubmissionReleaseEndpointCommand request,
+        CancellationToken cancellationToken) =>
+        scheduleService.ScheduleByActorAsync(
+            request.SubmissionId,
+            request.Command.ExpectedRoundId,
+            checked((int)request.Command.ExpectedSubmissionVersion),
+            request.Command.ExpectedScheduleVersion,
+            request.Command.ScheduledFor,
+            request.ActorId,
+            request.Command.IdempotencyKey,
+            request.Command.Reason,
+            cancellationToken);
+
+    public Task<GradeResultReleaseScheduleViewV1> Handle(
+        CancelRuntimeSubmissionReleaseScheduleEndpointCommand request,
+        CancellationToken cancellationToken) =>
+        scheduleService.CancelByActorAsync(
+            request.SubmissionId,
+            request.Command.ExpectedRoundId,
+            checked((int)request.Command.ExpectedSubmissionVersion),
+            request.Command.ExpectedScheduleVersion,
+            request.ActorId,
+            request.Command.IdempotencyKey,
+            request.Command.Reason,
+            cancellationToken);
 }

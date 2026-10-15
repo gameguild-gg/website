@@ -15,6 +15,8 @@ public sealed class EndpointCommandHandlerTests
         var assessmentId = Guid.NewGuid();
         var enrollmentId = Guid.NewGuid();
         var userId = Guid.NewGuid();
+        var testRunId = Guid.NewGuid();
+        var testSubjectId = Guid.NewGuid();
         var submissionId = Guid.NewGuid();
         var cueId = Guid.NewGuid();
         var groupId = Guid.NewGuid();
@@ -98,17 +100,39 @@ public sealed class EndpointCommandHandlerTests
         var service = new Mock<IPeerReviewAssignmentService>(MockBehavior.Strict);
         var assessmentId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var review = AssessmentPeerReview.Create(assessmentId, Guid.NewGuid(), userId);
-        var claim = new PeerReviewClaimResult(review.Id, "anonymous submission");
+        var reviewId = Guid.NewGuid();
+        var testRunId = Guid.NewGuid();
+        var testSubjectId = Guid.NewGuid();
+        var claim = new PeerReviewClaimResult(reviewId, "anonymous submission");
+        var review = new PeerReviewClaimView(
+            reviewId,
+            Guid.NewGuid(),
+            assessmentId,
+            Guid.NewGuid(),
+            userId,
+            null,
+            Grading.Persistence.PeerReviewClaimStatus.Assigned,
+            0,
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddMinutes(30),
+            null,
+            1,
+            "{}",
+            "{}");
 
         service.Setup(s => s.ClaimAsync(assessmentId, userId)).ReturnsAsync(Result.Success(claim));
-        service.Setup(s => s.SubmitReviewAsync(review, Score(80), "Good", "{}"))
+        service.Setup(s => s.ClaimAuthorTestAsync(testRunId, testSubjectId, userId))
+            .ReturnsAsync(Result.Success(claim));
+        service.Setup(s => s.SubmitReviewAsync(reviewId, userId, Score(80), "Good", "{}"))
             .ReturnsAsync(Result.Success(review));
 
         var handler = new PeerReviewEndpointCommandHandler(service.Object);
 
         (await handler.Handle(new ClaimPeerReviewEndpointCommand(assessmentId, userId), default)).Value.Should().Be(claim);
-        (await handler.Handle(new SubmitPeerReviewEndpointCommand(review, Score(80), "Good", "{}"), default)).Value.Should().BeSameAs(review);
+        (await handler.Handle(
+            new ClaimAuthorTestPeerReviewEndpointCommand(testRunId, testSubjectId, userId),
+            default)).Value.Should().Be(claim);
+        (await handler.Handle(new SubmitPeerReviewEndpointCommand(reviewId, userId, Score(80), "Good", "{}"), default)).Value.Should().BeSameAs(review);
 
         service.VerifyAll();
     }

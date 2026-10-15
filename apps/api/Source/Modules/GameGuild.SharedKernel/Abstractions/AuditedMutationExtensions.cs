@@ -11,10 +11,12 @@ namespace GameGuild;
 public static class AuditedMutationExtensions
 {
     /// <summary>
-    ///     Begins a database transaction when the underlying context is relational. Non-relational
-    ///     providers (the in-memory test provider) do not support transactions; callers then run the
-    ///     mutation and the audit emission in one <see cref="IApplicationDbContext.SaveChangesAsync"/>
-    ///     batch, which is equally atomic for those providers.
+    ///     Begins a database transaction when the underlying context is relational and no transaction
+    ///     already owns the command. Callers participate in an existing transaction without taking
+    ///     ownership of its commit or disposal. Non-relational providers (the in-memory test provider)
+    ///     do not support transactions; callers then run the mutation and the audit emission in one
+    ///     <see cref="IApplicationDbContext.SaveChangesAsync"/> batch, which is equally atomic for those
+    ///     providers.
     /// </summary>
     public static async Task<IDbContextTransaction?> BeginAuditedMutationTransactionAsync(
         this IApplicationDbContext context,
@@ -26,9 +28,12 @@ public static class AuditedMutationExtensions
             return null;
         }
 
-        return !relational.Database.IsRelational()
-            ? null
-            : await relational.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        if (!relational.Database.IsRelational() || relational.Database.CurrentTransaction is not null)
+        {
+            return null;
+        }
+
+        return await relational.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

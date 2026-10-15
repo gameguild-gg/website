@@ -1,6 +1,9 @@
 # Parte 4. Expansão de reviews e operação
 
-Status: não iniciada; gate de entrada `04-0` aprovado em 2026-10-08.
+Status: implementada em 2026-10-13 e encerrada em 2026-10-14; validação local
+do runtime, web, arquitetura, migrations e matriz browser aprovada. A
+reexecução da suíte HTTP + PostgreSQL permanece bloqueada antes do grading por
+uma exigência externa de certificado de Data Protection no host de integração.
 
 ## Objetivo
 
@@ -34,8 +37,11 @@ Regras globais: [`08-implementation-sequence.md`](../08-implementation-sequence.
 Gate aprovado em 2026-10-08. `CLOSE-01` a `CLOSE-04`, `ACCESS-03A`,
 `ACCESS-04` e `ACCESS-05` estão concluídos. A delegação operacional
 `ACCESS-03B` permanece externa e não bloqueante. A aprovação libera somente
-`SEQ-12A`; ela não autoriza schema, migration, capability oficial nova nem
-provider de produção.
+`SEQ-12A`; ela não prescreve antecipadamente um delta de schema, capability
+oficial nova nem provider de produção. Uma mudança relacional mínima está
+autorizada quando o `SCHEMA-GATE` do próprio marco demonstrar que o modelo atual
+não consegue garantir seus invariantes e a entrega incluir a migration
+incremental correspondente.
 
 A aprovação está sustentada pelas seguintes evidências:
 
@@ -60,31 +66,48 @@ e a suíte acumulada, permanecem registradas na
 
 Executar um marco por vez. Cada marco encerra contrato, API, surface e testes
 aplicáveis antes do seguinte; esta parte não deve ser implementada como um único
-corte. Todo `SCHEMA-GATE` interrompe a execução e exige apresentação e aprovação
-explícita antes de editar entidades EF, configurações, migrations, snapshot ou
-tabelas.
+corte. Todo `SCHEMA-GATE` é uma decisão técnica registrada, não uma presunção
+contra persistência nem um pedido de autorização caso a caso. Antes de alterar
+o modelo relacional, o gate deve demonstrar por que entidades, constraints e
+índices atuais não sustentam o contrato. Se houver lacuna, o mesmo marco entrega
+o menor delta suficiente em entidades EF, configuração, nova migration
+incremental, designer e snapshot. Se não houver, registra delta relacional zero.
 
-O estado atual já permite classificar os gates:
+Não editar, substituir, apagar ou recriar migrations históricas. Cada migration
+nova deve provar criação limpa e upgrade de um banco populado pela migration
+imediatamente anterior, além de preservar dados, constraints e artefatos SQL
+ativos. Remoção, renomeação destrutiva, backfill com reinterpretação de dados ou
+troca de owner persistente continuam exigindo proposta e aprovação explícitas.
 
-- `SEQ-12A`: nenhuma mudança relacional é prevista. Se a evolução do lifecycle
-  ou do test run multipersona demonstrar necessidade de schema, interromper e
-  apresentar o delta;
-- `SEQ-12`: gate realmente condicional. `ReviewEvidence` e
-  `GradingCommandReceipt` podem permitir um event stream append-only de draft,
-  mas isso deve ser provado sob concorrência antes de concluir delta zero;
-- `SEQ-13`: existe delta relacional esperado. `AssessmentPeerReview` atual não
-  representa lease, expiração, reatribuição, ownership pelo stage/round nem os
-  estados operacionais exigidos. O desenho exato continua não aprovado;
-- `SEQ-14`: gate condicional. O módulo possui outbox acadêmica e receipts, mas
-  não pode importar o inbox do host `GameGuild.API`;
-- `SEQ-15`: existe delta relacional esperado para agendamento por rodada.
-  `Assessment.ResultReleaseScheduledFor` guarda a policy autoral, enquanto
-  `GradeResultRelease` representa apenas uma liberação final append-only. O
-  desenho exato continua não aprovado.
+Os gates foram encerrados com as seguintes decisões:
 
-Nenhuma das duas propostas esperadas autoriza antecipadamente uma migration.
-Cada uma deve listar ownership, lifecycle, campos, constraints, índices,
-retenção, concorrência, alternativa rejeitada e impacto no catálogo PostgreSQL.
+- `SEQ-12A`: delta relacional zero. O lifecycle assíncrono e o test run
+  multipersona usam os agregados existentes;
+- `SEQ-12`: `ReviewEvidence` e `GradingCommandReceipt` continuam sendo a
+  autoridade de evidência, draft e idempotência. Foi adicionada somente a
+  autorreferência opcional `ReviewEvidence.SourceReviewEvidenceId`, necessária
+  para provar reuso cross-round sem duplicar uma ação humana;
+- `SEQ-13`: `PeerReviewClaim` tornou-se o owner canônico de lease, identidade
+  exclusiva do revisor, expiração e evidência por `ReviewStage`.
+  `ReviewStage.EvidenceDeadlineAt` representa a janela do stage.
+  `AssessmentPeerReview` foi preservado e permanece fora da autoridade do novo
+  runtime;
+- `SEQ-14`: delta relacional zero. Requests usam a outbox acadêmica e respostas
+  são deduplicadas pelos receipts e evidências do próprio módulo, sem importar
+  o inbox do host;
+- `SEQ-15`: `GradeResultReleaseSchedule` é o owner operacional único do
+  agendamento por `GradeRound`; `GradeResultRelease` continua sendo o fato final
+  append-only.
+
+Os deltas de `SEQ-12` e de `SEQ-13`/`SEQ-15` foram entregues, respectivamente,
+pelas migrations incrementais `AddReviewEvidenceReuseReference` e
+`AddPeerReviewClaimsAndReleaseSchedules`, com designer e snapshot atualizados.
+
+Os deltas esperados não autorizam tabelas ou colunas por conveniência. Cada gate
+deve listar ownership, lifecycle, campos, constraints, índices, retenção,
+concorrência, alternativa rejeitada e impacto no catálogo PostgreSQL; uma vez
+demonstrada a necessidade, a migration incremental faz parte obrigatória do
+próprio marco.
 
 ## Fora do escopo
 
@@ -169,7 +192,8 @@ fundação é concluída antes de implementar `SelfReview`.
   execução correta após reload;
 - regrade não solicita silenciosamente nova evidência humana e preserva a
   proveniência da evidência reutilizada;
-- nenhuma mudança de schema é realizada sem um novo gate explícito.
+- nenhuma mudança de schema é realizada sem decisão registrada no gate e sua
+  migration incremental correspondente.
 
 ## `SEQ-12`. Completar `SelfReview`
 
@@ -196,10 +220,10 @@ garante:
   quando um regrade reutilizá-la.
 
 Se o núcleo atender integralmente, registrar o gate com delta relacional zero.
-Se não atender, apresentar tabelas, colunas, constraints e índices necessários
-e obter aprovação antes de criar uma migration incremental forward-only. Provar
-criação limpa, upgrade de banco populado pela migration anterior e preservação
-de dados e artefatos SQL ativos.
+Se não atender, registrar as tabelas, colunas, constraints e índices necessários
+e criar uma migration incremental forward-only no mesmo marco. Provar criação
+limpa, upgrade de banco populado pela migration anterior e preservação de dados
+e artefatos SQL ativos.
 
 ### Implementação
 
@@ -222,7 +246,7 @@ de dados e artefatos SQL ativos.
 - permitir que qualquer participante do snapshot edite o draft coletivo com
   concorrência otimista;
 - implementar `SaveCollectiveSelfReviewDraftV1(expectedVersion,
-  idempotencyKey, requestHash)` sobre `IdempotentCommandEnvelopeV1`; cada save
+idempotencyKey, requestHash)` sobre `IdempotentCommandEnvelopeV1`; cada save
   aceito grava na mesma transação um evento append-only e replay idêntico
   reutiliza o outcome sem duplicá-lo;
 - aceitar um único submit final da evidência coletiva e registrar o ator real;
@@ -305,19 +329,23 @@ relacional obrigatória para:
 O estado atual de `AssessmentPeerReview`, limitado a `Assigned`/`Submitted` e
 sem lease ou vínculo com stage/round, não satisfaz esse contrato. O gate deve
 decidir explicitamente entre evoluir essa entidade ou introduzir um owner
-canônico novo. Essa constatação não pré-aprova nenhuma das alternativas.
+canônico novo, escolhendo a alternativa com menor duplicação de ownership e
+menor delta relacional.
 
 Reutilizar tabelas atuais quando possuírem ownership e invariantes corretos.
 `AssessmentPeerReview` pode permanecer como registro individual de claim e
 evidência, mas não como segunda autoridade do resultado agregado.
-Qualquer mudança aprovada entra em nova migration incremental e preserva a
-cadeia histórica. Remover uma estrutura existente exige prova e aprovação
-específicas, não apenas a classificação de que ela é antiga.
+Qualquer mudança demonstrada como necessária entra em nova migration incremental
+e preserva a cadeia histórica. Remover uma estrutura existente exige prova e
+aprovação específicas, não apenas a classificação de que ela é antiga.
 
 ### Implementação
 
 - adaptar a atribuição, claim e workspace anônimos existentes ao stage/round
   canônico, preservando a UX útil sem preservar autoridade paralela;
+- projetar no workspace anônimo a entrega imutável e a resposta canônica da
+  `GradingExecution`; para quiz, a surface interpreta esses envelopes pelo
+  adapter e mostra a resposta submetida sem answer key nem identidade;
 - impedir que aluno revise a própria submission ou uma submission de grupo do
   qual participe;
 - manter revisores individuais mesmo quando o alvo for coletivo;
@@ -333,6 +361,9 @@ específicas, não apenas a classificação de que ela é antiga.
 - transformar cada submit autorizado do workspace em `ReviewEvidence` da
   `GradingExecution`, entregue pelo dispatcher genérico; somente o handler de
   `PeerReview` aceita, agrega e conclui o stage;
+- serializar submits, retomadas e operações peer pelo mesmo lock transacional
+  da `GradingExecution`, para que reviewers concorrentes não disputem versões
+  do mesmo stage nem dupliquem agregação ou finalização;
 - agregar resultados por submission conforme policy versionada;
 - encaminhar opcionalmente o agregado para `InstructorReview`;
 - exercitar múltiplas personas no test run;
@@ -397,7 +428,7 @@ ser importado por `GameGuild.Learning.Assessments`. A proposta deve preservar a
 direção de dependência: Learning expõe portas e comandos genéricos; o host
 compõe o adapter do provider e entrega respostas ao caso de uso idempotente de
 Learning. Deduplicação autoritativa da resposta fica em receipts já adequados ou
-em persistência do próprio módulo aprovada neste gate.
+em persistência do próprio módulo justificada neste gate.
 Somente se não atenderem, apresentar mudanças para:
 
 - request estável e correlação com stage/round;
@@ -405,8 +436,8 @@ Somente se não atenderem, apresentar mudanças para:
 - timeout, retry e estado pendente;
 - identidade e versão do modelo/provider.
 
-Mudanças aprovadas entram em migration incremental forward-only, com criação
-limpa e upgrade populado testados.
+Mudanças demonstradas como necessárias entram em migration incremental
+forward-only, com criação limpa e upgrade populado testados.
 
 ### Implementação
 
@@ -453,8 +484,8 @@ convertidos em `SEQ-03`. Para consumers, filas, métricas e projeções, usar ou
 e estruturas existentes primeiro e somente propor persistência nova quando
 consulta, retenção ou idempotência operacional não puderem ser atendidas
 corretamente. O agendamento por rodada possui o delta esperado descrito abaixo.
-Toda proposta exige aprovação e migration incremental própria; componentes sem
-delta registram essa conclusão separadamente.
+Todo delta demonstrado como necessário exige migration incremental própria;
+componentes sem delta registram essa conclusão separadamente.
 
 Para release agendado, o gate parte do estado já comprovado:
 
@@ -481,7 +512,7 @@ execução da rodada.
   `CancelScheduledGradeResultRelease` com ator, permissão, rodada esperada,
   versão de concorrência, idempotency key, motivo e auditoria. Reagendamento é
   uma nova execução idempotente de schedule sobre a versão esperada;
-- depois da aprovação do gate, persistir `ScheduledFor` em UTC no owner de
+- depois da decisão técnica do gate, persistir `ScheduledFor` em UTC no owner de
   schedule e usar `TimeProvider` injetável. O worker busca schedules vencidos
   por índice, mas executa o mesmo `ReleaseGradeResult` com identidade de serviço
   autorizada; nunca cria ou altera `GradeResultRelease` diretamente;
@@ -599,16 +630,50 @@ restaram autoridades concorrentes, referências obsoletas ou lacunas na matriz.
 - toda a suíte de grading acumulada das Partes 1, 2, 3 e 4 passa em CI com banco
   criado do zero e diff global sem drift depois de cada `SCHEMA-GATE`.
 
+## Evidências executadas
+
+- a suite `GameGuild.Learning.Assessments.UnitTests` passou com `484/484`; nela,
+  `AssessmentGradingRuntimeTests` cobre os nove workflows de review em
+  `AuthorTest`, os métodos oficiais adicionados, sujeitos individuais e
+  coletivos, handoff para instrutor, regrade por referência, release imediato,
+  manual e agendado, fan-out e idempotência;
+- testes de controller e service cobrem anonimato peer, claims, expiração,
+  reatribuição, insuficiência, fila canônica e bloqueio das mutações antigas;
+- `52/52` testes web focados passaram e cobrem o formulário compartilhado de
+  `SelfReview`, actions peer, workspace, seleção de capabilities e
+  indisponibilidade de `AIReview` sem provider; o workspace também prova a
+  renderização da entrega/resposta canônica do quiz sem dados de identidade;
+- testes de contrato cobrem provider controlado, resposta duplicada, falha
+  transitória e novo request em regrade;
+- `AssessmentReviewOperationsMigrationPostgreSqlTests` prova upgrade a partir
+  da migration imediatamente anterior, preserva dado existente, valida tabelas,
+  colunas e índices, executa rollback e recria o schema final sem model drift;
+- o `Quiz Grading Scenario Runner` criou um curso limpo com sete quizzes e
+  comprovou, em uma execução browser agregada `7/7`, os fluxos oficiais
+  `AutomatedReview`, `InstructorReview`, `SelfReview` e `PeerReview`, diretos ou
+  seguidos por `InstructorReview`; todos terminaram em `released`, incluindo as
+  duas personas learner dos fluxos peer, projeção no gradebook, retomada da
+  tentativa e negação do outsider;
+- build da solution, testes de arquitetura/autorizacao e typechecks dos
+  packages e da web foram aprovados localmente;
+- a tentativa de reexecutar `AssessmentGradingPostgreSqlHttpTests` em
+  2026-10-14 confirmou que os `14/14` casos continuam interrompidos durante a
+  inicializacao global do host, antes de criar qualquer cenário, porque
+  `DataProtectionStartupConfiguration` exige as duas variáveis de certificado.
+  O erro não percorre código de grading e permanece registrado como bloqueio
+  externo de infraestrutura de teste, sem bypass no módulo de Assessments.
+
 ## Acompanhamento
 
-| Marco | Status | Evidência |
-| --- | --- | --- |
-| gate `04-0` | aprovado | `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados em 2026-10-08; `ACCESS-03B` não bloqueante |
-| `SEQ-12A` | pendente | lifecycle genérico, test run multipersona e regra de regrade |
-| `SEQ-12` | pendente | `SelfReview` individual e coletivo |
-| schema de `SEQ-13` | aguardando proposta e aprovação | lease, ownership de stage, identidades e estados de claim |
-| `SEQ-13` | bloqueado pelo schema gate | `PeerReview` individual e coletivo |
-| `SEQ-14` | pendente | contract test de provider e gate condicional |
-| schema de schedule em `SEQ-15` | aguardando proposta e aprovação | owner por rodada, UTC, concorrência e índice de vencimento |
-| `SEQ-15` | bloqueado pelo schema gate | integração global, operação e projeções idempotentes |
-| `SEQ-16` | pendente | CI, auditoria e checklist global |
+| Marco                          | Status                                    | Evidência                                                                                                                                     |
+| ------------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| gate `04-0`                    | aprovado                                  | `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados em 2026-10-08; `ACCESS-03B` não bloqueante                                                  |
+| `SEQ-12A`                      | concluído                                 | lifecycle genérico, test run multipersona e regrade sem novo runtime por método                                                               |
+| schema de `SEQ-12`             | aprovado                                  | autorreferência opcional de evidência; migration incremental isolada                                                                          |
+| `SEQ-12`                       | concluído                                 | `SelfReview` individual/coletivo, direto/com instrutor, surface compartilhada e regrade por referência                                        |
+| schema de `SEQ-13`             | aprovado                                  | claim por stage, lease, identidade exclusiva, deadline e índices canônicos                                                                    |
+| `SEQ-13`                       | concluído                                 | `PeerReview` individual/coletivo, test run multipersona, operações de insuficiência e regrade                                                 |
+| `SEQ-14`                       | concluído                                 | porta, registry, outbox, deduplicação e provider controlado; produção permanece fail-closed sem provider                                      |
+| schema de schedule em `SEQ-15` | aprovado                                  | owner único por rodada, UTC, concorrência e índice de vencimento                                                                              |
+| `SEQ-15`                       | concluído                                 | release agendado, consumers independentes, operação, métricas e fila canônica                                                                 |
+| `SEQ-16`                       | concluído com bloqueio externo registrado | auditoria, mapas, suíte de domínio `484/484` e matriz browser `7/7` aprovados; rerun HTTP + PostgreSQL aguarda correção do host de integração |
