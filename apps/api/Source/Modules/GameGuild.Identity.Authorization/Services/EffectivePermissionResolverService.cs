@@ -82,7 +82,8 @@ public sealed class EffectivePermissionResolverService(
     IEvaluationDenialThrottleService? denialThrottle = null,
     IExternalAuthorizationDecisionProvider? externalDecisionProvider = null,
     IResourceOwnershipProvider? ownershipProvider = null,
-    IContentTypePermissionGrantRepository? contentTypePermissionGrantRepository = null
+    IContentTypePermissionGrantRepository? contentTypePermissionGrantRepository = null,
+    IContentTypeHierarchyProvider? contentTypeHierarchyProvider = null
 ) : IEffectivePermissionResolver
 {
     private readonly AuthorizationOptions _authOptions = authorizationOptions.Value;
@@ -695,12 +696,31 @@ public sealed class EffectivePermissionResolverService(
         {
             await AddContentTypeGrantRowAsync(null, PermissionSource.ContentTypeDefault, contentTypeName, context, allows, denies, sources, ct).ConfigureAwait(false);
             await AddContentTypeGrantRowAsync(context.UserId, PermissionSource.ContentTypeGrant, contentTypeName, context, allows, denies, sources, ct).ConfigureAwait(false);
+
+            // Hierarchy inheritance (issue #314): grants on registered ancestor content
+            // types apply to this type too, minted under THIS type's qualified name so
+            // exact-name checks for the descendant find them. Inheritance flows
+            // downward only; a cycle-broken or unregistered chain contributes nothing.
+            if (contentTypeHierarchyProvider is not null)
+            {
+                var ancestors = await contentTypeHierarchyProvider
+                    .GetAncestorsAsync(contentTypeName, context.TenantId, ct)
+                    .ConfigureAwait(false);
+                foreach (var ancestor in ancestors)
+                {
+                    await AddContentTypeGrantRowAsync(null, PermissionSource.ContentTypeInheritedDefault, ancestor, context, allows, denies, sources, ct, inheritInto: contentTypeName).ConfigureAwait(false);
+                    await AddContentTypeGrantRowAsync(context.UserId, PermissionSource.ContentTypeInheritedGrant, ancestor, context, allows, denies, sources, ct, inheritInto: contentTypeName).ConfigureAwait(false);
+                }
+            }
         }
     }
 
     /// <summary>
     ///     Adds the contribution of one <see cref="ContentTypePermissionGrant"/> row
-    ///     (inactive, expired, soft-deleted or absent rows contribute nothing).
+    ///     (inactive, expired, soft-deleted or absent rows contribute nothing). When
+    ///     <paramref name="inheritInto"/> is set, the row's permissions mint under the
+    ///     descendant's qualified name instead of the row's own content type (hierarchy
+    ///     inheritance, issue #314).
     /// </summary>
     private async Task AddContentTypeGrantRowAsync(
         Guid? userId,
@@ -710,7 +730,8 @@ public sealed class EffectivePermissionResolverService(
         HashSet<string> allows,
         HashSet<string> denies,
         Dictionary<string, PermissionSource> sources,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? inheritInto = null)
     {
         var row = await contentTypePermissionGrantRepository!
             .GetBySubjectAndContentTypeAsync(userId, context.TenantId, contentTypeName, ct)
@@ -720,6 +741,8 @@ public sealed class EffectivePermissionResolverService(
             return;
         }
 
+        var mintFor = inheritInto ?? contentTypeName;
+
         foreach (var permission in row.Permissions)
         {
             if (string.IsNullOrWhiteSpace(permission))
@@ -727,7 +750,7 @@ public sealed class EffectivePermissionResolverService(
                 continue;
             }
 
-            var qualified = $"{contentTypeName}.{permission.Trim()}";
+            var qualified = $"{mintFor}.{permission.Trim()}";
             if (allows.Add(qualified))
             {
                 sources[qualified] = source;
@@ -741,7 +764,7 @@ public sealed class EffectivePermissionResolverService(
                 continue;
             }
 
-            denies.Add($"{contentTypeName}.{denied.Trim()}");
+            denies.Add($"{mintFor}.{denied.Trim()}");
         }
     }
 

@@ -769,6 +769,30 @@ public enum PermissionType
     /// </summary>
     DataMigration = 210,
 
+    /// <summary>
+    ///     Permission to edit an entity's descriptive metadata without touching its
+    ///     content (titles, tags, SEO fields, classification labels) (issue #333)
+    /// </summary>
+    EditMetadata = 211,
+
+    /// <summary>
+    ///     System permission to execute maintenance operations (cleanup jobs, retention
+    ///     sweeps, index rebuilds) (issue #333)
+    /// </summary>
+    Maintenance = 212,
+
+    /// <summary>
+    ///     System permission to read monitoring telemetry, health probes and operational
+    ///     metrics (issue #333)
+    /// </summary>
+    Monitoring = 213,
+
+    /// <summary>
+    ///     System permission to deploy artifacts and promote releases between
+    ///     environments (issue #333)
+    /// </summary>
+    Deployment = 214,
+
     #endregion
 }
 

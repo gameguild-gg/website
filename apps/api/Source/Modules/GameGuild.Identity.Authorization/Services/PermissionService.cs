@@ -49,8 +49,10 @@ public class PermissionService(
         Guid tenantId,
         string[] permissions,
         Guid? grantedBy = null,
+        DateTime? expiresAt = null,
+        string? reason = null,
         CancellationToken cancellationToken = default
-    ) => _bulkService.BulkGrantTenantPermissionAsync(userIds, tenantId, permissions, grantedBy, cancellationToken);
+    ) => _bulkService.BulkGrantTenantPermissionAsync(userIds, tenantId, permissions, grantedBy, expiresAt, reason, cancellationToken);
 
     public Task<bool> RevokeTenantPermissionAsync(
         Guid? userId,

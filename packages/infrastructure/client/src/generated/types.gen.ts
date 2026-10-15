@@ -11481,10 +11481,18 @@ export interface IdentityAuthorizationGetTenantPermissionsOutput {
   isSystemAdmin?: boolean;
   /** Gets whether the user is a tenant admin. */
   isTenantAdmin?: boolean;
-  /** Gets the list of permissions. */
+  /** Gets the 1-based page number this response represents (issue #307). */
+  page?: number;
+  /** Gets the page size that produced this response (issue #307). */
+  pageSize?: number;
+  /** Gets the list of permissions on the requested page. */
   permissions: string[] | null;
   /** Gets the tenant ID. */
   tenantId: string;
+  /** Gets the total number of permissions across all pages (issue #307). */
+  totalCount?: number;
+  /** Gets the total number of pages (issue #307). */
+  totalPages?: number;
   /** Gets the user ID. */
   userId: string;
 }
@@ -11525,6 +11533,18 @@ export interface IdentityAuthorizationGrantTenantPermissionCommand {
 
 /** Graph export formats */
 export type IdentityAuthorizationGraphExportFormat = 'None' | 'DOT' | 'JSON' | 'GraphML';
+
+/** Response of a global-permission validation. */
+export interface IdentityAuthorizationHasGlobalPermissionOutput {
+  /** Gets the reason the permission is not granted (when it is not). */
+  denialReason?: string | null;
+  /** Gets whether the global default baseline grants the permission. */
+  hasPermission: boolean;
+  /** Gets the permission that was validated. */
+  permission: string | null;
+  /** Gets the source of the decision (always the global-defaults layer). */
+  source: string | null;
+}
 
 /** Response indicating whether the user has the requested permission. */
 export interface IdentityAuthorizationHasPermissionOutput {
@@ -12331,7 +12351,11 @@ export type IdentityAuthorizationPermissionType =
   | 'AuditAccess'
   | 'SystemConfiguration'
   | 'BackupRestore'
-  | 'DataMigration';
+  | 'DataMigration'
+  | 'EditMetadata'
+  | 'Maintenance'
+  | 'Monitoring'
+  | 'Deployment';
 
 /** Result of updating permissions. */
 export interface IdentityAuthorizationPermissionUpdateResult {
@@ -24598,6 +24622,7 @@ export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<Iden
 export let IdentityAuthorizationGrantContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationGrantContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationGraphExportFormatSchema: z.ZodType<IdentityAuthorizationGraphExportFormat>;
+export let IdentityAuthorizationHasGlobalPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasGlobalPermissionOutput>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationHistoricalInheritanceEdgeSchema: z.ZodType<IdentityAuthorizationHistoricalInheritanceEdge>;
 export let IdentityAuthorizationHistoricalResourceGrantSchema: z.ZodType<IdentityAuthorizationHistoricalResourceGrant>;
@@ -36219,8 +36244,12 @@ IdentityAuthorizationGetResourceUsersOutputSchema = z.object({
 IdentityAuthorizationGetTenantPermissionsOutputSchema = z.object({
   isSystemAdmin: z.boolean().optional(),
   isTenantAdmin: z.boolean().optional(),
+  page: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
   permissions: z.array(z.string()).nullable(),
   tenantId: z.string().uuid(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
   userId: z.string().uuid(),
 });
 
@@ -36249,6 +36278,14 @@ IdentityAuthorizationGrantTenantPermissionCommandSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationGraphExportFormat. Graph export formats */
 IdentityAuthorizationGraphExportFormatSchema = z.enum(['None', 'DOT', 'JSON', 'GraphML']);
+
+/** Zod schema for IdentityAuthorizationHasGlobalPermissionOutput. Response of a global-permission validation. */
+IdentityAuthorizationHasGlobalPermissionOutputSchema = z.object({
+  denialReason: z.string().nullable().optional(),
+  hasPermission: z.boolean(),
+  permission: z.string().nullable(),
+  source: z.string().nullable(),
+});
 
 /** Zod schema for IdentityAuthorizationHasPermissionOutput. Response indicating whether the user has the requested permission. */
 IdentityAuthorizationHasPermissionOutputSchema = z.object({
@@ -36921,6 +36958,10 @@ IdentityAuthorizationPermissionTypeSchema = z.enum([
   'SystemConfiguration',
   'BackupRestore',
   'DataMigration',
+  'EditMetadata',
+  'Maintenance',
+  'Monitoring',
+  'Deployment',
 ]);
 
 /** Zod schema for IdentityAuthorizationPermissionUpdateResult. Result of updating permissions. */
