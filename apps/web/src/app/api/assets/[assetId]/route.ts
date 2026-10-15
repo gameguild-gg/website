@@ -35,6 +35,25 @@ export async function GET(
   return proxy(upstream);
 }
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ assetId: string }> },
+): Promise<Response> {
+  const token = await getToken();
+  if (!token) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  const { assetId } = await params;
+  const upstream = await fetch(assertSafeServiceUrl(`${apiBaseUrl()}/v1/assets/${encodeURIComponent(assetId)}`, apiBaseUrl()), {
+    redirect: "error",
+    method: "DELETE",
+    headers: {
+      authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+    signal: request.signal,
+  });
+  return proxy(upstream);
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ assetId: string }> },
