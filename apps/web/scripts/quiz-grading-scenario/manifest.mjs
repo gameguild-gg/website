@@ -13,10 +13,13 @@ import { fileURLToPath } from "node:url";
 import {
   CHECKPOINTS,
   DEFINITION_SCHEMA_VERSION,
+  checkpointIndex,
   getScenarioDefinition,
+  hasPeerReview,
+  selectQuizDefinitions,
 } from "./definitions.mjs";
 
-export const MANIFEST_SCHEMA_VERSION = 1;
+export const MANIFEST_SCHEMA_VERSION = 2;
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 export const WEB_ROOT = resolve(SCRIPT_DIR, "../..");
@@ -76,19 +79,26 @@ export function createManifest({
   definitionKey,
   apiBaseUrl,
   webBaseUrl,
+  quizKeys,
   runId = randomUUID(),
   now = new Date(),
 }) {
   const definition = getScenarioDefinition(definitionKey);
+  const quizzes = selectQuizDefinitions(definition, quizKeys);
   const marker = `qgs-${definition.key}-${runId.replaceAll("-", "").slice(0, 12)}`;
   const timestamp = now.toISOString();
   const personaKeys = ["instructor", "learnerA", "outsider"];
-  if (definition.subject === "collective") personaKeys.splice(2, 0, "learnerB");
+  if (
+    quizzes.some((quiz) => quiz.subject === "collective" || hasPeerReview(quiz))
+  ) {
+    personaKeys.splice(2, 0, "learnerB");
+  }
 
   return {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     definitionSchemaVersion: DEFINITION_SCHEMA_VERSION,
     definitionKey,
+    quizKeys: quizzes.map((quiz) => quiz.key),
     runId,
     marker,
     createdAt: timestamp,
@@ -106,23 +116,43 @@ export function createManifest({
       courseId: null,
       courseSlug: null,
       gradingGroupId: null,
-      contentId: null,
-      contentVersion: null,
-      contentDraftRevision: null,
-      assessmentId: null,
-      assessmentVersion: null,
-      candidateRevisionId: null,
-      publishedRevisionId: null,
       groupSetId: null,
       courseGroupId: null,
       enrollmentIds: [],
-      submissionId: null,
-      gradingExecutionId: null,
-      gradeResultId: null,
-      testRunId: null,
+      quizzes: Object.fromEntries(
+        quizzes.map((quiz) => [quiz.key, createQuizResources(quiz)]),
+      ),
     },
     commands: {},
     urls: {},
+  };
+}
+
+function createQuizResources(quiz) {
+  const submissionPersonaKeys = hasPeerReview(quiz)
+    ? ["learnerA", "learnerB"]
+    : ["learnerA"];
+  return {
+    checkpoint: "empty",
+    contentId: null,
+    contentVersion: null,
+    contentDraftRevision: null,
+    assessmentId: null,
+    assessmentVersion: null,
+    candidateRevisionId: null,
+    publishedRevisionId: null,
+    testRunId: null,
+    peerReviewIds: {},
+    submissions: Object.fromEntries(
+      submissionPersonaKeys.map((key) => [
+        key,
+        {
+          submissionId: null,
+          gradingExecutionId: null,
+          gradeResultId: null,
+        },
+      ]),
+    ),
   };
 }
 
@@ -163,6 +193,7 @@ export function validateManifest(value, expectedKey) {
     throw new Error("Scenario manifest has no definitionKey.");
   }
   getScenarioDefinition(value.definitionKey);
+  const definition = getScenarioDefinition(value.definitionKey);
   if (expectedKey && value.definitionKey !== expectedKey) {
     throw new Error(
       `Manifest belongs to "${value.definitionKey}", not "${expectedKey}".`,
@@ -178,6 +209,28 @@ export function validateManifest(value, expectedKey) {
     !String(value.marker).startsWith(`qgs-${value.definitionKey}-`)
   ) {
     throw new Error("Manifest ownership marker is missing or invalid.");
+  }
+  if (
+    !Array.isArray(value.quizKeys) ||
+    value.quizKeys.length === 0 ||
+    new Set(value.quizKeys).size !== value.quizKeys.length
+  ) {
+    throw new Error("Manifest quizKeys must be a non-empty unique list.");
+  }
+  const quizzes = selectQuizDefinitions(definition, value.quizKeys);
+  if (
+    !value.resources?.quizzes ||
+    quizzes.some((quiz) => !value.resources.quizzes[quiz.key])
+  ) {
+    throw new Error("Manifest is missing resources for one or more quizzes.");
+  }
+  for (const quiz of quizzes) {
+    const resources = value.resources.quizzes[quiz.key];
+    if (!CHECKPOINTS.includes(resources.checkpoint)) {
+      throw new Error(
+        `Manifest quiz "${quiz.key}" has unknown checkpoint "${String(resources.checkpoint)}".`,
+      );
+    }
   }
   if (
     !value.environment ||
@@ -203,10 +256,64 @@ export function validateManifest(value, expectedKey) {
   return value;
 }
 
+export function selectedManifestQuizzes(manifest) {
+  return selectQuizDefinitions(
+    getScenarioDefinition(manifest.definitionKey),
+    manifest.quizKeys,
+  );
+}
+
+export function recomputeManifestCheckpoint(manifest) {
+  const checkpoints = selectedManifestQuizzes(manifest).map(
+    (quiz) => manifest.resources.quizzes[quiz.key].checkpoint,
+  );
+  manifest.checkpoint = checkpoints.reduce((earliest, checkpoint) =>
+    checkpointIndex(checkpoint) < checkpointIndex(earliest)
+      ? checkpoint
+      : earliest,
+  );
+  return manifest.checkpoint;
+}
+
 export async function readManifest(key, { optional = false } = {}) {
   try {
     const raw = await readFile(manifestPath(key), "utf8");
     return validateManifest(JSON.parse(raw), key);
+  } catch (error) {
+    if (optional && error?.code === "ENOENT") return null;
+    if (error instanceof SyntaxError) {
+      throw new Error(
+        `Manifest for "${key}" is not valid JSON: ${error.message}`,
+      );
+    }
+    throw error;
+  }
+}
+
+export async function readManifestForReset(key, { optional = false } = {}) {
+  try {
+    const value = JSON.parse(await readFile(manifestPath(key), "utf8"));
+    if (
+      !value ||
+      value.definitionKey !== key ||
+      !String(value.marker ?? "").startsWith(`qgs-${key}-`) ||
+      !value.environment ||
+      !value.resources ||
+      !value.personas
+    ) {
+      throw new Error(
+        `Reset refused because the manifest for "${key}" has no valid ownership envelope.`,
+      );
+    }
+    value.environment.apiBaseUrl = assertLocalUrl(
+      value.environment.apiBaseUrl,
+      "manifest API base URL",
+    );
+    value.environment.webBaseUrl = assertLocalUrl(
+      value.environment.webBaseUrl,
+      "manifest web base URL",
+    );
+    return value;
   } catch (error) {
     if (optional && error?.code === "ENOENT") return null;
     if (error instanceof SyntaxError) {
@@ -344,7 +451,7 @@ async function releaseOwnedLock(lockPath, token) {
 export async function removeScenarioSecrets(key) {
   let manifest = null;
   try {
-    manifest = await readManifest(key, { optional: true });
+    manifest = await readManifestForReset(key, { optional: true });
   } catch {
     // A cleanup report is more useful than retaining an unreadable secret file.
   }

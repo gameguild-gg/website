@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using GameGuild.Assets.Openinary;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Assets;
@@ -18,16 +19,35 @@ public class AssetUploadConfiguration
 }
 
 /// <summary>
-/// Implementation of asset upload with deduplication.
+/// Implementation of asset upload with deduplication and dual-path storage:
+/// new content goes to Openinary when configured, legacy rows keep flowing
+/// through <see cref="IAssetStorageService"/>.
 /// </summary>
 public class AssetUploadService : IAssetUploadService
 {
+    private static readonly Dictionary<string, string> MimeExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["image/jpeg"] = "jpg",
+        ["image/png"] = "png",
+        ["image/webp"] = "webp",
+        ["image/gif"] = "gif",
+        ["image/avif"] = "avif",
+        ["video/mp4"] = "mp4",
+        ["video/webm"] = "webm",
+        ["audio/mpeg"] = "mp3",
+        ["audio/wav"] = "wav",
+        ["audio/ogg"] = "ogg",
+        ["application/pdf"] = "pdf",
+    };
+
     private readonly IAssetContentRepository _contentRepository;
     private readonly IAssetReferenceRepository _referenceRepository;
     private readonly IAssetStorageService _storageService;
     private readonly Microsoft.Extensions.Options.IOptions<AssetUploadConfiguration> _options;
     private readonly ILogger<AssetUploadService> _logger;
     private readonly IUseCaseOperationContextAccessor? _operationContextAccessor;
+    private readonly IOpeninaryClient _openinaryClient;
+    private readonly Microsoft.Extensions.Options.IOptions<OpeninaryOptions> _openinaryOptions;
 
     // In-memory store for chunked uploads (should be replaced with distributed cache in production)
     private static readonly Dictionary<string, ChunkedUploadSession> _chunkedSessions = new();
@@ -39,7 +59,9 @@ public class AssetUploadService : IAssetUploadService
         IAssetStorageService storageService,
         Microsoft.Extensions.Options.IOptions<AssetUploadConfiguration> options,
         ILogger<AssetUploadService> logger,
-        IUseCaseOperationContextAccessor? operationContextAccessor = null)
+        IUseCaseOperationContextAccessor? operationContextAccessor = null,
+        Microsoft.Extensions.Options.IOptions<OpeninaryOptions>? openinaryOptions = null,
+        IOpeninaryClient? openinaryClient = null)
     {
         _contentRepository = contentRepository;
         _referenceRepository = referenceRepository;
@@ -47,6 +69,26 @@ public class AssetUploadService : IAssetUploadService
         _options = options;
         _logger = logger;
         _operationContextAccessor = operationContextAccessor;
+        _openinaryOptions = openinaryOptions ?? Microsoft.Extensions.Options.Options.Create(new OpeninaryOptions());
+        _openinaryClient = openinaryClient ?? new DisabledOpeninaryClient();
+    }
+
+    private bool OpeninaryEnabled =>
+        !string.IsNullOrWhiteSpace(_openinaryOptions.Value.ApiKey);
+
+    private long EffectiveMaxFileSizeBytes
+    {
+        get
+        {
+            var configured = _options.Value.MaxFileSizeBytes;
+            if (!OpeninaryEnabled)
+            {
+                return configured;
+            }
+
+            var openinaryLimit = (long)_openinaryOptions.Value.MaxFileMb * 1024 * 1024;
+            return Math.Min(configured, openinaryLimit);
+        }
     }
 
     public async Task<AssetUploadResult> UploadAsync(
@@ -58,13 +100,15 @@ public class AssetUploadService : IAssetUploadService
         CancellationToken ct = default)
     {
         var uploadOptions = _options.Value;
+        var maxFileSize = EffectiveMaxFileSizeBytes;
 
         // Validate file size
-        if (content.Length > uploadOptions.MaxFileSizeBytes)
+        if (content.Length > maxFileSize)
         {
+            var limitMb = maxFileSize / (1024.0 * 1024.0);
             return new AssetUploadResult(
                 false, null, null,
-                $"File size exceeds maximum allowed ({uploadOptions.MaxFileSizeBytes} bytes)");
+                $"File size exceeds maximum allowed ({maxFileSize} bytes, effective limit {limitMb:0.#} MB)");
         }
 
         // Validate MIME type
@@ -87,6 +131,13 @@ public class AssetUploadService : IAssetUploadService
 
         if (existingContent != null)
         {
+            if (IsQuarantined(existingContent))
+            {
+                return new AssetUploadResult(
+                    false, null, null,
+                    "Content matches previously quarantined material (rejected, blocked, or infected) and cannot be re-uploaded");
+            }
+
             _logger.LogInformation("Content already exists with hash {ContentHash}, reusing", contentHash);
             assetContent = existingContent;
             await _contentRepository.IncrementReferenceCountAsync(existingContent.Id, ct).ConfigureAwait(false);
@@ -101,14 +152,36 @@ public class AssetUploadService : IAssetUploadService
                 content.Position = 0;
             }
 
-            // Upload to storage
-            var storageResult = await _storageService.UploadAsync(
-                content, contentHash, mimeType, false, ct).ConfigureAwait(false);
+            string bucketName;
+            string objectKey;
+
+            if (OpeninaryEnabled)
+            {
+                content.Position = 0;
+                var openinaryPath = await TryUploadToOpeninaryAsync(content, contentHash, mimeType, options.TenantId, ct)
+                    .ConfigureAwait(false);
+                if (openinaryPath is null)
+                {
+                    return new AssetUploadResult(
+                        false, null, null, "Openinary upload failed; asset was not stored");
+                }
+
+                bucketName = OpeninaryOptions.StorageBackendName;
+                objectKey = openinaryPath;
+            }
+            else
+            {
+                // Upload to storage
+                var storageResult = await _storageService.UploadAsync(
+                    content, contentHash, mimeType, false, ct).ConfigureAwait(false);
+                bucketName = storageResult.BucketName;
+                objectKey = storageResult.ObjectKey;
+            }
 
             // Create content record
             assetContent = new AssetContent(
-                storageResult.BucketName,
-                storageResult.ObjectKey,
+                bucketName,
+                objectKey,
                 contentHash,
                 mimeType,
                 content.Length,
@@ -119,6 +192,7 @@ public class AssetUploadService : IAssetUploadService
             assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, userId, options.TenantId));
 
             assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
+            await _contentRepository.IncrementReferenceCountAsync(assetContent.Id, ct).ConfigureAwait(false);
         }
 
         // Create reference
@@ -268,19 +342,65 @@ public class AssetUploadService : IAssetUploadService
 
         var contentHash = await ComputeHashAsync(stream, ct).ConfigureAwait(false);
 
-        // Create content record
-        var assetContent = new AssetContent(
-            storageResult.BucketName,
-            storageResult.ObjectKey,
-            contentHash,
-            session.MimeType,
-            session.TotalSize,
-            null, null);
+        // Check for existing content (deduplication), mirroring UploadAsync
+        var existingContent = await _contentRepository.GetByContentHashAsync(contentHash, ct).ConfigureAwait(false);
+        AssetContent assetContent;
 
-        assetContent.TenantId = options.TenantId;
-        assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, session.UserId, options.TenantId));
+        if (existingContent != null)
+        {
+            if (IsQuarantined(existingContent))
+            {
+                return new AssetUploadResult(
+                    false, null, null,
+                    "Content matches previously quarantined material (rejected, blocked, or infected) and cannot be re-uploaded");
+            }
 
-        assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
+            _logger.LogInformation("Chunked content already exists with hash {ContentHash}, reusing", contentHash);
+            assetContent = existingContent;
+            await _contentRepository.IncrementReferenceCountAsync(existingContent.Id, ct).ConfigureAwait(false);
+        }
+        else
+        {
+            string bucketName;
+            string objectKey;
+
+            if (OpeninaryEnabled)
+            {
+                // The S3 multipart object is orphaned when Openinary is enabled;
+                // retention GC cleans S3 orphans (abort logic intentionally out of scope).
+                stream.Position = 0;
+                var openinaryPath = await TryUploadToOpeninaryAsync(stream, contentHash, session.MimeType, options.TenantId, ct)
+                    .ConfigureAwait(false);
+                if (openinaryPath is null)
+                {
+                    return new AssetUploadResult(
+                        false, null, null, "Openinary upload failed; asset was not stored");
+                }
+
+                bucketName = OpeninaryOptions.StorageBackendName;
+                objectKey = openinaryPath;
+            }
+            else
+            {
+                bucketName = storageResult.BucketName;
+                objectKey = storageResult.ObjectKey;
+            }
+
+            // Create content record
+            assetContent = new AssetContent(
+                bucketName,
+                objectKey,
+                contentHash,
+                session.MimeType,
+                session.TotalSize,
+                null, null);
+
+            assetContent.TenantId = options.TenantId;
+            assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, session.UserId, options.TenantId));
+
+            assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
+            await _contentRepository.IncrementReferenceCountAsync(assetContent.Id, ct).ConfigureAwait(false);
+        }
 
         // Create reference
         var reference = new AssetReference(
@@ -310,6 +430,46 @@ public class AssetUploadService : IAssetUploadService
             _chunkedSessions.Remove(uploadId);
             _chunkedSessionPartETags.Remove(uploadId);
             await _storageService.AbortMultipartUploadAsync(uploadId, session.ObjectKey, ct).ConfigureAwait(false);
+        }
+    }
+
+    private static bool IsQuarantined(AssetContent content) =>
+        content.ModerationStatus is ModerationStatus.Rejected or ModerationStatus.Blocked ||
+        content.VirusScanStatus is VirusScanStatus.Infected;
+
+    private async Task<string?> TryUploadToOpeninaryAsync(
+        Stream content,
+        string contentHash,
+        string mimeType,
+        Guid? tenantId,
+        CancellationToken ct)
+    {
+        var options = _openinaryOptions.Value;
+        var folder = $"{options.FolderPrefix}{tenantId?.ToString() ?? "platform"}";
+        var extension = MimeExtensions.TryGetValue(mimeType, out var mapped) ? mapped : "bin";
+        var fileName = $"{contentHash}.{extension}";
+
+        try
+        {
+            // Idempotency: a prior upload may have stored the bytes without a DB row.
+            try
+            {
+                var metadata = await _openinaryClient.GetMetadataAsync($"{folder}/{fileName}", ct)
+                    .ConfigureAwait(false);
+                return metadata.Path;
+            }
+            catch (OpeninaryException exception) when (exception.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+            }
+
+            var result = await _openinaryClient.UploadAsync(content, fileName, folder, [], ct)
+                .ConfigureAwait(false);
+            return result.Path;
+        }
+        catch (OpeninaryException exception)
+        {
+            _logger.LogError(exception, "Openinary upload failed for content hash {ContentHash}", contentHash);
+            return null;
         }
     }
 
@@ -355,4 +515,27 @@ public class AssetUploadService : IAssetUploadService
         await Task.CompletedTask;
         return (null, null);
     }
+}
+
+/// <summary>
+/// Null-object fallback so the flag-off path never touches Openinary.
+/// </summary>
+internal sealed class DisabledOpeninaryClient : IOpeninaryClient
+{
+    public Task<OpeninaryUploadResult> UploadAsync(
+        Stream content, string fileName, string folder,
+        IReadOnlyCollection<string> prewarmTransforms, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("Openinary is not configured");
+
+    public Task DeleteAsync(string path, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("Openinary is not configured");
+
+    public Task InvalidateAsync(string path, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("Openinary is not configured");
+
+    public Task<OpeninaryFileMetadata> GetMetadataAsync(string path, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("Openinary is not configured");
+
+    public Task<byte[]> DownloadAsync(string path, CancellationToken cancellationToken) =>
+        throw new NotSupportedException("Openinary is not configured");
 }

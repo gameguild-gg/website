@@ -26,6 +26,7 @@
 #define CURLINC_CURL_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -56,8 +57,8 @@ extern "C"
         struct curl_slist *next;
     };
 
-    /** Size type used by write/read callbacks. */
-    typedef size_t curl_off_t;
+    /** Signed 64-bit byte count used by libcurl large-size options and info. */
+    typedef int64_t curl_off_t;
 
     /* ------------------------------------------------------------------ */
     /*  Callback signatures                                                */
@@ -102,6 +103,7 @@ extern "C"
         CURLE_OPERATION_TIMEDOUT = 28,
         CURLE_SSL_CONNECT_ERROR = 35,
         CURLE_ABORTED_BY_CALLBACK = 42,
+        CURLE_BAD_FUNCTION_ARGUMENT = 43,
         CURLE_NOT_BUILT_IN = 4,
         CURLE_GOT_NOTHING = 52,
         CURLE_SEND_ERROR = 55,
@@ -137,6 +139,7 @@ extern "C"
         CURLOPT_CAINFO = CURLOPTTYPE_OBJECTPOINT + 65,           /* 10065 */
         CURLOPT_CAPATH = CURLOPTTYPE_OBJECTPOINT + 97,           /* 10097 */
         CURLOPT_ACCEPT_ENCODING = CURLOPTTYPE_OBJECTPOINT + 102, /* 10102 */
+        CURLOPT_COPYPOSTFIELDS = CURLOPTTYPE_OBJECTPOINT + 165,   /* 10165 */
         CURLOPT_NETRC_FILE = CURLOPTTYPE_OBJECTPOINT + 118,      /* 10118 */
         CURLOPT_USERPWD = CURLOPTTYPE_OBJECTPOINT + 5,           /* 10005 */
         CURLOPT_RANGE = CURLOPTTYPE_OBJECTPOINT + 7,             /* 10007 */

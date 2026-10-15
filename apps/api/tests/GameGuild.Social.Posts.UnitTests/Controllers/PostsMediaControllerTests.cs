@@ -25,7 +25,7 @@ public sealed class PostsMediaControllerTests
             512,
             SocialMediaProcessingState.Ready);
         var assets = new Mock<ISocialMediaAssetService>();
-        assets.Setup(service => service.ResolveReadyOwnedAsync(assetId, actorId, It.IsAny<CancellationToken>()))
+        assets.Setup(service => service.ResolveReadyOwnedInTenantAsync(assetId, actorId, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(descriptor);
         var sender = new Mock<ISender>();
         sender.Setup(candidate => candidate.Send(
@@ -53,7 +53,7 @@ public sealed class PostsMediaControllerTests
         var assetId = Guid.NewGuid();
         var sender = new Mock<ISender>();
         var assets = new Mock<ISocialMediaAssetService>();
-        assets.Setup(service => service.ResolveReadyOwnedAsync(assetId, actorId, It.IsAny<CancellationToken>()))
+        assets.Setup(service => service.ResolveReadyOwnedInTenantAsync(assetId, actorId, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((SocialMediaAssetDescriptor?)null);
         var controller = Controller(actorId, sender.Object, assets.Object);
 

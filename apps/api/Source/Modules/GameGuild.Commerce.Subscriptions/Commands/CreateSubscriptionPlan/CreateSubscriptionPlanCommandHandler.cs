@@ -32,12 +32,30 @@ public sealed class CreateSubscriptionPlanCommandHandler(
                     $"Could not generate a unique slug from plan name '{request.Name}'. Provide an explicit slug.");
         }
 
+        // Issue #416: plan-type pricing invariants are enforced fail-closed before any write.
+        SubscriptionPlanPricingRules.Validate(request.Type, request.MonthlyPriceInCents, null);
+        SubscriptionPlanPricingRules.ValidateAnnualDiscountPercent(request.AnnualDiscountPercent);
+
         var plan = new SubscriptionPlan(
             request.Name,
             slug,
             request.MonthlyPriceInCents,
             request.Currency,
-            request.Description);
+            request.Description)
+        {
+            // Issue #416: the create payload carries the full initial contract — type,
+            // annual-discount derivation, features and limits. Later changes go through the
+            // PATCH-by-concern endpoints (pricing, features, limits).
+            Type = request.Type,
+            AnnualDiscountPercent = request.AnnualDiscountPercent,
+            Features = request.Features,
+            MaxUsers = request.MaxUsers,
+            MaxStorageMb = request.MaxStorageMb,
+            MaxApiCallsPerMonth = request.MaxApiCallsPerMonth,
+            HasPrioritySupport = request.HasPrioritySupport ?? false,
+            HasAdvancedAnalytics = request.HasAdvancedAnalytics ?? false,
+            HasCustomBranding = request.HasCustomBranding ?? false
+        };
 
         await subscriptionPlanRepository.AddAsync(plan, cancellationToken).ConfigureAwait(false);
 

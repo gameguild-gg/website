@@ -348,7 +348,10 @@ public class RbacPermissionResolver(
 
             foreach (var ancestor in closure.Ancestors)
             {
-                if (ancestor.Permissions.Count == 0) continue;
+                if (ancestor.Permissions.Count == 0)
+                {
+                    continue;
+                }
 
                 foreach (var perm in ancestor.Permissions)
                 {

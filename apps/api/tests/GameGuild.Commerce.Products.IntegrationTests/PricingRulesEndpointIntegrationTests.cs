@@ -235,13 +235,14 @@ public class PricingRulesEndpointIntegrationTests : IDisposable
         var response = await _client.SendAsync(request);
 
         // Denial status semantics as pinned platform-wide by MonetizationPermissionHttpTests
-        // (same double gate as SetProductPricing): the endpoint-level permission filter is
-        // disabled by default (Controllers:EnablePermissionAuthorizationFilter=false), so the
-        // enforced gate is the [AuthorizeRequest(monetization:monetize)] on the dispatched
-        // command; AuthorizationBehavior denies and the shared exception pipeline maps the
-        // failure to a fail-closed 500 ProblemDetails — no rule content, no mutation.
+        // (same double gate as SetProductPricing): the endpoint-level DAC permission filter
+        // is enabled by default (Controllers:EnablePermissionAuthorizationFilter=true), so a
+        // caller without the endpoint-level permission is denied by the filter with a
+        // fail-closed 403 ProblemDetails — no rule content, no mutation. The
+        // [AuthorizeRequest(monetization:monetize)] gate on the dispatched command remains
+        // the second, independent fail-closed gate.
         response.StatusCode.Should().Be(
-            HttpStatusCode.InternalServerError,
+            HttpStatusCode.Forbidden,
             await response.Content.ReadAsStringAsync());
 
         using var scope = _factory.Services.CreateScope();

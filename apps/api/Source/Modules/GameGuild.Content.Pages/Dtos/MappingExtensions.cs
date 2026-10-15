@@ -121,6 +121,27 @@ public static class MappingExtensions
     public static IEnumerable<MarketingLeadDto> ToDtos(this IEnumerable<MarketingLead> entities) =>
         entities.Select(e => e.ToDto());
 
+    // ──── CourseProposal ────
+
+    public static CourseProposalDto ToDto(this CourseProposal entity) => new()
+    {
+        Id = entity.Id,
+        Slug = entity.Slug,
+        Status = entity.Status,
+        CourseTitle = entity.CourseTitle,
+        Pitch = entity.Pitch,
+        Audience = entity.Audience,
+        ProposerName = entity.ProposerName,
+        ProposerEmail = entity.ProposerEmail,
+        Metadata = entity.Metadata,
+        CreatedAt = entity.CreatedAt,
+        UpdatedAt = entity.UpdatedAt,
+        PublishedAt = entity.PublishedAt,
+    };
+
+    public static IEnumerable<CourseProposalDto> ToDtos(this IEnumerable<CourseProposal> entities) =>
+        entities.Select(e => e.ToDto());
+
     // ──── OpenGraph resolution ────
 
     public static OpenGraphMetadataDto ToOpenGraphDto(this Page page) => new()

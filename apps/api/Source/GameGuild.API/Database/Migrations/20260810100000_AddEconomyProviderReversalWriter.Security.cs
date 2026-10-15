@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddEconomyProviderReversalWriter
+public partial class AddEconomyProviderReversalWriter : Migration
 {
     private static void InstallProviderReversalWriter(MigrationBuilder migrationBuilder)
     {

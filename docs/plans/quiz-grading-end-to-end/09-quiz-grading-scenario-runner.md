@@ -1,33 +1,42 @@
 # Quiz Grading Scenario Runner
 
-Status: implementado e validado localmente.
+Status: implementado; matriz multi-quiz adicionada em 2026-10-14.
 
-Data: 2026-10-09.
+Data: 2026-10-14.
 
 ## Estado da implementação
 
-O MVP foi concluído em 2026-10-09, com os seguintes resultados:
+O runner inicial foi concluído em 2026-10-09. Em 2026-10-14, após a Parte 4,
+ele foi expandido para testar os reviews executáveis no mesmo curso, com os
+seguintes resultados:
 
 - CLI `grading:scenario` disponível na raiz e em `apps/web`, com os comandos
   `list`, `prepare`, `status`, `verify`, `test` e `reset`;
 - manifesto local versionado, escrita atômica, lock por cenário, credenciais
   com permissão restrita, ownership explícito e proteção contra hosts remotos;
 - provisionamento e verificação por APIs públicas para `automated`,
-  `instructor`, `automated-instructor` e
-  `collective-automated-instructor`;
+  `instructor`, `automated-instructor`, `self`, `self-instructor`, `peer`,
+  `peer-instructor` e `collective-automated-instructor`;
+- cenário agregado `review-matrix`, que mantém sete quizzes independentes em
+  um único curso e permite selecionar um subconjunto com `--quiz`;
+- exatamente duas questões determinísticas por quiz, com valor total de dois
+  pontos, para manter ações e resultados previsíveis;
 - Playwright usando o mesmo manifesto para Test Run, negação do outsider,
   tentativa do learner, SpeedGrader, release e gradebook;
 - reset explícito e idempotente, limitado aos recursos registrados e com
   recuperação de manifestos parciais sem recursos remotos;
-- workflows individuais `automated`, `instructor` e `automated-instructor`
-  validados de ponta a ponta em browser;
+- workflows individuais executados como testes Playwright separados por quiz,
+  ainda que compartilhem o curso, grading group e personas da matriz;
+- jornadas de `SelfReview` e `PeerReview`, diretas ou seguidas por
+  `InstructorReview`, cobertas no Test Run e na tentativa oficial;
 - cenário coletivo validado pela API com uma única submission e uma única
   projeção compartilhada pelos participantes;
 - nenhuma alteração de endpoint, schema, tabela, snapshot ou migration.
 
-A jornada visual coletiva permanece fora do MVP; sua semântica acadêmica já é
-verificada pelo runner na API e pode receber cobertura de browser quando houver
-uma experiência coletiva dedicada para o learner.
+A jornada visual coletiva permanece fora do runner de browser; sua semântica
+acadêmica já é verificada pela API. `AIReview` também não entra na matriz
+executável enquanto não houver provider aprovado e registrado: o runner não
+substitui essa integração por um resultado artificial.
 
 ## Objetivo
 
@@ -79,6 +88,26 @@ pnpm grading:scenario test --scenario automated-instructor --headed
 pnpm grading:scenario reset --scenario automated-instructor
 ```
 
+A expansão multi-quiz usa o mesmo contrato operacional:
+
+```bash
+# Curso completo para inspeção humana a partir do Test Run
+pnpm grading:scenario prepare \
+  --scenario review-matrix \
+  --checkpoint test-run-ready \
+  --fresh
+
+# Todos os workflows como testes Playwright separados
+pnpm grading:scenario test --scenario review-matrix --fresh
+
+# Apenas um subconjunto da matriz
+pnpm grading:scenario test \
+  --scenario review-matrix \
+  --quiz self \
+  --quiz peer-instructor \
+  --fresh
+```
+
 `prepare` deixa os dados disponíveis. Limpeza automática é proibida no perfil
 manual. `reset` é sempre uma ação explícita e limitada aos recursos registrados
 no manifesto daquele cenário.
@@ -114,8 +143,9 @@ no manifesto daquele cenário.
   Git, com acesso restrito e remoção explícita;
 - não usar usuário admin como prova positiva da jornada de professor ou aluno;
 - não redefinir contratos de quiz, grading ou review dentro dos scripts;
-- não depender da Parte 4 nem antecipar `SelfReview`, `PeerReview` ou
-  `AIReview`;
+- refletir apenas reviews já executáveis pelos contratos oficiais. A matriz
+  inclui `SelfReview` e `PeerReview` após a conclusão da Parte 4, mas mantém
+  `AIReview` fora enquanto não houver provider aprovado;
 - não executar contra host remoto no primeiro corte. API e web devem resolver
   para `localhost`, `127.0.0.1` ou endereço explicitamente permitido para o
   ambiente local;
@@ -144,8 +174,8 @@ O runner deve compor o que o repositório já possui:
 - `node:util.parseArgs`, `node:crypto` e `node:fs` para CLI, identificadores e
   manifesto, sem introduzir framework adicional de linha de comando.
 
-Não adicionar Faker, Fishery, Testcontainers ou outra biblioteca de fixtures
-no MVP. Dados determinísticos e identificadores por execução são mais úteis
+Não adicionar Faker, Fishery, Testcontainers ou outra biblioteca de fixtures.
+Dados determinísticos e identificadores por execução são mais úteis
 para diagnóstico do que geração aleatória ampla.
 
 ## Organização proposta
@@ -194,28 +224,30 @@ arquivo para cada nome.
 Uma definição versionada deve conter somente intenção reproduzível:
 
 ```ts
-interface QuizGradingScenarioDefinitionV1 {
-  schemaVersion: 1;
-  key: string;
-  title: string;
-  subject: "individual" | "collective";
-  reviewMethods:
-    | ["AutomatedReview"]
-    | ["InstructorReview"]
-    | ["AutomatedReview", "InstructorReview"];
-  release: "automatic" | "manual";
-  gradingGroup: {
+interface QuizGradingScenarioDefinitionV2 {
+    schemaVersion: 2;
+    key: string;
     title: string;
-    weightPercent: number;
-  };
-  quiz: {
-    title: string;
-    questions: readonly QuizContentItem[];
-  };
-  expected: {
-    maxScore: ScoreValue;
-    automatedScore?: ScoreValue;
-  };
+    gradingGroup: {
+        title: string;
+        weightPercent: number;
+    };
+    quizzes: Array<{
+        key: string;
+        title: string;
+        subject: "individual" | "collective";
+        reviewMethods: readonly AssessmentReviewMethod[];
+        release: "automatic" | "manual";
+        document: QuizContentDocument;
+        correctAnswer: QuizAnswerEnvelope;
+        expected: {
+            maxScore: ScoreValue;
+            automatedScore: ScoreValue;
+            selfReviewScore: ScoreValue;
+            peerReviewScore: ScoreValue;
+            instructorScore: ScoreValue;
+        };
+    }>;
 }
 ```
 
@@ -223,36 +255,40 @@ O tipo ilustrativo deve ser ajustado aos contratos públicos reais durante a
 implementação. Valores acadêmicos usam as unidades inteiras canônicas já
 adotadas pelo grading; a definição não cria conversões paralelas.
 
-### Cenários iniciais
+### Cenários disponíveis
 
-| Chave | Workflow | Finalidade |
-| --- | --- | --- |
-| `automated` | `AutomatedReview` | correção determinística e conclusão sem professor |
-| `instructor` | `InstructorReview` | correção integral pelo professor |
-| `automated-instructor` | `AutomatedReview, InstructorReview` | resultado automático seguido de revisão docente |
-| `collective-automated-instructor` | workflow combinado e sujeito coletivo | uma submission e um resultado compartilhados |
+| Chave                             | Workflow                              | Finalidade                                               |
+| --------------------------------- | ------------------------------------- | -------------------------------------------------------- |
+| `automated`                       | `AutomatedReview`                     | correção determinística e conclusão sem professor        |
+| `instructor`                      | `InstructorReview`                    | correção integral pelo professor                         |
+| `automated-instructor`            | `AutomatedReview, InstructorReview`   | resultado automático seguido de revisão docente          |
+| `self`                            | `SelfReview`                          | autoavaliação do aluno como resultado primário           |
+| `self-instructor`                 | `SelfReview, InstructorReview`        | autoavaliação seguida de revisão docente                 |
+| `peer`                            | `PeerReview`                          | dois alunos revisam anonimamente a tentativa um do outro |
+| `peer-instructor`                 | `PeerReview, InstructorReview`        | agregado peer seguido de revisão docente                 |
+| `collective-automated-instructor` | workflow combinado e sujeito coletivo | uma submission e um resultado compartilhados             |
+| `review-matrix`                   | sete workflows individuais            | um único curso para execução seletiva ou agregada        |
 
-O MVP pode concluir primeiro os três cenários individuais. O cenário coletivo
-entra no mesmo runner depois que os checkpoints individuais estiverem estáveis,
-sem criar outro provisionador.
+Cada quiz usa a mesma fixture mínima de duas questões determinísticas,
+`TrueFalse` e `SingleChoice`, com um ponto cada. A variação entre cenários fica
+restrita ao workflow de review, evitando que tipo de questão e método de review
+mudem simultaneamente. Tipos adicionais de quiz entram em uma expansão futura.
 
-As primeiras questões devem ser pequenas e determinísticas: por exemplo,
-`TrueFalse`, `SingleChoice` e `Matching`. Um cenário separado com questão que
-exige professor deve comprovar itens não resolvidos pelo grader determinístico,
-sem tornar a fixture básica ambígua.
+`AIReview` não é cenário executável sem provider registrado. Seu gate de
+capability deve continuar falhando fechado, em vez de o runner simular uma IA.
 
 ## Checkpoints canônicos
 
 Cada checkpoint inclui todos os anteriores:
 
-| Checkpoint | Estado autoritativo esperado | Tela humana principal |
-| --- | --- | --- |
-| `authoring-ready` | curso, grupo e quiz criados; conteúdo ainda editável | editor de conteúdo |
-| `test-run-ready` | draft válido e candidate preparado; ainda sem efeito acadêmico | editor do assessment e Test Run |
-| `learner-ready` | revisão e curso publicados; learner com enrollment ativo; sem tentativa | atividade em `/learn` |
-| `review-ready` | tentativa oficial enviada e aguardando `InstructorReview` | SpeedGrader |
-| `release-ready` | resultado finalizado e retido pela policy | release no SpeedGrader |
-| `released` | resultado liberado e projeções acadêmicas processadas | nota/feedback do aluno |
+| Checkpoint        | Estado autoritativo esperado                                            | Tela humana principal           |
+| ----------------- | ----------------------------------------------------------------------- | ------------------------------- |
+| `authoring-ready` | curso, grupo e quiz criados; conteúdo ainda editável                    | editor de conteúdo              |
+| `test-run-ready`  | draft válido e candidate preparado; ainda sem efeito acadêmico          | editor do assessment e Test Run |
+| `learner-ready`   | revisão e curso publicados; learner com enrollment ativo; sem tentativa | atividade em `/learn`           |
+| `review-ready`    | tentativa oficial enviada e aguardando `InstructorReview`               | SpeedGrader                     |
+| `release-ready`   | resultado finalizado e retido pela policy                               | release no SpeedGrader          |
+| `released`        | resultado liberado e projeções acadêmicas processadas                   | nota/feedback do aluno          |
 
 Nem todo workflow percorre todos os checkpoints. Por exemplo, `automated` só
 produz `review-ready` se houver resolução pendente prevista pela policy; caso
@@ -277,39 +313,52 @@ fabricar um estado impossível.
 O manifesto representa uma execução local, não a fonte autoritativa:
 
 ```ts
-interface QuizGradingScenarioManifestV1 {
-  schemaVersion: 1;
-  definitionKey: string;
-  runId: string;
-  createdAt: string;
-  updatedAt: string;
-  environment: {
-    apiBaseUrl: string;
-    webBaseUrl: string;
-    tenantId: string;
-  };
-  checkpoint: string;
-  personas: {
-    instructor: LocalPersonaReference;
-    learnerA: LocalPersonaReference;
-    learnerB?: LocalPersonaReference;
-    outsider?: LocalPersonaReference;
-  };
-  resources: {
-    courseId: string;
-    courseSlug: string;
-    gradingGroupId: string;
-    contentId: string;
-    assessmentId: string;
-    candidateRevisionId?: string;
-    publishedRevisionId?: string;
-    enrollmentIds: string[];
-    submissionId?: string;
-    gradingExecutionId?: string;
-    gradeResultId?: string;
-  };
-  commands: Record<string, { idempotencyKey: string; requestHash: string }>;
-  urls: Record<string, string>;
+interface QuizGradingScenarioManifestV2 {
+    schemaVersion: 2;
+    definitionKey: string;
+    quizKeys: string[];
+    runId: string;
+    createdAt: string;
+    updatedAt: string;
+    environment: {
+        apiBaseUrl: string;
+        webBaseUrl: string;
+        tenantId: string;
+    };
+    checkpoint: string;
+    personas: {
+        instructor: LocalPersonaReference;
+        learnerA: LocalPersonaReference;
+        learnerB?: LocalPersonaReference;
+        outsider?: LocalPersonaReference;
+    };
+    resources: {
+        courseId: string;
+        courseSlug: string;
+        gradingGroupId: string;
+        enrollmentIds: string[];
+        quizzes: Record<
+            string,
+            {
+                checkpoint: string;
+                contentId: string;
+                assessmentId: string;
+                candidateRevisionId?: string;
+                publishedRevisionId?: string;
+                peerReviewIds: Record<string, string>;
+                submissions: Record<
+                    string,
+                    {
+                        submissionId?: string;
+                        gradingExecutionId?: string;
+                        gradeResultId?: string;
+                    }
+                >;
+            }
+        >;
+    };
+    commands: Record<string, { idempotencyKey: string; requestHash: string }>;
+    urls: Record<string, string>;
 }
 ```
 
@@ -324,6 +373,11 @@ Regras:
   recursos, permitindo confirmar que `reset` não está apagando recurso alheio;
 - versão desconhecida do manifesto falha com instrução de recriação, sem
   conversão ou legado, pois a ferramenta ainda não foi lançada.
+- cada quiz possui checkpoint e recursos próprios; o checkpoint do manifesto é
+  o menor deles e nunca afirma que toda a matriz avançou além do quiz mais
+  atrasado;
+- a seleção `quizKeys` é imutável durante uma execução. Alterá-la exige
+  `reset`, impedindo que um manifesto parcial seja reinterpretado.
 
 ## Personas e sessões
 
@@ -410,19 +464,23 @@ uma função testada. Nenhum teste browser deve reconstruí-las de outra maneira
 
 ## Automação Playwright
 
-O spec inicial deve reutilizar o manifesto e cobrir:
+O spec reutiliza o manifesto e cria um teste serial independente por quiz. A
+execução pode selecionar um quiz, um subconjunto ou toda a matriz e cobre:
 
 1. instrutor abre assessment e encontra workflow e revisão esperados;
 2. professor executa Test Run sem criar enrollment, submission oficial ou
    gradebook;
 3. learner matriculado abre a atividade e outsider recebe negação adequada;
 4. learner inicia, responde e envia a tentativa oficial;
-5. workflow automático produz o score determinístico esperado;
-6. workflow combinado aparece no SpeedGrader aguardando professor;
-7. professor revisa ou altera score e conclui o review;
-8. release respeita a policy configurada;
-9. learner só enxerga nota e feedback depois da liberação;
-10. `verify` confirma API, auditoria essencial e projeção acadêmica.
+5. as duas respostas determinísticas são enviadas por cada learner necessário;
+6. `SelfReview` é submetido pelo próprio aluno quando configurado;
+7. em `PeerReview`, learner A revisa B e learner B revisa A por contextos
+   isolados e pelo workspace anônimo;
+8. workflows com `InstructorReview` aparecem no SpeedGrader aguardando o
+   professor, que resolve os dois itens;
+9. release respeita a policy manual configurada;
+10. learner só enxerga nota e feedback depois da liberação;
+11. `verify` confirma API, workflow, score e projeção acadêmica por quiz.
 
 O Playwright valida UX e integração browser. Assertions profundas de
 persistência continuam nos testes PostgreSQL/HTTP; o runner não deve duplicar
@@ -453,8 +511,10 @@ pode ser adicionado depois sem alterar definições ou provisionador.
 
 - lock atômico por `scenario-key` impede duas preparações concorrentes do mesmo
   cenário local;
-- `reset` recusa manifesto cujo `apiBaseUrl` ou `tenantId` não corresponde ao
-  ambiente atual;
+- `reset` recusa `apiBaseUrl` remoto ou divergente; se o banco local tiver sido
+  recriado, confirma a mudança de `tenantId` pela identidade reservada antes de
+  descartar o manifesto obsoleto, enquanto falhas de credencial no mesmo tenant
+  continuam fechadas;
 - chamadas HTTP registram método, rota sanitizada, status e correlation ID, mas
   nunca authorization header, cookie ou senha;
 - erros de quota e permission são exibidos integralmente como falha do cenário;
@@ -578,6 +638,8 @@ Gate:
 - ao menos um E2E completo para `automated`;
 - ao menos um E2E completo para `automated-instructor`;
 - smoke de `instructor` até `review-ready` e conclusão pelo professor;
+- E2Es completos de `self`, `self-instructor`, `peer` e
+  `peer-instructor`, separados por quiz e também executáveis na matriz;
 - negação de outsider;
 - reload/resume nos pontos de tentativa e review;
 - evidência preservada em falha.
@@ -592,7 +654,8 @@ O plano estará concluído quando:
 - a mesma definição puder recriar o cenário após limpeza do banco;
 - reexecução não duplicar efeitos nem avançar silenciosamente além do alvo;
 - Playwright consumir exatamente o mesmo cenário e produzir evidências úteis;
-- automated, instructor e automated+instructor forem comprovados;
+- automated, instructor, self e peer, diretos ou seguidos por instrutor, forem
+  comprovados em testes separados e na execução agregada;
 - o cenário coletivo for comprovado sem duplicar submission ou resultado;
 - reset remover somente recursos de ownership confirmado;
 - não houver endpoint de seed, acesso direto ao banco, bypass de autorização,
@@ -601,15 +664,15 @@ O plano estará concluído quando:
 
 ## Relação com a Parte 4
 
-O runner não implementa novos reviews. Depois do MVP, cada marco da Parte 4
-deve acrescentar:
+O runner não implementa reviews; ele exercita os contratos entregues pela
+Parte 4. Cada novo review executável deve acrescentar:
 
 - uma definição de cenário compatível com a nova capability;
 - os checkpoints que realmente se aplicam ao método;
 - assertions da evidência e do estado de espera;
 - uma jornada browser apenas quando houver interação humana correspondente.
 
-`SelfReview`, `PeerReview` e `AIReview` não entram antecipadamente no catálogo.
-Eles só serão adicionados quando o respectivo marco de domínio possuir contrato
-executável. Dessa forma, o runner evidencia capacidades reais e não cria mocks
-que façam um workflow incompleto parecer disponível.
+`SelfReview` e `PeerReview` foram adicionados depois que seus contratos oficiais
+se tornaram executáveis. `AIReview` permanece fora até existir provider real
+aprovado e registrado. Dessa forma, o runner evidencia capacidades reais e não
+cria mocks que façam um workflow incompleto parecer disponível.

@@ -71,11 +71,21 @@ public class ExternalBillingProviderEndpointsIntegrationTests
                     options.DefaultChallengeScheme = ProviderTestAuthHandler.SchemeName;
                 }).AddScheme<AuthenticationSchemeOptions, ProviderTestAuthHandler>(ProviderTestAuthHandler.SchemeName, _ => { });
 
-                // Deterministic policy resolution for the test host: the SystemAdmin
-                // policy is a role requirement instead of the database-seeded definition.
-                services.AddAuthorization(options => options.AddPolicy(
-                    GameGuild.Identity.Authorization.Policies.SystemAdmin,
-                    policy => policy.RequireRole("SystemAdmin")));
+                // Deterministic policy resolution for the test host: the system
+                // permission policies are role requirements instead of the
+                // database-seeded definitions (issue #386 tiers).
+                services.AddAuthorization(options =>
+                {
+                    options.AddPolicy(
+                        GameGuild.Identity.Authorization.Policies.SystemAdmin,
+                        policy => policy.RequireRole("SystemAdmin"));
+                    options.AddPolicy(
+                        GameGuild.Identity.Authorization.Policies.SystemConfigurationManage,
+                        policy => policy.RequireRole("SystemAdmin"));
+                    options.AddPolicy(
+                        GameGuild.Identity.Authorization.Policies.SystemDataMigration,
+                        policy => policy.RequireRole("SystemAdmin"));
+                });
                 services.RemoveAll<IAuthorizationPolicyProvider>();
                 services.TryAddSingleton<IAuthorizationPolicyProvider>(provider =>
                     new DefaultAuthorizationPolicyProvider(provider.GetRequiredService<IOptions<AuthorizationOptions>>()));

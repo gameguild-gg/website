@@ -24,7 +24,8 @@ public interface IPostCrudService
         string? mediaUrl = null,
         MediaType? mediaType = null,
         Guid? tenantId = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        Guid? mediaAssetReferenceId = null);
 
     /// <summary>Updates an existing post</summary>
     Task<Result<Post>> UpdatePostAsync(Guid postId, Guid actorId, string content, CancellationToken cancellationToken = default);

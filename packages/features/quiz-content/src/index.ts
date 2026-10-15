@@ -4,5 +4,6 @@ export * from "./grading-projection";
 export * from "./ids";
 export * from "./learner";
 export * from "./parsing";
+export * from "./rules";
 export * from "./storage";
 export * from "./types";

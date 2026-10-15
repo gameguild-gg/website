@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="GameGuild.Commerce.Billing.IntegrationTests"/>
+        <InternalsVisibleTo Include="GameGuild.Commerce.Billing.UnitTests"/>
         <PackageReference Include="FluentValidation"/>
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>

@@ -1241,7 +1241,12 @@ public class TenantPermissionQueryHandlerTests5
         var querySvc = new Mock<IPermissionQueryService>();
         var accessor = new Mock<IActorContextAccessor>();
         var logger = NullLogger<GetTenantPermissionsQueryHandler>.Instance;
-        new GetTenantPermissionsQueryHandler(querySvc.Object, accessor.Object, logger)
+        new GetTenantPermissionsQueryHandler(
+                querySvc.Object,
+                accessor.Object,
+                Mock.Of<ITenantSecurityVersionStore>(),
+                new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()),
+                logger)
             .Should().NotBeNull();
     }
 

@@ -54,6 +54,13 @@ public class UserMfaConfigurationConfiguration : IEntityTypeConfiguration<UserMf
 
         builder.Property(x => x.SetupExpiresAt).HasColumnName("setup_expires_at").IsConcurrencyToken();
 
+        // SMS MFA enrollment (issue #244): verified destination phone; concurrency-tokened so a
+        // concurrent disable/re-enroll race fails one writer instead of silently merging methods.
+        builder.Property(x => x.SmsPhoneNumber).HasColumnName("sms_phone_number").HasMaxLength(32).IsRequired(false).IsConcurrencyToken();
+
+        // Push MFA device enrollment (issue #259): single active device token per account.
+        builder.Property(x => x.PushDeviceToken).HasColumnName("push_device_token").HasMaxLength(512).IsRequired(false).IsConcurrencyToken();
+
         // Configure CreatedAt property
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
 

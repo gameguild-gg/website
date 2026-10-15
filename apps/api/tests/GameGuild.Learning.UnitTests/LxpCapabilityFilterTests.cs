@@ -133,6 +133,8 @@ public sealed class LxpCapabilityFilterTests
             case "query":
                 context.HttpContext.Request.QueryString = QueryString.Create("tenantId", tenantId.ToString());
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(source));
         }
         var nextCalled = false;
 

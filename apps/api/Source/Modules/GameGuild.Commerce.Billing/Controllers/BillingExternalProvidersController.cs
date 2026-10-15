@@ -16,8 +16,11 @@ namespace GameGuild.Commerce.Billing;
 ///     providers with read-only configuration health (config validity, webhook endpoint
 ///     readiness) and runtime enabled state, allows administrators to explicitly enable
 ///     or disable a provider at runtime, and produces report-only provider-migration
-///     dry-run assessments. All actions require the SystemAdmin policy and additionally
-///     enforce the system-administrator guard at the controller layer (fail closed).
+///     dry-run assessments. Issue #386: provider configuration is gated by the
+///     SystemConfiguration.Manage policy and the migration dry-run by the
+///     System.DataMigration policy (SystemAdmin role or the delegated
+///     system:manage-configuration / system:data-migration permission). A fail-closed
+///     in-controller guard additionally enforces the same tier at the controller layer.
 ///     Gateway routing and provider failover are tracked separately in issue #413.
 /// </summary>
 [ApiVersion("1.0")]
@@ -41,7 +44,7 @@ public sealed class BillingExternalProvidersController(
     ///     disable persists a management override).
     /// </remarks>
     [HttpGet]
-    [Authorize(Policy = Policies.SystemAdmin)]
+    [Authorize(Policy = Policies.SystemConfigurationManage)]
     [EndpointSummary("List external billing providers with health and enabled state")]
     [EndpointDescription(
         "Returns one entry per supported external billing provider with read-only configuration health (credentials configured, configuration valid, webhook endpoint verification material present) and the runtime enabled state. Requires the system administrator policy.")]
@@ -50,7 +53,7 @@ public sealed class BillingExternalProvidersController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ListProviders(CancellationToken ct)
     {
-        var adminGuard = RequireSystemAdmin("list external billing providers");
+        var adminGuard = RequireSystemAdminOrPermission(SystemConfigurationPermission.Keys.Manage, "list external billing providers");
         if (adminGuard is not null)
         {
             return adminGuard;
@@ -71,7 +74,7 @@ public sealed class BillingExternalProvidersController(
     ///     Fails closed with 404 for unknown provider keys.
     /// </remarks>
     [HttpGet("{providerKey}")]
-    [Authorize(Policy = Policies.SystemAdmin)]
+    [Authorize(Policy = Policies.SystemConfigurationManage)]
     [EndpointSummary("Get one external billing provider by key")]
     [EndpointDescription(
         "Returns the management and health snapshot of a single external billing provider. Fails closed with 404 for unknown provider keys.")]
@@ -81,7 +84,7 @@ public sealed class BillingExternalProvidersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProvider(string providerKey, CancellationToken ct)
     {
-        var adminGuard = RequireSystemAdmin("inspect an external billing provider");
+        var adminGuard = RequireSystemAdminOrPermission(SystemConfigurationPermission.Keys.Manage, "inspect an external billing provider");
         if (adminGuard is not null)
         {
             return adminGuard;
@@ -104,7 +107,7 @@ public sealed class BillingExternalProvidersController(
     ///     valid provider configuration.
     /// </remarks>
     [HttpPost("{providerKey}:enable")]
-    [Authorize(Policy = Policies.SystemAdmin)]
+    [Authorize(Policy = Policies.SystemConfigurationManage)]
     [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
     [EndpointSummary("Enable an external billing provider")]
     [EndpointDescription(
@@ -115,7 +118,7 @@ public sealed class BillingExternalProvidersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> EnableProvider(string providerKey, CancellationToken ct)
     {
-        var adminGuard = RequireSystemAdmin("enable an external billing provider");
+        var adminGuard = RequireSystemAdminOrPermission(SystemConfigurationPermission.Keys.Manage, "enable an external billing provider");
         if (adminGuard is not null)
         {
             return adminGuard;
@@ -144,7 +147,7 @@ public sealed class BillingExternalProvidersController(
     ///     Fails closed with 404 for unknown provider keys.
     /// </remarks>
     [HttpPost("{providerKey}:disable")]
-    [Authorize(Policy = Policies.SystemAdmin)]
+    [Authorize(Policy = Policies.SystemConfigurationManage)]
     [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
     [EndpointSummary("Disable an external billing provider")]
     [EndpointDescription(
@@ -155,7 +158,7 @@ public sealed class BillingExternalProvidersController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DisableProvider(string providerKey, CancellationToken ct)
     {
-        var adminGuard = RequireSystemAdmin("disable an external billing provider");
+        var adminGuard = RequireSystemAdminOrPermission(SystemConfigurationPermission.Keys.Manage, "disable an external billing provider");
         if (adminGuard is not null)
         {
             return adminGuard;
@@ -188,7 +191,7 @@ public sealed class BillingExternalProvidersController(
     ///     tracked in issue #413. Fails closed with 400 for unknown or identical provider keys.
     /// </remarks>
     [HttpPost("migration:dry-run")]
-    [Authorize(Policy = Policies.SystemAdmin)]
+    [Authorize(Policy = Policies.SystemDataMigration)]
     [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
     [EndpointSummary("Report-only migration dry-run between two billing providers")]
     [EndpointDescription(
@@ -199,7 +202,7 @@ public sealed class BillingExternalProvidersController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> MigrationDryRun([FromBody] MigrationDryRunRequest request, CancellationToken ct)
     {
-        var adminGuard = RequireSystemAdmin("run a billing provider migration dry-run");
+        var adminGuard = RequireSystemAdminOrPermission(DataMigrationPermission.Keys.Operate, "run a billing provider migration dry-run");
         if (adminGuard is not null)
         {
             return adminGuard;
@@ -217,16 +220,24 @@ public sealed class BillingExternalProvidersController(
     /// </summary>
     public sealed record MigrationDryRunRequest(string SourceProvider, string TargetProvider);
 
-    private IActionResult? RequireSystemAdmin(string operation)
-        => actorContextAccessor.ActorContext.IsSystemAdmin
+    /// <summary>
+    ///     Fail-closed runtime guard for the system permission tiers (issue #386): the
+    ///     SystemAdmin role always passes; every other actor must hold the delegated
+    ///     permission for the operation's tier.
+    /// </summary>
+    private IActionResult? RequireSystemAdminOrPermission(string permission, string operation)
+    {
+        var actor = actorContextAccessor.ActorContext;
+        return actor.IsSystemAdmin || actor.HasPermission(permission)
             ? null
             : new ObjectResult(new ProblemDetails
             {
                 Status = StatusCodes.Status403Forbidden,
                 Title = "Forbidden",
-                Detail = $"Only system administrators may {operation}."
+                Detail = $"Only system administrators or holders of '{permission}' may {operation}."
             })
             {
                 StatusCode = StatusCodes.Status403Forbidden
             };
+    }
 }

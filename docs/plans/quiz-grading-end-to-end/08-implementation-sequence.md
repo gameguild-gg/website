@@ -69,7 +69,7 @@ capabilities de uma parte posterior.
 4. Abrir PRs menores dentro de um marco quando necessário, sem atravessar o
    gate do marco seguinte.
 5. Atualizar primeiro contrato e testes, depois domínio API, persistência
-   aprovada, endpoints, web e E2E da mesma fatia.
+   justificada pelo `SCHEMA-GATE`, endpoints, web e E2E da mesma fatia.
 6. Encerrar a parte com sua suíte acumulada e uma revisão explícita das
    evidências antes de liberar a parte seguinte. Suíte acumulada significa os
    testes da parte atual mais todos os contratos, testes e E2Es aprovados nas
@@ -78,14 +78,18 @@ capabilities de uma parte posterior.
    transitória só pode existir com owner, prazo e gate de remoção explícitos;
    preservar uma coluna histórica como shadow property inerte não a torna fonte
    autoritativa.
-8. Toda alteração relacional aprovada cria uma migration incremental
-   forward-only. As migrations e designers existentes são preservados e o
-   snapshot corrente recebe somente o novo delta; um eventual squash do
-   baseline global é outra operação, fora deste plano, e exige inventário,
+8. Toda alteração relacional demonstrada como necessária cria uma migration
+   incremental forward-only. As migrations e designers existentes são
+   preservados e o snapshot corrente recebe somente o novo delta; um eventual
+   squash do baseline global é outra operação, fora deste plano, e exige inventário,
    backup e coordenação de todos os módulos do `ApplicationDbContext`.
-9. Interromper a execução em todo `SCHEMA-GATE` para apresentar o impacto e
-   obter aprovação explícita antes de editar entidades EF, configurações,
-   migrations, snapshot ou tabelas.
+9. Tratar todo `SCHEMA-GATE` como decisão técnica registrada. Antes de editar o
+   modelo relacional, demonstrar por que o schema atual não garante o contrato;
+   se houver lacuna, entregar o menor delta suficiente com nova migration,
+   designer e snapshot no mesmo marco. Não é necessária nova autorização caso a
+   caso para esse delta não destrutivo. Remoção, renomeação destrutiva, backfill
+   com reinterpretação de dados ou troca de owner persistente continuam exigindo
+   aprovação explícita.
 10. Não manter dois caminhos autoritativos após uma substituição. O código
     anterior deixa de ler e escrever no mesmo corte em que seu substituto passa
     no E2E; a remoção física de armazenamento segue um gate próprio e pode ficar
@@ -93,7 +97,7 @@ capabilities de uma parte posterior.
     recuperação.
 11. `SEQ-16` é auditoria final, não depósito para limpezas conhecidas que
     poderiam ter sido feitas nos marcos anteriores.
-12. Depois de toda migration aprovada, testar a criação do banco do zero e o
+12. Depois de toda migration criada, testar a criação do banco do zero e o
     upgrade de um banco populado pela migration anterior, executar o diff global
     de modelo e repetir a suíte acumulada. Um gate de schema não está concluído
     enquanto uma parte anterior regredir ou algum dado/artefato desaparecer sem
@@ -120,7 +124,7 @@ capabilities de uma parte posterior.
     e índices especiais.
 19. `Assessment.DefinitionPayload` e seu setter genérico deixam de ser usados
     pelo runtime. Fonte mutável de policy só existe com contrato tipado, nome
-    próprio, ownership exclusivo e aprovação no `SCHEMA-GATE`; as colunas
+    próprio, ownership exclusivo e decisão registrada no `SCHEMA-GATE`; as colunas
     históricas permanecem inertes até uma remoção posterior comprovadamente
     segura.
 20. Release persiste somente `GradeRoundId` único; a submission é derivada pelo
@@ -177,33 +181,40 @@ capabilities de uma parte posterior.
     compostos em `GameGuild.API` sem inverter a direção de dependência.
 38. Policy autoral de release agendado e schedule operacional por rodada são
     dados distintos. `GradeResultRelease` permanece o fato final append-only;
-    qualquer owner de schedule exige `SCHEMA-GATE` e aprovação próprios.
+    qualquer owner de schedule exige `SCHEMA-GATE` próprio e migration quando o
+    delta for confirmado.
 
 ## Política de evolução do schema
 
 Esta seção segue o
 [`ADR-20260903-development-database-baseline`](../../architecture/ADR-20260903-development-database-baseline.md).
 O plano não congela antecipadamente tabelas de funcionalidades ainda não
-implementadas e não autoriza mudanças estruturais silenciosas. Como o contexto
+implementadas e não autoriza mudanças estruturais silenciosas ou por
+conveniência. Como o contexto
 EF é compartilhado por todos os módulos, cada gate inclui uma auditoria global
 do modelo, da cadeia de migrations e do catálogo PostgreSQL; somente o delta de
-grading aprovado pode mudar o modelo produzido.
+grading registrado no gate pode mudar o modelo produzido.
 
 Cada fatia que prevê impacto relacional começa por um `SCHEMA-GATE`:
 
 ```text
 desenhar somente o necessário para a fatia
-  -> apresentar tabelas, colunas, constraints, índices e remoções
-    -> obter aprovação explícita
+  -> provar a lacuna do schema atual e registrar alternativas
+    -> definir tabelas, colunas, constraints e índices mínimos
       -> adicionar migration incremental forward-only
         -> testar criação limpa e upgrade populado
           -> provar preservação de dados, catálogo e constraints
 ```
 
+O gate autoriza a implementação do delta não destrutivo que demonstrar ser
+necessário ao marco. Se o modelo atual já sustentar o contrato, o gate registra
+delta zero. Remoções e demais mudanças destrutivas seguem o gate específico de
+remoção e exigem aprovação explícita.
+
 Isso permite aprender com fatias verticais sem reescrever o passado. Ao final,
 o repositório mantém a cadeia de migrations capaz de criar o schema do zero e
 de atualizar a versão imediatamente anterior. Cada migration deve comparar o
-modelo completo e rejeitar drift fora do delta aprovado.
+modelo completo e rejeitar drift fora do delta registrado.
 
 O diff possui duas dimensões obrigatórias: `IModel`/snapshot EF e catálogo
 PostgreSQL. Todo SQL ativo fora do modelo deve ser inventariado com arquivo de
@@ -260,16 +271,17 @@ artefatos SQL fora do IModel afetados e seus testes
 | 3 | `ACCESS-03B` | delegação operacional para collaborator e reviewer da equipe | `ACCESS-02`; não bloqueia `ACCESS-04` | não; aguarda contrato de Authorization |
 | 3 | `ACCESS-04` | fixture de owner, dois learners e outsider com sessões reais | `ACCESS-03A` | não |
 | 3 | `ACCESS-05` | E2E principal revalidado por persona | `ACCESS-04` | não |
-| 4 | `SEQ-12A` | lifecycle genérico de stage, test run multipersona e regra de regrade | Parte 3 aprovada | não previsto; parar se houver delta |
+| 4 | `SEQ-12A` | lifecycle genérico de stage, test run multipersona e regra de regrade | Parte 3 aprovada | não previsto; abrir `SCHEMA-GATE` se houver delta |
 | 4 | `SEQ-12` | `SelfReview` em teste e oficial | `SEQ-12A` | `SCHEMA-GATE` |
 | 4 | `SEQ-13` | `PeerReview` em teste e oficial | `SEQ-12` | `SCHEMA-GATE` |
 | 4 | `SEQ-14` | porta durável de `AIReview` | `SEQ-13` | `SCHEMA-GATE` condicional |
 | 4 | `SEQ-15` | release agendado, integração global e operação avançados | `SEQ-14` | `SCHEMA-GATE`; schedule possui delta esperado |
 | 4 | `SEQ-16` | auditoria e fechamento | `SEQ-15` | não |
 
-`Não previsto` significa que o marco deve usar o schema já aprovado. Se a
+`Não previsto` significa que o marco deve usar o schema já existente. Se a
 implementação demonstrar que falta uma coluna, constraint, índice ou entidade,
-o marco para, abre um `SCHEMA-GATE` e somente continua após nova aprovação.
+o marco abre um `SCHEMA-GATE`, registra a necessidade e continua com o menor
+delta acompanhado de sua migration incremental.
 
 ## Organização dos PRs
 
@@ -280,7 +292,7 @@ contrato e testes
   -> domínio puro
     -> aplicação e autorização
       -> SCHEMA-GATE, quando necessário
-        -> persistência aprovada
+        -> persistência justificada e migrada
           -> endpoints
             -> web
               -> integração e E2E
@@ -291,7 +303,7 @@ Cada PR deve declarar:
 
 - parte, marco e subentrega atendidos;
 - contrato alterado;
-- efeito em schema: `nenhum` ou referência ao `SCHEMA-GATE` aprovado;
+- efeito em schema: `nenhum` ou referência ao `SCHEMA-GATE` registrado;
 - invariantes e linhas da matriz de autorização cobertas;
 - testes executados;
 - caminho anterior removido na fatia;
@@ -311,7 +323,7 @@ Não misturar no mesmo PR:
 A implementação deve parar e retornar ao planejamento quando:
 
 1. surgir necessidade de tabela, coluna, índice ou constraint sem
-   `SCHEMA-GATE` aprovado;
+   `SCHEMA-GATE` registrado e sem migration incremental planejada;
 2. um mesmo dado passar a ter dois owners mutáveis;
 3. a UI se tornar responsável exclusiva por autorização ou validade;
 4. um review precisar fabricar score para prosseguir;
@@ -320,14 +332,14 @@ A implementação deve parar e retornar ao planejamento quando:
 7. tentativa coletiva começar a executar grading por participante;
 8. finalização e liberação precisarem compartilhar o mesmo evento;
 9. um PR exigir mudança relacional, backfill ou compatibilidade transitória sem
-   `SCHEMA-GATE` e estratégia de upgrade aprovados;
+   `SCHEMA-GATE` registrado e estratégia de upgrade verificável;
 10. score, peso ou percentual acadêmico exigir `decimal`, `float` ou `double`
     persistido;
 11. um caminho substituído continuar autoritativo depois do gate E2E;
 12. persona simulada for tratada como ator autenticado ou sujeito oficial;
 13. evento acadêmico durável continuar sendo publicado diretamente em processo
     em vez de ser gravado na outbox transacional;
-14. uma migration ou atualização do snapshot produzir drift não aprovado em
+14. uma migration ou atualização do snapshot produzir drift não registrado em
     outro módulo da API;
 15. rota learner/public ainda puder retornar DTO autoral ou answer key;
 16. capability `AuthorTest` for usada para autorizar publish ou execução
@@ -429,7 +441,7 @@ A implementação deve parar e retornar ao planejamento quando:
 | 2. E2E principal | concluída | test run e fluxo oficial individual/coletivo aprovados |
 | Fechamento 2 → 3 | concluído | `CLOSE-01` a `CLOSE-04` aprovados sem reexecutar toda a Parte 2 |
 | 3. Acesso contextual | concluída | `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados com owner, dois learners e outsider; `ACCESS-03B` não bloqueante |
-| 4. Expansão e operação | não iniciada; gate aprovado | começar por `SEQ-12A`; schema de peer e schedule continua sem aprovação |
+| 4. Expansão e operação | concluída com bloqueio externo de validação registrado | `SEQ-12A` a `SEQ-16` implementados; deltas mínimos de evidência, peer e schedule entregues por migrations incrementais; rerun HTTP + PostgreSQL aguarda o host de integração iniciar sem exigir certificados ausentes |
 
 O detalhe de cada marco é atualizado somente no documento da parte
 correspondente. Este índice registra apenas a passagem entre as quatro entregas.

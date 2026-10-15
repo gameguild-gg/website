@@ -1,4 +1,7 @@
 using FluentAssertions;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Configuration.PresentationLayer.Authorization;
 using GameGuild.Identity.Authorization;
@@ -33,7 +36,7 @@ public class JwtTokenServiceTests
         
         _jwtOptions = new JwtOptions
         {
-            SecretKey = "ThisIsAVerySecureSecretKeyForTestingPurposesOnly12345",
+            SecretKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
             Issuer = "TestIssuer",
             Audience = "TestAudience",
             AccessTokenExpirationMinutes = 15,
@@ -50,6 +53,189 @@ public class JwtTokenServiceTests
             _httpContextAccessorMock.Object,
             _jwtOptionsMock.Object
         );
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task GenerateAccessTokenAsync_LogPrivacy_GroupLookupFailurePreservesException(string channel)
+    {
+        var email = $"private-{Guid.NewGuid():N}@example.test";
+        var privateDetail = Guid.NewGuid().ToString("N");
+        var failure = PrivateFailure(channel, email, privateDetail);
+        var groups = new Mock<IAuthorizationGroupMembershipProvider>();
+        groups.Setup(provider => provider.GetActiveGroupIdsAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+        var service = new JwtTokenService(_loggerMock.Object, _refreshTokenRepositoryMock.Object,
+            _refreshTokenHasherMock.Object, _httpContextAccessorMock.Object, _jwtOptionsMock.Object,
+            groups.Object);
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GenerateAccessTokenAsync(Guid.NewGuid(), email, ["Member"], Guid.NewGuid()));
+
+        result.Should().BeSameAs(failure);
+        AssertPrivateLogs(failure.GetType().FullName!, email, privateDetail);
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task GenerateRefreshTokenAsync_LogPrivacy_RepositoryFailurePreservesException(string channel)
+    {
+        var privateDetail = Guid.NewGuid().ToString("N");
+        var failure = PrivateFailure(channel, privateDetail);
+        _refreshTokenHasherMock.Setup(hasher => hasher.HashToken(It.IsAny<string>()))
+            .Returns(Guid.NewGuid().ToString("N"));
+        _refreshTokenRepositoryMock.Setup(repository => repository.CreateAsync(
+                It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.GenerateRefreshTokenAsync(Guid.NewGuid(), new DeviceInfo(), CancellationToken.None));
+
+        result.Should().BeSameAs(failure);
+        _refreshTokenRepositoryMock.Verify(repository => repository.CreateAsync(
+            It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Once);
+        AssertPrivateLogs(failure.GetType().FullName!, privateDetail);
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task RevokeRefreshTokenAsync_LogPrivacy_RepositoryFailureReturnsFalse(string channel)
+    {
+        var privateValue = Guid.NewGuid().ToString("N");
+        var failure = PrivateFailure(channel, privateValue);
+        var digest = Guid.NewGuid().ToString("N");
+        _refreshTokenHasherMock.Setup(hasher => hasher.HashToken(privateValue)).Returns(digest);
+        _refreshTokenRepositoryMock.Setup(repository => repository.GetByTokenAsync(
+                digest, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+
+        var result = await _service.RevokeRefreshTokenAsync(privateValue);
+
+        result.Should().BeFalse();
+        _refreshTokenRepositoryMock.Verify(repository => repository.UpdateAsync(
+            It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        AssertPrivateLogs(failure.GetType().FullName!, privateValue);
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task GenerateServiceAccountTokenAsync_LogPrivacy_ScopeFailurePreservesException(string channel)
+    {
+        var serviceId = Guid.NewGuid().ToString("N");
+        var clientId = Guid.NewGuid().ToString("N");
+        var privateDetail = Guid.NewGuid().ToString("N");
+        var failure = PrivateFailure(channel, privateDetail);
+        var scopes = new Mock<IReadOnlySet<string>>();
+        scopes.Setup(value => value.GetEnumerator()).Throws(failure);
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.GenerateServiceAccountTokenAsync(serviceId, clientId, "Private service",
+                scopes.Object, Guid.NewGuid()));
+
+        result.Should().BeSameAs(failure);
+        AssertPrivateLogs(failure.GetType().FullName!, serviceId, clientId, privateDetail);
+        var information = _loggerMock.Invocations.Should().ContainSingle(call =>
+            call.Method.Name == nameof(ILogger.Log) && Equals(call.Arguments[0], LogLevel.Information)).Subject;
+        information.Arguments[2].ToString().Should().Contain(LogRedaction.RedactId(serviceId, "said"))
+            .And.Contain(LogRedaction.RedactId(clientId, "cid"));
+    }
+
+    [Fact]
+    public async Task ValidateTokenAsync_LogPrivacy_MalformedTokenStillReturnsFalse()
+    {
+        var privateValue = $"private-{Guid.NewGuid():N}";
+
+        var result = await _service.ValidateTokenAsync(privateValue);
+
+        result.Should().BeFalse();
+        AssertPrivateLogs(null, privateValue);
+    }
+
+    [Fact]
+    public async Task ValidateTokenAsync_LogPrivacy_InvalidSignatureStillReturnsFalse()
+    {
+        var privateEmail = $"private-{Guid.NewGuid():N}@example.test";
+        var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            issuer: _jwtOptions.Issuer, audience: _jwtOptions.Audience,
+            claims: [new Claim(JwtRegisteredClaimNames.Email, privateEmail)],
+            notBefore: DateTime.UtcNow.AddMinutes(-1), expires: DateTime.UtcNow.AddMinutes(5),
+            signingCredentials: new SigningCredentials(
+                new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey)),
+                SecurityAlgorithms.HmacSha256)));
+
+        var result = await _service.ValidateTokenAsync(token);
+
+        result.Should().BeFalse();
+        AssertPrivateLogs(null, privateEmail, token, signingKey);
+    }
+
+    [Fact]
+    public async Task ValidateTokenAsync_LogPrivacy_ExpiredTokenStillReturnsFalse()
+    {
+        _jwtOptions.ValidateLifetime = true;
+        var privateEmail = $"private-{Guid.NewGuid():N}@example.test";
+        var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            issuer: _jwtOptions.Issuer, audience: _jwtOptions.Audience,
+            claims: [new Claim(JwtRegisteredClaimNames.Email, privateEmail)],
+            notBefore: DateTime.UtcNow.AddHours(-2), expires: DateTime.UtcNow.AddHours(-1),
+            signingCredentials: new SigningCredentials(
+                new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_jwtOptions.SecretKey)),
+                SecurityAlgorithms.HmacSha256)));
+
+        var result = await _service.ValidateTokenAsync(token);
+
+        result.Should().BeFalse();
+        AssertPrivateLogs(typeof(SecurityTokenExpiredException).FullName!, privateEmail, token);
+    }
+
+    private static InvalidOperationException PrivateFailure(string channel, params string[] privateValues)
+    {
+        var payload = string.Join("; ", privateValues);
+        var failure = new InvalidOperationException(
+            channel == "message" ? payload : "Dependency unavailable",
+            channel == "inner" ? new Exception(payload) : null);
+        if (channel == "data") { failure.Data["detail"] = payload; }
+        return failure;
+    }
+
+    private void AssertPrivateLogs(string? expectedErrorType, params string[] privateValues)
+    {
+        var failures = new List<Moq.IInvocation>();
+        foreach (var entry in _loggerMock.Invocations)
+        {
+            if (entry.Method.Name != nameof(ILogger.Log)) { continue; }
+            entry.Arguments[3].Should().BeNull("exception objects can contain private payloads");
+            var fields = entry.Arguments[2].Should().BeAssignableTo<IEnumerable<KeyValuePair<string, object?>>>().Subject;
+            foreach (var privateValue in privateValues)
+            {
+                entry.Arguments[2].ToString().Should().NotContain(privateValue);
+                foreach (var field in fields)
+                {
+                    (field.Value?.ToString() ?? string.Empty).Should().NotContain(privateValue);
+                }
+            }
+            if (Equals(entry.Arguments[0], LogLevel.Error) || Equals(entry.Arguments[0], LogLevel.Warning))
+            {
+                failures.Add(entry);
+            }
+        }
+        var failure = failures.Should().ContainSingle().Subject;
+        var failureFields = failure.Arguments[2].Should().BeAssignableTo<IEnumerable<KeyValuePair<string, object?>>>().Subject;
+        failureFields.Should().Contain(pair => pair.Key == "ErrorType" && pair.Value is string);
+        if (expectedErrorType is not null)
+        {
+            failureFields.Should().Contain(pair => pair.Key == "ErrorType" && Equals(pair.Value, expectedErrorType));
+        }
     }
 
     [Fact]

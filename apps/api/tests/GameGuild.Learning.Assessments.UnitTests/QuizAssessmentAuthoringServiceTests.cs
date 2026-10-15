@@ -361,6 +361,7 @@ public sealed class QuizAssessmentAuthoringServiceTests
                 adapters,
                 executionPolicies,
                 stageHandlers,
+                new AIReviewProviderRegistry([]),
                 [handler],
                 new AcademicOutboxWriter(context, []),
                 NullLogger<AssessmentAuthoringService>.Instance);
@@ -391,8 +392,20 @@ public sealed class QuizAssessmentAuthoringServiceTests
         public string? ProviderPolicyVersion => null;
         public IReadOnlySet<ReviewExecutionContext> Contexts { get; } = contexts;
 
-        public ValueTask<GradeResultV1> ExecuteAsync(
+        public ValueTask<ReviewStageTransitionV1> StartAsync(
             ReviewStageRequest request,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("The controlled authoring handler is never executed.");
+
+        public ValueTask<ReviewStageTransitionV1> AcceptEvidenceAsync(
+            ReviewStageRequest request,
+            ReviewStageEvidenceV1 evidence,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("The controlled authoring handler is never executed.");
+
+        public ValueTask<ReviewStageTransitionV1> TryCompleteAsync(
+            ReviewStageRequest request,
+            IReadOnlyList<ReviewStageEvidenceV1> evidence,
             CancellationToken cancellationToken) =>
             throw new NotSupportedException("The controlled authoring handler is never executed.");
     }

@@ -91,10 +91,12 @@ public sealed class ResourcePermissionAuthorizationFilterTests
             new EndpointMetadataCollection(),
             "protected-action"));
 
+        // The fail-closed missing-services guard applies to endpoints that declare a
+        // DAC requirement (the filter is scoped to declared requirements).
         var actionDescriptor = new ControllerActionDescriptor
         {
-            ControllerTypeInfo = typeof(ProtectedController).GetTypeInfo(),
-            MethodInfo = typeof(ProtectedController).GetMethod(nameof(ProtectedController.Dashboard))!
+            ControllerTypeInfo = typeof(MetricsController).GetTypeInfo(),
+            MethodInfo = typeof(MetricsController).GetMethod(nameof(MetricsController.Get))!
         };
         var actionContext = new ActionContext(
             httpContext,
@@ -167,7 +169,10 @@ public sealed class ResourcePermissionAuthorizationFilterTests
         await new ResourcePermissionAuthorizationFilter(
             NullLogger<ResourcePermissionAuthorizationFilter>.Instance).OnAuthorizationAsync(filterContext);
 
-        filterContext.Result.Should().BeOfType<ForbidResult>();
+        // Structured fail-closed denial (issue #321): 403 ProblemDetails, not a bare
+        // ForbidResult, so callers receive a machine-readable reason.
+        filterContext.Result.Should().BeOfType<ObjectResult>()
+            .Which.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
         auditService.Verify(a => a.LogPermissionChangeAsync(
             PermissionOperationType.Check,
             It.IsAny<Guid?>(),

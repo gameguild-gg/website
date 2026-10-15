@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class HardenEconomyProviderReversalWriter
+public partial class HardenEconomyProviderReversalWriter : Migration
 {
     internal static void InstallHardenedProviderReversalWriter(MigrationBuilder migrationBuilder)
     {

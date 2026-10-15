@@ -297,7 +297,7 @@ public sealed class PermissionEvaluationControllerTests
     }
 
     [Fact]
-    public async Task GetTenantPermissions_ShouldMapIdentifiers()
+    public async Task GetTenantPermissions_ShouldMapIdentifiersAndPaging()
     {
         var mediator = new Mock<IMediator>();
         GetTenantPermissionsQuery? captured = null;
@@ -307,15 +307,26 @@ public sealed class PermissionEvaluationControllerTests
         mediator
             .Setup(x => x.Send(It.IsAny<GetTenantPermissionsQuery>(), It.IsAny<CancellationToken>()))
             .Callback<object, CancellationToken>((request, _) => captured = (GetTenantPermissionsQuery)request)
-            .ReturnsAsync(Array.Empty<PermissionType>());
+            .ReturnsAsync(new GetTenantPermissionsResponse
+            {
+                UserId = userId,
+                TenantId = tenantId,
+                Permissions = [],
+                Page = 2,
+                PageSize = 25,
+                TotalCount = 0
+            });
 
         var controller = new PermissionEvaluationController(mediator.Object, NullLogger<PermissionEvaluationController>.Instance);
 
-        var result = await controller.GetTenantPermissions(userId, tenantId);
+        var result = await controller.GetTenantPermissions(userId, tenantId, page: 2, pageSize: 25, sortDescending: true);
 
         captured.Should().NotBeNull();
         captured!.UserId.Should().Be(userId);
-        captured.TenantId.Should().Be(tenantId);
+        captured.TenantId.Value.Should().Be(tenantId);
+        captured.Page.Should().Be(2);
+        captured.PageSize.Should().Be(25);
+        captured.SortDescending.Should().BeTrue();
         result.Result.Should().BeOfType<OkObjectResult>();
     }
 

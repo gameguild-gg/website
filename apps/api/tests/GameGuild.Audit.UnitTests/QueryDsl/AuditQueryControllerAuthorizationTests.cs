@@ -8,15 +8,16 @@ namespace GameGuild.Tests.Audit.Unit.QueryDsl;
 
 /// <summary>
 ///     Authorization matrix for the audit query DSL surface: every endpoint is deny-by-default
-///     and gated on the same SystemAdmin policy as the sibling Compliance.Audit controllers,
-///     with no anonymous access anywhere.
+///     and gated on the Audit.Read permission tier (issue #294 - the tenant-administered
+///     self-service audit tier; the controller additionally clamps non-system callers to
+///     their own tenant's rows), with no anonymous access anywhere.
 /// </summary>
 public sealed class AuditQueryControllerAuthorizationTests
 {
     private const string AnonymousEndpointRegistryPath = "apps/api/Source/GameGuild.API/Security/AnonymousEndpointRegistry.cs";
 
     [Fact]
-    public void Controller_RequiresSystemAdminPolicy()
+    public void Controller_RequiresAuditReadPolicy()
     {
         var attribute = typeof(AuditQueryController)
             .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
@@ -24,7 +25,7 @@ public sealed class AuditQueryControllerAuthorizationTests
             .SingleOrDefault();
 
         attribute.Should().NotBeNull("the audit query controller must be deny-by-default");
-        attribute!.Policy.Should().Be(Policies.SystemAdmin, "audit queries expose tenant-wide audit data and follow the sibling audit controllers");
+        attribute!.Policy.Should().Be(Policies.AuditRead, "audit queries expose tenant-wide audit data and follow the sibling audit controllers' Audit.Read tier (#294)");
     }
 
     [Fact]

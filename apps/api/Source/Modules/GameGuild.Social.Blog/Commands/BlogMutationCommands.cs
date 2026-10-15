@@ -38,8 +38,8 @@ public sealed record RemoveBlogPostCoauthorCommand(Guid PostId, Guid UserId) : I
 /// <summary>Transfers primary authorship to a current co-author (primary only); writes one history row for the old route.</summary>
 public sealed record TransferBlogPrimaryCommand(Guid PostId, Guid NewPrimaryUserId) : ICommand<BlogPost>;
 
-/// <summary>Publishes the post (primary only); dispatches the publication announcement.</summary>
-public sealed record PublishBlogPostCommand(Guid PostId) : ICommand<BlogPost>;
+/// <summary>Publishes the post (primary only); body assets must pass the safe-to-serve gate; dispatches the publication announcement.</summary>
+public sealed record PublishBlogPostCommand(Guid PostId, Guid? OgImageAssetReferenceId = null) : ICommand<BlogPost>;
 
 /// <summary>Unpublishes the post back to draft (primary only).</summary>
 public sealed record UnpublishBlogPostCommand(Guid PostId) : ICommand<BlogPost>;
@@ -153,7 +153,7 @@ public sealed class PublishBlogPostCommandHandler(IBlogPostService service, IAct
 {
     /// <inheritdoc />
     public Task<BlogPost> Handle(PublishBlogPostCommand request, CancellationToken cancellationToken)
-        => service.PublishAsync(BlogCommandHandlers.RequireActorUserId(actorContext), request.PostId, cancellationToken);
+        => service.PublishAsync(BlogCommandHandlers.RequireActorUserId(actorContext), request.PostId, request.OgImageAssetReferenceId, cancellationToken);
 }
 
 /// <summary>Handles <see cref="UnpublishBlogPostCommand"/>.</summary>
