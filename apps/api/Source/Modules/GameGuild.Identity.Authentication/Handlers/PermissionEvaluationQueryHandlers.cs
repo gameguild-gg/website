@@ -2,6 +2,7 @@ using GameGuild.CQRS;
 using GameGuild.CQRS.Models;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
@@ -169,10 +170,12 @@ public sealed class HasContentTypePermissionQueryHandler(
 }
 
 /// <summary>
-///     Lists a user's resource-layer permissions for one resource.
+///     Lists a user's resource-layer permissions for one resource. Reads the same
+///     <see cref="GenericResourcePermission"/> store the /v1/permissions resource-grant
+///     endpoints write, so the evaluation surface and the mutation surface agree.
 /// </summary>
 public sealed class GetResourcePermissionsQueryHandler(
-    IResourcePermissionService resourcePermissionService,
+    IApplicationDbContext dbContext,
     IActorContextAccessor actorContextAccessor,
     ILogger<GetResourcePermissionsQueryHandler> logger)
     : IQueryHandler<GetResourcePermissionsQuery, IEnumerable<PermissionType>>
@@ -190,38 +193,19 @@ public sealed class GetResourcePermissionsQueryHandler(
             return [];
         }
 
-        var grants = await resourcePermissionService
-            .GetUserResourcesAsync(new TenantId(request.TenantId), request.UserId, resourceType: null, cancellationToken)
-            .ConfigureAwait(false);
+        var grant = await PermissionEvaluationQueryGuards.LoadGrantAsync(dbContext, request.UserId, request.TenantId, request.ResourceId, cancellationToken).ConfigureAwait(false);
 
-        var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var grant in grants)
-        {
-            if (!string.Equals(grant.ResourceId, request.ResourceId.ToString(), StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (grant.ExpiresAt.HasValue && grant.ExpiresAt.Value <= SystemClock.UtcNow)
-            {
-                continue;
-            }
-
-            foreach (var permission in grant.Permissions)
-            {
-                permissions.Add(permission);
-            }
-        }
-
-        return PermissionEvaluationQueryGuards.ToPermissionTypes(permissions);
+        return grant is null ? [] : grant.GetPermissionsAsEnum();
     }
 }
 
 /// <summary>
-///     Checks a user's resource-scoped permission.
+///     Checks a user's resource-scoped permission against the same
+///     <see cref="GenericResourcePermission"/> store the /v1/permissions resource-grant
+///     endpoints write (inactive, expired or soft-deleted grants deny, fail-closed).
 /// </summary>
 public sealed class HasResourcePermissionQueryHandler(
-    IResourcePermissionService resourcePermissionService,
+    IApplicationDbContext dbContext,
     IActorContextAccessor actorContextAccessor,
     ILogger<HasResourcePermissionQueryHandler> logger)
     : IQueryHandler<HasResourcePermissionQuery, bool>
@@ -239,15 +223,12 @@ public sealed class HasResourcePermissionQueryHandler(
             return false;
         }
 
-        var grants = await resourcePermissionService
-            .GetUserResourcesAsync(new TenantId(request.TenantId), request.UserId, resourceType: null, cancellationToken)
-            .ConfigureAwait(false);
+        var grant = await PermissionEvaluationQueryGuards.LoadGrantAsync(dbContext, request.UserId, request.TenantId, request.ResourceId, cancellationToken).ConfigureAwait(false);
 
-        var permissionName = request.Permission.ToString();
-        return grants.Any(grant =>
-            string.Equals(grant.ResourceId, request.ResourceId.ToString(), StringComparison.Ordinal)
+        return grant is not null
+            && grant.IsActive
             && (!grant.ExpiresAt.HasValue || grant.ExpiresAt.Value > SystemClock.UtcNow)
-            && grant.Permissions.Contains(permissionName, StringComparer.OrdinalIgnoreCase));
+            && grant.HasPermission(request.Permission);
     }
 }
 
@@ -581,6 +562,25 @@ internal static class PermissionEvaluationQueryGuards
 
         throw new InvalidOperationException("TenantId is required to read permissions");
     }
+
+    /// <summary>
+    ///     Loads the live <see cref="GenericResourcePermission"/> row for one user,
+    ///     tenant and resource (soft-deleted rows never match). Shared by the resource
+    ///     list/check handlers so both read the exact store the grant endpoints write.
+    /// </summary>
+    public static Task<GenericResourcePermission?> LoadGrantAsync(
+        IApplicationDbContext dbContext,
+        Guid userId,
+        Guid tenantId,
+        Guid resourceId,
+        CancellationToken cancellationToken)
+        => dbContext.Set<GenericResourcePermission>()
+            .FirstOrDefaultAsync(p =>
+                    p.UserId == userId &&
+                    p.TenantId == (tenantId == Guid.Empty ? null : tenantId) &&
+                    p.ResourceId == resourceId &&
+                    p.DeletedAt == null,
+                cancellationToken);
 
     /// <summary>
     ///     Fail-closed mapping of permission names to the enum catalogue: values that do
