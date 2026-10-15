@@ -259,7 +259,7 @@ public class WebhookSecretRotationTests
             protection,
             Options.Create(configuration),
             accessor.Object,
-            Mock.Of<IAuditService>(),
+            auditService.Object,
             Mock.Of<ILogger<RotateWebhookSecretCommandHandler>>());
 
         var result = await handler.Handle(
