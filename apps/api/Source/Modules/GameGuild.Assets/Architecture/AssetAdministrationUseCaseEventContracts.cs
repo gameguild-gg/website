@@ -8,3 +8,4 @@ using GameGuild.Assets.Commands;
 [assembly: UseCaseEventContract(typeof(UpdateAssetCommand), "assets.update", NoDomainEventReason = "Asset metadata changes are observed through the durable generic operation event.")]
 [assembly: UseCaseEventContract(typeof(BulkDeleteAssetsCommand), "assets.bulk-delete", NoDomainEventReason = "Bulk deletion is observed through the durable generic operation event.")]
 [assembly: UseCaseEventContract(typeof(ReportAssetCommand), "assets.report", NoDomainEventReason = "Asset reports are observed through the durable generic operation event.")]
+[assembly: UseCaseEventContract(typeof(RebindAssetParentCommand), "assets.rebind-asset-parent", ExpectedEventTypes = new[] { typeof(AssetReferenceReboundEvent) })]

@@ -31,9 +31,23 @@ Security Services:
 Core Services:
 ├── AssetStorageService          [File system operations]
 ├── ContentHashService           [SHA-256 deduplication]
-├── ImageTransformService        [On-the-fly transformations]
+├── ImageTransformService        [On-the-fly transformations via Openinary]
 └── AssetAccessService           [Unified access control]
 ```
+
+## Integration: Openinary & Moderation
+
+### Openinary Asset CDN
+The module integrates with Openinary for scalable, high-performance asset delivery and transformation. 
+- **Backend:** Assets stored in Openinary are tagged with `BucketName="openinary"`.
+- **Dual-Path Logic:** The system transparently routes between legacy S3-compatible storage and Openinary based on the asset's backend record.
+- **Transformations:** Image transformations are handled by Openinary's URL-based transformation engine, removing the need for local processing.
+
+### Auto-Moderation Worker
+A background worker ensures content safety using an ML-based classifier.
+- **Flow:** Upload $\rightarrow$ Quarantine $\rightarrow$ ML Classification $\rightarrow$ Auto-Approval/Rejection or Human Review.
+- **Fail-Safe:** Any classification failure or low-confidence result triggers a `NeedsReview` status, ensuring no unverified content is auto-approved.
+- **Tuning:** Thresholds for auto-approval and auto-rejection are configurable via `AutoModerationOptions`.
 
 ## Security Controls
 

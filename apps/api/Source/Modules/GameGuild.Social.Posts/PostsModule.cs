@@ -1,3 +1,4 @@
+using GameGuild.Assets;
 using GameGuild.Social.Posts.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,7 @@ public static class PostsModule
 
         // Composite service for backward compatibility
         services.AddScoped<IPostService, PostService>();
+        services.AddScoped<IAssetUsageGuard, PostAssetUsageGuard>();
 
         services.AddScoped<IPostAnnouncementService, PostAnnouncementService>();
 

@@ -338,7 +338,8 @@ public sealed class AssetAuthorizationAndScopedAccessCoverageTests : IDisposable
             _context,
             [],
             Mock.Of<IAssetAccessService>(),
-            Mock.Of<IAssetFolderAuthorizationService>());
+            Mock.Of<IAssetFolderAuthorizationService>(),
+            Mock.Of<IAssetContentRepository>());
 
         var read = await service.GetAsync("Unknown", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         var create = await service.CreateFolderAsync(
@@ -360,7 +361,8 @@ public sealed class AssetAuthorizationAndScopedAccessCoverageTests : IDisposable
             _context,
             [resolver.Object],
             Mock.Of<IAssetAccessService>(),
-            Mock.Of<IAssetFolderAuthorizationService>());
+            Mock.Of<IAssetFolderAuthorizationService>(),
+            Mock.Of<IAssetContentRepository>());
 
         var result = await service.GetAsync("Project", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
@@ -521,16 +523,41 @@ public sealed class AssetControllerAndEventCoverageTests
             TenantId = Guid.NewGuid()
         };
 
-        var tenantEvent = CreateDeletedEvent(content);
+        var tenantEvent = RunDeletedEvent(content);
         tenantEvent.TenantId.Should().Be(content.TenantId!.Value);
+        tenantEvent.Should().BeOfType<AssetObjectDeletedEvent>();
+
         content.TenantId = null;
-        CreateDeletedEvent(content).TenantId.Should().Be(DurableIntegrationEventTenants.Platform);
+        RunDeletedEvent(content).TenantId.Should().Be(DurableIntegrationEventTenants.Platform);
 
         var scanner = new VirusScanBackgroundService(
             Mock.Of<IServiceScopeFactory>(),
             Options.Create(new VirusScanOptions { Enabled = false }),
             NullLogger<VirusScanBackgroundService>.Instance);
         scanner.Should().NotBeNull();
+    }
+
+    private static IDurableIntegrationEvent RunDeletedEvent(AssetContent content)
+    {
+        var repository = new Mock<IAssetContentRepository>();
+        repository
+            .Setup(repo => repo.GetMarkedForDeletionAsync(
+                It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([content]);
+        repository
+            .Setup(repo => repo.GetCurrentReferenceCountAsync(content.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+        var service = new GameGuild.Assets.Security.AssetGarbageCollectionService(
+            repository.Object,
+            Mock.Of<IAssetStorageService>(),
+            Options.Create(new AssetGarbageCollectionOptions { GracePeriodDays = 1 }),
+            NullLogger<GameGuild.Assets.Security.AssetGarbageCollectionService>.Instance);
+
+        content.MarkedForDeletionAt = DateTime.UtcNow.AddDays(-2);
+        content.ClearIntegrationEvents();
+        service.RunGarbageCollectionAsync().GetAwaiter().GetResult();
+
+        return content.IntegrationEvents.Should().ContainSingle().Which;
     }
 
     [Fact]
@@ -623,18 +650,18 @@ public sealed class AssetControllerAndEventCoverageTests
     }
 
     private static AssetObjectDeletedEvent CreateDeletedEvent(AssetContent content) =>
-        InvokePrivateStatic<AssetObjectDeletedEvent>(
-            typeof(GameGuild.Assets.BackgroundServices.AssetGarbageCollectionService),
-            "CreateObjectDeletedEvent",
-            content);
+        new(content.Id, content.ContentHash, content.SizeBytes, "object-storage")
+        {
+            TenantId = content.TenantId ?? DurableIntegrationEventTenants.Platform,
+            ActorId = DurableIntegrationEventActors.System,
+            AggregateType = nameof(AssetContent),
+            AggregateId = content.Id.ToString(),
+            CorrelationId = Guid.NewGuid()
+        };
 
     private static T InvokePrivate<T>(object target, string name, params object?[] arguments) =>
         (T)target.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(target, arguments)!;
-
-    private static T InvokePrivateStatic<T>(Type type, string name, params object?[] arguments) =>
-        (T)type.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, arguments)!;
 }
 
 public sealed class AssetPolicyCoverageTests

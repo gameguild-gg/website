@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild;
+using GameGuild.Assets;
 using GameGuild.Social.Blog.Configuration;
 using GameGuild.Social.Blog.Services;
 using GameGuild.Social.Follows;
@@ -35,7 +36,8 @@ public sealed class BlogServiceTestHarness : IDisposable
             .Options;
         Context = new BlogTestDbContext(options);
         var slugService = new BlogSlugService(Context);
-        Service = new BlogPostService(Context, slugService, Moderation, Announcer);
+        var manifest = new BlogAssetManifestService(Context);
+        Service = new BlogPostService(Context, slugService, Moderation, Announcer, manifest);
         ViewCounter = new BlogViewCounterService(Context);
     }
 
@@ -50,6 +52,9 @@ public sealed class BlogServiceTestHarness : IDisposable
 
     public async Task<BlogPost> PublishAsync(Guid postId)
         => await Service.PublishAsync(Primary, postId);
+
+    public Task<BlogPost> PublishAsync(Guid postId, Guid? ogImageAssetReferenceId)
+        => Service.PublishAsync(Primary, postId, ogImageAssetReferenceId);
 
     /// <summary>Soft-deletes via the service after faking the concurrency Version InMemory never bumps.</summary>
     public async Task DeletePostAsync(Guid postId)
@@ -77,7 +82,7 @@ public sealed class BlogServiceTestHarness : IDisposable
     public void Dispose() => Context.Dispose();
 }
 
-/// <summary>InMemory context applying the blog model plus the SocialProfile and Reaction shapes used by the read side.</summary>
+/// <summary>InMemory context applying the blog model plus the SocialProfile, Reaction, and Asset shapes used by tests.</summary>
 public sealed class BlogTestDbContext(DbContextOptions<BlogTestDbContext> options) : DbContext(options), IApplicationDbContext
 {
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -90,6 +95,23 @@ public sealed class BlogTestDbContext(DbContextOptions<BlogTestDbContext> option
             builder.Ignore(profile => profile.PortfolioItems);
         });
         modelBuilder.Entity<Reaction>(builder => builder.HasKey(reaction => reaction.Id));
+        modelBuilder.Entity<AssetContent>(builder =>
+        {
+            builder.HasKey(content => content.Id);
+            builder.Ignore(content => content.References);
+            builder.Ignore(content => content.TransformedVersions);
+        });
+        modelBuilder.Entity<AssetReference>(builder =>
+        {
+            builder.HasKey(reference => reference.Id);
+            builder.Ignore(reference => reference.Reports);
+            builder.Ignore(reference => reference.Localizations);
+            builder.Ignore(reference => reference.Revisions);
+            builder
+                .HasOne(reference => reference.Content)
+                .WithMany()
+                .HasForeignKey(reference => reference.AssetContentId);
+        });
     }
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)

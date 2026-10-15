@@ -11,6 +11,12 @@ public class Post : EntityBase
     public string Content { get; private set; } = string.Empty;
     public string? MediaUrl { get; private set; }
     public MediaType? MediaType { get; private set; }
+
+    /// <summary>
+    /// Asset reference backing the media (GameGuild.Assets). Null on legacy posts that
+    /// only carry a denormalized <see cref="MediaUrl"/>.
+    /// </summary>
+    public Guid? MediaAssetReferenceId { get; private set; }
     public PostVisibility Visibility { get; private set; }
     public bool IsPinned { get; private set; }
     public bool IsEdited { get; private set; }
@@ -60,6 +66,31 @@ public class Post : EntityBase
 
         MediaUrl = mediaUrl.Trim();
         MediaType = mediaType;
+        MediaAssetReferenceId = null;
+        UpdatedAt = SystemClock.UtcNow;
+    }
+
+    public void AttachMediaAsset(Guid mediaAssetReferenceId, string accessUrl, MediaType? mediaType)
+    {
+        if (mediaAssetReferenceId == Guid.Empty)
+        {
+            throw new ArgumentException("Media asset reference is required.", nameof(mediaAssetReferenceId));
+        }
+
+        if (string.IsNullOrWhiteSpace(accessUrl))
+        {
+            throw new ArgumentException("Media URL is required.", nameof(accessUrl));
+        }
+
+        MediaAssetReferenceId = mediaAssetReferenceId;
+        MediaUrl = accessUrl.Trim();
+        MediaType = mediaType;
+        UpdatedAt = SystemClock.UtcNow;
+    }
+
+    public void DetachMediaAsset()
+    {
+        MediaAssetReferenceId = null;
         UpdatedAt = SystemClock.UtcNow;
     }
 

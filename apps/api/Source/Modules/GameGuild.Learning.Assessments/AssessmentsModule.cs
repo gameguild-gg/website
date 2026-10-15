@@ -40,6 +40,7 @@ public static class AssessmentsModule
         services.AddScoped<IProgramContentLifecycleGuard, AssessmentProgramContentLifecycleGuard>();
         services.AddScoped<GameGuild.Learning.Courses.IAssessmentGradingSync, AssessmentGradingSync>();
         services.AddScoped<IAssetParentAuthorizationResolver, AssessmentSubmissionAssetAuthorizationResolver>();
+        services.AddScoped<IAssetUsageGuard, AssessmentSubmissionAssetUsageGuard>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IReviewCapabilityRegistration, CoreGradingCapabilityRegistration>());
         services.TryAddSingleton<ICodeAssessmentExecutor, UnconfiguredCodeAssessmentExecutor>();
         services.AddSingleton<CodeAssessmentTypeAdapter>();

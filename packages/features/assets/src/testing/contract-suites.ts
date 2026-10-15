@@ -19,6 +19,7 @@ export function describeAssetRepositoryContract(
       expect(await new Response(await repository.readStream(record.uri)).text()).toBe("name,value\na,1");
       expect((await repository.list({ search: "sample" })).items).toHaveLength(1);
       expect((await repository.rename(record.uri, "renamed.csv")).name).toBe("renamed.csv");
+      expect((await repository.rename(record.uri, "final.csv")).name).toBe("final.csv");
 
       const scope = { type: "document", id: "one" };
       await repository.reconcileUsage(scope, [
@@ -94,6 +95,19 @@ export function describeRemoteAssetProviderContract(
         [{ id: parseAssetUri(uri)!.id, uri, blob: new Blob(["x"]), name: "x.txt", mimeType: "text/plain" }],
         { signal: controller.signal },
       )).rejects.toMatchObject({ name: "AbortError" });
+    });
+
+    it("renames a remote asset", async () => {
+      const provider = createProvider();
+      const blob = new Blob(["body"], { type: "text/plain" });
+      const uri = createAssetUri();
+      const [record] = await provider.upload(
+        [{ id: parseAssetUri(uri)!.id, uri, blob, name: "old.txt", mimeType: blob.type }],
+        { scope: { type: "test", id: "remote" } },
+      );
+      const renamed = await provider.rename?.(record!.id, "new.txt", {});
+      expect(renamed?.name).toBe("new.txt");
+      expect((await provider.get(record!.uri, {})).name).toBe("new.txt");
     });
   });
 }

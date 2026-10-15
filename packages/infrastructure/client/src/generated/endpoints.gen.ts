@@ -14289,6 +14289,22 @@ export const postAssetsGenerateAccessUrlEndpoint = {
 } as const;
 
 /**
+ * Attach an asset reference to a parent resource, or detach it (null body fields).
+ */
+export interface PostAssetsRebindParentInput {
+  id: string;
+  body?: Types.AssetsControllersRebindAssetParentInput;
+}
+export type PostAssetsRebindParentOutput = void;
+export const postAssetsRebindParentEndpoint = {
+  operationId: 'postAssetsRebindParent' as const,
+  method: 'POST' as const,
+  path: '/v1/assets/{id}:rebind-parent' as const,
+  tags: ['Assets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Report an asset for moderation.
  */
 export interface PostAssetsReportInput {
@@ -30306,6 +30322,7 @@ export const endpoints = {
   patchAssets: patchAssetsEndpoint,
   getSignedAssetExtractedText: getSignedAssetExtractedTextEndpoint,
   postAssetsGenerateAccessUrl: postAssetsGenerateAccessUrlEndpoint,
+  postAssetsRebindParent: postAssetsRebindParentEndpoint,
   postAssetsReport: postAssetsReportEndpoint,
   getAssetsContent: getAssetsContentEndpoint,
   getAssetExtractedText: getAssetExtractedTextEndpoint,

@@ -10,11 +10,15 @@ public sealed record CreatePostEndpointCommand(
     string? MediaUrl,
     MediaType? MediaType,
     Guid? TenantId,
-    string[]? Tags) : ICommand<Result<Post>>;
+    string[]? Tags,
+    Guid? MediaAssetReferenceId = null) : ICommand<Result<Post>>;
 
 public sealed record UpdatePostEndpointCommand(Guid PostId, Guid ActorId, string Content) : ICommand<Result<Post>>;
 
-public sealed record DeletePostEndpointCommand(Guid PostId, Guid ActorId) : ICommand<Result>;
+public sealed record DeletePostEndpointCommand(
+    Guid PostId,
+    Guid ActorId,
+    Guid? TenantId = null) : ICommand<Result>;
 
 public sealed record AddPostCommentEndpointCommand(
     Guid PostId,
@@ -80,7 +84,8 @@ public sealed class PostEndpointCommandHandler(IPostService postService) :
             request.MediaUrl,
             request.MediaType,
             request.TenantId,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            request.MediaAssetReferenceId).ConfigureAwait(false);
 
         if (result.IsSuccess && result.Value is not null && request.Tags?.Length > 0)
         {
