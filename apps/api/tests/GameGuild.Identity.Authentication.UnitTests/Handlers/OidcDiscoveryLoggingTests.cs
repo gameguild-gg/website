@@ -30,11 +30,11 @@ public sealed class OidcDiscoveryLoggingTests
         state.Select(property => property.Key).Should().Equal("Count", "{OriginalFormat}");
         state.Single(property => property.Key == "Count").Value.Should().Be(1);
         state.Single(property => property.Key == "{OriginalFormat}").Value.Should()
-            .Be("OIDC domain discovery matched {Count} provider(s)");
+            .Be("OIDC provider discovery matched {Count} provider(s)");
         foreach (var property in state)
         {
             (property.Value?.ToString() ?? string.Empty).Should().NotContain(email).And.NotContain(expectedDomain);
         }
-        log.Arguments[2].ToString().Should().Be("OIDC domain discovery matched 1 provider(s)");
+        log.Arguments[2].ToString().Should().Be("OIDC provider discovery matched 1 provider(s)");
     }
 }

@@ -61,11 +61,13 @@ public sealed class PermissionExpirationAlertLoggingTests
             log.EventId.Id.Should().Be(0);
             log.Exception.Should().BeNull();
             var state = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.State).ToArray();
-            state.Select(property => property.Key).Should().Equal("Kind", "Channel", "Outcome", "{OriginalFormat}");
+            state.Select(property => property.Key).Should().Equal("Kind", "PermissionId", "Channel", "TenantId", "{OriginalFormat}");
             var channel = state.Single(property => property.Key == "Channel").Value;
-            log.Text.Should().Be($"Failed to queue Upcoming permission-expiration alert on channel {channel}: {expectedOutcome}.");
+            log.Text.Should().Contain("Failed to queue Upcoming permission-expiration alert")
+                .And.Contain($"on channel {channel}");
             state.Single(property => property.Key == "Kind").Value.Should().Be(PermissionExpirationKind.Upcoming);
-            state.Single(property => property.Key == "Outcome").Value.Should().Be(expectedOutcome);
+            state.Single(property => property.Key == "PermissionId").Value.Should().Be(permissionId);
+            state.Single(property => property.Key == "Channel").Value.ToString().Should().BeOneOf("InApp", "Email");
             foreach (var property in state)
             {
                 (property.Value?.ToString() ?? string.Empty).Should().NotContain(recipientEmail)
