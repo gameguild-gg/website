@@ -42,7 +42,7 @@ export async function PATCH(
   const token = await getToken();
   if (!token) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   const { assetId } = await params;
-  const body = await request.json();
+  const body: unknown = await request.json();
   const upstream = await fetch(assertSafeServiceUrl(`${apiBaseUrl()}/v1/assets/${encodeURIComponent(assetId)}`, apiBaseUrl()), {
     redirect: "error",
     method: "PATCH",
