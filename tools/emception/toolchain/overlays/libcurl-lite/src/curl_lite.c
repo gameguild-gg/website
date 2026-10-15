@@ -125,7 +125,7 @@ static CURLcode copy_postfields(CurlHandle *h, const char *data)
         {
             /* A negative postfieldsize promises a null-terminated buffer; the
                bounded scan keeps the read length explicit instead of strlen. */
-            const char *terminator = (const char *)memchr(data, '\0', SIZE_MAX);
+            const char *terminator = (const char *)memchr(data, (unsigned char)'\0', SIZE_MAX);
             if (!terminator)
                 return CURLE_OUT_OF_MEMORY;
             length = (size_t)(terminator - data);
@@ -503,7 +503,7 @@ CURLcode curl_easy_perform(CURL *handle)
         else
         {
             /* The postfields contract guarantees termination; scan boundedly. */
-            const char *terminator = (const char *)memchr(h->postfields, '\0', SIZE_MAX);
+            const char *terminator = (const char *)memchr(h->postfields, (unsigned char)'\0', SIZE_MAX);
             if (!terminator)
                 return CURLE_BAD_FUNCTION_ARGUMENT;
             body_length = (size_t)(terminator - h->postfields);
