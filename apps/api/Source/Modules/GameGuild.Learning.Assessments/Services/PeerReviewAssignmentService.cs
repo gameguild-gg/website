@@ -70,21 +70,30 @@ public sealed class PeerReviewAssignmentService(
                 "Synthetic reviewer does not belong to this test run"));
         }
 
-        var targets = await LoadAuthorTestTargetsAsync(testRunId).ConfigureAwait(false);
-        var ownTarget = targets.SingleOrDefault(value => value.Execution.TestRunSubjectId == reviewerTestRunSubjectId);
-        if (ownTarget is null)
+        var reviewerRevision = await (
+                from execution in context.Set<GradingExecution>().AsNoTracking()
+                join revision in context.Set<AssessmentDefinitionRevision>().AsNoTracking()
+                    on execution.DefinitionRevisionId equals revision.Id
+                where execution.TestRunSubjectId == reviewerTestRunSubjectId &&
+                      execution.ExecutionContext == ReviewExecutionContext.AuthorTest &&
+                      execution.SubmittedAt.HasValue
+                select revision)
+            .SingleOrDefaultAsync()
+            .ConfigureAwait(false);
+        if (reviewerRevision is null)
         {
             return Result.Failure<PeerReviewClaimResult>(Error.Validation(
                 "PeerReview.AuthorTestResponseRequired",
                 "The synthetic reviewer must submit its own response before reviewing peers"));
         }
 
+        var targets = await LoadAuthorTestTargetsAsync(testRunId).ConfigureAwait(false);
+        var runStageIds = await LoadAuthorTestPeerStageIdsAsync(testRunId).ConfigureAwait(false);
         var now = SystemClock.UtcNow;
-        var targetStageIds = targets.Select(value => value.Stage.Id).ToArray();
-        await ExpireClaimsAsync(targetStageIds, now).ConfigureAwait(false);
+        await ExpireClaimsAsync(runStageIds, now).ConfigureAwait(false);
         var active = await context.Set<PeerReviewClaim>()
             .Where(value => value.ReviewerTestRunSubjectId == reviewerTestRunSubjectId &&
-                            targetStageIds.Contains(value.ReviewStageId) &&
+                            runStageIds.Contains(value.ReviewStageId) &&
                             value.Status == PeerReviewClaimStatus.Assigned &&
                             value.LeaseExpiresAt > now)
             .OrderBy(value => value.ClaimedAt)
@@ -95,10 +104,10 @@ public sealed class PeerReviewAssignmentService(
             return Result.Success(new PeerReviewClaimResult(active.Id, "Anonymous test subject"));
         }
 
-        var policy = ReadPeerPolicy(ownTarget.Revision);
+        var policy = ReadPeerPolicy(reviewerRevision);
         var used = await context.Set<PeerReviewClaim>()
             .CountAsync(value => value.ReviewerTestRunSubjectId == reviewerTestRunSubjectId &&
-                                 targetStageIds.Contains(value.ReviewStageId) &&
+                                 runStageIds.Contains(value.ReviewStageId) &&
                                  (value.Status == PeerReviewClaimStatus.Submitted ||
                                   value.Status == PeerReviewClaimStatus.Assigned && value.LeaseExpiresAt > now))
             .ConfigureAwait(false);
@@ -780,6 +789,22 @@ public sealed class PeerReviewAssignmentService(
                        stage.Status == PersistedReviewStageStatus.Running)
                 select new PeerTarget(stage, execution, revision, null))
             .ToListAsync()
+            .ConfigureAwait(false);
+
+    private async Task<Guid[]> LoadAuthorTestPeerStageIdsAsync(Guid testRunId) =>
+        await (
+                from subject in context.Set<AssessmentTestRunSubject>().AsNoTracking()
+                join execution in context.Set<GradingExecution>().AsNoTracking()
+                    on subject.Id equals execution.TestRunSubjectId
+                join round in context.Set<GradeRound>().AsNoTracking()
+                    on execution.ActiveGradeRoundId equals (Guid?)round.Id
+                join stage in context.Set<ReviewStage>().AsNoTracking()
+                    on round.Id equals stage.GradeRoundId
+                where subject.TestRunId == testRunId &&
+                      execution.ExecutionContext == ReviewExecutionContext.AuthorTest &&
+                      stage.ReviewMethod == ReviewMethod.PeerReview
+                select stage.Id)
+            .ToArrayAsync()
             .ConfigureAwait(false);
 
     private async Task<List<PeerTarget>> FilterAvailableTargetsAsync(

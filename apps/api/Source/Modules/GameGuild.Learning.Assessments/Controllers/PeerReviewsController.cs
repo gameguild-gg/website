@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
@@ -534,7 +535,7 @@ public sealed record AnonymousReviewSubmissionDto(
     Guid ReviewId,
     PeerReviewClaimStatus Status,
     AnonymousReviewAssessmentDto Assessment,
-    AnonymousReviewRubricDto? Rubric,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] AnonymousReviewRubricDto? Rubric,
     int AttemptNumber,
     DateTime? SubmittedAt,
     SubmissionStatus SubmissionStatus,

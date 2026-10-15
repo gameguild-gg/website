@@ -1,9 +1,9 @@
 # Parte 4. Expansão de reviews e operação
 
-Status: implementada em 2026-10-13; validação local do runtime, web, arquitetura
-e migrations aprovada. A reexecução da suíte HTTP + PostgreSQL permanece
-bloqueada antes do grading por uma exigência externa de certificado de Data
-Protection no host de integração.
+Status: implementada em 2026-10-13 e encerrada em 2026-10-14; validação local
+do runtime, web, arquitetura, migrations e matriz browser aprovada. A
+reexecução da suíte HTTP + PostgreSQL permanece bloqueada antes do grading por
+uma exigência externa de certificado de Data Protection no host de integração.
 
 ## Objetivo
 
@@ -246,7 +246,7 @@ e artefatos SQL ativos.
 - permitir que qualquer participante do snapshot edite o draft coletivo com
   concorrência otimista;
 - implementar `SaveCollectiveSelfReviewDraftV1(expectedVersion,
-  idempotencyKey, requestHash)` sobre `IdempotentCommandEnvelopeV1`; cada save
+idempotencyKey, requestHash)` sobre `IdempotentCommandEnvelopeV1`; cada save
   aceito grava na mesma transação um evento append-only e replay idêntico
   reutiliza o outcome sem duplicá-lo;
 - aceitar um único submit final da evidência coletiva e registrar o ator real;
@@ -648,26 +648,32 @@ restaram autoridades concorrentes, referências obsoletas ou lacunas na matriz.
 - `AssessmentReviewOperationsMigrationPostgreSqlTests` prova upgrade a partir
   da migration imediatamente anterior, preserva dado existente, valida tabelas,
   colunas e índices, executa rollback e recria o schema final sem model drift;
+- o `Quiz Grading Scenario Runner` criou um curso limpo com sete quizzes e
+  comprovou, em uma execução browser agregada `7/7`, os fluxos oficiais
+  `AutomatedReview`, `InstructorReview`, `SelfReview` e `PeerReview`, diretos ou
+  seguidos por `InstructorReview`; todos terminaram em `released`, incluindo as
+  duas personas learner dos fluxos peer, projeção no gradebook, retomada da
+  tentativa e negação do outsider;
 - build da solution, testes de arquitetura/autorizacao e typechecks dos
   packages e da web foram aprovados localmente;
 - a tentativa de reexecutar `AssessmentGradingPostgreSqlHttpTests` em
-  2026-10-13 falhou durante a inicializacao global do host, antes de criar o
-  cenário, porque `DataProtectionStartupConfiguration` passou a exigir as duas
-  variáveis de certificado. O erro não percorre código de grading e permanece
-  registrado como bloqueio externo de infraestrutura de teste, sem bypass no
-  módulo de Assessments.
+  2026-10-14 confirmou que os `14/14` casos continuam interrompidos durante a
+  inicializacao global do host, antes de criar qualquer cenário, porque
+  `DataProtectionStartupConfiguration` exige as duas variáveis de certificado.
+  O erro não percorre código de grading e permanece registrado como bloqueio
+  externo de infraestrutura de teste, sem bypass no módulo de Assessments.
 
 ## Acompanhamento
 
-| Marco | Status | Evidência |
-| --- | --- | --- |
-| gate `04-0` | aprovado | `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados em 2026-10-08; `ACCESS-03B` não bloqueante |
-| `SEQ-12A` | concluído | lifecycle genérico, test run multipersona e regrade sem novo runtime por método |
-| schema de `SEQ-12` | aprovado | autorreferência opcional de evidência; migration incremental isolada |
-| `SEQ-12` | concluído | `SelfReview` individual/coletivo, direto/com instrutor, surface compartilhada e regrade por referência |
-| schema de `SEQ-13` | aprovado | claim por stage, lease, identidade exclusiva, deadline e índices canônicos |
-| `SEQ-13` | concluído | `PeerReview` individual/coletivo, test run multipersona, operações de insuficiência e regrade |
-| `SEQ-14` | concluído | porta, registry, outbox, deduplicação e provider controlado; produção permanece fail-closed sem provider |
-| schema de schedule em `SEQ-15` | aprovado | owner único por rodada, UTC, concorrência e índice de vencimento |
-| `SEQ-15` | concluído | release agendado, consumers independentes, operação, métricas e fila canônica |
-| `SEQ-16` | concluído com bloqueio externo registrado | auditoria, mapas e suítes locais aprovados; rerun HTTP + PostgreSQL aguarda correção do host de integração |
+| Marco                          | Status                                    | Evidência                                                                                                                                     |
+| ------------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| gate `04-0`                    | aprovado                                  | `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados em 2026-10-08; `ACCESS-03B` não bloqueante                                                  |
+| `SEQ-12A`                      | concluído                                 | lifecycle genérico, test run multipersona e regrade sem novo runtime por método                                                               |
+| schema de `SEQ-12`             | aprovado                                  | autorreferência opcional de evidência; migration incremental isolada                                                                          |
+| `SEQ-12`                       | concluído                                 | `SelfReview` individual/coletivo, direto/com instrutor, surface compartilhada e regrade por referência                                        |
+| schema de `SEQ-13`             | aprovado                                  | claim por stage, lease, identidade exclusiva, deadline e índices canônicos                                                                    |
+| `SEQ-13`                       | concluído                                 | `PeerReview` individual/coletivo, test run multipersona, operações de insuficiência e regrade                                                 |
+| `SEQ-14`                       | concluído                                 | porta, registry, outbox, deduplicação e provider controlado; produção permanece fail-closed sem provider                                      |
+| schema de schedule em `SEQ-15` | aprovado                                  | owner único por rodada, UTC, concorrência e índice de vencimento                                                                              |
+| `SEQ-15`                       | concluído                                 | release agendado, consumers independentes, operação, métricas e fila canônica                                                                 |
+| `SEQ-16`                       | concluído com bloqueio externo registrado | auditoria, mapas, suíte de domínio `484/484` e matriz browser `7/7` aprovados; rerun HTTP + PostgreSQL aguarda correção do host de integração |

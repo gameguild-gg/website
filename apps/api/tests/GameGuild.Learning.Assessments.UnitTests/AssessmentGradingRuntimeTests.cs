@@ -504,12 +504,7 @@ public sealed class AssessmentGradingRuntimeTests
             run.TestRunId,
             learnerA.SubjectId,
             harness.InstructorId);
-        var claimB = await harness.PeerReviews.ClaimAuthorTestAsync(
-            run.TestRunId,
-            learnerB.SubjectId,
-            harness.InstructorId);
         claimA.IsSuccess.Should().BeTrue();
-        claimB.IsSuccess.Should().BeTrue();
 
         (await harness.PeerReviews.SubmitReviewAsync(
             claimA.Value.ReviewId,
@@ -517,6 +512,14 @@ public sealed class AssessmentGradingRuntimeTests
             ScoreValue.FromUnits(125),
             "Synthetic learner A review",
             null)).IsSuccess.Should().BeTrue();
+
+        // Receiving a review must not remove a synthetic learner's independent
+        // obligation to review another submitted response.
+        var claimB = await harness.PeerReviews.ClaimAuthorTestAsync(
+            run.TestRunId,
+            learnerB.SubjectId,
+            harness.InstructorId);
+        claimB.IsSuccess.Should().BeTrue();
         (await harness.PeerReviews.SubmitReviewAsync(
             claimB.Value.ReviewId,
             harness.InstructorId,

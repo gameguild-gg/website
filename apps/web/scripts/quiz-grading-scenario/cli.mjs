@@ -4,6 +4,7 @@ import {
   assertApplicableCheckpoint,
   getScenarioDefinition,
   listScenarioDefinitions,
+  selectQuizDefinitions,
 } from "./definitions.mjs";
 import {
   assertLocalUrl,
@@ -18,6 +19,7 @@ const { positionals, values } = parseArgs({
   strict: true,
   options: {
     scenario: { type: "string", short: "s" },
+    quiz: { type: "string", multiple: true },
     checkpoint: { type: "string", short: "c" },
     fresh: { type: "boolean", default: false },
     headed: { type: "boolean", default: false },
@@ -35,6 +37,7 @@ if (values.help || positionals.length === 0) {
 }
 
 const command = positionals[0];
+const selectedQuizKeys = parseQuizKeys(values.quiz);
 const apiBaseUrl = assertLocalUrl(
   values["api-base-url"] ??
     process.env.QUIZ_GRADING_API_BASE_URL ??
@@ -78,12 +81,12 @@ try {
   process.exitCode = 1;
 }
 
-async function prepare(scenarioKey, checkpoint) {
+async function prepare(scenarioKey, checkpoint, quizKeys = selectedQuizKeys) {
   const definition = getScenarioDefinition(scenarioKey);
-  assertApplicableCheckpoint(definition, checkpoint);
+  const quizzes = selectQuizDefinitions(definition, quizKeys);
+  assertApplicableCheckpoint(definition, checkpoint, quizzes);
   if (values.fresh) {
-    const existing = await readManifest(scenarioKey, { optional: true });
-    if (existing) await reset(scenarioKey);
+    await reset(scenarioKey);
   }
   const { prepareScenario } = await import("./provision.mjs");
   const { verifyScenario } = await import("./verify.mjs");
@@ -92,6 +95,7 @@ async function prepare(scenarioKey, checkpoint) {
     prepareScenario({
       scenarioKey,
       checkpoint,
+      quizKeys,
       apiBaseUrl,
       webBaseUrl,
       onProgress: progress,
@@ -142,15 +146,20 @@ async function reset(scenarioKey) {
 
 async function test(scenarioKey, checkpoint) {
   const definition = getScenarioDefinition(scenarioKey);
-  assertApplicableCheckpoint(definition, checkpoint);
+  const quizzes = selectQuizDefinitions(definition, selectedQuizKeys);
+  assertApplicableCheckpoint(definition, checkpoint, quizzes);
   if (values.fresh) {
-    const existing = await readManifest(scenarioKey, { optional: true });
-    if (existing) await reset(scenarioKey);
+    await reset(scenarioKey);
   }
-  await prepare(scenarioKey, checkpoint);
+  const existing = await readManifest(scenarioKey, { optional: true });
+  await prepare(scenarioKey, checkpoint, existing ? [] : selectedQuizKeys);
   const { runBrowserScenario } = await import("./browser.mjs");
   await withCliScenarioLock(scenarioKey, () =>
-    runBrowserScenario({ scenarioKey, headed: values.headed }),
+    runBrowserScenario({
+      scenarioKey,
+      quizKeys: selectedQuizKeys,
+      headed: values.headed,
+    }),
   );
   await verify(scenarioKey);
   if (values.cleanup) await reset(scenarioKey);
@@ -159,19 +168,28 @@ async function test(scenarioKey, checkpoint) {
 async function list() {
   const entries = [];
   for (const definition of listScenarioDefinitions()) {
-    const manifest = await readManifest(definition.key, { optional: true });
+    let manifest = null;
+    let diagnostic = null;
+    try {
+      manifest = await readManifest(definition.key, { optional: true });
+    } catch (error) {
+      diagnostic = error.message;
+    }
     entries.push({
       key: definition.key,
       subject: definition.subject,
-      workflow: definition.reviewMethods.join(" + "),
-      prepared: Boolean(manifest),
+      quizzes: definition.quizzes.map((quiz) => ({
+        key: quiz.key,
+        workflow: quiz.reviewMethods.join(" + "),
+      })),
+      prepared: Boolean(manifest) || Boolean(diagnostic),
       checkpoint: manifest?.checkpoint ?? null,
+      ...(diagnostic ? { healthy: false } : {}),
+      ...(diagnostic ? { diagnostic } : {}),
       urls: manifest
         ? {
-            assessmentEditor: manifest.urls.assessmentEditor,
             learnerCourses: manifest.urls.learnerCourses,
-            learnerActivity: manifest.urls.learnerActivity,
-            speedGrader: manifest.urls.speedGrader,
+            quizzes: manifest.urls.quizzes,
           }
         : {},
     });
@@ -188,6 +206,7 @@ function outputScenario(manifest, report, { credentials }) {
     confirmedCheckpoint: report.confirmedCheckpoint,
     healthy: report.healthy,
     nextCheckpoint: report.nextCheckpoint,
+    checkpoints: report.checkpoints,
     urls: manifest.urls,
     ...(credentials
       ? {
@@ -235,6 +254,17 @@ function requireScenario(value) {
   return value;
 }
 
+function parseQuizKeys(values) {
+  return [
+    ...new Set(
+      (values ?? [])
+        .flatMap((value) => value.split(","))
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 function printHelp() {
   console.log(`Quiz Grading Scenario Runner
 
@@ -243,11 +273,12 @@ Usage:
   pnpm grading:scenario prepare --scenario <key> --checkpoint <checkpoint>
   pnpm grading:scenario status --scenario <key>
   pnpm grading:scenario verify --scenario <key>
-  pnpm grading:scenario test --scenario <key> [--headed] [--cleanup]
+  pnpm grading:scenario test --scenario <key> [--quiz <key>] [--headed] [--cleanup]
   pnpm grading:scenario reset --scenario <key>
 
 Options:
   --fresh                 Reset the owned execution before preparing it
+  --quiz <key>            Select one or more quizzes (repeat or comma-separate)
   --api-base-url <url>    Defaults to http://localhost:8080
   --web-base-url <url>    Defaults to http://localhost:3000
   --json                  Machine-readable output

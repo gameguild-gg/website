@@ -1,7 +1,6 @@
 export function buildScenarioUrls(manifest) {
   const { webBaseUrl } = manifest.environment;
-  const { assessmentId, contentId, courseSlug, submissionId } =
-    manifest.resources;
+  const { courseSlug } = manifest.resources;
   if (!courseSlug) return {};
 
   const locale = "en-US";
@@ -18,17 +17,41 @@ export function buildScenarioUrls(manifest) {
     learnerCourse: learner,
     learnerActivities: `${learner}/activities`,
     learnerGrades: `${learner}/grades`,
+    learnerReviews: `${learnerHome}/reviews`,
+    quizzes: {},
   };
-  if (contentId) {
-    urls.contentEditor = `${workspace}/content/${encodeURIComponent(contentId)}`;
+
+  for (const quizKey of manifest.quizKeys ?? []) {
+    const resources = manifest.resources.quizzes?.[quizKey];
+    if (!resources) continue;
+    const quizUrls = {};
+    if (resources.contentId) {
+      quizUrls.contentEditor = `${workspace}/content/${encodeURIComponent(resources.contentId)}`;
+    }
+    if (resources.assessmentId) {
+      quizUrls.assessmentEditor = `${workspace}/assessments/${encodeURIComponent(resources.assessmentId)}`;
+      quizUrls.testRun = quizUrls.assessmentEditor;
+      quizUrls.learnerActivity = `${learner}/activities/assessment-${encodeURIComponent(resources.assessmentId)}`;
+      quizUrls.speedGraders = {};
+      for (const [personaKey, submission] of Object.entries(
+        resources.submissions ?? {},
+      )) {
+        const query = new URLSearchParams({ course: courseSlug });
+        if (submission.submissionId) {
+          query.set("submission", submission.submissionId);
+        }
+        quizUrls.speedGraders[personaKey] =
+          `${webBaseUrl}/${locale}/speedgrader/assessments/${encodeURIComponent(resources.assessmentId)}?${query}`;
+      }
+      quizUrls.speedGrader =
+        quizUrls.speedGraders.learnerA ??
+        `${webBaseUrl}/${locale}/speedgrader/assessments/${encodeURIComponent(resources.assessmentId)}?course=${encodeURIComponent(courseSlug)}`;
+    }
+    urls.quizzes[quizKey] = quizUrls;
   }
-  if (assessmentId) {
-    urls.assessmentEditor = `${workspace}/assessments/${encodeURIComponent(assessmentId)}`;
-    urls.testRun = urls.assessmentEditor;
-    urls.learnerActivity = `${learner}/activities/assessment-${encodeURIComponent(assessmentId)}`;
-    const query = new URLSearchParams({ course: courseSlug });
-    if (submissionId) query.set("submission", submissionId);
-    urls.speedGrader = `${webBaseUrl}/${locale}/speedgrader/assessments/${encodeURIComponent(assessmentId)}?${query}`;
+
+  if (manifest.quizKeys?.length === 1) {
+    Object.assign(urls, urls.quizzes[manifest.quizKeys[0]]);
   }
   return urls;
 }

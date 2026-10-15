@@ -11,31 +11,46 @@ import {
   checkpointIndex,
   getScenarioDefinition,
   hasInstructorReview,
+  hasPeerReview,
+  hasSelfReview,
   requestHash,
+  selectQuizDefinitions,
 } from "./definitions.mjs";
-import { createManifest, readManifest, writeManifest } from "./manifest.mjs";
+import {
+  createManifest,
+  readManifest,
+  recomputeManifestCheckpoint,
+  selectedManifestQuizzes,
+  writeManifest,
+} from "./manifest.mjs";
 import { buildScenarioUrls } from "./urls.mjs";
 
 export async function prepareScenario({
   scenarioKey,
   checkpoint,
+  quizKeys,
   apiBaseUrl,
   webBaseUrl,
   onProgress = () => {},
 }) {
   const definition = getScenarioDefinition(scenarioKey);
-  assertApplicableCheckpoint(definition, checkpoint);
+  const requestedQuizzes = selectQuizDefinitions(definition, quizKeys);
+  assertApplicableCheckpoint(definition, checkpoint, requestedQuizzes);
   let manifest = await readManifest(scenarioKey, { optional: true });
   if (!manifest) {
     manifest = createManifest({
       definitionKey: scenarioKey,
+      quizKeys: requestedQuizzes.map((quiz) => quiz.key),
       apiBaseUrl,
       webBaseUrl,
     });
     await persist(manifest);
   } else {
     assertEnvironmentMatches(manifest, apiBaseUrl, webBaseUrl);
+    assertSelectionMatches(manifest, quizKeys);
   }
+  const quizzes = selectedManifestQuizzes(manifest);
+  assertApplicableCheckpoint(definition, checkpoint, quizzes);
 
   onProgress("Checking the local API and web application.");
   await assertStackAvailable(
@@ -60,50 +75,73 @@ export async function prepareScenario({
   }
   await assertExistingCourseStillExists(manifest, sessions.instructor);
 
-  if (checkpointIndex(manifest.checkpoint) >= checkpointIndex(checkpoint)) {
+  if (
+    quizzes.every(
+      (quiz) =>
+        checkpointIndex(manifest.resources.quizzes[quiz.key].checkpoint) >=
+        checkpointIndex(checkpoint),
+    )
+  ) {
     onProgress(
-      `Manifest is already at ${manifest.checkpoint}; no provisioning is needed.`,
+      `Every selected quiz is already at or beyond ${checkpoint}; no provisioning is needed.`,
     );
     return manifest;
   }
 
-  onProgress("Preparing the course, quiz, assessment, and grading group.");
-  await ensureAuthoring(manifest, definition, sessions);
-  setCheckpoint(manifest, "authoring-ready");
+  onProgress("Preparing the course, quizzes, assessments, and grading group.");
+  await ensureSharedAuthoring(manifest, definition, quizzes, sessions);
+  for (const quiz of quizzes) {
+    await ensureQuizAuthoring(manifest, definition, quiz, sessions);
+    setQuizCheckpoint(manifest, quiz.key, "authoring-ready");
+  }
   await persist(manifest);
   if (checkpoint === "authoring-ready") return manifest;
 
-  onProgress("Preparing the immutable assessment candidate.");
-  await ensureCandidate(manifest, sessions.instructor);
-  setCheckpoint(manifest, "test-run-ready");
+  onProgress("Preparing immutable assessment candidates.");
+  for (const quiz of quizzes) {
+    await ensureCandidate(
+      manifest,
+      manifest.resources.quizzes[quiz.key],
+      sessions.instructor,
+    );
+    setQuizCheckpoint(manifest, quiz.key, "test-run-ready");
+  }
   await persist(manifest);
   if (checkpoint === "test-run-ready") return manifest;
 
-  onProgress("Publishing the revision and enrolling the learner personas.");
-  await ensureLearnerReady(manifest, definition, sessions);
-  setCheckpoint(manifest, "learner-ready");
+  onProgress("Publishing the revisions and enrolling learner personas.");
+  await ensureLearnerReady(manifest, quizzes, sessions);
+  for (const quiz of quizzes) {
+    setQuizCheckpoint(manifest, quiz.key, "learner-ready");
+  }
   await persist(manifest);
   if (checkpoint === "learner-ready") return manifest;
 
-  onProgress(
-    "Submitting the learner attempt and running deterministic grading.",
-  );
-  await ensureSubmitted(manifest, definition, sessions);
-  if (hasInstructorReview(definition)) {
-    setCheckpoint(manifest, "review-ready");
-    await persist(manifest);
-    if (checkpoint === "review-ready") return manifest;
-    onProgress("Applying the instructor review.");
-    await ensureInstructorReview(manifest, definition, sessions.instructor);
+  onProgress("Submitting learner attempts and completing primary reviews.");
+  for (const quiz of quizzes) {
+    await ensureSubmitted(manifest, quiz, sessions);
+    setQuizCheckpoint(
+      manifest,
+      quiz.key,
+      hasInstructorReview(quiz) ? "review-ready" : "release-ready",
+    );
   }
+  await persist(manifest);
+  if (checkpoint === "review-ready") return manifest;
 
-  setCheckpoint(manifest, "release-ready");
+  for (const quiz of quizzes.filter(hasInstructorReview)) {
+    onProgress(`Applying instructor review for "${quiz.title}".`);
+    await ensureInstructorReview(manifest, quiz, sessions.instructor);
+    setQuizCheckpoint(manifest, quiz.key, "release-ready");
+  }
   await persist(manifest);
   if (checkpoint === "release-ready") return manifest;
 
-  onProgress("Releasing the result to the learner.");
-  await ensureReleased(manifest, sessions.instructor);
-  setCheckpoint(manifest, "released");
+  onProgress("Releasing every finalized result to the learners.");
+  for (const quiz of quizzes) {
+    await ensureReleased(manifest, quiz, sessions.instructor);
+    setQuizCheckpoint(manifest, quiz.key, "released");
+  }
   await persist(manifest);
   return manifest;
 }
@@ -133,6 +171,7 @@ async function recoverRecreatedLocalEnvironment(
 
   const probe = createManifest({
     definitionKey: scenarioKey,
+    quizKeys: manifest.quizKeys,
     apiBaseUrl,
     webBaseUrl,
   });
@@ -142,7 +181,6 @@ async function recoverRecreatedLocalEnvironment(
   } catch {
     return null;
   }
-
   const currentTenantId = currentInstructor.identity.tenantId;
   if (!currentTenantId || currentTenantId === previousTenantId) return null;
 
@@ -151,6 +189,7 @@ async function recoverRecreatedLocalEnvironment(
   );
   const replacement = createManifest({
     definitionKey: scenarioKey,
+    quizKeys: manifest.quizKeys,
     apiBaseUrl,
     webBaseUrl,
   });
@@ -174,7 +213,7 @@ async function assertExistingCourseStillExists(manifest, instructor) {
   unwrap(result, "Read existing scenario course");
 }
 
-async function ensureAuthoring(manifest, definition, sessions) {
+async function ensureSharedAuthoring(manifest, definition, quizzes, sessions) {
   const instructor = sessions.instructor;
   const resources = manifest.resources;
   if (!resources.courseId) {
@@ -226,7 +265,10 @@ async function ensureAuthoring(manifest, definition, sessions) {
     await persist(manifest);
   }
 
-  if (definition.subject === "collective" && !resources.groupSetId) {
+  if (
+    quizzes.some((quiz) => quiz.subject === "collective") &&
+    !resources.groupSetId
+  ) {
     const sets = unwrap(
       await instructor.modules.groupSets.getCoursesGroupSets(
         resources.courseId,
@@ -239,9 +281,7 @@ async function ensureAuthoring(manifest, definition, sessions) {
       unwrap(
         await instructor.modules.groupSets.postCoursesGroupSets(
           resources.courseId,
-          {
-            name: setName,
-          },
+          { name: setName },
         ),
         "Create group set",
       );
@@ -249,31 +289,34 @@ async function ensureAuthoring(manifest, definition, sessions) {
     resources.groupSetId = groupSet.id;
     await persist(manifest);
   }
+}
+
+async function ensureQuizAuthoring(manifest, definition, quiz, sessions) {
+  const instructor = sessions.instructor;
+  const shared = manifest.resources;
+  const resources = shared.quizzes[quiz.key];
+  const slug = `${manifest.marker}-${quiz.key}`;
 
   if (!resources.contentId) {
     const contents = unwrap(
-      await instructor.modules.content.getCoursesContent(resources.courseId),
+      await instructor.modules.content.getCoursesContent(shared.courseId),
       "List course content",
     );
-    const contentSlug = `${manifest.marker}-quiz`;
     const content =
-      contents.find((candidate) => candidate.slug === contentSlug) ??
+      contents.find((candidate) => candidate.slug === slug) ??
       unwrap(
-        await instructor.modules.content.postCoursesContent(
-          resources.courseId,
-          {
-            programId: resources.courseId,
-            title: `[${manifest.marker}] ${definition.quiz.title}`,
-            slug: contentSlug,
-            description: definition.quiz.description,
-            type: "Questionnaire",
-            jsonBody: null,
-            isRequired: true,
-            estimatedMinutesSource: "Auto",
-            visibility: "Public",
-          },
-        ),
-        "Create quiz content",
+        await instructor.modules.content.postCoursesContent(shared.courseId, {
+          programId: shared.courseId,
+          title: `[${manifest.marker}] ${quiz.title}`,
+          slug,
+          description: quiz.description,
+          type: "Questionnaire",
+          jsonBody: null,
+          isRequired: true,
+          estimatedMinutesSource: "Auto",
+          visibility: "Public",
+        }),
+        `Create quiz content ${quiz.key}`,
       );
     requireId(content, "quiz content");
     resources.contentId = content.id;
@@ -284,7 +327,7 @@ async function ensureAuthoring(manifest, definition, sessions) {
   if (!resources.assessmentId) {
     const assessments = unwrap(
       await instructor.modules.assessments.getAssessmentsCourse(
-        resources.courseId,
+        shared.courseId,
       ),
       "List course assessments",
     );
@@ -297,7 +340,7 @@ async function ensureAuthoring(manifest, definition, sessions) {
     } else {
       const saved = unwrap(
         await instructor.modules.assessments.putAssessmentsCourseContentDraft(
-          resources.courseId,
+          shared.courseId,
           resources.contentId,
           {
             expectedContentVersion: requireNumber(
@@ -305,29 +348,27 @@ async function ensureAuthoring(manifest, definition, sessions) {
               "content version",
             ),
             expectedAssessmentVersion: null,
-            title: `[${manifest.marker}] ${definition.quiz.title}`,
-            slug: `${manifest.marker}-assessment`,
-            description: definition.quiz.description,
-            document: definition.quiz.document,
+            title: `[${manifest.marker}] ${quiz.title}`,
+            slug,
+            description: quiz.description,
+            document: quiz.document,
             visibility: "Public",
             isRequired: true,
             estimatedMinutes: null,
             estimatedMinutesSource: "Auto",
-            reviewMethods: definition.reviewMethodValue,
-            passingScore: definition.expected.maxScore,
+            reviewMethods: quiz.reviewMethodValue,
+            passingScore: quiz.expected.maxScore,
             maxAttempts: 1,
             contentCompletionMode: "on-release-and-pass",
-            resultReleaseMode: "manual",
-            reviewConfigurationCanonicalJson: hasInstructorReview(definition)
-              ? '{"schemaVersion":1,"instructor":{"requireOverrideReason":false}}'
-              : null,
+            resultReleaseMode: quiz.release,
+            reviewConfigurationCanonicalJson: buildReviewConfiguration(quiz),
           },
         ),
-        "Save atomic quiz assessment draft",
+        `Save atomic quiz assessment draft ${quiz.key}`,
       );
       if (!saved.assessmentId) {
         throw new Error(
-          "Saving the quiz draft did not return an assessmentId.",
+          `Saving quiz draft "${quiz.key}" did not return an assessmentId.`,
         );
       }
       resources.assessmentId = saved.assessmentId;
@@ -339,25 +380,25 @@ async function ensureAuthoring(manifest, definition, sessions) {
 
   let assessment = unwrap(
     await instructor.modules.assessments.getAssessments(resources.assessmentId),
-    "Read scenario assessment",
+    `Read scenario assessment ${quiz.key}`,
   );
-  if (assessment.assessmentGroupId !== resources.gradingGroupId) {
+  if (assessment.assessmentGroupId !== shared.gradingGroupId) {
     assessment = unwrap(
       await instructor.modules.assessments.putAssessmentsGroup(
         resources.assessmentId,
         {
-          assessmentGroupId: resources.gradingGroupId,
+          assessmentGroupId: shared.gradingGroupId,
           clearAssessmentGroup: false,
         },
       ),
-      "Assign assessment group",
+      `Assign assessment group ${quiz.key}`,
     );
     resources.assessmentVersion = assessment.version;
     await persist(manifest);
   }
   if (
-    definition.subject === "collective" &&
-    assessment.groupSetId !== resources.groupSetId
+    quiz.subject === "collective" &&
+    assessment.groupSetId !== shared.groupSetId
   ) {
     assessment = unwrap(
       await instructor.modules.assessments.putAssessments(
@@ -367,7 +408,7 @@ async function ensureAuthoring(manifest, definition, sessions) {
             assessment.version,
             "assessment version",
           ),
-          groupSetId: resources.groupSetId,
+          groupSetId: shared.groupSetId,
         },
       ),
       "Assign collective group set",
@@ -378,8 +419,42 @@ async function ensureAuthoring(manifest, definition, sessions) {
   resources.assessmentVersion = assessment.version;
 }
 
-async function ensureCandidate(manifest, instructor) {
-  const resources = manifest.resources;
+function buildReviewConfiguration(quiz) {
+  if (
+    !hasPeerReview(quiz) &&
+    !hasSelfReview(quiz) &&
+    !hasInstructorReview(quiz)
+  ) {
+    return null;
+  }
+  return JSON.stringify({
+    schemaVersion: 1,
+    peer: hasPeerReview(quiz)
+      ? {
+          reviewsPerReviewer: 1,
+          reviewsRequiredPerSubmission: 1,
+          minimumReviewsToFinalize: 1,
+          aggregation: "mean",
+          claimLeaseMinutes: 30,
+          evidenceWindowMinutes: 10080,
+          onInsufficientEvidence: "await-instructor-resolution",
+        }
+      : null,
+    ai: null,
+    self: hasSelfReview(quiz)
+      ? {
+          instructions:
+            "Score both deterministic answers and explain the assessment.",
+          requireFeedback: true,
+        }
+      : null,
+    instructor: hasInstructorReview(quiz)
+      ? { requireOverrideReason: false }
+      : null,
+  });
+}
+
+async function ensureCandidate(manifest, resources, instructor) {
   const state = await readAuthoringState(instructor, resources.assessmentId);
   if (state.candidate?.revisionId && state.candidateMatchesDraft) {
     resources.candidateRevisionId = state.candidate.revisionId;
@@ -406,46 +481,47 @@ async function ensureCandidate(manifest, instructor) {
       },
     },
   );
-  if (!prepared.revisionId)
+  if (!prepared.revisionId) {
     throw new Error("Prepared assessment returned no revisionId.");
+  }
   resources.candidateRevisionId = prepared.revisionId;
   resources.assessmentVersion = state.assessmentVersion;
   await persist(manifest);
 }
 
-async function ensureLearnerReady(manifest, definition, sessions) {
-  const resources = manifest.resources;
+async function ensureLearnerReady(manifest, quizzes, sessions) {
   const instructor = sessions.instructor;
-  await ensurePublishedQuizContent(manifest, definition, instructor);
-  const state = await readAuthoringState(instructor, resources.assessmentId);
-  if (!state.published?.revisionId || !state.publishedMatchesDraft) {
-    throw new Error(
-      "Publishing the quiz content did not produce an assessment revision matching the current draft.",
-    );
-  }
-  resources.publishedRevisionId = state.published.revisionId;
-  resources.assessmentVersion = state.assessmentVersion;
-  await persist(manifest);
-
-  for (const key of definition.subject === "collective"
-    ? ["learnerA", "learnerB"]
-    : ["learnerA"]) {
-    await ensureEnrollment(manifest, sessions, key);
+  for (const quiz of quizzes) {
+    const resources = manifest.resources.quizzes[quiz.key];
+    await ensurePublishedQuizContent(manifest, quiz, resources, instructor);
+    const state = await readAuthoringState(instructor, resources.assessmentId);
+    if (!state.published?.revisionId || !state.publishedMatchesDraft) {
+      throw new Error(
+        `Publishing quiz "${quiz.key}" did not produce an assessment revision matching the current draft.`,
+      );
+    }
+    resources.publishedRevisionId = state.published.revisionId;
+    resources.assessmentVersion = state.assessmentVersion;
+    await persist(manifest);
   }
 
-  if (definition.subject === "collective") {
+  await ensureEnrollment(manifest, sessions, "learnerA");
+  if (manifest.personas.learnerB) {
+    await ensureEnrollment(manifest, sessions, "learnerB");
+  }
+  if (quizzes.some((quiz) => quiz.subject === "collective")) {
     await ensureCollectiveGroup(manifest, sessions);
   }
 
   const course = unwrap(
     await instructor.modules.courses.getCoursesForGetCoursesById(
-      resources.courseId,
+      manifest.resources.courseId,
     ),
     "Read course lifecycle",
   );
   if (course.status !== "Published") {
     const published = await instructor.modules.lifecycle.postCoursesPublish(
-      resources.courseId,
+      manifest.resources.courseId,
     );
     if (!published.ok) {
       throw new Error(
@@ -456,28 +532,30 @@ async function ensureLearnerReady(manifest, definition, sessions) {
   await persist(manifest);
 }
 
-async function ensurePublishedQuizContent(manifest, definition, instructor) {
-  const resources = manifest.resources;
-  const authoringPath = `/v1/courses/${resources.courseId}/content/${resources.contentId}/authoring`;
+async function ensurePublishedQuizContent(
+  manifest,
+  quiz,
+  resources,
+  instructor,
+) {
+  const courseId = manifest.resources.courseId;
+  const authoringPath = `/v1/courses/${courseId}/content/${resources.contentId}/authoring`;
   const draft = await request(
     instructor.client,
     "Read quiz content authoring draft",
-    {
-      method: "GET",
-      path: authoringPath,
-    },
+    { method: "GET", path: authoringPath },
   );
   if (!draft.payload || !Number.isInteger(draft.revision)) {
     throw new Error("Quiz content authoring returned an incomplete draft.");
   }
   const expectedPayload = {
     ...draft.payload,
-    title: `[${manifest.marker}] ${definition.quiz.title}`,
-    slug: `${manifest.marker}-quiz`,
-    description: definition.quiz.description,
+    title: `[${manifest.marker}] ${quiz.title}`,
+    slug: `${manifest.marker}-${quiz.key}`,
+    description: quiz.description,
     type: "Questionnaire",
     body: null,
-    jsonBody: definition.quiz.document,
+    jsonBody: quiz.document,
     lessonFormat: null,
     isRequired: true,
     estimatedMinutes: null,
@@ -501,11 +579,11 @@ async function ensurePublishedQuizContent(manifest, definition, instructor) {
         },
       },
     );
-    if (!Number.isInteger(currentDraft.revision)) {
-      throw new Error(
-        "Saving quiz content authoring returned no draft revision.",
-      );
-    }
+  }
+  if (!Number.isInteger(currentDraft.revision)) {
+    throw new Error(
+      "Saving quiz content authoring returned no draft revision.",
+    );
   }
 
   const published = await request(instructor.client, "Publish quiz content", {
@@ -617,54 +695,96 @@ async function ensureCollectiveGroup(manifest, sessions) {
   await persist(manifest);
 }
 
-async function ensureSubmitted(manifest, definition, sessions) {
-  const resources = manifest.resources;
-  const learner = sessions.learnerA;
+async function ensureSubmitted(manifest, quiz, sessions) {
+  const resources = manifest.resources.quizzes[quiz.key];
+  const personaKeys = hasPeerReview(quiz)
+    ? ["learnerA", "learnerB"]
+    : ["learnerA"];
+  for (const personaKey of personaKeys) {
+    await ensurePersonaSubmission(
+      manifest,
+      quiz,
+      resources,
+      sessions,
+      personaKey,
+    );
+  }
+  if (hasPeerReview(quiz)) {
+    await ensurePeerReviews(manifest, quiz, resources, sessions);
+  }
+  for (const personaKey of personaKeys) {
+    const submission = await readRuntimeSubmission(
+      sessions[personaKey],
+      resources.submissions[personaKey].submissionId,
+    );
+    captureExecution(resources.submissions[personaKey], submission);
+  }
+  await persist(manifest);
+}
+
+async function ensurePersonaSubmission(
+  manifest,
+  quiz,
+  resources,
+  sessions,
+  personaKey,
+) {
+  const learner = sessions[personaKey];
+  const submissionResources = resources.submissions[personaKey];
   let submission;
-  if (resources.submissionId) {
-    submission = await readRuntimeSubmission(learner, resources.submissionId);
+  if (submissionResources.submissionId) {
+    submission = await readRuntimeSubmission(
+      learner,
+      submissionResources.submissionId,
+    );
   } else {
-    const intent =
-      definition.subject === "collective"
-        ? { courseGroupId: resources.courseGroupId }
-        : { contentId: resources.contentId };
-    const key = await commandKey(manifest, "start-official-submission", intent);
+    const collective = quiz.subject === "collective";
+    const intent = collective
+      ? { courseGroupId: manifest.resources.courseGroupId }
+      : { contentId: resources.contentId, personaKey };
+    const key = await commandKey(
+      manifest,
+      `${quiz.key}:${personaKey}:start-official-submission`,
+      intent,
+    );
     submission = await request(
       learner.client,
-      definition.subject === "collective"
+      collective
         ? "Start collective runtime submission"
         : "Start individual runtime submission",
       {
         method: "POST",
-        path:
-          definition.subject === "collective"
-            ? `/v1/assessments/${resources.assessmentId}/runtime-submissions/collective`
-            : `/v1/assessments/content/${resources.contentId}/runtime-submissions/individual`,
-        body:
-          definition.subject === "collective"
-            ? { courseGroupId: resources.courseGroupId, idempotencyKey: key }
-            : { idempotencyKey: key },
+        path: collective
+          ? `/v1/assessments/${resources.assessmentId}/runtime-submissions/collective`
+          : `/v1/assessments/content/${resources.contentId}/runtime-submissions/individual`,
+        body: collective
+          ? {
+              courseGroupId: manifest.resources.courseGroupId,
+              idempotencyKey: key,
+            }
+          : { idempotencyKey: key },
       },
     );
-    if (!submission.submissionId)
+    if (!submission.submissionId) {
       throw new Error("Runtime start returned no submissionId.");
-    resources.submissionId = submission.submissionId;
-    captureExecution(resources, submission);
+    }
+    submissionResources.submissionId = submission.submissionId;
+    captureExecution(submissionResources, submission);
     await persist(manifest);
   }
 
   if (
-    definition.subject === "collective" &&
-    submission.status === "InProgress" &&
+    quiz.subject === "collective" &&
+    normalizeStatus(submission.status) === "inprogress" &&
     submission.execution?.submittedResponse == null
   ) {
     const draftIntent = {
-      response: definition.quiz.correctAnswer,
+      response: quiz.correctAnswer,
       expectedVersion: submission.draftVersion,
     };
     const key = await commandKey(
       manifest,
-      "save-collective-response-draft",
+      `${quiz.key}:${personaKey}:save-collective-response-draft`,
       draftIntent,
     );
     submission = await request(
@@ -672,21 +792,21 @@ async function ensureSubmitted(manifest, definition, sessions) {
       "Save collective quiz response draft",
       {
         method: "PUT",
-        path: `/v1/assessments/runtime-submissions/${resources.submissionId}/draft`,
+        path: `/v1/assessments/runtime-submissions/${submissionResources.submissionId}/draft`,
         body: { ...draftIntent, idempotencyKey: key },
       },
     );
   }
 
-  if (submission.status === "InProgress") {
+  if (normalizeStatus(submission.status) === "inprogress") {
     const submitIntent = {
-      response: definition.quiz.correctAnswer,
+      response: quiz.correctAnswer,
       expectedDraftVersion:
-        definition.subject === "collective" ? submission.draftVersion : null,
+        quiz.subject === "collective" ? submission.draftVersion : null,
     };
     const key = await commandKey(
       manifest,
-      "submit-official-response",
+      `${quiz.key}:${personaKey}:submit-official-response`,
       submitIntent,
     );
     submission = await request(
@@ -694,87 +814,186 @@ async function ensureSubmitted(manifest, definition, sessions) {
       "Submit official quiz response",
       {
         method: "POST",
-        path: `/v1/assessments/runtime-submissions/${resources.submissionId}/submit`,
+        path: `/v1/assessments/runtime-submissions/${submissionResources.submissionId}/submit`,
         body: { ...submitIntent, idempotencyKey: key },
       },
     );
   }
-  if (definition.subject === "individual" && submission.enrollmentId) {
-    manifest.personas.learnerA.enrollmentId = submission.enrollmentId;
-    if (!resources.enrollmentIds.includes(submission.enrollmentId)) {
-      resources.enrollmentIds.push(submission.enrollmentId);
+  if (quiz.subject === "individual" && submission.enrollmentId) {
+    manifest.personas[personaKey].enrollmentId = submission.enrollmentId;
+    if (!manifest.resources.enrollmentIds.includes(submission.enrollmentId)) {
+      manifest.resources.enrollmentIds.push(submission.enrollmentId);
     }
   }
-  captureExecution(resources, submission);
-  await persist(manifest);
-}
 
-async function ensureInstructorReview(manifest, definition, instructor) {
-  const resources = manifest.resources;
-  let submission = await readRuntimeSubmission(
-    instructor,
-    resources.submissionId,
-  );
-  if (submission.execution?.requiresInstructorReview) {
-    const resolution = {
-      schemaVersion: 1,
-      items: [
-        {
-          itemId: "q1",
-          score: definition.expected.instructorScore,
-          feedback: "Reviewed by the scenario instructor.",
-        },
-      ],
-      feedback: "Scenario instructor review completed.",
-      overrideReason: null,
-    };
+  if (
+    hasSelfReview(quiz) &&
+    submission.execution?.selfReview &&
+    normalizeStatus(submission.execution.selfReview.status) !== "completed"
+  ) {
+    const evidence = buildItemReviewEvidence(
+      quiz.expected.selfReviewScore,
+      "Self review completed by the scenario learner.",
+    );
     const key = await commandKey(
       manifest,
-      "resolve-instructor-review",
-      resolution,
+      `${quiz.key}:${personaKey}:submit-self-review`,
+      evidence,
     );
-    submission = await request(instructor.client, "Resolve instructor review", {
+    submission = await request(learner.client, "Submit official self review", {
       method: "POST",
-      path: `/v1/assessments/runtime-submissions/${resources.submissionId}/instructor-review`,
-      body: { resolution, idempotencyKey: key },
+      path: `/v1/assessments/runtime-submissions/${submissionResources.submissionId}/self-review`,
+      body: {
+        evidence,
+        idempotencyKey: key,
+        expectedDraftVersion: null,
+      },
     });
   }
-  if (submission.execution?.requiresInstructorReview) {
-    throw new Error(
-      "Instructor review completed but the execution still requires review.",
-    );
-  }
-  captureExecution(resources, submission);
+  captureExecution(submissionResources, submission);
   await persist(manifest);
 }
 
-async function ensureReleased(manifest, instructor) {
-  const resources = manifest.resources;
-  const submission = await readRuntimeSubmission(
-    instructor,
-    resources.submissionId,
-  );
-  if (submission.execution?.released) {
-    captureExecution(resources, submission);
-    await persist(manifest);
-    return;
+async function ensurePeerReviews(manifest, quiz, resources, sessions) {
+  for (const reviewerKey of ["learnerA", "learnerB"]) {
+    const reviewer = sessions[reviewerKey];
+    let reviewId = resources.peerReviewIds[reviewerKey];
+    let status = null;
+    if (reviewId) {
+      const existing = await request(
+        reviewer.client,
+        `Read peer review for ${reviewerKey}`,
+        {
+          method: "GET",
+          path: `/v1/assessments/peer-reviews/${reviewId}`,
+        },
+      );
+      status = normalizeStatus(existing.status);
+    }
+    if (!reviewId) {
+      const claimed = await request(
+        reviewer.client,
+        `Claim peer review for ${reviewerKey}`,
+        {
+          method: "POST",
+          path: `/v1/assessments/${resources.assessmentId}/peer-reviews/claim`,
+        },
+      );
+      if (!claimed.reviewId) {
+        throw new Error(`Peer review claim for ${reviewerKey} returned no ID.`);
+      }
+      reviewId = claimed.reviewId;
+      resources.peerReviewIds[reviewerKey] = reviewId;
+      await persist(manifest);
+    }
+    if (status !== "submitted") {
+      await request(reviewer.client, `Submit peer review for ${reviewerKey}`, {
+        method: "POST",
+        path: `/v1/assessments/peer-reviews/${reviewId}/submit`,
+        body: {
+          score: quiz.expected.peerReviewScore,
+          feedback: `Peer feedback from ${reviewerKey}.`,
+          rubricScores: null,
+        },
+      });
+    }
   }
-  const roundId = submission.execution?.activeRoundId;
-  if (!roundId)
-    throw new Error("Finalized submission has no active round to release.");
-  const intent = {
-    expectedRoundId: roundId,
-    expectedSubmissionVersion: submission.version,
-    reason: "Released by the quiz grading scenario runner.",
-  };
-  const key = await commandKey(manifest, "release-result", intent);
-  const released = await request(instructor.client, "Release grade result", {
-    method: "POST",
-    path: `/v1/assessments/runtime-submissions/${resources.submissionId}/release`,
-    body: { ...intent, idempotencyKey: key },
-  });
-  resources.gradeResultId = released.gradeRoundId ?? roundId;
+}
+
+async function ensureInstructorReview(manifest, quiz, instructor) {
+  const resources = manifest.resources.quizzes[quiz.key];
+  for (const [personaKey, submissionResources] of Object.entries(
+    resources.submissions,
+  )) {
+    let submission = await readRuntimeSubmission(
+      instructor,
+      submissionResources.submissionId,
+    );
+    if (submission.execution?.requiresInstructorReview) {
+      const resolution = {
+        ...buildItemReviewEvidence(
+          quiz.expected.instructorScore,
+          "Reviewed by the scenario instructor.",
+        ),
+        overrideReason: null,
+      };
+      const key = await commandKey(
+        manifest,
+        `${quiz.key}:${personaKey}:resolve-instructor-review`,
+        resolution,
+      );
+      submission = await request(
+        instructor.client,
+        "Resolve instructor review",
+        {
+          method: "POST",
+          path: `/v1/assessments/runtime-submissions/${submissionResources.submissionId}/instructor-review`,
+          body: { resolution, idempotencyKey: key },
+        },
+      );
+    }
+    if (submission.execution?.requiresInstructorReview) {
+      throw new Error(
+        `Instructor review for "${quiz.key}" and ${personaKey} completed but the execution still requires review.`,
+      );
+    }
+    captureExecution(submissionResources, submission);
+  }
   await persist(manifest);
+}
+
+async function ensureReleased(manifest, quiz, instructor) {
+  const resources = manifest.resources.quizzes[quiz.key];
+  for (const [personaKey, submissionResources] of Object.entries(
+    resources.submissions,
+  )) {
+    let submission = await readRuntimeSubmission(
+      instructor,
+      submissionResources.submissionId,
+    );
+    if (!submission.execution?.released) {
+      const roundId = submission.execution?.activeRoundId;
+      if (!roundId) {
+        throw new Error(
+          `Finalized submission for "${quiz.key}" and ${personaKey} has no active round to release.`,
+        );
+      }
+      const intent = {
+        expectedRoundId: roundId,
+        expectedSubmissionVersion: submission.version,
+        reason: "Released by the quiz grading scenario runner.",
+      };
+      const key = await commandKey(
+        manifest,
+        `${quiz.key}:${personaKey}:release-result`,
+        intent,
+      );
+      await request(instructor.client, "Release grade result", {
+        method: "POST",
+        path: `/v1/assessments/runtime-submissions/${submissionResources.submissionId}/release`,
+        body: { ...intent, idempotencyKey: key },
+      });
+      submission = await readRuntimeSubmission(
+        instructor,
+        submissionResources.submissionId,
+      );
+    }
+    captureExecution(submissionResources, submission);
+  }
+  await persist(manifest);
+}
+
+function buildItemReviewEvidence(totalScore, feedback) {
+  const q1Score = Math.min(100, totalScore);
+  const q2Score = Math.max(0, totalScore - q1Score);
+  return {
+    schemaVersion: 1,
+    items: [
+      { itemId: "q1", score: q1Score, feedback },
+      { itemId: "q2", score: q2Score, feedback },
+    ],
+    feedback,
+  };
 }
 
 async function commandKey(manifest, name, payload) {
@@ -788,7 +1007,7 @@ async function commandKey(manifest, name, payload) {
     }
     return existing.idempotencyKey;
   }
-  const idempotencyKey = `qgs-${name}-${randomUUID()}`;
+  const idempotencyKey = `qgs-${name.replaceAll(":", "-")}-${randomUUID()}`;
   manifest.commands[name] = { idempotencyKey, requestHash: hash };
   await persist(manifest);
   return idempotencyKey;
@@ -816,10 +1035,12 @@ function readRuntimeSubmission(session, submissionId) {
   });
 }
 
-function setCheckpoint(manifest, next) {
-  if (checkpointIndex(next) > checkpointIndex(manifest.checkpoint)) {
-    manifest.checkpoint = next;
+function setQuizCheckpoint(manifest, quizKey, next) {
+  const resources = manifest.resources.quizzes[quizKey];
+  if (checkpointIndex(next) > checkpointIndex(resources.checkpoint)) {
+    resources.checkpoint = next;
   }
+  recomputeManifestCheckpoint(manifest);
 }
 
 async function persist(manifest) {
@@ -841,6 +1062,17 @@ function assertEnvironmentMatches(manifest, apiBaseUrl, webBaseUrl) {
   }
 }
 
+function assertSelectionMatches(manifest, requestedKeys) {
+  if (!requestedKeys?.length) return;
+  const requested = [...new Set(requestedKeys)].sort();
+  const existing = [...manifest.quizKeys].sort();
+  if (requested.join("\0") !== existing.join("\0")) {
+    throw new Error(
+      `Existing manifest contains quizzes [${existing.join(", ")}], not [${requested.join(", ")}]. Reset it before changing the scenario selection.`,
+    );
+  }
+}
+
 function requireId(value, label) {
   if (!value?.id) throw new Error(`Create ${label} returned no id.`);
   return value.id;
@@ -849,6 +1081,13 @@ function requireId(value, label) {
 function requireNumber(value, label) {
   if (!Number.isInteger(value)) throw new Error(`Missing ${label}.`);
   return value;
+}
+
+function normalizeStatus(value) {
+  return String(value ?? "")
+    .replaceAll("-", "")
+    .replaceAll("_", "")
+    .toLowerCase();
 }
 
 function sameJson(left, right) {

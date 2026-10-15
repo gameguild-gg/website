@@ -35,7 +35,9 @@ public sealed class PeerReviewAnonymityTests
         dto.ReviewId.Should().Be(fixture.Review.Id);
         dto.DeliveryCanonicalJson.Should().Be(fixture.Review.DeliveryCanonicalJson);
         dto.ResponseEnvelopeCanonicalJson.Should().Be(fixture.Review.ResponseEnvelopeCanonicalJson);
-        CollectPropertyNames(JsonSerializer.SerializeToElement(dto))
+        var serialized = JsonSerializer.SerializeToElement(dto);
+        serialized.TryGetProperty(nameof(dto.Rubric), out _).Should().BeFalse();
+        CollectPropertyNames(serialized)
             .Select(value => value.ToLowerInvariant())
             .Should().NotContain(ForbiddenSubmissionKeys);
     }

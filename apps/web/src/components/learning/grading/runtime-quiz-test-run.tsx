@@ -91,6 +91,8 @@ export function RuntimeQuizTestRun({
   const [peerClaims, setPeerClaims] = useState<
     Record<string, PeerReviewClaimRuntimeViewV1>
   >({});
+  const [completedPeerReviewSubjects, setCompletedPeerReviewSubjects] =
+    useState<ReadonlySet<string>>(new Set());
   const [peerScore, setPeerScore] = useState('');
   const [peerFeedback, setPeerFeedback] = useState('');
   const answerDrafts = useRef<
@@ -152,8 +154,7 @@ export function RuntimeQuizTestRun({
   const showPeerReview =
     isPeerReview &&
     execution?.submittedResponse != null &&
-    execution.status === 'awaitingReview' &&
-    !execution.requiresInstructorReview;
+    !completedPeerReviewSubjects.has(activeSubjectKey);
   const peerTargetAnswers = useMemo(() => {
     if (!activePeerClaim?.responseEnvelopeCanonicalJson) return null;
     try {
@@ -345,6 +346,9 @@ export function RuntimeQuizTestRun({
       setError(result.error);
       return;
     }
+    setCompletedPeerReviewSubjects((current) =>
+      new Set(current).add(activeSubjectKey),
+    );
     setPeerClaims((current) => {
       const next = { ...current };
       delete next[activeSubjectKey];
@@ -374,6 +378,7 @@ export function RuntimeQuizTestRun({
     selfReviewCommand.current = null;
     answerDrafts.current = {};
     setPeerClaims({});
+    setCompletedPeerReviewSubjects(new Set());
     adoptRun(
       result.data as AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
     );
