@@ -6,7 +6,9 @@ using Stripe;
 
 namespace GameGuild.Commerce.Billing;
 
-public sealed class StripeWebhookVerifier(IOptions<BillingConfiguration> options) : IStripeWebhookVerifier
+public sealed class StripeWebhookVerifier(
+    IOptions<BillingConfiguration> options,
+    IWebhookSigningSecretProvider? signingSecretProvider = null) : IStripeWebhookVerifier
 {
     private readonly StripeSettings _settings = options.Value.Stripe;
 
@@ -19,15 +21,22 @@ public sealed class StripeWebhookVerifier(IOptions<BillingConfiguration> options
             throw new InvalidOperationException("Stripe webhook verification is not configured.");
         }
 
+        // Every signing secret currently valid for the endpoint verifies: the configuration
+        // secret plus, during a rotation window, the rotation's active and previous secrets
+        // (issue #408 dual-secret verification). Without a provider the configuration secret
+        // is the single valid secret.
+        var validSecrets = signingSecretProvider?.GetValidSecrets(PaymentProviders.Stripe) is { Count: > 0 } secrets
+            ? secrets
+            : [_settings.WebhookSecret];
+
         Event stripeEvent;
         try
         {
-            stripeEvent = EventUtility.ConstructEvent(
-                payload,
-                signature,
-                _settings.WebhookSecret,
-                _settings.WebhookToleranceSeconds,
-                throwOnApiVersionMismatch: false);
+            stripeEvent = ConstructEventWithAnySecret(payload, signature, validSecrets);
+        }
+        catch (InvalidWebhookSignatureException)
+        {
+            throw;
         }
         catch (StripeException exception)
         {
@@ -130,6 +139,42 @@ public sealed class StripeWebhookVerifier(IOptions<BillingConfiguration> options
         string.IsNullOrWhiteSpace(_settings.ConnectedAccountId)
             ? _settings.AccountId
             : _settings.ConnectedAccountId;
+
+    /// <summary>
+    ///     Verifies the signature against each valid signing secret (issue #408): the first
+    ///     secret that verifies wins. Malformed payloads fail identically for every secret
+    ///     and surface as payload errors; a signature that matches no secret surfaces as the
+    ///     signature failure of the last attempted secret.
+    /// </summary>
+    private Event ConstructEventWithAnySecret(string payload, string signature, IReadOnlyList<string> validSecrets)
+    {
+        Exception? lastSignatureFailure = null;
+        foreach (var secret in validSecrets)
+        {
+            if (string.IsNullOrWhiteSpace(secret))
+            {
+                continue;
+            }
+
+            try
+            {
+                return EventUtility.ConstructEvent(
+                    payload,
+                    signature,
+                    secret,
+                    _settings.WebhookToleranceSeconds,
+                    throwOnApiVersionMismatch: false);
+            }
+            catch (StripeException exception)
+            {
+                lastSignatureFailure = exception;
+            }
+        }
+
+        throw new InvalidWebhookSignatureException(
+            "Stripe signature or timestamp is invalid.",
+            lastSignatureFailure ?? new InvalidOperationException("Signature did not match any valid signing secret."));
+    }
 
     private static string GetRequiredString(JsonElement element, string propertyName)
     {

@@ -599,6 +599,91 @@ public sealed class PaymentsController(
         return Ok(attempts);
     }
 
+    /// <summary>
+    ///     Per-gateway health and performance metrics over the rolling 24h/7d/30d windows
+    ///     (issue #413 follow-up): success rates, average processing latency and volume per
+    ///     gateway, plus the live circuit-breaker state of every known gateway. Requires the
+    ///     <c>payments:admin</c> permission; non-admin actors are scoped to their own tenant.
+    /// </summary>
+    [HttpGet("gateways/metrics")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("Get per-gateway payment metrics and circuit state")]
+    [EndpointDescription(
+        "Returns per-gateway rolling-window (24h/7d/30d) success rate, average processing latency and volume aggregates computed from payment records, together with the current circuit-breaker state of every known gateway. Requires the payments:admin permission; non-admin actors are scoped to their own tenant."
+    )]
+    [ProducesResponseType<GatewayMetricsReport>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetGatewayMetrics(CancellationToken ct)
+    {
+        Guid? tenantId = null;
+        var actorContext = actorContextAccessor.ActorContext;
+        if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
+        {
+            if (actorContext.TenantId is null)
+            {
+                return new ObjectResult(new { error = "A tenant context is required to read gateway metrics." })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
+            }
+
+            tenantId = actorContext.TenantId;
+        }
+
+        var metrics = await sender.Send(new GetGatewayMetricsQuery(tenantId), ct).ConfigureAwait(false);
+
+        return Ok(metrics);
+    }
+
+    /// <summary>
+    ///     Refund and dispute analytics for an inclusive window (issue #419 follow-up):
+    ///     refund counts and amounts by status, currency and UTC day, dispute resolution
+    ///     rates and the average time to resolution. Requires the
+    ///     <c>payments:admin</c> permission; non-admin actors are scoped to their own tenant.
+    /// </summary>
+    /// <param name="fromUtc">Inclusive window start (UTC).</param>
+    /// <param name="toUtc">Inclusive window end (UTC).</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpGet("refunds/metrics")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("Get refund and dispute analytics for a period")]
+    [EndpointDescription(
+        "Returns refund analytics for an inclusive window — counts and refunded amounts by status, currency and UTC day — plus dispute resolution rates (win/loss ratio of decided disputes) and the average time to dispute resolution. Requires the payments:admin permission; non-admin actors are scoped to their own tenant."
+    )]
+    [ProducesResponseType<RefundAnalyticsReport>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRefundMetrics(
+        [FromQuery] DateTimeOffset fromUtc,
+        [FromQuery] DateTimeOffset toUtc,
+        CancellationToken ct)
+    {
+        if (fromUtc > toUtc)
+        {
+            return BadRequest(new { error = "fromUtc must be earlier than or equal to toUtc" });
+        }
+
+        Guid? tenantId = null;
+        var actorContext = actorContextAccessor.ActorContext;
+        if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
+        {
+            if (actorContext.TenantId is null)
+            {
+                return new ObjectResult(new { error = "A tenant context is required to read refund metrics." })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
+            }
+
+            tenantId = actorContext.TenantId;
+        }
+
+        var metrics = await sender.Send(
+            new GetRefundAnalyticsQuery(fromUtc.UtcDateTime, toUtc.UtcDateTime, tenantId), ct).ConfigureAwait(false);
+
+        return Ok(metrics);
+    }
+
     public sealed record ProcessPaymentRequest(Guid TenantId, Guid SubscriptionId, decimal Amount, string PaymentMethodId);
 
     public sealed record CreateSetupIntentRequest(Guid TenantId, Guid SubscriptionId, string? CustomerEmail, string? CustomerName);

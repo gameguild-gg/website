@@ -4,6 +4,10 @@ namespace GameGuild.Commerce;
 ///     Minimal subscription payment context shared across commerce modules.
 ///     Keeps payment-processing dependencies out of the Subscriptions project graph.
 /// </summary>
+/// <param name="OwnerUserId">
+///     User the subscription belongs to; lets the payment path resolve per-user state
+///     (for example account-credit auto-apply, issue #410) without a Subscriptions reference.
+/// </param>
 public sealed record SubscriptionPaymentContext(
     Guid SubscriptionId,
     Guid TenantId,
@@ -12,7 +16,8 @@ public sealed record SubscriptionPaymentContext(
     string? ExternalCustomerId,
     int BillingCycleNumber = 1,
     DateTime? BillingPeriodStart = null,
-    DateTime? BillingPeriodEnd = null);
+    DateTime? BillingPeriodEnd = null,
+    Guid? OwnerUserId = null);
 
 /// <summary>
 ///     Provides the payment-facing subscription data needed by the Payments module.

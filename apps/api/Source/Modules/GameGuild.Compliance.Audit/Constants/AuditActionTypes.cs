@@ -112,6 +112,9 @@ public static class AuditActionTypes
 
     public const string BillingProviderMigrationDryRun = "BillingProviderMigrationDryRun";
 
+    // Billing webhook signing-secret rotation (issue #408)
+    public const string BillingWebhookSecretRotated = "BillingWebhookSecretRotated";
+
     // Tenant Operations
     public const string TenantCreated = "TenantCreated";
 
