@@ -1180,6 +1180,30 @@ Table "course_likes" {
   }
 }
 
+Table "course_proposals" {
+  "Id" uuid [not null]
+  "Slug" "character varying(160)" [not null]
+  "Status" "character varying(40)" [not null, default: 'submitted']
+  "CourseTitle" "character varying(200)" [not null]
+  "Pitch" "character varying(4000)"
+  "Audience" "character varying(2000)"
+  "ProposerName" "character varying(120)"
+  "ProposerEmail" "character varying(200)"
+  "Metadata" "character varying(4000)"
+  "PublishedAt" timestamp
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_course_proposals"]
+    Slug [name: "IX_course_proposals_Slug"]
+    (Status, CreatedAt) [name: "IX_course_proposals_Status_CreatedAt"]
+  }
+}
+
 Table "course_reviews" {
   "Id" uuid [not null]
   "CourseId" uuid [not null]

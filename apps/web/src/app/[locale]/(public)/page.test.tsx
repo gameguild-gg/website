@@ -24,6 +24,12 @@ vi.mock('@/lib/community/public-community-queries', () => ({
 vi.mock('@/lib/projects/public-projects', () => ({
   getPublishedProjects: vi.fn().mockResolvedValue([]),
 }));
+vi.mock('@/lib/courses/services/course.service', () => ({
+  getPublicCourseCatalog: vi.fn().mockResolvedValue({ success: true, data: [] }),
+}));
+vi.mock('@/lib/blogs/queries', () => ({
+  getBlogIndex: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
+}));
 
 import RootPage from './page';
 
@@ -60,5 +66,59 @@ describe('contextual root page', () => {
     render(await RootPage(props));
 
     expect(screen.getByRole('heading', { name: 'Learn, Build & Connect' })).toBeInTheDocument();
+  });
+
+  it('lists the latest courses and community posts (issue #123)', async () => {
+    const { getPublicCourseCatalog } = await import('@/lib/courses/services/course.service');
+    const { getBlogIndex } = await import('@/lib/blogs/queries');
+    vi.mocked(getPublicCourseCatalog).mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: 'course-1',
+          slug: 'game-feel-foundations',
+          title: 'Game Feel Foundations',
+          description: 'Juice your prototypes.',
+          difficulty: 'Beginner',
+          estimatedHours: 12,
+        },
+      ],
+    } as never);
+    vi.mocked(getBlogIndex).mockResolvedValue({
+      items: [
+        {
+          id: 'post-1',
+          slug: 'shipping-a-jam-game',
+          title: 'Shipping a Jam Game',
+          excerpt: 'Lessons from a 48h jam.',
+          primaryAuthorHandle: 'devperson',
+          primaryAuthorDisplayName: 'Dev Person',
+          publishedAt: '2026-10-01T00:00:00.000Z',
+          readTimeMinutes: 5,
+        },
+      ],
+      hasMore: false,
+    } as never);
+    mocks.auth.mockResolvedValue(null);
+
+    render(await RootPage(props));
+
+    expect(screen.getByRole('heading', { name: 'Latest courses' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Latest from the community' })).toBeInTheDocument();
+    expect(screen.getByText('Game Feel Foundations')).toBeInTheDocument();
+    expect(screen.getByText('Shipping a Jam Game')).toBeInTheDocument();
+  });
+
+  it('keeps the landing usable when the course catalog or blog are unavailable', async () => {
+    const { getPublicCourseCatalog } = await import('@/lib/courses/services/course.service');
+    const { getBlogIndex } = await import('@/lib/blogs/queries');
+    vi.mocked(getPublicCourseCatalog).mockRejectedValue(new Error('api down'));
+    vi.mocked(getBlogIndex).mockRejectedValue(new Error('api down'));
+    mocks.auth.mockResolvedValue(null);
+
+    render(await RootPage(props));
+
+    expect(screen.getByText('Published courses will appear here soon.')).toBeInTheDocument();
+    expect(screen.getByText('Community posts will appear here soon.')).toBeInTheDocument();
   });
 });

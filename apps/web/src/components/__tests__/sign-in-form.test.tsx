@@ -298,7 +298,7 @@ describe("SignInForm MFA", () => {
     });
   });
 
-  it("shows the server setup key inside the existing form after starting enrollment", async () => {
+  it("never offers enrollment or reveals a TOTP secret in the sign-in challenge", () => {
     mockAuth.mfaChallenge = {
       mfaToken: "x".repeat(43),
       availableMethods: ["TOTP"],
@@ -309,14 +309,19 @@ describe("SignInForm MFA", () => {
       expiresAt: new Date(Date.now() + 300000).toISOString(),
       qrCodeUri: "otpauth://totp/Example",
     });
-    const { user } = renderWithUser(<SignInForm />);
-    await user.click(
-      screen.getByRole("button", { name: "Set up authenticator" }),
-    );
+    renderWithUser(<SignInForm />);
+
+    // Issue #838: enrollment lives exclusively in workspace settings; the
+    // login challenge must not expose the raw provisioning secret.
     expect(
-      await screen.findByText("LOCAL-AUTHENTICATOR-KEY"),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: "Set up authenticator" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("LOCAL-AUTHENTICATOR-KEY")).not.toBeInTheDocument();
+    expect(mockAuth.startMfaEnrollment).not.toHaveBeenCalled();
     expect(mockAuth.signIn).not.toHaveBeenCalled();
+
+    // The challenge still accepts an existing authenticator code.
+    expect(screen.getByLabelText("Authentication code")).toBeInTheDocument();
   });
 
   it("displays recovery codes once and offers acknowledgment", () => {

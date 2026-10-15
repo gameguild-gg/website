@@ -7694,6 +7694,22 @@ export type ContentPagesContentResourceStatus = 'Draft' | 'InReview' | 'Publishe
 /** The type of content resource. */
 export type ContentPagesContentResourceType = 'Article' | 'Tutorial' | 'Documentation' | 'Video' | 'Download' | 'ExternalLink' | 'Course' | 'Custom';
 
+/** Course proposal as rendered by the CRM or the public detail page. */
+export interface ContentPagesCourseProposalDto {
+  id?: string;
+  audience?: string | null;
+  courseTitle?: string | null;
+  createdAt?: string;
+  metadata?: string | null;
+  pitch?: string | null;
+  proposerEmail?: string | null;
+  proposerName?: string | null;
+  publishedAt?: string | null;
+  slug?: string | null;
+  status?: string | null;
+  updatedAt?: string | null;
+}
+
 /** Data model for Content Pages Create Content Resource Dto. */
 export interface ContentPagesCreateContentResourceDto {
   body?: string | null;
@@ -7718,6 +7734,16 @@ export interface ContentPagesCreateContentResourceDto {
   tags?: string | null;
   title?: string | null;
   videoUrl?: string | null;
+}
+
+/** Public submission payload for the creator pipeline (issue #105). */
+export interface ContentPagesCreateCourseProposalDto {
+  audience?: string | null;
+  courseTitle: string;
+  metadata?: string | null;
+  pitch?: string | null;
+  proposerEmail: string;
+  proposerName: string;
 }
 
 /** Data model for Content Pages Create Marketing Lead Dto. */
@@ -7910,6 +7936,15 @@ export interface ContentPagesUpdateContentResourceDto {
   tags?: string | null;
   title?: string | null;
   videoUrl?: string | null;
+}
+
+/** CRM-side update payload: status transitions and content edits. */
+export interface ContentPagesUpdateCourseProposalDto {
+  audience?: string | null;
+  courseTitle?: string | null;
+  metadata?: string | null;
+  pitch?: string | null;
+  status?: string | null;
 }
 
 /** Data model for Content Pages Update Page Dto. */
@@ -24349,7 +24384,9 @@ export let ComplianceKYCSumSubWebhookIngestionResultSchema: z.ZodType<Compliance
 export let ContentPagesContentResourceDtoSchema: z.ZodType<ContentPagesContentResourceDto>;
 export let ContentPagesContentResourceStatusSchema: z.ZodType<ContentPagesContentResourceStatus>;
 export let ContentPagesContentResourceTypeSchema: z.ZodType<ContentPagesContentResourceType>;
+export let ContentPagesCourseProposalDtoSchema: z.ZodType<ContentPagesCourseProposalDto>;
 export let ContentPagesCreateContentResourceDtoSchema: z.ZodType<ContentPagesCreateContentResourceDto>;
+export let ContentPagesCreateCourseProposalDtoSchema: z.ZodType<ContentPagesCreateCourseProposalDto>;
 export let ContentPagesCreateMarketingLeadDtoSchema: z.ZodType<ContentPagesCreateMarketingLeadDto>;
 export let ContentPagesCreatePageDtoSchema: z.ZodType<ContentPagesCreatePageDto>;
 export let ContentPagesCreatePageSectionDtoSchema: z.ZodType<ContentPagesCreatePageSectionDto>;
@@ -24362,6 +24399,7 @@ export let ContentPagesPageTypeSchema: z.ZodType<ContentPagesPageType>;
 export let ContentPagesSectionTypeSchema: z.ZodType<ContentPagesSectionType>;
 export let ContentPagesSitemapEntryDtoSchema: z.ZodType<ContentPagesSitemapEntryDto>;
 export let ContentPagesUpdateContentResourceDtoSchema: z.ZodType<ContentPagesUpdateContentResourceDto>;
+export let ContentPagesUpdateCourseProposalDtoSchema: z.ZodType<ContentPagesUpdateCourseProposalDto>;
 export let ContentPagesUpdatePageDtoSchema: z.ZodType<ContentPagesUpdatePageDto>;
 export let ContentPagesUpdatePageSectionDtoSchema: z.ZodType<ContentPagesUpdatePageSectionDto>;
 export let ContentStatusSchema: z.ZodType<ContentStatus>;
@@ -32710,6 +32748,22 @@ ContentPagesContentResourceStatusSchema = z.enum(['Draft', 'InReview', 'Publishe
 /** Zod schema for ContentPagesContentResourceType. The type of content resource. */
 ContentPagesContentResourceTypeSchema = z.enum(['Article', 'Tutorial', 'Documentation', 'Video', 'Download', 'ExternalLink', 'Course', 'Custom']);
 
+/** Zod schema for ContentPagesCourseProposalDto. Course proposal as rendered by the CRM or the public detail page. */
+ContentPagesCourseProposalDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  audience: z.string().nullable().optional(),
+  courseTitle: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  metadata: z.string().nullable().optional(),
+  pitch: z.string().nullable().optional(),
+  proposerEmail: z.string().nullable().optional(),
+  proposerName: z.string().nullable().optional(),
+  publishedAt: z.string().datetime().nullable().optional(),
+  slug: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().nullable().optional(),
+});
+
 /** Zod schema for ContentPagesCreateContentResourceDto. Data model for Content Pages Create Content Resource Dto. */
 ContentPagesCreateContentResourceDtoSchema = z.object({
   body: z.string().nullable().optional(),
@@ -32734,6 +32788,16 @@ ContentPagesCreateContentResourceDtoSchema = z.object({
   tags: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for ContentPagesCreateCourseProposalDto. Public submission payload for the creator pipeline (issue #105). */
+ContentPagesCreateCourseProposalDtoSchema = z.object({
+  audience: z.string().max(2000).nullable().optional(),
+  courseTitle: z.string().min(1).max(200),
+  metadata: z.string().max(4000).nullable().optional(),
+  pitch: z.string().max(4000).nullable().optional(),
+  proposerEmail: z.string().email().min(1).max(200),
+  proposerName: z.string().min(1).max(120),
 });
 
 /** Zod schema for ContentPagesCreateMarketingLeadDto. Data model for Content Pages Create Marketing Lead Dto. */
@@ -32930,6 +32994,15 @@ ContentPagesUpdateContentResourceDtoSchema = z.object({
   tags: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for ContentPagesUpdateCourseProposalDto. CRM-side update payload: status transitions and content edits. */
+ContentPagesUpdateCourseProposalDtoSchema = z.object({
+  audience: z.string().max(2000).nullable().optional(),
+  courseTitle: z.string().max(200).nullable().optional(),
+  metadata: z.string().max(4000).nullable().optional(),
+  pitch: z.string().max(4000).nullable().optional(),
+  status: z.string().max(40).nullable().optional(),
 });
 
 /** Zod schema for ContentPagesUpdatePageDto. Data model for Content Pages Update Page Dto. */
@@ -47702,8 +47775,12 @@ export type ComplianceFERPAFerpaInspectionRequest = ComplianceFERPAFerpaInspecti
 export { ComplianceFERPAFerpaInspectionRequestDtoSchema as ComplianceFERPAFerpaInspectionRequestSchema };
 export type ContentPagesContentResource = ContentPagesContentResourceDto;
 export { ContentPagesContentResourceDtoSchema as ContentPagesContentResourceSchema };
+export type ContentPagesCourseProposal = ContentPagesCourseProposalDto;
+export { ContentPagesCourseProposalDtoSchema as ContentPagesCourseProposalSchema };
 export type ContentPagesCreateContentResource = ContentPagesCreateContentResourceDto;
 export { ContentPagesCreateContentResourceDtoSchema as ContentPagesCreateContentResourceSchema };
+export type ContentPagesCreateCourseProposal = ContentPagesCreateCourseProposalDto;
+export { ContentPagesCreateCourseProposalDtoSchema as ContentPagesCreateCourseProposalSchema };
 export type ContentPagesCreateMarketingLead = ContentPagesCreateMarketingLeadDto;
 export { ContentPagesCreateMarketingLeadDtoSchema as ContentPagesCreateMarketingLeadSchema };
 export type ContentPagesCreatePage = ContentPagesCreatePageDto;
@@ -47722,6 +47799,8 @@ export type ContentPagesSitemapEntry = ContentPagesSitemapEntryDto;
 export { ContentPagesSitemapEntryDtoSchema as ContentPagesSitemapEntrySchema };
 export type ContentPagesUpdateContentResource = ContentPagesUpdateContentResourceDto;
 export { ContentPagesUpdateContentResourceDtoSchema as ContentPagesUpdateContentResourceSchema };
+export type ContentPagesUpdateCourseProposal = ContentPagesUpdateCourseProposalDto;
+export { ContentPagesUpdateCourseProposalDtoSchema as ContentPagesUpdateCourseProposalSchema };
 export type ContentPagesUpdatePage = ContentPagesUpdatePageDto;
 export { ContentPagesUpdatePageDtoSchema as ContentPagesUpdatePageSchema };
 export type ContentPagesUpdatePageSection = ContentPagesUpdatePageSectionDto;
