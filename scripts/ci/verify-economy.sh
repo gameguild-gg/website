@@ -16,6 +16,7 @@ test_hang_timeout="${ECONOMY_TEST_HANG_TIMEOUT:-5m}"
 api_test_timeout="${ECONOMY_API_TEST_TIMEOUT:-12m}"
 api_integration_test_timeout="${ECONOMY_API_INTEGRATION_TEST_TIMEOUT:-25m}"
 whole_solution_jobs="${ECONOMY_WHOLE_SOLUTION_JOBS:-}"
+regression_shard="${ECONOMY_REGRESSION_SHARD:-all}"
 
 # shellcheck source=economy-gate.sh
 source "$script_dir/economy-gate.sh"
@@ -178,12 +179,24 @@ if (($#)); then
 fi
 
 case "$gate_profile" in
-  pr|full) ;;
+  pr|full|release|regression|coverage|api-bundle|client-bundle|browser) ;;
   *)
     printf 'Unknown Economy gate profile: %s\n' "$gate_profile" >&2
     exit 2
     ;;
 esac
+
+case "$regression_shard" in
+  all|api-integration|api-integration-[1-4]|api-unit|remaining|remaining-[1-2]) ;;
+  *)
+    printf 'Unknown Economy regression shard: %s\n' "$regression_shard" >&2
+    exit 2
+    ;;
+esac
+if [[ "$gate_profile" != regression && "$regression_shard" != all ]]; then
+  printf 'Regression shards require ECONOMY_GATE_PROFILE=regression\n' >&2
+  exit 2
+fi
 
 if [[ -z "$whole_solution_jobs" ]]; then
   whole_solution_jobs=2
@@ -217,6 +230,7 @@ cleanup() {
   {
     printf 'gate=economy\n'
     printf 'profile=%s\n' "$gate_profile"
+    printf 'regression_shard=%s\n' "$regression_shard"
     printf 'result=%s\n' "$gate_result"
     printf 'status=%s\n' "$status"
     printf 'stage=%s\n' "$gate_stage"
@@ -340,6 +354,9 @@ mkdir -p \
   "$artifact_root/playwright" \
   "$artifact_root/postgres" \
   "$artifact_root/publish"
+printf '{"commit":"%s","tree":"%s","profile":"%s","regressionShard":"%s"}\n' \
+  "$(git rev-parse HEAD)" "$(git rev-parse 'HEAD^{tree}')" "$gate_profile" "$regression_shard" \
+  > "$artifact_root/source-identity.json"
 
 gate_stage='preflight-smoke'
 run node --test scripts/devops/smoke-check.test.mjs
@@ -395,6 +412,94 @@ for contract in manifest.get("providerContractProjects", []):
 PY
 )
 
+build_client() {
+  gate_stage='client'
+  client_evidence="$artifact_root/vitest/client.json"
+  run "${pnpm_command[@]}" --filter @game-guild/client exec vitest run --reporter=json "--outputFile=$client_evidence"
+  assert_vitest_evidence "$client_evidence" >/dev/null
+  run "${pnpm_command[@]}" --filter @game-guild/client build
+}
+
+publish_api() {
+  # Some host references are not solution members. Preserve the warning-clean
+  # build during publish; no compiled output from another revision is reused.
+  run dotnet publish apps/api/Source/GameGuild.API/GameGuild.API.csproj -c Release --no-restore --nologo --output "$publish_directory" \
+    "${dotnet_build_isolation[@]}" \
+    -p:TreatWarningsAsErrors=true
+}
+
+finish_gate() {
+  gate_stage='completed'
+  printf 'Economy verification passed with %s evidence files under %s\n' \
+    "$(find "$artifact_root" -type f | wc -l | tr -d ' ')" "$artifact_root"
+}
+
+# Producers have no database/server dependency. Their jobs run concurrently
+# with coverage and regression; the browser job consumes these exact outputs.
+if [[ "$gate_profile" == client-bundle ]]; then
+  build_client
+  run bash "$script_dir/economy-artifacts.sh" pack client \
+    "$repository_root/packages/infrastructure/client/dist" "$repository_root/artifacts/economy-bundles/client"
+  finish_gate
+  exit
+elif [[ "$gate_profile" == api-bundle ]]; then
+  gate_stage='publish'
+  publish_directory="$artifact_root/publish/api"
+  run dotnet restore apps/api/Source/GameGuild.API/GameGuild.API.csproj --nologo
+  publish_api
+  run dotnet build-server shutdown
+  run bash "$script_dir/economy-artifacts.sh" pack api "$publish_directory" "$repository_root/artifacts/economy-bundles/api"
+  finish_gate
+  exit
+elif [[ "$gate_profile" == browser ]]; then
+  gate_stage='verify-inputs'
+  [[ -n "${ECONOMY_INPUT_ROOT:-}" ]] || economy_gate_error 'Browser verification requires same-run Economy bundles'
+  run bash "$script_dir/economy-artifacts.sh" unpack api "$ECONOMY_INPUT_ROOT/api" "$artifact_root/publish/api"
+  run bash "$script_dir/economy-artifacts.sh" unpack client "$ECONOMY_INPUT_ROOT/client" "$repository_root/packages/infrastructure/client/dist"
+  cp "$ECONOMY_INPUT_ROOT/api/identity.json" "$artifact_root/api-bundle-identity.json"
+  cp "$ECONOMY_INPUT_ROOT/client/identity.json" "$artifact_root/client-bundle-identity.json"
+fi
+
+prepare_whole_solution_projects() {
+  local test_project shard remaining_index=0
+  gate_stage='regression-partition'
+  whole_solution_results="$artifact_root/trx/whole-solution"
+  mapfile -t whole_solution_candidates < <(
+    dotnet sln apps/api/GameGuild.sln list |
+      awk 'NR > 2 && /Tests\.csproj$/ { print "apps/api/" $0 }' |
+      tr '\134' '/' | LC_ALL=C sort
+  )
+  whole_solution_all_projects=()
+  whole_solution_projects=()
+  : > "$whole_solution_results/project-partition.tsv"
+  for test_project in "${whole_solution_candidates[@]}"; do
+    whole_solution_test_project "$test_project" || continue
+    economy_test_project "$test_project" && continue
+    whole_solution_all_projects+=("$test_project")
+    case "$(basename "${test_project%.csproj}")" in
+      GameGuild.API.IntegrationTests) shard=api-integration ;;
+      GameGuild.API.UnitTests) shard=api-unit ;;
+      *)
+        shard="remaining-$((remaining_index % 2 + 1))"
+        remaining_index=$((remaining_index + 1))
+        ;;
+    esac
+    printf '%s\t%s\n' "$shard" "$test_project" >> "$whole_solution_results/project-partition.tsv"
+    if [[ "$regression_shard" == all || "$regression_shard" == "$shard" ||
+      ( "$shard" == api-integration && "$regression_shard" == api-integration-* ) ||
+      ( "$shard" == remaining-* && "$regression_shard" == remaining ) ]]; then
+      whole_solution_projects+=("$test_project")
+    fi
+  done
+  ((${#whole_solution_projects[@]} > 0)) || economy_gate_error "Empty regression shard: $regression_shard"
+  printf 'Regression shard %s: %s of %s complete test projects\n' \
+    "$regression_shard" "${#whole_solution_projects[@]}" "${#whole_solution_all_projects[@]}"
+}
+
+if [[ "$gate_profile" == full || "$gate_profile" == regression ]]; then
+  prepare_whole_solution_projects
+fi
+
 postgres_container="gameguild-economy-ci-app-$$-$RANDOM"
 economy_postgres_container="gameguild-economy-ci-tests-$$-$RANDOM"
 app_postgres_password="$(new_disposable_postgres_password)"
@@ -423,6 +528,7 @@ postgres_mapping="$(docker port "$postgres_container" '5432/tcp')"
 postgres_port="${BASH_REMATCH[1]}"
 connection_string="Host=127.0.0.1;Port=$postgres_port;Database=economy_ci;Username=postgres;Password=$app_postgres_password;Include Error Detail=true"
 
+if [[ "$gate_profile" != browser ]]; then
 gate_stage='postgres-economy-tests'
 # Full-schema resets across isolated test databases share PostgreSQL's lock table.
 # Keep the two test workers while sizing their disposable server for both resets.
@@ -448,13 +554,14 @@ economy_postgres_mapping="$(docker port "$economy_postgres_container" '5432/tcp'
 economy_postgres_port="${BASH_REMATCH[1]}"
 economy_connection_string="Host=127.0.0.1;Port=$economy_postgres_port;Database=economy_tests;Username=postgres;Password=$economy_postgres_password;Include Error Detail=true"
 export ECONOMY_POSTGRES_CONNECTION="$economy_connection_string"
+fi
 export ConnectionStrings__DefaultConnection="$connection_string"
 export ConnectionStrings__AuthenticationDb="$connection_string"
 export ConnectionStrings__MigrationConnection="$connection_string"
 export Database__FailStartupOnMigrationFailure=true
 export SeedData__ImportSnapshotCourses=false
 
-if [[ "$gate_profile" == full ]]; then
+if [[ "$gate_profile" == full || "$gate_profile" == regression ]]; then
   gate_stage='postgres-whole-solution-migrations'
   whole_solution_postgres_container="gameguild-economy-ci-whole-solution-$$-$RANDOM"
   whole_solution_postgres_password="$(new_disposable_postgres_password)"
@@ -486,9 +593,11 @@ fi
 probe_sql='SELECT 1;'
 [[ "${ECONOMY_CI_PROBE_POSTGRES_FAILURE:-0}" != '1' ]] || probe_sql='SELECT 1 / 0;'
 run docker exec "$postgres_container" psql --username postgres --dbname economy_ci --set ON_ERROR_STOP=1 --command "$probe_sql"
-run docker exec "$economy_postgres_container" psql --username postgres --dbname economy_tests --set ON_ERROR_STOP=1 --command "$probe_sql"
+if [[ "$gate_profile" != browser ]]; then
+  run docker exec "$economy_postgres_container" psql --username postgres --dbname economy_tests --set ON_ERROR_STOP=1 --command "$probe_sql"
+fi
 printf 'app_database=economy_ci\napp_port=%s\neconomy_test_database=economy_tests\neconomy_test_port=%s\n' \
-  "$postgres_port" "$economy_postgres_port" > "$artifact_root/postgres/connection.txt"
+  "$postgres_port" "${economy_postgres_port:-not-used}" > "$artifact_root/postgres/connection.txt"
 if [[ -n "$whole_solution_connection_string" ]]; then
   printf 'whole_solution_test_database=whole_solution_tests\nwhole_solution_test_port=%s\n' \
     "$whole_solution_postgres_port" >> "$artifact_root/postgres/connection.txt"
@@ -529,10 +638,28 @@ fi
   export S3_REGION=garage
 }
 
+if [[ "$gate_profile" != browser ]]; then
 gate_stage='build'
 run dotnet restore apps/api/GameGuild.sln --nologo
 run dotnet tool restore
-if [[ "$gate_profile" == full ]]; then
+if [[ "$gate_profile" == regression ]]; then
+  # Build the selected projects together in one MSBuild graph, including the
+  # host needed for the migrated template. Coverage retains the full solution
+  # warning-clean build. The union of required shards still runs every project.
+  selected_solution="$artifact_root/regression.slnf"
+  "$PYTHON_BIN" - "$repository_root" "$selected_solution" "${whole_solution_projects[@]}" <<'PY'
+import json
+import pathlib
+import sys
+root, destination, *projects = sys.argv[1:]
+solution = pathlib.Path(root) / "apps/api/GameGuild.sln"
+projects.append("apps/api/Source/GameGuild.API/GameGuild.API.csproj")
+paths = sorted({str(pathlib.Path(p).relative_to("apps/api")) for p in projects})
+pathlib.Path(destination).write_text(json.dumps({"solution": {"path": str(solution), "projects": paths}}), encoding="utf-8")
+PY
+  run dotnet build "$selected_solution" -c Release --no-restore --nologo --verbosity minimal \
+    "${dotnet_build_isolation[@]}" -p:TreatWarningsAsErrors=true
+elif [[ "$gate_profile" != pr ]]; then
   run dotnet build apps/api/GameGuild.sln -c Release --no-restore --nologo --verbosity minimal \
     "${dotnet_build_isolation[@]}" \
     -p:TreatWarningsAsErrors=true
@@ -560,12 +687,15 @@ run docker exec "$economy_postgres_container" psql --username postgres --dbname 
   --set ON_ERROR_STOP=1 --command "ALTER DATABASE \"$economy_template_database\" IS_TEMPLATE true;"
 export ECONOMY_POSTGRES_TEMPLATE_DATABASE="$economy_template_database"
 printf 'economy_template_database=%s\n' "$economy_template_database" >> "$artifact_root/postgres/connection.txt"
+run dotnet build-server shutdown
+fi
 
 test_hang_arguments=(
   --blame-hang-timeout "$test_hang_timeout"
   --blame-hang-dump-type mini
 )
 
+if [[ "$gate_profile" != regression && "$gate_profile" != browser ]]; then
 for record in "${economy_coverage_records[@]}"; do
   gate_stage='economy-tests'
   IFS=$'\t' read -r test_project assemblies_csv path_prefixes_csv minimum_branch_rate <<< "$record"
@@ -579,7 +709,7 @@ for record in "${economy_coverage_records[@]}"; do
     [[ -z "$include" ]] || include+=','
     include+="[$assembly]*"
   done
-  run_test_with_timeout dotnet test "$test_project" -c Release --no-build --nologo "${test_hang_arguments[@]}" \
+  run_test_with_timeout dotnet test "$test_project" -c Release --no-build --no-restore --nologo "${test_hang_arguments[@]}" \
     --logger "trx;LogFileName=$test_name.trx" \
     --results-directory "$results" \
     --collect 'XPlat Code Coverage' -- \
@@ -601,11 +731,12 @@ if [[ "${ECONOMY_CI_PROBE_COVERAGE_FAILURE:-0}" == '1' ]]; then
   printf '<coverage><packages><package name="GameGuild.Finance.Economy.Probe" line-rate="0.99" branch-rate="1"><classes><class name="Probe"><methods><method name="Covered"><lines><line number="1" hits="1" /></lines></method></methods></class></classes></package></packages></coverage>\n' > "$lowered"
   assert_cobertura_coverage "$lowered" 'GameGuild.Finance.Economy.Probe' >/dev/null
 fi
+fi
 
 run_whole_solution_test_project() {
   local test_project="$1" whole_solution_results="$2"
   local test_name results project_log project_timeout="$test_hang_timeout"
-  local -a test_environment=()
+  local -a test_environment=() test_filter=()
 
   test_name="$(basename "${test_project%.csproj}")"
   results="$whole_solution_results/$test_name"
@@ -625,10 +756,36 @@ run_whole_solution_test_project() {
     # in the diagnostic run. Bound the assembly separately from the unchanged
     # per-test blame timeout so steady progress is not mistaken for a hang.
     project_timeout="$api_integration_test_timeout"
+    if [[ "$regression_shard" == api-integration-* ]]; then
+      # The first three filters name disjoint full class prefixes. The fourth
+      # is their exact complement, so newly added tests are always selected.
+      integration_filter="$("$PYTHON_BIN" - "$script_dir/economy-integration-shards.json" "$regression_shard" <<'PY'
+import json
+import re
+import sys
+groups = json.load(open(sys.argv[1], encoding="utf-8"))
+if set(groups) != {"api-integration-1", "api-integration-2", "api-integration-3"}:
+    raise SystemExit("Integration shards require three explicit groups plus their complement")
+names = [name for group in groups.values() for name in group]
+if len(names) != len(set(names)) or any(not re.fullmatch(r"GameGuild\.API\.IntegrationTests\.[A-Za-z0-9_]+", name) for name in names):
+    raise SystemExit("Integration shard classes must be valid and disjoint")
+if any(not group for group in groups.values()):
+    raise SystemExit("An explicit integration shard is empty")
+shard = sys.argv[2]
+if shard == "api-integration-4":
+    print("&".join(f"FullyQualifiedName!~{name}." for name in names))
+else:
+    print("|".join(f"FullyQualifiedName~{name}." for name in groups[shard]))
+PY
+)"
+      test_filter=(--filter "$integration_filter")
+      printf '%s\n' "$integration_filter" > "$results/test-filter.txt"
+      cp "$script_dir/economy-integration-shards.json" "$results/integration-partition.json"
+    fi
   fi
   run_logged "$project_log" timeout --kill-after=30s "$project_timeout" \
     "${test_environment[@]}" \
-    dotnet test "$test_project" -c Release --no-build --nologo --verbosity minimal -m:1 "${test_hang_arguments[@]}" \
+    dotnet test "$test_project" -c Release --no-build --no-restore --nologo --verbosity minimal -m:1 "${test_hang_arguments[@]}" "${test_filter[@]}" \
     --logger "trx;LogFileName=$test_name.trx" \
     --results-directory "$results"
   [[ -f "$results/$test_name.trx" ]] || economy_gate_error "Whole-solution test project produced no TRX: $test_project"
@@ -646,32 +803,26 @@ wait_for_whole_solution_batch() {
   return "$worker_status"
 }
 
-if [[ "$gate_profile" == full ]]; then
+run_whole_solution_worker() {
+  local worker_index="$1" project_index
+  # Each worker advances independently. A long assembly must not leave the
+  # other worker idle behind a barrier after every pair of projects.
+  for ((project_index=worker_index; project_index<${#whole_solution_projects[@]}; project_index+=whole_solution_jobs)); do
+    run_whole_solution_test_project "${whole_solution_projects[project_index]}" "$whole_solution_results"
+  done
+}
+
+if [[ "$gate_profile" == full || "$gate_profile" == regression ]]; then
   gate_stage='whole-solution-tests'
   whole_solution_results="$artifact_root/trx/whole-solution"
   whole_solution_log="$whole_solution_results/dotnet-test.log"
   : > "$whole_solution_log"
-  mapfile -t whole_solution_candidates < <(
-    dotnet sln apps/api/GameGuild.sln list |
-      awk 'NR > 2 && /Tests\.csproj$/ { print "apps/api/" $0 }' |
-      tr '\134' '/'
-  )
-  whole_solution_projects=()
-  for test_project in "${whole_solution_candidates[@]}"; do
-    whole_solution_test_project "$test_project" || continue
-    economy_test_project "$test_project" && continue
-    whole_solution_projects+=("$test_project")
-  done
-  ((${#whole_solution_projects[@]} > 0)) || economy_gate_error 'The solution does not contain test projects'
 
-  # Run isolated VSTest hosts in bounded batches. This releases state per assembly
-  # without serializing the entire solution on Linux CI.
-  for test_project in "${whole_solution_projects[@]}"; do
-    run_whole_solution_test_project "$test_project" "$whole_solution_results" &
+  # Preserve isolated VSTest hosts and the same bounded concurrency, while
+  # removing repeated barriers between short and long assemblies.
+  for ((worker_index=0; worker_index<whole_solution_jobs && worker_index<${#whole_solution_projects[@]}; worker_index++)); do
+    run_whole_solution_worker "$worker_index" &
     whole_solution_worker_pids+=("$!")
-    if ((${#whole_solution_worker_pids[@]} >= whole_solution_jobs)); then
-      wait_for_whole_solution_batch
-    fi
   done
   wait_for_whole_solution_batch
   while IFS= read -r project_log; do
@@ -681,6 +832,7 @@ if [[ "$gate_profile" == full ]]; then
   assert_whole_solution_evidence "$repository_root" "$whole_solution_log" "${whole_solution_trx[@]}" >/dev/null
 fi
 
+if [[ "$gate_profile" != regression && "$gate_profile" != browser ]]; then
 {
   gate_stage='provider-contract-tests'
   for record in "${provider_contracts[@]}"; do
@@ -689,7 +841,7 @@ fi
     results="$artifact_root/trx/provider/$name"
     mkdir -p "$results"
     provider_build_arguments=(--no-restore)
-    [[ "$gate_profile" != full ]] || provider_build_arguments=(--no-build --no-restore)
+    [[ "$gate_profile" == pr ]] || provider_build_arguments=(--no-build --no-restore)
     run_test_with_timeout dotnet test "$project" -c Release "${provider_build_arguments[@]}" --nologo "${test_hang_arguments[@]}" \
       --filter "$filter" \
       --logger "trx;LogFileName=$name.trx" \
@@ -697,16 +849,15 @@ fi
     assert_trx_evidence "$results/$name.trx" >/dev/null
   done
 }
+fi
 
-if [[ "$gate_profile" == full ]]; then
+if [[ "$gate_profile" == full || "$gate_profile" == release || "$gate_profile" == browser ]]; then
 {
   gate_stage='openapi-client'
   publish_directory="$artifact_root/publish/api"
-  # Some API project references are intentionally not solution members. Build
-  # during publish so their output is always materialized before packaging.
-  run dotnet publish apps/api/Source/GameGuild.API/GameGuild.API.csproj -c Release --no-restore --nologo --output "$publish_directory" \
-    "${dotnet_build_isolation[@]}" \
-    -p:TreatWarningsAsErrors=true
+  if [[ "$gate_profile" != browser ]]; then
+    publish_api
+  fi
   api_port="$(get_ephemeral_port)"
   export ASPNETCORE_ENVIRONMENT=Development
   export ASPNETCORE_URLS="http://127.0.0.1:$api_port"
@@ -728,10 +879,11 @@ if [[ "$gate_profile" == full ]]; then
 
 {
   gate_stage='frontend'
-  client_evidence="$artifact_root/vitest/client.json"
-  run "${pnpm_command[@]}" --filter @game-guild/client exec vitest run --reporter=json "--outputFile=$client_evidence"
-  assert_vitest_evidence "$client_evidence" >/dev/null
-  run "${pnpm_command[@]}" --filter @game-guild/client build
+  if [[ "$gate_profile" != browser ]]; then
+    run dotnet build-server shutdown
+    build_client
+  fi
+  gate_stage='frontend'
 
   web_evidence="$artifact_root/vitest/web.json"
   run env -u API_URL "${pnpm_command[@]}" --filter @game-guild/web exec vitest run --maxWorkers=4 --reporter=json "--outputFile=$web_evidence"
@@ -774,5 +926,4 @@ fi
 
 evidence_count="$(find "$artifact_root" -type f | wc -l | tr -d ' ')"
 ((evidence_count > 0)) || economy_gate_error "No verification evidence was written under $artifact_root"
-gate_stage='completed'
-printf 'Economy verification passed with %s evidence files under %s\n' "$evidence_count" "$artifact_root"
+finish_gate
