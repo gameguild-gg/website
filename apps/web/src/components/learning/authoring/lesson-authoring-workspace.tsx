@@ -8,6 +8,11 @@ import { LessonExternalLinkEditor } from "@/components/learning/console/courses/
 import { QuizContentEditor } from "@/components/learning/console/courses/[course]/content/[contentId]/quiz-content-editor";
 import { CodingDefinitionEditor } from "@/components/learning/console/courses/[course]/assessments/[assessmentId]/coding-definition/coding-definition-editor";
 import { CodingAssignmentPreview } from "@/components/learning/authoring/coding-assignment-preview";
+import {
+  AssetPickerDialog,
+  AssetsProvider,
+} from "@game-guild/assets/react";
+import type { AssetRecord } from "@game-guild/assets";
 import type { CodingAssignmentContent } from "@/lib/coding-assignment/types";
 import {
   createAssessment,
@@ -98,6 +103,7 @@ import {
   Clock3,
   FileCode2,
   FileText,
+  Image,
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -264,6 +270,7 @@ export function LessonAuthoringWorkspace({
   const [rightPanel, setRightPanel] = useState<RightPanel>("settings");
   const [curriculumSearch, setCurriculumSearch] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
   const [copilotPrompt, setCopilotPrompt] = useState("");
   const [proposalMode, setProposalMode] =
     useState<AiProposalKind>("ReplaceDocument");
@@ -451,6 +458,16 @@ export function LessonAuthoringWorkspace({
         current.slug === slugify(current.title) || !current.slug
           ? slugify(value)
           : current.slug,
+    }));
+  };
+
+  const handleMediaSelected = (result: AssetRecord | AssetRecord[]) => {
+    const selected = Array.isArray(result) ? result[0] : result;
+    if (!selected) return;
+    // The persist pipeline promotes any asset:// uri found in the payload.
+    setPayload((current) => ({
+      ...current,
+      body: `${current.body ?? ""}\n\n![${selected.name}](${selected.uri})`,
     }));
   };
 
@@ -1138,6 +1155,21 @@ export function LessonAuthoringWorkspace({
               <Button
                 variant="ghost"
                 size="icon-sm"
+                aria-label="Insert media"
+                onClick={() => setAssetPickerOpen(true)}
+              />
+            }
+          >
+            <Image className="size-4" />
+          </TooltipTrigger>
+          <TooltipContent>Insert media</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 aria-label="Toggle lesson panel"
                 onClick={toggleRightPanel}
               />
@@ -1792,6 +1824,17 @@ export function LessonAuthoringWorkspace({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AssetsProvider scope={assetScope}>
+        <AssetPickerDialog
+          open={assetPickerOpen}
+          onOpenChange={setAssetPickerOpen}
+          onSelect={handleMediaSelected}
+          title="Insert media"
+          accept="image/*"
+          kinds={["image"]}
+        />
+      </AssetsProvider>
     </div>
   );
 }
