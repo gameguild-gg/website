@@ -154,4 +154,10 @@ public sealed class BulkGrantResourcePermissionsCommandHandler(
 /// <summary>
 ///     Concrete bulk-result carrying per-user failures for resource permission operations.
 /// </summary>
-public sealed class ResourceBulkPermissionResult : BulkPermissionResult;
+/// <remarks>
+///     <b>Issues #302/#310:</b> same per-item contract as
+///     <see cref="TenantBulkPermissionResult"/> — <see cref="GameGuild.ICommitOnFailureOutcome"/>
+///     plus the inherited <see cref="BulkPermissionResult.IsFailure"/> keeps successful
+///     items committed while every per-user failure is reported.
+/// </remarks>
+public sealed class ResourceBulkPermissionResult : BulkPermissionResult, GameGuild.ICommitOnFailureOutcome;

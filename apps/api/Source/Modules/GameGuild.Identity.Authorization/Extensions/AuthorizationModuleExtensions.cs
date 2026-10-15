@@ -457,6 +457,13 @@ public static class AuthorizationModuleExtensions
         // callers (issue #330): docs/effective-permission-resolution.md
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
 
+        // Layer 2: ABAC overlay on effective resolution (issue #293). The built-in
+        // extension folds active ABAC policies (attribute/condition expressions included)
+        // into every effective-permission computation: a matching deny policy subtracts
+        // its target actions (or everything, when untargeted); ABAC allows never mint
+        // grants. Host-registered plugins continue to be picked up alongside this one.
+        services.AddScoped<IPermissionEvaluationExtension, AbacPolicyEvaluationExtension>();
+
         // External authorization-decision provider (issue #146): consulted by the
         // effective-permission resolver after every local layer. The built-in HTTP
         // implementation is disabled by default (Authorization:ExternalDecision:Enabled
@@ -478,6 +485,11 @@ public static class AuthorizationModuleExtensions
         // point for the 3-layer DAC model (tenant / content-type / resource) that
         // delegates every decision to the canonical effective-permission resolver.
         services.AddScoped<IDacPermissionResolver, DacPermissionResolver>();
+
+        // Dual-mode (sync + async) dispatch surface for permission commands (issue #302).
+        // The synchronous mode exists for callers that cannot await (background jobs,
+        // legacy sync adapters); guards, versioning and auditing are identical in both.
+        services.AddScoped<IPermissionCommandDispatcher, PermissionCommandDispatcher>();
 
         return services;
     }

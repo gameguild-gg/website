@@ -696,13 +696,16 @@ public sealed class PermissionBulkService(
         Guid tenantId,
         string[] permissions,
         Guid? grantedBy = null,
+        DateTime? expiresAt = null,
+        string? reason = null,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
-            "Bulk granting permissions {Permissions} to {UserCount} users in tenant {TenantId}",
+            "Bulk granting permissions {Permissions} to {UserCount} users in tenant {TenantId} (expiresAt: {ExpiresAt})",
             string.Join(", ", permissions),
             userIds.Length,
-            tenantId);
+            tenantId,
+            expiresAt);
 
         var results = new List<TenantPermission>();
 
@@ -713,8 +716,8 @@ public sealed class PermissionBulkService(
                 tenantId,
                 permissions,
                 grantedBy,
-                null,
-                null,
+                expiresAt,
+                reason,
                 cancellationToken);
             results.Add(result);
         }

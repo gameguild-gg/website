@@ -15893,6 +15893,10 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AppliesTo")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<string>("ContentTypeName")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -15920,13 +15924,26 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsRegistered")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
+
+                    b.Property<string>("ParentContentTypeName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Permissions")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Restrictions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
@@ -15942,6 +15959,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentContentTypeName")
+                        .HasDatabaseName("ix_contenttypepermission_parent_contenttype");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_contenttypepermission_tenant_id");

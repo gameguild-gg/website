@@ -29,10 +29,12 @@ public interface IPermissionService
     );
 
     Task<List<TenantPermission>> BulkGrantTenantPermissionAsync(
-        Guid[] userIds, 
-        Guid tenantId, 
-        string[] permissions, 
-        Guid? grantedBy = null, 
+        Guid[] userIds,
+        Guid tenantId,
+        string[] permissions,
+        Guid? grantedBy = null,
+        DateTime? expiresAt = null,
+        string? reason = null,
         CancellationToken cancellationToken = default);
 
     Task<bool> RevokeTenantPermissionAsync(

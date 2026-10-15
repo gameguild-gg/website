@@ -521,7 +521,7 @@ public class StaticsAndFacadeTests
     {
         var bulkMock = new Mock<IPermissionBulkService>();
         bulkMock.Setup(x => x.BulkGrantTenantPermissionAsync(It.IsAny<Guid[]>(), It.IsAny<Guid>(),
-                It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TenantPermission>());
 
         var svc = new PermissionService(

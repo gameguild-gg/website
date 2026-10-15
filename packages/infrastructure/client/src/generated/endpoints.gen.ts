@@ -6376,6 +6376,23 @@ export const postAuthorizationPermissionsSimulateEndpoint = {
 } as const;
 
 /**
+ * Validates a system-wide permission against the global default baseline (issue #307).
+ */
+export interface GetAuthorizationPermissionsGlobalCheckInput {
+  query?: {
+    permission?: string;
+  };
+}
+export type GetAuthorizationPermissionsGlobalCheckOutput = Types.IdentityAuthorizationHasGlobalPermissionOutput;
+export const getAuthorizationPermissionsGlobalCheckEndpoint = {
+  operationId: 'getAuthorizationPermissionsGlobalCheck' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/global:check' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Reconstructs a subject's effective permission state at a past instant
  * (issue #189: access rights at any point in time).
  */
@@ -6681,13 +6698,16 @@ export const getAuthorizationTenantsHasPermissionEndpoint = {
 } as const;
 
 /**
- * Gets all tenant-level permissions for a user.
+ * Gets all tenant-level permissions for a user (paginated, issue #298/#307).
  */
 export interface GetAuthorizationTenantsPermissionsInput {
   tenantId: string;
   query?: {
     userId?: string;
     includeEffective?: boolean;
+    page?: number;
+    pageSize?: number;
+    sortDescending?: boolean;
   };
 }
 export type GetAuthorizationTenantsPermissionsOutput = Types.IdentityAuthorizationGetTenantPermissionsOutput;
@@ -29758,6 +29778,7 @@ export const endpoints = {
   postAuthorizationPermissionTemplatesMigrationsRollback: postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint,
   getAuthorizationPermissionTemplatesVersions: getAuthorizationPermissionTemplatesVersionsEndpoint,
   postAuthorizationPermissionsSimulate: postAuthorizationPermissionsSimulateEndpoint,
+  getAuthorizationPermissionsGlobalCheck: getAuthorizationPermissionsGlobalCheckEndpoint,
   getAuthorizationPermissionsHistoryAt: getAuthorizationPermissionsHistoryAtEndpoint,
   getAuthorizationPermissionsHistoryInheritance: getAuthorizationPermissionsHistoryInheritanceEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,

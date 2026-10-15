@@ -188,6 +188,87 @@ public sealed class BulkEvaluateAbacPoliciesCommandHandler(
 }
 
 /// <summary>
+///     Handler for <see cref="TestAbacExpressionCommand"/> (issue #293): validates and
+///     evaluates a hypothetical ABAC attribute expression (the JSON operator form stored in
+///     <c>AbacPolicy.AttributeExpression</c>) against a caller-supplied test context without
+///     saving anything. Validation and evaluation use the same production parser the
+///     effective-resolution ABAC overlay uses (<see cref="AbacExpressionEvaluator"/>).
+/// </summary>
+public sealed class TestAbacExpressionCommandHandler(
+    IActorContextAccessor actorContextAccessor,
+    ILogger<TestAbacExpressionCommandHandler> logger)
+    : ICommandHandler<TestAbacExpressionCommand, AbacExpressionTestResult>
+{
+    private ActorContext Actor => actorContextAccessor.ActorContext;
+
+    public Task<AbacExpressionTestResult> Handle(TestAbacExpressionCommand request, CancellationToken cancellationToken)
+    {
+        if (!Actor.IsAuthenticated)
+        {
+            throw new UnauthorizedAccessException("User is not authenticated");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var stopwatch = Stopwatch.StartNew();
+        var result = new TestAbacExpressionResult();
+
+        var validationErrors = AbacExpressionEvaluator.ValidateAttributeExpression(request.JsonExpression);
+        result.ValidationErrors.AddRange(validationErrors);
+
+        if (validationErrors.Count > 0)
+        {
+            stopwatch.Stop();
+            result.IsValid = false;
+            result.ErrorMessage = "The expression failed structural validation";
+            result.EvaluationTime = stopwatch.Elapsed.TotalMilliseconds;
+            return Task.FromResult<AbacExpressionTestResult>(result);
+        }
+
+        var context = AbacEvaluationContextMapper.ToRequestContext(request.TestContext);
+        result.IsValid = true;
+        result.EvaluationResult = AbacExpressionEvaluator.EvaluateAttributeExpression(
+            request.JsonExpression,
+            context);
+
+        stopwatch.Stop();
+        result.EvaluationTime = stopwatch.Elapsed.TotalMilliseconds;
+        result.DebugInfo["attributeCount"] = CountExpressionAttributes(request.JsonExpression);
+        result.DebugInfo["userAttributes"] = request.TestContext.UserAttributes.Count;
+        result.DebugInfo["resourceAttributes"] = request.TestContext.ResourceAttributes.Count;
+        result.DebugInfo["environmentAttributes"] = request.TestContext.EnvironmentalAttributes.Count;
+        result.DebugInfo["actionAttributes"] = request.TestContext.ActionAttributes.Count;
+
+        logger.LogInformation(
+            "ABAC expression test completed: valid={IsValid}, result={EvaluationResult}",
+            result.IsValid,
+            result.EvaluationResult);
+
+        return Task.FromResult<AbacExpressionTestResult>(result);
+    }
+
+    private static int CountExpressionAttributes(string jsonExpression)
+    {
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(jsonExpression);
+            return document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                ? document.RootElement.EnumerateObject().Count()
+                : 0;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return 0;
+        }
+    }
+}
+
+/// <summary>Concrete ABAC expression-test envelope.</summary>
+public sealed class TestAbacExpressionResult : AbacExpressionTestResult
+{
+}
+
+/// <summary>
 ///     Handler for <see cref="EvaluateConditionalPoliciesCommand"/> (issue #374):
 ///     evaluates the active conditional policies for a hypothetical request context
 ///     through the production <see cref="IConditionalPolicyEvaluator"/>. Read-only.
