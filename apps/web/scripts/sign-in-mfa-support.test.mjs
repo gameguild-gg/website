@@ -102,7 +102,7 @@ test("accepts a challenge for an elevated-role account with a provisioned secret
   assert.deepEqual(
     await bridge(
       { requiresMfa: true, mfaToken: "x".repeat(43), tenantId: "bound", userId: "bound" },
-      async (action, body) => ({ accessToken: "verified", tenantId: "bound", userId: "bound" }),
+      async () => ({ accessToken: "verified", tenantId: "bound", userId: "bound" }),
       "admin@game-guild.com",
     ),
     { ...response, tenantId: "bound", userId: "bound" },
