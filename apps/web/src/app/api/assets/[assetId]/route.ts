@@ -35,17 +35,22 @@ export async function GET(
   return proxy(upstream);
 }
 
-export async function DELETE(
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ assetId: string }> },
 ): Promise<Response> {
   const token = await getToken();
   if (!token) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   const { assetId } = await params;
+  const body = await request.json();
   const upstream = await fetch(assertSafeServiceUrl(`${apiBaseUrl()}/v1/assets/${encodeURIComponent(assetId)}`, apiBaseUrl()), {
     redirect: "error",
-    method: "DELETE",
-    headers: { authorization: `Bearer ${token}` },
+    method: "PATCH",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
     cache: "no-store",
     signal: request.signal,
   });

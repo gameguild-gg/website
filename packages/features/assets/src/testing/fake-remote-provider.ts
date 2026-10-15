@@ -1,6 +1,6 @@
 import type { AssetPage, AssetQuery, AssetRecord } from "../core/asset-contracts";
 import type { AssetUri } from "../core/asset-uri";
-import { classifyAssetKind, inferMimeType } from "../core/mime";
+import { classifyAssetKind, createAssetUri, inferMimeType } from "../core/mime";
 import { hashBlob } from "../browser/content-hashing";
 import type {
   AssetDownload,
@@ -94,7 +94,17 @@ export class FakeRemoteAssetProvider implements RemoteAssetProvider {
   async delete(record: AssetRecord): Promise<void> {
     this.values.delete(record.uri);
   }
-
+  
+  async rename(id: string, displayName: string, context: AssetProviderContext): Promise<AssetRecord> {
+    if (context.signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    const uri = createAssetUri(id);
+    const value = this.values.get(uri);
+    if (!value) throw new Error(`Remote asset not found: ${uri}`);
+    
+    value.record.name = displayName;
+    return structuredClone(value.record);
+  }
+  
   seed(uri: AssetUri, download: AssetDownload): void {
     this.values.set(uri, download);
   }
