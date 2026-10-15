@@ -1,6 +1,7 @@
 import type { AssetPage, AssetQuery, AssetRecord } from "../core/asset-contracts";
 import type { AssetUri } from "../core/asset-uri";
-import { classifyAssetKind, createAssetUri, inferMimeType } from "../core/mime";
+import { classifyAssetKind, inferMimeType } from "../core/mime";
+import { createAssetUri } from "../core/asset-uri";
 import { hashBlob } from "../browser/content-hashing";
 import type {
   AssetDownload,
