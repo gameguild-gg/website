@@ -19,7 +19,8 @@ import { getTranslations } from 'next-intl/server';
  * concern on the deployment side.
  */
 export async function SecurityPoliciesCard({ locale }: { locale: string }): Promise<React.JSX.Element> {
-  const [t, policies] = await Promise.all([getTranslations({ locale, namespace: 'settings.security.policies' }), getSecurityPolicies()]);
+  const t = await getTranslations({ locale, namespace: 'settings.security.policies' });
+  const policies = getSecurityPolicies();
 
   const rows = [
     {
