@@ -322,11 +322,22 @@ public static class AuthorizationModuleExtensions
         
         // Repositories
         services.AddScoped<ITenantPermissionRepository, TenantPermissionRepository>();
+        services.AddScoped<IContentTypePermissionGrantRepository, ContentTypePermissionGrantRepository>();
         services.AddScoped<IPermissionAuditLogRepository, PermissionAuditLogRepository>();
+
+        // Content-type grant layer (issues #360/#365): scoped grant CRUD with the
+        // guarded + versioned + audited mutation contract.
+        services.AddScoped<IContentTypePermissionGrantService, ContentTypePermissionGrantService>();
 
         // Actor context is the primary identity abstraction
         // IActorContextAccessor is registered via AddActorContextIntegration()
         services.AddScoped<ILocalizationContext, LocalizationContext>();
+
+        // Template lifecycle (issues #369/#370): the instantiation command handler is
+        // consumed concretely by the dry-run preview query handler (the preview IS a
+        // DryRun execution of the command), so the concrete type needs its own
+        // registration beyond the CQRS interface scan.
+        services.AddScoped<InstantiatePermissionTemplateCommandHandler>();
 
         // CQRS Authorization Behavior
         services.AddScoped(typeof(CQRS.IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));

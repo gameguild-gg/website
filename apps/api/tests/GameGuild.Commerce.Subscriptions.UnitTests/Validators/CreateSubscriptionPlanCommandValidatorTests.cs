@@ -361,9 +361,8 @@ public class CreateSubscriptionPlanCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e =>
-            e.PropertyName == nameof(CreateSubscriptionPlanCommand.MonthlyPriceInCents) &&
-            e.ErrorMessage.Contains("greater than or equal to 0"));
+        // The sentinel rule is a command-level Must() — assert on the invariant message.
+        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("custom-quote sentinel"));
     }
 
     [Theory]

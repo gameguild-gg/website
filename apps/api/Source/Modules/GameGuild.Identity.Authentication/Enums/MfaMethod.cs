@@ -9,5 +9,6 @@ public enum MfaMethod
     BackupCode = 2,
     Sms = 3,
     Email = 4,
-    WebAuthn = 5
+    WebAuthn = 5,
+    Push = 6
 }

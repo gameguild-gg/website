@@ -18,6 +18,9 @@ internal static class EventTransportServiceCollectionExtensions
         services.AddScoped<IIntegrationEventHandler<RefreshTokenReplayContainedV1>, RefreshTokenReplayAlertHandler>();
         services.AddScoped<IIntegrationEventHandler<SuspiciousLoginDetectedV1>, SuspiciousLoginAlertHandler>();
         services.AddScoped<IIntegrationEventHandler<SuspiciousLoginDetectedV1>, RiskEventSessionRevocationHandler>();
+        // Issue #278: ordinary new sign-ins notify the owner only when they opted in
+        // (default off; the per-user preference is evaluated host-side, fail-closed).
+        services.AddScoped<IIntegrationEventHandler<NewLoginDetectedV1>, NewLoginAlertHandler>();
         // Issue #406: completed provider invoice payments credit the paying user's billing
         // wallet (idempotent per provider event identifier).
         services.AddScoped<IIntegrationEventHandler<BillingInvoicePaidV1>, BillingInvoicePaidWalletCreditHandler>();

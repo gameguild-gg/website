@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddTenantScopedTreasury
+public partial class AddTenantScopedTreasury : Migration
 {
     private static void InstallRiskCounterReservationTransitions(MigrationBuilder migrationBuilder)
     {

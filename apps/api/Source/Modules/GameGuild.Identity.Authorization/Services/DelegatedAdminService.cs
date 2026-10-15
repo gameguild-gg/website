@@ -61,7 +61,10 @@ public class DelegatedAdminService(
         {
             // Only currently-valid scopes (active and inside their validity window)
             // delegate administrative authority over managed users.
-            if (!scope.IsValid()) continue;
+            if (!scope.IsValid())
+            {
+                continue;
+            }
             if (string.IsNullOrEmpty(scope.AllowedUserIds)) continue;
             try
             {
@@ -93,7 +96,10 @@ public class DelegatedAdminService(
         {
             // Only currently-valid scopes (active and inside their validity window)
             // delegate administrative authority over managed resource types.
-            if (!scope.IsValid()) continue;
+            if (!scope.IsValid())
+            {
+                continue;
+            }
             if (string.IsNullOrEmpty(scope.AllowedResourceTypes)) continue;
             try
             {

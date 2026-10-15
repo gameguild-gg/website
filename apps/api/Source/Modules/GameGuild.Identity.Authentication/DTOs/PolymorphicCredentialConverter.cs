@@ -56,7 +56,10 @@ public class PolymorphicCredentialConverter : JsonConverter<ICredentialData>
             return JsonSerializer.Deserialize<Web3CredentialData>(root.GetRawText(), options);
         }
 
-        if (root.TryGetProperty("thumbprint", out _)) return JsonSerializer.Deserialize<CertificateCredentialData>(root.GetRawText(), options);
+        if (root.TryGetProperty("thumbprint", out _))
+        {
+            return JsonSerializer.Deserialize<CertificateCredentialData>(root.GetRawText(), options);
+        }
 
         throw new JsonException("Unable to determine credential type from JSON structure");
     }

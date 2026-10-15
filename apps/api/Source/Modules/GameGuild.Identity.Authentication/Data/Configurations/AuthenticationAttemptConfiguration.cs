@@ -28,6 +28,8 @@ public class AuthenticationAttemptConfiguration : IEntityTypeConfiguration<Authe
         builder.Property(x => x.AttemptedAt).IsRequired();
         builder.Property(x => x.ProcessingTime).IsRequired();
         builder.Property(x => x.Location).HasMaxLength(200);
+        builder.Property(x => x.Country).HasMaxLength(8);
+        builder.Property(x => x.City).HasMaxLength(100);
         builder.Property(x => x.DeviceFingerprint).HasMaxLength(64);
         builder.Property(x => x.IsSuspicious).IsRequired();
         builder.Property(x => x.RiskScore).IsRequired();

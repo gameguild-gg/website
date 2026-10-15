@@ -38,6 +38,9 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetPermissionCacheKeyQuery, PermissionCacheKeyInfoDto?>, GetPermissionCacheKeyQueryHandler>();
         services.AddScoped<ICommandHandler<WarmPermissionCacheCommand, PermissionCacheWarmupResult>, WarmPermissionCacheCommandHandler>();
 
+        // Issue #221: self-service session-state surface (read-only query).
+        services.AddScoped<IQueryHandler<GetAuthSessionStateQuery, AuthSessionStateDto>, GetAuthSessionStateQueryHandler>();
+
         // Register validators
         services.AddScoped<FluentValidation.IValidator<LocalSignUpCommand>, LocalSignUpCommandValidator>();
         services.AddScoped<FluentValidation.IValidator<LocalSignInCommand>, LocalSignInCommandValidator>();

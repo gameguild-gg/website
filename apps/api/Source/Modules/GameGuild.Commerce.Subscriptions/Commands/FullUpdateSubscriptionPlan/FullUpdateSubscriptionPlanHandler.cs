@@ -41,8 +41,17 @@ public sealed class FullUpdateSubscriptionPlanHandler(
         plan.Name = request.Name;
         plan.Slug = slug;
         plan.Description = request.Description;
+        // Issue #416: type and discount changes enforce the plan-type pricing invariants
+        // against the incoming prices before anything is persisted.
+        if (request.Type.HasValue)
+        {
+            plan.Reclassify(request.Type.Value);
+        }
+        SubscriptionPlanPricingRules.Validate(plan.Type, request.MonthlyPriceInCents, request.AnnualPriceInCents);
         plan.MonthlyPriceInCents = request.MonthlyPriceInCents;
         plan.AnnualPriceInCents = request.AnnualPriceInCents;
+        plan.AnnualDiscountPercent = request.AnnualDiscountPercent ?? plan.AnnualDiscountPercent;
+        SubscriptionPlanPricingRules.ValidateAnnualDiscountPercent(plan.AnnualDiscountPercent);
         plan.MaxUsers = request.MaxUsers;
         plan.MaxStorageMb = request.MaxStorageMb;
         plan.MaxApiCallsPerMonth = request.MaxApiCallsPerMonth;

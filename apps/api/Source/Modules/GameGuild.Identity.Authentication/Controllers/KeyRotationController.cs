@@ -13,7 +13,10 @@ namespace GameGuild.Identity.Authentication;
 /// </summary>
 [ApiVersion("1.0")]
 [Microsoft.AspNetCore.Http.Tags("auth/signing-keys")]
-[Authorize(Policy = Policies.SystemAdmin)]
+// Issue #386: signing-key rotation is system-configuration management. Platform-scoped
+// (SystemAdmin role or a delegated system:manage-configuration grant); no tenant clamping
+// because rotated keys protect every tenant.
+[Authorize(Policy = Policies.SystemConfigurationManage)]
 public class KeyRotationController : BaseApiController
 {
     private readonly IKeyRotationService _keyRotationService;

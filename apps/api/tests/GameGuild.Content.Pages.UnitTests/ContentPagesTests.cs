@@ -522,7 +522,7 @@ public class MarketingLeadServiceTests
             });
         await db.SaveChangesAsync();
 
-        var service = new MarketingLeadService(db);
+        var service = new MarketingLeadService(db, new RecordingContentPagesAuditEventSink());
 
         var results = await service.ListAsync(" CONTACT ", " REVIEWED ", " SALES ", null, 0, 10);
 
