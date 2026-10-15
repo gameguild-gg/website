@@ -219,11 +219,15 @@ public sealed class GradingExecutionOrchestrator(
         var previous = await PreviousStageResultAsync(round.Id, stage.Sequence, cancellationToken).ConfigureAwait(false);
         // Code's trusted worker emits redacted feedback on its single persisted item.
         // An omitted optional instructor comment must not erase that feedback.
-        var previousCodeFeedback = snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType
+        var codeAdapterVersion = snapshot.Manifest.Items.SingleOrDefault(item =>
+            item.ItemId == Code.CodeAssessmentContracts.ItemId &&
+            item.AdapterKey == Code.CodeAssessmentContracts.AdapterKey)?.AdapterVersion;
+        var previousCodeFeedback = snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType &&
+            Code.CodeAssessmentContracts.IsSupportedVersion(codeAdapterVersion)
             ? previous?.Items.SingleOrDefault(item => item.ItemId == Code.CodeAssessmentContracts.ItemId &&
                 item.ReviewMethod == ReviewMethod.AutomatedReview &&
                 item.HandlerKey == Code.CodeAssessmentContracts.HandlerKey &&
-                item.HandlerVersion == Code.CodeAssessmentContracts.Version)?.Feedback
+                item.HandlerVersion == codeAdapterVersion)?.Feedback
             : null;
         string? ResolveFeedback(string? supplied) => previousCodeFeedback is not null && string.IsNullOrWhiteSpace(supplied)
             ? previousCodeFeedback : supplied;
