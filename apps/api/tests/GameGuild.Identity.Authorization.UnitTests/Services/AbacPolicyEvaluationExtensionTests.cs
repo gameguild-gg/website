@@ -233,7 +233,8 @@ public class AbacPolicyEvaluatorExpressionTests
     [Fact]
     public async Task Policy_WithFailingConditionExpression_DoesNotDeny()
     {
-        SetupPolicy(p => p.ConditionExpression = "user.clearanceLevel >= resource.requiredClearance");
+        // 5 < 4 is false, so the deny policy does not match and must not deny.
+        SetupPolicy(p => p.ConditionExpression = "user.clearanceLevel < resource.requiredClearance");
         var context = new AbacRequestContext(
             new Dictionary<string, object> { ["subject.clearanceLevel"] = 5 },
             new Dictionary<string, object> { ["resource.requiredClearance"] = 4 },
