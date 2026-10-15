@@ -56,6 +56,7 @@ public class PermissionEvaluationController(IMediator mediator, ILogger<Permissi
     public async Task<ActionResult<GetTenantPermissionsResponse>> GetTenantPermissions(
         [FromQuery] Guid userId,
         [FromQuery] Guid tenantId,
+        [FromQuery] bool includeEffective = true,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         [FromQuery] bool sortDescending = false)
@@ -64,6 +65,7 @@ public class PermissionEvaluationController(IMediator mediator, ILogger<Permissi
         {
             UserId = userId,
             TenantId = new TenantId(tenantId),
+            IncludeEffective = includeEffective,
             Page = page,
             PageSize = pageSize,
             SortDescending = sortDescending
