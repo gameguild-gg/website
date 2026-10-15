@@ -1,5 +1,5 @@
 {
-  "version": "4.4.0",
+  "version": "4.4.1",
   "name": "emception",
   "description": "Runtime-agnostic core: types, EmceptionCore, VFS, tool registry, build resolver, test engine, presets, RuntimeAdapter.",
   "license": "MIT",

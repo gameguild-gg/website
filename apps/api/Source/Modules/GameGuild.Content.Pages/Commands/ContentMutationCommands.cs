@@ -14,6 +14,9 @@ public sealed record UpdatePageSectionCommand(Guid PageId, Guid SectionId, Updat
 public sealed record DeletePageSectionCommand(Guid PageId, Guid SectionId) : ICommand<bool>;
 public sealed record ReorderPageSectionsCommand(Guid PageId, IReadOnlyList<Guid> OrderedIds) : ICommand;
 public sealed record CreateMarketingLeadCommand(CreateMarketingLeadDto Lead) : ICommand<MarketingLead>;
+public sealed record CreateCourseProposalCommand(CreateCourseProposalDto Proposal) : ICommand<CourseProposal>;
+public sealed record UpdateCourseProposalCommand(Guid ProposalId, UpdateCourseProposalDto Proposal) : ICommand<CourseProposal?>;
+public sealed record DeleteCourseProposalCommand(Guid ProposalId) : ICommand<bool>;
 
 public sealed class CreateContentResourceCommandHandler(IContentResourceService service)
     : ICommandHandler<CreateContentResourceCommand, ContentResource>
@@ -105,4 +108,26 @@ public sealed class CreateMarketingLeadCommandHandler(IMarketingLeadService serv
 {
     public Task<MarketingLead> Handle(CreateMarketingLeadCommand command, CancellationToken cancellationToken) =>
         service.CreateAsync(command.Lead, cancellationToken);
+}
+
+
+public sealed class CreateCourseProposalCommandHandler(ICourseProposalService service)
+    : ICommandHandler<CreateCourseProposalCommand, CourseProposal>
+{
+    public Task<CourseProposal> Handle(CreateCourseProposalCommand command, CancellationToken cancellationToken) =>
+        service.CreateAsync(command.Proposal, cancellationToken);
+}
+
+public sealed class UpdateCourseProposalCommandHandler(ICourseProposalService service)
+    : ICommandHandler<UpdateCourseProposalCommand, CourseProposal?>
+{
+    public Task<CourseProposal?> Handle(UpdateCourseProposalCommand command, CancellationToken cancellationToken) =>
+        service.UpdateAsync(command.ProposalId, command.Proposal, cancellationToken);
+}
+
+public sealed class DeleteCourseProposalCommandHandler(ICourseProposalService service)
+    : ICommandHandler<DeleteCourseProposalCommand, bool>
+{
+    public Task<bool> Handle(DeleteCourseProposalCommand command, CancellationToken cancellationToken) =>
+        service.DeleteAsync(command.ProposalId, cancellationToken);
 }

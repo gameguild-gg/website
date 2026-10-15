@@ -70,7 +70,9 @@ jobs:
         id: identity
         run: echo "treeSha=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
       - name: Test classifier contract
-        run: node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs
+        run: |
+          node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs scripts/ci/tests/emception-web-artifacts.test.mjs
+          python3 -m unittest discover -s scripts/ci/tests -p 'acquire_emception_release_test.py'
       - name: Test docker build-context invariants
         run: node --test scripts/ci/tests/dockerignore-pnpm-patches.test.mjs scripts/ci/tests/dockerignore-api-analyzer-config.test.mjs
 
@@ -96,7 +98,11 @@ jobs:
     needs: classify
     if: needs.classify.outputs.web == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Include the bounded producer wait and the existing Web gates.
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
@@ -104,6 +110,17 @@ jobs:
         run: pnpm --filter @game-guild/client build
       - name: Test credentials and MFA client integration
         run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts --maxWorkers=1
+      - name: Acquire verified Toolchain release for Web
+        id: emception-web-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}
+          CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}
+        run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800
+      - name: Verify acquired frozen Toolchain identity
+        if: steps.emception-web-release.outputs.required == 'true'
+        run: |
+          node --input-type=module -e "import { verifyCodingCycleToolchain } from './apps/web/scripts/coding-cycle-toolchain-support.mjs'; await verifyCodingCycleToolchain('./tools/emception/artifacts/toolchain/release/cdn/manifest.json');"
       - name: Build Web runtime dependencies
         run: pnpm --filter @game-guild/web run build:emception-dependencies
       - name: Generate Web route types

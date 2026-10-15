@@ -291,6 +291,27 @@
           "success": "Autenticação multifator desativada.",
           "wrongPassword": "Falha na verificação da senha. O MFA permanece ativado."
         }
+      },
+      "policies": {
+        "title": "Políticas de segurança",
+        "description": "A postura de segurança do workspace é definida por administradores via configuração de ambiente no servidor. Os valores abaixo são somente leitura.",
+        "managedBadge": "Gerenciado por administradores",
+        "twoFactor": {
+          "title": "Autenticação de dois fatores",
+          "optional": "Opcional (opt-in)",
+          "required": "Obrigatória",
+          "description": "Se as contas precisam registrar um segundo fator antes do acesso completo."
+        },
+        "sessionTimeout": {
+          "title": "Tempo limite de sessão",
+          "value": "{minutes} minutos",
+          "description": "Tempo de inatividade da sessão antes de nova autenticação."
+        },
+        "apiKeyRotation": {
+          "title": "Rotação de chaves de API",
+          "value": "A cada {days} dias",
+          "description": "Idade máxima recomendada das chaves de API antes da rotação."
+        }
       }
     }
   },

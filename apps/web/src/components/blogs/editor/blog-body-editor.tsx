@@ -13,6 +13,7 @@ import type { AssetRecord } from "@game-guild/assets";
 import { Image } from "lucide-react";
 import { Button } from "@game-guild/ui/components/button";
 import { AssetPickerDialog, AssetsProvider } from "@game-guild/assets/react";
+import { INSERT_MEDIA_LEXICAL_COMMAND, type MediaType, MediaPlugin } from "@game-guild/lexical-surface/features/media";
 
 const MonacoCodeEditor = lazy(async () => {
   const mod = await import(
@@ -101,25 +102,26 @@ export function BlogBodyEditor({
           Use the rich-text editor to write your post.
         </p>
         <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-          <Suspense fallback={<EditorLoadingState />}>
-            <LexicalSurface
-              namespace="BlogPostEditor"
-              mountKey={postId}
-              initialState={
-                (jsonBody ?? null) as unknown as SerializedEditorState | null
-              }
-              onChange={(state) =>
-                onJsonBodyChange(JSON.stringify(state) as unknown as string)
-              }
-              accessibleLabel="Body"
-              placeholder="Start writing your post..."
-              contentStyle={{ minHeight: "400px" }}
-              contentClassName="max-w-none"
-              features={BLOG_EDITOR_FEATURES}
-              assetsRepository={assetRepository}
-              assetScope={{ type: "BlogPost", id: postId }}
-            />
-          </Suspense>
+           <Suspense fallback={<EditorLoadingState />}>
+             <LexicalSurface
+               namespace="BlogPostEditor"
+               mountKey={postId}
+               initialState={
+                 (jsonBody ?? null) as unknown as SerializedEditorState | null
+               }
+               onChange={(state) =>
+                 onJsonBodyChange(JSON.stringify(state) as unknown as string)
+               }
+               accessibleLabel="Body"
+               placeholder="Start writing your post..."
+               contentStyle={{ minHeight: "400px" }}
+               contentClassName="max-w-none"
+               features={BLOG_EDITOR_FEATURES}
+               assetsRepository={assetRepository}
+               assetScope={{ type: "BlogPost", id: postId }}
+               mediaPlugin={<MediaPlugin />}
+             />
+           </Suspense>
         </div>
       </div>
     );

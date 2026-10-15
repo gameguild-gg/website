@@ -17157,6 +17157,88 @@ export const getContentResourcesBySlugEndpoint = {
   requiresAuth: false,
 } as const;
 
+export interface GetContentCourseProposalsInput {
+  query?: {
+    status?: string;
+    search?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetContentCourseProposalsOutput = Types.ContentPagesCourseProposalDto[];
+export const getContentCourseProposalsEndpoint = {
+  operationId: 'getContentCourseProposals' as const,
+  method: 'GET' as const,
+  path: '/v1/content/course-proposals' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostContentCourseProposalsInput {
+  body?: Types.ContentPagesCreateCourseProposalDto;
+}
+export type PostContentCourseProposalsOutput = Types.ContentPagesCourseProposalDto;
+export const postContentCourseProposalsEndpoint = {
+  operationId: 'postContentCourseProposals' as const,
+  method: 'POST' as const,
+  path: '/v1/content/course-proposals' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: false,
+} as const;
+
+export interface GetCourseProposalByIdInput {
+  id: string;
+}
+export type GetCourseProposalByIdOutput = Types.ContentPagesCourseProposalDto;
+export const getCourseProposalByIdEndpoint = {
+  operationId: 'getCourseProposalById' as const,
+  method: 'GET' as const,
+  path: '/v1/content/course-proposals/{id}' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutContentCourseProposalsInput {
+  id: string;
+  body?: Types.ContentPagesUpdateCourseProposalDto;
+}
+export type PutContentCourseProposalsOutput = Types.ContentPagesCourseProposalDto;
+export const putContentCourseProposalsEndpoint = {
+  operationId: 'putContentCourseProposals' as const,
+  method: 'PUT' as const,
+  path: '/v1/content/course-proposals/{id}' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteContentCourseProposalsInput {
+  id: string;
+}
+export type DeleteContentCourseProposalsOutput = void;
+export const deleteContentCourseProposalsEndpoint = {
+  operationId: 'deleteContentCourseProposals' as const,
+  method: 'DELETE' as const,
+  path: '/v1/content/course-proposals/{id}' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Public detail lookup for /proposals/[slug]; anonymous callers receive
+ * published proposals only, so drafts and rejections stay unlisted.
+ */
+export interface GetContentCourseProposalsBySlugInput {
+  slug: string;
+}
+export type GetContentCourseProposalsBySlugOutput = Types.ContentPagesCourseProposalDto;
+export const getContentCourseProposalsBySlugEndpoint = {
+  operationId: 'getContentCourseProposalsBySlug' as const,
+  method: 'GET' as const,
+  path: '/v1/content/course-proposals/by-slug/{slug}' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: false,
+} as const;
+
 /**
  * Create or resume a content interaction
  * Requires an active enrollment in the parent Program.
@@ -30338,6 +30420,12 @@ export const endpoints = {
   deleteContentResources: deleteContentResourcesEndpoint,
   postContentResourcesPublish: postContentResourcesPublishEndpoint,
   getContentResourcesBySlug: getContentResourcesBySlugEndpoint,
+  getContentCourseProposals: getContentCourseProposalsEndpoint,
+  postContentCourseProposals: postContentCourseProposalsEndpoint,
+  getCourseProposalById: getCourseProposalByIdEndpoint,
+  putContentCourseProposals: putContentCourseProposalsEndpoint,
+  deleteContentCourseProposals: deleteContentCourseProposalsEndpoint,
+  getContentCourseProposalsBySlug: getContentCourseProposalsBySlugEndpoint,
   postCourseInteractions: postCourseInteractionsEndpoint,
   postCourseInteractionsComplete: postCourseInteractionsCompleteEndpoint,
   putCourseInteractionsProgress: putCourseInteractionsProgressEndpoint,
