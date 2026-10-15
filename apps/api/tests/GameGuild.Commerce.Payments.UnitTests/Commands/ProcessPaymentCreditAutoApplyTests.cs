@@ -269,7 +269,9 @@ public class ProcessPaymentCreditAutoApplyTests
                 ErrorCode: null,
                 ErrorMessage: null,
                 Status: PaymentStatus.Succeeded,
-                ProcessedAt: SystemClock.UtcNow));
+                ProcessedAt: SystemClock.UtcNow,
+                ProviderId: "stripe",
+                ProviderMapping: new GatewayProviderMapping("test", "acct_platform", "pi_123", "payment_intent", "capture")));
 
     private void NotificationShouldHaveBeenSent(NotificationType type) =>
         _notificationService.Verify(

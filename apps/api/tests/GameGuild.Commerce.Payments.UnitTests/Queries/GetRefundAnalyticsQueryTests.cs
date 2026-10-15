@@ -47,6 +47,10 @@ public class GetRefundAnalyticsQueryTests
         {
             refund.MarkCompleted("re_123", "stripe");
         }
+        else if (status == RefundStatus.Failed)
+        {
+            refund.MarkFailed("gateway rejected the test refund");
+        }
 
         ForceCreatedAt(refund, createdAtUtc);
         return refund;
