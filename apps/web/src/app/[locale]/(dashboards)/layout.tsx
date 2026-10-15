@@ -1,4 +1,5 @@
 import { auth } from '@/auth';
+import { GitHubStarPrompt } from '@/components/community/github-star-prompt';
 import { WorkspaceShell } from '@/components/console/workspace-shell';
 import { AccessibilitySyncInitializer } from '@/components/settings/accessibility-sync-initializer';
 import { EditorPreferencesSyncInitializer } from '@/components/settings/editor-preferences-sync-initializer';
@@ -39,6 +40,7 @@ export default async function Layout({ children, params }: LayoutProps<'/[locale
       <ThemeSyncInitializer />
       <AccessibilitySyncInitializer />
       <EditorPreferencesSyncInitializer />
+      <GitHubStarPrompt />
       {children}
     </WorkspaceShell>
   );

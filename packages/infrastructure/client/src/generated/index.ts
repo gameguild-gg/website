@@ -143,6 +143,7 @@ export * from './modules/auth-trusted-devices.gen.js';
 export * from './modules/auth-webauthn.gen.js';
 export * from './modules/commerce-subscriptions-clients.gen.js';
 export * from './modules/content-pages-resources.gen.js';
+export * from './modules/content-course-proposals.gen.js';
 export * from './modules/learning-courses-content-interaction.gen.js';
 export * from './modules/learning-courses-program.gen.js';
 export * from './modules/learning-courses-access.gen.js';

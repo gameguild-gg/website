@@ -291,6 +291,27 @@
           "success": "Multi-factor authentication disabled.",
           "wrongPassword": "Password verification failed. MFA stays enabled."
         }
+      },
+      "policies": {
+        "title": "Security policies",
+        "description": "Workspace security posture is managed by administrators through server-side environment configuration. The values below are read-only.",
+        "managedBadge": "Managed by admins",
+        "twoFactor": {
+          "title": "Two-factor authentication",
+          "optional": "Optional (opt-in)",
+          "required": "Required",
+          "description": "Whether accounts must enroll a second factor before full access."
+        },
+        "sessionTimeout": {
+          "title": "Session timeout",
+          "value": "{minutes} minutes",
+          "description": "Idle session lifetime before re-authentication is required."
+        },
+        "apiKeyRotation": {
+          "title": "API key rotation",
+          "value": "Every {days} days",
+          "description": "Recommended maximum age of API keys before rotation."
+        }
       }
     }
   },
