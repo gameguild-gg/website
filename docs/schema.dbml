@@ -1106,6 +1106,35 @@ Table "content_versions" {
   }
 }
 
+Table "ContentTypePermissionGrants" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "ContentTypeName" "character varying(256)" [not null]
+  "Permissions" "text[]" [not null]
+  "DenyPermissions" "text[]" [not null]
+  "GrantedBy" uuid
+  "Reason" "character varying(500)"
+  "Metadata" jsonb
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "UserId" uuid
+  "ExpiresAt" timestamp
+  "IsActive" boolean [not null]
+  "GrantedAt" timestamp [not null]
+
+  Indexes {
+    Id [pk, name: "PK_ContentTypePermissionGrants"]
+    ContentTypeName [name: "IX_ContentTypePermissionGrants_ContentTypeName"]
+    ExpiresAt [name: "IX_ContentTypePermissionGrants_ExpiresAt"]
+    (UserId, TenantId, ContentTypeName) [unique, name: "IX_ContentTypePermissionGrants_Subject_Tenant_ContentType"]
+    (TenantId, ContentTypeName) [name: "IX_ContentTypePermissionGrants_Tenant_ContentType"]
+    TenantId [name: "IX_ContentTypePermissionGrants_TenantId"]
+    UserId [name: "IX_ContentTypePermissionGrants_UserId"]
+  }
+}
+
 Table "course_discussions" {
   "Id" uuid [not null]
   "CourseId" uuid [not null]
@@ -3510,6 +3539,7 @@ Table "payments" {
   "OrderId" uuid
   "InvoiceId" uuid
   "Amount" numeric(18,2) [not null]
+  "CreditAppliedAmount" numeric(18,2) [not null]
   "Currency" "character varying(3)" [not null]
   "Status" integer [not null]
   "Provider" "character varying(50)" [not null]
@@ -3672,11 +3702,67 @@ Table "PermissionEvaluationLogs" {
   }
 }
 
+Table "PermissionTemplateInstantiations" {
+  "Id" uuid [not null]
+  "TemplateId" uuid [not null]
+  "UserId" uuid [not null]
+  "TemplateVersionNumber" integer [not null]
+  "InstantiatedByUserId" uuid [not null]
+  "InstantiatedAt" timestamp [not null]
+  "IsActive" boolean [not null]
+  "LastMigrationId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_PermissionTemplateInstantiations"]
+    (TemplateId, TemplateVersionNumber) [name: "IX_PermissionTemplateInstantiations_Template_Version"]
+    TemplateId [name: "IX_PermissionTemplateInstantiations_TemplateId"]
+    (TemplateId, UserId, TenantId) [unique, name: "IX_PermissionTemplateInstantiations_Unique_Target"]
+  }
+}
+
+Table "PermissionTemplateMigrations" {
+  "Id" uuid [not null]
+  "TemplateId" uuid [not null]
+  "FromVersion" integer [not null]
+  "ToVersion" integer [not null]
+  "Status" integer [not null]
+  "Strategy" integer [not null]
+  "ScheduledFor" timestamp
+  "StartedAt" timestamp
+  "CompletedAt" timestamp
+  "InitiatedByUserId" uuid [not null]
+  "AffectedTenantIds" "uuid[]"
+  "AffectedUserIds" "uuid[]"
+  "SuccessCount" integer [not null]
+  "FailureCount" integer [not null]
+  "SkippedCount" integer [not null]
+  "TotalCount" integer [not null]
+  "Errors" text
+  "Log" text
+  "RollbackPlan" text
+  "DryRunResult" text
+  "IsDryRun" boolean [not null]
+  "Notes" text
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_PermissionTemplateMigrations"]
+    TemplateId [name: "IX_PermissionTemplateMigrations_TemplateId"]
+  }
+}
+
 Table "PermissionTemplates" {
   "Id" uuid [not null]
   "Name" "character varying(100)" [not null]
   "Description" "character varying(500)" [not null]
   "Permissions" "text[]" [not null]
+  "RoleKeys" "text[]" [not null]
   "IsSystemTemplate" boolean [not null]
   "IsActive" boolean [not null]
   "Category" "character varying(50)"
@@ -3692,6 +3778,33 @@ Table "PermissionTemplates" {
     Id [pk, name: "PK_PermissionTemplates"]
     IsSystemTemplate [name: "IX_PermissionTemplates_IsSystemTemplate"]
     Name [unique, name: "IX_PermissionTemplates_Name"]
+  }
+}
+
+Table "PermissionTemplateVersions" {
+  "Id" uuid [not null]
+  "TemplateId" uuid [not null]
+  "VersionNumber" integer [not null]
+  "Name" text [not null]
+  "Description" text [not null]
+  "Permissions" "text[]" [not null]
+  "IsActive" boolean [not null]
+  "CreatedByUserId" uuid [not null]
+  "ChangeNotes" text
+  "ChangeType" integer [not null]
+  "AddedPermissions" "text[]"
+  "RemovedPermissions" "text[]"
+  "UnchangedPermissions" "text[]"
+  "PreviousVersion" integer
+  "Metadata" text
+  "PermissionHash" text
+  "Tags" "text[]"
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_PermissionTemplateVersions"]
+    (TemplateId, VersionNumber) [unique, name: "IX_PermissionTemplateVersions_Template_Version"]
   }
 }
 
@@ -3720,6 +3833,78 @@ Table "personalized_feed_items" {
     UserId [name: "IX_PersonalizedFeedItems_UserId"]
     (UserId, IsDismissed, ExpiresAt) [name: "IX_PersonalizedFeedItems_UserId_IsDismissed_ExpiresAt"]
     (UserId, ItemType) [name: "IX_PersonalizedFeedItems_UserId_ItemType"]
+  }
+}
+
+Table "PiiRedactionOperations" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "Source" integer [not null]
+  "AppliedRuleIds" "uuid[]" [not null]
+  "RedactedValueCount" integer [not null]
+  "TokenizedValueCount" integer [not null]
+  "FailClosed" boolean [not null]
+  "FailureReason" "character varying(1000)"
+  "AppliedAt" timestamp [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_PiiRedactionOperations"]
+    (TenantId, AppliedAt) [name: "IX_PiiRedactionOperations_TenantId_AppliedAt"]
+    (TenantId, FailClosed) [name: "IX_PiiRedactionOperations_TenantId_FailClosed"]
+  }
+}
+
+Table "PiiRedactionRules" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "RuleName" "character varying(200)" [not null]
+  "Description" "character varying(1000)"
+  "IsEnabled" boolean [not null]
+  "Priority" integer [not null]
+  "PatternType" integer [not null]
+  "RegexPattern" "character varying(1000)"
+  "Preset" integer
+  "Action" integer [not null]
+  "Scope" integer [not null]
+  "TargetFields" "text[]" [not null]
+  "Replacement" "character varying(100)" [not null]
+  "Revision" integer [not null]
+  "CreatedByUserId" uuid
+  "UpdatedByUserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_PiiRedactionRules"]
+    (TenantId, IsEnabled) [name: "IX_PiiRedactionRules_TenantId_IsEnabled"]
+  }
+}
+
+Table "PiiTokenVaultEntries" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "ScopeKey" "character varying(40)" [not null]
+  "Token" "character varying(64)" [not null]
+  "EncryptedValue" text [not null]
+  "SourceRuleId" uuid
+  "FirstSeenAt" timestamp [not null]
+  "LastSeenAt" timestamp [not null]
+  "UseCount" bigint [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_PiiTokenVaultEntries"]
+    (ScopeKey, Token) [unique, name: "IX_PiiTokenVaultEntries_ScopeKey_Token"]
+    TenantId [name: "IX_PiiTokenVaultEntries_TenantId"]
   }
 }
 
@@ -4065,6 +4250,28 @@ Table "pricing_rules" {
     ProductId [name: "IX_pricing_rules_ProductId"]
     RuleType [name: "IX_pricing_rules_RuleType"]
     StartDate [name: "IX_pricing_rules_StartDate"]
+  }
+}
+
+Table "product_categories" {
+  "Id" uuid [not null]
+  "Name" "character varying(150)" [not null]
+  "Slug" "character varying(150)" [not null]
+  "Description" "character varying(1000)"
+  "ParentCategoryId" uuid
+  "AttributesJson" jsonb
+  "DisplayOrder" integer [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_product_categories"]
+    DisplayOrder [name: "IX_product_categories_DisplayOrder"]
+    ParentCategoryId [name: "IX_product_categories_ParentCategoryId"]
+    (TenantId, Slug) [unique, name: "IX_product_categories_TenantId_Slug"]
   }
 }
 
@@ -4476,6 +4683,56 @@ Table "RubricCriteria" {
   Indexes {
     Id [pk, name: "PK_RubricCriteria"]
     RubricId [name: "IX_RubricCriteria_RubricId"]
+  }
+}
+
+Table "SavedAuditQueries" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "QueryName" "character varying(200)" [not null]
+  "Description" "character varying(1000)"
+  "QueryDsl" text [not null]
+  "IsPublic" boolean [not null]
+  "CreatedByUserId" uuid [not null]
+  "AllowedRoles" "text[]" [not null]
+  "AllowedUserIds" "uuid[]" [not null]
+  "CurrentRevision" integer [not null]
+  "ExecutionCount" integer [not null]
+  "LastExecutedAt" timestamp
+  "LastExecutedByUserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SavedAuditQueries"]
+    IsPublic [name: "IX_SavedAuditQueries_IsPublic"]
+    (TenantId, CreatedByUserId) [name: "IX_SavedAuditQueries_TenantId_CreatedByUserId"]
+    (TenantId, QueryName) [name: "IX_SavedAuditQueries_TenantId_QueryName"]
+  }
+}
+
+Table "SavedAuditQueryRevisions" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "SavedAuditQueryId" uuid [not null]
+  "Revision" integer [not null]
+  "QueryDsl" text [not null]
+  "QueryName" "character varying(200)" [not null]
+  "Description" "character varying(1000)"
+  "IsPublic" boolean [not null]
+  "ChangedByUserId" uuid [not null]
+  "IsCreation" boolean [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SavedAuditQueryRevisions"]
+    SavedAuditQueryId [name: "IX_SavedAuditQueryRevisions_SavedAuditQueryId"]
+    (SavedAuditQueryId, Revision) [unique, name: "IX_SavedAuditQueryRevisions_SavedAuditQueryId_Revision"]
   }
 }
 
@@ -5020,6 +5277,8 @@ Table "SubscriptionPlans" {
   "AnnualPriceInCents" bigint
   "Currency" "character varying(3)" [not null]
   "IsActive" boolean [not null]
+  "Type" integer [not null, default: 1]
+  "AnnualDiscountPercent" numeric(5,2) [not null, default: 0.0]
   "MaxUsers" integer
   "MaxStorageMb" bigint
   "MaxApiCallsPerMonth" bigint
@@ -5462,6 +5721,7 @@ Table "user_wallets" {
   "LastTransactionAt" timestamp
   "DailyLimit" numeric(18,2)
   "MonthlyLimit" numeric(18,2)
+  "LowBalanceAlertedAt" timestamp
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
@@ -5477,7 +5737,7 @@ Table "user_wallets" {
     Id [pk, name: "PK_user_wallets"]
     Currency [name: "IX_user_wallets_Currency"]
     IsActive [name: "IX_user_wallets_IsActive"]
-    UserId [unique, name: "IX_user_wallets_UserId"]
+    (UserId, Currency) [unique, name: "IX_user_wallets_UserId_Currency"]
   }
 }
 
@@ -5505,6 +5765,27 @@ Table "Users" {
     Id [pk, name: "PK_Users"]
     Email [unique, name: "IX_Users_Email"]
     Username [unique, name: "IX_Users_Username"]
+  }
+}
+
+Table "WebhookSecretRotations" {
+  "Id" uuid [not null]
+  "ProviderKey" "character varying(50)" [not null]
+  "EncryptedPreviousSecret" text [not null]
+  "EncryptedActiveSecret" text [not null]
+  "RotatedAtUtc" timestamp [not null]
+  "WindowEndsAtUtc" timestamp [not null]
+  "DeprecatedAtUtc" timestamp
+  "RotatedByUserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_WebhookSecretRotations"]
+    (ProviderKey, RotatedAtUtc) [name: "ix_webhook_secret_rotations_provider_rotated_at"]
   }
 }
 
@@ -7522,6 +7803,24 @@ Table "SoDViolation" {
   }
 }
 
+Table "SubscriptionPlanIntervalPrices" {
+  "Id" uuid [not null]
+  "PlanId" uuid [not null]
+  "Interval" "character varying(20)" [not null]
+  "PriceInCents" bigint [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_SubscriptionPlanIntervalPrices"]
+    PlanId [name: "ix_subscription_plan_interval_prices_plan_id"]
+    (PlanId, Interval) [unique, name: "ix_subscription_plan_interval_prices_plan_interval"]
+  }
+}
+
 Table "Subscriptions" {
   "Id" uuid [not null]
   "CreatedByUserId" uuid [not null]
@@ -7924,6 +8223,7 @@ Table "Products" {
   "Type" integer [not null]
   "IsBundle" boolean [not null]
   "IsPublished" boolean [not null]
+  "CategoryId" uuid
   "CreatorId" uuid
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
@@ -7933,6 +8233,7 @@ Table "Products" {
 
   Indexes {
     Id [pk, name: "PK_Products"]
+    CategoryId [name: "IX_Products_CategoryId"]
     CreatorId [name: "IX_Products_CreatorId"]
     IsPublished [name: "IX_Products_IsPublished"]
     Name [name: "IX_Products_Name"]
@@ -9133,6 +9434,26 @@ Table "product_commission_configs" {
     Id [pk, name: "PK_product_commission_configs"]
     IsActive [name: "IX_product_commission_configs_IsActive"]
     ProductId [unique, name: "IX_product_commission_configs_ProductId"]
+  }
+}
+
+Table "product_inventory" {
+  "Id" uuid [not null]
+  "ProductId" uuid [not null]
+  "StockQuantity" integer [not null]
+  "ReservedQuantity" integer [not null]
+  "TrackInventory" boolean [not null]
+  "LowStockThreshold" integer [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_product_inventory"]
+    ProductId [unique, name: "IX_product_inventory_ProductId"]
+    TrackInventory [name: "IX_product_inventory_TrackInventory"]
   }
 }
 
@@ -11027,6 +11348,8 @@ Ref "FK_DynamicRole_DynamicRole_ParentRoleId":"DynamicRole"."Id" ?<? "DynamicRol
 
 Ref "FK_pages_pages_ParentPageId":"pages"."Id" ?<? "pages"."ParentPageId" [delete: restrict]
 
+Ref "FK_product_categories_product_categories_ParentCategoryId":"product_categories"."Id" ?<? "product_categories"."ParentCategoryId" [delete: restrict]
+
 Ref "FK_tax_jurisdictions_tax_jurisdictions_ParentJurisdictionId":"tax_jurisdictions"."Id" ?<? "tax_jurisdictions"."ParentJurisdictionId" [delete: restrict]
 
 Ref "FK_AcademicOutboxDeliveries_AcademicOutboxMessages_OutboxMessa~":"AcademicOutboxMessages"."Id" <? "AcademicOutboxDeliveries"."OutboxMessageId" [delete: cascade]
@@ -11233,6 +11556,8 @@ Ref "FK_social_profile_skills_social_profiles_ProfileId":"social_profiles"."Id" 
 
 Ref "FK_SoDViolation_SoDRule_RuleId":"SoDRule"."Id" <? "SoDViolation"."RuleId" [delete: cascade]
 
+Ref "FK_SubscriptionPlanIntervalPrices_SubscriptionPlans_PlanId":"SubscriptionPlans"."Id" <? "SubscriptionPlanIntervalPrices"."PlanId" [delete: cascade]
+
 Ref "FK_Subscriptions_SubscriptionPlans_PlanId":"SubscriptionPlans"."Id" <? "Subscriptions"."PlanId" [delete: restrict]
 
 Ref "FK_SupportTicketMessages_SupportTickets_TicketId":"SupportTickets"."Id" <? "SupportTicketMessages"."TicketId" [delete: cascade]
@@ -11266,6 +11591,8 @@ Ref "FK_wallet_transactions_user_wallets_WalletId":"user_wallets"."Id" <? "walle
 Ref "FK_orders_Users_UserId":"Users"."Id" <? "orders"."UserId" [delete: cascade]
 
 Ref "FK_Products_Users_CreatorId":"Users"."Id" ?<? "Products"."CreatorId"
+
+Ref "FK_Products_product_categories_CategoryId":"product_categories"."Id" ?<? "Products"."CategoryId" [delete: restrict]
 
 Ref "FK_program_enrollments_Users_UserId":"Users"."Id" <? "program_enrollments"."UserId" [delete: cascade]
 
@@ -11432,6 +11759,8 @@ Ref "FK_product_bundle_items_Products_BundleProductId":"Products"."Id" <? "produ
 Ref "FK_product_bundle_items_Products_IncludedProductId":"Products"."Id" <? "product_bundle_items"."IncludedProductId" [delete: restrict]
 
 Ref "FK_product_commission_configs_Products_ProductId":"Products"."Id" <? "product_commission_configs"."ProductId" [delete: cascade]
+
+Ref "FK_product_inventory_Products_ProductId":"Products"."Id" <? "product_inventory"."ProductId" [delete: cascade]
 
 Ref "FK_product_pricing_Products_ProductId":"Products"."Id" <? "product_pricing"."ProductId" [delete: cascade]
 
@@ -12086,6 +12415,8 @@ Table "gameguild.authentication"."authenticationattempt" {
   "AttemptedAt" timestamp [not null]
   "ProcessingTime" interval [not null]
   "Location" "character varying(200)"
+  "Country" "character varying(8)"
+  "City" "character varying(100)"
   "DeviceFingerprint" "character varying(64)"
   "SessionId" uuid
   "TenantId" uuid
@@ -12474,6 +12805,8 @@ Table "gameguild.authentication"."user_mfa_configuration" {
   "qr_code_setup_data" "character varying(1000)"
   "is_setup_complete" boolean [not null]
   "setup_expires_at" timestamp
+  "sms_phone_number" "character varying(32)"
+  "push_device_token" "character varying(512)"
   "created_at" timestamp [not null]
   "updated_at" timestamp [not null]
 

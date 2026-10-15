@@ -7856,6 +7856,29 @@ export const postBillingWebhooksPaypalEndpoint = {
 } as const;
 
 /**
+ * Rotate a provider's webhook signing secret (issue #408)
+ *
+ * Records a signing-secret rotation for one provider webhook endpoint. During the
+ * rotation window (Billing:Webhook:SecretRotationWindowHours, default 24h) deliveries
+ * signed with either the previous or the new secret verify (dual-secret verification);
+ * after the window the previous secret is automatically deprecated and rejected. The
+ * new secret is stored encrypted at rest and never appears in logs or the response.
+ * Requires the SystemAdmin policy; the acting administrator is taken from the
+ * authenticated actor, and the decision is audited.
+ */
+export interface PostBillingWebhooksSecretsRotateInput {
+  body?: Types.CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput;
+}
+export type PostBillingWebhooksSecretsRotateOutput = Types.CommerceBillingWebhookSecretRotationResult;
+export const postBillingWebhooksSecretsRotateEndpoint = {
+  operationId: 'postBillingWebhooksSecretsRotate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/webhooks/secrets:rotate' as const,
+  tags: ['CommerceBillingWebhooks'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get the billing webhook security monitoring summary
  *
  * Admin-facing monitoring surface for the billing webhook security controls: the state of
@@ -9113,6 +9136,24 @@ export const getPaymentsRetryAttemptsEndpoint = {
 } as const;
 
 /**
+ * Per-gateway health and performance metrics over the rolling 24h/7d/30d windows
+ * (issue #413 follow-up): success rates, average processing latency and volume per
+ * gateway, plus the live circuit-breaker state of every known gateway. Requires the
+ * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+ *
+ * Returns per-gateway rolling-window (24h/7d/30d) success rate, average processing latency and volume aggregates computed from payment records, together with the current circuit-breaker state of every known gateway. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+ */
+export type GetPaymentsGatewaysMetricsInput = void;
+export type GetPaymentsGatewaysMetricsOutput = Types.CommercePaymentsGatewayMetricsReport;
+export const getPaymentsGatewaysMetricsEndpoint = {
+  operationId: 'getPaymentsGatewaysMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/gateways/metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Payment success and failed-payment recovery metrics for an inclusive window.
  *
  * Aggregates the recovery analytics that billing administrators need to steer retry and
@@ -9132,6 +9173,29 @@ export const getPaymentsRecoveryMetricsEndpoint = {
   operationId: 'getPaymentsRecoveryMetrics' as const,
   method: 'GET' as const,
   path: '/api/v1/payments/recovery-metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Refund and dispute analytics for an inclusive window (issue #419 follow-up):
+ * refund counts and amounts by status, currency and UTC day, dispute resolution
+ * rates and the average time to resolution. Requires the
+ * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+ *
+ * Returns refund analytics for an inclusive window — counts and refunded amounts by status, currency and UTC day — plus dispute resolution rates (win/loss ratio of decided disputes) and the average time to dispute resolution. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+ */
+export interface GetPaymentsRefundsMetricsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetPaymentsRefundsMetricsOutput = Types.CommercePaymentsRefundAnalyticsReport;
+export const getPaymentsRefundsMetricsEndpoint = {
+  operationId: 'getPaymentsRefundsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/refunds/metrics' as const,
   tags: ['CommercePayments'] as const,
   requiresAuth: true,
 } as const;
@@ -29760,6 +29824,7 @@ export const endpoints = {
   postBillingWebhooksApplePay: postBillingWebhooksApplePayEndpoint,
   postBillingWebhooksGooglePay: postBillingWebhooksGooglePayEndpoint,
   postBillingWebhooksPaypal: postBillingWebhooksPaypalEndpoint,
+  postBillingWebhooksSecretsRotate: postBillingWebhooksSecretsRotateEndpoint,
   getBillingWebhooksSecurity: getBillingWebhooksSecurityEndpoint,
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
@@ -29830,7 +29895,9 @@ export const endpoints = {
   postPaymentsRefund: postPaymentsRefundEndpoint,
   postPaymentsRetry: postPaymentsRetryEndpoint,
   getPaymentsRetryAttempts: getPaymentsRetryAttemptsEndpoint,
+  getPaymentsGatewaysMetrics: getPaymentsGatewaysMetricsEndpoint,
   getPaymentsRecoveryMetrics: getPaymentsRecoveryMetricsEndpoint,
+  getPaymentsRefundsMetrics: getPaymentsRefundsMetricsEndpoint,
   getPaymentsRetryingCandidates: getPaymentsRetryingCandidatesEndpoint,
   postPaymentsSetupIntents: postPaymentsSetupIntentsEndpoint,
   postPaymentsSubscriptionCheckoutsComplete: postPaymentsSubscriptionCheckoutsCompleteEndpoint,
