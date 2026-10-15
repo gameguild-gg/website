@@ -204,7 +204,7 @@ function MagicLinkConsumer({
   redirectTo: string;
   messages: MagicLinkMessages;
 }) {
-  const { signIn, mfaChallenge, mfaEnrollmentBackupCodes } = useAuth();
+  const { signIn, mfaChallenge } = useAuth();
   const attemptedToken = useRef<string | null>(null);
   const [status, setStatus] = useState<"pending" | "complete" | "failed">(
     "pending",
@@ -228,7 +228,7 @@ function MagicLinkConsumer({
     };
   }, [redirectTo, signIn, token]);
 
-  if (mfaChallenge || mfaEnrollmentBackupCodes?.length) {
+  if (mfaChallenge) {
     return <SignInForm redirectTo={redirectTo} />;
   }
 

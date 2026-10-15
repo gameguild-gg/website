@@ -238,6 +238,7 @@ API_ENV=(
   "Redis__Enabled=false"
   "SeedData__ImportSnapshotCourses=false"
   "Seed__AdminPassword=${ADMIN_PASSWORD}"
+  "Seed:AdminTotpSecret=${E2E_ADMIN_TOTP_SECRET:?E2E_ADMIN_TOTP_SECRET must be exported by the runner}"
   "Jwt__SecretKey=testing-lab-e2e-jwt-secret-key-at-least-32-characters"
   "Authentication__JwtSecretKey=testing-lab-e2e-jwt-secret-key-at-least-32-characters"
 )

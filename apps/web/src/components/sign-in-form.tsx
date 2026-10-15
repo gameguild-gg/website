@@ -2,7 +2,7 @@
 
 import { type FormEvent, useState, useSyncExternalStore } from "react";
 import { Link } from "@/i18n/navigation";
-import { useAuth, type MfaEnrollmentData } from "@game-guild/client/react";
+import { useAuth } from "@game-guild/client/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@game-guild/ui/components/button";
 import {
@@ -44,11 +44,8 @@ export function SignInForm({
     error,
     clearError,
     mfaChallenge,
-    startMfaEnrollment,
-    mfaEnrollmentBackupCodes,
     clearMfa,
   } = useAuth();
-  const [enrollment, setEnrollment] = useState<MfaEnrollmentData | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const isHydrated = useSyncExternalStore(
     subscribeToHydration,
@@ -102,22 +99,13 @@ export function SignInForm({
     try {
       await signIn("credentials", {
         mfaToken: mfaChallenge.mfaToken,
-        method: enrollment ? "Totp" : data.get("method") || "Totp",
+        method: data.get("method") || "Totp",
         code: data.get("code") as string,
         redirectTo,
       });
-      setEnrollment(null);
       form.reset();
     } catch {
       /* The hook keeps the current challenge and exposes the error. */
-    }
-  }
-
-  async function handleMfaEnrollment() {
-    try {
-      setEnrollment(await startMfaEnrollment());
-    } catch {
-      /* Error shown below. */
     }
   }
 
@@ -133,7 +121,7 @@ export function SignInForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {providers && !mfaChallenge && !mfaEnrollmentBackupCodes?.length && (
+          {providers && !mfaChallenge && (
             <>
               <div className="mb-6">{providers}</div>
               <div className="flex w-full items-center gap-3 text-xs text-slate-400">
@@ -143,29 +131,7 @@ export function SignInForm({
               </div>
             </>
           )}
-          {mfaEnrollmentBackupCodes?.length ? (
-            <FieldGroup>
-              <FieldDescription>
-                Save these recovery codes securely. They are shown once and each
-                code can be used once.
-              </FieldDescription>
-              <ul aria-label="Recovery codes" className="space-y-1 font-mono">
-                {mfaEnrollmentBackupCodes.map((code) => (
-                  <li key={code}>{code}</li>
-                ))}
-              </ul>
-              <Button
-                type="button"
-                onClick={() => {
-                  clearMfa();
-                  setEnrollment(null);
-                  window.location.href = redirectTo;
-                }}
-              >
-                I saved my codes — continue
-              </Button>
-            </FieldGroup>
-          ) : mfaChallenge ? (
+          {mfaChallenge ? (
             <form
               method="post"
               onSubmit={(event) => {
@@ -178,34 +144,7 @@ export function SignInForm({
                   Confirm your sign-in with your authenticator app. This sign-in
                   challenge expires after five minutes.
                 </FieldDescription>
-                {enrollment ? (
-                  <Field>
-                    <FieldDescription>
-                      Add this key to your authenticator app, then enter its
-                      six-digit code.
-                    </FieldDescription>
-                    <code className="break-all rounded border border-white/10 p-3">
-                      {enrollment.secretKey}
-                    </code>
-                    <FieldDescription>
-                      Setup expires at{" "}
-                      {new Date(enrollment.expiresAt).toLocaleTimeString()}.
-                    </FieldDescription>
-                  </Field>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isLoading}
-                    onClick={() => {
-                      void handleMfaEnrollment();
-                    }}
-                  >
-                    Set up authenticator
-                  </Button>
-                )}
-                {!enrollment &&
-                  mfaChallenge.availableMethods.includes("BackupCode") && (
+                {mfaChallenge.availableMethods.includes("BackupCode") && (
                     <Field>
                       <FieldLabel htmlFor="mfa-method">
                         Verification method
@@ -246,9 +185,9 @@ export function SignInForm({
                   type="button"
                   variant="ghost"
                   disabled={isLoading}
+                  className="text-slate-200 hover:bg-white/10 hover:text-white"
                   onClick={() => {
                     clearMfa();
-                    setEnrollment(null);
                   }}
                 >
                   Start sign-in again

@@ -31,6 +31,8 @@ public sealed class TotpRecoverySecurityTests
         Assert.Equal(setup.SecretKey, encryption.Decrypt(stored.TotpSecretKey!));
         Assert.Contains("algorithm=SHA1&digits=6&period=30", setup.QrCodeUri);
         Assert.Contains("synthetic%2Brecovery%40example.test", setup.QrCodeUri);
+        Assert.InRange((setup.ExpiresAt - DateTimeOffset.UtcNow).TotalMinutes, 9.5, 10.5);
+        Assert.Equal(stored.SetupExpiresAt!.Value, setup.ExpiresAt.UtcDateTime);
         Assert.False(stored.IsEnabled);
         Assert.False(stored.IsSetupComplete);
         Assert.NotNull(stored.SetupExpiresAt);

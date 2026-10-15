@@ -65,6 +65,7 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
         {
             SecretKey = result.SecretKey,
             QrCodeUri = result.QrCodeUrl,
+            ExpiresAt = result.ExpiresAt,
             BackupCodes = []
         });
     }
@@ -317,12 +318,12 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
     /// <summary>
     ///     Disable MFA for the current user
     /// </summary>
-    /// <param name="body">Disable request with password confirmation</param>
+    /// <param name="body">Disable request with TOTP confirmation code</param>
     /// <param name="ct">Cancellation token</param>
     /// <returns>Success confirmation</returns>
     [HttpPost("v{version:apiVersion}/auth/mfa:disable")]
     [EndpointSummary("Disable MFA")]
-    [EndpointDescription("Disables multi-factor authentication for the current user after password verification.")]
+    [EndpointDescription("Disables multi-factor authentication for the current user after TOTP confirmation code verification.")]
     [ProducesResponseType<MfaSuccessResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -330,7 +331,7 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
     {
         ArgumentNullException.ThrowIfNull(body);
         var userId = GetCurrentUserId();
-        var result = await sender.Send(new DisableMfaCommand(userId, body.Password), ct).ConfigureAwait(false);
+        var result = await sender.Send(new DisableMfaCommand(userId, body.Code), ct).ConfigureAwait(false);
 
         if (!result)
         {

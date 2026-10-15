@@ -298,35 +298,20 @@ describe("SignInForm MFA", () => {
     });
   });
 
-  it("shows the server setup key inside the existing form after starting enrollment", async () => {
+  it("gives challenge buttons explicit light-on-dark text (light-mode contrast)", () => {
     mockAuth.mfaChallenge = {
       mfaToken: "x".repeat(43),
-      availableMethods: ["TOTP"],
+      availableMethods: ["TOTP", "BackupCode"],
     };
-    mockAuth.startMfaEnrollment.mockResolvedValue({
-      success: true,
-      secretKey: "LOCAL-AUTHENTICATOR-KEY",
-      expiresAt: new Date(Date.now() + 300000).toISOString(),
-      qrCodeUri: "otpauth://totp/Example",
-    });
-    const { user } = renderWithUser(<SignInForm />);
-    await user.click(
-      screen.getByRole("button", { name: "Set up authenticator" }),
+    renderWithUser(<SignInForm />);
+
+    // Dark card + light-mode variant tokens = white-on-white without these overrides.
+    expect(screen.getByLabelText("Verification method")).toHaveClass(
+      "border-white/10",
     );
     expect(
-      await screen.findByText("LOCAL-AUTHENTICATOR-KEY"),
-    ).toBeInTheDocument();
-    expect(mockAuth.signIn).not.toHaveBeenCalled();
-  });
-
-  it("displays recovery codes once and offers acknowledgment", () => {
-    mockAuth.mfaEnrollmentBackupCodes = ["ONE-TIME-RECOVERY"];
-    renderWithUser(<SignInForm />);
-    expect(screen.getByText("ONE-TIME-RECOVERY")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "I saved my codes — continue" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Start sign-in again" }),
+    ).toHaveClass("text-slate-200");
   });
 });
 

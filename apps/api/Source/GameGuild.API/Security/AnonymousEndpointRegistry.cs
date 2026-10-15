@@ -46,7 +46,6 @@ public static class AnonymousEndpointRegistry
             // ── Authentication entry points (necessarily anonymous) ──
             ["AuthController.LocalSignUp"] = "Sign-up entry point; creates the account it then authenticates.",
             ["AuthController.LocalSignIn"] = "Sign-in entry point; verifies credentials and issues tokens.",
-            ["AuthController.StartMfaSignInEnrollment"] = "Provisions an unenrolled account only through a current first-factor challenge; supplies no authenticated session or recovery codes.",
             ["AuthController.CompleteMfaSignIn"] = "Consumes an expiring first-factor challenge bound to the server-side subject, tenant and policy; issues credentials only after enrolled MFA proof.",
             ["AuthController.PolymorphicSignIn"] = "Password sign-in entry point; resolves a unique identifier and applies the local authentication controls.",
             ["AuthController.RefreshToken"] = "Refresh-token rotation; the rotating refresh token itself is the credential.",
@@ -74,6 +73,9 @@ public static class AnonymousEndpointRegistry
             ["OrchestratedAuthController.GetFlowState"] = "Flow-ID capability lookup; abandoned, expired and unknown flows are not observable.",
             ["OrchestratedAuthController.Abandon"] = "Flow-ID capability termination; only makes the flow fail closed.",
             ["MfaController.VerifyMfa"] = "Completes the MFA ceremony with the pending sign-in session's code.",
+            ["MfaRecoveryController.RequestMfaRecovery"] = "Starts lost-MFA recovery from an email; the response is enumeration-safe and sends only a cooling-off link.",
+            ["MfaRecoveryController.ContinueMfaRecovery"] = "Redeems the single-use emailed request token after the cooling-off window; unknown tokens fail closed.",
+            ["MfaRecoveryController.ConfirmMfaRecovery"] = "Consumes the single-use expiring confirmation token to disable MFA; unknown tokens fail closed.",
             ["WebAuthnController.BeginAuthentication"] = "First half of the passkey ceremony; returns only a challenge.",
             ["WebAuthnController.CompleteAuthentication"] = "Second half of the passkey ceremony; issues tokens on proof of possession.",
             ["ServiceAccountTokenController.Token"] = "OAuth-style client-credential token issuance for service accounts.",

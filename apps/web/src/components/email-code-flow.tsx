@@ -199,7 +199,7 @@ function EmailCodeConsumer({
   messages: EmailCodeMessages;
   onUseDifferentEmail: () => void;
 }) {
-  const { signIn, mfaChallenge, mfaEnrollmentBackupCodes } = useAuth();
+  const { signIn, mfaChallenge } = useAuth();
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -222,7 +222,7 @@ function EmailCodeConsumer({
     }
   }
 
-  if (mfaChallenge || mfaEnrollmentBackupCodes?.length) {
+  if (mfaChallenge) {
     return <SignInForm redirectTo={redirectTo} />;
   }
 

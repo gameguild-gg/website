@@ -394,11 +394,11 @@ public class MfaControllerCovTests
     public async Task DisableMfa_Success_ReturnsOk()
     {
         _mfaService.Setup(s => s.DisableMfaAsync(
-            _userId, "password", It.IsAny<CancellationToken>()))
+            _userId, "123456", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await _controller.DisableMfa(
-            new DisableMfaRequest { Password = "password" }, CancellationToken.None);
+            new DisableMfaRequest { Code = "123456" }, CancellationToken.None);
         result.Should().BeOfType<OkObjectResult>();
     }
 
@@ -406,11 +406,11 @@ public class MfaControllerCovTests
     public async Task DisableMfa_Failure_ReturnsBadRequest()
     {
         _mfaService.Setup(s => s.DisableMfaAsync(
-            _userId, "wrong", It.IsAny<CancellationToken>()))
+            _userId, "000000", It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await _controller.DisableMfa(
-            new DisableMfaRequest { Password = "wrong" }, CancellationToken.None);
+            new DisableMfaRequest { Code = "000000" }, CancellationToken.None);
         result.Should().BeOfType<BadRequestObjectResult>();
     }
 }
@@ -728,7 +728,7 @@ public class TotpMfaServiceCovTests
             It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMfaConfiguration c, CancellationToken _) => c);
 
-        var (qrUri, secret) = await _svc.SetupTotpAsync(userId, "user@test.com");
+        var (qrUri, secret, _) = await _svc.SetupTotpAsync(userId, "user@test.com");
 
         qrUri.Should().StartWith("otpauth://totp/");
         secret.Should().NotBeNullOrEmpty();
@@ -751,7 +751,7 @@ public class TotpMfaServiceCovTests
             It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMfaConfiguration c, CancellationToken _) => c);
 
-        var (qrUri, secret) = await _svc.SetupTotpAsync(userId, "user@test.com");
+        var (qrUri, secret, _) = await _svc.SetupTotpAsync(userId, "user@test.com");
         qrUri.Should().NotBeNullOrEmpty();
     }
 
@@ -1194,8 +1194,8 @@ public class SessionMfaDtoCovTests
     [Fact]
     public void DisableMfaRequest_Properties()
     {
-        var r = new DisableMfaRequest { Password = "pw" };
-        r.Password.Should().Be("pw");
+        var r = new DisableMfaRequest { Code = "123456" };
+        r.Code.Should().Be("123456");
     }
 
     [Fact]

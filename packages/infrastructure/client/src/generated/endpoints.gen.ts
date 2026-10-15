@@ -12600,6 +12600,24 @@ export const getAdminSecurityAuditPermissionsEndpoint = {
 } as const;
 
 /**
+ * Reset a user's multi-factor authentication: clears MFA secrets, revokes all
+ * issued tokens, terminates sessions, and cancels any live lost-device recovery request.
+ *
+ * Disables a user's multi-factor authentication through the audited shared disable path and cancels any live recovery request. Requires system administration or tenant administration of the user's tenant.
+ */
+export interface PostAdminUsersMfaResetInput {
+  userId: string;
+}
+export type PostAdminUsersMfaResetOutput = Types.IdentityAuthenticationAdminResetUserMfaOutput;
+export const postAdminUsersMfaResetEndpoint = {
+  operationId: 'postAdminUsersMfaReset' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/users/{userId}/mfa:reset' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Execute a conversational completion request.
  */
 export interface PostAiChatInput {
@@ -15189,7 +15207,7 @@ export const getAuthMfaEndpoint = {
 /**
  * Disable MFA for the current user
  *
- * Disables multi-factor authentication for the current user after password verification.
+ * Disables multi-factor authentication for the current user after TOTP confirmation code verification.
  */
 export interface PostAuthMfaDisableInput {
   body?: Types.IdentityAuthenticationDisableMfaInput;
@@ -15249,6 +15267,57 @@ export const getAuthMfaMethodsEndpoint = {
 } as const;
 
 /**
+ * Complete a recovery using the confirmation token from the second email; disables MFA.
+ *
+ * Consumes the single-use confirmation token and disables multi-factor authentication for the recovered account. Denials are generic and never reveal token state.
+ */
+export interface PostAuthMfaRecoveryConfirmInput {
+  body?: Types.IdentityAuthenticationMfaRecoveryConfirmInput;
+}
+export type PostAuthMfaRecoveryConfirmOutput = Types.IdentityAuthenticationMfaRecoveryConfirmOutput;
+export const postAuthMfaRecoveryConfirmEndpoint = {
+  operationId: 'postAuthMfaRecoveryConfirm' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/recovery:confirm' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Continue a recovery after the cooling-off window using the request token from the first email.
+ *
+ * Exchanges the recovery request token (after the cooling-off window) for a confirmation email. Denials are generic and never reveal token state.
+ */
+export interface PostAuthMfaRecoveryContinueInput {
+  body?: Types.IdentityAuthenticationMfaRecoveryContinueInput;
+}
+export type PostAuthMfaRecoveryContinueOutput = Types.IdentityAuthenticationMfaRecoveryContinueOutput;
+export const postAuthMfaRecoveryContinueEndpoint = {
+  operationId: 'postAuthMfaRecoveryContinue' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/recovery:continue' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Start a lost-MFA-device recovery for an email address.
+ *
+ * Opens a lost-MFA-device recovery request for an email address and sends a recovery email with a cooling-off period. Always returns a generic success response to prevent user enumeration.
+ */
+export interface PostAuthMfaRecoveryRequestInput {
+  body?: Types.IdentityAuthenticationMfaRecoveryRequestInput;
+}
+export type PostAuthMfaRecoveryRequestOutput = Types.IdentityAuthenticationMfaRecoveryRequestOutput;
+export const postAuthMfaRecoveryRequestEndpoint = {
+  operationId: 'postAuthMfaRecoveryRequest' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/recovery:request' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
  *
  * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
@@ -15261,23 +15330,6 @@ export const postAuthMfaSignInCompleteEndpoint = {
   operationId: 'postAuthMfaSignInComplete' as const,
   method: 'POST' as const,
   path: '/v1/auth/mfa/sign-in/complete' as const,
-  tags: ['Auth'] as const,
-  requiresAuth: false,
-} as const;
-
-/**
- * Provision the first TOTP factor using only the limited first-factor challenge.
- *
- * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
- */
-export interface PostAuthMfaSignInEnrollmentInput {
-  body?: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput;
-}
-export type PostAuthMfaSignInEnrollmentOutput = Types.IdentityAuthenticationMfaSignInEnrollmentOutput;
-export const postAuthMfaSignInEnrollmentEndpoint = {
-  operationId: 'postAuthMfaSignInEnrollment' as const,
-  method: 'POST' as const,
-  path: '/v1/auth/mfa/sign-in/enrollment' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
 } as const;
@@ -29546,6 +29598,7 @@ export const endpoints = {
   getAdminSecurityAuditAuthentication: getAdminSecurityAuditAuthenticationEndpoint,
   getAdminSecurityAuditDashboard: getAdminSecurityAuditDashboardEndpoint,
   getAdminSecurityAuditPermissions: getAdminSecurityAuditPermissionsEndpoint,
+  postAdminUsersMfaReset: postAdminUsersMfaResetEndpoint,
   postAiChat: postAiChatEndpoint,
   postAiEmail: postAiEmailEndpoint,
   postAiGenerate: postAiGenerateEndpoint,
@@ -29722,8 +29775,10 @@ export const endpoints = {
   getAuthMfaBackupCodes: getAuthMfaBackupCodesEndpoint,
   postAuthMfaBackupCodesRegenerate: postAuthMfaBackupCodesRegenerateEndpoint,
   getAuthMfaMethods: getAuthMfaMethodsEndpoint,
+  postAuthMfaRecoveryConfirm: postAuthMfaRecoveryConfirmEndpoint,
+  postAuthMfaRecoveryContinue: postAuthMfaRecoveryContinueEndpoint,
+  postAuthMfaRecoveryRequest: postAuthMfaRecoveryRequestEndpoint,
   postAuthMfaSignInComplete: postAuthMfaSignInCompleteEndpoint,
-  postAuthMfaSignInEnrollment: postAuthMfaSignInEnrollmentEndpoint,
   postAuthMfaSmsComplete: postAuthMfaSmsCompleteEndpoint,
   postAuthMfaSmsSetup: postAuthMfaSmsSetupEndpoint,
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,

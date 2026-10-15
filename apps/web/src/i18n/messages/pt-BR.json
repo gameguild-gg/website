@@ -71,6 +71,7 @@
       "appearance": "Aparência",
       "localization": "Idioma e região",
       "privacy": "Privacidade",
+      "security": "Segurança",
       "accessibility": "Acessibilidade"
     },
     "profile": {
@@ -153,6 +154,37 @@
       "personalizedContent": {
         "label": "Conteúdo personalizado",
         "description": "Permita que recomendações de conteúdo usem suas preferências."
+      }
+    },
+    "security": {
+      "title": "Segurança",
+      "description": "Gerencie as preferências de segurança que protegem sua conta do GameGuild.",
+      "statusEnabled": "A autenticação de dois fatores está ativada.",
+      "statusDisabled": "A autenticação de dois fatores está desativada.",
+      "setUp": "Configurar autenticação de dois fatores",
+      "qrAlt": "Escaneie este código QR com seu app autenticador.",
+      "manualSecret": "Ou insira este código manualmente no seu app autenticador.",
+      "expiresAt": "Este código expira em {expiresAt}.",
+      "codeLabel": "Código de verificação",
+      "verify": "Verificar e ativar",
+      "backupCodesTitle": "Códigos de backup",
+      "backupCodesOnce": "Cada código de backup pode ser usado apenas uma vez. Guarde-os em um local seguro.",
+      "regenerate": "Gerar novos códigos",
+      "disableTitle": "Desativar autenticação de dois fatores",
+      "disableConfirmCode": "Insira um código de verificação do seu app autenticador, ou um código de backup, para confirmar.",
+      "disable": "Desativar",
+      "recoveryHint": "Use um código de backup para entrar se perder o acesso ao seu app autenticador.",
+      "codesSaved": "Salvei meus códigos",
+      "backupCodesRemaining": "{count, plural, =1 {1 código de backup restante} other {# códigos de backup restantes}}",
+      "backupCodesNone": "Nenhum código de backup restante.",
+      "regenerateConfirm": "Gerar um novo conjunto de códigos de backup? Seus códigos atuais deixarão de funcionar.",
+      "nudge": {
+        "title": "Proteja sua conta — ative a autenticação de dois fatores",
+        "action": "Configurar 2FA",
+        "dismiss": "Dispensar lembrete de dois fatores"
+      },
+      "errors": {
+        "saveFailed": "Não foi possível salvar suas preferências de segurança."
       }
     },
     "accessibility": {
