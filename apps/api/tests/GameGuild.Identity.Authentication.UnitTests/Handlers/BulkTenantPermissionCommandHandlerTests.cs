@@ -209,7 +209,7 @@ public class BulkTenantPermissionCommandHandlerTests
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .Where(ex => ex.Message.Contains("no matching grant", StringComparison.Ordinal));
+            .Where(ex => ex.Message.Contains("Atomic bulk revoke aborted", StringComparison.Ordinal));
     }
 
     [Fact]

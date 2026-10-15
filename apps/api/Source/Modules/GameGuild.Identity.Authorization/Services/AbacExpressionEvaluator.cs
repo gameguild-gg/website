@@ -269,40 +269,75 @@ public static class AbacExpressionEvaluator
     }
 
     /// <summary>
-    ///     Resolves a dotted attribute path against the four attribute categories. Canonical
-    ///     prefixes (<c>subject.</c>/<c>user.</c>, <c>resource.</c>, <c>environment.</c>,
-    ///     <c>action.</c>) select one category; a bare key is looked up in every category
-    ///     (subject first, then resource, environment, action).
+    ///     Resolves a dotted attribute path against the four attribute categories.
+    ///     Two key conventions are honored so expression authors can use either:
+    ///     prefixed full keys (<c>subject.department</c> — the builder convention,
+    ///     with <c>user.</c>/<c>subject.</c> interchangeable aliases) and
+    ///     category-prefixed paths addressing bare keys (<c>environment.current-hour</c>
+    ///     against a category that stores <c>current-hour</c>). A bare path with no dot
+    ///     searches every category, subject first.
     /// </summary>
     internal static object? ResolveAttribute(string attributePath, AbacRequestContext context)
     {
-        var separator = attributePath.IndexOf('.');
-        if (separator <= 0 || separator == attributePath.Length - 1)
+        var categories = new[]
         {
-            // Bare key: search every category.
-            return Search(context.SubjectAttributes)
-                ?? Search(context.ResourceAttributes)
-                ?? Search(context.EnvironmentAttributes)
-                ?? Search(context.ActionAttributes);
-
-            object? Search(IReadOnlyDictionary<string, object> category)
-                => category.TryGetValue(attributePath, out var value) && value is not null ? value : null;
-        }
-
-        var prefix = attributePath[..separator].ToLowerInvariant();
-        var key = attributePath[(separator + 1)..];
-        var category = prefix switch
-        {
-            "subject" or "user" => context.SubjectAttributes,
-            "resource" => context.ResourceAttributes,
-            "environment" or "env" => context.EnvironmentAttributes,
-            "action" => context.ActionAttributes,
-            // Unknown prefix: no category matches, so a typo cannot silently resolve to a
-            // differently-named attribute (fail closed).
-            _ => null
+            context.SubjectAttributes,
+            context.ResourceAttributes,
+            context.EnvironmentAttributes,
+            context.ActionAttributes
         };
 
-        return category is not null && category.TryGetValue(key, out var resolved) ? resolved : null;
+        // 1. Full-path key candidates, including the subject/user alias.
+        var candidates = new List<string> { attributePath };
+        var separator = attributePath.IndexOf('.');
+        if (separator > 0 && separator < attributePath.Length - 1)
+        {
+            var prefix = attributePath[..separator].ToLowerInvariant();
+            var suffix = attributePath[(separator + 1)..];
+            if (prefix == "user")
+            {
+                candidates.Add($"subject.{suffix}");
+            }
+            else if (prefix == "subject")
+            {
+                candidates.Add($"user.{suffix}");
+            }
+        }
+
+        foreach (var candidate in candidates)
+        {
+            foreach (var category in categories)
+            {
+                if (category.TryGetValue(candidate, out var value) && value is not null)
+                {
+                    return value;
+                }
+            }
+        }
+
+        // 2. Category-prefixed path addressing a bare key stored without the prefix.
+        if (separator > 0 && separator < attributePath.Length - 1)
+        {
+            var prefix = attributePath[..separator].ToLowerInvariant();
+            var key = attributePath[(separator + 1)..];
+            var category = prefix switch
+            {
+                "subject" or "user" => context.SubjectAttributes,
+                "resource" => context.ResourceAttributes,
+                "environment" or "env" => context.EnvironmentAttributes,
+                "action" => context.ActionAttributes,
+                // Unknown prefix: no category matches, so a typo cannot silently
+                // resolve to a differently-named attribute (fail closed).
+                _ => null
+            };
+
+            if (category is not null && category.TryGetValue(key, out var resolved))
+            {
+                return resolved;
+            }
+        }
+
+        return null;
     }
 
     private static bool LooseEquals(object actual, JsonElement expected)
