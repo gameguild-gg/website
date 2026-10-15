@@ -148,10 +148,9 @@ async function test(scenarioKey, checkpoint) {
   const definition = getScenarioDefinition(scenarioKey);
   const quizzes = selectQuizDefinitions(definition, selectedQuizKeys);
   assertApplicableCheckpoint(definition, checkpoint, quizzes);
-  if (values.fresh) {
-    await reset(scenarioKey);
-  }
-  const existing = await readManifest(scenarioKey, { optional: true });
+  const existing = values.fresh
+    ? null
+    : await readManifest(scenarioKey, { optional: true });
   await prepare(scenarioKey, checkpoint, existing ? [] : selectedQuizKeys);
   const { runBrowserScenario } = await import("./browser.mjs");
   await withCliScenarioLock(scenarioKey, () =>
