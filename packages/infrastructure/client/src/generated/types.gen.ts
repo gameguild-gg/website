@@ -15420,10 +15420,10 @@ export interface LearningAssessmentsAnonymousReviewSubmissionDto {
   filePayload?: string | null;
   mediaPayload?: string | null;
   projectPayload?: string | null;
+  responseEnvelopeCanonicalJson?: string | null;
   reviewId?: string;
   rubric?: LearningAssessmentsAnonymousReviewRubricDto;
-  responseEnvelopeCanonicalJson?: string | null;
-  status?: LearningAssessmentsPeerReviewStatus;
+  status?: LearningAssessmentsGradingPersistencePeerReviewClaimStatus;
   submissionStatus?: LearningAssessmentsSubmissionStatus;
   submittedAt?: string | null;
   textPayload?: string | null;
@@ -15543,6 +15543,11 @@ export interface LearningAssessmentsCanAttemptOutput {
   currentAttemptCount?: number;
 }
 
+/** Data model for Learning Assessments Claim Assessment Test Peer Review Request. */
+export interface LearningAssessmentsClaimAssessmentTestPeerReviewInput {
+  subjectId?: string;
+}
+
 /** Data model for Learning Assessments Course Assessment Analytics Dto. */
 export interface LearningAssessmentsCourseAssessmentAnalyticsDto {
   assessmentCount?: number;
@@ -15597,6 +15602,14 @@ export interface LearningAssessmentsCreateGroupInput {
 /** Request to create a group set. */
 export interface LearningAssessmentsCreateGroupSetInput {
   name?: string | null;
+}
+
+/** Data model for Learning Assessments Extend Peer Review Window Request. */
+export interface LearningAssessmentsExtendPeerReviewWindowInput {
+  deadlineAt?: string;
+  expectedStageVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
 }
 
 /** Data model for Learning Assessments Grade Result Release Response. */
@@ -15752,6 +15765,10 @@ export interface LearningAssessmentsGradingContractsGradeResultV1 {
   state?: string | null;
 }
 
+/** OpenAPI schema for Learning Assessments Grading Contracts Grade Round Status V1. */
+export type LearningAssessmentsGradingContractsGradeRoundStatusV1 =
+  'pending' | 'running' | 'awaiting-evidence' | 'awaiting-instructor-resolution' | 'failed' | 'finalized';
+
 /** OpenAPI schema for Learning Assessments Grading Contracts Result Release Mode. */
 export type LearningAssessmentsGradingContractsResultReleaseMode = 'immediate' | 'manual' | 'scheduled';
 
@@ -15764,8 +15781,18 @@ export type LearningAssessmentsGradingContractsReviewMethod = 'PeerReview' | 'AI
 /** Numeric review-workflow bitmask. Valid values are 0, 1, 2, 4, 8, 9, 10, 12, 16, and 24. */
 export type LearningAssessmentsGradingContractsReviewMethods = 0 | 1 | 2 | 4 | 8 | 9 | 10 | 12 | 16 | 24;
 
+/** OpenAPI schema for Learning Assessments Grading Contracts Review Stage Status V1. */
+export type LearningAssessmentsGradingContractsReviewStageStatusV1 =
+  'pending' | 'running' | 'awaiting-evidence' | 'awaiting-instructor-resolution' | 'completed' | 'failed';
+
 /** OpenAPI schema for Learning Assessments Grading Persistence Assessment Test Run Status. */
 export type LearningAssessmentsGradingPersistenceAssessmentTestRunStatus = 'Draft' | 'Running' | 'Completed' | 'Cancelled';
+
+/** OpenAPI schema for Learning Assessments Grading Persistence Grade Result Release Schedule Status. */
+export type LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus = 'Scheduled' | 'Cancelled' | 'Released';
+
+/** OpenAPI schema for Learning Assessments Grading Persistence Peer Review Claim Status. */
+export type LearningAssessmentsGradingPersistencePeerReviewClaimStatus = 'Assigned' | 'Submitted' | 'Expired' | 'Cancelled';
 
 /** OpenAPI schema for Learning Assessments Grading Persistence Persisted Grade Round Status. */
 export type LearningAssessmentsGradingPersistencePersistedGradeRoundStatus =
@@ -15773,6 +15800,10 @@ export type LearningAssessmentsGradingPersistencePersistedGradeRoundStatus =
 
 /** OpenAPI schema for Learning Assessments Grading Persistence Persisted Grading Execution Status. */
 export type LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus = 'Pending' | 'Running' | 'AwaitingReview' | 'Completed' | 'Failed';
+
+/** OpenAPI schema for Learning Assessments Grading Persistence Persisted Review Stage Status. */
+export type LearningAssessmentsGradingPersistencePersistedReviewStageStatus =
+  'Pending' | 'Running' | 'AwaitingEvidence' | 'AwaitingInstructorResolution' | 'Completed' | 'Failed';
 
 /** Assessment summary fields the SpeedGrader header and grading panel need. */
 export interface LearningAssessmentsGradingQueueAssessmentDto {
@@ -15795,13 +15826,19 @@ export interface LearningAssessmentsGradingQueueDto {
   total?: number;
 }
 
-/** One navigable queue entry = one student or group. SubmissionId is the row the grader opens:
-the target's LATEST attempt's row (the single row for individuals, the canonical Min(Id)
-row for groups; CanonicalSubmissionId mirrors it so clients can address group items by
-their canonical id). AssignmentScore/AssignmentPassed are the assignment-level grade from
+/** One navigable queue entry = one student or group. SubmissionId is the target's latest
+attempt and CanonicalSubmissionId mirrors it for existing clients. AssignmentScore and
+AssignmentPassed are the assignment-level grade from
 the target's LATEST GRADED attempt — they persist across resubmissions until a newer
-attempt is graded (one grade per assignment; regrades land on a fresh submission). */
+attempt is graded (one grade per assignment; regrades land on a fresh submission).
+When the submission has a grading execution, the active round/stage fields are the
+authoritative operational state and RequiresStaffReview drives the instructor queue. */
 export interface LearningAssessmentsGradingQueueItemDto {
+  activeGradeRoundId?: string | null;
+  activeGradeRoundStatus?: LearningAssessmentsGradingContractsGradeRoundStatusV1 | null;
+  activeReviewMethod?: LearningAssessmentsGradingContractsReviewMethod | null;
+  activeReviewStageId?: string | null;
+  activeReviewStageStatus?: LearningAssessmentsGradingContractsReviewStageStatusV1 | null;
   assignmentPassed?: boolean | null;
   assignmentScore?: LearningGradingContractsScoreValue | null;
   attemptCount?: number;
@@ -15813,6 +15850,7 @@ export interface LearningAssessmentsGradingQueueItemDto {
   isGroup?: boolean;
   isLate?: boolean;
   memberNames?: string[] | null;
+  requiresStaffReview?: boolean;
   status?: LearningAssessmentsSubmissionStatus;
   submissionId?: string;
   submittedAt?: string | null;
@@ -15837,6 +15875,7 @@ export interface LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1 {
   learnerVisibleResult?: LearningAssessmentsGradingContractsGradeResultV1;
   released?: boolean;
   requiresInstructorReview?: boolean;
+  selfReview?: LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1;
   status?: LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus;
   submittedResponse?: LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1;
 }
@@ -15859,6 +15898,20 @@ export interface LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1 {
   version?: number;
 }
 
+/** Data model for Learning Assessments Grading Runtime Assessment Test Run Subject Command V1. */
+export interface LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1 {
+  personaDisplayName?: string | null;
+  personaKey?: string | null;
+}
+
+/** Data model for Learning Assessments Grading Runtime Assessment Test Run Subject View V1. */
+export interface LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1 {
+  execution?: LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1;
+  personaDisplayName?: string | null;
+  personaKey?: string | null;
+  subjectId?: string;
+}
+
 /** Data model for Learning Assessments Grading Runtime Assessment Test Run View V1. */
 export interface LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1 {
   assessmentId?: string;
@@ -15870,7 +15923,17 @@ export interface LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1 {
   personaKey?: string | null;
   readyForPublication?: boolean;
   status?: LearningAssessmentsGradingPersistenceAssessmentTestRunStatus;
+  subjects?: LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1[] | null;
   testRunId?: string;
+}
+
+/** Data model for Learning Assessments Grading Runtime Cancel Scheduled Grade Result Release Command. */
+export interface LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand {
+  expectedRoundId?: string;
+  expectedScheduleVersion?: number;
+  expectedSubmissionVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
 }
 
 /** Data model for Learning Assessments Grading Runtime Gradebook Assessment Projection V1. */
@@ -15902,6 +15965,17 @@ export interface LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1 {
   weightPercent?: LearningGradingContractsPercentValue;
 }
 
+/** Data model for Learning Assessments Grading Runtime Grade Result Release Schedule View V1. */
+export interface LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1 {
+  cancelledAt?: string | null;
+  gradeRoundId?: string;
+  releasedAt?: string | null;
+  scheduledFor?: string;
+  scheduleId?: string;
+  status?: LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus;
+  version?: number;
+}
+
 /** Data model for Learning Assessments Grading Runtime Grade Round View V1. */
 export interface LearningAssessmentsGradingRuntimeGradeRoundViewV1 {
   finalizedAt?: string | null;
@@ -15910,6 +15984,7 @@ export interface LearningAssessmentsGradingRuntimeGradeRoundViewV1 {
   reasonDetail?: string | null;
   released?: boolean;
   releasedAt?: string | null;
+  releaseSchedule?: LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
   result?: LearningAssessmentsGradingContractsGradeResultV1;
   roundId?: string;
   roundNumber?: number;
@@ -15933,6 +16008,14 @@ export interface LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1 {
   schemaVersion?: number;
 }
 
+/** Data model for Learning Assessments Grading Runtime Peer Review Insufficiency Resolution V1. */
+export interface LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1 {
+  feedback?: string | null;
+  items?: LearningAssessmentsGradingRuntimeInstructorItemResolutionV1[] | null;
+  reason?: string | null;
+  schemaVersion?: number;
+}
+
 /** Data model for Learning Assessments Grading Runtime Regrade Execution Command. */
 export interface LearningAssessmentsGradingRuntimeRegradeExecutionCommand {
   idempotencyKey?: string | null;
@@ -15945,6 +16028,43 @@ export interface LearningAssessmentsGradingRuntimeReleaseGradeResultCommand {
   expectedSubmissionVersion?: number;
   idempotencyKey?: string | null;
   reason?: string | null;
+}
+
+/** Data model for Learning Assessments Grading Runtime Schedule Grade Result Release Command. */
+export interface LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand {
+  expectedRoundId?: string;
+  expectedScheduleVersion?: number;
+  expectedSubmissionVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
+  scheduledFor?: string;
+}
+
+/** Data model for Learning Assessments Grading Runtime Self Review Evidence V1. */
+export interface LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1 {
+  feedback?: string | null;
+  items?: LearningAssessmentsGradingRuntimeSelfReviewItemV1[] | null;
+  schemaVersion?: number;
+}
+
+/** Data model for Learning Assessments Grading Runtime Self Review Item V1. */
+export interface LearningAssessmentsGradingRuntimeSelfReviewItemV1 {
+  feedback?: string | null;
+  itemId?: string | null;
+  score?: LearningGradingContractsScoreValue;
+}
+
+/** Data model for Learning Assessments Grading Runtime Self Review Runtime State V1. */
+export interface LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1 {
+  draft?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
+  draftVersion?: number;
+  instructions?: string | null;
+  lastDraftActorId?: string | null;
+  requireFeedback?: boolean;
+  reviewStageId?: string;
+  status?: LearningAssessmentsGradingPersistencePersistedReviewStageStatus;
+  submittedByActorId?: string | null;
+  submittedEvidence?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
 }
 
 /** Group detail with member display names. */
@@ -16073,8 +16193,29 @@ export interface LearningAssessmentsPeerReviewClaimDto {
   reviewId?: string;
 }
 
-/** OpenAPI schema for Learning Assessments Peer Review Status. */
-export type LearningAssessmentsPeerReviewStatus = 'Assigned' | 'Submitted';
+/** Data model for Learning Assessments Peer Review Claim Result. */
+export interface LearningAssessmentsPeerReviewClaimResult {
+  maskedSubmission?: string | null;
+  reviewId?: string;
+}
+
+/** Data model for Learning Assessments Peer Review Claim View. */
+export interface LearningAssessmentsPeerReviewClaimView {
+  id?: string;
+  assessmentId?: string;
+  attemptNumber?: number;
+  claimedAt?: string;
+  deliveryCanonicalJson?: string | null;
+  leaseExpiresAt?: string;
+  responseEnvelopeCanonicalJson?: string | null;
+  reviewerTestRunSubjectId?: string | null;
+  reviewerUserId?: string | null;
+  reviewStageId?: string;
+  status?: LearningAssessmentsGradingPersistencePeerReviewClaimStatus;
+  submissionId?: string | null;
+  submittedAt?: string | null;
+  version?: number;
+}
 
 /** Body of a peer review submit: plain score XOR rubric scores (rubric rules enforced server-side),
 plus the mandatory feedback comment. */
@@ -16082,6 +16223,13 @@ export interface LearningAssessmentsPeerReviewSubmitInput {
   feedback?: string | null;
   rubricScores?: string | null;
   score?: LearningGradingContractsScoreValue | null;
+}
+
+/** Data model for Learning Assessments Reassign Peer Review Claim Request. */
+export interface LearningAssessmentsReassignPeerReviewClaimInput {
+  expectedClaimVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
 }
 
 /** THE anonymity boundary for reviewees: what a student sees of reviews they received.
@@ -16098,6 +16246,13 @@ export interface LearningAssessmentsReceivedPeerReviewDto {
 export interface LearningAssessmentsResolveInstructorReviewInput {
   idempotencyKey?: string | null;
   resolution?: LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1;
+  subjectId?: string | null;
+}
+
+/** Data model for Learning Assessments Resolve Peer Review Insufficiency Request. */
+export interface LearningAssessmentsResolvePeerReviewInsufficiencyInput {
+  idempotencyKey?: string | null;
+  resolution?: LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1;
 }
 
 /** Rubric criterion read shape. */
@@ -16122,6 +16277,13 @@ export interface LearningAssessmentsSaveCollectiveRuntimeDraftInput {
   response?: LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1;
 }
 
+/** Data model for Learning Assessments Save Collective Self Review Draft Request. */
+export interface LearningAssessmentsSaveCollectiveSelfReviewDraftInput {
+  evidence?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
+  expectedVersion?: number;
+  idempotencyKey?: string | null;
+}
+
 /** One criterion row of a rubric save request. */
 export interface LearningAssessmentsSaveRubricCriterionInput {
   description?: string | null;
@@ -16141,6 +16303,7 @@ export interface LearningAssessmentsStartAssessmentTestRunInput {
   personaDisplayName?: string | null;
   personaKey?: string | null;
   revisionId?: string;
+  subjects?: LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1[] | null;
 }
 
 /** Data model for Learning Assessments Start Collective Runtime Submission Request. */
@@ -16186,6 +16349,22 @@ export interface LearningAssessmentsSubmitAssessmentRuntimeInput {
   expectedDraftVersion?: number | null;
   idempotencyKey?: string | null;
   response?: LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1;
+  subjectId?: string | null;
+}
+
+/** Data model for Learning Assessments Submit Assessment Test Peer Review Request. */
+export interface LearningAssessmentsSubmitAssessmentTestPeerReviewInput {
+  feedback?: string | null;
+  rubricScores?: string | null;
+  score?: LearningGradingContractsScoreValue;
+}
+
+/** Data model for Learning Assessments Submit Self Review Request. */
+export interface LearningAssessmentsSubmitSelfReviewInput {
+  evidence?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
+  expectedDraftVersion?: number | null;
+  idempotencyKey?: string | null;
+  subjectId?: string | null;
 }
 
 /** One task item. Variant fields are null outside their type (GradingQueueItemDto precedent). */
@@ -25076,11 +25255,13 @@ export let LearningAssessmentsAssessmentSubmissionDtoSchema: z.ZodType<LearningA
 export let LearningAssessmentsAssessmentTypeSchema: z.ZodType<LearningAssessmentsAssessmentType>;
 export let LearningAssessmentsAssignAssessmentGroupInputSchema: z.ZodType<LearningAssessmentsAssignAssessmentGroupInput>;
 export let LearningAssessmentsCanAttemptOutputSchema: z.ZodType<LearningAssessmentsCanAttemptOutput>;
+export let LearningAssessmentsClaimAssessmentTestPeerReviewInputSchema: z.ZodType<LearningAssessmentsClaimAssessmentTestPeerReviewInput>;
 export let LearningAssessmentsCourseAssessmentAnalyticsDtoSchema: z.ZodType<LearningAssessmentsCourseAssessmentAnalyticsDto>;
 export let LearningAssessmentsCreateAssessmentGroupInputSchema: z.ZodType<LearningAssessmentsCreateAssessmentGroupInput>;
 export let LearningAssessmentsCreateAssessmentInputSchema: z.ZodType<LearningAssessmentsCreateAssessmentInput>;
 export let LearningAssessmentsCreateGroupInputSchema: z.ZodType<LearningAssessmentsCreateGroupInput>;
 export let LearningAssessmentsCreateGroupSetInputSchema: z.ZodType<LearningAssessmentsCreateGroupSetInput>;
+export let LearningAssessmentsExtendPeerReviewWindowInputSchema: z.ZodType<LearningAssessmentsExtendPeerReviewWindowInput>;
 export let LearningAssessmentsGradeResultReleaseOutputSchema: z.ZodType<LearningAssessmentsGradeResultReleaseOutput>;
 export let LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult>;
 export let LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResult>;
@@ -25099,27 +25280,41 @@ export let LearningAssessmentsGradingContractsContentCompletionModeSchema: z.Zod
 export let LearningAssessmentsGradingContractsGradeItemResultV1Schema: z.ZodType<LearningAssessmentsGradingContractsGradeItemResultV1>;
 export let LearningAssessmentsGradingContractsGradeItemStateSchema: z.ZodType<LearningAssessmentsGradingContractsGradeItemState>;
 export let LearningAssessmentsGradingContractsGradeResultV1Schema: z.ZodType<LearningAssessmentsGradingContractsGradeResultV1>;
+export let LearningAssessmentsGradingContractsGradeRoundStatusV1Schema: z.ZodType<LearningAssessmentsGradingContractsGradeRoundStatusV1>;
 export let LearningAssessmentsGradingContractsResultReleaseModeSchema: z.ZodType<LearningAssessmentsGradingContractsResultReleaseMode>;
 export let LearningAssessmentsGradingContractsReviewExecutionContextSchema: z.ZodType<LearningAssessmentsGradingContractsReviewExecutionContext>;
 export let LearningAssessmentsGradingContractsReviewMethodSchema: z.ZodType<LearningAssessmentsGradingContractsReviewMethod>;
 export let LearningAssessmentsGradingContractsReviewMethodsSchema: z.ZodType<LearningAssessmentsGradingContractsReviewMethods>;
+export let LearningAssessmentsGradingContractsReviewStageStatusV1Schema: z.ZodType<LearningAssessmentsGradingContractsReviewStageStatusV1>;
 export let LearningAssessmentsGradingPersistenceAssessmentTestRunStatusSchema: z.ZodType<LearningAssessmentsGradingPersistenceAssessmentTestRunStatus>;
+export let LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatusSchema: z.ZodType<LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus>;
+export let LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePeerReviewClaimStatus>;
 export let LearningAssessmentsGradingPersistencePersistedGradeRoundStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePersistedGradeRoundStatus>;
 export let LearningAssessmentsGradingPersistencePersistedGradingExecutionStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus>;
+export let LearningAssessmentsGradingPersistencePersistedReviewStageStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePersistedReviewStageStatus>;
 export let LearningAssessmentsGradingQueueAssessmentDtoSchema: z.ZodType<LearningAssessmentsGradingQueueAssessmentDto>;
 export let LearningAssessmentsGradingQueueDtoSchema: z.ZodType<LearningAssessmentsGradingQueueDto>;
 export let LearningAssessmentsGradingQueueItemDtoSchema: z.ZodType<LearningAssessmentsGradingQueueItemDto>;
 export let LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1>;
 export let LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1>;
+export let LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1>;
+export let LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1>;
 export let LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1>;
+export let LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand>;
 export let LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1>;
 export let LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1>;
 export let LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1>;
+export let LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1>;
 export let LearningAssessmentsGradingRuntimeGradeRoundViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradeRoundViewV1>;
 export let LearningAssessmentsGradingRuntimeInstructorItemResolutionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeInstructorItemResolutionV1>;
 export let LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1>;
+export let LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1>;
 export let LearningAssessmentsGradingRuntimeRegradeExecutionCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeRegradeExecutionCommand>;
 export let LearningAssessmentsGradingRuntimeReleaseGradeResultCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeReleaseGradeResultCommand>;
+export let LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand>;
+export let LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1>;
+export let LearningAssessmentsGradingRuntimeSelfReviewItemV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeSelfReviewItemV1>;
+export let LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1>;
 export let LearningAssessmentsGroupDetailDtoSchema: z.ZodType<LearningAssessmentsGroupDetailDto>;
 export let LearningAssessmentsGroupDtoSchema: z.ZodType<LearningAssessmentsGroupDto>;
 export let LearningAssessmentsGroupMemberDtoSchema: z.ZodType<LearningAssessmentsGroupMemberDto>;
@@ -25135,13 +25330,17 @@ export let LearningAssessmentsLearnerAssessmentSubmissionDtoSchema: z.ZodType<Le
 export let LearningAssessmentsLearnerInteractiveVideoAssessmentCueDtoSchema: z.ZodType<LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto>;
 export let LearningAssessmentsLinkInteractiveVideoCueInputSchema: z.ZodType<LearningAssessmentsLinkInteractiveVideoCueInput>;
 export let LearningAssessmentsPeerReviewClaimDtoSchema: z.ZodType<LearningAssessmentsPeerReviewClaimDto>;
-export let LearningAssessmentsPeerReviewStatusSchema: z.ZodType<LearningAssessmentsPeerReviewStatus>;
+export let LearningAssessmentsPeerReviewClaimResultSchema: z.ZodType<LearningAssessmentsPeerReviewClaimResult>;
+export let LearningAssessmentsPeerReviewClaimViewSchema: z.ZodType<LearningAssessmentsPeerReviewClaimView>;
 export let LearningAssessmentsPeerReviewSubmitInputSchema: z.ZodType<LearningAssessmentsPeerReviewSubmitInput>;
+export let LearningAssessmentsReassignPeerReviewClaimInputSchema: z.ZodType<LearningAssessmentsReassignPeerReviewClaimInput>;
 export let LearningAssessmentsReceivedPeerReviewDtoSchema: z.ZodType<LearningAssessmentsReceivedPeerReviewDto>;
 export let LearningAssessmentsResolveInstructorReviewInputSchema: z.ZodType<LearningAssessmentsResolveInstructorReviewInput>;
+export let LearningAssessmentsResolvePeerReviewInsufficiencyInputSchema: z.ZodType<LearningAssessmentsResolvePeerReviewInsufficiencyInput>;
 export let LearningAssessmentsRubricCriterionDtoSchema: z.ZodType<LearningAssessmentsRubricCriterionDto>;
 export let LearningAssessmentsRubricDtoSchema: z.ZodType<LearningAssessmentsRubricDto>;
 export let LearningAssessmentsSaveCollectiveRuntimeDraftInputSchema: z.ZodType<LearningAssessmentsSaveCollectiveRuntimeDraftInput>;
+export let LearningAssessmentsSaveCollectiveSelfReviewDraftInputSchema: z.ZodType<LearningAssessmentsSaveCollectiveSelfReviewDraftInput>;
 export let LearningAssessmentsSaveRubricCriterionInputSchema: z.ZodType<LearningAssessmentsSaveRubricCriterionInput>;
 export let LearningAssessmentsSaveRubricInputSchema: z.ZodType<LearningAssessmentsSaveRubricInput>;
 export let LearningAssessmentsStartAssessmentTestRunInputSchema: z.ZodType<LearningAssessmentsStartAssessmentTestRunInput>;
@@ -25153,6 +25352,8 @@ export let LearningAssessmentsSubmissionModalitySchema: z.ZodType<LearningAssess
 export let LearningAssessmentsSubmissionStatusSchema: z.ZodType<LearningAssessmentsSubmissionStatus>;
 export let LearningAssessmentsSubmitAssessmentInputSchema: z.ZodType<LearningAssessmentsSubmitAssessmentInput>;
 export let LearningAssessmentsSubmitAssessmentRuntimeInputSchema: z.ZodType<LearningAssessmentsSubmitAssessmentRuntimeInput>;
+export let LearningAssessmentsSubmitAssessmentTestPeerReviewInputSchema: z.ZodType<LearningAssessmentsSubmitAssessmentTestPeerReviewInput>;
+export let LearningAssessmentsSubmitSelfReviewInputSchema: z.ZodType<LearningAssessmentsSubmitSelfReviewInput>;
 export let LearningAssessmentsTaskItemDtoSchema: z.ZodType<LearningAssessmentsTaskItemDto>;
 export let LearningAssessmentsTasksDtoSchema: z.ZodType<LearningAssessmentsTasksDto>;
 export let LearningAssessmentsUpdateAssessmentGroupInputSchema: z.ZodType<LearningAssessmentsUpdateAssessmentGroupInput>;
@@ -39597,10 +39798,10 @@ LearningAssessmentsAnonymousReviewSubmissionDtoSchema = z.object({
   filePayload: z.string().nullable().optional(),
   mediaPayload: z.string().nullable().optional(),
   projectPayload: z.string().nullable().optional(),
+  responseEnvelopeCanonicalJson: z.string().nullable().optional(),
   reviewId: z.string().uuid().optional(),
   rubric: z.lazy(() => LearningAssessmentsAnonymousReviewRubricDtoSchema).optional(),
-  responseEnvelopeCanonicalJson: z.string().nullable().optional(),
-  status: z.lazy(() => LearningAssessmentsPeerReviewStatusSchema).optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema).optional(),
   submissionStatus: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
   submittedAt: z.string().datetime().nullable().optional(),
   textPayload: z.string().nullable().optional(),
@@ -39735,6 +39936,11 @@ LearningAssessmentsCanAttemptOutputSchema = z.object({
   currentAttemptCount: z.number().int().optional(),
 });
 
+/** Zod schema for LearningAssessmentsClaimAssessmentTestPeerReviewInput. Data model for Learning Assessments Claim Assessment Test Peer Review Request. */
+LearningAssessmentsClaimAssessmentTestPeerReviewInputSchema = z.object({
+  subjectId: z.string().uuid().optional(),
+});
+
 /** Zod schema for LearningAssessmentsCourseAssessmentAnalyticsDto. Data model for Learning Assessments Course Assessment Analytics Dto. */
 LearningAssessmentsCourseAssessmentAnalyticsDtoSchema = z.object({
   assessmentCount: z.number().int().optional(),
@@ -39798,6 +40004,14 @@ LearningAssessmentsCreateGroupInputSchema = z.object({
 /** Zod schema for LearningAssessmentsCreateGroupSetInput. Request to create a group set. */
 LearningAssessmentsCreateGroupSetInputSchema = z.object({
   name: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsExtendPeerReviewWindowInput. Data model for Learning Assessments Extend Peer Review Window Request. */
+LearningAssessmentsExtendPeerReviewWindowInputSchema = z.object({
+  deadlineAt: z.string().datetime().optional(),
+  expectedStageVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsGradeResultReleaseOutput. Data model for Learning Assessments Grade Result Release Response. */
@@ -39977,6 +40191,16 @@ LearningAssessmentsGradingContractsGradeResultV1Schema = z.object({
   state: z.string().nullable().optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingContractsGradeRoundStatusV1. OpenAPI schema for Learning Assessments Grading Contracts Grade Round Status V1. */
+LearningAssessmentsGradingContractsGradeRoundStatusV1Schema = z.enum([
+  'pending',
+  'running',
+  'awaiting-evidence',
+  'awaiting-instructor-resolution',
+  'failed',
+  'finalized',
+]);
+
 /** Zod schema for LearningAssessmentsGradingContractsResultReleaseMode. OpenAPI schema for Learning Assessments Grading Contracts Result Release Mode. */
 LearningAssessmentsGradingContractsResultReleaseModeSchema = z.enum(['immediate', 'manual', 'scheduled']);
 
@@ -40000,8 +40224,24 @@ LearningAssessmentsGradingContractsReviewMethodsSchema = z.union([
   z.literal(24),
 ]);
 
+/** Zod schema for LearningAssessmentsGradingContractsReviewStageStatusV1. OpenAPI schema for Learning Assessments Grading Contracts Review Stage Status V1. */
+LearningAssessmentsGradingContractsReviewStageStatusV1Schema = z.enum([
+  'pending',
+  'running',
+  'awaiting-evidence',
+  'awaiting-instructor-resolution',
+  'completed',
+  'failed',
+]);
+
 /** Zod schema for LearningAssessmentsGradingPersistenceAssessmentTestRunStatus. OpenAPI schema for Learning Assessments Grading Persistence Assessment Test Run Status. */
 LearningAssessmentsGradingPersistenceAssessmentTestRunStatusSchema = z.enum(['Draft', 'Running', 'Completed', 'Cancelled']);
+
+/** Zod schema for LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus. OpenAPI schema for Learning Assessments Grading Persistence Grade Result Release Schedule Status. */
+LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatusSchema = z.enum(['Scheduled', 'Cancelled', 'Released']);
+
+/** Zod schema for LearningAssessmentsGradingPersistencePeerReviewClaimStatus. OpenAPI schema for Learning Assessments Grading Persistence Peer Review Claim Status. */
+LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema = z.enum(['Assigned', 'Submitted', 'Expired', 'Cancelled']);
 
 /** Zod schema for LearningAssessmentsGradingPersistencePersistedGradeRoundStatus. OpenAPI schema for Learning Assessments Grading Persistence Persisted Grade Round Status. */
 LearningAssessmentsGradingPersistencePersistedGradeRoundStatusSchema = z.enum([
@@ -40015,6 +40255,16 @@ LearningAssessmentsGradingPersistencePersistedGradeRoundStatusSchema = z.enum([
 
 /** Zod schema for LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus. OpenAPI schema for Learning Assessments Grading Persistence Persisted Grading Execution Status. */
 LearningAssessmentsGradingPersistencePersistedGradingExecutionStatusSchema = z.enum(['Pending', 'Running', 'AwaitingReview', 'Completed', 'Failed']);
+
+/** Zod schema for LearningAssessmentsGradingPersistencePersistedReviewStageStatus. OpenAPI schema for Learning Assessments Grading Persistence Persisted Review Stage Status. */
+LearningAssessmentsGradingPersistencePersistedReviewStageStatusSchema = z.enum([
+  'Pending',
+  'Running',
+  'AwaitingEvidence',
+  'AwaitingInstructorResolution',
+  'Completed',
+  'Failed',
+]);
 
 /** Zod schema for LearningAssessmentsGradingQueueAssessmentDto. Assessment summary fields the SpeedGrader header and grading panel need. */
 LearningAssessmentsGradingQueueAssessmentDtoSchema = z.object({
@@ -40040,13 +40290,28 @@ LearningAssessmentsGradingQueueDtoSchema = z.object({
   total: z.number().int().optional(),
 });
 
-/** Zod schema for LearningAssessmentsGradingQueueItemDto. One navigable queue entry = one student or group. SubmissionId is the row the grader opens:
-the target's LATEST attempt's row (the single row for individuals, the canonical Min(Id)
-row for groups; CanonicalSubmissionId mirrors it so clients can address group items by
-their canonical id). AssignmentScore/AssignmentPassed are the assignment-level grade from
+/** Zod schema for LearningAssessmentsGradingQueueItemDto. One navigable queue entry = one student or group. SubmissionId is the target's latest
+attempt and CanonicalSubmissionId mirrors it for existing clients. AssignmentScore and
+AssignmentPassed are the assignment-level grade from
 the target's LATEST GRADED attempt — they persist across resubmissions until a newer
-attempt is graded (one grade per assignment; regrades land on a fresh submission). */
+attempt is graded (one grade per assignment; regrades land on a fresh submission).
+When the submission has a grading execution, the active round/stage fields are the
+authoritative operational state and RequiresStaffReview drives the instructor queue. */
 LearningAssessmentsGradingQueueItemDtoSchema = z.object({
+  activeGradeRoundId: z.string().uuid().nullable().optional(),
+  activeGradeRoundStatus: z
+    .lazy(() => LearningAssessmentsGradingContractsGradeRoundStatusV1Schema)
+    .nullable()
+    .optional(),
+  activeReviewMethod: z
+    .lazy(() => LearningAssessmentsGradingContractsReviewMethodSchema)
+    .nullable()
+    .optional(),
+  activeReviewStageId: z.string().uuid().nullable().optional(),
+  activeReviewStageStatus: z
+    .lazy(() => LearningAssessmentsGradingContractsReviewStageStatusV1Schema)
+    .nullable()
+    .optional(),
   assignmentPassed: z.boolean().nullable().optional(),
   assignmentScore: z
     .lazy(() => LearningGradingContractsScoreValueSchema)
@@ -40061,6 +40326,7 @@ LearningAssessmentsGradingQueueItemDtoSchema = z.object({
   isGroup: z.boolean().optional(),
   isLate: z.boolean().optional(),
   memberNames: z.array(z.string()).nullable().optional(),
+  requiresStaffReview: z.boolean().optional(),
   status: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
   submissionId: z.string().uuid().optional(),
   submittedAt: z.string().datetime().nullable().optional(),
@@ -40100,6 +40366,7 @@ LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1Schema = z.object({
   learnerVisibleResult: z.lazy(() => LearningAssessmentsGradingContractsGradeResultV1Schema).optional(),
   released: z.boolean().optional(),
   requiresInstructorReview: z.boolean().optional(),
+  selfReview: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1Schema).optional(),
   status: z.lazy(() => LearningAssessmentsGradingPersistencePersistedGradingExecutionStatusSchema).optional(),
   submittedResponse: z.lazy(() => LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1Schema).optional(),
 });
@@ -40122,6 +40389,20 @@ LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1Schema = z.object({
   version: z.number().int().optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1. Data model for Learning Assessments Grading Runtime Assessment Test Run Subject Command V1. */
+LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1Schema = z.object({
+  personaDisplayName: z.string().nullable().optional(),
+  personaKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1. Data model for Learning Assessments Grading Runtime Assessment Test Run Subject View V1. */
+LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1Schema = z.object({
+  execution: z.lazy(() => LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1Schema).optional(),
+  personaDisplayName: z.string().nullable().optional(),
+  personaKey: z.string().nullable().optional(),
+  subjectId: z.string().uuid().optional(),
+});
+
 /** Zod schema for LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1. Data model for Learning Assessments Grading Runtime Assessment Test Run View V1. */
 LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema = z.object({
   assessmentId: z.string().uuid().optional(),
@@ -40133,7 +40414,20 @@ LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema = z.object({
   personaKey: z.string().nullable().optional(),
   readyForPublication: z.boolean().optional(),
   status: z.lazy(() => LearningAssessmentsGradingPersistenceAssessmentTestRunStatusSchema).optional(),
+  subjects: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1Schema))
+    .nullable()
+    .optional(),
   testRunId: z.string().uuid().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand. Data model for Learning Assessments Grading Runtime Cancel Scheduled Grade Result Release Command. */
+LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommandSchema = z.object({
+  expectedRoundId: z.string().uuid().optional(),
+  expectedScheduleVersion: z.number().int().optional(),
+  expectedSubmissionVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1. Data model for Learning Assessments Grading Runtime Gradebook Assessment Projection V1. */
@@ -40171,6 +40465,17 @@ LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1Schema = z.object({
   weightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1. Data model for Learning Assessments Grading Runtime Grade Result Release Schedule View V1. */
+LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema = z.object({
+  cancelledAt: z.string().datetime().nullable().optional(),
+  gradeRoundId: z.string().uuid().optional(),
+  releasedAt: z.string().datetime().nullable().optional(),
+  scheduledFor: z.string().datetime().optional(),
+  scheduleId: z.string().uuid().optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatusSchema).optional(),
+  version: z.number().int().optional(),
+});
+
 /** Zod schema for LearningAssessmentsGradingRuntimeGradeRoundViewV1. Data model for Learning Assessments Grading Runtime Grade Round View V1. */
 LearningAssessmentsGradingRuntimeGradeRoundViewV1Schema = z.object({
   finalizedAt: z.string().datetime().nullable().optional(),
@@ -40179,6 +40484,7 @@ LearningAssessmentsGradingRuntimeGradeRoundViewV1Schema = z.object({
   reasonDetail: z.string().nullable().optional(),
   released: z.boolean().optional(),
   releasedAt: z.string().datetime().nullable().optional(),
+  releaseSchedule: z.lazy(() => LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema).optional(),
   result: z.lazy(() => LearningAssessmentsGradingContractsGradeResultV1Schema).optional(),
   roundId: z.string().uuid().optional(),
   roundNumber: z.number().int().optional(),
@@ -40211,6 +40517,17 @@ LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1Schema = z.object({
   schemaVersion: z.number().int().optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1. Data model for Learning Assessments Grading Runtime Peer Review Insufficiency Resolution V1. */
+LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1Schema = z.object({
+  feedback: z.string().nullable().optional(),
+  items: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeInstructorItemResolutionV1Schema))
+    .nullable()
+    .optional(),
+  reason: z.string().nullable().optional(),
+  schemaVersion: z.number().int().optional(),
+});
+
 /** Zod schema for LearningAssessmentsGradingRuntimeRegradeExecutionCommand. Data model for Learning Assessments Grading Runtime Regrade Execution Command. */
 LearningAssessmentsGradingRuntimeRegradeExecutionCommandSchema = z.object({
   idempotencyKey: z.string().nullable().optional(),
@@ -40223,6 +40540,46 @@ LearningAssessmentsGradingRuntimeReleaseGradeResultCommandSchema = z.object({
   expectedSubmissionVersion: z.number().int().optional(),
   idempotencyKey: z.string().nullable().optional(),
   reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand. Data model for Learning Assessments Grading Runtime Schedule Grade Result Release Command. */
+LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommandSchema = z.object({
+  expectedRoundId: z.string().uuid().optional(),
+  expectedScheduleVersion: z.number().int().optional(),
+  expectedSubmissionVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  scheduledFor: z.string().datetime().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1. Data model for Learning Assessments Grading Runtime Self Review Evidence V1. */
+LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema = z.object({
+  feedback: z.string().nullable().optional(),
+  items: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewItemV1Schema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.number().int().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeSelfReviewItemV1. Data model for Learning Assessments Grading Runtime Self Review Item V1. */
+LearningAssessmentsGradingRuntimeSelfReviewItemV1Schema = z.object({
+  feedback: z.string().nullable().optional(),
+  itemId: z.string().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1. Data model for Learning Assessments Grading Runtime Self Review Runtime State V1. */
+LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1Schema = z.object({
+  draft: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
+  draftVersion: z.number().int().optional(),
+  instructions: z.string().nullable().optional(),
+  lastDraftActorId: z.string().uuid().nullable().optional(),
+  requireFeedback: z.boolean().optional(),
+  reviewStageId: z.string().uuid().optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistencePersistedReviewStageStatusSchema).optional(),
+  submittedByActorId: z.string().uuid().nullable().optional(),
+  submittedEvidence: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsGroupDetailDto. Group detail with member display names. */
@@ -40363,8 +40720,29 @@ LearningAssessmentsPeerReviewClaimDtoSchema = z.object({
   reviewId: z.string().uuid().optional(),
 });
 
-/** Zod schema for LearningAssessmentsPeerReviewStatus. OpenAPI schema for Learning Assessments Peer Review Status. */
-LearningAssessmentsPeerReviewStatusSchema = z.enum(['Assigned', 'Submitted']);
+/** Zod schema for LearningAssessmentsPeerReviewClaimResult. Data model for Learning Assessments Peer Review Claim Result. */
+LearningAssessmentsPeerReviewClaimResultSchema = z.object({
+  maskedSubmission: z.string().nullable().optional(),
+  reviewId: z.string().uuid().optional(),
+});
+
+/** Zod schema for LearningAssessmentsPeerReviewClaimView. Data model for Learning Assessments Peer Review Claim View. */
+LearningAssessmentsPeerReviewClaimViewSchema = z.object({
+  id: z.string().uuid().optional(),
+  assessmentId: z.string().uuid().optional(),
+  attemptNumber: z.number().int().optional(),
+  claimedAt: z.string().datetime().optional(),
+  deliveryCanonicalJson: z.string().nullable().optional(),
+  leaseExpiresAt: z.string().datetime().optional(),
+  responseEnvelopeCanonicalJson: z.string().nullable().optional(),
+  reviewerTestRunSubjectId: z.string().uuid().nullable().optional(),
+  reviewerUserId: z.string().uuid().nullable().optional(),
+  reviewStageId: z.string().uuid().optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema).optional(),
+  submissionId: z.string().uuid().nullable().optional(),
+  submittedAt: z.string().datetime().nullable().optional(),
+  version: z.number().int().optional(),
+});
 
 /** Zod schema for LearningAssessmentsPeerReviewSubmitInput. Body of a peer review submit: plain score XOR rubric scores (rubric rules enforced server-side),
 plus the mandatory feedback comment. */
@@ -40375,6 +40753,13 @@ LearningAssessmentsPeerReviewSubmitInputSchema = z.object({
     .lazy(() => LearningGradingContractsScoreValueSchema)
     .nullable()
     .optional(),
+});
+
+/** Zod schema for LearningAssessmentsReassignPeerReviewClaimInput. Data model for Learning Assessments Reassign Peer Review Claim Request. */
+LearningAssessmentsReassignPeerReviewClaimInputSchema = z.object({
+  expectedClaimVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsReceivedPeerReviewDto. THE anonymity boundary for reviewees: what a student sees of reviews they received.
@@ -40394,6 +40779,13 @@ LearningAssessmentsReceivedPeerReviewDtoSchema = z.object({
 LearningAssessmentsResolveInstructorReviewInputSchema = z.object({
   idempotencyKey: z.string().nullable().optional(),
   resolution: z.lazy(() => LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1Schema).optional(),
+  subjectId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsResolvePeerReviewInsufficiencyInput. Data model for Learning Assessments Resolve Peer Review Insufficiency Request. */
+LearningAssessmentsResolvePeerReviewInsufficiencyInputSchema = z.object({
+  idempotencyKey: z.string().nullable().optional(),
+  resolution: z.lazy(() => LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1Schema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsRubricCriterionDto. Rubric criterion read shape. */
@@ -40421,6 +40813,13 @@ LearningAssessmentsSaveCollectiveRuntimeDraftInputSchema = z.object({
   response: z.lazy(() => LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1Schema).optional(),
 });
 
+/** Zod schema for LearningAssessmentsSaveCollectiveSelfReviewDraftInput. Data model for Learning Assessments Save Collective Self Review Draft Request. */
+LearningAssessmentsSaveCollectiveSelfReviewDraftInputSchema = z.object({
+  evidence: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
+  expectedVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+});
+
 /** Zod schema for LearningAssessmentsSaveRubricCriterionInput. One criterion row of a rubric save request. */
 LearningAssessmentsSaveRubricCriterionInputSchema = z.object({
   description: z.string().nullable().optional(),
@@ -40443,6 +40842,10 @@ LearningAssessmentsStartAssessmentTestRunInputSchema = z.object({
   personaDisplayName: z.string().nullable().optional(),
   personaKey: z.string().nullable().optional(),
   revisionId: z.string().uuid().optional(),
+  subjects: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1Schema))
+    .nullable()
+    .optional(),
 });
 
 /** Zod schema for LearningAssessmentsStartCollectiveRuntimeSubmissionInput. Data model for Learning Assessments Start Collective Runtime Submission Request. */
@@ -40488,6 +40891,22 @@ LearningAssessmentsSubmitAssessmentRuntimeInputSchema = z.object({
   expectedDraftVersion: z.number().int().nullable().optional(),
   idempotencyKey: z.string().nullable().optional(),
   response: z.lazy(() => LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1Schema).optional(),
+  subjectId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsSubmitAssessmentTestPeerReviewInput. Data model for Learning Assessments Submit Assessment Test Peer Review Request. */
+LearningAssessmentsSubmitAssessmentTestPeerReviewInputSchema = z.object({
+  feedback: z.string().nullable().optional(),
+  rubricScores: z.string().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+});
+
+/** Zod schema for LearningAssessmentsSubmitSelfReviewInput. Data model for Learning Assessments Submit Self Review Request. */
+LearningAssessmentsSubmitSelfReviewInputSchema = z.object({
+  evidence: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
+  expectedDraftVersion: z.number().int().nullable().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  subjectId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsTaskItemDto. One task item. Variant fields are null outside their type (GradingQueueItemDto precedent). */
