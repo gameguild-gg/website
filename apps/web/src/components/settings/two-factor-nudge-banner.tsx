@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from '@/i18n/navigation';
 import { buttonVariants } from '@game-guild/ui/components/button';
 import { ShieldAlert, X } from 'lucide-react';
@@ -15,6 +15,7 @@ const RESHOW_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 function readDismissedAt(): string | null {
   try {
+    if (typeof window === 'undefined') return null;
     const raw = window.localStorage.getItem(TWO_FACTOR_NUDGE_STORAGE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
@@ -39,6 +40,10 @@ function isDismissed(): boolean {
   return Date.now() - dismissedMs < RESHOW_AFTER_MS;
 }
 
+// No-op subscribe as we don't expect external changes to localStorage
+// that need immediate UI updates beyond manual interaction.
+const subscribeToDismissal = () => () => undefined;
+
 /**
  * Persistent nudge for accounts without two-factor authentication (issue #838).
  *
@@ -48,7 +53,16 @@ function isDismissed(): boolean {
  */
 export function TwoFactorNudgeBanner({ twoFactorEnabled }: { twoFactorEnabled: boolean }) {
   const t = useTranslations('settings.security');
-  const [dismissed, setDismissed] = useState(true);
+
+  // Read dismissal state via useSyncExternalStore to avoid setState in useEffect.
+  // Server snapshot returns true (hidden) to match the initial client render and prevent hydration mismatch.
+  const dismissed = useSyncExternalStore(
+    subscribeToDismissal,
+    () => isDismissed(),
+    () => true,
+  );
+
+  const [manualDismiss, setManualDismiss] = useState(false);
 
   useEffect(() => {
     if (twoFactorEnabled) {
@@ -57,10 +71,9 @@ export function TwoFactorNudgeBanner({ twoFactorEnabled }: { twoFactorEnabled: b
       window.localStorage.removeItem(TWO_FACTOR_NUDGE_STORAGE_KEY);
       return;
     }
-    setDismissed(isDismissed());
   }, [twoFactorEnabled]);
 
-  if (twoFactorEnabled || dismissed) return null;
+  if (twoFactorEnabled || dismissed || manualDismiss) return null;
 
   return (
     <div
@@ -87,7 +100,7 @@ export function TwoFactorNudgeBanner({ twoFactorEnabled }: { twoFactorEnabled: b
               TWO_FACTOR_NUDGE_STORAGE_KEY,
               JSON.stringify({ dismissedAt: new Date().toISOString() }),
             );
-            setDismissed(true);
+            setManualDismiss(true);
           }}
           aria-label={t('nudge.dismiss')}
           data-testid="two-factor-nudge-dismiss"

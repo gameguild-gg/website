@@ -1,3 +1,4 @@
+using GameGuild;
 using FluentAssertions;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Authentication;
@@ -225,7 +226,7 @@ public sealed class AdminResetUserMfaCommandHandlerTests
 
         var act = () => CreateHandler().Handle(new AdminResetUserMfaCommand { UserId = _targetUserId }, CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<EntityNotFoundException>();
         _tracking.Verify(t => t.DisableMfaAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         _versionStore.Verify(v => v.IncrementVersionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
