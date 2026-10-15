@@ -148,11 +148,12 @@ static CURLcode copy_postfields(CurlHandle *h, const char *data)
         }
         /* An explicit size does not promise a terminator in the source buffer:
            the caller may pass exactly `length` heap bytes. */
-        copy = (char *)malloc(length + 1);
+        const size_t copy_bytes = length;
+        copy = (char *)malloc(copy_bytes + 1);
         if (!copy)
             return CURLE_OUT_OF_MEMORY;
-        memcpy(copy, data, length);
-        copy[length] = '\0';
+        memcpy(copy, data, copy_bytes);
+        copy[copy_bytes] = '\0';
     }
     free(h->owned_postfields);
     h->owned_postfields = copy;
@@ -266,14 +267,15 @@ CURL *curl_easy_duphandle(CURL *handle)
     dst->custom_method = strdup_safe(src->custom_method);
     if (src->owned_postfields)
     {
-        const size_t owned_bytes = (size_t)src->owned_postfieldsize + 1;
-        dst->owned_postfields = (char *)malloc(owned_bytes);
+        const size_t owned_bytes = (size_t)src->owned_postfieldsize;
+        dst->owned_postfields = (char *)malloc(owned_bytes + 1);
         if (!dst->owned_postfields)
         {
             curl_easy_cleanup((CURL *)dst);
             return NULL;
         }
         memcpy(dst->owned_postfields, src->owned_postfields, owned_bytes);
+        dst->owned_postfields[owned_bytes] = '\0';
         dst->postfields = dst->owned_postfields;
         dst->owned_postfieldsize = src->owned_postfieldsize;
     }
