@@ -6,11 +6,8 @@ import { Skeleton } from "@game-guild/ui/components/skeleton";
 import { type LexicalSurfaceFeatures } from "@game-guild/lexical-surface";
 import type { SerializedEditorState } from "lexical";
 import { getBlogAssetRepository } from "@/lib/blogs/assets";
+import { MediaPlugin } from "@game-guild/lexical-surface/features/media";
 import type { BlogContentFormat } from "@/lib/blogs/types";
-import { Image } from "lucide-react";
-import { Button } from "@game-guild/ui/components/button";
-import { AssetPickerDialog, AssetsProvider } from "@game-guild/assets/react";
-import { INSERT_MEDIA_LEXICAL_COMMAND, type MediaType, MediaPlugin } from "@game-guild/lexical-surface/features/media";
 
 const MonacoCodeEditor = lazy(async () => {
   const mod = await import(
