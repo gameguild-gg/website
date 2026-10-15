@@ -67,6 +67,7 @@ public class ControllerAndServiceCtorTests
         var svc = new WebAuthnRegistrationService(
             Mock.Of<IFido2>(),
             Mock.Of<IWebAuthnCredentialRepository>(),
+            Mock.Of<IWebAuthnSessionStore>(),
             NullLogger<WebAuthnRegistrationService>.Instance);
         svc.Should().NotBeNull();
     }

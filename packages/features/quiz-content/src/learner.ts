@@ -3,6 +3,7 @@ import {
   toQuizLearnerEntry,
 } from "@game-guild/quiz";
 import { QUIZ_BLOCK_TYPE, QUIZ_CONTENT_SCHEMA_VERSION } from "./constants";
+import { parseQuizRules, quizRulesIssuesToParseIssues } from "./rules";
 import type {
   QuizContentParseIssue,
   QuizContentDocument,
@@ -12,7 +13,7 @@ import type {
 } from "./types";
 
 type UnknownRecord = Record<string, unknown>;
-const LEARNER_ROOT_KEYS = new Set(["schemaVersion", "order", "blocks"]);
+const LEARNER_ROOT_KEYS = new Set(["schemaVersion", "order", "blocks", "rules"]);
 
 export function toQuizLearnerContentDocument(
   document: QuizContentDocument,
@@ -26,6 +27,9 @@ export function toQuizLearnerContentDocument(
         toQuizLearnerEntry(document.blocks[id]!),
       ]),
     ),
+    // Rules ride along so the learner runtime can enforce due date / time
+    // limit (issue #432). Attempt counting stays a server concern.
+    ...(document.rules ? { rules: document.rules } : {}),
   };
 }
 
@@ -154,14 +158,21 @@ export function parseQuizLearnerContentDocument(
     }
   }
 
-  return {
-    document: {
-      schemaVersion: QUIZ_CONTENT_SCHEMA_VERSION,
-      order: normalizedOrder,
-      blocks: normalizedBlocks,
-    },
-    issues,
+  const document: QuizLearnerContentDocument = {
+    schemaVersion: QUIZ_CONTENT_SCHEMA_VERSION,
+    order: normalizedOrder,
+    blocks: normalizedBlocks,
   };
+
+  if (Object.prototype.hasOwnProperty.call(root, "rules")) {
+    const parsedRules = parseQuizRules(root.rules);
+    if (parsedRules.rules) {
+      document.rules = parsedRules.rules;
+    }
+    issues.push(...quizRulesIssuesToParseIssues(parsedRules.issues));
+  }
+
+  return { document, issues };
 }
 
 export function isQuizRuntimeContentDocument(

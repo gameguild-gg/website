@@ -74,6 +74,9 @@ public static class AnonymousEndpointRegistry
             ["OrchestratedAuthController.GetFlowState"] = "Flow-ID capability lookup; abandoned, expired and unknown flows are not observable.",
             ["OrchestratedAuthController.Abandon"] = "Flow-ID capability termination; only makes the flow fail closed.",
             ["MfaController.VerifyMfa"] = "Completes the MFA ceremony with the pending sign-in session's code.",
+            ["MfaController.SendSmsChallenge"] = "Sends a throttled one-time code to the already-enrolled phone; the code itself is the credential and unknown users get a generic failure.",
+            ["MfaController.IssuePushChallenge"] = "Issues a short-lived approval challenge to the already-enrolled device; the challenge bearer is the credential.",
+            ["MfaController.RespondPushChallenge"] = "Records the device's decision for a pending, unexpired challenge; unknown or expired challenges fail closed.",
             ["WebAuthnController.BeginAuthentication"] = "First half of the passkey ceremony; returns only a challenge.",
             ["WebAuthnController.CompleteAuthentication"] = "Second half of the passkey ceremony; issues tokens on proof of possession.",
             ["ServiceAccountTokenController.Token"] = "OAuth-style client-credential token issuance for service accounts.",
@@ -158,6 +161,8 @@ public static class AnonymousEndpointRegistry
 
             // ── Public intake forms ──
             ["MarketingLeadController.CreateLead"] = "Public contact form; rate limited and validated.",
+            ["CourseProposalsController.CreateProposal"] = "Public course-proposal submission form (issue #105); validated, audit-logged, stores no secrets.",
+            ["CourseProposalsController.GetProposalBySlug"] = "Public proposal detail surface; anonymous callers receive published proposals only.",
 
             // ── Asset delivery (per-request token + access-policy authorization) ──
             ["AssetsController.GetAsset"] = "Metadata fetch; access policy is enforced inside the asset access service.",

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class RegisterBountyPostingTemplatesInWriter
+public partial class RegisterBountyPostingTemplatesInWriter : Migration
 {
     private static void InstallBountyPostingTemplateValidation(MigrationBuilder migrationBuilder)
     {

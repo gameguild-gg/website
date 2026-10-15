@@ -296,6 +296,71 @@ public record CreateMarketingLeadDto
     public string? UserAgent { get; init; }
 }
 
+
+// ──────────────────────────── CourseProposal DTOs ────────────────────────────
+
+/// <summary>Course proposal as rendered by the CRM or the public detail page.</summary>
+public record CourseProposalDto
+{
+    public Guid Id { get; init; }
+    public string Slug { get; init; } = string.Empty;
+    public string Status { get; init; } = CourseProposalStatuses.Submitted;
+    public string CourseTitle { get; init; } = string.Empty;
+    public string? Pitch { get; init; }
+    public string? Audience { get; init; }
+    public string? ProposerName { get; init; }
+    public string? ProposerEmail { get; init; }
+    public string? Metadata { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+    public DateTime? PublishedAt { get; init; }
+}
+
+/// <summary>Public submission payload for the creator pipeline (issue #105).</summary>
+public record CreateCourseProposalDto
+{
+    [Required]
+    [MaxLength(200)]
+    public string CourseTitle { get; init; } = string.Empty;
+
+    [MaxLength(4000)]
+    public string? Pitch { get; init; }
+
+    [MaxLength(2000)]
+    public string? Audience { get; init; }
+
+    [Required]
+    [MaxLength(120)]
+    public string ProposerName { get; init; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    [MaxLength(200)]
+    public string ProposerEmail { get; init; } = string.Empty;
+
+    [MaxLength(4000)]
+    public string? Metadata { get; init; }
+}
+
+/// <summary>CRM-side update payload: status transitions and content edits.</summary>
+public record UpdateCourseProposalDto
+{
+    [MaxLength(40)]
+    public string? Status { get; init; }
+
+    [MaxLength(200)]
+    public string? CourseTitle { get; init; }
+
+    [MaxLength(4000)]
+    public string? Pitch { get; init; }
+
+    [MaxLength(2000)]
+    public string? Audience { get; init; }
+
+    [MaxLength(4000)]
+    public string? Metadata { get; init; }
+}
+
 // ──────────────────────────── OpenGraph DTO ────────────────────────────
 
 /// <summary>

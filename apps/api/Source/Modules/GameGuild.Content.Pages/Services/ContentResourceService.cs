@@ -3,8 +3,12 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Content.Pages;
 
 /// <summary>EF Core implementation of <see cref="IContentResourceService"/>.</summary>
-public sealed class ContentResourceService(IApplicationDbContext db) : IContentResourceService
+public sealed class ContentResourceService(
+    IApplicationDbContext db,
+    IContentPagesAuditEventSink auditSink,
+    IRequestContextAccessor? requestContextAccessor = null) : IContentResourceService
 {
+    private Guid? ActingUserId => requestContextAccessor?.CurrentUserId;
     public async Task<ContentResource?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await db.Set<ContentResource>().FindAsync([id], ct).ConfigureAwait(false);
 
@@ -75,7 +79,11 @@ public sealed class ContentResourceService(IApplicationDbContext db) : IContentR
         };
 
         db.Set<ContentResource>().Add(resource);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.ContentResourceCreated", "ContentResource", resource.Id.ToString(), ActingUserId, resource.TenantId,
+                $"Content resource '{resource.Title}' created", Metadata: new { resource.Slug, resource.ResourceType, resource.Locale }), token),
+            ct).ConfigureAwait(false);
         return resource;
     }
 
@@ -109,7 +117,11 @@ public sealed class ContentResourceService(IApplicationDbContext db) : IContentR
         if (dto.ScheduledPublishAt.HasValue) resource.ScheduledPublishAt = dto.ScheduledPublishAt;
         if (dto.CustomData is not null) resource.CustomData = dto.CustomData;
 
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.ContentResourceUpdated", "ContentResource", resource.Id.ToString(), ActingUserId, resource.TenantId,
+                $"Content resource '{resource.Title}' updated", Metadata: new { resource.Slug, resource.Status }), token),
+            ct).ConfigureAwait(false);
         return resource;
     }
 
@@ -119,7 +131,11 @@ public sealed class ContentResourceService(IApplicationDbContext db) : IContentR
         if (resource is null) return false;
 
         resource.SoftDelete();
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.ContentResourceDeleted", "ContentResource", resource.Id.ToString(), ActingUserId, resource.TenantId,
+                $"Content resource '{resource.Title}' deleted", Metadata: new { resource.Slug }), token),
+            ct).ConfigureAwait(false);
         return true;
     }
 
@@ -131,7 +147,11 @@ public sealed class ContentResourceService(IApplicationDbContext db) : IContentR
         resource.Status = ContentResourceStatus.Published;
         resource.PublishedAt ??= DateTime.UtcNow;
         resource.PublishedBy = userId;
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.ContentResourcePublished", "ContentResource", resource.Id.ToString(), userId, resource.TenantId,
+                $"Content resource '{resource.Title}' published", Metadata: new { resource.Slug, resource.Locale }), token),
+            ct).ConfigureAwait(false);
         return resource;
     }
 

@@ -1300,11 +1300,13 @@ public class AuditControllerCoverageCompletionTests
 
     private static ActorContext CreateActor(Guid userId)
     {
+        // System-administrator actor: the audit controllers' tenant clamp (issue #294)
+        // passes the requested tenant scope through unchanged for system administrators.
         return new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = userId.ToString(),
-            Roles = new HashSet<string> { "Admin" },
+            Roles = new HashSet<string> { "SystemAdmin" },
             Permissions = new HashSet<string>(),
             IsAuthenticated = true
         };
@@ -1405,11 +1407,13 @@ public class SecurityAuditControllerCoverageCompletionTests
 
     private static ActorContext CreateActor(Guid userId)
     {
+        // System-administrator actor: the audit controllers' tenant clamp (issue #294)
+        // passes the requested tenant scope through unchanged for system administrators.
         return new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = userId.ToString(),
-            Roles = new HashSet<string> { "Admin" },
+            Roles = new HashSet<string> { "SystemAdmin" },
             Permissions = new HashSet<string>(),
             IsAuthenticated = true
         };

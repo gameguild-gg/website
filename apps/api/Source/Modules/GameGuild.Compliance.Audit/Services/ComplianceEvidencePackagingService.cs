@@ -28,7 +28,7 @@ public interface IComplianceEvidencePackagingService
 public sealed class ComplianceEvidencePackagingService(
     IActorContextAccessor actors, ICompliancePackagingRepository repository, IComplianceFrameworkCatalog catalog,
     IComplianceEvidenceDataSource source, ComplianceEvidenceValidationEngine validation, ComplianceArtifactBuilder artifacts,
-    IAuditService audit, TimeProvider timeProvider) : IComplianceEvidencePackagingService
+    IAuditService audit, ITamperEvidentAuditService tamperEvidence, TimeProvider timeProvider) : IComplianceEvidencePackagingService
 {
     public async Task<IReadOnlyList<ComplianceFrameworkTemplate>> GetTemplatesAsync(CancellationToken cancellationToken)
     {
@@ -167,6 +167,11 @@ public sealed class ComplianceEvidencePackagingService(
         package.ReadyForAuditorReview = artifact.Manifest.Validation.ReadyForAuditorReview;
         package.GapCount = artifact.Manifest.Validation.Gaps.Count;
         await repository.AddPackageAsync(package, cancellationToken).ConfigureAwait(false);
+        // The sealed bundle and its tamper-evident chain row are one evidence unit: the seal is
+        // recorded through the hash-chained audit trail (signed, per-tenant WORM chain), and a
+        // bundle whose chain row cannot be written is reported as an integrity failure instead of
+        // being handed out as sealed evidence.
+        await RecordSealInTamperEvidentChainAsync(package, tenant, user, cancellationToken).ConfigureAwait(false);
         await AuditAsync("ComplianceEvidencePackagePrepared", tenant, user, package.Id,
             new { package.TemplateId, package.ReadyForAuditorReview, package.GapCount, package.ArtifactSha256 }).ConfigureAwait(false);
         return new(Summary(package), artifact.Manifest, artifact.Seal);
@@ -261,6 +266,49 @@ public sealed class ComplianceEvidencePackagingService(
             Category = AuditCategory.Admin, RiskLevel = success ? AuditRiskLevel.Medium : AuditRiskLevel.High,
             Success = success, Description = action, Metadata = metadata
         });
+
+    /// <summary>
+    ///     Writes the seal of a compliance evidence bundle into the per-tenant hash chain through
+    ///     <see cref="ITamperEvidentAuditService"/>. The chained row carries the artifact digest and
+    ///     the signing key so later verification can prove the bundle was not altered after sealing.
+    ///     A chain row that cannot be written fails the sealing operation: the bundle is reported as
+    ///     an integrity failure rather than silently delivered without tamper evidence.
+    /// </summary>
+    private async Task RecordSealInTamperEvidentChainAsync(
+        ComplianceSealedPackage package, Guid tenant, Guid user, CancellationToken cancellationToken)
+    {
+        var sealMetadata = new AuditEventMetadata
+        {
+            CorrelationId = package.Id.ToString()
+        };
+        var result = await tamperEvidence
+            .CreateAuditLogAsync(
+                tenant,
+                user,
+                "ComplianceEvidencePackageSealed",
+                "ComplianceSealedPackage",
+                package.Id,
+                beforeSnapshot: null,
+                afterSnapshot: CompliancePackagingSerialization.Serialize(new SealedPackageSnapshot(
+                    package.Id, package.TemplateId, package.PeriodStartUtc, package.PeriodEndUtc,
+                    package.ArtifactLength, package.ArtifactSha256, package.SigningKeyId,
+                    package.ReadyForAuditorReview, package.GapCount)),
+                changes: package.ArtifactSha256,
+                riskLevel: nameof(AuditRiskLevel.High),
+                ipAddress: string.Empty,
+                userAgent: "compliance-packaging",
+                sealMetadata,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (!result.IsSuccess)
+        {
+            throw new CompliancePackagingIntegrityException();
+        }
+    }
+
+    private sealed record SealedPackageSnapshot(
+        Guid Id, string TemplateId, DateTime PeriodStartUtc, DateTime PeriodEndUtc,
+        int ArtifactLength, string ArtifactSha256, string SigningKeyId, bool ReadyForAuditorReview, int GapCount);
 
     private static ComplianceDocumentSnapshot Snapshot(ComplianceEvidenceDocument document) => new(
         document.Id, document.Name, document.Type, document.MediaType, document.ContentSha256, document.Content,

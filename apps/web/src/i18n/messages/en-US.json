@@ -68,6 +68,7 @@
     "nav": {
       "profile": "Profile",
       "account": "Account",
+      "security": "Security",
       "appearance": "Appearance",
       "localization": "Language & region",
       "privacy": "Privacy",
@@ -178,7 +179,141 @@
       }
     },
     "notificationsTitle": "Notification settings",
-    "notificationsDescription": "Choose how you receive notifications and emails."
+    "notificationsDescription": "Choose how you receive notifications and emails.",
+    "security": {
+      "title": "Security & sessions",
+      "description": "Review every active session, name the devices you recognize, and terminate anything suspicious.",
+      "actionFailed": "The request failed. Please try again.",
+      "analysis": {
+        "title": "Session security analysis",
+        "description": "{sessions, plural, =1 {1 active session} other {# active sessions}} across {devices, plural, =1 {1 device} other {# devices}}.",
+        "risk": {
+          "low": "Low risk",
+          "medium": "Medium risk",
+          "high": "High risk",
+          "critical": "Critical risk"
+        }
+      },
+      "sessions": {
+        "title": "Active sessions",
+        "description": "Devices currently signed in to your account. Terminating a session signs it out immediately.",
+        "empty": "No active sessions.",
+        "current": "This device",
+        "trusted": "Trusted",
+        "lastUsed": "Last used {time}",
+        "terminate": "Terminate",
+        "terminateAria": "Terminate session {name}",
+        "terminated": "Session terminated.",
+        "terminateOthers": "Terminate other sessions",
+        "othersTerminated": "Other sessions were terminated.",
+        "terminateAll": "Terminate all sessions",
+        "confirmTerminateAllTitle": "Terminate all sessions?",
+        "confirmTerminateAllDescription": "This signs out every device, including the one you are using now. You will need to sign in again.",
+        "confirmTerminateAll": "Terminate everything",
+        "confirmCancel": "Cancel",
+        "allTerminated": "All sessions were terminated."
+      },
+      "rename": {
+        "trigger": "Rename",
+        "aria": "Rename session {name}",
+        "label": "Session name",
+        "save": "Save",
+        "cancel": "Cancel",
+        "success": "Session renamed.",
+        "nameRequired": "Enter a session name.",
+        "nameTooLong": "Session names are limited to 64 characters."
+      },
+      "trustedDevices": {
+        "title": "Trusted devices",
+        "description": "Devices you marked as trusted skip some re-authentication prompts.",
+        "empty": "No trusted devices yet.",
+        "unnamed": "Unnamed device",
+        "trustedAt": "Trusted {time}",
+        "expiresAt": "expires {time}",
+        "revoke": "Revoke",
+        "revoked": "Trusted device removed.",
+        "trustCurrent": "Trust this device",
+        "trustCurrentDescription": "Mark the device you are using now as trusted.",
+        "trustCurrentButton": "Trust",
+        "trustedCurrent": "This device is now trusted."
+      },
+      "mfa": {
+        "title": "Multi-factor authentication",
+        "description": "Manage your enrolled sign-in factors and recovery codes.",
+        "status": {
+          "label": "MFA status",
+          "enabled": "Enabled since {date}. Your account requires a second factor at sign-in.",
+          "disabled": "Disabled. Your account is protected by your password only.",
+          "badgeEnabled": "Protected",
+          "badgeDisabled": "Not protected"
+        },
+        "methods": {
+          "enrolled": "Enrolled",
+          "available": "Available",
+          "unavailable": "Unavailable",
+          "cancel": "Cancel"
+        },
+        "totp": {
+          "start": "Add authenticator app",
+          "started": "Scan the code in your authenticator app, then enter the current code.",
+          "scan": "Scan this secret with your authenticator app (Google Authenticator, Authy, 1Password), then enter the six-digit code it shows.",
+          "codeLabel": "Authenticator code",
+          "complete": "Verify and enroll",
+          "completed": "Authenticator app enrolled."
+        },
+        "sms": {
+          "start": "Add SMS codes",
+          "unavailable": "SMS delivery is not configured on this platform.",
+          "phoneLabel": "Phone number (international format)",
+          "send": "Send code",
+          "sent": "Code sent to {phone}.",
+          "codeLabel": "SMS code",
+          "complete": "Verify and enroll",
+          "completed": "SMS codes enrolled."
+        },
+        "recovery": {
+          "title": "Recovery codes",
+          "description": "Single-use codes for emergency access when your other factors are unavailable.",
+          "none": "No recovery codes on file. Generate a set and store it somewhere safe.",
+          "remaining": "{remaining} of {total} codes remaining.",
+          "generate": "Generate codes",
+          "regenerate": "Regenerate codes",
+          "regenerated": "New recovery codes generated. Previous codes are now invalid.",
+          "freshWarning": "These codes are shown only once. Store them somewhere safe now.",
+          "hide": "I saved my codes"
+        },
+        "disable": {
+          "title": "Disable MFA",
+          "description": "Enter your account password to turn off multi-factor authentication. All enrolled factors and recovery codes are removed.",
+          "passwordLabel": "Account password",
+          "cancel": "Cancel",
+          "confirm": "Disable MFA",
+          "success": "Multi-factor authentication disabled.",
+          "wrongPassword": "Password verification failed. MFA stays enabled."
+        }
+      },
+      "policies": {
+        "title": "Security policies",
+        "description": "Workspace security posture is managed by administrators through server-side environment configuration. The values below are read-only.",
+        "managedBadge": "Managed by admins",
+        "twoFactor": {
+          "title": "Two-factor authentication",
+          "optional": "Optional (opt-in)",
+          "required": "Required",
+          "description": "Whether accounts must enroll a second factor before full access."
+        },
+        "sessionTimeout": {
+          "title": "Session timeout",
+          "value": "{minutes} minutes",
+          "description": "Idle session lifetime before re-authentication is required."
+        },
+        "apiKeyRotation": {
+          "title": "API key rotation",
+          "value": "Every {days} days",
+          "description": "Recommended maximum age of API keys before rotation."
+        }
+      }
+    }
   },
   "connectedAccounts": {
     "title": "Connected Accounts",

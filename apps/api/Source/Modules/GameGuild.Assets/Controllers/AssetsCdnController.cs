@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using GameGuild.Assets.Openinary;
 
 namespace GameGuild.Assets.Controllers;
 
@@ -24,19 +26,22 @@ public class AssetsCdnController : BaseApiController
     private readonly IAssetContentRepository _contentRepository;
     private readonly IAssetReferenceRepository _referenceRepository;
     private readonly IDurableEventProducer? _durableEventProducer;
+    private readonly OpeninaryOptions? _openinaryOptions;
 
     public AssetsCdnController(
         IAssetAccessService accessService,
         IAssetStorageService storageService,
         IAssetContentRepository contentRepository,
         IAssetReferenceRepository referenceRepository,
-        IDurableEventProducer? durableEventProducer = null)
+        IDurableEventProducer? durableEventProducer = null,
+        IOptions<OpeninaryOptions>? openinaryOptions = null)
     {
         _accessService = accessService;
         _storageService = storageService;
         _contentRepository = contentRepository;
         _referenceRepository = referenceRepository;
         _durableEventProducer = durableEventProducer;
+        _openinaryOptions = openinaryOptions?.Value;
     }
 
     /// <summary>
@@ -205,6 +210,73 @@ public class AssetsCdnController : BaseApiController
             return NotFound();
         }
 
+        // Openinary-backed redirect: the /t/ CDN is public and cached ~1yr, so the
+        // redirect is allowed ONLY for safe-to-serve content under a public policy.
+        var gate = await TryBuildOpeninaryRedirectAsync(reference, spec, ct).ConfigureAwait(false);
+        if (gate.Outcome == OpeninaryGateOutcome.Denied)
+        {
+            return NotFound();
+        }
+
+        if (gate.Outcome == OpeninaryGateOutcome.NotApplicable)
+        {
+            return await ServeLegacyTransformAsync(reference, transformation, spec, ct).ConfigureAwait(false);
+        }
+
+        return Redirect(gate.Url!);
+    }
+
+    private enum OpeninaryGateOutcome
+    {
+        NotApplicable,
+        Denied,
+        Redirect
+    }
+
+    private readonly record struct OpeninaryGate(OpeninaryGateOutcome Outcome, string? Url = null);
+
+    private async Task<OpeninaryGate> TryBuildOpeninaryRedirectAsync(
+        AssetReference reference,
+        TransformationSpec spec,
+        CancellationToken ct)
+    {
+        if (_openinaryOptions == null || string.IsNullOrEmpty(_openinaryOptions.ApiKey))
+        {
+            return new OpeninaryGate(OpeninaryGateOutcome.NotApplicable);
+        }
+
+        var content = await _contentRepository
+            .GetByIdAsync(reference.AssetContentId, ct).ConfigureAwait(false);
+        if (content == null || !AssetStorageBackend.IsOpeninary(content))
+        {
+            return new OpeninaryGate(OpeninaryGateOutcome.NotApplicable);
+        }
+
+        // Gate order: policy → safety. Fail closed on everything else.
+        if (reference.AccessPolicy != AssetAccessPolicy.Public &&
+            reference.AccessPolicy != AssetAccessPolicy.TenantPublic)
+        {
+            return new OpeninaryGate(OpeninaryGateOutcome.Denied);
+        }
+
+        if (!content.IsSafeToServe)
+        {
+            return new OpeninaryGate(OpeninaryGateOutcome.Denied);
+        }
+
+        var baseUrl = _openinaryOptions.BaseUrl.TrimEnd('/');
+        var segment = Transformation.OpeninaryTransformMapper.ToSegment(spec);
+        return new OpeninaryGate(
+            OpeninaryGateOutcome.Redirect,
+            $"{baseUrl}/t/{segment}/{content.ObjectKey}");
+    }
+
+    private async Task<IActionResult> ServeLegacyTransformAsync(
+        AssetReference reference,
+        string transformation,
+        TransformationSpec spec,
+        CancellationToken ct)
+    {
         // Check if transformation already exists
         var transformedAsset = await _accessService.GetOrCreateTransformationAsync(
             reference.AssetContentId,

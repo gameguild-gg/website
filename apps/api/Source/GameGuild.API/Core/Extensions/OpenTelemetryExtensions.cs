@@ -81,6 +81,7 @@ public static class OpenTelemetryExtensions
                         "GameGuild.Learning.Assessments.Grading",
                         "GameGuild.Identity.Authentication.PermissionBulkCheck",
                         "GameGuild.Identity.Authentication.RefreshTokens",
+                        "GameGuild.Identity.Authentication.Sessions",
                         "GameGuild.Identity.Authorization.Cache");
 
                 if (options.ConsoleExporterEnabled)

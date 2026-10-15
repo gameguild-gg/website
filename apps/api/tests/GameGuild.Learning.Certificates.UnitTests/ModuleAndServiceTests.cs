@@ -22,6 +22,9 @@ public class CertificatesModuleAndServiceTests
         var services = new ServiceCollection();
         services.AddScoped<IApplicationDbContext>(_ => Mock.Of<IApplicationDbContext>());
         services.AddScoped(typeof(ILogger<>), typeof(NullLogger<>));
+        // The CertificateService constructor takes ILearningAuditEventSink, registered by
+        // the Audit module in the composed host; provide a no-op for the isolated test.
+        services.AddScoped<GameGuild.Learning.ILearningAuditEventSink>(_ => new NoOpAuditSink());
 
         services.AddCertificatesModule();
 
@@ -36,7 +39,8 @@ public class CertificatesModuleAndServiceTests
     {
         var service = new CertificateService(
             Mock.Of<IApplicationDbContext>(),
-            NullLogger<CertificateService>.Instance);
+            NullLogger<CertificateService>.Instance,
+            new NoopLearningAuditEventSink());
 
         service.Should().NotBeNull();
         service.Should().BeAssignableTo<ICertificateIssuanceService>();
@@ -47,7 +51,8 @@ public class CertificatesModuleAndServiceTests
     {
         var service = new CertificateService(
             Mock.Of<IApplicationDbContext>(),
-            NullLogger<CertificateService>.Instance);
+            NullLogger<CertificateService>.Instance,
+            new NoopLearningAuditEventSink());
 
         var number = await service.GenerateCertificateNumberAsync();
 
@@ -59,7 +64,7 @@ public class CertificatesModuleAndServiceTests
     public async Task IssueCertificateForEnrollmentAsync_ShouldCreateCertificateAndReportExistingCertificate()
     {
         await using var context = CertificateServiceDbContext.Create();
-        var service = new CertificateService(context, NullLogger<CertificateService>.Instance);
+        var service = new CertificateService(context, NullLogger<CertificateService>.Instance, new NoopLearningAuditEventSink());
         var enrollmentId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var programId = Guid.NewGuid();
@@ -85,7 +90,8 @@ public class CertificatesModuleAndServiceTests
     {
         var service = new CertificateTemplateService(
             Mock.Of<IApplicationDbContext>(),
-            NullLogger<CertificateTemplateService>.Instance);
+            NullLogger<CertificateTemplateService>.Instance,
+            new NoopLearningAuditEventSink());
 
         service.Should().NotBeNull();
     }
@@ -100,7 +106,7 @@ public class CertificatesModuleAndServiceTests
         first.SetDefault(true);
         context.Set<CertificateTemplate>().AddRange(first, second);
         await context.SaveChangesAsync();
-        var service = new CertificateTemplateService(context, NullLogger<CertificateTemplateService>.Instance);
+        var service = new CertificateTemplateService(context, NullLogger<CertificateTemplateService>.Instance, new NoopLearningAuditEventSink());
 
         var result = await service.SetDefaultTemplateAsync(courseId, second.Id);
 
@@ -148,4 +154,10 @@ public class CertificatesModuleAndServiceTests
             });
         }
     }
+}
+
+file sealed class NoOpAuditSink : GameGuild.Learning.ILearningAuditEventSink
+{
+    public Task RecordAsync(GameGuild.Learning.LearningAuditEvent auditEvent, CancellationToken cancellationToken)
+        => Task.CompletedTask;
 }

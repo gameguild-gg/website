@@ -193,11 +193,21 @@ public interface IPermissionBulkService
     /// <summary>
     ///     Grant permissions to multiple users at once.
     /// </summary>
+    /// <remarks>
+    ///     <para><b>Issue #310:</b> the expiry envelope and audit reason supplied by the
+    ///     caller are forwarded to every per-user grant instead of being discarded, so a
+    ///     finite bulk grant stays finite.</para>
+    ///     <para><b>Issue #302/#365:</b> every per-user grant runs inside the caller's
+    ///     ambient transaction (the host pipeline opens one for commands); callers that
+    ///     need all-or-nothing semantics must observe per-user failures.</para>
+    /// </remarks>
     Task<List<TenantPermission>> BulkGrantTenantPermissionAsync(
         Guid[] userIds,
         Guid tenantId,
         string[] permissions,
         Guid? grantedBy = null,
+        DateTime? expiresAt = null,
+        string? reason = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

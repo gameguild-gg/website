@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -299,7 +300,8 @@ public class EfConfigAndExtendedTests
     public void BackgroundGarbageCollectionService_CanBeCreated()
     {
         var svc = new GameGuild.Assets.BackgroundServices.AssetGarbageCollectionService(
-            Mock.Of<IServiceProvider>(),
+            Mock.Of<IServiceScopeFactory>(),
+            Options.Create(new AssetGarbageCollectionOptions()),
             Mock.Of<ILogger<GameGuild.Assets.BackgroundServices.AssetGarbageCollectionService>>());
         svc.Should().NotBeNull();
     }
@@ -308,7 +310,8 @@ public class EfConfigAndExtendedTests
     public void TransformedAssetCleanupService_CanBeCreated()
     {
         var svc = new TransformedAssetCleanupService(
-            Mock.Of<IServiceProvider>(),
+            Mock.Of<IServiceScopeFactory>(),
+            Options.Create(new TransformedAssetCleanupOptions()),
             Mock.Of<ILogger<TransformedAssetCleanupService>>());
         svc.Should().NotBeNull();
     }

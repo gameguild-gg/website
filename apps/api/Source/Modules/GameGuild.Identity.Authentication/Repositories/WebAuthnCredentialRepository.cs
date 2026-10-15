@@ -112,7 +112,10 @@ public class WebAuthnCredentialRepository(IApplicationDbContext context) : IWebA
     public async Task<bool> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-        if (credential == null || credential.Status != WebAuthnCredentialStatus.Active) return false;
+        if (credential == null || credential.Status != WebAuthnCredentialStatus.Active)
+        {
+            return false;
+        }
 
         credential.Deactivate();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -122,7 +125,10 @@ public class WebAuthnCredentialRepository(IApplicationDbContext context) : IWebA
     public async Task<bool> ReactivateAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-        if (credential == null || credential.Status != WebAuthnCredentialStatus.Deactivated) return false;
+        if (credential == null || credential.Status != WebAuthnCredentialStatus.Deactivated)
+        {
+            return false;
+        }
 
         credential.Activate();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

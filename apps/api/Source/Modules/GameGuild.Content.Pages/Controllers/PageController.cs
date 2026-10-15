@@ -123,7 +123,10 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [ProducesResponseType(403)]
     public async Task<ActionResult<PageDto>> UpdatePage(Guid id, [FromBody] UpdatePageDto dto)
     {
-        if (!CanEditContent) return Forbid();
+        if (!CanEditContent)
+        {
+            return Forbid();
+        }
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var page = await sender.Send(new UpdatePageCommand(id, dto)).ConfigureAwait(false);
         if (page is null) return NotFound();
@@ -194,7 +197,10 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [ProducesResponseType(403)]
     public async Task<ActionResult<PageSectionDto>> UpdateSection(Guid pageId, Guid sectionId, [FromBody] UpdatePageSectionDto dto)
     {
-        if (!CanEditContent) return Forbid();
+        if (!CanEditContent)
+        {
+            return Forbid();
+        }
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var section = await sender.Send(new UpdatePageSectionCommand(pageId, sectionId, dto)).ConfigureAwait(false);
         if (section is null) return NotFound();

@@ -30,7 +30,8 @@ public sealed class AssetLibraryServiceTests : IDisposable
             _context,
             [_parentResolver.Object],
             _accessService.Object,
-            _folderAuthorizationService.Object);
+            _folderAuthorizationService.Object,
+            Mock.Of<IAssetContentRepository>());
     }
 
     [Fact]

@@ -187,6 +187,19 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
     if (!response.ok && response.status !== 404) throw apiError(response.status, "The asset delete failed");
   }
 
+  async rename(id: string, displayName: string, context: AssetProviderContext): Promise<AssetRecord> {
+    const response = await fetch(assertSafeRemoteUrl(`/api/assets/${encodeURIComponent(id)}`), {
+      redirect: "error",
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ displayName }),
+      cache: "no-store",
+      signal: context.signal,
+    });
+    if (!response.ok) throw apiError(response.status, "The asset rename failed");
+    return readAsset(response);
+  }
+
   private contentUrl(id: string): string {
     return `/api/assets/${encodeURIComponent(id)}/content`;
   }

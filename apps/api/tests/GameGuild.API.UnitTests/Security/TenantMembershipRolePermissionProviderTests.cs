@@ -39,6 +39,20 @@ public sealed class TenantMembershipRolePermissionProviderTests
 
         permissions.Should().Contain(AdminPermission.Keys.TenantAdmin);
         permissions.Should().Contain(UsersPermission.Keys.Manage);
+
+        // Issue #294: the administrative tier is granted to administrative membership roles...
+        permissions.Should().Contain([
+            ManageMembersPermission.Keys.Manage,
+            ManageSettingsPermission.Keys.Read,
+            ManageSettingsPermission.Keys.Manage,
+            AuditPermission.Keys.Read
+        ]);
+
+        // ...while delegation-only capabilities stay absent.
+        permissions.Should().NotContain([
+            ManageRolesPermission.Keys.Manage,
+            AuditPermission.Keys.Export
+        ]);
     }
 
     [Fact]
@@ -67,7 +81,12 @@ public sealed class TenantMembershipRolePermissionProviderTests
         ]);
         permissions.Should().NotContain([
             AdminPermission.Keys.TenantAdmin,
-            UsersPermission.Keys.Manage
+            UsersPermission.Keys.Manage,
+            ManageMembersPermission.Keys.Manage,
+            ManageRolesPermission.Keys.Manage,
+            ManageSettingsPermission.Keys.Manage,
+            AuditPermission.Keys.Read,
+            AuditPermission.Keys.Export
         ]);
     }
 

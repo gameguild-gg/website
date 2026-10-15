@@ -12,6 +12,7 @@ internal static class PostMappings
         TenantId = post.TenantId,
         Content = post.Content,
         MediaUrl = post.MediaUrl,
+        MediaAssetReferenceId = post.MediaAssetReferenceId,
         MediaType = post.MediaType?.ToString(),
         Visibility = post.Visibility.ToString(),
         IsPinned = post.IsPinned,
@@ -85,6 +86,7 @@ public sealed record PostDto
     public Guid? TenantId { get; init; }
     public string Content { get; init; } = string.Empty;
     public string? MediaUrl { get; init; }
+    public Guid? MediaAssetReferenceId { get; init; }
     public string? MediaType { get; init; }
     public string Visibility { get; init; } = "Public";
     public bool IsPinned { get; init; }

@@ -170,6 +170,8 @@ public sealed class ScimBulkProcessor(
                         ? Succeeded(method, operation.BulkId, 204, $"{ScimConstants.UsersPath}/{id}", id.ToString())
                         : Failed(method, operation.BulkId, 400, null, result.Error.Description);
                 }
+                default:
+                    throw ScimException.BadPayload($"The bulk method '{operation.Method}' is not supported.");
             }
         }
 
@@ -202,6 +204,8 @@ public sealed class ScimBulkProcessor(
                         ? Succeeded(method, operation.BulkId, 204, $"{ScimConstants.GroupsPath}/{id}", id.ToString())
                         : Failed(method, operation.BulkId, 400, null, result.Error.Description);
                 }
+                default:
+                    throw ScimException.BadPayload($"The bulk method '{operation.Method}' is not supported.");
             }
         }
 

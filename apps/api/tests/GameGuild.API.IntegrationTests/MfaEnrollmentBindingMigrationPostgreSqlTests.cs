@@ -26,15 +26,29 @@ public sealed class MfaEnrollmentBindingMigrationPostgreSqlTests(ApiPostgreSqlFi
         var predecessor = migrations[migrations.IndexOf(migration) - 1];
         var migrator = db.GetService<IMigrator>();
         await migrator.MigrateAsync(predecessor);
-        var configuration = new UserMfaConfiguration { UserId = Guid.NewGuid(), IsEnabled = true, IsSetupComplete = true,
-            TotpSecretKey = "synthetic-preserved-encrypted-value", BackupCodes = "[]" };
-        db.Set<UserMfaConfiguration>().Add(configuration);
-        await db.SaveChangesAsync();
+
+        // Seed and verify with raw SQL against the historical schema: the current model maps
+        // columns that this rollback point predates (for example push_device_token and
+        // sms_phone_number from 20261014101541), so materializing the entity here would
+        // reference columns that do not exist yet.
+        var configurationId = Guid.NewGuid();
+        var preferredMethod = MfaMethod.Totp.ToString();
+        var now = DateTime.UtcNow;
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO "gameguild.authentication".user_mfa_configuration
+                (id, user_id, is_enabled, is_setup_complete, preferred_method, failed_attempts, created_at, updated_at, totp_secret_key, backup_codes)
+            VALUES ({configurationId}, {Guid.NewGuid()}, {true}, {true}, {preferredMethod}, {0}, {now}, {now}, {"synthetic-preserved-encrypted-value"}, {"[]"})
+            """);
         await migrator.MigrateAsync(migration);
-        var saved = await db.Set<UserMfaConfiguration>().AsNoTracking().SingleAsync(row => row.Id == configuration.Id);
-        Assert.True(saved.IsEnabled);
-        Assert.Equal(configuration.TotpSecretKey, saved.TotpSecretKey);
-        Assert.Equal(configuration.BackupCodes, saved.BackupCodes);
+        Assert.True(await db.Database.SqlQuery<bool>($"""
+            SELECT is_enabled AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {configurationId}
+            """).SingleAsync());
+        Assert.Equal("synthetic-preserved-encrypted-value", await db.Database.SqlQuery<string>($"""
+            SELECT totp_secret_key AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {configurationId}
+            """).SingleAsync());
+        Assert.Equal("[]", await db.Database.SqlQuery<string>($"""
+            SELECT backup_codes AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {configurationId}
+            """).SingleAsync());
         var index = await db.Database.SqlQueryRaw<string>("""
             SELECT indexdef AS "Value" FROM pg_indexes WHERE schemaname = 'gameguild.authentication'
             AND indexname = 'ix_user_mfa_configuration_user_id'
@@ -46,7 +60,9 @@ public sealed class MfaEnrollmentBindingMigrationPostgreSqlTests(ApiPostgreSqlFi
             AND table_name = 'sign_in_mfa_challenges' AND column_name LIKE 'enrollment_%'
             """).SingleAsync();
         Assert.Equal(0, columns);
-        Assert.Equal(configuration.TotpSecretKey, (await db.Set<UserMfaConfiguration>().AsNoTracking().SingleAsync(row => row.Id == configuration.Id)).TotpSecretKey);
+        Assert.Equal("synthetic-preserved-encrypted-value", await db.Database.SqlQuery<string>($"""
+            SELECT totp_secret_key AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {configurationId}
+            """).SingleAsync());
         await migrator.MigrateAsync(migration);
         Assert.False(db.Database.HasPendingModelChanges());
     }
@@ -63,18 +79,38 @@ public sealed class MfaEnrollmentBindingMigrationPostgreSqlTests(ApiPostgreSqlFi
         var predecessor = migrations[migrations.IndexOf(migration) - 1];
         var migrator = db.GetService<IMigrator>();
         await migrator.MigrateAsync(predecessor);
+
+        // Seed with raw SQL for the same reason as above: entity materialization at this
+        // historical schema would reference columns that only later migrations introduce.
         var userId = Guid.NewGuid();
-        var first = new UserMfaConfiguration { UserId = userId, IsEnabled = true, IsSetupComplete = true, TotpSecretKey = "synthetic-first-factor" };
-        var second = new UserMfaConfiguration { UserId = userId, IsEnabled = true, IsSetupComplete = true, TotpSecretKey = "synthetic-second-factor" };
-        db.Set<UserMfaConfiguration>().AddRange(first, second);
-        await db.SaveChangesAsync();
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
+        var preferredMethod = MfaMethod.Totp.ToString();
+        var now = DateTime.UtcNow;
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO "gameguild.authentication".user_mfa_configuration
+                (id, user_id, is_enabled, is_setup_complete, preferred_method, failed_attempts, created_at, updated_at, totp_secret_key)
+            VALUES ({firstId}, {userId}, {true}, {true}, {preferredMethod}, {0}, {now}, {now}, {"synthetic-first-factor"}),
+                   ({secondId}, {userId}, {true}, {true}, {preferredMethod}, {0}, {now}, {now}, {"synthetic-second-factor"})
+            """);
         var exception = await Assert.ThrowsAsync<PostgresException>(() => migrator.MigrateAsync(migration));
         Assert.Equal(PostgresErrorCodes.UniqueViolation, exception.SqlState);
         Assert.Contains("reconcile duplicate MFA configurations", exception.MessageText, StringComparison.Ordinal);
-        var saved = await db.Set<UserMfaConfiguration>().AsNoTracking().Where(row => row.UserId == userId).ToListAsync();
-        Assert.Equal(2, saved.Count);
-        Assert.Contains(saved, row => row.Id == first.Id && row.TotpSecretKey == first.TotpSecretKey && row.IsEnabled);
-        Assert.Contains(saved, row => row.Id == second.Id && row.TotpSecretKey == second.TotpSecretKey && row.IsEnabled);
+        Assert.Equal(2, await db.Database.SqlQuery<int>($"""
+            SELECT COUNT(*)::int AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE user_id = {userId}
+            """).SingleAsync());
+        Assert.Equal("synthetic-first-factor", await db.Database.SqlQuery<string>($"""
+            SELECT totp_secret_key AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {firstId}
+            """).SingleAsync());
+        Assert.True(await db.Database.SqlQuery<bool>($"""
+            SELECT is_enabled AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {firstId}
+            """).SingleAsync());
+        Assert.Equal("synthetic-second-factor", await db.Database.SqlQuery<string>($"""
+            SELECT totp_secret_key AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {secondId}
+            """).SingleAsync());
+        Assert.True(await db.Database.SqlQuery<bool>($"""
+            SELECT is_enabled AS "Value" FROM "gameguild.authentication".user_mfa_configuration WHERE id = {secondId}
+            """).SingleAsync());
         Assert.DoesNotContain(migration, await db.Database.GetAppliedMigrationsAsync());
     }
 }

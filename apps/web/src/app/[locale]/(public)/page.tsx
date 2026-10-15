@@ -2,13 +2,25 @@ import { auth } from '@/auth';
 import { publicWebsiteHighlights } from '@/components/app/app-shell';
 import { isSocialFeedTab } from '@/components/feed/social-feed-tabs';
 import { Link, redirect } from '@/i18n/navigation';
+import { getBlogIndex } from '@/lib/blogs/queries';
 import {
   getPublicActivities,
   getPublicMemberSpotlights,
   getPublicPlaytests,
 } from '@/lib/community/public-community-queries';
+import { getPublicCourseCatalog } from '@/lib/courses/services/course.service';
 import { getPublishedProjects } from '@/lib/projects/public-projects';
-import { ArrowRight, CalendarDays, MessageSquare, Sparkles, Users } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  Clock,
+  GraduationCap,
+  MessageSquare,
+  Newspaper,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 import React from 'react';
 
 /** `/` is contextual: the community feed when signed in, the marketing landing otherwise. */
@@ -24,12 +36,21 @@ export default async function Page({ params, searchParams }: PageProps<'/[locale
     throw new Error('Authenticated home redirect');
   }
 
-  const [latestProjects, memberSpotlights, playtests, activities] = await Promise.all([
-    getPublishedProjects().then((projects) => projects.slice(0, 3)),
-    getPublicMemberSpotlights(),
-    getPublicPlaytests(),
-    getPublicActivities(),
-  ]);
+  const [latestProjects, latestCourses, latestPosts, memberSpotlights, playtests, activities] =
+    await Promise.all([
+      getPublishedProjects().then((projects) => projects.slice(0, 3)),
+      // Latest published courses (issue #123); resilient to a catalog outage.
+      getPublicCourseCatalog()
+        .then((catalog) => (catalog.success ? catalog.data.slice(0, 3) : []))
+        .catch(() => []),
+      // Latest published community posts (issue #123); resilient to a blog outage.
+      getBlogIndex()
+        .then((page) => (page ? page.items.slice(0, 3) : []))
+        .catch(() => []),
+      getPublicMemberSpotlights(),
+      getPublicPlaytests(),
+      getPublicActivities(),
+    ]);
 
   return (
     <main className="bg-background text-foreground">
@@ -122,6 +143,108 @@ export default async function Page({ params, searchParams }: PageProps<'/[locale
                 </article>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-background">
+        <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-16 sm:px-6 lg:px-8">
+          <div className="max-w-2xl space-y-3">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Latest courses
+            </h2>
+            <p className="text-base leading-7 text-muted-foreground">
+              Fresh programs from the catalog - practical paths built around shipping real games.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {latestCourses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Published courses will appear here soon.</p>
+            ) : (
+              latestCourses.map((course) => (
+                <Link
+                  key={course.slug ?? course.id}
+                  href={`/courses/${course.slug ?? course.id}`}
+                  className="group flex flex-col rounded-3xl border border-border bg-card p-6 text-card-foreground transition hover:-translate-y-1 hover:border-primary/30"
+                >
+                  <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <GraduationCap className="size-5" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">{course.title ?? 'Untitled course'}</h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                    {course.description ?? 'A new learning path from the community.'}
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    {course.difficulty != null && (
+                      <span className="inline-flex items-center gap-1">
+                        <BookOpen className="size-3.5" aria-hidden="true" />
+                        {String(course.difficulty)}
+                      </span>
+                    )}
+                    {course.estimatedHours != null && (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="size-3.5" aria-hidden="true" />
+                        {course.estimatedHours}h
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-8">
+            <div className="max-w-2xl space-y-3">
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Latest from the community
+              </h2>
+              <p className="text-base leading-7 text-muted-foreground">
+                Post-mortems, tutorials, and devlogs published by GameGuild members.
+              </p>
+            </div>
+            <Link
+              href="/blogs"
+              className="inline-flex items-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent"
+            >
+              Visit the blog
+              <ArrowRight className="ml-2 size-4" aria-hidden="true" />
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {latestPosts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Community posts will appear here soon.</p>
+            ) : (
+              latestPosts.map((post) => (
+                <Link
+                  key={post.id ?? post.slug}
+                  href={
+                    post.primaryAuthorHandle && post.slug
+                      ? `/blogs/${post.primaryAuthorHandle}/${post.slug}`
+                      : '/blogs'
+                  }
+                  className="group flex flex-col rounded-3xl border border-border bg-card p-6 text-card-foreground transition hover:-translate-y-1 hover:border-primary/30"
+                >
+                  <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Newspaper className="size-5" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">{post.title ?? 'Untitled post'}</h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                    {post.excerpt ?? 'Read the full post on the GameGuild blog.'}
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    {post.primaryAuthorDisplayName && <span>{post.primaryAuthorDisplayName}</span>}
+                    {post.publishedAt && (
+                      <time dateTime={post.publishedAt}>
+                        {new Date(post.publishedAt).toLocaleDateString()}
+                      </time>
+                    )}
+                    {post.readTimeMinutes != null && <span>{post.readTimeMinutes} min read</span>}
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>

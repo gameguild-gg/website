@@ -40,6 +40,13 @@ public class WebhookSettings
     ///     Asynchronous retry worker for failed webhook inbox events (issue #396).
     /// </summary>
     public WebhookRetryWorkerSettings RetryWorker { get; set; } = new WebhookRetryWorkerSettings();
+
+    /// <summary>
+    ///     Signing-secret rotation window in hours (issue #408): after a rotation is
+    ///     recorded, the previous secret stays accepted for this long before it is
+    ///     automatically deprecated. Default 24 hours.
+    /// </summary>
+    public int SecretRotationWindowHours { get; set; } = 24;
 }
 
 /// <summary>

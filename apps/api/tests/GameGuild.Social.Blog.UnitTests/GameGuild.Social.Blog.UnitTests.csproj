@@ -40,5 +40,6 @@
         <ProjectReference Include="..\..\Source\Modules\GameGuild.AI\GameGuild.AI.csproj" />
         <ProjectReference Include="..\..\Source\Modules\GameGuild.Finance.Economy.AiCredits\GameGuild.Finance.Economy.AiCredits.csproj" />
         <ProjectReference Include="..\..\Source\Modules\GameGuild.Resources\GameGuild.Resources.csproj" />
+        <ProjectReference Include="..\..\Source\Modules\GameGuild.Assets\GameGuild.Assets.csproj" />
     </ItemGroup>
 </Project>

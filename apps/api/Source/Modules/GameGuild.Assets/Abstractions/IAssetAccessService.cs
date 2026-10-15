@@ -93,6 +93,13 @@ public interface IAssetAccessService
         Guid contentId,
         TransformationSpec spec,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Prewarms the default transformation variants for approved image content.
+    /// CONTRACT: the caller MUST only invoke this after the content is (or is
+    /// past) the Approved moderation state.
+    /// </summary>
+    Task PrewarmDefaultVariantsAsync(AssetContent content, CancellationToken ct = default);
 }
 
 /// <summary>

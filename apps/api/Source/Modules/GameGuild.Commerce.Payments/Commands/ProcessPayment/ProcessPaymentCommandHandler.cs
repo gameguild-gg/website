@@ -1,5 +1,7 @@
 using GameGuild.CQRS;
 using GameGuild.Commerce;
+using GameGuild.Notifications;
+using GameGuild.Notifications.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -16,8 +18,13 @@ public sealed class ProcessPaymentCommandHandler(
     IOptions<PaymentRetryOptions> retryOptions,
     IPaymentRetryPolicyResolver retryPolicyResolver,
     IFraudDetectionService fraudDetectionService,
-    ILogger<ProcessPaymentCommandHandler> logger) : ICommandHandler<ProcessPaymentCommand, PaymentResult>
+    ILogger<ProcessPaymentCommandHandler> logger,
+    IAccountCreditService? creditService = null,
+    IOptions<CreditAutoApplyOptions>? creditAutoApplyOptions = null,
+    INotificationService? notificationService = null) : ICommandHandler<ProcessPaymentCommand, PaymentResult>
 {
+    private const string SubscriptionInvoiceKind = "subscription";
+
     public async Task<PaymentResult> Handle(ProcessPaymentCommand request, CancellationToken cancellationToken)
     {
         var subscription = await subscriptionPaymentContextService.GetPaymentContextAsync(request.SubscriptionId, cancellationToken)
@@ -66,7 +73,8 @@ public sealed class ProcessPaymentCommandHandler(
                 Amount = new Money(existingPayment.Amount, existingPayment.Currency),
                 ProcessedAt = existingPayment.ProcessedAt,
                 Status = existingPayment.Status,
-                FailureReason = existingPayment.FailureReason
+                FailureReason = existingPayment.FailureReason,
+                CreditApplied = existingPayment.CreditAppliedAmount > 0 ? existingPayment.CreditAppliedAmount : null
             };
         }
 
@@ -127,14 +135,61 @@ public sealed class ProcessPaymentCommandHandler(
             };
         }
 
+        // Account-credit auto-apply (issue #410): plan the credit tender BEFORE charging the
+        // payment method so the gateway charge is reduced by the spendable credits, capped at
+        // the invoice amount (FIFO by expiry at consumption time). The consumption itself is
+        // only committed after the charge outcome is known, so a failed charge never burns
+        // credits. Config-gated via Credits:AutoApply:Enabled (default false); without an
+        // owner or a credit service the path is a no-op.
+        var plannedCreditAmount = 0m;
+        var chargeAmount = subscription.Amount;
+        Guid? autoApplyOwnerId = null;
+        if (creditAutoApplyOptions?.Value.Enabled == true
+            && creditService is not null
+            && subscription.OwnerUserId is { } creditOwnerId)
+        {
+            autoApplyOwnerId = creditOwnerId;
+            var balances = await creditService
+                .GetBalancesAsync(subscription.TenantId, creditOwnerId, cancellationToken)
+                .ConfigureAwait(false);
+            var available = balances
+                .FirstOrDefault(balance => string.Equals(balance.Currency, subscription.Currency, StringComparison.OrdinalIgnoreCase))
+                ?.Available ?? 0m;
+            plannedCreditAmount = Math.Min(available, subscription.Amount);
+            chargeAmount = subscription.Amount - plannedCreditAmount;
+
+            if (plannedCreditAmount > 0)
+            {
+                logger.LogInformation(
+                    "Auto-applying {CreditAmount} {Currency} of account credit for subscription {SubscriptionId}; gateway charge reduced from {InvoiceAmount} to {ChargeAmount}",
+                    plannedCreditAmount,
+                    subscription.Currency,
+                    request.SubscriptionId,
+                    subscription.Amount,
+                    chargeAmount);
+            }
+        }
+
         // 4. Mark as processing
         payment.MarkAsProcessing();
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
 
-        // 5. Process through payment gateway
+        // 5. Process through payment gateway — or settle entirely with credits when they
+        //    cover the full invoice amount (no payment-method charge happens at all).
+        if (chargeAmount <= 0m && plannedCreditAmount > 0m)
+        {
+            return await SettleWithCreditsOnlyAsync(
+                    payment,
+                    autoApplyOwnerId!.Value,
+                    plannedCreditAmount,
+                    subscription.BillingCycleNumber,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var gatewayRequest = new GatewayPaymentRequest(
             IdempotencyKey: idempotencyKey,
-            Amount: subscription.Amount,
+            Amount: chargeAmount,
             Currency: subscription.Currency,
             CustomerId: externalCustomerId,
             PaymentMethodId: request.PaymentMethodId,
@@ -191,6 +246,24 @@ public sealed class ProcessPaymentCommandHandler(
                 payment.Id, gatewayResult.ErrorMessage, gatewayResult.ErrorCode, schedule.Classification, schedule.IsRetriable);
         }
 
+        // Credits are consumed only after the charge outcome is known: a failed or
+        // action-pending charge leaves the grants untouched.
+        var appliedCredit = 0m;
+        if (gatewayResult.Success && plannedCreditAmount > 0m && autoApplyOwnerId.HasValue)
+        {
+            appliedCredit = await ConsumePlannedCreditsAsync(
+                    payment,
+                    autoApplyOwnerId.Value,
+                    plannedCreditAmount,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (appliedCredit > 0m)
+            {
+                payment.RecordCreditApplied(appliedCredit);
+            }
+        }
+
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
 
         if (gatewayResult.Success && payment.ProcessedAt.HasValue)
@@ -205,6 +278,12 @@ public sealed class ProcessPaymentCommandHandler(
                 cancellationToken).ConfigureAwait(false);
         }
 
+        if (appliedCredit > 0m && autoApplyOwnerId.HasValue)
+        {
+            await NotifyCreditAppliedAsync(payment, autoApplyOwnerId.Value, appliedCredit, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         // 7. Return result
         return new PaymentResult
         {
@@ -216,7 +295,179 @@ public sealed class ProcessPaymentCommandHandler(
             ProcessedAt = payment.ProcessedAt,
             Status = payment.Status,
             FailureReason = gatewayResult.ErrorMessage,
-            PaymentMethodId = request.PaymentMethodId
+            PaymentMethodId = request.PaymentMethodId,
+            CreditApplied = appliedCredit > 0m ? appliedCredit : null
         };
+    }
+
+    /// <summary>
+    ///     Full-credit-coverage settlement (issue #410 auto-apply): the credits cover the
+    ///     whole invoice amount, so no gateway charge happens. Fails closed when the planned
+    ///     consumption cannot be committed (for example the balance was drained concurrently):
+    ///     the payment is recorded as failed and retriable, and no credits move.
+    /// </summary>
+    private async Task<PaymentResult> SettleWithCreditsOnlyAsync(
+        Payment payment,
+        Guid ownerUserId,
+        decimal plannedCreditAmount,
+        int billingCycleNumber,
+        CancellationToken cancellationToken)
+    {
+        var appliedCredit = await ConsumePlannedCreditsAsync(payment, ownerUserId, plannedCreditAmount, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (appliedCredit <= 0m)
+        {
+            var schedule = retryPolicyResolver.ComputeSchedule(failureCode: null, payment.RetryCount);
+            payment.MarkAsFailed(
+                "Account credit auto-apply could not be reconciled; no charge was made.",
+                "credit_auto_apply_reconcile_failed",
+                maxRetries: schedule.EffectiveMaxRetries,
+                backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier,
+                nextRetryAt: schedule.NextRetryAt,
+                isRetriable: schedule.IsRetriable);
+            await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
+
+            return new PaymentResult
+            {
+                TenantId = payment.TenantId,
+                Success = false,
+                PaymentId = payment.Id.ToString(),
+                Amount = new Money(payment.Amount, payment.Currency),
+                ProcessedAt = payment.ProcessedAt,
+                Status = payment.Status,
+                FailureReason = payment.FailureReason
+            };
+        }
+
+        payment.RecordCreditApplied(appliedCredit);
+        var settlementReference = $"account-credit:{payment.Id}";
+        payment.MarkAsSucceeded(settlementReference, settlementReference);
+
+        await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
+
+        if (payment.ProcessedAt.HasValue)
+        {
+            await paymentSubscriptionSyncService.SyncSuccessfulPaymentAsync(
+                payment.Id,
+                payment.SubscriptionId,
+                payment.Amount,
+                payment.Currency,
+                billingCycleNumber,
+                payment.ProcessedAt.Value,
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        await NotifyCreditAppliedAsync(payment, ownerUserId, appliedCredit, cancellationToken)
+            .ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Payment {PaymentId} settled entirely with {CreditAmount} {Currency} of account credit; no gateway charge",
+            payment.Id,
+            appliedCredit,
+            payment.Currency);
+
+        return new PaymentResult
+        {
+            TenantId = payment.TenantId,
+            Success = true,
+            TransactionId = settlementReference,
+            PaymentId = payment.Id.ToString(),
+            Amount = new Money(payment.Amount, payment.Currency),
+            ProcessedAt = payment.ProcessedAt,
+            Status = payment.Status,
+            CreditApplied = appliedCredit
+        };
+    }
+
+    private async Task<decimal> ConsumePlannedCreditsAsync(
+        Payment payment,
+        Guid ownerUserId,
+        decimal plannedAmount,
+        CancellationToken cancellationToken)
+    {
+        if (creditService is null || plannedAmount <= 0m)
+        {
+            return 0m;
+        }
+
+        var consumption = await creditService
+            .ConsumeAsync(
+                payment.TenantId,
+                ownerUserId,
+                payment.Currency,
+                plannedAmount,
+                payment.Id,
+                SubscriptionInvoiceKind,
+                $"payment:{payment.Id}:credit-auto-apply",
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (consumption.IsFailure)
+        {
+            // The planned credit tender could not be committed (for example the balance was
+            // drained concurrently). The already-made provider charge stands; flag the
+            // shortfall for manual settlement instead of silently re-charging the user.
+            logger.LogWarning(
+                "Planned credit auto-apply of {PlannedAmount} {Currency} for payment {PaymentId} could not be consumed ({Error}); the provider charge stands and the credit shortfall must be settled manually",
+                plannedAmount,
+                payment.Currency,
+                payment.Id,
+                consumption.Error.Description);
+            return 0m;
+        }
+
+        return consumption.Value.AmountApplied;
+    }
+
+    private async Task NotifyCreditAppliedAsync(
+        Payment payment,
+        Guid ownerUserId,
+        decimal appliedAmount,
+        CancellationToken cancellationToken)
+    {
+        if (notificationService is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var chargedAmount = payment.Amount - appliedAmount;
+            var result = await notificationService
+                .SendAsync(
+                    recipientId: ownerUserId,
+                    type: NotificationType.CreditApplied,
+                    title: "Account credits applied to your payment",
+                    message:
+                        $"{appliedAmount:0.##} {payment.Currency} of account credit was applied to your invoice payment. " +
+                        (chargedAmount > 0m
+                            ? $"Your payment method was charged {chargedAmount:0.##} {payment.Currency}."
+                            : "Your payment method was not charged."),
+                    channel: NotificationChannel.Email,
+                    tenantId: payment.TenantId,
+                    priority: NotificationPriority.Normal,
+                    referenceEntityId: payment.Id,
+                    referenceEntityType: nameof(Payment),
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!result.IsSuccess)
+            {
+                logger.LogInformation(
+                    "Credit-applied notice for payment {PaymentId} was not delivered: {Reason}",
+                    payment.Id,
+                    result.Error?.Description ?? "preference decision");
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Notifications are best-effort: delivery problems must never fail a settled payment.
+            logger.LogWarning(
+                exception,
+                "Failed to send the credit-applied notice for payment {PaymentId}",
+                payment.Id);
+        }
     }
 }

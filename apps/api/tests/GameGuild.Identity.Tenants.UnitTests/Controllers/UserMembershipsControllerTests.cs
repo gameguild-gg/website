@@ -13,14 +13,75 @@ namespace GameGuild.Identity.Tenants.UnitTests.Controllers;
 public class UserMembershipsControllerTests
 {
     [Fact]
-    public void AddUserMembership_Should_Require_Tenant_Admin()
+    public void AddUserMembership_Should_Require_Members_Manage()
     {
         var method = typeof(UserMembershipsController).GetMethod(nameof(UserMembershipsController.AddUserMembership));
 
         method.Should().NotBeNull();
+        // Issue #294: member management is governed by the granular Members.Manage tier
+        // (tenant match + administrative role or a delegated members:manage grant).
         method!.GetCustomAttributes<AuthorizeAttribute>()
             .Should()
-            .ContainSingle(attribute => attribute.Policy == Policies.TenantAdmin);
+            .ContainSingle(attribute => attribute.Policy == Policies.MembersManage);
+    }
+
+    [Fact]
+    public async Task DelegatedMemberManager_WithMembersManagePermission_ShouldManageOwnTenant()
+    {
+        var tenantId = Guid.NewGuid();
+        var sender = new StubSender();
+        sender.Setup<AddTenantMemberCommand, AddTenantMemberResponse>(_ => new AddTenantMemberResponse
+        {
+            Success = true,
+            MemberId = Guid.NewGuid(),
+            Message = "Member added successfully"
+        });
+        var actor = new ActorContext
+        {
+            IsAuthenticated = true,
+            ActorKind = ActorKind.User,
+            SubjectId = Guid.NewGuid().ToString(),
+            TenantId = tenantId,
+            Permissions = new HashSet<string>([ManageMembersPermission.Keys.Manage], StringComparer.OrdinalIgnoreCase),
+            Roles = new HashSet<string>()
+        };
+
+        var controller = CreateController(sender, actor);
+
+        // The in-code guard honors the delegated members:manage permission within the
+        // actor's own tenant (issue #294).
+        var result = await controller.AddUserMembership(
+            Guid.NewGuid(),
+            new AddUserMembershipRequest { TenantId = tenantId, Role = "Member" },
+            CancellationToken.None);
+
+        result.Should().BeOfType<ObjectResult>()
+            .Which.StatusCode.Should().Be(StatusCodes.Status201Created);
+    }
+
+    [Fact]
+    public async Task DelegatedMemberManager_ForForeignTenant_ShouldBeForbidden()
+    {
+        var tenantId = Guid.NewGuid();
+        var foreignTenant = Guid.NewGuid();
+        var actor = new ActorContext
+        {
+            IsAuthenticated = true,
+            ActorKind = ActorKind.User,
+            SubjectId = Guid.NewGuid().ToString(),
+            TenantId = tenantId,
+            Permissions = new HashSet<string>([ManageMembersPermission.Keys.Manage], StringComparer.OrdinalIgnoreCase),
+            Roles = new HashSet<string>()
+        };
+
+        var controller = CreateController(new StubSender(), actor);
+
+        var result = await controller.AddUserMembership(
+            Guid.NewGuid(),
+            new AddUserMembershipRequest { TenantId = foreignTenant, Role = "Member" },
+            CancellationToken.None);
+
+        result.Should().BeOfType<ForbidResult>();
     }
 
     [Fact]

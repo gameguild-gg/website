@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddEconomySelfServiceTopUpIntents
+public partial class AddEconomySelfServiceTopUpIntents : Migration
 {
     private static void InstallEconomyTopUpSecurity(MigrationBuilder migrationBuilder)
     {

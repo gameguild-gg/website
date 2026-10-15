@@ -1,6 +1,6 @@
 {
   "name": "@gameguild/emception-xterm",
-  "version": "4.4.0",
+  "version": "4.4.1",
   "description": "xterm.js stdin/stdout/stderr bridge for emception. xterm peer dep lives here.",
   "license": "MIT",
   "type": "module",
@@ -32,7 +32,7 @@
     "clean": "node -e \"const fs=require('fs');for(const path of ['dist','tsconfig.tsbuildinfo'])fs.rmSync(path,{recursive:true,force:true})\""
   },
   "dependencies": {
-    "emception": "4.4.0"
+    "emception": "4.4.1"
   },
   "peerDependencies": {
     "@xterm/xterm": "^6.0.0"

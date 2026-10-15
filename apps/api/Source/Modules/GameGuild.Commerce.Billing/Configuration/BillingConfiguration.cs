@@ -142,6 +142,13 @@ public class BillingConfiguration : IValidatableObject
         }
 
         // Webhook settings validation
+        if (Webhook.SecretRotationWindowHours is < 1 or > 168)
+        {
+            yield return new ValidationResult(
+                "SecretRotationWindowHours must be between 1 and 168 hours",
+                new[] { $"{nameof(Webhook)}.{nameof(Webhook.SecretRotationWindowHours)}" });
+        }
+
         if (Webhook.MaxRetryAttempts < 0)
         {
             yield return new ValidationResult(

@@ -291,6 +291,42 @@ public class TenantPermissionConfiguration : IEntityTypeConfiguration<TenantPerm
 }
 
 /// <summary>
+///     EF Core configuration for ContentTypePermissionGrant entity (the content-type
+///     layer's scoped grant store, issues #360/#365).
+/// </summary>
+public class ContentTypePermissionGrantConfiguration : IEntityTypeConfiguration<ContentTypePermissionGrant>
+{
+    public void Configure(EntityTypeBuilder<ContentTypePermissionGrant> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.HasQueryFilter(grant => grant.DeletedAt == null);
+        builder.HasIndex(e => e.TenantId);
+        builder.HasIndex(e => e.UserId);
+        builder.HasIndex(e => new { e.UserId, e.TenantId, e.ContentTypeName }, "IX_ContentTypePermissionGrants_Subject_Tenant_ContentType")
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
+        builder.HasIndex(e => new { e.TenantId, e.ContentTypeName }, "IX_ContentTypePermissionGrants_Tenant_ContentType");
+        builder.HasIndex(e => e.ExpiresAt);
+
+        builder.Property(e => e.ContentTypeName).IsRequired().HasMaxLength(256);
+        builder.Property(e => e.Permissions).IsRequired();
+        builder.Property(e => e.Reason).HasMaxLength(500);
+
+        // Explicitly map Metadata as a JSON-serialized property (not a navigation)
+        // so both Npgsql and InMemory providers handle Dictionary<string, object> correctly
+        builder.Property(e => e.Metadata)
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(v, (JsonSerializerOptions?)null)
+            );
+
+        builder.Property(e => e.Metadata)
+            .Metadata.SetValueComparer(JsonDictionaryValueComparers.ObjectDictionaryComparer);
+    }
+}
+
+/// <summary>
 ///     EF Core configuration for PermissionTemplate entity
 /// </summary>
 public class PermissionTemplateConfiguration : IEntityTypeConfiguration<PermissionTemplate>
