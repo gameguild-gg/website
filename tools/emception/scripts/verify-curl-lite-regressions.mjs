@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
+  writeFileSync,
   rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -59,7 +61,47 @@ const temporaryBase = realpathSync(tmpdir());
 const prefix = "emception-curl-regressions-";
 const directory = mkdtempSync(path.join(temporaryBase, prefix));
 try {
-  for (const name of ["header_callback", "encoding"]) {
+
+  const baselineRevision = process.env.CURL_LITE_BASELINE_REV;
+  if (baselineRevision) {
+    if (!/^[a-f0-9]{40}$/u.test(baselineRevision)) {
+      throw new Error("The baseline must be an exact commit SHA");
+    }
+    const baseline = run("git", [
+      "show",
+      `${baselineRevision}:tools/emception/toolchain/overlays/libcurl-lite/src/curl_lite.c`,
+    ], true).replaceAll("\r\n", "\n");
+    const baselineHash = createHash("sha256").update(baseline).digest("hex");
+    if (baselineHash === "fb4bdabfc97ce4e38600b032eb6798f1a2abc04c6fcf95c0402a05d1d39c9dd7") {
+      const baselineSource = path.join(directory, "baseline-curl.c");
+      const baselineExecutable = path.join(directory, process.platform === "win32" ? "baseline.exe" : "baseline");
+      writeFileSync(baselineSource, baseline);
+      run(process.env.CC ?? (process.platform === "win32" ? "clang" : "gcc"), [
+        "-std=c11", "-Wall", "-Wextra", "-Werror", "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer", "-I", path.join(library, "include"),
+        "-DCURL_LITE_BASELINE_ONLY",
+        `-DCURL_LITE_SOURCE="${baselineSource.replaceAll("\\", "/")}"`,
+        path.join(library, "tests", "postfields.c"),
+        "-o", baselineExecutable,
+      ]);
+      const control = spawnSync(baselineExecutable, [], {
+        env: { ...environment, ASAN_OPTIONS: "detect_leaks=1:halt_on_error=1" },
+        encoding: "utf8",
+        timeout: 30000,
+      });
+      process.stdout.write(control.stdout ?? "");
+      process.stderr.write(control.stderr ?? "");
+      if (control.error || control.status === 0 ||
+          !/AddressSanitizer: heap-buffer-overflow/u.test(control.stderr ?? "")) {
+        throw new Error("The reviewed before-source did not reproduce the expected heap-buffer-overflow");
+      }
+      process.stdout.write(`Before-source control: reproduced heap-buffer-overflow at ${baselineRevision} (${baselineHash})\n`);
+    } else {
+      process.stdout.write(`Before-source control not applicable: baseline content ${baselineHash} differs from the reviewed vulnerable source\n`);
+    }
+  }
+
+  for (const name of ["header_callback", "encoding", "postfields"]) {
     const source = path.join(library, "tests", `${name}.c`);
     const common = [
       "-std=c11",
