@@ -1,0 +1,70 @@
+name: Curl adapter security regressions
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - tools/emception/toolchain/overlays/libcurl-lite/**
+      - tools/emception/toolchain/toolchain.lock.json
+      - tools/emception/scripts/verify-curl-lite-regressions.mjs
+      - .github/workflows/curl-lite-security.yml
+  workflow_dispatch:
+    inputs:
+      baseline_revision:
+        description: Optional exact commit SHA for the reviewed before-source control
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: curl-lite-security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-and-wasm:
+    name: Native and WASM binary-body regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CURL_LITE_BASELINE_REV: ${{ inputs.baseline_revision || github.event.pull_request.base.sha }}
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-node-workspace
+      - name: Verify current native memory and body regressions
+        shell: bash
+        run: |
+          mkdir -p artifacts/test-results/curl-lite-security "$RUNNER_TEMP/gameguild-curl-security"
+          git rev-parse HEAD > artifacts/test-results/curl-lite-security/head.txt
+          git rev-parse 'HEAD^{tree}' > artifacts/test-results/curl-lite-security/tree.txt
+          {
+            for test in header_callback encoding postfields; do
+              gcc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer \
+                -I tools/emception/toolchain/overlays/libcurl-lite/include \
+                "tools/emception/toolchain/overlays/libcurl-lite/tests/$test.c" \
+                -o "$RUNNER_TEMP/gameguild-curl-security/$test"
+              "$RUNNER_TEMP/gameguild-curl-security/$test"
+            done
+          } 2>&1 | tee artifacts/test-results/curl-lite-security/native.log
+      - name: Install and verify pinned Emscripten SDK
+        run: pnpm --dir tools/emception toolchain build emsdk
+      - name: Reproduce reviewed before-source and verify current native and WASM behavior
+        shell: bash
+        run: |
+          mkdir -p artifacts/test-results/curl-lite-security
+          git rev-parse HEAD > artifacts/test-results/curl-lite-security/head.txt
+          git rev-parse 'HEAD^{tree}' > artifacts/test-results/curl-lite-security/tree.txt
+          pnpm --dir tools/emception run test:curl-lite 2>&1 | tee artifacts/test-results/curl-lite-security/verification.log
+      - name: Upload exact-head regression evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: curl-lite-security-${{ github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/test-results/curl-lite-security
+          if-no-files-found: warn
