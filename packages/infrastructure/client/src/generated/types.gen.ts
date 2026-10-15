@@ -1628,6 +1628,14 @@ export interface CommerceBillingBillingWebhookEventListItemDto {
   tenantId?: string | null;
 }
 
+/** Request body for the webhook signing-secret rotation. */
+export interface CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput {
+  /** The new signing secret exactly as configured at the provider. */
+  newSecret?: string | null;
+  /** Provider key (stripe, paypal, ...). */
+  providerKey?: string | null;
+}
+
 /** A security alert surfaced from the Compliance.Audit pipeline. */
 export interface CommerceBillingBillingWebhookSecurityAlertDto {
   id?: string;
@@ -1933,6 +1941,20 @@ export interface CommerceBillingValidatePricingLedgerDriftInput {
   sampleSize?: number;
   /** Inclusive window end (null = unbounded). */
   toUtc?: string | null;
+}
+
+/** Result of a recorded webhook signing-secret rotation. Never contains secret material. */
+export interface CommerceBillingWebhookSecretRotationResult {
+  /** Always true on creation; the previous secret verifies for the whole window. */
+  previousSecretStillAccepted?: boolean;
+  /** UTC instant after which the previous secret stops verifying. */
+  previousSecretValidUntilUtc?: string;
+  /** Normalized provider key. */
+  providerKey?: string | null;
+  /** UTC instant the rotation was recorded. */
+  rotatedAtUtc?: string;
+  /** The recorded rotation. */
+  rotationId?: string;
 }
 
 /** OpenAPI schema for Commerce Order Charge State. */
@@ -2706,6 +2728,58 @@ export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | '
 /** Risk band derived from the aggregate fraud score. */
 export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
 
+/** Health snapshot of one gateway circuit (issue #413). */
+export interface CommercePaymentsGatewayCircuitSnapshot {
+  /** Consecutive retriable failures recorded while closed. */
+  consecutiveFailures?: number;
+  /** Configured consecutive-failure threshold. */
+  failureThreshold?: number;
+  /** When the circuit last opened; null while closed. */
+  openedAtUtc?: string | null;
+  /** Provider identifier of the gateway. */
+  providerId?: string | null;
+  state?: CommercePaymentsGatewayCircuitState;
+}
+
+/** Circuit state of one payment gateway. */
+export type CommercePaymentsGatewayCircuitState = 'Closed' | 'Open' | 'HalfOpen';
+
+/** Combined read model of one reporting pass: rolling-window aggregates per gateway
+plus the current circuit-breaker snapshot of every known gateway. */
+export interface CommercePaymentsGatewayMetricsReport {
+  /** Circuit-breaker snapshot of every known gateway at generation time. */
+  circuitBreakers: CommercePaymentsGatewayCircuitSnapshot[] | null;
+  /** UTC instant the report was generated. */
+  generatedAtUtc: string;
+  /** Window aggregates (24h/7d/30d) per provider with payments in the window;
+providers without payments in a window are omitted from that window. */
+  windows: CommercePaymentsGatewayWindowMetrics[] | null;
+}
+
+/** Aggregated performance of one gateway over one rolling window, computed from
+persisted payment records (issue #413). */
+export interface CommercePaymentsGatewayWindowMetrics {
+  /** Payments recorded for the gateway inside the window. */
+  attempts?: number;
+  /** Mean of `ProcessedAt - CreatedAt` over succeeded payments, milliseconds; null
+when no succeeded payment has both timestamps. */
+  averageProcessingLatencyMs?: number | null;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Failed. */
+  failed?: number;
+  /** Provider identifier of the gateway. */
+  providerId?: string | null;
+  /** Inclusive window start (UTC). */
+  sinceUtc?: string;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Succeeded. */
+  succeeded?: number;
+  /** Succeeded / Attempts; 0 when no attempts. */
+  successRate?: number;
+  /** Payments still pending/processing/requiring action inside the window. */
+  unresolved?: number;
+  /** Window label (24h, 7d or 30d). */
+  window?: string | null;
+}
+
 /** Public (non-secret) view of a gift for the redemption preview endpoint. */
 export interface CommercePaymentsGiftPublicView {
   /** Gift id. */
@@ -2993,6 +3067,10 @@ export interface CommercePaymentsPaymentRecoveryMetrics {
 /** Result of payment processing */
 export interface CommercePaymentsPaymentResult {
   amount?: Money;
+  /** Account-credit tender applied automatically before the payment method was charged
+(issue #410 auto-apply); the provider charge is `Amount - CreditApplied`.
+Null when no credits were applied. */
+  creditApplied?: number | null;
   failureReason?: string | null;
   /** Invoice ID that this payment was applied to.
 Links payment to specific invoice for audit trail and preventing duplicate applications. */
@@ -3496,6 +3574,49 @@ export interface CommercePaymentsReferrerLeaderboardEntry {
   rewardedReferrals?: number;
 }
 
+/** Combined refund/dispute analytics read model (issue #419 follow-up). */
+export interface CommercePaymentsRefundAnalyticsReport {
+  /** Average hours from creation to resolution for resolved disputes; null when none resolved. */
+  averageDisputeResolutionHours?: number | null;
+  /** Refunded amount by currency for completed refunds in the window. */
+  completedRefundAmountByCurrency: Record<string, number> | null;
+  /** Dispute count by status in the window. */
+  disputeCountByStatus: {
+    Cancelled?: number;
+    Lost?: number;
+    PendingCustomerResponse?: number;
+    PendingMerchantResponse?: number;
+    Resolved?: number;
+    Submitted?: number;
+    UnderReview?: number;
+    Won?: number;
+  } | null;
+  /** Share of decided (won or lost) disputes among all disputes; null when there are none. */
+  disputeResolutionRate?: number | null;
+  /** Disputes lost by the merchant in the window. */
+  disputesLost: number;
+  /** Disputes won by the merchant in the window. */
+  disputesWon: number;
+  /** Share of won disputes among decided disputes; null when none were decided. */
+  disputeWinRate?: number | null;
+  /** Inclusive window start. */
+  fromUtc: string;
+  /** Refunded amount by lifecycle status in the window. */
+  refundAmountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** Refund count by currency in the window (all statuses). */
+  refundCountByCurrency: Record<string, number> | null;
+  /** Refund count by lifecycle status in the window. */
+  refundCountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** UTC-day breakdown of refund counts and completed amounts. */
+  refundsByDay: CommercePaymentsRefundDailyBucket[] | null;
+  /** Total disputes considered in the window. */
+  totalDisputeCount: number;
+  /** Total refunds considered in the window (all statuses). */
+  totalRefundCount: number;
+  /** Inclusive window end. */
+  toUtc: string;
+}
+
 /** Paged read model for the pending refund-approval queue. */
 export interface CommercePaymentsRefundApprovalQueuePage {
   /** Queue items for the requested page, oldest first. */
@@ -3506,6 +3627,16 @@ export interface CommercePaymentsRefundApprovalQueuePage {
   pageSize: number;
   /** Total queue size across all pages. */
   totalCount: number;
+}
+
+/** One UTC-day bucket of the refund period breakdown. */
+export interface CommercePaymentsRefundDailyBucket {
+  /** Sum of amounts of refunds completed that day. */
+  completedAmount?: number;
+  /** Refunds created that day (all statuses). */
+  count?: number;
+  /** UTC day (midnight) the bucket covers. */
+  date?: string;
 }
 
 /** Result of an approval or rejection decision on a refund request. */
@@ -23794,6 +23925,7 @@ export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<Comm
 export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
 export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
 export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventListItemDto>;
+export let CommerceBillingBillingWebhooksControllerRotateWebhookSecretInputSchema: z.ZodType<CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput>;
 export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
 export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
@@ -23813,6 +23945,7 @@ export let CommerceBillingPricingRuleImpactRowSchema: z.ZodType<CommerceBillingP
 export let CommerceBillingPromoCodeEffectivenessRowSchema: z.ZodType<CommerceBillingPromoCodeEffectivenessRow>;
 export let CommerceBillingStackingOutcomeRowSchema: z.ZodType<CommerceBillingStackingOutcomeRow>;
 export let CommerceBillingValidatePricingLedgerDriftInputSchema: z.ZodType<CommerceBillingValidatePricingLedgerDriftInput>;
+export let CommerceBillingWebhookSecretRotationResultSchema: z.ZodType<CommerceBillingWebhookSecretRotationResult>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
@@ -23882,6 +24015,10 @@ export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<Commerce
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
+export let CommercePaymentsGatewayCircuitSnapshotSchema: z.ZodType<CommercePaymentsGatewayCircuitSnapshot>;
+export let CommercePaymentsGatewayCircuitStateSchema: z.ZodType<CommercePaymentsGatewayCircuitState>;
+export let CommercePaymentsGatewayMetricsReportSchema: z.ZodType<CommercePaymentsGatewayMetricsReport>;
+export let CommercePaymentsGatewayWindowMetricsSchema: z.ZodType<CommercePaymentsGatewayWindowMetrics>;
 export let CommercePaymentsGiftPublicViewSchema: z.ZodType<CommercePaymentsGiftPublicView>;
 export let CommercePaymentsGiftPurchaseResultSchema: z.ZodType<CommercePaymentsGiftPurchaseResult>;
 export let CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema: z.ZodType<CommercePaymentsGiftsControllerPurchaseGiftRequestBody>;
@@ -23936,7 +24073,9 @@ export let CommercePaymentsReferralSignupResultSchema: z.ZodType<CommercePayment
 export let CommercePaymentsReferralStatsSchema: z.ZodType<CommercePaymentsReferralStats>;
 export let CommercePaymentsReferralStatusSchema: z.ZodType<CommercePaymentsReferralStatus>;
 export let CommercePaymentsReferrerLeaderboardEntrySchema: z.ZodType<CommercePaymentsReferrerLeaderboardEntry>;
+export let CommercePaymentsRefundAnalyticsReportSchema: z.ZodType<CommercePaymentsRefundAnalyticsReport>;
 export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
+export let CommercePaymentsRefundDailyBucketSchema: z.ZodType<CommercePaymentsRefundDailyBucket>;
 export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
 export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
 export let CommercePaymentsRefundRecordSchema: z.ZodType<CommercePaymentsRefundRecord>;
@@ -27280,6 +27419,12 @@ CommerceBillingBillingWebhookEventListItemDtoSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput. Request body for the webhook signing-secret rotation. */
+CommerceBillingBillingWebhooksControllerRotateWebhookSecretInputSchema = z.object({
+  newSecret: z.string().nullable().optional(),
+  providerKey: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingBillingWebhookSecurityAlertDto. A security alert surfaced from the Compliance.Audit pipeline. */
 CommerceBillingBillingWebhookSecurityAlertDtoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -27500,6 +27645,15 @@ CommerceBillingValidatePricingLedgerDriftInputSchema = z.object({
   fromUtc: z.string().datetime().nullable().optional(),
   sampleSize: z.number().int().optional(),
   toUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingWebhookSecretRotationResult. Result of a recorded webhook signing-secret rotation. Never contains secret material. */
+CommerceBillingWebhookSecretRotationResultSchema = z.object({
+  previousSecretStillAccepted: z.boolean().optional(),
+  previousSecretValidUntilUtc: z.string().datetime().optional(),
+  providerKey: z.string().nullable().optional(),
+  rotatedAtUtc: z.string().datetime().optional(),
+  rotationId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrderChargeState. OpenAPI schema for Commerce Order Charge State. */
@@ -28192,6 +28346,40 @@ CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', '
 /** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
 CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
 
+/** Zod schema for CommercePaymentsGatewayCircuitSnapshot. Health snapshot of one gateway circuit (issue #413). */
+CommercePaymentsGatewayCircuitSnapshotSchema = z.object({
+  consecutiveFailures: z.number().int().optional(),
+  failureThreshold: z.number().int().optional(),
+  openedAtUtc: z.string().datetime().nullable().optional(),
+  providerId: z.string().nullable().optional(),
+  state: z.lazy(() => CommercePaymentsGatewayCircuitStateSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsGatewayCircuitState. Circuit state of one payment gateway. */
+CommercePaymentsGatewayCircuitStateSchema = z.enum(['Closed', 'Open', 'HalfOpen']);
+
+/** Zod schema for CommercePaymentsGatewayMetricsReport. Combined read model of one reporting pass: rolling-window aggregates per gateway
+plus the current circuit-breaker snapshot of every known gateway. */
+CommercePaymentsGatewayMetricsReportSchema = z.object({
+  circuitBreakers: z.array(z.lazy(() => CommercePaymentsGatewayCircuitSnapshotSchema)).nullable(),
+  generatedAtUtc: z.string().datetime(),
+  windows: z.array(z.lazy(() => CommercePaymentsGatewayWindowMetricsSchema)).nullable(),
+});
+
+/** Zod schema for CommercePaymentsGatewayWindowMetrics. Aggregated performance of one gateway over one rolling window, computed from
+persisted payment records (issue #413). */
+CommercePaymentsGatewayWindowMetricsSchema = z.object({
+  attempts: z.number().int().optional(),
+  averageProcessingLatencyMs: z.number().nullable().optional(),
+  failed: z.number().int().optional(),
+  providerId: z.string().nullable().optional(),
+  sinceUtc: z.string().datetime().optional(),
+  succeeded: z.number().int().optional(),
+  successRate: z.number().optional(),
+  unresolved: z.number().int().optional(),
+  window: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsGiftPublicView. Public (non-secret) view of a gift for the redemption preview endpoint. */
 CommercePaymentsGiftPublicViewSchema = z.object({
   id: z.string().uuid().optional(),
@@ -28413,6 +28601,7 @@ CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
 /** Zod schema for CommercePaymentsPaymentResult. Result of payment processing */
 CommercePaymentsPaymentResultSchema = z.object({
   amount: z.lazy(() => MoneySchema).optional(),
+  creditApplied: z.number().nullable().optional(),
   failureReason: z.string().nullable().optional(),
   invoiceId: z.string().uuid().nullable().optional(),
   paymentId: z.string().nullable().optional(),
@@ -28810,12 +28999,67 @@ CommercePaymentsReferrerLeaderboardEntrySchema = z.object({
   rewardedReferrals: z.number().int().optional(),
 });
 
+/** Zod schema for CommercePaymentsRefundAnalyticsReport. Combined refund/dispute analytics read model (issue #419 follow-up). */
+CommercePaymentsRefundAnalyticsReportSchema = z.object({
+  averageDisputeResolutionHours: z.number().nullable().optional(),
+  completedRefundAmountByCurrency: z.record(z.string(), z.number()).nullable(),
+  disputeCountByStatus: z
+    .object({
+      Cancelled: z.number().int(),
+      Lost: z.number().int(),
+      PendingCustomerResponse: z.number().int(),
+      PendingMerchantResponse: z.number().int(),
+      Resolved: z.number().int(),
+      Submitted: z.number().int(),
+      UnderReview: z.number().int(),
+      Won: z.number().int(),
+    })
+    .nullable(),
+  disputeResolutionRate: z.number().nullable().optional(),
+  disputesLost: z.number().int(),
+  disputesWon: z.number().int(),
+  disputeWinRate: z.number().nullable().optional(),
+  fromUtc: z.string().datetime(),
+  refundAmountByStatus: z
+    .object({
+      Approved: z.number(),
+      Completed: z.number(),
+      Failed: z.number(),
+      Pending: z.number(),
+      Processing: z.number(),
+      Rejected: z.number(),
+    })
+    .nullable(),
+  refundCountByCurrency: z.record(z.string(), z.number().int()).nullable(),
+  refundCountByStatus: z
+    .object({
+      Approved: z.number().int(),
+      Completed: z.number().int(),
+      Failed: z.number().int(),
+      Pending: z.number().int(),
+      Processing: z.number().int(),
+      Rejected: z.number().int(),
+    })
+    .nullable(),
+  refundsByDay: z.array(z.lazy(() => CommercePaymentsRefundDailyBucketSchema)).nullable(),
+  totalDisputeCount: z.number().int(),
+  totalRefundCount: z.number().int(),
+  toUtc: z.string().datetime(),
+});
+
 /** Zod schema for CommercePaymentsRefundApprovalQueuePage. Paged read model for the pending refund-approval queue. */
 CommercePaymentsRefundApprovalQueuePageSchema = z.object({
   items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
   page: z.number().int(),
   pageSize: z.number().int(),
   totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsRefundDailyBucket. One UTC-day bucket of the refund period breakdown. */
+CommercePaymentsRefundDailyBucketSchema = z.object({
+  completedAmount: z.number().optional(),
+  count: z.number().int().optional(),
+  date: z.string().datetime().optional(),
 });
 
 /** Zod schema for CommercePaymentsRefundDecisionResult. Result of an approval or rejection decision on a refund request. */

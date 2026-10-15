@@ -88,6 +88,41 @@ export class CommerceBillingWebhooksModule {
   }
 
   /**
+   * Rotate a provider's webhook signing secret (issue #408)
+   *
+   * Records a signing-secret rotation for one provider webhook endpoint. During the
+   * rotation window (Billing:Webhook:SecretRotationWindowHours, default 24h) deliveries
+   * signed with either the previous or the new secret verify (dual-secret verification);
+   * after the window the previous secret is automatically deprecated and rejected. The
+   * new secret is stored encrypted at rest and never appears in logs or the response.
+   * Requires the SystemAdmin policy; the acting administrator is taken from the
+   * authenticated actor, and the decision is audited.
+   */
+  async postBillingWebhooksSecretsRotate(
+    body: Types.CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput,
+  ): Promise<Result<Types.CommerceBillingWebhookSecretRotationResult, ApiError>> {
+    const url = '/api/v1/billing/webhooks/secrets:rotate';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommerceBillingBillingWebhooksControllerRotateWebhookSecretInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceBillingWebhookSecretRotationResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Get the billing webhook security monitoring summary
    *
    * Admin-facing monitoring surface for the billing webhook security controls: the state of

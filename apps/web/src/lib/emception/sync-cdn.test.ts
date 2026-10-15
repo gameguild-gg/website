@@ -195,6 +195,33 @@ describe('ensureCanonicalRelease', () => {
     expect(result).toEqual({ action: 'hydrated', source: src, version: '4.3.0', schemaVersion: 2 });
   });
 
+  it('accepts a hydrate fallback to the latest published version when the pin is unpublished', async () => {
+    const root = await makeTree();
+    const src = path.join(root, 'canonical', 'cdn');
+    const packageJson = path.join(root, 'toolchain-package.json');
+    await fs.writeFile(packageJson, JSON.stringify({ version: '4.4.1' }));
+
+    const logs: string[] = [];
+    const result = await ensureCanonicalRelease({
+      srcDir: src,
+      versionPackagePath: packageJson,
+      log: (m) => logs.push(m),
+      hydrate: async ({ srcDir: dir, version }) => {
+        // Mirrors hydratePublishedRelease: the pinned tarball is unpublished, so
+        // npm pack falls back to the latest published version.
+        const packed = version === '4.4.1' ? '4.4.0' : version;
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(
+          path.join(dir, 'manifest.json'),
+          JSON.stringify({ schemaVersion: 2, artifactVersion: packed }),
+        );
+        return { version: packed };
+      },
+    });
+
+    expect(result).toEqual({ action: 'hydrated', source: src, version: '4.4.0', schemaVersion: 2 });
+  });
+
   it('rejects a hydrated release whose manifest does not match the pinned version', async () => {
     const root = await makeTree();
     const src = path.join(root, 'canonical', 'cdn');
