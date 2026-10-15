@@ -510,7 +510,7 @@ public class AssetUploadService : IAssetUploadService
     private static async Task<(int? Width, int? Height)> ExtractImageDimensionsAsync(
         Stream content, CancellationToken ct)
     {
-        // Simplified - in production, use ImageSharp or similar
+        // Simplified - in production, use a bounded raster decoder
         // This would parse image headers to get dimensions without loading full image
         await Task.CompletedTask;
         return (null, null);

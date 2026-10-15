@@ -165,6 +165,16 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             operationEventPending = true;
         }
 
+        // Universal entity-change audit capture (issue #166): staged inside the same
+        // SaveChanges call, before the version bump and commit, so a failed or rolled-back
+        // transaction leaves no audit rows and Modified snapshots keep only business-changed
+        // properties. Permission-family entities are deliberately captured here as well:
+        // the dedicated permission audit path above feeds the centralized compliance
+        // AuditLog store, while these rows are the per-entity change history — separate
+        // stores, no double recording. Audit-store types are excluded inside the capture
+        // to prevent audit-of-audit recursion.
+        var capturedAuditRecordCount = EntityChangeAuditCapture.Capture(this, operationContext, _logger);
+
         foreach (var entry in ChangeTracker.Entries())
         {
             if (entry.Entity is EntityBase<Guid> entity &&
@@ -204,7 +214,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             entity.ClearIntegrationEvents();
         }
 
-        return affectedRows - capturedOutboxCount;
+        return affectedRows - capturedOutboxCount - capturedAuditRecordCount;
     }
 
     /// <summary>

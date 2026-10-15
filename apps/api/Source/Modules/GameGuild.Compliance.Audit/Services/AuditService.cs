@@ -414,6 +414,9 @@ public sealed class AuditService(
         if (query.StartDate.HasValue) { queryable = queryable.Where(a => a.CreatedAt >= query.StartDate.Value); }
         if (query.EndDate.HasValue) { queryable = queryable.Where(a => a.CreatedAt <= query.EndDate.Value); }
         if (!string.IsNullOrEmpty(query.IpAddress)) { queryable = queryable.Where(a => a.IpAddress == query.IpAddress); }
+        var searchPredicate = AuditLogSearchFilter.BuildPredicate(query.SearchText);
+        if (searchPredicate is not null) { queryable = queryable.Where(searchPredicate); }
+        if (query.Condition is not null) { queryable = queryable.Where(AuditConditionTreeTranslator.BuildPredicate(query.Condition)); }
 
         return queryable;
     }

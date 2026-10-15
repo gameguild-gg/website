@@ -20,12 +20,14 @@ public class UserMfaConfiguration
     ///     TOTP secret key (encrypted)
     /// </summary>
     [MaxLength(500)]
+    [AuditSensitive]
     public string? TotpSecretKey { get; set; }
 
     /// <summary>
     ///     Versioned issued-set metadata and salted hashes; legacy SHA-256 lists remain readable
     /// </summary>
     [MaxLength(2000)]
+    [AuditSensitive]
     public string? BackupCodes { get; set; }
 
     /// <summary>

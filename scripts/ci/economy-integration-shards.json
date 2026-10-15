@@ -1,0 +1,23 @@
+{
+  "api-integration-1": [
+    "GameGuild.API.IntegrationTests.PolymorphicSignInPostgreSqlHttpTests",
+    "GameGuild.API.IntegrationTests.PasswordHistoryPostgreSqlHttpTests",
+    "GameGuild.API.IntegrationTests.MfaSignInCompletionSecurityPostgreSqlTests",
+    "GameGuild.API.IntegrationTests.MfaSignInEnrollmentSecurityPostgreSqlTests"
+  ],
+  "api-integration-2": [
+    "GameGuild.API.IntegrationTests.AuthenticationTimingDistributionHttpTests",
+    "GameGuild.API.IntegrationTests.AuthenticationTimingPostgreSqlHttpTests",
+    "GameGuild.API.IntegrationTests.AuthenticationDtoPostgreSqlHttpTests",
+    "GameGuild.API.IntegrationTests.AuditReplayPostgreSqlHttpTests",
+    "GameGuild.API.IntegrationTests.AuditExportPostgreSqlHttpTests",
+    "GameGuild.API.IntegrationTests.AuditRetentionSimulationPostgreSqlHttpTests",
+    "GameGuild.API.IntegrationTests.AssessmentGradingPostgreSqlHttpTests"
+  ],
+  "api-integration-3": [
+    "GameGuild.API.IntegrationTests.ApplicationStartupIntegrationTests",
+    "GameGuild.API.IntegrationTests.ModuleOpenApiIntegrationTests",
+    "GameGuild.API.IntegrationTests.CommonOpenApiIntegrationTests",
+    "GameGuild.API.IntegrationTests.CompliancePackagingPostgreSqlHttpTests"
+  ]
+}

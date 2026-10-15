@@ -109,7 +109,16 @@ test_workflow_uses_fast_pr_and_full_release_economy_profiles() {
 
   grep -Fq 'name: Economy Release Gate' "$pr_workflow" || return 1
   grep -Fq "needs.classify.outputs.economyCritical == 'true'" "$pr_workflow" || return 1
-  grep -Fq 'ECONOMY_GATE_PROFILE: full' "$pr_workflow" || return 1
+  grep -Fq 'ECONOMY_GATE_PROFILE: browser' "$pr_workflow" || return 1
+  grep -Fq 'ECONOMY_GATE_PROFILE: coverage' "$pr_workflow" || return 1
+  grep -Fq 'ECONOMY_GATE_PROFILE: api-bundle' "$pr_workflow" || return 1
+  grep -Fq 'ECONOMY_GATE_PROFILE: client-bundle' "$pr_workflow" || return 1
+  grep -Fq 'ECONOMY_GATE_PROFILE: regression' "$pr_workflow" || return 1
+  grep -Fq 'shard: [api-integration-1, api-integration-2, api-integration-3, api-integration-4, api-unit, remaining-1, remaining-2]' "$pr_workflow" || return 1
+  grep -Fq 'needs: [classify, economy-api, economy-client]' "$pr_workflow" || return 1
+  grep -Fq 'tree or SHA256 mismatch' "$ci_dir/economy-artifacts.sh" || return 1
+  sed -n '/^  required-gate:/,$p' "$pr_workflow" | grep -Fq 'economy-coverage,' || return 1
+  sed -n '/^  required-gate:/,$p' "$pr_workflow" | grep -Fq 'economy-regression,' || return 1
   grep -Fq 'cron: "17 3 * * *"' "$nightly_workflow" || return 1
   grep -Fq 'ECONOMY_GATE_PROFILE: full' "$nightly_workflow"
 }
@@ -201,8 +210,8 @@ test_economy_gate_supports_fast_pr_and_full_release_profiles() {
   local gate="$ci_dir/verify-economy.sh"
 
   grep -Fq 'case "$gate_profile" in' "$gate" || return 1
-  grep -Fq 'pr|full)' "$gate" || return 1
-  grep -Fq '[[ "$gate_profile" == full ]]' "$gate"
+  grep -Fq 'pr|full|release|regression|coverage|api-bundle|client-bundle|browser)' "$gate" || return 1
+  grep -Fq '[[ "$gate_profile" == full || "$gate_profile" == release || "$gate_profile" == browser ]]' "$gate"
 }
 
 test_economy_gate_batches_whole_solution_tests() {
@@ -805,8 +814,9 @@ test_whole_solution_isolates_vstest_processes() {
   grep -Fq 'economy_test_project()' "$gate" || return 1
   grep -Fq 'economy_test_project "$test_project" && continue' "$gate" || return 1
   grep -Fq "tr '${path_separator}134' '/'" "$gate" || return 1
-  grep -Fq 'for test_project in "${whole_solution_projects[@]}"; do' "$gate" || return 1
-  grep -Fq 'run_whole_solution_test_project "$test_project" "$whole_solution_results" &' "$gate" || return 1
+  grep -Fq 'run_whole_solution_worker()' "$gate" || return 1
+  grep -Fq 'run_whole_solution_worker "$worker_index" &' "$gate" || return 1
+  grep -Fq 'run_whole_solution_test_project "${whole_solution_projects[project_index]}" "$whole_solution_results"' "$gate" || return 1
   grep -Fq 'Whole-solution test project produced no TRX:' "$gate" || return 1
   ! grep -Fq 'dotnet test apps/api/GameGuild.sln' "$gate"
 }
