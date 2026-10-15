@@ -161,6 +161,8 @@ public static class AnonymousEndpointRegistry
 
             // ── Public intake forms ──
             ["MarketingLeadController.CreateLead"] = "Public contact form; rate limited and validated.",
+            ["CourseProposalsController.CreateProposal"] = "Public course-proposal submission form (issue #105); validated, audit-logged, stores no secrets.",
+            ["CourseProposalsController.GetProposalBySlug"] = "Public proposal detail surface; anonymous callers receive published proposals only.",
 
             // ── Asset delivery (per-request token + access-policy authorization) ──
             ["AssetsController.GetAsset"] = "Metadata fetch; access policy is enforced inside the asset access service.",

@@ -2,7 +2,7 @@
 
 import { type FormEvent, useState, useSyncExternalStore } from "react";
 import { Link } from "@/i18n/navigation";
-import { useAuth, type MfaEnrollmentData } from "@game-guild/client/react";
+import { useAuth } from "@game-guild/client/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@game-guild/ui/components/button";
 import {
@@ -44,11 +44,9 @@ export function SignInForm({
     error,
     clearError,
     mfaChallenge,
-    startMfaEnrollment,
     mfaEnrollmentBackupCodes,
     clearMfa,
   } = useAuth();
-  const [enrollment, setEnrollment] = useState<MfaEnrollmentData | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const isHydrated = useSyncExternalStore(
     subscribeToHydration,
@@ -102,22 +100,13 @@ export function SignInForm({
     try {
       await signIn("credentials", {
         mfaToken: mfaChallenge.mfaToken,
-        method: enrollment ? "Totp" : data.get("method") || "Totp",
+        method: data.get("method") || "Totp",
         code: data.get("code") as string,
         redirectTo,
       });
-      setEnrollment(null);
       form.reset();
     } catch {
       /* The hook keeps the current challenge and exposes the error. */
-    }
-  }
-
-  async function handleMfaEnrollment() {
-    try {
-      setEnrollment(await startMfaEnrollment());
-    } catch {
-      /* Error shown below. */
     }
   }
 
@@ -158,7 +147,6 @@ export function SignInForm({
                 type="button"
                 onClick={() => {
                   clearMfa();
-                  setEnrollment(null);
                   window.location.href = redirectTo;
                 }}
               >
@@ -176,52 +164,27 @@ export function SignInForm({
               <FieldGroup>
                 <FieldDescription>
                   Confirm your sign-in with your authenticator app. This sign-in
-                  challenge expires after five minutes.
+                  challenge expires after five minutes. New to two-factor
+                  authentication? Enable it from Security in workspace settings
+                  after signing in.
                 </FieldDescription>
-                {enrollment ? (
+                {mfaChallenge.availableMethods.includes("BackupCode") && (
                   <Field>
-                    <FieldDescription>
-                      Add this key to your authenticator app, then enter its
-                      six-digit code.
-                    </FieldDescription>
-                    <code className="break-all rounded border border-white/10 p-3">
-                      {enrollment.secretKey}
-                    </code>
-                    <FieldDescription>
-                      Setup expires at{" "}
-                      {new Date(enrollment.expiresAt).toLocaleTimeString()}.
-                    </FieldDescription>
+                    <FieldLabel htmlFor="mfa-method">
+                      Verification method
+                    </FieldLabel>
+                    <select
+                      id="mfa-method"
+                      name="method"
+                      defaultValue="Totp"
+                      disabled={isLoading}
+                      className="h-10 rounded border border-white/10 bg-slate-900 px-3"
+                    >
+                      <option value="Totp">Authenticator app</option>
+                      <option value="BackupCode">Recovery code</option>
+                    </select>
                   </Field>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isLoading}
-                    onClick={() => {
-                      void handleMfaEnrollment();
-                    }}
-                  >
-                    Set up authenticator
-                  </Button>
                 )}
-                {!enrollment &&
-                  mfaChallenge.availableMethods.includes("BackupCode") && (
-                    <Field>
-                      <FieldLabel htmlFor="mfa-method">
-                        Verification method
-                      </FieldLabel>
-                      <select
-                        id="mfa-method"
-                        name="method"
-                        defaultValue="Totp"
-                        disabled={isLoading}
-                        className="h-10 rounded border border-white/10 bg-slate-900 px-3"
-                      >
-                        <option value="Totp">Authenticator app</option>
-                        <option value="BackupCode">Recovery code</option>
-                      </select>
-                    </Field>
-                  )}
                 <Field>
                   <FieldLabel htmlFor="mfa-code">
                     Authentication code
@@ -248,7 +211,6 @@ export function SignInForm({
                   disabled={isLoading}
                   onClick={() => {
                     clearMfa();
-                    setEnrollment(null);
                   }}
                 >
                   Start sign-in again
