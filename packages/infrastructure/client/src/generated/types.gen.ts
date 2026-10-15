@@ -1299,6 +1299,12 @@ export interface AssetsControllersMarkNonDeletableInput {
   reason?: string | null;
 }
 
+/** Data model for Assets Controllers Rebind Asset Parent Request. */
+export interface AssetsControllersRebindAssetParentInput {
+  parentResourceId?: string | null;
+  parentResourceType?: string | null;
+}
+
 /** Data model for Assets Controllers Report Asset Request. */
 export interface AssetsControllersReportAssetInput {
   description?: string | null;
@@ -23701,6 +23707,7 @@ export let AssetsControllersContentModerationInputSchema: z.ZodType<AssetsContro
 export let AssetsControllersCopyAssetReferenceInputSchema: z.ZodType<AssetsControllersCopyAssetReferenceInput>;
 export let AssetsControllersCreateAssetFolderInputSchema: z.ZodType<AssetsControllersCreateAssetFolderInput>;
 export let AssetsControllersMarkNonDeletableInputSchema: z.ZodType<AssetsControllersMarkNonDeletableInput>;
+export let AssetsControllersRebindAssetParentInputSchema: z.ZodType<AssetsControllersRebindAssetParentInput>;
 export let AssetsControllersReportAssetInputSchema: z.ZodType<AssetsControllersReportAssetInput>;
 export let AssetsControllersRestrictAssetFolderInputSchema: z.ZodType<AssetsControllersRestrictAssetFolderInput>;
 export let AssetsControllersReviewReportInputSchema: z.ZodType<AssetsControllersReviewReportInput>;
@@ -26918,6 +26925,12 @@ AssetsControllersCreateAssetFolderInputSchema = z.object({
 /** Zod schema for AssetsControllersMarkNonDeletableInput. Data model for Assets Controllers Mark Non Deletable Request. */
 AssetsControllersMarkNonDeletableInputSchema = z.object({
   reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for AssetsControllersRebindAssetParentInput. Data model for Assets Controllers Rebind Asset Parent Request. */
+AssetsControllersRebindAssetParentInputSchema = z.object({
+  parentResourceId: z.string().uuid().nullable().optional(),
+  parentResourceType: z.string().nullable().optional(),
 });
 
 /** Zod schema for AssetsControllersReportAssetInput. Data model for Assets Controllers Report Asset Request. */
