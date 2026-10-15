@@ -1,15 +1,12 @@
 "use client";
 
-import { lazy, Suspense, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { Label } from "@game-guild/ui/components/label";
 import { Skeleton } from "@game-guild/ui/components/skeleton";
 import { type LexicalSurfaceFeatures } from "@game-guild/lexical-surface";
 import type { SerializedEditorState } from "lexical";
 import { getBlogAssetRepository } from "@/lib/blogs/assets";
 import type { BlogContentFormat } from "@/lib/blogs/types";
-import { toast } from "sonner";
-import { getDefaultBrowserAssetRepository } from "@game-guild/assets/browser";
-import type { AssetRecord } from "@game-guild/assets";
 import { Image } from "lucide-react";
 import { Button } from "@game-guild/ui/components/button";
 import { AssetPickerDialog, AssetsProvider } from "@game-guild/assets/react";
