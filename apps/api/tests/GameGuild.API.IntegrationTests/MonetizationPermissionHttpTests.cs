@@ -86,13 +86,15 @@ public sealed class MonetizationPermissionHttpTests(ApiPostgreSqlFixture fixture
             var anonymousResponse = await anonymousClient.GetAsync(MetricsRoute);
             anonymousResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
-            // Without the grant the request is denied fail-closed: the CQRS gate on
-            // GetProductMetricsQuery refuses the dispatch and the shared exception
-            // pipeline answers with a 500 ProblemDetails (no metrics payload leaks).
+            // Without the grant the request is denied fail-closed: the endpoint-level DAC
+            // permission filter (enabled by default, Controllers:EnablePermissionAuthorizationFilter)
+            // refuses the request with a 403 ProblemDetails before the dispatch (no metrics
+            // payload leaks); the CQRS gate on GetProductMetricsQuery remains the second,
+            // independent fail-closed gate.
             using var memberClient = fixture.CreateAuthenticatedClient(memberId, tenantId);
             var deniedResponse = await memberClient.GetAsync(MetricsRoute);
             deniedResponse.StatusCode.Should().Be(
-                HttpStatusCode.InternalServerError,
+                HttpStatusCode.Forbidden,
                 await deniedResponse.Content.ReadAsStringAsync());
             (await deniedResponse.Content.ReadAsStringAsync()).Should().NotContain("monthlyRecurringRevenue",
                 "a denied request must not leak any metrics payload");
@@ -155,20 +157,21 @@ public sealed class MonetizationPermissionHttpTests(ApiPostgreSqlFixture fixture
         {
             var planBody = new { name = "Monetization HTTP plan", slug, monthlyPriceInCents = 1999L };
 
-            // A different monetization permission does not unlock Configure: the gate on
-            // CreateSubscriptionPlanCommand denies the dispatch (fail-closed 500) and
-            // no plan is persisted.
+            // A different monetization permission does not unlock Configure: the
+            // endpoint-level DAC permission filter denies the request (fail-closed 403)
+            // and no plan is persisted; the gate on CreateSubscriptionPlanCommand remains
+            // the second, independent fail-closed gate.
             using var monetizerClient = fixture.CreateAuthenticatedClient(monetizerId, tenantId);
             var wrongPermissionResponse = await monetizerClient.PostAsJsonAsync(PlansRoute, planBody);
             wrongPermissionResponse.StatusCode.Should().Be(
-                HttpStatusCode.InternalServerError,
+                HttpStatusCode.Forbidden,
                 await wrongPermissionResponse.Content.ReadAsStringAsync());
             (await CountPlansBySlugAsync(slug)).Should().Be(0, "denied requests must not create plans");
 
             // An expired Configure grant fails closed.
             using var expiredClient = fixture.CreateAuthenticatedClient(expiredConfiguratorId, tenantId);
             var expiredResponse = await expiredClient.PostAsJsonAsync(PlansRoute, planBody);
-            expiredResponse.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+            expiredResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
             (await CountPlansBySlugAsync(slug)).Should().Be(0);
 
             // With the Configure grant the plan is created and persisted.
@@ -230,14 +233,14 @@ public sealed class MonetizationPermissionHttpTests(ApiPostgreSqlFixture fixture
 
         try
         {
-            // No permissions at all: the Monetize gate refuses the dispatch and the
-            // creator's product remains pricing-free.
+            // No permissions at all: the endpoint-level DAC permission filter denies the
+            // request (fail-closed 403) and the creator's product remains pricing-free.
             using var noGrantClient = fixture.CreateAuthenticatedClient(noGrantUserId, tenantId);
             var controllerDenyResponse = await noGrantClient.PutAsJsonAsync(
                 $"/v1/products/{noGrantProduct}/pricing",
                 PricingBody("Standard", 49.90m));
             controllerDenyResponse.StatusCode.Should().Be(
-                HttpStatusCode.InternalServerError,
+                HttpStatusCode.Forbidden,
                 await controllerDenyResponse.Content.ReadAsStringAsync());
             (await CountPricingRowsAsync(noGrantProduct)).Should().Be(0, "denied pricing requests must not persist");
 

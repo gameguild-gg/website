@@ -126,7 +126,9 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetTestRunAsync(replay.ResourceId, actorId, cancellationToken).ConfigureAwait(false);
+        }
 
         var run = AssessmentTestRun.Create(assessment.TenantId, assessmentId, revision.Id, actorId);
         run.Start();
@@ -290,7 +292,9 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetTestRunAsync(replay.ResourceId, actorId, cancellationToken).ConfigureAwait(false);
+        }
 
         var revision = await RequireRevisionAsync(owned.Run.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
         var run = AssessmentTestRun.Create(owned.Run.TenantId, owned.Run.AssessmentId, revision.Id, actorId);
@@ -351,7 +355,9 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false);
+        }
 
         var existingSubmission = await context.Set<AssessmentSubmission>()
             .Where(value => value.AssessmentId == assessmentId && value.EnrollmentId == command.EnrollmentId)
@@ -361,7 +367,9 @@ public sealed class AssessmentGradingRuntimeService(
         if (existingSubmission is not null)
         {
             if (existingSubmission.UserId != command.UserId)
+            {
                 throw new UnauthorizedAccessException("Submission belongs to another learner.");
+            }
             AddReceipt(
                 tenantId,
                 assessmentId,
@@ -376,7 +384,9 @@ public sealed class AssessmentGradingRuntimeService(
         }
 
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
+        {
             throw new InvalidOperationException("Assessment does not have a published executable revision.");
+        }
         var revision = await RequireRevisionAsync(assessment.PublishedDefinitionRevisionId.Value, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         ValidateStartPolicy(snapshot.AuthoringSource.Policy);
@@ -436,7 +446,9 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false);
+        }
 
         var existingSubmission = await context.Set<AssessmentSubmission>()
             .Where(value => value.AssessmentId == assessmentId && value.CourseGroupId == command.CourseGroupId)
@@ -460,18 +472,24 @@ public sealed class AssessmentGradingRuntimeService(
         }
 
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
+        {
             throw new InvalidOperationException("Assessment does not have a published executable revision.");
+        }
         var revision = await RequireRevisionAsync(assessment.PublishedDefinitionRevisionId.Value, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         ValidateStartPolicy(snapshot.AuthoringSource.Policy);
         if (!assessment.GroupSetId.HasValue)
+        {
             throw new InvalidOperationException("Assessment is not configured for collective submissions.");
+        }
         var groupSetBelongsToCourse = await context.Set<CourseGroupSet>()
             .AsNoTracking()
             .AnyAsync(value => value.Id == assessment.GroupSetId.Value && value.CourseId == assessment.CourseId, cancellationToken)
             .ConfigureAwait(false);
         if (!groupSetBelongsToCourse)
+        {
             throw new InvalidOperationException("Assessment group set does not belong to its course.");
+        }
         var group = await context.Set<CourseGroup>()
             .SingleOrDefaultAsync(value => value.Id == command.CourseGroupId && value.GroupSetId == assessment.GroupSetId.Value, cancellationToken)
             .ConfigureAwait(false)
@@ -485,7 +503,10 @@ public sealed class AssessmentGradingRuntimeService(
             .ConfigureAwait(false);
         if (!memberUserIds.Contains(command.ActorId))
             throw new UnauthorizedAccessException("Only a current group member can start the collective submission.");
-        if (memberUserIds.Length == 0) throw new InvalidOperationException("Course group has no members.");
+        if (memberUserIds.Length == 0)
+        {
+            throw new InvalidOperationException("Course group has no members.");
+        }
         var memberships = new List<(Guid EnrollmentId, Guid UserId)>();
         foreach (var userId in memberUserIds)
         {
@@ -1049,7 +1070,9 @@ public sealed class AssessmentGradingRuntimeService(
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException("Assessment submission does not have an official grading execution.");
         if (execution.ExecutionContext != ReviewExecutionContext.OfficialSubmission)
+        {
             throw new InvalidOperationException("Assessment submission is not bound to an official execution.");
+        }
         return new OfficialExecution(submission, execution);
     }
 
@@ -1059,7 +1082,10 @@ public sealed class AssessmentGradingRuntimeService(
         CancellationToken cancellationToken)
     {
         if (submission.UserId == actorId) return;
-        if (!submission.IsCollective) throw new UnauthorizedAccessException("Submission belongs to another learner.");
+        if (!submission.IsCollective)
+        {
+            throw new UnauthorizedAccessException("Submission belongs to another learner.");
+        }
         var participant = await context.Set<AssessmentSubmissionParticipant>()
             .AsNoTracking()
             .AnyAsync(value => value.SubmissionId == submission.Id && value.UserId == actorId, cancellationToken)
@@ -1080,7 +1106,10 @@ public sealed class AssessmentGradingRuntimeService(
                                value.Status != GameGuild.Learning.Enrollments.EnrollmentStatus.Expired,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (enrollmentExists) return;
+        if (enrollmentExists)
+        {
+            return;
+        }
         var canonicalEnrollmentExists = await ProgramEnrollmentAssessmentMembership.ActiveForCourse(context, courseId)
             .AnyAsync(value => value.Id == enrollmentId && value.UserId == userId, cancellationToken)
             .ConfigureAwait(false);
@@ -1094,7 +1123,10 @@ public sealed class AssessmentGradingRuntimeService(
             .AnyAsync(value => value.Id == enrollmentId && value.ProgramId == courseId && value.UserId == userId,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (!programUserExists) throw new UnauthorizedAccessException("Active course membership was not found.");
+        if (!programUserExists)
+        {
+            throw new UnauthorizedAccessException("Active course membership was not found.");
+        }
     }
 
     private async Task<Guid> ResolveMembershipIdAsync(
@@ -1136,7 +1168,9 @@ public sealed class AssessmentGradingRuntimeService(
     {
         var assessment = await RequireAssessmentAsync(assessmentId, cancellationToken).ConfigureAwait(false);
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
+        {
             throw new InvalidOperationException("Assessment does not have a published executable revision.");
+        }
         return assessment;
     }
 
@@ -1156,7 +1190,9 @@ public sealed class AssessmentGradingRuntimeService(
     private static void ValidateStartPolicy(AssessmentExecutionPolicyV1 policy)
     {
         if (!TryGetSubmissionTiming(policy, SystemClock.UtcNow, SystemClock.UtcNow, out _))
+        {
             throw new InvalidOperationException("Assessment is not currently available.");
+        }
         if (policy.MaxAttempts != 1)
             throw new InvalidOperationException("The current runtime supports exactly one attempt.");
     }

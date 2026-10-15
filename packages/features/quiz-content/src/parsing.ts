@@ -5,6 +5,7 @@ import { syncQuizGradingDefinition } from "@game-guild/grading-adapter-quiz";
 import { safeParseQuizEntry } from "@game-guild/quiz";
 import { QUIZ_BLOCK_TYPE, QUIZ_CONTENT_SCHEMA_VERSION } from "./constants";
 import { quizDocumentToGradingItems } from "./grading-projection";
+import { parseQuizRules, quizRulesIssuesToParseIssues } from "./rules";
 import { createEmptyQuizContentDocument } from "./storage";
 import type {
   QuizContentDocument,
@@ -13,7 +14,7 @@ import type {
 } from "./types";
 
 type UnknownRecord = Record<string, unknown>;
-const ROOT_KEYS = new Set(["schemaVersion", "order", "blocks", "grading"]);
+const ROOT_KEYS = new Set(["schemaVersion", "order", "blocks", "rules", "grading"]);
 
 export class QuizContentValidationError extends Error {
   readonly issues: QuizContentParseIssue[];
@@ -144,6 +145,14 @@ export function parseQuizContentDocument(value: unknown): QuizContentParseResult
     order: normalizedOrder,
     blocks: normalizedBlocks,
   };
+
+  if (Object.prototype.hasOwnProperty.call(root, "rules")) {
+    const parsedRules = parseQuizRules(root.rules);
+    if (parsedRules.rules) {
+      document = { ...document, rules: parsedRules.rules };
+    }
+    issues.push(...quizRulesIssuesToParseIssues(parsedRules.issues));
+  }
 
   if (Object.prototype.hasOwnProperty.call(root, "grading")) {
     const grading = tryParseContentGradingDefinition(root.grading);

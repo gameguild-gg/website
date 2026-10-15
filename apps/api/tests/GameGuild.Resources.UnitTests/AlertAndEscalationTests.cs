@@ -76,7 +76,7 @@ public class QuotaExceededAlertHandlerTests
             x => x.Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => true),
+                It.Is<It.IsAnyType>((_, _) => true),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);

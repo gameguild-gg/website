@@ -596,11 +596,12 @@ public sealed class AuthenticationCoverageCompletionTests
     }
 
     [Fact]
-    public void MfaController_MaskPhoneNumber_CoversShortInput()
+    public void SmsMfaService_MaskPhoneNumber_CoversShortInput()
     {
-        InvokePrivateStatic<string>(typeof(MfaController), "MaskPhoneNumber", "").Should().Be("****");
-        InvokePrivateStatic<string>(typeof(MfaController), "MaskPhoneNumber", "123").Should().Be("****");
-        InvokePrivateStatic<string>(typeof(MfaController), "MaskPhoneNumber", "15551234567").Should().Be("***-***-4567");
+        // Issue #244: masking moved from the controller stub to the SMS factor service.
+        SmsMfaService.MaskPhoneNumber("").Should().Be("****");
+        SmsMfaService.MaskPhoneNumber("123").Should().Be("****");
+        SmsMfaService.MaskPhoneNumber("+15551234567").Should().Be("***-***-4567");
     }
 
     [Fact]

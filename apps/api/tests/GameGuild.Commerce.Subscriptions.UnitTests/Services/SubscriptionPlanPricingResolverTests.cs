@@ -7,19 +7,37 @@ namespace GameGuild.Commerce.Subscriptions.UnitTests.Services;
 public class SubscriptionPlanPricingResolverTests
 {
     private readonly Mock<ISubscriptionPlanService> _planService = new();
+    private readonly Mock<ISubscriptionIntervalPricingService> _intervalPricing = new();
     private readonly SubscriptionPlanPricingResolver _resolver;
 
     public SubscriptionPlanPricingResolverTests()
     {
-        _resolver = new SubscriptionPlanPricingResolver(_planService.Object);
+        _intervalPricing
+            .Setup(service => service.ResolvePriceForCycleAsync(It.IsAny<SubscriptionPlan>(), It.IsAny<BillingCycle>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SubscriptionPlan plan, BillingCycle cycle, CancellationToken _) =>
+                new Money(cycle switch
+                {
+                    BillingCycle.Annually => 199.90m,
+                    BillingCycle.Monthly => 19.99m,
+                    _ => 19.99m
+                }, plan.Currency));
+        _resolver = new SubscriptionPlanPricingResolver(_planService.Object, _intervalPricing.Object);
     }
 
     [Fact]
     public void Constructor_ShouldThrow_WhenPlanServiceIsNull()
     {
-        var act = () => new SubscriptionPlanPricingResolver(null!);
+        var act = () => new SubscriptionPlanPricingResolver(null!, _intervalPricing.Object);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("planService");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_WhenIntervalPricingServiceIsNull()
+    {
+        var act = () => new SubscriptionPlanPricingResolver(_planService.Object, null!);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("intervalPricingService");
     }
 
     [Fact]
@@ -48,6 +66,18 @@ public class SubscriptionPlanPricingResolverTests
     }
 
     [Fact]
+    public async Task GetPlanMonthlyPriceAsync_ShouldFailClosed_WhenEnterprisePlanIsCustomQuotePending()
+    {
+        var plan = CreatePlan(SubscriptionPlanType.Enterprise, SubscriptionPlanPricingRules.CustomQuotePriceInCents);
+        _planService.Setup(s => s.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(plan);
+
+        var act = () => _resolver.GetPlanMonthlyPriceAsync(plan.Id);
+
+        await act.Should().ThrowAsync<SubscriptionPlanCustomQuotePendingException>();
+    }
+
+    [Fact]
     public async Task GetPlanPriceAsync_ShouldReturnNull_WhenPlanDoesNotExist()
     {
         _planService.Setup(s => s.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -59,58 +89,32 @@ public class SubscriptionPlanPricingResolverTests
     }
 
     [Fact]
-    public async Task GetPlanPriceAsync_ShouldUseAnnualPrice_WhenConfigured()
+    public async Task GetPlanPriceAsync_ShouldDelegateToIntervalPricing_WithTheRequestedCycle()
     {
         var plan = CreatePlan();
         plan.AnnualPriceInCents = 19990;
         _planService.Setup(s => s.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
 
-        var result = await _resolver.GetPlanPriceAsync(Guid.NewGuid(), BillingCycle.Annually);
+        var result = await _resolver.GetPlanPriceAsync(plan.Id, BillingCycle.Annually);
 
         result!.Amount.Should().Be(199.90m);
+        _intervalPricing.Verify(service => service.ResolvePriceForCycleAsync(
+            plan, BillingCycle.Annually, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task GetPlanPriceAsync_ShouldFallbackToTwelveMonths_WhenAnnualPriceMissing()
+    public async Task GetPlanPriceAsync_ShouldFailClosed_WhenEnterprisePlanIsCustomQuotePending()
     {
-        var plan = CreatePlan();
+        var plan = CreatePlan(SubscriptionPlanType.Enterprise, SubscriptionPlanPricingRules.CustomQuotePriceInCents);
         _planService.Setup(s => s.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
 
-        var result = await _resolver.GetPlanPriceAsync(Guid.NewGuid(), BillingCycle.Annually);
+        var act = () => _resolver.GetPlanPriceAsync(plan.Id, BillingCycle.Monthly);
 
-        result!.Amount.Should().Be(239.88m);
-    }
-
-    [Theory]
-    [InlineData(BillingCycle.SemiAnnually, 119.94)]
-    [InlineData(BillingCycle.Quarterly, 59.97)]
-    [InlineData(BillingCycle.Monthly, 19.99)]
-    [InlineData(BillingCycle.Weekly, 4.99)]
-    [InlineData(BillingCycle.Biannually, 479.76)]
-    public async Task GetPlanPriceAsync_ShouldMapBillingCyclesToExpectedAmounts(BillingCycle cycle, decimal expectedAmount)
-    {
-        var plan = CreatePlan();
-        _planService.Setup(s => s.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(plan);
-
-        var result = await _resolver.GetPlanPriceAsync(Guid.NewGuid(), cycle);
-
-        result!.Amount.Should().Be(expectedAmount);
-        result.Currency.Should().Be("USD");
-    }
-
-    [Fact]
-    public async Task GetPlanPriceAsync_ShouldFallbackToMonthly_ForUnsupportedCycle()
-    {
-        var plan = CreatePlan();
-        _planService.Setup(s => s.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(plan);
-
-        var result = await _resolver.GetPlanPriceAsync(Guid.NewGuid(), (BillingCycle)999);
-
-        result!.Amount.Should().Be(19.99m);
+        await act.Should().ThrowAsync<SubscriptionPlanCustomQuotePendingException>();
+        _intervalPricing.Verify(service => service.ResolvePriceForCycleAsync(
+            It.IsAny<SubscriptionPlan>(), It.IsAny<BillingCycle>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -127,9 +131,12 @@ public class SubscriptionPlanPricingResolverTests
         existing.Should().BeTrue();
     }
 
-    private static SubscriptionPlan CreatePlan()
+    private static SubscriptionPlan CreatePlan(SubscriptionPlanType type = SubscriptionPlanType.Paid, long monthlyPriceInCents = 1999)
     {
-        var plan = new SubscriptionPlan("Pro", "pro", 1999, "USD", "Professional plan");
+        var plan = new SubscriptionPlan("Pro", "pro", monthlyPriceInCents, "USD", "Professional plan")
+        {
+            Type = type
+        };
         typeof(SubscriptionPlan).GetProperty(nameof(SubscriptionPlan.Id))!.SetValue(plan, Guid.NewGuid());
         return plan;
     }

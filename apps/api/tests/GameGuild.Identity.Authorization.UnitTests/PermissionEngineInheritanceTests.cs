@@ -50,7 +50,7 @@ public class RoleInheritanceEngineTests
                 ids.Where(id => roles.ContainsKey(id)).Select(id => roles[id]).ToList());
         repository
             .Setup(repo => repo.GetByTenantAsync(It.IsAny<Guid?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid? tenantId, bool includeGlobal, CancellationToken _) =>
+            .ReturnsAsync((Guid? tenantId, bool _, CancellationToken _) =>
                 roles.Values.Where(role => role.TenantId == tenantId).ToList());
 
         return new RoleInheritanceEngine(

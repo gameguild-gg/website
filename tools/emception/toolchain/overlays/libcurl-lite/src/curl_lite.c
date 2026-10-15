@@ -118,7 +118,7 @@ static size_t bounded_strlen(const char *s)
     size_t scanned = 0;
     for (;;)
     {
-        const char *hit = (const char *)memchr(s + scanned, '\0', SCAN_CHUNK);
+        const char *hit = (const char *)memchr(s + scanned, (unsigned char)'\0', SCAN_CHUNK);
         if (hit)
             return (size_t)(hit - s);
         scanned += SCAN_CHUNK;
@@ -126,6 +126,7 @@ static size_t bounded_strlen(const char *s)
             return SIZE_MAX;
     }
 }
+
 static CURLcode copy_postfields(CurlHandle *h, const char *data)
 {
     char *copy = NULL;
@@ -146,12 +147,13 @@ static CURLcode copy_postfields(CurlHandle *h, const char *data)
             if (length == SIZE_MAX)
                 return CURLE_OUT_OF_MEMORY;
         }
-        /* An explicit size does not promise a terminator in the source buffer:
-           the caller may pass exactly `length` heap bytes. */
-        const size_t copy_bytes = length;
-        copy = (char *)malloc(copy_bytes + 1);
+        copy = (char *)malloc(length + 1);
         if (!copy)
             return CURLE_OUT_OF_MEMORY;
+        /* An explicit size does not promise a terminator in the source buffer:
+           the caller may pass exactly `length` heap bytes, so copy exactly the
+           payload and terminate the private copy separately. */
+        const size_t copy_bytes = length;
         memcpy(copy, data, copy_bytes);
         copy[copy_bytes] = '\0';
     }
@@ -267,15 +269,14 @@ CURL *curl_easy_duphandle(CURL *handle)
     dst->custom_method = strdup_safe(src->custom_method);
     if (src->owned_postfields)
     {
-        const size_t owned_bytes = (size_t)src->owned_postfieldsize;
-        dst->owned_postfields = (char *)malloc(owned_bytes + 1);
+        const size_t owned_bytes = (size_t)src->owned_postfieldsize + 1;
+        dst->owned_postfields = (char *)malloc(owned_bytes);
         if (!dst->owned_postfields)
         {
             curl_easy_cleanup((CURL *)dst);
             return NULL;
         }
         memcpy(dst->owned_postfields, src->owned_postfields, owned_bytes);
-        dst->owned_postfields[owned_bytes] = '\0';
         dst->postfields = dst->owned_postfields;
         dst->owned_postfieldsize = src->owned_postfieldsize;
     }

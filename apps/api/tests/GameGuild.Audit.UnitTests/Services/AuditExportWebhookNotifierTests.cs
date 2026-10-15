@@ -11,7 +11,14 @@ namespace GameGuild.Tests.Audit.Unit.Services;
 
 public sealed class AuditExportWebhookNotifierTests
 {
-    private const string SigningSecret = "unit-test-signing-secret-with-more-than-32-characters";
+    private static readonly string SigningSecret = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+
+    [Fact]
+    public void SigningFixture_UsesFullCryptographicKeyMaterial()
+    {
+        Convert.FromHexString(SigningSecret).Should().HaveCount(32);
+        CreateOptions().SigningSecret.Should().Be(SigningSecret);
+    }
 
     [Fact]
     public void ValidateWebhookUrl_ShouldRequireConfiguredHttpsAllowlistedHost()

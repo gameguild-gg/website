@@ -71,6 +71,7 @@ public class ProjectQueries
 | `resourceType` | DAC resource type; enables resource-scoped evaluation. |
 | `resourceIdArgument` | Dotted argument path holding the resource id (e.g. `input.projectId`). |
 | `resourceIdParentProperty` | Parent-value property path holding the resource id (nested fields). |
+| `contentType` | DAC content type (issues #360/#365/#320); enables content-type scoped evaluation through the engine's content-type grant layer. Cannot be combined with `resourceType`. |
 
 ### Enforcement semantics (deny-by-default)
 
@@ -84,7 +85,11 @@ Enforcement is centralized in the host's GraphQL authorization field middleware
 - Within one application, `permissions` (per `mode`), `roles` and `policy` all apply (AND).
 - Permission checks run through `IEffectivePermissionResolver` — the canonical
   effective-permission engine (DENY-WINS, deny-by-default). Tenant-scoped rules resolve a
-  tenant context; resource-scoped rules (`resourceType` + a resolved id) resolve an exact
+  tenant context; content-type scoped rules (`contentType`, no resource pair) resolve a
+  content-type context served by the engine's content-type grant layer — each permission
+  key is satisfied by the content-type qualified name (`{ContentType}.{Permission}`) or the
+  unqualified tenant name (inheritance: a tenant-layer grant satisfies a content-type
+  scoped rule); resource-scoped rules (`resourceType` + a resolved id) resolve an exact
   resource context, which is what activates **owner override** (#372) and
   **expiration-aware precedence** (#363, `OwnerOverrideEvaluation.EffectiveThroughUtc`):
   a lapsed ownership bound fails closed inside the engine and simply mints nothing.

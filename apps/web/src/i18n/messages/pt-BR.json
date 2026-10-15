@@ -236,6 +236,82 @@
         "trustCurrentDescription": "Marque o dispositivo que você está usando agora como confiável.",
         "trustCurrentButton": "Confiar",
         "trustedCurrent": "Este dispositivo agora é confiável."
+      },
+      "mfa": {
+        "title": "Autenticação multifator",
+        "description": "Gerencie seus fatores de login e códigos de recuperação.",
+        "status": {
+          "label": "Status do MFA",
+          "enabled": "Ativado desde {date}. Sua conta exige um segundo fator no login.",
+          "disabled": "Desativado. Sua conta está protegida apenas pela senha.",
+          "badgeEnabled": "Protegida",
+          "badgeDisabled": "Não protegida"
+        },
+        "methods": {
+          "enrolled": "Ativado",
+          "available": "Disponível",
+          "unavailable": "Indisponível",
+          "cancel": "Cancelar"
+        },
+        "totp": {
+          "start": "Adicionar app autenticador",
+          "started": "Leia o código no seu app autenticador e informe o código atual.",
+          "scan": "Leia este segredo com seu app autenticador (Google Authenticator, Authy, 1Password) e informe o código de seis dígitos exibido.",
+          "codeLabel": "Código do autenticador",
+          "complete": "Verificar e ativar",
+          "completed": "App autenticador ativado."
+        },
+        "sms": {
+          "start": "Adicionar códigos por SMS",
+          "unavailable": "A entrega de SMS não está configurada nesta plataforma.",
+          "phoneLabel": "Número de telefone (formato internacional)",
+          "send": "Enviar código",
+          "sent": "Código enviado para {phone}.",
+          "codeLabel": "Código SMS",
+          "complete": "Verificar e ativar",
+          "completed": "Códigos por SMS ativados."
+        },
+        "recovery": {
+          "title": "Códigos de recuperação",
+          "description": "Códigos de uso único para acesso de emergência quando seus outros fatores estiverem indisponíveis.",
+          "none": "Nenhum código de recuperação em arquivo. Gere um conjunto e guarde em local seguro.",
+          "remaining": "{remaining} de {total} códigos restantes.",
+          "generate": "Gerar códigos",
+          "regenerate": "Regenerar códigos",
+          "regenerated": "Novos códigos de recuperação gerados. Os anteriores foram invalidados.",
+          "freshWarning": "Estes códigos são exibidos apenas uma vez. Guarde-os em local seguro agora.",
+          "hide": "Salvei meus códigos"
+        },
+        "disable": {
+          "title": "Desativar MFA",
+          "description": "Informe a senha da conta para desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
+          "passwordLabel": "Senha da conta",
+          "cancel": "Cancelar",
+          "confirm": "Desativar MFA",
+          "success": "Autenticação multifator desativada.",
+          "wrongPassword": "Falha na verificação da senha. O MFA permanece ativado."
+        }
+      },
+      "policies": {
+        "title": "Políticas de segurança",
+        "description": "A postura de segurança do workspace é definida por administradores via configuração de ambiente no servidor. Os valores abaixo são somente leitura.",
+        "managedBadge": "Gerenciado por administradores",
+        "twoFactor": {
+          "title": "Autenticação de dois fatores",
+          "optional": "Opcional (opt-in)",
+          "required": "Obrigatória",
+          "description": "Se as contas precisam registrar um segundo fator antes do acesso completo."
+        },
+        "sessionTimeout": {
+          "title": "Tempo limite de sessão",
+          "value": "{minutes} minutos",
+          "description": "Tempo de inatividade da sessão antes de nova autenticação."
+        },
+        "apiKeyRotation": {
+          "title": "Rotação de chaves de API",
+          "value": "A cada {days} dias",
+          "description": "Idade máxima recomendada das chaves de API antes da rotação."
+        }
       }
     }
   },

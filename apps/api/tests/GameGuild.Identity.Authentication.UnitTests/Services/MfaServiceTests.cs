@@ -15,6 +15,8 @@ public class MfaServiceTests
     private readonly Mock<ITotpMfaService> _totpMfaServiceMock;
     private readonly Mock<IBackupCodeMfaService> _backupCodeMfaServiceMock;
     private readonly Mock<IMfaAttemptTrackingService> _attemptTrackingServiceMock;
+    private readonly Mock<GameGuild.Identity.Users.IUserRepository> _userRepositoryMock;
+    private readonly Mock<IPasswordHasher> _passwordHasherMock;
     private readonly MfaService _service;
 
     public MfaServiceTests()
@@ -23,12 +25,16 @@ public class MfaServiceTests
         _totpMfaServiceMock = new Mock<ITotpMfaService>();
         _backupCodeMfaServiceMock = new Mock<IBackupCodeMfaService>();
         _attemptTrackingServiceMock = new Mock<IMfaAttemptTrackingService>();
+        _userRepositoryMock = new Mock<GameGuild.Identity.Users.IUserRepository>();
+        _passwordHasherMock = new Mock<IPasswordHasher>();
 
         _service = new MfaService(
             _loggerMock.Object,
             _totpMfaServiceMock.Object,
             _backupCodeMfaServiceMock.Object,
-            _attemptTrackingServiceMock.Object);
+            _attemptTrackingServiceMock.Object,
+            _userRepositoryMock.Object,
+            _passwordHasherMock.Object);
     }
 
     #region GetMfaConfigurationAsync Tests
@@ -120,7 +126,9 @@ public class MfaServiceTests
             _totpMfaServiceMock.Object,
             _backupCodeMfaServiceMock.Object,
             _attemptTrackingServiceMock.Object,
-            new GameGuild.Configuration.ApplicationLayer.MfaOptions { BackupCodesCount = 4 });
+            _userRepositoryMock.Object,
+            _passwordHasherMock.Object,
+            mfaOptions: new GameGuild.Configuration.ApplicationLayer.MfaOptions { BackupCodesCount = 4 });
 
         var result = await service.InitiateMfaSetupAsync(userId, "user@example.com");
 
@@ -333,49 +341,92 @@ public class MfaServiceTests
 
     #endregion
 
-    #region DisableMfaAsync Tests
+    #region DisableMfaAsync Tests (issue #244: password re-verification)
+
+    private static GameGuild.Identity.Users.User CreateUserWithPasswordHash(string? passwordHash)
+    {
+        return new GameGuild.Identity.Users.User { Email = "user@example.com", Name = "User", PasswordHash = passwordHash, IsActive = true };
+    }
 
     [Fact]
-    public async Task DisableMfaAsync_WhenConfirmationCodeValid_ShouldDelegateToAttemptTrackingService()
+    public async Task DisableMfaAsync_WhenPasswordValid_ShouldDelegateToAttemptTrackingService()
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var confirmationCode = "123456";
-
-        _totpMfaServiceMock
-            .Setup(x => x.VerifyTotpAsync(userId, confirmationCode, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
+        var password = "Correct-Horse-1!";
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateUserWithPasswordHash("hash:$2a$11$storedhash"));
+        _passwordHasherMock
+            .Setup(x => x.VerifyPassword("hash:$2a$11$storedhash", password))
+            .Returns(true);
         _attemptTrackingServiceMock
             .Setup(x => x.DisableMfaAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
-        var result = await _service.DisableMfaAsync(userId, confirmationCode);
+        var result = await _service.DisableMfaAsync(userId, password);
 
         // Assert
         result.Should().BeTrue();
-        _totpMfaServiceMock.Verify(
-            x => x.VerifyTotpAsync(userId, confirmationCode, null, It.IsAny<CancellationToken>()),
-            Times.Once);
+        _passwordHasherMock.Verify(x => x.VerifyPassword("hash:$2a$11$storedhash", password), Times.Once);
         _attemptTrackingServiceMock.Verify(
             x => x.DisableMfaAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task DisableMfaAsync_WhenConfirmationCodeInvalid_ShouldReturnFalse()
+    public async Task DisableMfaAsync_WhenPasswordInvalid_ShouldReturnFalseWithoutDisabling()
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var confirmationCode = "000000";
-
-        _totpMfaServiceMock
-            .Setup(x => x.VerifyTotpAsync(userId, confirmationCode, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateUserWithPasswordHash("hash:$2a$11$storedhash"));
+        _passwordHasherMock
+            .Setup(x => x.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(false);
 
         // Act
-        var result = await _service.DisableMfaAsync(userId, confirmationCode);
+        var result = await _service.DisableMfaAsync(userId, "wrong-password");
+
+        // Assert
+        result.Should().BeFalse();
+        _attemptTrackingServiceMock.Verify(
+            x => x.DisableMfaAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DisableMfaAsync_WhenUserUnknown_ShouldReturnFalseWithoutDisabling()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((GameGuild.Identity.Users.User?)null);
+
+        // Act
+        var result = await _service.DisableMfaAsync(userId, "any-password");
+
+        // Assert
+        result.Should().BeFalse();
+        _attemptTrackingServiceMock.Verify(
+            x => x.DisableMfaAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DisableMfaAsync_WhenUserHasNoPasswordCredential_ShouldReturnFalse()
+    {
+        // Arrange: passwordless (OAuth-only) accounts cannot disable MFA this way.
+        var userId = Guid.NewGuid();
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateUserWithPasswordHash(null!));
+
+        // Act
+        var result = await _service.DisableMfaAsync(userId, "any-password");
 
         // Assert
         result.Should().BeFalse();

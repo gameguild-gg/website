@@ -9,13 +9,68 @@ namespace GameGuild.Commerce.Subscriptions.UnitTests.Commands;
 public class CreateSubscriptionCommandHandlerTests
 {
     private readonly Mock<ISubscriptionRepository> _mockRepository;
+    private readonly Mock<ISubscriptionPlanRepository> _mockPlanRepository;
     private readonly CreateSubscriptionCommandHandler _handler;
 
     public CreateSubscriptionCommandHandlerTests()
     {
         _mockRepository = new Mock<ISubscriptionRepository>();
+        _mockPlanRepository = new Mock<ISubscriptionPlanRepository>();
+        _mockPlanRepository
+            .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid id, CancellationToken _) => new SubscriptionPlan("Pro", "pro", 1999, "USD") { Type = SubscriptionPlanType.Paid });
         Mock<ILogger<CreateSubscriptionCommandHandler>> mockLogger = new Mock<ILogger<CreateSubscriptionCommandHandler>>();
-        _handler = new CreateSubscriptionCommandHandler(_mockRepository.Object, mockLogger.Object);
+        _handler = new CreateSubscriptionCommandHandler(_mockRepository.Object, _mockPlanRepository.Object, mockLogger.Object);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldFailClosed_WhenEnterprisePlanIsCustomQuotePending()
+    {
+        // Issue #416: checkout is blocked until a concrete price is configured.
+        var planId = Guid.NewGuid();
+        _mockPlanRepository
+            .Setup(repository => repository.GetByIdAsync(planId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubscriptionPlan("Enterprise", "enterprise", SubscriptionPlanPricingRules.CustomQuotePriceInCents, "USD")
+            {
+                Type = SubscriptionPlanType.Enterprise
+            });
+        var command = new CreateSubscriptionCommand(
+            TenantId: Guid.NewGuid(),
+            PlanId: planId,
+            CreatedByUserId: Guid.NewGuid(),
+            BillingCycle: BillingCycle.Monthly,
+            Amount: 0m,
+            StartDate: null,
+            TrialDays: null
+        );
+
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<SubscriptionPlanCustomQuotePendingException>();
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Subscription>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldFailClosed_WhenPlanDoesNotExist()
+    {
+        var planId = Guid.NewGuid();
+        _mockPlanRepository
+            .Setup(repository => repository.GetByIdAsync(planId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SubscriptionPlan?)null);
+        var command = new CreateSubscriptionCommand(
+            TenantId: Guid.NewGuid(),
+            PlanId: planId,
+            CreatedByUserId: Guid.NewGuid(),
+            BillingCycle: BillingCycle.Monthly,
+            Amount: 29.99m,
+            StartDate: null,
+            TrialDays: null
+        );
+
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<GameGuild.EntityNotFoundException>();
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Subscription>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using GameGuild.CQRS;
+using GameGuild.Learning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -118,8 +119,14 @@ public interface IEnrollmentService
     Task<IReadOnlyList<EnrollmentDto>> GetCourseEnrollmentsAsync(Guid courseId, EnrollmentStatus? status, CancellationToken cancellationToken = default);
 }
 
-public sealed class EnrollmentService(IEnrollmentRepository repository) : IEnrollmentService
+public sealed class EnrollmentService(
+    IEnrollmentRepository repository,
+    IApplicationDbContext context,
+    ILearningAuditEventSink auditSink,
+    IRequestContextAccessor? requestContextAccessor = null) : IEnrollmentService
 {
+    private Guid? ActingUserId => requestContextAccessor?.CurrentUserId;
+
     public async Task<EnrollmentDto> EnrollAsync(EnrollUserCommand command, CancellationToken cancellationToken = default)
     {
         var existing = await repository.GetActiveAsync(command.CourseId, command.UserId, cancellationToken)
@@ -130,7 +137,27 @@ public sealed class EnrollmentService(IEnrollmentRepository repository) : IEnrol
         }
 
         var enrollment = Enrollment.Create(command.CourseId, command.UserId, command.CohortId);
-        await repository.AddAsync(enrollment, cancellationToken).ConfigureAwait(false);
+        // The enrollment row and its audit event share one transaction: an audit failure rolls
+        // the enrollment back instead of committing an unaudited mutation.
+        var transaction = await context.BeginAuditedMutationTransactionAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await repository.AddAsync(enrollment, cancellationToken).ConfigureAwait(false);
+            await auditSink.RecordAsync(new LearningAuditEvent(
+                "Learning.Enrollments.UserEnrolled", "Enrollment", enrollment.Id.ToString(),
+                ActingUserId ?? command.UserId, enrollment.TenantId,
+                $"User enrolled in course {command.CourseId}",
+                Metadata: new { command.CourseId, command.UserId, command.CohortId, Status = enrollment.Status.ToString() }), cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAuditedMutationAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
         return ToDto(enrollment);
     }
 
@@ -143,7 +170,8 @@ public sealed class EnrollmentService(IEnrollmentRepository repository) : IEnrol
         }
 
         enrollment.UpdateProgress(progress);
-        await repository.UpdateAsync(enrollment, cancellationToken).ConfigureAwait(false);
+        await SaveWithAuditAsync(enrollment, "Learning.Enrollments.ProgressUpdated",
+            $"Enrollment progress updated to {progress}%", new { Progress = progress }, cancellationToken).ConfigureAwait(false);
         return ToDto(enrollment);
     }
 
@@ -176,8 +204,30 @@ public sealed class EnrollmentService(IEnrollmentRepository repository) : IEnrol
                 throw new ArgumentOutOfRangeException(nameof(status), status, null);
         }
 
-        await repository.UpdateAsync(enrollment, cancellationToken).ConfigureAwait(false);
+        await SaveWithAuditAsync(enrollment, "Learning.Enrollments.StatusChanged",
+            $"Enrollment status changed to {status}", new { Status = status.ToString() }, cancellationToken).ConfigureAwait(false);
         return ToDto(enrollment);
+    }
+
+    private async Task SaveWithAuditAsync(
+        Enrollment enrollment, string actionType, string description, object metadata, CancellationToken cancellationToken)
+    {
+        var transaction = await context.BeginAuditedMutationTransactionAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await repository.UpdateAsync(enrollment, cancellationToken).ConfigureAwait(false);
+            await auditSink.RecordAsync(new LearningAuditEvent(
+                actionType, "Enrollment", enrollment.Id.ToString(), ActingUserId, enrollment.TenantId,
+                description, Metadata: metadata), cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAuditedMutationAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync().ConfigureAwait(false);
+            }
+        }
     }
 
     public async Task<EnrollmentDto?> GetAsync(Guid id, CancellationToken cancellationToken = default)

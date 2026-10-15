@@ -85,6 +85,7 @@ public class AuthorizationModule : ModuleBase
         modelBuilder.ApplyConfiguration(new DataMaskingRuleConfiguration());
         modelBuilder.ApplyConfiguration(new TenantPermissionConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionTemplateConfiguration());
+        modelBuilder.ApplyConfiguration(new ContentTypePermissionGrantConfiguration());
 
         // Template lifecycle (issues #369/#370): version snapshots, migration execution
         // records and per-target instantiation provenance.

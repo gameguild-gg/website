@@ -20,8 +20,22 @@ public sealed class ScimProvisioningQueryTranslationTests
 {
     private static ApplicationDbContext CreateContext()
         => new(new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseNpgsql("Host=localhost;Port=5432;Database=gameguild;Username=postgres;Password=postgres")
+            .UseNpgsql("Host=localhost;Port=5432;Database=gameguild")
             .Options);
+
+    [Fact]
+    public void TranslationContext_RequiresNoCredentialsAndKeepsConnectionClosed()
+    {
+        using var context = CreateContext();
+        var connection = context.Database.GetDbConnection();
+        context.Database.GetConnectionString().Should().Be("Host=localhost;Port=5432;Database=gameguild");
+        connection.State.Should().Be(System.Data.ConnectionState.Closed);
+
+        new ScimUserMappingRepository(context).QueryTenantUsers(Guid.NewGuid())
+            .Take(1).ToQueryString().Should().Contain("SELECT");
+
+        connection.State.Should().Be(System.Data.ConnectionState.Closed);
+    }
 
     [Fact]
     public void UserProjection_TranslatesOrderingPaginationAndLookup()

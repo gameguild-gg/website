@@ -25,6 +25,7 @@ namespace GameGuild.Identity.Authorization;
 ///             <item>Tenant defaults (UserId=null, TenantId=current tenant)</item>
 ///             <item>Direct user grants (UserId=current user, TenantId=current tenant)</item>
 ///             <item>Just-in-Time elevation grants — approved, inside their time window, tenant-scoped only, never <c>admin:*</c> (issue #341)</item>
+///             <item>Content-type grants — <see cref="ContentTypePermissionGrant"/> rows for the context content type (explicit, or derived from the resource type); they mint only the content-type qualified name <c>{ContentType}.{permission}</c> (issues #360/#365)</item>
 ///             <item>Resource grants — only when the context carries a resource type and id that match the grant</item>
 ///         </list>
 ///     </para>
@@ -114,9 +115,21 @@ public sealed record EffectivePermissionContext
     /// <summary>Optional: resource id for the resource layer (must be paired with <see cref="ResourceType"/>).</summary>
     public string? ResourceId { get; init; }
 
+    /// <summary>
+    ///     Optional: content-type name for the content-type layer (e.g. <c>Course</c>).
+    ///     Standalone (a content-type scoped resolution) or alongside a resource pair (a
+    ///     resource of type <c>T</c> is content of content type <c>T</c>, so the engine
+    ///     also derives the content type from <see cref="ResourceType"/> when this is
+    ///     absent). Blank values are treated as absent.
+    /// </summary>
+    public string? ContentType { get; init; }
+
     /// <summary>True when a complete resource (type, id) pair is present.</summary>
     public bool HasResource =>
         !string.IsNullOrWhiteSpace(ResourceType) && !string.IsNullOrWhiteSpace(ResourceId);
+
+    /// <summary>True when a non-blank content type is present.</summary>
+    public bool HasContentType => !string.IsNullOrWhiteSpace(ContentType);
 
     /// <summary>
     ///     True when the context is safe to resolve: non-empty user and tenant, and the
@@ -134,6 +147,14 @@ public sealed record EffectivePermissionContext
     /// <summary>Creates a resource-scoped context (tenant + exact resource).</summary>
     public static EffectivePermissionContext ForResource(Guid userId, Guid tenantId, string resourceType, string resourceId)
         => new() { UserId = userId, TenantId = tenantId, ResourceType = resourceType, ResourceId = resourceId };
+
+    /// <summary>
+    ///     Creates a content-type scoped context (tenant + content type, no exact
+    ///     resource). Content-type grants for the named type contribute their
+    ///     content-type qualified names.
+    /// </summary>
+    public static EffectivePermissionContext ForContentType(Guid userId, Guid tenantId, string contentType)
+        => new() { UserId = userId, TenantId = tenantId, ContentType = contentType };
 }
 
 /// <summary>
@@ -278,7 +299,23 @@ public enum PermissionSource
     ///     <c>Authorization:OwnerOverride</c> mode is <c>AlwaysAllow</c> (fail-closed
     ///     default: <c>AllowUnlessDenied</c>).
     /// </summary>
-    Owner = 9
+    Owner = 9,
+
+    /// <summary>
+    ///     Content-type tenant default (issues #360/#365): a
+    ///     <see cref="ContentTypePermissionGrant"/> row with a null subject applying to
+    ///     every user of the tenant for one content type. Contributes only the
+    ///     content-type qualified name <c>{ContentTypeName}.{permission}</c>.
+    /// </summary>
+    ContentTypeDefault = 10,
+
+    /// <summary>
+    ///     Direct content-type grant (issues #360/#365): a
+    ///     <see cref="ContentTypePermissionGrant"/> row for the current user and one
+    ///     content type. Contributes only the content-type qualified name
+    ///     <c>{ContentTypeName}.{permission}</c>; subject to DENY-WINS.
+    /// </summary>
+    ContentTypeGrant = 11
 }
 
 /// <summary>
