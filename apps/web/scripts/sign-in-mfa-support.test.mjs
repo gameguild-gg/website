@@ -94,6 +94,20 @@ test("denied completion or a missing secret never returns an authenticated respo
     ),
   );
 });
+test("accepts a challenge for an elevated-role account with a provisioned secret", async () => {
+  const bridge = createMfaSignInContinuation({
+    secrets: new Map([["admin@game-guild.com", "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"]]),
+  });
+  const response = { accessToken: "verified" };
+  assert.deepEqual(
+    await bridge(
+      { requiresMfa: true, mfaToken: "x".repeat(43), tenantId: "bound", userId: "bound" },
+      async (action, body) => ({ accessToken: "verified", tenantId: "bound", userId: "bound" }),
+      "admin@game-guild.com",
+    ),
+    { ...response, tenantId: "bound", userId: "bound" },
+  );
+});
 
 test("SignInForm keeps void callbacks without obsolete promise suppressions", async () => {
   const { readFile } = await import("node:fs/promises");

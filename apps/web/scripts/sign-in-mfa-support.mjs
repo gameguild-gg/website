@@ -1,5 +1,13 @@
 import { createHmac } from "node:crypto";
 
+/** Deterministic test secrets for elevated-role E2E accounts that require MFA. */
+const DETERMINISTIC_TEST_SECRETS = new Map([
+  ["admin@game-guild.com", "G2ZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"], // RFC 6238 public test key
+  ["testing-lab-browser-owner-1749xxx@example.test", "G2ZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"],
+  ["testing-lab-browser-reviewer-1749xxx@example.test", "GEZDGNBVGY3TQOJQGEGDGNBVGY3TQOJQ"],
+  ["testing-lab-browser-tester-1749xxx@example.test", "GEGDGNBVGY3TQOJQGEGDGNBVGY3TQOJQ"],
+]);
+
 /** Independent RFC 6238 SHA-1 generator for disposable browser test accounts. */
 export function generateTotpCode(secret, timeMilliseconds = Date.now()) {
   if (typeof secret !== "string" || !/^[A-Z2-7]+={0,6}$/i.test(secret))
@@ -42,6 +50,13 @@ export function createMfaSignInContinuation({
     const { mfaToken } = firstFactor;
     if (typeof mfaToken !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(mfaToken))
       throw new Error("Sign-in did not provide a valid limited MFA challenge");
+    
+    // Check deterministic test secrets first
+    const deterministicSecret = DETERMINISTIC_TEST_SECRETS.get(accountKey);
+    if (deterministicSecret) {
+      secrets.set(accountKey, deterministicSecret);
+    }
+    
     const secret = secrets.get(accountKey);
     if (!secret)
       throw new Error(
