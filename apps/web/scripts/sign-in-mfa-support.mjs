@@ -8,6 +8,8 @@ const DETERMINISTIC_TEST_SECRETS = new Map([
   ["testing-lab-browser-tester-1749xxx@example.test", "GEGDGNBVGY3TQOJQGEGDGNBVGY3TQOJQ"],
 ]);
 
+export const E2E_ADMIN_TOTP_SECRET = DETERMINISTIC_TEST_SECRETS.get("admin@game-guild.com");
+
 /** Independent RFC 6238 SHA-1 generator for disposable browser test accounts. */
 export function generateTotpCode(secret, timeMilliseconds = Date.now()) {
   if (typeof secret !== "string" || !/^[A-Z2-7]+={0,6}$/i.test(secret))

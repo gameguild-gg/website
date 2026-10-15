@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { E2E_ADMIN_TOTP_SECRET } from './sign-in-mfa-support.mjs';
 
 export function resolveBashExecutable({
   platform = process.platform,
@@ -58,6 +59,9 @@ export function runTestingLabBrowserE2E() {
   const script = fileURLToPath(
     new URL('./testing-lab-browser-e2e.sh', import.meta.url),
   );
+  // Pass the deterministic admin TOTP secret to the bash runner so the .sh
+  // can seed the API without re-declaring the literal (GitGuardian-clean).
+  process.env.E2E_ADMIN_TOTP_SECRET ??= E2E_ADMIN_TOTP_SECRET;
   const child = spawn(bash, [script], {
     cwd: fileURLToPath(new URL('..', import.meta.url)),
     env: process.env,
