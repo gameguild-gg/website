@@ -665,7 +665,6 @@ export class ToolRunner {
     const buildNinjaData = await this.vfs.fetchFile(buildNinjaPath);
     if (!buildNinjaData) {
       const msg = `ninja: error: loading '${buildNinjaPath}'.`;
-      console.error(`${LOG_PREFIX}   [ninja-bypass] ${msg}`);
       options.onStderr?.(msg);
       return { exitCode: 1, stdout: '', stderr: msg };
     }
@@ -762,7 +761,7 @@ export class ToolRunner {
       });
 
       if (result.exitCode !== 0) {
-        console.error(`${LOG_PREFIX}   [ninja-bypass] ${progress} FAILED (exit ${result.exitCode})`);
+        options.onStderr?.(`[ninja-bypass] ${progress} FAILED (exit ${result.exitCode})`);
         return {
           exitCode: result.exitCode,
           stdout: stdoutChunks.join('\n'),
@@ -1221,7 +1220,6 @@ export class ToolRunner {
       },
       printErr: (text: string) => {
         stderrChunks.push(text);
-        console.error(`${LOG_PREFIX}   [printErr] ${text}`);
         options.onStderr?.(text);
       },
       // For interactive scripts, wrap stdin to flush the Emscripten TTY
@@ -1391,7 +1389,7 @@ export class ToolRunner {
             console.log(`${LOG_PREFIX}   [subprocess] Done: exitCode=${subResult.exitCode}`);
             if (subStderr.length > 0) {
               for (const line of subStderr) {
-                console.error(`${LOG_PREFIX}   [subprocess] stderr: ${line}`);
+                options.onStderr?.(`${LOG_PREFIX}   [subprocess] stderr: ${line}`);
               }
             }
 
@@ -1408,7 +1406,7 @@ export class ToolRunner {
             return waitStatus;
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            console.error(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
+            options.onStderr?.(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
             if (instanceRef) {
               instanceRef.FS.writeFile('/tmp/.subprocess_stdout', '');
               instanceRef.FS.writeFile('/tmp/.subprocess_stderr', msg);
@@ -2230,12 +2228,12 @@ sys.excepthook = _hook
             console.log(`${LOG_PREFIX}   [subprocess] Done: exitCode=${effectiveExitCode}`);
             if (subStderr.length > 0) {
               for (const line of subStderr) {
-                console.error(`${LOG_PREFIX}   [subprocess] stderr: ${line}`);
+                options.onStderr?.(`${LOG_PREFIX}   [subprocess] stderr: ${line}`);
               }
             }
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            console.error(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
+            options.onStderr?.(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
             instanceRef.FS.writeFile('/tmp/__dispatch_subprocess__', '1');
             instanceRef.FS.writeFile('/tmp/.subprocess_stdout', '');
             instanceRef.FS.writeFile('/tmp/.subprocess_stderr', msg);
