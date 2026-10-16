@@ -189,10 +189,11 @@ function GradingPanelSession({
     (round) => round.roundId === submission.execution.activeRoundId,
   );
   const releaseSchedule = activeRound?.releaseSchedule ?? null;
+  const scheduledReleaseTimestamp = Date.parse(releaseScheduledFor);
   const canSchedule = Boolean(
     canRelease &&
       releaseScheduledFor &&
-      Date.parse(releaseScheduledFor) > Date.now(),
+      Number.isFinite(scheduledReleaseTimestamp),
   );
 
   async function submitReview() {
@@ -252,6 +253,10 @@ function GradingPanelSession({
 
   async function scheduleResultRelease() {
     if (!submission || !submission.execution.activeRoundId || !canSchedule) return;
+    if (scheduledReleaseTimestamp <= Date.now()) {
+      setError('Scheduled release must be in the future.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     const result = await scheduleRuntimeSubmissionRelease(
@@ -261,7 +266,7 @@ function GradingPanelSession({
         expectedRoundId: submission.execution.activeRoundId,
         expectedScheduleVersion: releaseSchedule?.version ?? 0,
       },
-      new Date(releaseScheduledFor).toISOString(),
+      new Date(scheduledReleaseTimestamp).toISOString(),
       releaseScheduleReason.trim() || null,
       createIdempotencyKey(),
     );

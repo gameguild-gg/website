@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   SelfReviewEvidenceV1,
   SelfReviewRuntimeStateV1,
@@ -36,38 +36,57 @@ interface ItemDraft {
 export function SelfReviewForm({
   items,
   state,
+  ...props
+}: SelfReviewFormProps): React.JSX.Element {
+  const itemKey = items.map((item) => `${item.itemId}:${item.maxScore}`).join('|');
+  const sessionKey = [
+    state.reviewStageId,
+    state.draftVersion,
+    state.submittedEvidence == null ? 'draft' : 'submitted',
+    itemKey,
+  ].join(':');
+
+  return (
+    <SelfReviewFormSession
+      key={sessionKey}
+      items={items}
+      state={state}
+      {...props}
+    />
+  );
+}
+
+function SelfReviewFormSession({
+  items,
+  state,
   busy = false,
   onSaveDraft,
   onSubmit,
 }: SelfReviewFormProps): React.JSX.Element {
-  const [drafts, setDrafts] = useState<Record<string, ItemDraft>>({});
-  const [overallFeedback, setOverallFeedback] = useState('');
+  const initialEvidence = state.submittedEvidence ?? state.draft;
+  const initialItems = new Map(
+    (initialEvidence?.items ?? []).map((item) => [item.itemId, item]),
+  );
+  const [drafts, setDrafts] = useState<Record<string, ItemDraft>>(() =>
+    Object.fromEntries(
+      items.map((item) => {
+        const current = initialItems.get(item.itemId);
+        return [
+          item.itemId,
+          {
+            points:
+              current == null ? '' : String(scoreUnitsToPoints(current.score)),
+            feedback: current?.feedback ?? '',
+          },
+        ];
+      }),
+    ),
+  );
+  const [overallFeedback, setOverallFeedback] = useState(
+    initialEvidence?.feedback ?? '',
+  );
   const [localError, setLocalError] = useState<string | null>(null);
   const readOnly = state.status === 'completed' || state.submittedEvidence != null;
-
-  useEffect(() => {
-    const evidence = state.submittedEvidence ?? state.draft;
-    const byItem = new Map(
-      (evidence?.items ?? []).map((item) => [item.itemId, item]),
-    );
-    setDrafts(
-      Object.fromEntries(
-        items.map((item) => {
-          const current = byItem.get(item.itemId);
-          return [
-            item.itemId,
-            {
-              points:
-                current == null ? '' : String(scoreUnitsToPoints(current.score)),
-              feedback: current?.feedback ?? '',
-            },
-          ];
-        }),
-      ),
-    );
-    setOverallFeedback(evidence?.feedback ?? '');
-    setLocalError(null);
-  }, [items, state.draftVersion, state.reviewStageId, state.submittedEvidence]);
 
   const evidence = useMemo(() => {
     try {

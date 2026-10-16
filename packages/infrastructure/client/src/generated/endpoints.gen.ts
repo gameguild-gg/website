@@ -13403,6 +13403,38 @@ export const getAssessmentsMySubmissionsEndpoint = {
 } as const;
 
 /**
+ * Extend an insufficient peer-review evidence window.
+ */
+export interface PostAssessmentsPeerReviewStagesExtendInput {
+  reviewStageId: string;
+  body?: Types.LearningAssessmentsExtendPeerReviewWindowInput;
+}
+export type PostAssessmentsPeerReviewStagesExtendOutput = void;
+export const postAssessmentsPeerReviewStagesExtendEndpoint = {
+  operationId: 'postAssessmentsPeerReviewStagesExtend' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-review-stages/{reviewStageId}/extend' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolve a peer stage whose evidence threshold was not reached before its deadline.
+ */
+export interface PostAssessmentsPeerReviewStagesResolveInsufficientInput {
+  reviewStageId: string;
+  body?: Types.LearningAssessmentsResolvePeerReviewInsufficiencyInput;
+}
+export type PostAssessmentsPeerReviewStagesResolveInsufficientOutput = void;
+export const postAssessmentsPeerReviewStagesResolveInsufficientEndpoint = {
+  operationId: 'postAssessmentsPeerReviewStagesResolveInsufficient' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-review-stages/{reviewStageId}/resolve-insufficient' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get the anonymous submission a claimed review refers to. Reviewer-only.
  */
 export interface GetAssessmentsPeerReviewsInput {
@@ -13418,8 +13450,23 @@ export const getAssessmentsPeerReviewsEndpoint = {
 } as const;
 
 /**
- * Legacy peer-review submit. Valid requests fail closed until peer review is implemented
- * as a canonical grading stage.
+ * Cancel an active claim so another eligible reviewer can claim the stage.
+ */
+export interface PostAssessmentsPeerReviewsReassignInput {
+  reviewId: string;
+  body?: Types.LearningAssessmentsReassignPeerReviewClaimInput;
+}
+export type PostAssessmentsPeerReviewsReassignOutput = void;
+export const postAssessmentsPeerReviewsReassignEndpoint = {
+  operationId: 'postAssessmentsPeerReviewsReassign' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-reviews/{reviewId}/reassign' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Submit evidence for the canonical peer-review stage assigned to the learner.
  */
 export interface PostAssessmentsPeerReviewsSubmitInput {
   reviewId: string;
@@ -13494,6 +13541,58 @@ export const postAssessmentsRuntimeSubmissionsReleaseEndpoint = {
   operationId: 'postAssessmentsRuntimeSubmissionsRelease' as const,
   method: 'POST' as const,
   path: '/v1/assessments/runtime-submissions/{submissionId}/release' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsReleaseScheduleInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand;
+}
+export type PostAssessmentsRuntimeSubmissionsReleaseScheduleOutput = Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
+export const postAssessmentsRuntimeSubmissionsReleaseScheduleEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsReleaseSchedule' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/release-schedule' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsReleaseScheduleCancelInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand;
+}
+export type PostAssessmentsRuntimeSubmissionsReleaseScheduleCancelOutput = Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
+export const postAssessmentsRuntimeSubmissionsReleaseScheduleCancelEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsReleaseScheduleCancel' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/release-schedule/cancel' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsSelfReviewInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsSubmitSelfReviewInput;
+}
+export type PostAssessmentsRuntimeSubmissionsSelfReviewOutput = Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1;
+export const postAssessmentsRuntimeSubmissionsSelfReviewEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsSelfReview' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/self-review' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAssessmentsRuntimeSubmissionsSelfReviewDraftInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsSaveCollectiveSelfReviewDraftInput;
+}
+export type PutAssessmentsRuntimeSubmissionsSelfReviewDraftOutput = Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1;
+export const putAssessmentsRuntimeSubmissionsSelfReviewDraftEndpoint = {
+  operationId: 'putAssessmentsRuntimeSubmissionsSelfReviewDraft' as const,
+  method: 'PUT' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/self-review/draft' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -13598,6 +13697,55 @@ export const postAssessmentsTestRunsInstructorReviewEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Gets the anonymous response held by a synthetic peer-review claim.
+ */
+export interface GetAssessmentsTestRunsPeerReviewsInput {
+  testRunId: string;
+  reviewId: string;
+}
+export type GetAssessmentsTestRunsPeerReviewsOutput = Types.LearningAssessmentsPeerReviewClaimView;
+export const getAssessmentsTestRunsPeerReviewsEndpoint = {
+  operationId: 'getAssessmentsTestRunsPeerReviews' as const,
+  method: 'GET' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/{reviewId}' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Submits synthetic peer evidence through the canonical review-stage lifecycle.
+ */
+export interface PostAssessmentsTestRunsPeerReviewsSubmitInput {
+  testRunId: string;
+  reviewId: string;
+  body?: Types.LearningAssessmentsSubmitAssessmentTestPeerReviewInput;
+}
+export type PostAssessmentsTestRunsPeerReviewsSubmitOutput = Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1;
+export const postAssessmentsTestRunsPeerReviewsSubmitEndpoint = {
+  operationId: 'postAssessmentsTestRunsPeerReviewsSubmit' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/{reviewId}/submit' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Claims an anonymous synthetic subject for peer review within an instructor test run.
+ */
+export interface PostAssessmentsTestRunsPeerReviewsClaimInput {
+  testRunId: string;
+  body?: Types.LearningAssessmentsClaimAssessmentTestPeerReviewInput;
+}
+export type PostAssessmentsTestRunsPeerReviewsClaimOutput = Types.LearningAssessmentsPeerReviewClaimResult;
+export const postAssessmentsTestRunsPeerReviewsClaimEndpoint = {
+  operationId: 'postAssessmentsTestRunsPeerReviewsClaim' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/claim' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface PostAssessmentsTestRunsRestartInput {
   testRunId: string;
   body?: Types.LearningAssessmentsIdempotentRuntimeInput;
@@ -13607,6 +13755,19 @@ export const postAssessmentsTestRunsRestartEndpoint = {
   operationId: 'postAssessmentsTestRunsRestart' as const,
   method: 'POST' as const,
   path: '/v1/assessments/test-runs/{testRunId}/restart' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsTestRunsSelfReviewInput {
+  testRunId: string;
+  body?: Types.LearningAssessmentsSubmitSelfReviewInput;
+}
+export type PostAssessmentsTestRunsSelfReviewOutput = Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1;
+export const postAssessmentsTestRunsSelfReviewEndpoint = {
+  operationId: 'postAssessmentsTestRunsSelfReview' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/self-review' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -29653,13 +29814,20 @@ export const endpoints = {
   putAssessmentsGroups: putAssessmentsGroupsEndpoint,
   deleteAssessmentsGroups: deleteAssessmentsGroupsEndpoint,
   getAssessmentsMySubmissions: getAssessmentsMySubmissionsEndpoint,
+  postAssessmentsPeerReviewStagesExtend: postAssessmentsPeerReviewStagesExtendEndpoint,
+  postAssessmentsPeerReviewStagesResolveInsufficient: postAssessmentsPeerReviewStagesResolveInsufficientEndpoint,
   getAssessmentsPeerReviews: getAssessmentsPeerReviewsEndpoint,
+  postAssessmentsPeerReviewsReassign: postAssessmentsPeerReviewsReassignEndpoint,
   postAssessmentsPeerReviewsSubmit: postAssessmentsPeerReviewsSubmitEndpoint,
   getAssessmentsRuntimeSubmissions: getAssessmentsRuntimeSubmissionsEndpoint,
   putAssessmentsRuntimeSubmissionsDraft: putAssessmentsRuntimeSubmissionsDraftEndpoint,
   postAssessmentsRuntimeSubmissionsInstructorReview: postAssessmentsRuntimeSubmissionsInstructorReviewEndpoint,
   postAssessmentsRuntimeSubmissionsRegrade: postAssessmentsRuntimeSubmissionsRegradeEndpoint,
   postAssessmentsRuntimeSubmissionsRelease: postAssessmentsRuntimeSubmissionsReleaseEndpoint,
+  postAssessmentsRuntimeSubmissionsReleaseSchedule: postAssessmentsRuntimeSubmissionsReleaseScheduleEndpoint,
+  postAssessmentsRuntimeSubmissionsReleaseScheduleCancel: postAssessmentsRuntimeSubmissionsReleaseScheduleCancelEndpoint,
+  postAssessmentsRuntimeSubmissionsSelfReview: postAssessmentsRuntimeSubmissionsSelfReviewEndpoint,
+  putAssessmentsRuntimeSubmissionsSelfReviewDraft: putAssessmentsRuntimeSubmissionsSelfReviewDraftEndpoint,
   postAssessmentsRuntimeSubmissionsSubmit: postAssessmentsRuntimeSubmissionsSubmitEndpoint,
   getAssessmentsSubmissionsForGetAssessmentsSubmissionsBySubmissionId: getAssessmentsSubmissionsForGetAssessmentsSubmissionsBySubmissionIdEndpoint,
   getAssessmentsSubmissionsPeerReviews: getAssessmentsSubmissionsPeerReviewsEndpoint,
@@ -29667,7 +29835,11 @@ export const endpoints = {
   postAssessmentsSubmissionsSubmit: postAssessmentsSubmissionsSubmitEndpoint,
   getAssessmentsTestRuns: getAssessmentsTestRunsEndpoint,
   postAssessmentsTestRunsInstructorReview: postAssessmentsTestRunsInstructorReviewEndpoint,
+  getAssessmentsTestRunsPeerReviews: getAssessmentsTestRunsPeerReviewsEndpoint,
+  postAssessmentsTestRunsPeerReviewsSubmit: postAssessmentsTestRunsPeerReviewsSubmitEndpoint,
+  postAssessmentsTestRunsPeerReviewsClaim: postAssessmentsTestRunsPeerReviewsClaimEndpoint,
   postAssessmentsTestRunsRestart: postAssessmentsTestRunsRestartEndpoint,
+  postAssessmentsTestRunsSelfReview: postAssessmentsTestRunsSelfReviewEndpoint,
   postAssessmentsTestRunsSubmit: postAssessmentsTestRunsSubmitEndpoint,
   getAssetLibraries: getAssetLibrariesEndpoint,
   postAssetLibrariesFolders: postAssetLibrariesFoldersEndpoint,
