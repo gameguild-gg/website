@@ -28,7 +28,7 @@ public class AssetReferenceRepository : IAssetReferenceRepository
     }
 
     public async Task<IReadOnlyList<AssetReference>> GetByIdsWithContentAsync(
-        IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
+        IReadOnlyCollection<Guid> ids, CancellationToken ct)
     {
         if (ids.Count == 0)
         {

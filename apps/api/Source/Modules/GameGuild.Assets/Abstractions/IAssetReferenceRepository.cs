@@ -18,7 +18,7 @@ public interface IAssetReferenceRepository
     /// <summary>
     /// Gets asset references by IDs with content loaded. Deleted references are excluded.
     /// </summary>
-    Task<IReadOnlyList<AssetReference>> GetByIdsWithContentAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default);
+    Task<IReadOnlyList<AssetReference>> GetByIdsWithContentAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
 
     /// <summary>
     /// Gets asset references by parent resource.
