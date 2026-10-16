@@ -523,6 +523,26 @@ export const getApiAuditRedactionPipelineTokensEndpoint = {
 } as const;
 
 /**
+ * Readable capture alias (issue #169): the same bounded, durably audited
+ *             selection as the POST capture, addressed by query parameters so an investigator can
+ *             link and re-fetch one frozen range. The response is never cacheable.
+ */
+export interface GetApiAuditReplaySnapshotsInput {
+  query?: {
+    start?: string;
+    end?: string;
+  };
+}
+export type GetApiAuditReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const getApiAuditReplaySnapshotsEndpoint = {
+  operationId: 'getApiAuditReplaySnapshots' as const,
+  method: 'GET' as const,
+  path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
  *
  * Null tenant context selects global-only rows. SHA256 detects content changes against
@@ -536,6 +556,27 @@ export const postApiAuditReplaySnapshotsEndpoint = {
   operationId: 'postApiAuditReplaySnapshots' as const,
   method: 'POST' as const,
   path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reconstructs the chronological incident timeline of one client-held snapshot
+ *             (issue #169). The document is revalidated against every capture invariant and its
+ *             canonical serialization must match the expected digest; otherwise nothing is returned.
+ *
+ * The reconstruction adds per-user journeys and per-session summaries. A digest
+ *             match detects content changes; it does not establish provenance, actor attribution or
+ *             source clock synchronization.
+ */
+export interface PostApiAuditReplaySnapshotsReconstructInput {
+  body?: Types.ComplianceAuditReconstructAuditReplayInput;
+}
+export type PostApiAuditReplaySnapshotsReconstructOutput = Types.ComplianceAuditAuditReplayReconstructionOutput;
+export const postApiAuditReplaySnapshotsReconstructEndpoint = {
+  operationId: 'postApiAuditReplaySnapshotsReconstruct' as const,
+  method: 'POST' as const,
+  path: '/api/audit/replay/snapshots:reconstruct' as const,
   tags: ['ComplianceAuditReplay'] as const,
   requiresAuth: true,
 } as const;
@@ -703,6 +744,21 @@ export const getApiAuditRetentionSimulationTemplatesEndpoint = {
   method: 'GET' as const,
   path: '/api/audit/retention-simulation/templates' as const,
   tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Searches audit events using a nested condition tree with boolean logic.
+ */
+export interface PostApiAuditSearchFilterInput {
+  body?: Types.ComplianceAuditAuditConditionSearchInput;
+}
+export type PostApiAuditSearchFilterOutput = Types.ComplianceAuditAuditLogOutput;
+export const postApiAuditSearchFilterEndpoint = {
+  operationId: 'postApiAuditSearchFilter' as const,
+  method: 'POST' as const,
+  path: '/api/audit/search-filter' as const,
+  tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
 
@@ -5922,6 +5978,110 @@ export const getAuthorizationComplianceReportEndpoint = {
 } as const;
 
 /**
+ * Lists the content-type grant rows of one tenant, optionally narrowed to one
+ * content type.
+ */
+export interface GetAuthorizationContentTypesGrantsInput {
+  tenantId: string;
+  query?: {
+    contentType?: string;
+  };
+}
+export type GetAuthorizationContentTypesGrantsOutput = Types.IdentityAuthorizationGetContentTypePermissionGrantsOutput;
+export const getAuthorizationContentTypesGrantsEndpoint = {
+  operationId: 'getAuthorizationContentTypesGrants' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/content-types/{tenantId}/grants' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Soft-deletes one content-type grant row by id (tenant-isolated).
+ */
+export interface DeleteAuthorizationContentTypesGrantsInput {
+  tenantId: string;
+  grantId: string;
+}
+export type DeleteAuthorizationContentTypesGrantsOutput = void;
+export const deleteAuthorizationContentTypesGrantsEndpoint = {
+  operationId: 'deleteAuthorizationContentTypesGrants' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/authorization/content-types/{tenantId}/grants/{grantId}' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Checks whether a user holds a content-type scoped permission, resolved through
+ * the canonical effective-permission engine (tenant → content-type → resource,
+ * DENY-WINS, deny-by-default).
+ */
+export interface GetAuthorizationContentTypesHasPermissionInput {
+  tenantId: string;
+  query?: {
+    contentType?: string;
+    permission?: string;
+    userId?: string;
+  };
+}
+export type GetAuthorizationContentTypesHasPermissionOutput = Record<string, unknown>;
+export const getAuthorizationContentTypesHasPermissionEndpoint = {
+  operationId: 'getAuthorizationContentTypesHasPermission' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/content-types/{tenantId}/has-permission' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Adds explicit DENY-WINS entries to a content-type grant row.
+ */
+export interface PostAuthorizationContentTypesDeniesInput {
+  body?: Types.IdentityAuthorizationDenyContentTypePermissionGrantCommand;
+}
+export type PostAuthorizationContentTypesDeniesOutput = Record<string, unknown>;
+export const postAuthorizationContentTypesDeniesEndpoint = {
+  operationId: 'postAuthorizationContentTypesDenies' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/content-types/denies' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Grants content-type scoped permissions to a user (null user = the tenant
+ * default row for the content type).
+ */
+export interface PostAuthorizationContentTypesGrantsInput {
+  body?: Types.IdentityAuthorizationGrantContentTypePermissionGrantCommand;
+}
+export type PostAuthorizationContentTypesGrantsOutput = Record<string, unknown>;
+export const postAuthorizationContentTypesGrantsEndpoint = {
+  operationId: 'postAuthorizationContentTypesGrants' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/content-types/grants' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revokes content-type scoped permissions from a user (the row is soft-deleted
+ * once its payload is empty).
+ */
+export interface PostAuthorizationContentTypesGrantsRevokeInput {
+  body?: Types.IdentityAuthorizationRevokeContentTypePermissionGrantCommand;
+}
+export type PostAuthorizationContentTypesGrantsRevokeOutput = Record<string, unknown>;
+export const postAuthorizationContentTypesGrantsRevokeEndpoint = {
+  operationId: 'postAuthorizationContentTypesGrantsRevoke' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/content-types/grants:revoke' as const,
+  tags: ['AccessControlContentTypePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Creates a pending multi-stage approval workflow for a tenant permission grant.
  */
 export interface PostAuthorizationPermissionApprovalsInput {
@@ -6035,6 +6195,215 @@ export const getAuthorizationPermissionPoliciesVersionsEndpoint = {
   method: 'GET' as const,
   path: '/api/v1/authorization/permission-policies/{policyId}/versions' as const,
   tags: ['AccessControlPermissionHistory'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists permission templates with their role keys and current version.
+ */
+export interface GetAuthorizationPermissionTemplatesInput {
+  query?: {
+    includeInactive?: boolean;
+    category?: string;
+  };
+}
+export type GetAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateSummary[];
+export const getAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a permission template. The initial permission/role set is snapshotted
+ * as version 1 and the creation is audited.
+ */
+export interface PostAuthorizationPermissionTemplatesInput {
+  body?: Types.IdentityAuthorizationCreatePermissionTemplateCommand;
+}
+export type PostAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateMutationResult;
+export const postAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplates' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Updates a permission template. Every accepted update appends a new version
+ * snapshot with the computed diff and bumps the security version of every
+ * tenant holding an active instantiation.
+ */
+export interface PutAuthorizationPermissionTemplatesInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationUpdatePermissionTemplateCommand;
+}
+export type PutAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateMutationResult;
+export const putAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'putAuthorizationPermissionTemplates' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a permission template. Templates with active instantiations are
+ * pinned (fail closed) and must be migrated away first.
+ */
+export interface DeleteAuthorizationPermissionTemplatesInput {
+  templateId: string;
+  query?: {
+    reason?: string;
+  };
+}
+export type DeleteAuthorizationPermissionTemplatesOutput = void;
+export const deleteAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'deleteAuthorizationPermissionTemplates' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Instantiates a template into a tenant: grants the template permissions to the
+ * target users and assigns the template's roles (role templates). Use
+ * `dryRun` for the preview-only form.
+ */
+export interface PostAuthorizationPermissionTemplatesInstantiateInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationInstantiateTemplateInput;
+}
+export type PostAuthorizationPermissionTemplatesInstantiateOutput = Types.IdentityAuthorizationPermissionTemplateInstantiationResult;
+export const postAuthorizationPermissionTemplatesInstantiateEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesInstantiate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}:instantiate' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Dry-run preview of instantiating a template into a tenant: per-target
+ *     permission grants and role assignments that would apply, without mutating
+ * anything.
+ */
+export interface PostAuthorizationPermissionTemplatesInstantiatePreviewInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationPreviewInstantiationInput;
+}
+export type PostAuthorizationPermissionTemplatesInstantiatePreviewOutput = Types.IdentityAuthorizationPermissionTemplateInstantiationResult;
+export const postAuthorizationPermissionTemplatesInstantiatePreviewEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesInstantiatePreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}:instantiate-preview' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Migrates a template's instantiated targets to a target version (issue #370):
+ * applies the version delta across the tenants that instantiated the template,
+ * batched, with durable per-batch progress. Supports dry-run.
+ */
+export interface PostAuthorizationPermissionTemplatesMigrationsInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationMigrateTemplateInput;
+}
+export type PostAuthorizationPermissionTemplatesMigrationsOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const postAuthorizationPermissionTemplatesMigrationsEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesMigrations' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reads the durable progress of one migration (issue #370).
+ */
+export interface GetAuthorizationPermissionTemplatesMigrationsInput {
+  templateId: string;
+  migrationId: string;
+}
+export type GetAuthorizationPermissionTemplatesMigrationsOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const getAuthorizationPermissionTemplatesMigrationsEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplatesMigrations' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations/{migrationId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Rolls back a completed template migration (issue #370): restores every
+ * affected target to its recorded pre-migration state.
+ */
+export interface PostAuthorizationPermissionTemplatesMigrationsRollbackInput {
+  templateId: string;
+  migrationId: string;
+  body?: Types.IdentityAuthorizationRollbackMigrationInput;
+}
+export type PostAuthorizationPermissionTemplatesMigrationsRollbackOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesMigrationsRollback' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations/{migrationId}:rollback' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the append-only version history of a template (issue #370), newest first.
+ */
+export interface GetAuthorizationPermissionTemplatesVersionsInput {
+  templateId: string;
+}
+export type GetAuthorizationPermissionTemplatesVersionsOutput = Types.IdentityAuthorizationPermissionTemplateVersionSummary[];
+export const getAuthorizationPermissionTemplatesVersionsEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplatesVersions' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/versions' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Simulates a permission change (issue #374): given a subject (user, role or
+ * tenant), a grant/revoke delta and an optional resource scope, returns the
+ * before/after effective permission diff. Nothing is applied — no grants are
+ * written, no security version is bumped, no audit entry is recorded.
+ */
+export interface PostAuthorizationPermissionsSimulateInput {
+  body?: Types.IdentityAuthorizationSimulatePermissionChangeCommand;
+}
+export type PostAuthorizationPermissionsSimulateOutput = Types.IdentityAuthorizationPermissionSimulationResult;
+export const postAuthorizationPermissionsSimulateEndpoint = {
+  operationId: 'postAuthorizationPermissionsSimulate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permissions:simulate' as const,
+  tags: ['AccessControlPermissionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validates a system-wide permission against the global default baseline (issue #307).
+ */
+export interface GetAuthorizationPermissionsGlobalCheckInput {
+  query?: {
+    permission?: string;
+  };
+}
+export type GetAuthorizationPermissionsGlobalCheckOutput = Types.IdentityAuthorizationHasGlobalPermissionOutput;
+export const getAuthorizationPermissionsGlobalCheckEndpoint = {
+  operationId: 'getAuthorizationPermissionsGlobalCheck' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/global:check' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6344,13 +6713,16 @@ export const getAuthorizationTenantsHasPermissionEndpoint = {
 } as const;
 
 /**
- * Gets all tenant-level permissions for a user.
+ * Gets all tenant-level permissions for a user (paginated, issue #298/#307).
  */
 export interface GetAuthorizationTenantsPermissionsInput {
   tenantId: string;
   query?: {
     userId?: string;
     includeEffective?: boolean;
+    page?: number;
+    pageSize?: number;
+    sortDescending?: boolean;
   };
 }
 export type GetAuthorizationTenantsPermissionsOutput = Types.IdentityAuthorizationGetTenantPermissionsOutput;
@@ -7516,6 +7888,29 @@ export const postBillingWebhooksPaypalEndpoint = {
   path: '/api/v1/billing/webhooks/paypal' as const,
   tags: ['CommerceBillingWebhooks'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * Rotate a provider's webhook signing secret (issue #408)
+ *
+ * Records a signing-secret rotation for one provider webhook endpoint. During the
+ * rotation window (Billing:Webhook:SecretRotationWindowHours, default 24h) deliveries
+ * signed with either the previous or the new secret verify (dual-secret verification);
+ * after the window the previous secret is automatically deprecated and rejected. The
+ * new secret is stored encrypted at rest and never appears in logs or the response.
+ * Requires the SystemAdmin policy; the acting administrator is taken from the
+ * authenticated actor, and the decision is audited.
+ */
+export interface PostBillingWebhooksSecretsRotateInput {
+  body?: Types.CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput;
+}
+export type PostBillingWebhooksSecretsRotateOutput = Types.CommerceBillingWebhookSecretRotationResult;
+export const postBillingWebhooksSecretsRotateEndpoint = {
+  operationId: 'postBillingWebhooksSecretsRotate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/webhooks/secrets:rotate' as const,
+  tags: ['CommerceBillingWebhooks'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -8776,6 +9171,24 @@ export const getPaymentsRetryAttemptsEndpoint = {
 } as const;
 
 /**
+ * Per-gateway health and performance metrics over the rolling 24h/7d/30d windows
+ * (issue #413 follow-up): success rates, average processing latency and volume per
+ * gateway, plus the live circuit-breaker state of every known gateway. Requires the
+ * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+ *
+ * Returns per-gateway rolling-window (24h/7d/30d) success rate, average processing latency and volume aggregates computed from payment records, together with the current circuit-breaker state of every known gateway. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+ */
+export type GetPaymentsGatewaysMetricsInput = void;
+export type GetPaymentsGatewaysMetricsOutput = Types.CommercePaymentsGatewayMetricsReport;
+export const getPaymentsGatewaysMetricsEndpoint = {
+  operationId: 'getPaymentsGatewaysMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/gateways/metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Payment success and failed-payment recovery metrics for an inclusive window.
  *
  * Aggregates the recovery analytics that billing administrators need to steer retry and
@@ -8795,6 +9208,29 @@ export const getPaymentsRecoveryMetricsEndpoint = {
   operationId: 'getPaymentsRecoveryMetrics' as const,
   method: 'GET' as const,
   path: '/api/v1/payments/recovery-metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Refund and dispute analytics for an inclusive window (issue #419 follow-up):
+ * refund counts and amounts by status, currency and UTC day, dispute resolution
+ * rates and the average time to resolution. Requires the
+ * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+ *
+ * Returns refund analytics for an inclusive window — counts and refunded amounts by status, currency and UTC day — plus dispute resolution rates (win/loss ratio of decided disputes) and the average time to dispute resolution. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+ */
+export interface GetPaymentsRefundsMetricsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetPaymentsRefundsMetricsOutput = Types.CommercePaymentsRefundAnalyticsReport;
+export const getPaymentsRefundsMetricsEndpoint = {
+  operationId: 'getPaymentsRefundsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/refunds/metrics' as const,
   tags: ['CommercePayments'] as const,
   requiresAuth: true,
 } as const;
@@ -12138,6 +12574,7 @@ export interface GetAdminAuditLogsInput {
     StartDate?: string;
     EndDate?: string;
     IpAddress?: string;
+    SearchText?: string;
     Skip?: number;
     Take?: number;
   };
@@ -12212,6 +12649,26 @@ export const postAdminAuditLogsExportJsonEndpoint = {
 } as const;
 
 /**
+ * Readable capture alias (issue #169): the same bounded, durably audited
+ *             selection as the POST capture, addressed by query parameters so an investigator can
+ *             link and re-fetch one frozen range. The response is never cacheable.
+ */
+export interface GetAdminAuditLogsReplaySnapshotsInput {
+  query?: {
+    start?: string;
+    end?: string;
+  };
+}
+export type GetAdminAuditLogsReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const getAdminAuditLogsReplaySnapshotsEndpoint = {
+  operationId: 'getAdminAuditLogsReplaySnapshots' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
  *
  * Null tenant context selects global-only rows. SHA256 detects content changes against
@@ -12225,6 +12682,27 @@ export const postAdminAuditLogsReplaySnapshotsEndpoint = {
   operationId: 'postAdminAuditLogsReplaySnapshots' as const,
   method: 'POST' as const,
   path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reconstructs the chronological incident timeline of one client-held snapshot
+ *             (issue #169). The document is revalidated against every capture invariant and its
+ *             canonical serialization must match the expected digest; otherwise nothing is returned.
+ *
+ * The reconstruction adds per-user journeys and per-session summaries. A digest
+ *             match detects content changes; it does not establish provenance, actor attribution or
+ *             source clock synchronization.
+ */
+export interface PostAdminAuditLogsReplaySnapshotsReconstructInput {
+  body?: Types.ComplianceAuditReconstructAuditReplayInput;
+}
+export type PostAdminAuditLogsReplaySnapshotsReconstructOutput = Types.ComplianceAuditAuditReplayReconstructionOutput;
+export const postAdminAuditLogsReplaySnapshotsReconstructEndpoint = {
+  operationId: 'postAdminAuditLogsReplaySnapshotsReconstruct' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots:reconstruct' as const,
   tags: ['ComplianceAuditReplay'] as const,
   requiresAuth: true,
 } as const;
@@ -12315,6 +12793,21 @@ export const getAdminAuditLogsScheduledExportsHistoryEndpoint = {
   operationId: 'getAdminAuditLogsScheduledExportsHistory' as const,
   method: 'GET' as const,
   path: '/v1/admin/audit-logs/scheduled-exports/{exportId}/history' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Searches audit events using a nested condition tree with boolean logic.
+ */
+export interface PostAdminAuditLogsSearchFilterInput {
+  body?: Types.ComplianceAuditAuditConditionSearchInput;
+}
+export type PostAdminAuditLogsSearchFilterOutput = Types.ComplianceAuditAuditLogOutput;
+export const postAdminAuditLogsSearchFilterEndpoint = {
+  operationId: 'postAdminAuditLogsSearchFilter' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/search-filter' as const,
   tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
@@ -12531,6 +13024,12 @@ export const postAdminSecurityAuditExportEndpoint = {
 
 /**
  * Get authentication attempt logs specifically.
+ *
+ * Deliberately kept on the SystemAdmin policy: the authentication-attempt surface
+ * has no tenant-scoped filter today (the request and the underlying query are
+ * platform-wide), so opening it to the Audit.Read self-service tier would leak
+ * cross-tenant authentication data. Revisit together with a tenant filter on
+ * GameGuild.Compliance.Audit.AuthenticationAuditRequest.
  */
 export interface GetAdminSecurityAuditAuthenticationInput {
   query?: {
@@ -13403,6 +13902,38 @@ export const getAssessmentsMySubmissionsEndpoint = {
 } as const;
 
 /**
+ * Extend an insufficient peer-review evidence window.
+ */
+export interface PostAssessmentsPeerReviewStagesExtendInput {
+  reviewStageId: string;
+  body?: Types.LearningAssessmentsExtendPeerReviewWindowInput;
+}
+export type PostAssessmentsPeerReviewStagesExtendOutput = void;
+export const postAssessmentsPeerReviewStagesExtendEndpoint = {
+  operationId: 'postAssessmentsPeerReviewStagesExtend' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-review-stages/{reviewStageId}/extend' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolve a peer stage whose evidence threshold was not reached before its deadline.
+ */
+export interface PostAssessmentsPeerReviewStagesResolveInsufficientInput {
+  reviewStageId: string;
+  body?: Types.LearningAssessmentsResolvePeerReviewInsufficiencyInput;
+}
+export type PostAssessmentsPeerReviewStagesResolveInsufficientOutput = void;
+export const postAssessmentsPeerReviewStagesResolveInsufficientEndpoint = {
+  operationId: 'postAssessmentsPeerReviewStagesResolveInsufficient' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-review-stages/{reviewStageId}/resolve-insufficient' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get the anonymous submission a claimed review refers to. Reviewer-only.
  */
 export interface GetAssessmentsPeerReviewsInput {
@@ -13418,8 +13949,23 @@ export const getAssessmentsPeerReviewsEndpoint = {
 } as const;
 
 /**
- * Legacy peer-review submit. Valid requests fail closed until peer review is implemented
- * as a canonical grading stage.
+ * Cancel an active claim so another eligible reviewer can claim the stage.
+ */
+export interface PostAssessmentsPeerReviewsReassignInput {
+  reviewId: string;
+  body?: Types.LearningAssessmentsReassignPeerReviewClaimInput;
+}
+export type PostAssessmentsPeerReviewsReassignOutput = void;
+export const postAssessmentsPeerReviewsReassignEndpoint = {
+  operationId: 'postAssessmentsPeerReviewsReassign' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-reviews/{reviewId}/reassign' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Submit evidence for the canonical peer-review stage assigned to the learner.
  */
 export interface PostAssessmentsPeerReviewsSubmitInput {
   reviewId: string;
@@ -13494,6 +14040,58 @@ export const postAssessmentsRuntimeSubmissionsReleaseEndpoint = {
   operationId: 'postAssessmentsRuntimeSubmissionsRelease' as const,
   method: 'POST' as const,
   path: '/v1/assessments/runtime-submissions/{submissionId}/release' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsReleaseScheduleInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand;
+}
+export type PostAssessmentsRuntimeSubmissionsReleaseScheduleOutput = Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
+export const postAssessmentsRuntimeSubmissionsReleaseScheduleEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsReleaseSchedule' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/release-schedule' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsReleaseScheduleCancelInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand;
+}
+export type PostAssessmentsRuntimeSubmissionsReleaseScheduleCancelOutput = Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
+export const postAssessmentsRuntimeSubmissionsReleaseScheduleCancelEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsReleaseScheduleCancel' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/release-schedule/cancel' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsSelfReviewInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsSubmitSelfReviewInput;
+}
+export type PostAssessmentsRuntimeSubmissionsSelfReviewOutput = Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1;
+export const postAssessmentsRuntimeSubmissionsSelfReviewEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsSelfReview' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/self-review' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAssessmentsRuntimeSubmissionsSelfReviewDraftInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsSaveCollectiveSelfReviewDraftInput;
+}
+export type PutAssessmentsRuntimeSubmissionsSelfReviewDraftOutput = Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1;
+export const putAssessmentsRuntimeSubmissionsSelfReviewDraftEndpoint = {
+  operationId: 'putAssessmentsRuntimeSubmissionsSelfReviewDraft' as const,
+  method: 'PUT' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/self-review/draft' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -13598,6 +14196,55 @@ export const postAssessmentsTestRunsInstructorReviewEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Gets the anonymous response held by a synthetic peer-review claim.
+ */
+export interface GetAssessmentsTestRunsPeerReviewsInput {
+  testRunId: string;
+  reviewId: string;
+}
+export type GetAssessmentsTestRunsPeerReviewsOutput = Types.LearningAssessmentsPeerReviewClaimView;
+export const getAssessmentsTestRunsPeerReviewsEndpoint = {
+  operationId: 'getAssessmentsTestRunsPeerReviews' as const,
+  method: 'GET' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/{reviewId}' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Submits synthetic peer evidence through the canonical review-stage lifecycle.
+ */
+export interface PostAssessmentsTestRunsPeerReviewsSubmitInput {
+  testRunId: string;
+  reviewId: string;
+  body?: Types.LearningAssessmentsSubmitAssessmentTestPeerReviewInput;
+}
+export type PostAssessmentsTestRunsPeerReviewsSubmitOutput = Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1;
+export const postAssessmentsTestRunsPeerReviewsSubmitEndpoint = {
+  operationId: 'postAssessmentsTestRunsPeerReviewsSubmit' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/{reviewId}/submit' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Claims an anonymous synthetic subject for peer review within an instructor test run.
+ */
+export interface PostAssessmentsTestRunsPeerReviewsClaimInput {
+  testRunId: string;
+  body?: Types.LearningAssessmentsClaimAssessmentTestPeerReviewInput;
+}
+export type PostAssessmentsTestRunsPeerReviewsClaimOutput = Types.LearningAssessmentsPeerReviewClaimResult;
+export const postAssessmentsTestRunsPeerReviewsClaimEndpoint = {
+  operationId: 'postAssessmentsTestRunsPeerReviewsClaim' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/claim' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface PostAssessmentsTestRunsRestartInput {
   testRunId: string;
   body?: Types.LearningAssessmentsIdempotentRuntimeInput;
@@ -13607,6 +14254,19 @@ export const postAssessmentsTestRunsRestartEndpoint = {
   operationId: 'postAssessmentsTestRunsRestart' as const,
   method: 'POST' as const,
   path: '/v1/assessments/test-runs/{testRunId}/restart' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsTestRunsSelfReviewInput {
+  testRunId: string;
+  body?: Types.LearningAssessmentsSubmitSelfReviewInput;
+}
+export type PostAssessmentsTestRunsSelfReviewOutput = Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1;
+export const postAssessmentsTestRunsSelfReviewEndpoint = {
+  operationId: 'postAssessmentsTestRunsSelfReview' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/self-review' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -13836,6 +14496,22 @@ export const postAssetsGenerateAccessUrlEndpoint = {
   path: '/v1/assets/{id}:generate-access-url' as const,
   tags: ['Assets'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * Attach an asset reference to a parent resource, or detach it (null body fields).
+ */
+export interface PostAssetsRebindParentInput {
+  id: string;
+  body?: Types.AssetsControllersRebindAssetParentInput;
+}
+export type PostAssetsRebindParentOutput = void;
+export const postAssetsRebindParentEndpoint = {
+  operationId: 'postAssetsRebindParent' as const,
+  method: 'POST' as const,
+  path: '/v1/assets/{id}:rebind-parent' as const,
+  tags: ['Assets'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -15267,6 +15943,57 @@ export const getAuthMfaMethodsEndpoint = {
 } as const;
 
 /**
+ * Issue a push MFA approval challenge
+ *
+ * Issues a push approval challenge to the enrolled device. The challenge must be approved within the TTL; on timeout the sign-in flow falls back to TOTP.
+ */
+export interface PostAuthMfaPushChallengeInput {
+  body?: Types.IdentityAuthenticationPushMfaChallengeInput;
+}
+export type PostAuthMfaPushChallengeOutput = Types.IdentityAuthenticationPushMfaChallengeOutput;
+export const postAuthMfaPushChallengeEndpoint = {
+  operationId: 'postAuthMfaPushChallenge' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/push:challenge' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Register the mobile device for push MFA
+ *
+ * Registers (or replaces) the mobile device registration token used to deliver push MFA approval challenges.
+ */
+export interface PostAuthMfaPushRegisterDeviceInput {
+  body?: Types.IdentityAuthenticationPushMfaDeviceInput;
+}
+export type PostAuthMfaPushRegisterDeviceOutput = Types.IdentityAuthenticationMfaSuccessOutput;
+export const postAuthMfaPushRegisterDeviceEndpoint = {
+  operationId: 'postAuthMfaPushRegisterDevice' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/push:register-device' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Respond to a push MFA challenge from the device
+ *
+ * Records the device's approve/deny decision for a pending, unexpired challenge. Only a pending challenge accepts a response; everything else fails closed.
+ */
+export interface PostAuthMfaPushRespondInput {
+  body?: Types.IdentityAuthenticationPushMfaRespondInput;
+}
+export type PostAuthMfaPushRespondOutput = Types.IdentityAuthenticationMfaSuccessOutput;
+export const postAuthMfaPushRespondEndpoint = {
+  operationId: 'postAuthMfaPushRespond' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/push:respond' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Complete a recovery using the confirmation token from the second email; disables MFA.
  *
  * Consumes the single-use confirmation token and disables multi-factor authentication for the recovered account. Denials are generic and never reveal token state.
@@ -15335,9 +16062,26 @@ export const postAuthMfaSignInCompleteEndpoint = {
 } as const;
 
 /**
+ * Send a fresh SMS sign-in code to the enrolled phone
+ *
+ * Sends a fresh verification code to the enrolled phone before MFA verification. Generic failure payload; throttled to one code per minute per user.
+ */
+export interface PostAuthMfaSmsChallengeInput {
+  body?: Types.IdentityAuthenticationSmsMfaChallengeInput;
+}
+export type PostAuthMfaSmsChallengeOutput = Types.IdentityAuthenticationSmsMfaSetupOutput;
+export const postAuthMfaSmsChallengeEndpoint = {
+  operationId: 'postAuthMfaSmsChallenge' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sms:challenge' as const,
+  tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Complete SMS MFA setup by verifying the code
  *
- * Completes SMS MFA setup by verifying the code sent to the user's phone.
+ * Completes SMS MFA setup by verifying the code sent to the user's phone, enrolling the verified number as an SMS factor.
  */
 export interface PostAuthMfaSmsCompleteInput {
   body?: Types.IdentityAuthenticationCompleteMfaSetupInput;
@@ -15354,7 +16098,7 @@ export const postAuthMfaSmsCompleteEndpoint = {
 /**
  * Initiate SMS-based MFA setup
  *
- * Initiates SMS-based MFA setup by sending a verification code to the provided phone number.
+ * Initiates SMS-based MFA setup by sending a verification code to the provided phone number. Delivery rides the SMS notification channel; codes are six digits, single-use, and expire in ten minutes.
  */
 export interface PostAuthMfaSmsSetupInput {
   body?: Types.IdentityAuthenticationSmsMfaSetupInput;
@@ -15924,6 +16668,22 @@ export const patchAuthServiceAccountsScopesEndpoint = {
 } as const;
 
 /**
+ * Read the caller's current authentication state (issue #221): session validity and
+ * expiry, token version, active-session count and MFA enrollment state.
+ *
+ * Returns the caller's current session validity, session expiry, token version, active-session count and MFA enrollment state. Anonymous access is not viable: the state describes the authenticated caller's own session.
+ */
+export type GetAuthSessionStateInput = void;
+export type GetAuthSessionStateOutput = Types.IdentityAuthenticationAuthSessionStateDto;
+export const getAuthSessionStateEndpoint = {
+  operationId: 'getAuthSessionState' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/session-state' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get current user's active sessions
  *
  * Retrieves a list of all active sessions for the current user, including device and location information.
@@ -16011,6 +16771,24 @@ export const deleteAuthSessionsEndpoint = {
   operationId: 'deleteAuthSessions' as const,
   method: 'DELETE' as const,
   path: '/v1/auth/sessions/{sessionId}' as const,
+  tags: ['AuthSessions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Name or rename one of the current user's own sessions
+ *
+ * Assigns a user-defined name to one of the current user's own active sessions. The acting user is taken from the authenticated principal, never from the body.
+ */
+export interface PatchAuthSessionsNameInput {
+  sessionId: string;
+  body?: Types.IdentityAuthenticationRenameSessionInput;
+}
+export type PatchAuthSessionsNameOutput = Types.IdentityAuthenticationSessionSuccessOutput;
+export const patchAuthSessionsNameEndpoint = {
+  operationId: 'patchAuthSessionsName' as const,
+  method: 'PATCH' as const,
+  path: '/v1/auth/sessions/{sessionId}/name' as const,
   tags: ['AuthSessions'] as const,
   requiresAuth: true,
 } as const;
@@ -16704,6 +17482,88 @@ export const getContentResourcesBySlugEndpoint = {
   method: 'GET' as const,
   path: '/v1/content-resources/by-slug/{slug}' as const,
   tags: ['ContentPagesResources'] as const,
+  requiresAuth: false,
+} as const;
+
+export interface GetContentCourseProposalsInput {
+  query?: {
+    status?: string;
+    search?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetContentCourseProposalsOutput = Types.ContentPagesCourseProposalDto[];
+export const getContentCourseProposalsEndpoint = {
+  operationId: 'getContentCourseProposals' as const,
+  method: 'GET' as const,
+  path: '/v1/content/course-proposals' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostContentCourseProposalsInput {
+  body?: Types.ContentPagesCreateCourseProposalDto;
+}
+export type PostContentCourseProposalsOutput = Types.ContentPagesCourseProposalDto;
+export const postContentCourseProposalsEndpoint = {
+  operationId: 'postContentCourseProposals' as const,
+  method: 'POST' as const,
+  path: '/v1/content/course-proposals' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: false,
+} as const;
+
+export interface GetCourseProposalByIdInput {
+  id: string;
+}
+export type GetCourseProposalByIdOutput = Types.ContentPagesCourseProposalDto;
+export const getCourseProposalByIdEndpoint = {
+  operationId: 'getCourseProposalById' as const,
+  method: 'GET' as const,
+  path: '/v1/content/course-proposals/{id}' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutContentCourseProposalsInput {
+  id: string;
+  body?: Types.ContentPagesUpdateCourseProposalDto;
+}
+export type PutContentCourseProposalsOutput = Types.ContentPagesCourseProposalDto;
+export const putContentCourseProposalsEndpoint = {
+  operationId: 'putContentCourseProposals' as const,
+  method: 'PUT' as const,
+  path: '/v1/content/course-proposals/{id}' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteContentCourseProposalsInput {
+  id: string;
+}
+export type DeleteContentCourseProposalsOutput = void;
+export const deleteContentCourseProposalsEndpoint = {
+  operationId: 'deleteContentCourseProposals' as const,
+  method: 'DELETE' as const,
+  path: '/v1/content/course-proposals/{id}' as const,
+  tags: ['ContentCourseProposals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Public detail lookup for /proposals/[slug]; anonymous callers receive
+ * published proposals only, so drafts and rejections stay unlisted.
+ */
+export interface GetContentCourseProposalsBySlugInput {
+  slug: string;
+}
+export type GetContentCourseProposalsBySlugOutput = Types.ContentPagesCourseProposalDto;
+export const getContentCourseProposalsBySlugEndpoint = {
+  operationId: 'getContentCourseProposalsBySlug' as const,
+  method: 'GET' as const,
+  path: '/v1/content/course-proposals/by-slug/{slug}' as const,
+  tags: ['ContentCourseProposals'] as const,
   requiresAuth: false,
 } as const;
 
@@ -28829,7 +29689,9 @@ export const endpoints = {
   deleteApiAuditRedactionPipelineRules: deleteApiAuditRedactionPipelineRulesEndpoint,
   postApiAuditRedactionPipelineTest: postApiAuditRedactionPipelineTestEndpoint,
   getApiAuditRedactionPipelineTokens: getApiAuditRedactionPipelineTokensEndpoint,
+  getApiAuditReplaySnapshots: getApiAuditReplaySnapshotsEndpoint,
   postApiAuditReplaySnapshots: postApiAuditReplaySnapshotsEndpoint,
+  postApiAuditReplaySnapshotsReconstruct: postApiAuditReplaySnapshotsReconstructEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
   postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
@@ -28842,6 +29704,7 @@ export const endpoints = {
   getApiAuditRetentionSimulationConfiguration: getApiAuditRetentionSimulationConfigurationEndpoint,
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
   getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
+  postApiAuditSearchFilter: postApiAuditSearchFilterEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
   postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
@@ -29216,6 +30079,12 @@ export const endpoints = {
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
   getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  getAuthorizationContentTypesGrants: getAuthorizationContentTypesGrantsEndpoint,
+  deleteAuthorizationContentTypesGrants: deleteAuthorizationContentTypesGrantsEndpoint,
+  getAuthorizationContentTypesHasPermission: getAuthorizationContentTypesHasPermissionEndpoint,
+  postAuthorizationContentTypesDenies: postAuthorizationContentTypesDeniesEndpoint,
+  postAuthorizationContentTypesGrants: postAuthorizationContentTypesGrantsEndpoint,
+  postAuthorizationContentTypesGrantsRevoke: postAuthorizationContentTypesGrantsRevokeEndpoint,
   postAuthorizationPermissionApprovals: postAuthorizationPermissionApprovalsEndpoint,
   getAuthorizationPermissionApprovals: getAuthorizationPermissionApprovalsEndpoint,
   postAuthorizationPermissionApprovalsDecisions: postAuthorizationPermissionApprovalsDecisionsEndpoint,
@@ -29223,6 +30092,18 @@ export const endpoints = {
   getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
   getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
   getAuthorizationPermissionPoliciesVersions: getAuthorizationPermissionPoliciesVersionsEndpoint,
+  getAuthorizationPermissionTemplates: getAuthorizationPermissionTemplatesEndpoint,
+  postAuthorizationPermissionTemplates: postAuthorizationPermissionTemplatesEndpoint,
+  putAuthorizationPermissionTemplates: putAuthorizationPermissionTemplatesEndpoint,
+  deleteAuthorizationPermissionTemplates: deleteAuthorizationPermissionTemplatesEndpoint,
+  postAuthorizationPermissionTemplatesInstantiate: postAuthorizationPermissionTemplatesInstantiateEndpoint,
+  postAuthorizationPermissionTemplatesInstantiatePreview: postAuthorizationPermissionTemplatesInstantiatePreviewEndpoint,
+  postAuthorizationPermissionTemplatesMigrations: postAuthorizationPermissionTemplatesMigrationsEndpoint,
+  getAuthorizationPermissionTemplatesMigrations: getAuthorizationPermissionTemplatesMigrationsEndpoint,
+  postAuthorizationPermissionTemplatesMigrationsRollback: postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint,
+  getAuthorizationPermissionTemplatesVersions: getAuthorizationPermissionTemplatesVersionsEndpoint,
+  postAuthorizationPermissionsSimulate: postAuthorizationPermissionsSimulateEndpoint,
+  getAuthorizationPermissionsGlobalCheck: getAuthorizationPermissionsGlobalCheckEndpoint,
   getAuthorizationPermissionsHistoryAt: getAuthorizationPermissionsHistoryAtEndpoint,
   getAuthorizationPermissionsHistoryInheritance: getAuthorizationPermissionsHistoryInheritanceEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
@@ -29307,6 +30188,7 @@ export const endpoints = {
   postBillingWebhooksApplePay: postBillingWebhooksApplePayEndpoint,
   postBillingWebhooksGooglePay: postBillingWebhooksGooglePayEndpoint,
   postBillingWebhooksPaypal: postBillingWebhooksPaypalEndpoint,
+  postBillingWebhooksSecretsRotate: postBillingWebhooksSecretsRotateEndpoint,
   getBillingWebhooksSecurity: getBillingWebhooksSecurityEndpoint,
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
@@ -29377,7 +30259,9 @@ export const endpoints = {
   postPaymentsRefund: postPaymentsRefundEndpoint,
   postPaymentsRetry: postPaymentsRetryEndpoint,
   getPaymentsRetryAttempts: getPaymentsRetryAttemptsEndpoint,
+  getPaymentsGatewaysMetrics: getPaymentsGatewaysMetricsEndpoint,
   getPaymentsRecoveryMetrics: getPaymentsRecoveryMetricsEndpoint,
+  getPaymentsRefundsMetrics: getPaymentsRefundsMetricsEndpoint,
   getPaymentsRetryingCandidates: getPaymentsRetryingCandidatesEndpoint,
   postPaymentsSetupIntents: postPaymentsSetupIntentsEndpoint,
   postPaymentsSubscriptionCheckoutsComplete: postPaymentsSubscriptionCheckoutsCompleteEndpoint,
@@ -29579,12 +30463,15 @@ export const endpoints = {
   getAdminAuditLogsExportProgress: getAdminAuditLogsExportProgressEndpoint,
   postAdminAuditLogsExportCsv: postAdminAuditLogsExportCsvEndpoint,
   postAdminAuditLogsExportJson: postAdminAuditLogsExportJsonEndpoint,
+  getAdminAuditLogsReplaySnapshots: getAdminAuditLogsReplaySnapshotsEndpoint,
   postAdminAuditLogsReplaySnapshots: postAdminAuditLogsReplaySnapshotsEndpoint,
+  postAdminAuditLogsReplaySnapshotsReconstruct: postAdminAuditLogsReplaySnapshotsReconstructEndpoint,
   getAdminAuditLogsScheduledExportHistoryDownload: getAdminAuditLogsScheduledExportHistoryDownloadEndpoint,
   getAdminAuditLogsScheduledExports: getAdminAuditLogsScheduledExportsEndpoint,
   postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
   deleteAdminAuditLogsScheduledExports: deleteAdminAuditLogsScheduledExportsEndpoint,
   getAdminAuditLogsScheduledExportsHistory: getAdminAuditLogsScheduledExportsHistoryEndpoint,
+  postAdminAuditLogsSearchFilter: postAdminAuditLogsSearchFilterEndpoint,
   getAdminAuditLogsSearchByActionType: getAdminAuditLogsSearchByActionTypeEndpoint,
   getAdminAuditLogsSearchByActionTypeExport: getAdminAuditLogsSearchByActionTypeExportEndpoint,
   getAdminAuditLogsSearchByActionTypeTaxonomy: getAdminAuditLogsSearchByActionTypeTaxonomyEndpoint,
@@ -29653,13 +30540,20 @@ export const endpoints = {
   putAssessmentsGroups: putAssessmentsGroupsEndpoint,
   deleteAssessmentsGroups: deleteAssessmentsGroupsEndpoint,
   getAssessmentsMySubmissions: getAssessmentsMySubmissionsEndpoint,
+  postAssessmentsPeerReviewStagesExtend: postAssessmentsPeerReviewStagesExtendEndpoint,
+  postAssessmentsPeerReviewStagesResolveInsufficient: postAssessmentsPeerReviewStagesResolveInsufficientEndpoint,
   getAssessmentsPeerReviews: getAssessmentsPeerReviewsEndpoint,
+  postAssessmentsPeerReviewsReassign: postAssessmentsPeerReviewsReassignEndpoint,
   postAssessmentsPeerReviewsSubmit: postAssessmentsPeerReviewsSubmitEndpoint,
   getAssessmentsRuntimeSubmissions: getAssessmentsRuntimeSubmissionsEndpoint,
   putAssessmentsRuntimeSubmissionsDraft: putAssessmentsRuntimeSubmissionsDraftEndpoint,
   postAssessmentsRuntimeSubmissionsInstructorReview: postAssessmentsRuntimeSubmissionsInstructorReviewEndpoint,
   postAssessmentsRuntimeSubmissionsRegrade: postAssessmentsRuntimeSubmissionsRegradeEndpoint,
   postAssessmentsRuntimeSubmissionsRelease: postAssessmentsRuntimeSubmissionsReleaseEndpoint,
+  postAssessmentsRuntimeSubmissionsReleaseSchedule: postAssessmentsRuntimeSubmissionsReleaseScheduleEndpoint,
+  postAssessmentsRuntimeSubmissionsReleaseScheduleCancel: postAssessmentsRuntimeSubmissionsReleaseScheduleCancelEndpoint,
+  postAssessmentsRuntimeSubmissionsSelfReview: postAssessmentsRuntimeSubmissionsSelfReviewEndpoint,
+  putAssessmentsRuntimeSubmissionsSelfReviewDraft: putAssessmentsRuntimeSubmissionsSelfReviewDraftEndpoint,
   postAssessmentsRuntimeSubmissionsSubmit: postAssessmentsRuntimeSubmissionsSubmitEndpoint,
   getAssessmentsSubmissionsForGetAssessmentsSubmissionsBySubmissionId: getAssessmentsSubmissionsForGetAssessmentsSubmissionsBySubmissionIdEndpoint,
   getAssessmentsSubmissionsPeerReviews: getAssessmentsSubmissionsPeerReviewsEndpoint,
@@ -29667,7 +30561,11 @@ export const endpoints = {
   postAssessmentsSubmissionsSubmit: postAssessmentsSubmissionsSubmitEndpoint,
   getAssessmentsTestRuns: getAssessmentsTestRunsEndpoint,
   postAssessmentsTestRunsInstructorReview: postAssessmentsTestRunsInstructorReviewEndpoint,
+  getAssessmentsTestRunsPeerReviews: getAssessmentsTestRunsPeerReviewsEndpoint,
+  postAssessmentsTestRunsPeerReviewsSubmit: postAssessmentsTestRunsPeerReviewsSubmitEndpoint,
+  postAssessmentsTestRunsPeerReviewsClaim: postAssessmentsTestRunsPeerReviewsClaimEndpoint,
   postAssessmentsTestRunsRestart: postAssessmentsTestRunsRestartEndpoint,
+  postAssessmentsTestRunsSelfReview: postAssessmentsTestRunsSelfReviewEndpoint,
   postAssessmentsTestRunsSubmit: postAssessmentsTestRunsSubmitEndpoint,
   getAssetLibraries: getAssetLibrariesEndpoint,
   postAssetLibrariesFolders: postAssetLibrariesFoldersEndpoint,
@@ -29682,6 +30580,7 @@ export const endpoints = {
   patchAssets: patchAssetsEndpoint,
   getSignedAssetExtractedText: getSignedAssetExtractedTextEndpoint,
   postAssetsGenerateAccessUrl: postAssetsGenerateAccessUrlEndpoint,
+  postAssetsRebindParent: postAssetsRebindParentEndpoint,
   postAssetsReport: postAssetsReportEndpoint,
   getAssetsContent: getAssetsContentEndpoint,
   getAssetExtractedText: getAssetExtractedTextEndpoint,
@@ -29775,10 +30674,14 @@ export const endpoints = {
   getAuthMfaBackupCodes: getAuthMfaBackupCodesEndpoint,
   postAuthMfaBackupCodesRegenerate: postAuthMfaBackupCodesRegenerateEndpoint,
   getAuthMfaMethods: getAuthMfaMethodsEndpoint,
+  postAuthMfaPushChallenge: postAuthMfaPushChallengeEndpoint,
+  postAuthMfaPushRegisterDevice: postAuthMfaPushRegisterDeviceEndpoint,
+  postAuthMfaPushRespond: postAuthMfaPushRespondEndpoint,
   postAuthMfaRecoveryConfirm: postAuthMfaRecoveryConfirmEndpoint,
   postAuthMfaRecoveryContinue: postAuthMfaRecoveryContinueEndpoint,
   postAuthMfaRecoveryRequest: postAuthMfaRecoveryRequestEndpoint,
   postAuthMfaSignInComplete: postAuthMfaSignInCompleteEndpoint,
+  postAuthMfaSmsChallenge: postAuthMfaSmsChallengeEndpoint,
   postAuthMfaSmsComplete: postAuthMfaSmsCompleteEndpoint,
   postAuthMfaSmsSetup: postAuthMfaSmsSetupEndpoint,
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,
@@ -29814,12 +30717,14 @@ export const endpoints = {
   postAuthServiceAccountsUnlock: postAuthServiceAccountsUnlockEndpoint,
   getAuthServiceAccountsAuditLog: getAuthServiceAccountsAuditLogEndpoint,
   patchAuthServiceAccountsScopes: patchAuthServiceAccountsScopesEndpoint,
+  getAuthSessionState: getAuthSessionStateEndpoint,
   getAuthSessions: getAuthSessionsEndpoint,
   getAuthSessionsAnalyzeSecurity: getAuthSessionsAnalyzeSecurityEndpoint,
   postAuthSessionsRefresh: postAuthSessionsRefreshEndpoint,
   postAuthSessionsTerminateAll: postAuthSessionsTerminateAllEndpoint,
   postAuthSessionsTerminateOthers: postAuthSessionsTerminateOthersEndpoint,
   deleteAuthSessions: deleteAuthSessionsEndpoint,
+  patchAuthSessionsName: patchAuthSessionsNameEndpoint,
   postAuthSignIn: postAuthSignInEndpoint,
   postAuthSignUp: postAuthSignUpEndpoint,
   getAuthSigningKeys: getAuthSigningKeysEndpoint,
@@ -29863,6 +30768,12 @@ export const endpoints = {
   deleteContentResources: deleteContentResourcesEndpoint,
   postContentResourcesPublish: postContentResourcesPublishEndpoint,
   getContentResourcesBySlug: getContentResourcesBySlugEndpoint,
+  getContentCourseProposals: getContentCourseProposalsEndpoint,
+  postContentCourseProposals: postContentCourseProposalsEndpoint,
+  getCourseProposalById: getCourseProposalByIdEndpoint,
+  putContentCourseProposals: putContentCourseProposalsEndpoint,
+  deleteContentCourseProposals: deleteContentCourseProposalsEndpoint,
+  getContentCourseProposalsBySlug: getContentCourseProposalsBySlugEndpoint,
   postCourseInteractions: postCourseInteractionsEndpoint,
   postCourseInteractionsComplete: postCourseInteractionsCompleteEndpoint,
   putCourseInteractionsProgress: putCourseInteractionsProgressEndpoint,

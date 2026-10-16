@@ -2,6 +2,7 @@ using Asp.Versioning;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
 using GameGuild.Identity.Authorization;
 using GameGuild.CQRS;
+using GameGuild.CQRS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -47,16 +48,28 @@ public class PermissionEvaluationController(IMediator mediator, ILogger<Permissi
     }
 
     /// <summary>
-    ///     Get all tenant permissions for a user
+    ///     Get all tenant permissions for a user (paginated, issue #298/#307)
     /// </summary>
     [HttpGet("tenant")]
-    [ProducesResponseType(typeof(IEnumerable<PermissionType>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GetTenantPermissionsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IEnumerable<PermissionType>>> GetTenantPermissions(
+    public async Task<ActionResult<GetTenantPermissionsResponse>> GetTenantPermissions(
         [FromQuery] Guid userId,
-        [FromQuery] Guid tenantId)
+        [FromQuery] Guid tenantId,
+        [FromQuery] bool includeEffective = true,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] bool sortDescending = false)
     {
-        var query = new GetTenantPermissionsQuery { UserId = userId, TenantId = tenantId };
+        var query = new GetTenantPermissionsQuery
+        {
+            UserId = userId,
+            TenantId = new TenantId(tenantId),
+            IncludeEffective = includeEffective,
+            Page = page,
+            PageSize = pageSize,
+            SortDescending = sortDescending
+        };
         var result = await _mediator.Send(query).ConfigureAwait(false);
 
         return Ok(result);

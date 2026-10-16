@@ -63,6 +63,8 @@ public sealed class PermissionCommandSecurityTests
                 It.IsAny<Guid>(),
                 It.IsAny<string[]>(),
                 It.IsAny<Guid?>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
         _grantService
@@ -320,6 +322,8 @@ public sealed class PermissionCommandSecurityTests
             It.IsAny<Guid>(),
             It.IsAny<string[]>(),
             It.IsAny<Guid?>(),
+            It.IsAny<DateTime?>(),
+            It.IsAny<string?>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -349,6 +353,8 @@ public sealed class PermissionCommandSecurityTests
             tenantId,
             It.Is<string[]>(p => p.SequenceEqual(new[] { "Read" })),
             It.IsAny<Guid?>(),
+            It.IsAny<DateTime?>(),
+            It.IsAny<string?>(),
             It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
@@ -406,6 +412,8 @@ public sealed class PermissionCommandSecurityTests
                 It.IsAny<Guid>(),
                 It.IsAny<string[]>(),
                 It.IsAny<Guid?>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("quota exceeded"));
         var handler = new BulkGrantTenantPermissionsCommandHandler(

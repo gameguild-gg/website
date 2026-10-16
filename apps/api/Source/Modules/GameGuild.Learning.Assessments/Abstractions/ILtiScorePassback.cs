@@ -4,11 +4,23 @@ using GameGuild.Learning.Grading.Contracts;
 namespace GameGuild.Learning.Assessments;
 
 /// <summary>
-/// Posts a released grade back to the LTI platform line item mapped to the assessment
-/// (AGS score passback). Implemented by the LTI module; failures are swallowed by the
-/// implementation — grading must never fail because a platform is slow or broken.
+/// Posts a released grade back to the LTI platform line item mapped to the assessment.
+/// A missing mapping is a successful no-op. Delivery failures must propagate so the
+/// academic outbox can retry them without reopening the finalized grade.
 /// </summary>
 public interface ILtiScorePassback
 {
-    Task PostScoreIfMappedAsync(Guid assessmentId, Guid userId, ScoreValue score, ScoreValue maxScore);
+    Task<LtiScorePassbackOutcome> PostScoreIfMappedAsync(
+        Guid assessmentId,
+        Guid userId,
+        ScoreValue score,
+        ScoreValue maxScore,
+        CancellationToken cancellationToken = default);
+}
+
+public enum LtiScorePassbackOutcome
+{
+    NotMapped,
+    UserNotMapped,
+    Delivered,
 }

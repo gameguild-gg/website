@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddEconomyPayoutOperationPersistence
+public partial class AddEconomyPayoutOperationPersistence : Migration
 {
     private static void InstallPayoutOperationSecurity(MigrationBuilder migrationBuilder)
     {

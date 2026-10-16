@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddTenantScopedBounties
+public partial class AddTenantScopedBounties : Migration
 {
     private static void InstallTenantScopedBountySecurity(MigrationBuilder migrationBuilder)
     {

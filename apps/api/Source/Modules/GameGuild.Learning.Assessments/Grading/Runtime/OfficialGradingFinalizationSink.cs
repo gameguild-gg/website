@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Globalization;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Persistence;
 using GameGuild.Learning.Grading.Contracts;
@@ -75,17 +76,31 @@ public sealed class OfficialGradingFinalizationSink(
             collective = submission.IsCollective,
             participantEnrollmentIds = enrollmentIds,
         });
-        if (snapshot.AuthoringSource.Policy.ResultRelease.Mode == ResultReleaseMode.Immediate)
+        var releasePolicy = snapshot.AuthoringSource.Policy.ResultRelease;
+        if (releasePolicy.Mode == ResultReleaseMode.Immediate)
         {
-            Enqueue(execution.TenantId.Value, "grade-result-release-requested", new
+            EnqueueImmediateRelease(execution, round, submission, "immediate-release-policy");
+        }
+        else if (releasePolicy.Mode == ResultReleaseMode.Scheduled)
+        {
+            var scheduledFor = ParseScheduledRelease(releasePolicy.ScheduledFor);
+            if (scheduledFor <= SystemClock.UtcNow)
             {
-                schemaVersion = 1,
-                executionId = execution.Id,
-                submissionId = submission.Id,
-                gradeRoundId = round.Id,
-                expectedSubmissionVersion = checked(submission.Version + 1),
-                reason = "immediate-release-policy",
-            });
+                EnqueueImmediateRelease(execution, round, submission, "scheduled-release-policy-already-due");
+            }
+            else
+            {
+                Enqueue(execution.TenantId.Value, "grade-result-release-schedule-requested", new
+                {
+                    schemaVersion = 1,
+                    executionId = execution.Id,
+                    submissionId = submission.Id,
+                    gradeRoundId = round.Id,
+                    expectedSubmissionVersion = checked(submission.Version + 1),
+                    scheduledFor,
+                    reason = "scheduled-release-policy",
+                });
+            }
         }
     }
 
@@ -146,5 +161,35 @@ public sealed class OfficialGradingFinalizationSink(
     {
         var element = JsonSerializer.SerializeToElement(payload, GradingJson.Options);
         outbox.Enqueue(tenantId, eventType, "1", CanonicalJson.Serialize(element));
+    }
+
+    private void EnqueueImmediateRelease(
+        GradingExecution execution,
+        GradeRound round,
+        AssessmentSubmission submission,
+        string reason) =>
+        Enqueue(execution.TenantId!.Value, "grade-result-release-requested", new
+        {
+            schemaVersion = 1,
+            executionId = execution.Id,
+            submissionId = submission.Id,
+            gradeRoundId = round.Id,
+            expectedSubmissionVersion = checked(submission.Version + 1),
+            reason,
+        });
+
+    private static DateTime ParseScheduledRelease(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) ||
+            !DateTimeOffset.TryParse(
+                value,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var parsed))
+        {
+            throw new InvalidOperationException("The frozen scheduled release instant is invalid.");
+        }
+
+        return parsed.UtcDateTime;
     }
 }

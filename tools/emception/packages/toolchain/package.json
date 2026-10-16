@@ -1,6 +1,6 @@
 {
   "name": "@gameguild/emception-toolchain",
-  "version": "4.4.0",
+  "version": "4.4.1",
   "description": "Versioned Emception browser toolchain artifacts, manifest, ABI profiles, and compressed sysroot bundles.",
   "license": "MIT",
   "type": "module",

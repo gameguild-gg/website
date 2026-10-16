@@ -35,7 +35,17 @@ public sealed class TenantMembershipRolePermissionProviderTests
 
         var permissions = await provider.GetPermissionsAsync(userId, tenantId);
 
-        permissions.Should().Equal(AdminPermission.Keys.TenantAdmin);
+        // Issue #294: administrative membership roles carry the administrative permission
+        // tier. Role administration (roles:manage) and audit exports (audit:export) are
+        // deliberately absent - they are delegation-only capabilities.
+        permissions.Should().BeEquivalentTo(new[]
+        {
+            AdminPermission.Keys.TenantAdmin,
+            ManageMembersPermission.Keys.Manage,
+            ManageSettingsPermission.Keys.Read,
+            ManageSettingsPermission.Keys.Manage,
+            AuditPermission.Keys.Read
+        });
     }
 
     [Theory]

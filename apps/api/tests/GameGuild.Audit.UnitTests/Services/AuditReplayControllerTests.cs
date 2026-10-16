@@ -116,7 +116,7 @@ public sealed class AuditReplayControllerTests
     [Fact]
     public void EndpointRequiresAdministratorPolicyAndExplicitRange()
     {
-        Assert.Equal(Policies.SystemAdmin,
+        Assert.Equal(Policies.SystemBackupRestore,
             typeof(AuditReplayController).GetCustomAttribute<AuthorizeAttribute>()!.Policy);
         Assert.NotNull(typeof(CaptureAuditReplayRequest).GetProperty(nameof(CaptureAuditReplayRequest.Start))!
             .GetCustomAttribute<RequiredAttribute>());

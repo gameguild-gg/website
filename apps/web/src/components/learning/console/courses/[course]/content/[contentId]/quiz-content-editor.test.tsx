@@ -5,13 +5,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   disableGrading: vi.fn(),
   enableGrading: vi.fn(),
+  isPastDue: vi.fn(),
+  isValidRules: vi.fn(),
   itemsToDocument: vi.fn(),
   parseDocument: vi.fn(),
   readGrading: vi.fn(),
+  readRules: vi.fn(),
   serializeDocument: vi.fn(),
   sumPoints: vi.fn(),
   toItems: vi.fn(),
   toGradingItems: vi.fn(),
+  updateRules: vi.fn(),
 }));
 
 vi.mock("@game-guild/grading-adapter-quiz", () => ({
@@ -21,12 +25,16 @@ vi.mock("@game-guild/grading-adapter-quiz", () => ({
 vi.mock("@game-guild/quiz-content", () => ({
   disableQuizContentGrading: mocks.disableGrading,
   enableQuizContentGrading: mocks.enableGrading,
+  isQuizPastDue: mocks.isPastDue,
+  isValidQuizRules: mocks.isValidRules,
   parseQuizContentDocument: mocks.parseDocument,
   quizContentItemsToDocument: mocks.itemsToDocument,
   quizDocumentToContentItems: mocks.toItems,
   quizDocumentToGradingItems: mocks.toGradingItems,
   readQuizContentGrading: mocks.readGrading,
+  readQuizContentRules: mocks.readRules,
   serializeQuizContentDocument: mocks.serializeDocument,
+  updateQuizContentRules: mocks.updateRules,
 }));
 
 vi.mock("@game-guild/quiz-surface/editor", () => ({
@@ -58,6 +66,11 @@ import { QuizContentEditor } from "./quiz-content-editor";
 
 type TestDocument = {
   items: Array<{ id: string }>;
+  rules?: {
+    dueAt?: string;
+    timeLimitMinutes?: number;
+    maxAttempts?: number;
+  };
   grading?: {
     items: Record<string, unknown>;
     score: { maxScore: number; passingScore?: number };
@@ -99,6 +112,14 @@ describe("QuizContentEditor", () => {
       (document: TestDocument) => document.items,
     );
     mocks.sumPoints.mockReturnValue(7);
+    mocks.isPastDue.mockReturnValue(false);
+    mocks.isValidRules.mockReturnValue(true);
+    mocks.readRules.mockImplementation(
+      (document: TestDocument) => document.rules,
+    );
+    mocks.updateRules.mockImplementation(
+      (document: TestDocument, rules: unknown) => ({ ...document, rules }),
+    );
     mocks.serializeDocument.mockImplementation((document) => document);
     mocks.itemsToDocument.mockImplementation(({ items, grading }) => ({
       items,
@@ -216,11 +237,66 @@ describe("QuizContentEditor", () => {
 
     expect(mocks.itemsToDocument).toHaveBeenCalledWith({
       items: [{ id: "question-2" }],
+      rules: disabledDocument.rules,
       grading: disabledDocument.grading,
     });
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ items: [{ id: "question-2" }] }),
     );
+  });
+
+  it("edits quiz rules (due date, time limit, attempts) and commits them", () => {
+    const { onChange } = renderEditor();
+
+    // Empty state copy renders when no rules are configured.
+    expect(
+      screen.getByText("No rules configured — the quiz is always available."),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Time limit (minutes)"), {
+      target: { value: "30" },
+    });
+
+    expect(mocks.isValidRules).toHaveBeenCalledWith({ timeLimitMinutes: 30 });
+    expect(mocks.updateRules).toHaveBeenCalledWith(disabledDocument, {
+      timeLimitMinutes: 30,
+    });
+    expect(onChange).toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Max attempts"), {
+      target: { value: "3" },
+    });
+    expect(mocks.updateRules).toHaveBeenLastCalledWith(
+      expect.objectContaining({ items: disabledDocument.items }),
+      {
+        timeLimitMinutes: 30,
+        maxAttempts: 3,
+      },
+    );
+  });
+
+  it("renders configured rules as badges and past-due due dates as destructive", () => {
+    mocks.isPastDue.mockReturnValue(true);
+    renderEditor({
+      ...disabledDocument,
+      rules: {
+        dueAt: "2026-01-01T00:00:00.000Z",
+        timeLimitMinutes: 20,
+        maxAttempts: 2,
+      },
+    });
+
+    expect(screen.getByText("20 min limit")).toBeInTheDocument();
+    expect(screen.getByText("2 attempts")).toBeInTheDocument();
+    const dueBadge = screen
+      .getAllByText(/Due /)
+      .find((element) => element.getAttribute("data-slot") === "badge");
+    expect(dueBadge).toBeDefined();
+    expect(mocks.isPastDue).toHaveBeenCalledWith({
+      dueAt: "2026-01-01T00:00:00.000Z",
+      timeLimitMinutes: 20,
+      maxAttempts: 2,
+    });
   });
 
   it("summarizes configured grading items and their points", () => {

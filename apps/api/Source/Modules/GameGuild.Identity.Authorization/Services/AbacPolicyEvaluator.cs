@@ -60,7 +60,8 @@ public record AbacPolicyEvaluationDetail(
     Guid PolicyId,
     string PolicyName,
     bool ConditionsMatched,
-    AbacDecision Decision);
+    AbacDecision Decision,
+    IReadOnlyList<string>? TargetActions = null);
 
 /// <summary>
 ///     Implementation of ABAC policy evaluator using existing AbacPolicy entity.
@@ -99,7 +100,7 @@ public class AbacPolicyEvaluator(
                 : AbacDecision.NotApplicable;
 
             details.Add(new AbacPolicyEvaluationDetail(
-                policy.Id, policy.Name, matches, decision));
+                policy.Id, policy.Name, matches, decision, ParseTargetActions(policy)));
 
             if (matches && policy.Effect == AbacPolicyEffect.Deny)
             {
@@ -124,8 +125,29 @@ public class AbacPolicyEvaluator(
             Details: details);
     }
 
-    private bool EvaluatePolicy(AbacPolicy policy, AbacRequestContext context)
+    /// <summary>
+    ///     Parses the policy's <see cref="AbacPolicy.TargetActions"/> JSON array. Malformed
+    ///     payloads yield an empty list (no targeted actions) — never throw on the decision path.
+    /// </summary>
+    private static IReadOnlyList<string>? ParseTargetActions(AbacPolicy policy)
     {
+        if (string.IsNullOrWhiteSpace(policy.TargetActions))
+        {
+            return null;
+        }
+
+        try
+        {
+            var actions = JsonSerializer.Deserialize<string[]>(policy.TargetActions);
+            return actions is { Length: > 0 } ? actions : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private bool EvaluatePolicy(AbacPolicy policy, AbacRequestContext context)    {
         // Check resource type filter
         if (!string.IsNullOrEmpty(policy.ResourceType))
         {
@@ -171,6 +193,24 @@ public class AbacPolicyEvaluator(
         if (!string.IsNullOrEmpty(policy.ActionConditions))
         {
             if (!EvaluateJsonConditions(policy.ActionConditions, context.ActionAttributes))
+            {
+                return false;
+            }
+        }
+
+        // Evaluate the attribute expression (JSON): {"user.department": "IT", "user.clearanceLevel": {"$gte": 3}}
+        if (!string.IsNullOrWhiteSpace(policy.AttributeExpression))
+        {
+            if (!AbacExpressionEvaluator.EvaluateAttributeExpression(policy.AttributeExpression, context))
+            {
+                return false;
+            }
+        }
+
+        // Evaluate the condition expression (string): "user.clearanceLevel >= resource.requiredClearance"
+        if (!string.IsNullOrWhiteSpace(policy.ConditionExpression))
+        {
+            if (!AbacExpressionEvaluator.EvaluateConditionExpression(policy.ConditionExpression, context))
             {
                 return false;
             }

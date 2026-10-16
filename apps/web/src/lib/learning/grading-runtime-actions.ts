@@ -10,9 +10,14 @@ import type {
   AssessmentTestRunStatus,
   AssessmentTestRunRuntimeViewV1,
   GradeRoundRuntimeViewV1,
+  GradeResultReleaseScheduleRuntimeViewV1,
   GradingRuntimeExecutionStatus,
   GradingRuntimeRoundStatus,
   InstructorReviewResolutionV1,
+  PeerReviewClaimResultV1,
+  PeerReviewClaimRuntimeViewV1,
+  ScoreValue,
+  SelfReviewEvidenceV1,
 } from '@game-guild/grading';
 
 export type GradingRuntimeActionResult<T> =
@@ -80,6 +85,41 @@ const ROUND_STATUS_MAP: Record<string, GradingRuntimeRoundStatus> = {
   finalized: 'finalized',
 };
 
+const REVIEW_STAGE_STATUS_MAP = {
+  Pending: 'pending',
+  Running: 'running',
+  AwaitingEvidence: 'awaiting-evidence',
+  AwaitingInstructorResolution: 'awaiting-instructor-resolution',
+  Completed: 'completed',
+  Failed: 'failed',
+  pending: 'pending',
+  running: 'running',
+  awaitingEvidence: 'awaiting-evidence',
+  awaitingInstructorResolution: 'awaiting-instructor-resolution',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+const RELEASE_SCHEDULE_STATUS_MAP = {
+  Scheduled: 'scheduled',
+  Cancelled: 'cancelled',
+  Released: 'released',
+  scheduled: 'scheduled',
+  cancelled: 'cancelled',
+  released: 'released',
+} as const;
+
+const PEER_REVIEW_CLAIM_STATUS_MAP = {
+  Assigned: 'assigned',
+  Submitted: 'submitted',
+  Expired: 'expired',
+  Cancelled: 'cancelled',
+  assigned: 'assigned',
+  submitted: 'submitted',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const;
+
 function requireRecord(value: unknown, label: string): Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`Invalid ${label} returned by the grading API.`);
@@ -102,6 +142,10 @@ function normalizeStatus<T extends string>(
 
 function normalizeGradeRound(value: unknown): GradeRoundRuntimeViewV1 {
   const round = requireRecord(value, 'grade round');
+  const releaseSchedule =
+    round.releaseSchedule == null
+      ? null
+      : requireRecord(round.releaseSchedule, 'grade release schedule');
   return {
     ...round,
     status: normalizeStatus(
@@ -109,6 +153,17 @@ function normalizeGradeRound(value: unknown): GradeRoundRuntimeViewV1 {
       ROUND_STATUS_MAP,
       'grade round status',
     ),
+    releaseSchedule:
+      releaseSchedule == null
+        ? null
+        : {
+            ...releaseSchedule,
+            status: normalizeStatus(
+              releaseSchedule.status,
+              RELEASE_SCHEDULE_STATUS_MAP,
+              'grade release schedule status',
+            ),
+          },
   } as unknown as GradeRoundRuntimeViewV1;
 }
 
@@ -129,6 +184,17 @@ function normalizeExecution<TLearnerPayload = unknown>(
       'grading execution status',
     ),
     history: execution.history.map(normalizeGradeRound),
+    selfReview:
+      execution.selfReview == null
+        ? execution.selfReview
+        : {
+            ...requireRecord(execution.selfReview, 'self review state'),
+            status: normalizeStatus(
+              requireRecord(execution.selfReview, 'self review state').status,
+              REVIEW_STAGE_STATUS_MAP,
+              'self review stage status',
+            ),
+          },
   } as unknown as AssessmentExecutionRuntimeViewV1<TLearnerPayload>;
 }
 
@@ -149,6 +215,12 @@ function normalizeRuntimeSubmission(
 
 function normalizeTestRun(value: unknown): AssessmentTestRunRuntimeViewV1 {
   const testRun = requireRecord(value, 'assessment test run');
+  const subjects = Array.isArray(testRun.subjects)
+    ? testRun.subjects.map((rawSubject) => {
+        const subject = requireRecord(rawSubject, 'assessment test run subject');
+        return { ...subject, execution: normalizeExecution(subject.execution) };
+      })
+    : undefined;
   return {
     ...testRun,
     status: normalizeStatus(
@@ -157,7 +229,20 @@ function normalizeTestRun(value: unknown): AssessmentTestRunRuntimeViewV1 {
       'assessment test run status',
     ),
     execution: normalizeExecution(testRun.execution),
+    subjects,
   } as unknown as AssessmentTestRunRuntimeViewV1;
+}
+
+function normalizePeerReviewClaim(value: unknown): PeerReviewClaimRuntimeViewV1 {
+  const claim = requireRecord(value, 'peer-review claim');
+  return {
+    ...claim,
+    status: normalizeStatus(
+      claim.status,
+      PEER_REVIEW_CLAIM_STATUS_MAP,
+      'peer-review claim status',
+    ),
+  } as unknown as PeerReviewClaimRuntimeViewV1;
 }
 
 function getRuntimeClient() {
@@ -265,6 +350,40 @@ export async function submitRuntimeSubmission(
   );
 }
 
+export async function saveCollectiveRuntimeSelfReviewDraft(
+  submissionId: string,
+  evidence: SelfReviewEvidenceV1,
+  expectedVersion: number,
+  idempotencyKey: string,
+): Promise<GradingRuntimeActionResult<AssessmentSubmissionRuntimeViewV1>> {
+  return runtimeRequest(
+    'PUT',
+    `/v1.0/assessments/runtime-submissions/${encodeURIComponent(submissionId)}/self-review/draft`,
+    { evidence, expectedVersion, idempotencyKey },
+    undefined,
+    normalizeRuntimeSubmission,
+  );
+}
+
+export async function submitRuntimeSelfReview(
+  submissionId: string,
+  evidence: SelfReviewEvidenceV1,
+  idempotencyKey: string,
+  expectedDraftVersion?: number,
+): Promise<GradingRuntimeActionResult<AssessmentSubmissionRuntimeViewV1>> {
+  return runtimeRequest(
+    'POST',
+    `/v1.0/assessments/runtime-submissions/${encodeURIComponent(submissionId)}/self-review`,
+    {
+      evidence,
+      idempotencyKey,
+      expectedDraftVersion: expectedDraftVersion ?? null,
+    },
+    undefined,
+    normalizeRuntimeSubmission,
+  );
+}
+
 export async function resolveRuntimeInstructorReview(
   submissionId: string,
   resolution: InstructorReviewResolutionV1,
@@ -321,17 +440,92 @@ export async function releaseRuntimeSubmission(
   );
 }
 
+export async function scheduleRuntimeSubmissionRelease(
+  submission: Pick<
+    AssessmentSubmissionRuntimeViewV1,
+    'submissionId' | 'version'
+  > & {
+    expectedRoundId: string;
+    expectedScheduleVersion: number;
+  },
+  scheduledFor: string,
+  reason: string | null,
+  idempotencyKey: string,
+): Promise<GradingRuntimeActionResult<GradeResultReleaseScheduleRuntimeViewV1>> {
+  return runtimeRequest(
+    'POST',
+    `/v1.0/assessments/runtime-submissions/${encodeURIComponent(submission.submissionId)}/release-schedule`,
+    {
+      expectedRoundId: submission.expectedRoundId,
+      expectedSubmissionVersion: submission.version,
+      expectedScheduleVersion: submission.expectedScheduleVersion,
+      scheduledFor,
+      idempotencyKey,
+      reason,
+    },
+    undefined,
+    (value) => {
+      const schedule = requireRecord(value, 'grade release schedule');
+      return {
+        ...schedule,
+        status: normalizeStatus(
+          schedule.status,
+          RELEASE_SCHEDULE_STATUS_MAP,
+          'grade release schedule status',
+        ),
+      } as unknown as GradeResultReleaseScheduleRuntimeViewV1;
+    },
+  );
+}
+
+export async function cancelRuntimeSubmissionReleaseSchedule(
+  submission: Pick<
+    AssessmentSubmissionRuntimeViewV1,
+    'submissionId' | 'version'
+  > & {
+    expectedRoundId: string;
+    expectedScheduleVersion: number;
+  },
+  reason: string,
+  idempotencyKey: string,
+): Promise<GradingRuntimeActionResult<GradeResultReleaseScheduleRuntimeViewV1>> {
+  return runtimeRequest(
+    'POST',
+    `/v1.0/assessments/runtime-submissions/${encodeURIComponent(submission.submissionId)}/release-schedule/cancel`,
+    {
+      expectedRoundId: submission.expectedRoundId,
+      expectedSubmissionVersion: submission.version,
+      expectedScheduleVersion: submission.expectedScheduleVersion,
+      idempotencyKey,
+      reason,
+    },
+    undefined,
+    (value) => {
+      const schedule = requireRecord(value, 'grade release schedule');
+      return {
+        ...schedule,
+        status: normalizeStatus(
+          schedule.status,
+          RELEASE_SCHEDULE_STATUS_MAP,
+          'grade release schedule status',
+        ),
+      } as unknown as GradeResultReleaseScheduleRuntimeViewV1;
+    },
+  );
+}
+
 export async function startAssessmentTestRun(
   assessmentId: string,
   revisionId: string,
   idempotencyKey: string,
   personaKey = 'instructor-preview',
   personaDisplayName = 'Instructor preview',
+  subjects?: Array<{ personaKey: string; personaDisplayName: string }>,
 ): Promise<GradingRuntimeActionResult<AssessmentTestRunRuntimeViewV1>> {
   return runtimeRequest(
     'POST',
     `/v1.0/assessments/${encodeURIComponent(assessmentId)}/test-runs`,
-    { revisionId, personaKey, personaDisplayName, idempotencyKey },
+    { revisionId, personaKey, personaDisplayName, idempotencyKey, subjects },
     undefined,
     normalizeTestRun,
   );
@@ -341,11 +535,12 @@ export async function submitAssessmentTestRun(
   testRunId: string,
   response: AssessmentResponseEnvelopeV1,
   idempotencyKey: string,
+  subjectId?: string,
 ): Promise<GradingRuntimeActionResult<AssessmentTestRunRuntimeViewV1>> {
   return runtimeRequest(
     'POST',
     `/v1.0/assessments/test-runs/${encodeURIComponent(testRunId)}/submit`,
-    { response, idempotencyKey, expectedDraftVersion: null },
+    { response, idempotencyKey, expectedDraftVersion: null, subjectId },
     response.contentType === 'coding-assignment' ? 330_000 : undefined,
     normalizeTestRun,
   );
@@ -355,11 +550,67 @@ export async function resolveTestRunInstructorReview(
   testRunId: string,
   resolution: InstructorReviewResolutionV1,
   idempotencyKey: string,
+  subjectId?: string,
 ): Promise<GradingRuntimeActionResult<AssessmentTestRunRuntimeViewV1>> {
   return runtimeRequest(
     'POST',
     `/v1.0/assessments/test-runs/${encodeURIComponent(testRunId)}/instructor-review`,
-    { resolution, idempotencyKey },
+    { resolution, idempotencyKey, subjectId },
+    undefined,
+    normalizeTestRun,
+  );
+}
+
+export async function submitTestRunSelfReview(
+  testRunId: string,
+  evidence: SelfReviewEvidenceV1,
+  idempotencyKey: string,
+  subjectId?: string,
+): Promise<GradingRuntimeActionResult<AssessmentTestRunRuntimeViewV1>> {
+  return runtimeRequest(
+    'POST',
+    `/v1.0/assessments/test-runs/${encodeURIComponent(testRunId)}/self-review`,
+    { evidence, idempotencyKey, subjectId },
+    undefined,
+    normalizeTestRun,
+  );
+}
+
+export async function claimTestRunPeerReview(
+  testRunId: string,
+  subjectId: string,
+): Promise<GradingRuntimeActionResult<PeerReviewClaimResultV1>> {
+  return runtimeRequest(
+    'POST',
+    `/v1.0/assessments/test-runs/${encodeURIComponent(testRunId)}/peer-reviews/claim`,
+    { subjectId },
+  );
+}
+
+export async function getTestRunPeerReview(
+  testRunId: string,
+  reviewId: string,
+): Promise<GradingRuntimeActionResult<PeerReviewClaimRuntimeViewV1>> {
+  return runtimeRequest(
+    'GET',
+    `/v1.0/assessments/test-runs/${encodeURIComponent(testRunId)}/peer-reviews/${encodeURIComponent(reviewId)}`,
+    undefined,
+    undefined,
+    normalizePeerReviewClaim,
+  );
+}
+
+export async function submitTestRunPeerReview(
+  testRunId: string,
+  reviewId: string,
+  score: ScoreValue,
+  feedback: string,
+  rubricScores?: string | null,
+): Promise<GradingRuntimeActionResult<AssessmentTestRunRuntimeViewV1>> {
+  return runtimeRequest(
+    'POST',
+    `/v1.0/assessments/test-runs/${encodeURIComponent(testRunId)}/peer-reviews/${encodeURIComponent(reviewId)}/submit`,
+    { score, feedback, rubricScores: rubricScores ?? null },
     undefined,
     normalizeTestRun,
   );

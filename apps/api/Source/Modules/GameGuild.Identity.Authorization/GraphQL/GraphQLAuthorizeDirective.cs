@@ -44,6 +44,12 @@ public enum GraphQLAuthorizationMode
 ///     resource-scoped — which also activates the owner-override and temporal-precedence
 ///     behavior of the effective-permission engine (issues #372/#363).
 /// </param>
+/// <param name="ContentType">
+///     Optional DAC content type (issues #360/#365/#320). When set (without a resource
+///     pair), permission checks run content-type scoped: the engine's content-type grant
+///     layer contributes its content-type qualified names, and tenant-layer grants still
+///     satisfy the check (Auto inheritance).
+/// </param>
 /// <param name="ResourceIdArgumentName">
 ///     Dotted argument path holding the resource id, for example <c>input.projectId</c>.
 /// </param>
@@ -58,7 +64,8 @@ public sealed record GraphQLAuthorizeDirective(
     bool MaskUnauthorized,
     string? ResourceType,
     string? ResourceIdArgumentName,
-    string? ResourceIdParentPropertyName)
+    string? ResourceIdParentPropertyName,
+    string? ContentType = null)
 {
     /// <summary>The directive name as published in the GraphQL schema.</summary>
     public const string DirectiveName = "authorize";
@@ -66,6 +73,13 @@ public sealed record GraphQLAuthorizeDirective(
     /// <summary>Convenience factory for the default (tenant-scoped, AND-mode) rule.</summary>
     public static GraphQLAuthorizeDirective ForPermissions(params string[] permissions)
         => new(permissions, null, [], GraphQLAuthorizationMode.All, false, null, null, null);
+
+    /// <summary>
+    ///     Convenience factory for a content-type scoped rule (issues #360/#365): the
+    ///     permission keys are checked against the engine's content-type qualified names.
+    /// </summary>
+    public static GraphQLAuthorizeDirective ForContentType(string contentType, params string[] permissions)
+        => new(permissions, null, [], GraphQLAuthorizationMode.All, false, null, null, null, contentType);
 }
 
 /// <summary>
@@ -109,6 +123,9 @@ public sealed class GraphQLAuthorizeDirectiveType : DirectiveType<GraphQLAuthori
             .Type<StringType>();
         descriptor.Argument(directive => directive.ResourceIdParentPropertyName)
             .Description("Parent-value property path holding the resource id, for nested fields.")
+            .Type<StringType>();
+        descriptor.Argument(directive => directive.ContentType)
+            .Description("DAC content type for content-type scoped checks (engine content-type grant layer).")
             .Type<StringType>();
     }
 }
@@ -159,6 +176,13 @@ public sealed class GraphQLAuthorizeAttribute : ObjectFieldDescriptorAttribute
 
     /// <summary>Parent-value property path holding the resource id, for nested fields.</summary>
     public string? ResourceIdParentPropertyName { get; set; }
+
+    /// <summary>
+    ///     DAC content type for content-type scoped permission checks (issues
+    ///     #360/#365/#320). When set (and no resource pair is declared), checks run
+    ///     through the engine's content-type grant layer.
+    /// </summary>
+    public string? ContentType { get; set; }
 
     protected override void OnConfigure(
         IDescriptorContext context,
@@ -216,6 +240,16 @@ public sealed class GraphQLAuthorizeAttribute : ObjectFieldDescriptorAttribute
                 "A GraphQL authorize rule must name a non-empty parent resource id property.");
         }
 
+        if (ContentType is not null
+            && (string.IsNullOrWhiteSpace(ContentType) || ResourceType is not null))
+        {
+            // A content-type scoped rule names exactly one scope: a blank name is invalid
+            // and the resource-scoped variant already covers resource contexts.
+            throw new InvalidOperationException(
+                "A content-type scoped GraphQL authorize rule must name a non-empty content type " +
+                "and cannot also declare a resource scope.");
+        }
+
         descriptor.Directive(new GraphQLAuthorizeDirective(
             _permissions.Select(permission => permission.ToString()).ToArray(),
             string.IsNullOrWhiteSpace(Policy) ? null : Policy,
@@ -224,6 +258,7 @@ public sealed class GraphQLAuthorizeAttribute : ObjectFieldDescriptorAttribute
             MaskUnauthorized,
             string.IsNullOrWhiteSpace(ResourceType) ? null : ResourceType,
             ResourceIdParentPropertyName is null && bindsResourceId ? ResourceIdArgumentName : null,
-            ResourceIdParentPropertyName));
+            ResourceIdParentPropertyName,
+            string.IsNullOrWhiteSpace(ContentType) ? null : ContentType));
     }
 }

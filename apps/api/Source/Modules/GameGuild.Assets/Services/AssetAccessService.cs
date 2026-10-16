@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using GameGuild.Assets.Openinary;
+using GameGuild.Assets.Transformation;
 using GameGuild.Features;
 using GameGuild.Identity.Tenants;
 
@@ -31,6 +33,8 @@ public class AssetAccessService : IAssetAccessService
     private readonly IReadOnlyList<IAssetParentAuthorizationResolver> _parentAuthorizationResolvers;
     private readonly IAssetFolderAuthorizationService _folderAuthorizationService;
     private readonly IAssetScopedAccessService _scopedAccessService;
+    private readonly IAssetContentRepository? _contentRepository;
+    private readonly OpeninaryOptions? _openinaryOptions;
     private readonly AssetAccessOptions _options;
     private readonly ILogger<AssetAccessService> _logger;
 
@@ -45,7 +49,9 @@ public class AssetAccessService : IAssetAccessService
         IAssetFolderAuthorizationService folderAuthorizationService,
         IAssetScopedAccessService scopedAccessService,
         IOptions<AssetAccessOptions> options,
-        ILogger<AssetAccessService> logger)
+        ILogger<AssetAccessService> logger,
+        IAssetContentRepository? contentRepository = null,
+        IOptions<OpeninaryOptions>? openinaryOptions = null)
     {
         _referenceRepository = referenceRepository;
         _transformedAssetRepository = transformedAssetRepository;
@@ -56,6 +62,8 @@ public class AssetAccessService : IAssetAccessService
         _parentAuthorizationResolvers = parentAuthorizationResolvers.ToArray();
         _folderAuthorizationService = folderAuthorizationService;
         _scopedAccessService = scopedAccessService;
+        _contentRepository = contentRepository;
+        _openinaryOptions = openinaryOptions?.Value;
         _options = options.Value;
         _logger = logger;
     }
@@ -504,10 +512,30 @@ public class AssetAccessService : IAssetAccessService
 
         if (transformedAsset == null)
         {
-            _logger.LogInformation(
-                "No cached transformed asset found for content {ContentId} and spec {Spec}",
-                contentId, canonicalSpec);
-            return null;
+            // Cache miss: Openinary content gets a lazily-rendered /t/ row; S3-legacy keeps returning null (pinned behavior).
+            var content = _contentRepository == null
+                ? null
+                : await _contentRepository.GetByIdAsync(contentId, ct).ConfigureAwait(false);
+
+            if (content == null || !AssetStorageBackend.IsOpeninary(content))
+            {
+                _logger.LogInformation(
+                    "No cached transformed asset found for content {ContentId} and spec {Spec}",
+                    contentId, canonicalSpec);
+                return null;
+            }
+
+            transformedAsset = await PersistOpeninaryTransformAsync(content, canonicalSpec, ct)
+                .ConfigureAwait(false);
+
+            return new TransformedAssetInfo(
+                transformedAsset.Id,
+                transformedAsset.SourceContentId,
+                transformedAsset.BucketName,
+                transformedAsset.ObjectKey,
+                transformedAsset.MimeType,
+                transformedAsset.ObjectKey,
+                transformedAsset.SizeBytes);
         }
 
         var metadata = await _storageService
@@ -525,5 +553,77 @@ public class AssetAccessService : IAssetAccessService
             metadata?.MimeType ?? transformedAsset.MimeType,
             metadata?.ETag ?? transformedAsset.ObjectKey,
             metadata?.SizeBytes ?? transformedAsset.SizeBytes);
+    }
+
+    /// <summary>
+    /// Persists a TransformedAsset row pointing at the Openinary /t/ delivery URL
+    /// for the given canonical spec. Openinary renders the variant on the first
+    /// real request; video may answer 202 + statusUrl while processing (no polling
+    /// here — the CDN redirect handles it transparently).
+    /// </summary>
+    private async Task<TransformedAsset> PersistOpeninaryTransformAsync(
+        AssetContent content,
+        string canonicalSpec,
+        CancellationToken ct)
+    {
+        var segment = OpeninaryTransformMapper.ToSegment(TransformationSpec.Parse(canonicalSpec));
+        var objectKey = $"t/{segment}/{content.ObjectKey}";
+
+        var asset = new TransformedAsset
+        {
+            Id = Guid.NewGuid(),
+            SourceContentId = content.Id,
+            TransformationSpec = canonicalSpec,
+            BucketName = OpeninaryOptions.StorageBackendName,
+            ObjectKey = objectKey,
+            MimeType = content.MimeType,
+            SizeBytes = 0
+        };
+
+        return await _transformedAssetRepository.AddAsync(asset, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Prewarms the default transformation variants for approved image content
+    /// by persisting the TransformedAsset cache rows (Openinary renders on first
+    /// real request). No-op for non-image content, S3-legacy content, or when the
+    /// Openinary integration is disabled.
+    /// CONTRACT: the caller MUST guarantee the content is in (or past) the
+    /// Approved moderation state — prewarm never runs before moderation completes.
+    /// </summary>
+    public async Task PrewarmDefaultVariantsAsync(AssetContent content, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+
+        if (_openinaryOptions == null || string.IsNullOrEmpty(_openinaryOptions.ApiKey) ||
+            content.Kind != AssetKind.Image || !AssetStorageBackend.IsOpeninary(content))
+        {
+            return;
+        }
+
+        var featureContext = CreateFeatureContext(null, null);
+        var transformationsEnabled = await _featureService.IsEnabledAsync(
+            FeatureFlagConstants.AssetFeatureFlags.TransformationsEnabled,
+            featureContext,
+            ct).ConfigureAwait(false);
+
+        if (!transformationsEnabled)
+        {
+            return;
+        }
+
+        foreach (var canonicalSpec in DefaultTransformVariants.CanonicalSpecs)
+        {
+            var existing = await _transformedAssetRepository
+                .GetAsync(content.Id, canonicalSpec, ct)
+                .ConfigureAwait(false);
+
+            if (existing != null)
+            {
+                continue;
+            }
+
+            await PersistOpeninaryTransformAsync(content, canonicalSpec, ct).ConfigureAwait(false);
+        }
     }
 }

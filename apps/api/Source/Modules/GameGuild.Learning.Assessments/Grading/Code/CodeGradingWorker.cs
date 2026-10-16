@@ -16,6 +16,8 @@ public sealed class CodeGradingWorkerOptions
     public string? ScriptPath { get; set; }
     public string? RuntimeDirectory { get; set; }
     public string? CdnDirectory { get; set; }
+    public string? Version1RuntimeDirectory { get; set; }
+    public string? Version1CdnDirectory { get; set; }
     public string? BrowserDirectory { get; set; }
     public string? BrowserChannel { get; set; }
     public int DeadlineSeconds { get; set; } = 300;
@@ -47,7 +49,7 @@ public sealed class CodeGradingWorker(IOptions<CodeGradingWorkerOptions> configu
             throw new InvalidOperationException("The trusted Code grading worker is not configured.");
         }
 
-        var start = CreateStartInfo(options);
+        var start = CreateStartInfo(options, toolchain);
 
         if (!await _slot.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false))
         {
@@ -170,12 +172,16 @@ public sealed class CodeGradingWorker(IOptions<CodeGradingWorkerOptions> configu
         }
     }
 
-    internal static ProcessStartInfo CreateStartInfo(CodeGradingWorkerOptions options)
+    internal static ProcessStartInfo CreateStartInfo(CodeGradingWorkerOptions options) =>
+        CreateStartInfo(options, CodeToolchainIdentity.Version2);
+
+    internal static ProcessStartInfo CreateStartInfo(CodeGradingWorkerOptions options, CodeToolchainIdentity toolchain)
     {
+        var (runtimeDirectory, cdnDirectory) = SelectArtifactDirectories(options, toolchain);
         var node = RequireAbsoluteFile(options.NodeExecutable, OperatingSystem.IsWindows() ? "node.exe" : "node");
         var script = RequireAbsoluteFile(options.ScriptPath, "worker.mjs");
-        var runtime = RequireAbsoluteDirectory(options.RuntimeDirectory);
-        var cdn = RequireAbsoluteDirectory(options.CdnDirectory);
+        var runtime = RequireAbsoluteDirectory(runtimeDirectory);
+        var cdn = RequireAbsoluteDirectory(cdnDirectory);
         var browser = string.IsNullOrWhiteSpace(options.BrowserDirectory)
             ? null : RequireAbsoluteDirectory(options.BrowserDirectory);
         if (options.BrowserChannel is not (null or "chrome"))
@@ -223,6 +229,23 @@ public sealed class CodeGradingWorker(IOptions<CodeGradingWorkerOptions> configu
         }
 
         return start;
+    }
+
+    private static (string? Runtime, string? Cdn) SelectArtifactDirectories(
+        CodeGradingWorkerOptions options, CodeToolchainIdentity toolchain)
+    {
+        if (toolchain == CodeToolchainIdentity.Version2)
+        {
+            return (options.RuntimeDirectory, options.CdnDirectory);
+        }
+
+        if (toolchain == CodeToolchainIdentity.Version1)
+        {
+            // Missing retained artifacts must never fall back to the current compiler.
+            return (options.Version1RuntimeDirectory, options.Version1CdnDirectory);
+        }
+
+        throw new InvalidOperationException("The trusted Code worker requires a supported frozen toolchain identity.");
     }
 
     private static string RequireAbsoluteFile(string? path, string expectedName)

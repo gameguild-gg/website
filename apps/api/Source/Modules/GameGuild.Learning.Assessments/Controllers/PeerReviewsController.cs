@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
@@ -6,7 +7,10 @@ using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Assessments.Grading.Persistence;
+using GameGuild.Learning.Assessments.Grading.Runtime;
 using GameGuild.Learning.Grading.Contracts;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Learning.Assessments;
@@ -126,16 +130,12 @@ public class PeerReviewsController : BaseApiController
             return Forbid();
         }
 
-        if (!IsReviewWindowOpen(assessment))
+        if (!review.SubmissionId.HasValue)
         {
-            return Conflict(new ProblemDetails
-            {
-                Title = "Peer review submit rejected",
-                Detail = "Review window closed"
-            });
+            return NotFound();
         }
 
-        var submission = await _assessmentService.GetSubmissionByIdAsync(review.SubmissionId).ConfigureAwait(false);
+        var submission = await _assessmentService.GetSubmissionByIdAsync(review.SubmissionId.Value).ConfigureAwait(false);
         if (submission == null)
         {
             return NotFound();
@@ -150,6 +150,8 @@ public class PeerReviewsController : BaseApiController
             submission.AttemptNumber,
             submission.SubmittedAt,
             submission.Status,
+            review.DeliveryCanonicalJson,
+            review.ResponseEnvelopeCanonicalJson,
             submission.TextPayload,
             submission.UrlPayload,
             submission.CodePayload,
@@ -159,8 +161,7 @@ public class PeerReviewsController : BaseApiController
     }
 
     /// <summary>
-    /// Legacy peer-review submit. Valid requests fail closed until peer review is implemented
-    /// as a canonical grading stage.
+    /// Submit evidence for the canonical peer-review stage assigned to the learner.
     /// </summary>
     [HttpPost("peer-reviews/{reviewId:guid}/submit")]
     public async Task<IActionResult> SubmitReview(Guid reviewId, [FromBody] PeerReviewSubmitRequest request)
@@ -191,15 +192,6 @@ public class PeerReviewsController : BaseApiController
         if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false))
         {
             return Forbid();
-        }
-
-        if (!IsReviewWindowOpen(assessment))
-        {
-            return Conflict(new ProblemDetails
-            {
-                Title = "Peer review submit rejected",
-                Detail = "Review window closed"
-            });
         }
 
         if (string.IsNullOrWhiteSpace(request.Feedback))
@@ -235,18 +227,126 @@ public class PeerReviewsController : BaseApiController
         }
 
         var result = await _sender
-            .Send(new SubmitPeerReviewEndpointCommand(review, score, request.Feedback.Trim(), request.RubricScores))
+            .Send(new SubmitPeerReviewEndpointCommand(
+                review.Id,
+                actor.SubjectIdAsGuid.Value,
+                score,
+                request.Feedback.Trim(),
+                request.RubricScores))
             .ConfigureAwait(false);
         if (!result.IsSuccess)
         {
-            return Conflict(new ProblemDetails
+            if (result.Error.Type == ErrorType.Forbidden)
+            {
+                return Forbid();
+            }
+
+            var problem = new ProblemDetails
             {
                 Title = "Peer review submit rejected",
                 Detail = result.Error.Description
-            });
+            };
+            return result.Error.Type == ErrorType.Conflict
+                ? Conflict(problem)
+                : BadRequest(problem);
         }
 
         return Ok(new PeerReviewSubmitDto(result.Value.Id, result.Value.Status));
+    }
+
+    /// <summary>Extend an insufficient peer-review evidence window.</summary>
+    [HttpPost("peer-review-stages/{reviewStageId:guid}/extend")]
+    public async Task<IActionResult> ExtendEvidenceWindow(
+        Guid reviewStageId,
+        [FromBody] ExtendPeerReviewWindowRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var permission = await RequireStageStaffReviewAsync(reviewStageId, cancellationToken).ConfigureAwait(false);
+        if (permission is not null)
+        {
+            return permission;
+        }
+
+        return await ExecuteOperationAsync(
+            () => _sender.Send(new ExtendPeerReviewWindowEndpointCommand(
+                reviewStageId,
+                actorId.Value,
+                request.ExpectedStageVersion,
+                request.DeadlineAt,
+                request.Reason,
+                request.IdempotencyKey), cancellationToken)).ConfigureAwait(false);
+    }
+
+    /// <summary>Cancel an active claim so another eligible reviewer can claim the stage.</summary>
+    [HttpPost("peer-reviews/{reviewId:guid}/reassign")]
+    public async Task<IActionResult> ReassignClaim(
+        Guid reviewId,
+        [FromBody] ReassignPeerReviewClaimRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var review = await _peerReviewService.GetReviewAsync(reviewId).ConfigureAwait(false);
+        if (review is null)
+        {
+            return NotFound();
+        }
+
+        var assessment = await _assessmentService.GetAssessmentByIdAsync(review.AssessmentId).ConfigureAwait(false);
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
+        return await ExecuteOperationAsync(
+            () => _sender.Send(new ReassignPeerReviewClaimEndpointCommand(
+                reviewId,
+                actorId.Value,
+                request.ExpectedClaimVersion,
+                request.Reason,
+                request.IdempotencyKey), cancellationToken)).ConfigureAwait(false);
+    }
+
+    /// <summary>Resolve a peer stage whose evidence threshold was not reached before its deadline.</summary>
+    [HttpPost("peer-review-stages/{reviewStageId:guid}/resolve-insufficient")]
+    public async Task<IActionResult> ResolveInsufficientEvidence(
+        Guid reviewStageId,
+        [FromBody] ResolvePeerReviewInsufficiencyRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var permission = await RequireStageStaffReviewAsync(reviewStageId, cancellationToken).ConfigureAwait(false);
+        if (permission is not null)
+        {
+            return permission;
+        }
+
+        return await ExecuteOperationAsync(
+            () => _sender.Send(new ResolvePeerReviewInsufficiencyEndpointCommand(
+                reviewStageId,
+                actorId.Value,
+                request.Resolution,
+                request.IdempotencyKey), cancellationToken)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -288,7 +388,7 @@ public class PeerReviewsController : BaseApiController
 
         var reviews = await _peerReviewService.GetReviewsForSubmissionAsync(submissionId).ConfigureAwait(false);
         return Ok(reviews.Select(r => new ReceivedPeerReviewDto(
-            r.Id, r.Score, r.Feedback, r.RubricScoresPayload, r.SubmittedAt)));
+            r.ClaimId, r.Score, r.Feedback, r.RubricScores, r.SubmittedAt)));
     }
 
     /// <summary>
@@ -325,26 +425,13 @@ public class PeerReviewsController : BaseApiController
             .GetReviewerDisplayNamesAsync(reviews.Select(r => r.ReviewerUserId).Distinct().ToList())
             .ConfigureAwait(false);
         return Ok(reviews.Select(r => new InstructorPeerReviewDto(
-            r.Id,
+            r.ClaimId,
             r.Score,
             r.Feedback,
-            r.RubricScoresPayload,
+            r.RubricScores,
             r.SubmittedAt,
             r.ReviewerUserId,
             names.TryGetValue(r.ReviewerUserId, out var name) ? name : r.ReviewerUserId.ToString())));
-    }
-
-    // Reviews run to the assessment close (DueAt ?? AvailableUntil ?? LateSubmissionDeadline) —
-    // deliberately INCLUDING the late deadline, unlike group-join locking which stops at due.
-    private static bool IsReviewWindowOpen(Assessment assessment)
-    {
-        var closesAt = assessment.DueAt ?? assessment.AvailableUntil ?? assessment.LateSubmissionDeadline;
-        if (!closesAt.HasValue)
-        {
-            return true;
-        }
-
-        return closesAt.Value >= SystemClock.UtcNow;
     }
 
     private Task<bool> IsActorInProgramTenantAsync(Guid courseId) =>
@@ -358,6 +445,54 @@ public class PeerReviewsController : BaseApiController
             courseId,
             CourseCapability.StaffReview,
             HttpContext.RequestAborted);
+
+    private async Task<IActionResult?> RequireStageStaffReviewAsync(
+        Guid reviewStageId,
+        CancellationToken cancellationToken)
+    {
+        var assessmentId = await _peerReviewService
+            .GetAssessmentIdForStageAsync(reviewStageId, cancellationToken)
+            .ConfigureAwait(false);
+        if (!assessmentId.HasValue)
+        {
+            return NotFound();
+        }
+
+        var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId.Value).ConfigureAwait(false);
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
+        return await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false) ? null : Forbid();
+    }
+
+    private static async Task<IActionResult> ExecuteOperationAsync(Func<Task<Result>> operation)
+    {
+        try
+        {
+            var result = await operation().ConfigureAwait(false);
+            return result.IsSuccess
+                ? new NoContentResult()
+                : new BadRequestObjectResult(new ProblemDetails { Detail = result.Error.Description });
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return new NotFoundObjectResult(new ProblemDetails { Detail = exception.Message });
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            return new ConflictObjectResult(new ProblemDetails { Detail = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return new ConflictObjectResult(new ProblemDetails { Detail = exception.Message });
+        }
+        catch (ArgumentException exception)
+        {
+            return new BadRequestObjectResult(new ProblemDetails { Detail = exception.Message });
+        }
+    }
 }
 
 // ===== DTOs =====
@@ -374,7 +509,22 @@ public sealed record PeerReviewClaimDto(Guid ReviewId, string MaskedSubmission);
 /// </summary>
 public sealed record PeerReviewSubmitRequest(ScoreValue? Score, string? Feedback, string? RubricScores);
 
-public sealed record PeerReviewSubmitDto(Guid ReviewId, PeerReviewStatus Status);
+public sealed record ExtendPeerReviewWindowRequest(
+    int ExpectedStageVersion,
+    DateTime DeadlineAt,
+    string Reason,
+    string IdempotencyKey);
+
+public sealed record ReassignPeerReviewClaimRequest(
+    int ExpectedClaimVersion,
+    string Reason,
+    string IdempotencyKey);
+
+public sealed record ResolvePeerReviewInsufficiencyRequest(
+    PeerReviewInsufficiencyResolutionV1 Resolution,
+    string IdempotencyKey);
+
+public sealed record PeerReviewSubmitDto(Guid ReviewId, PeerReviewClaimStatus Status);
 
 /// <summary>
 /// THE anonymity boundary for reviewers: the reviewee's submission stripped of every identity,
@@ -383,12 +533,14 @@ public sealed record PeerReviewSubmitDto(Guid ReviewId, PeerReviewStatus Status)
 /// </summary>
 public sealed record AnonymousReviewSubmissionDto(
     Guid ReviewId,
-    PeerReviewStatus Status,
+    PeerReviewClaimStatus Status,
     AnonymousReviewAssessmentDto Assessment,
-    AnonymousReviewRubricDto? Rubric,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] AnonymousReviewRubricDto? Rubric,
     int AttemptNumber,
     DateTime? SubmittedAt,
     SubmissionStatus SubmissionStatus,
+    string? DeliveryCanonicalJson,
+    string? ResponseEnvelopeCanonicalJson,
     string? TextPayload,
     string? UrlPayload,
     string? CodePayload,

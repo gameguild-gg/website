@@ -10,6 +10,7 @@ import type {
   QUIZ_BLOCK_TYPE,
   QUIZ_CONTENT_SCHEMA_VERSION,
 } from "./constants";
+import type { QuizRules } from "./rules";
 
 export interface QuizBlockDataMap {
   quiz: QuizEntry;
@@ -33,6 +34,8 @@ export interface QuizContentDocumentV1 {
   schemaVersion: typeof QUIZ_CONTENT_SCHEMA_VERSION;
   order: QuizBlockOrderEntry[];
   blocks: Record<string, QuizEntry>;
+  /** Quiz-level rules and configuration (issue #432): due date, time limit, attempts. */
+  rules?: QuizRules;
   grading?: ContentGradingDefinitionV2;
 }
 
@@ -42,6 +45,8 @@ export interface QuizLearnerContentDocument {
   schemaVersion: typeof QUIZ_CONTENT_SCHEMA_VERSION;
   order: QuizBlockOrderEntry[];
   blocks: Record<string, QuizLearnerEntry>;
+  /** Learner-visible rules (issue #432): the runtime enforces due date and time limit. */
+  rules?: QuizRules;
 }
 
 export type QuizRuntimeContentDocument =
@@ -56,6 +61,8 @@ export type QuizContentParseIssueCode =
   | "missing-block-payload"
   | "orphan-block-payload"
   | "invalid-quiz-entry"
+  | "invalid-rules"
+  | "invalid-rules-field"
   | "invalid-grading";
 
 export interface QuizContentParseIssue {
@@ -76,5 +83,6 @@ export interface QuizLearnerContentParseResult {
 
 export interface QuizContentDocumentInput {
   items: readonly QuizContentItem[];
+  rules?: QuizRules | null;
   grading?: ContentGradingDefinitionV2 | null;
 }

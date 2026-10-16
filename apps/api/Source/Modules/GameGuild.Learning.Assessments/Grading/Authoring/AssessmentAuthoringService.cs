@@ -111,6 +111,7 @@ public sealed class AssessmentAuthoringService(
     IAssessmentTypeAdapterResolver assessmentTypeAdapters,
     IAssessmentExecutionPolicyResolver executionPolicies,
     IReviewStageHandlerResolver stageHandlers,
+    IAIReviewProviderRegistry aiReviewProviders,
     IEnumerable<IReviewStageHandler> registeredStageHandlers,
     IAcademicOutboxWriter outbox,
     ILogger<AssessmentAuthoringService> logger) : IAssessmentAuthoringService
@@ -741,12 +742,19 @@ public sealed class AssessmentAuthoringService(
 
             var handler = candidates[0];
             stageHandlers.Resolve(method, handler.Key, handler.Version, contextKind);
+            var aiPolicy = method == ReviewMethod.AIReview
+                ? policy.Review.Ai ?? throw new InvalidOperationException("AIReview requires a provider policy.")
+                : null;
+            if (aiPolicy is not null)
+            {
+                aiReviewProviders.Resolve(aiPolicy.ProviderKey, aiPolicy.PolicyVersion, contextKind);
+            }
             return new AssessmentReviewStageManifestV1(
                 method,
                 handler.Key,
                 handler.Version,
-                handler.ProviderKey,
-                handler.ProviderPolicyVersion);
+                aiPolicy?.ProviderKey ?? handler.ProviderKey,
+                aiPolicy?.PolicyVersion ?? handler.ProviderPolicyVersion);
         }).ToArray();
 
         executionPolicies.Resolve(
@@ -784,6 +792,13 @@ public sealed class AssessmentAuthoringService(
         foreach (var stage in snapshot.Manifest.Stages)
         {
             stageHandlers.Resolve(stage.Method, stage.HandlerKey, stage.HandlerVersion, contextKind);
+            if (stage.Method == ReviewMethod.AIReview)
+            {
+                aiReviewProviders.Resolve(
+                    stage.ProviderKey ?? throw new InvalidOperationException("AIReview provider key is missing."),
+                    stage.ProviderPolicyVersion ?? throw new InvalidOperationException("AIReview provider policy version is missing."),
+                    contextKind);
+            }
         }
         foreach (var policy in snapshot.Manifest.Policies)
         {

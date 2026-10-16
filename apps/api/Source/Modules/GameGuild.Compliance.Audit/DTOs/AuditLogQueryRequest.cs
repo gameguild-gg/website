@@ -22,6 +22,12 @@ public class AuditLogQueryRequest
 
     public string? IpAddress { get; set; }
 
+    /// <summary>
+    /// Optional free-text search over descriptions and serialized context/metadata
+    /// (case-insensitive, max 200 characters, empty means no filter).
+    /// </summary>
+    public string? SearchText { get; set; }
+
     public int Skip { get; set; } = 0;
 
     public int Take { get; set; } = 100;

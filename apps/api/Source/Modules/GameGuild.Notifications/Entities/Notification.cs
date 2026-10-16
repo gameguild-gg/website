@@ -449,6 +449,15 @@ public enum NotificationType
     /// <summary>Billing wallet balance dropped below the configured threshold (issue #406)</summary>
     WalletBalanceBelowThreshold = 27,
 
+    /// <summary>One-time SMS MFA verification code (issue #244)</summary>
+    SmsMfaCode = 28,
+
+    /// <summary>Push MFA approval challenge (issue #259)</summary>
+    PushMfaChallenge = 29,
+
+    /// <summary>Account credits were automatically applied to an invoice payment (issue #410)</summary>
+    CreditApplied = 30,
+
     /// <summary>Custom/other notification type</summary>
     Custom = 99
 }

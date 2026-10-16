@@ -1,7 +1,10 @@
 using Asp.Versioning;
+using GameGuild.Sms;
+using GameGuild.Push;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
@@ -13,7 +16,11 @@ namespace GameGuild.Identity.Authentication;
 [ApiVersion("1.0")]
 [Microsoft.AspNetCore.Http.Tags("auth/multi-factor")]
 [Authorize]
-public sealed class MfaController(IMfaService mfaService, ISender sender) : AuthControllerBase
+public sealed class MfaController(
+    IMfaService mfaService,
+    ISender sender,
+    IOptions<SmsDeliveryOptions>? smsDeliveryOptions = null,
+    IOptions<PushDeliveryOptions>? pushDeliveryOptions = null) : AuthControllerBase
 {
     #region Configuration Operations - /v1/auth/mfa
 
@@ -188,21 +195,28 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
     /// <param name="ct">Cancellation token</param>
     /// <returns>Setup initiation result</returns>
     [HttpPost("v{version:apiVersion}/auth/mfa/sms:setup")]
-    [UnavailableEndpoint("SMS MFA is disabled until an SMS provider is configured.")]
     [EndpointSummary("Setup SMS MFA")]
-    [EndpointDescription("Initiates SMS-based MFA setup by sending a verification code to the provided phone number.")]
+    [EndpointDescription("Initiates SMS-based MFA setup by sending a verification code to the provided phone number. Delivery rides the SMS notification channel; codes are six digits, single-use, and expire in ten minutes.")]
     [ProducesResponseType<SmsMfaSetupResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType<MfaErrorResponse>(StatusCodes.Status503ServiceUnavailable)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MfaErrorResponse>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public Task<IActionResult> InitiateSmsSetup([FromBody] SmsMfaSetupRequest body, CancellationToken ct)
+    public async Task<IActionResult> InitiateSmsSetup([FromBody] SmsMfaSetupRequest body, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(body);
+        var userId = GetCurrentUserId();
+        var result = await sender.Send(new StartSmsMfaEnrollmentCommand(userId, body.PhoneNumber), ct).ConfigureAwait(false);
 
-        return Task.FromResult<IActionResult>(StatusCode(StatusCodes.Status503ServiceUnavailable, new MfaErrorResponse
+        if (!result.Success)
         {
-            Error = "SMS MFA is not configured. Use authenticator-app TOTP or backup codes, or configure an SMS provider before enabling SMS MFA."
-        }));
+            return BadRequest(new MfaErrorResponse { Error = result.Message ?? "Failed to start SMS MFA setup" });
+        }
+
+        return Ok(new SmsMfaSetupResponse
+        {
+            Message = "Verification code sent",
+            PhoneNumberMasked = result.PhoneNumberMasked,
+            ExpiresInSeconds = result.ExpiresInSeconds
+        });
     }
 
     /// <summary>
@@ -212,21 +226,137 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
     /// <param name="ct">Cancellation token</param>
     /// <returns>Setup completion result</returns>
     [HttpPost("v{version:apiVersion}/auth/mfa/sms:complete")]
-    [UnavailableEndpoint("SMS MFA is disabled until an SMS provider is configured.")]
     [EndpointSummary("Complete SMS MFA setup")]
-    [EndpointDescription("Completes SMS MFA setup by verifying the code sent to the user's phone.")]
+    [EndpointDescription("Completes SMS MFA setup by verifying the code sent to the user's phone, enrolling the verified number as an SMS factor.")]
     [ProducesResponseType<MfaSuccessResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType<MfaErrorResponse>(StatusCodes.Status503ServiceUnavailable)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MfaErrorResponse>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public Task<IActionResult> CompleteSmsSetup([FromBody] CompleteMfaSetupRequest body, CancellationToken ct)
+    public async Task<IActionResult> CompleteSmsSetup([FromBody] CompleteMfaSetupRequest body, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(body);
+        var userId = GetCurrentUserId();
+        var result = await sender.Send(new CompleteSmsMfaEnrollmentCommand(userId, body.Code), ct).ConfigureAwait(false);
 
-        return Task.FromResult<IActionResult>(StatusCode(StatusCodes.Status503ServiceUnavailable, new MfaErrorResponse
+        if (!result.Success)
         {
-            Error = "SMS MFA is not configured. Use authenticator-app TOTP or backup codes, or configure an SMS provider before completing SMS MFA."
-        }));
+            return BadRequest(new MfaErrorResponse { Error = result.Message ?? "Failed to complete SMS MFA setup" });
+        }
+
+        return Ok(new MfaSuccessResponse { Message = "SMS MFA setup completed successfully" });
+    }
+
+    /// <summary>
+    ///     Send a fresh SMS sign-in code to the enrolled phone
+    /// </summary>
+    /// <param name="body">Identifier of the user requesting the challenge</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Challenge initiation result</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/mfa/sms:challenge")]
+    [EndpointSummary("Send SMS MFA challenge")]
+    [EndpointDescription("Sends a fresh verification code to the enrolled phone before MFA verification. Generic failure payload; throttled to one code per minute per user.")]
+    [ProducesResponseType<SmsMfaSetupResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SendSmsChallenge([FromBody] SmsMfaChallengeRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var result = await sender.Send(new SendSmsMfaChallengeCommand(body.UserId), ct).ConfigureAwait(false);
+
+        if (!result.Success)
+        {
+            return BadRequest(new MfaErrorResponse { Error = result.Message ?? "Failed to send SMS challenge" });
+        }
+
+        return Ok(new SmsMfaSetupResponse
+        {
+            Message = "Verification code sent",
+            PhoneNumberMasked = result.PhoneNumberMasked,
+            ExpiresInSeconds = result.ExpiresInSeconds
+        });
+    }
+
+    #endregion
+
+    #region Push MFA Operations - /v1/auth/mfa/push (v1: issue #259)
+
+    /// <summary>
+    ///     Register the mobile device for push MFA
+    /// </summary>
+    /// <param name="body">Device registration token</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Registration result</returns>
+    [HttpPost("v{version:apiVersion}/auth/mfa/push:register-device")]
+    [EndpointSummary("Register push MFA device")]
+    [EndpointDescription("Registers (or replaces) the mobile device registration token used to deliver push MFA approval challenges.")]
+    [ProducesResponseType<MfaSuccessResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MfaErrorResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RegisterPushDevice([FromBody] PushMfaDeviceRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var userId = GetCurrentUserId();
+        var result = await sender.Send(new RegisterPushMfaDeviceCommand(userId, body.DeviceToken), ct).ConfigureAwait(false);
+
+        if (!result)
+        {
+            return BadRequest(new MfaErrorResponse { Error = "Failed to register push device (invalid token or no MFA configuration)" });
+        }
+
+        return Ok(new MfaSuccessResponse { Message = "Push device registered successfully" });
+    }
+
+    /// <summary>
+    ///     Issue a push MFA approval challenge
+    /// </summary>
+    /// <param name="body">Identifier of the user requesting the challenge</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Challenge issuance result</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/mfa/push:challenge")]
+    [EndpointSummary("Issue push MFA challenge")]
+    [EndpointDescription("Issues a push approval challenge to the enrolled device. The challenge must be approved within the TTL; on timeout the sign-in flow falls back to TOTP.")]
+    [ProducesResponseType<PushMfaChallengeResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MfaErrorResponse>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> IssuePushChallenge([FromBody] PushMfaChallengeRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var result = await sender.Send(new IssuePushMfaChallengeCommand(body.UserId), ct).ConfigureAwait(false);
+
+        if (!result.Success)
+        {
+            return BadRequest(new MfaErrorResponse { Error = result.Message ?? "Failed to issue push challenge" });
+        }
+
+        return Ok(new PushMfaChallengeResponse
+        {
+            ChallengeId = result.ChallengeId,
+            ExpiresInSeconds = result.ExpiresInSeconds
+        });
+    }
+
+    /// <summary>
+    ///     Respond to a push MFA challenge from the device
+    /// </summary>
+    /// <param name="body">Challenge response with the device's decision</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Response acceptance result</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/mfa/push:respond")]
+    [EndpointSummary("Respond to push MFA challenge")]
+    [EndpointDescription("Records the device's approve/deny decision for a pending, unexpired challenge. Only a pending challenge accepts a response; everything else fails closed.")]
+    [ProducesResponseType<MfaSuccessResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MfaErrorResponse>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RespondPushChallenge([FromBody] PushMfaRespondRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var result = await sender.Send(new RespondPushMfaChallengeCommand(body.ChallengeId, body.Approved), ct).ConfigureAwait(false);
+
+        if (!result.Success)
+        {
+            return BadRequest(new MfaErrorResponse { Error = result.Message ?? "Failed to record push challenge response" });
+        }
+
+        return Ok(new MfaSuccessResponse { Message = result.Message ?? "Push challenge response recorded" });
     }
 
     #endregion
@@ -250,6 +380,9 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
 
         var enabledMethods = configuration.EnabledMethods ?? [];
 
+        var smsAvailable = smsDeliveryOptions?.Value.Enabled == true;
+        var pushAvailable = pushDeliveryOptions?.Value.Enabled == true;
+
         var methods = new List<MfaMethodInfo>
         {
             new()
@@ -267,7 +400,7 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
                 Name = "SMS",
                 Description = "Receive verification codes via text message",
                 IsEnabled = enabledMethods.Contains("sms", StringComparer.OrdinalIgnoreCase),
-                IsAvailable = false,
+                IsAvailable = smsAvailable,
                 Priority = 2
             },
             new()
@@ -281,17 +414,27 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
             },
             new()
             {
+                Method = MfaMethod.Push,
+                Name = "Push Approval",
+                Description = "Approve sign-in requests on your enrolled mobile device",
+                IsEnabled = enabledMethods.Contains("push", StringComparer.OrdinalIgnoreCase),
+                IsAvailable = pushAvailable,
+                Priority = 4
+            },
+            new()
+            {
                 Method = MfaMethod.BackupCode,
                 Name = "Backup Codes",
                 Description = "One-time use codes for emergency access",
                 IsEnabled = configuration.BackupCodesRemaining > 0,
                 IsAvailable = true,
-                Priority = 4
+                Priority = 5
             }
         };
 
         var defaultMethod = enabledMethods.Contains("totp", StringComparer.OrdinalIgnoreCase) ? MfaMethod.Totp :
                            enabledMethods.Contains("sms", StringComparer.OrdinalIgnoreCase) ? MfaMethod.Sms :
+                           enabledMethods.Contains("push", StringComparer.OrdinalIgnoreCase) ? MfaMethod.Push :
                            enabledMethods.Contains("email", StringComparer.OrdinalIgnoreCase) ? MfaMethod.Email : (MfaMethod?)null;
 
         return Ok(new MfaMethodsResponse
@@ -302,16 +445,6 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
     }
 
     #endregion
-
-    private static string MaskPhoneNumber(string phoneNumber)
-    {
-        if (string.IsNullOrEmpty(phoneNumber) || phoneNumber.Length < 4)
-        {
-            return "****";
-        }
-
-        return $"***-***-{phoneNumber[^4..]}";
-    }
 
     #region Disable Operations - /v1/auth/mfa:disable
 
@@ -404,6 +537,71 @@ public sealed record SmsMfaSetupRequest
     ///     Phone number to receive SMS codes
     /// </summary>
     public required string PhoneNumber { get; init; }
+}
+
+/// <summary>
+///     Request for an SMS sign-in challenge
+/// </summary>
+public sealed record SmsMfaChallengeRequest
+{
+    /// <summary>
+    ///     User identifier whose enrolled phone receives the code
+    /// </summary>
+    public required Guid UserId { get; init; }
+}
+
+/// <summary>
+///     Request to register a push MFA device
+/// </summary>
+public sealed record PushMfaDeviceRequest
+{
+    /// <summary>
+    ///     Device registration token from the mobile platform (FCM/APNs)
+    /// </summary>
+    public required string DeviceToken { get; init; }
+}
+
+/// <summary>
+///     Request to issue a push MFA challenge
+/// </summary>
+public sealed record PushMfaChallengeRequest
+{
+    /// <summary>
+    ///     User identifier whose enrolled device receives the challenge
+    /// </summary>
+    public required Guid UserId { get; init; }
+}
+
+/// <summary>
+///     Response carrying an issued push challenge
+/// </summary>
+public sealed record PushMfaChallengeResponse
+{
+    /// <summary>
+    ///     Opaque challenge identifier the device answers with
+    /// </summary>
+    public required string ChallengeId { get; init; }
+
+    /// <summary>
+    ///     Seconds until the challenge expires (fallback to TOTP on timeout)
+    /// </summary>
+    public required int ExpiresInSeconds { get; init; }
+}
+
+/// <summary>
+///     Device's answer to a push MFA challenge
+/// </summary>
+public sealed record PushMfaRespondRequest
+{
+    /// <summary>
+    ///     Opaque challenge identifier from the push payload
+    /// </summary>
+    public required string ChallengeId { get; init; }
+
+    /// <summary>
+    ///     true to approve the sign-in, false to deny it
+    /// </summary>
+    public required bool Approved { get; init; }
 }
 
 /// <summary>

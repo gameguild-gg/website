@@ -66,6 +66,10 @@ public sealed class MfaAttemptTrackingService(
             {
                 enabledMethods.Add(MfaMethod.Totp.ToString());
             }
+            if (!string.IsNullOrEmpty(mfaConfig.SmsPhoneNumber))
+            {
+                enabledMethods.Add(MfaMethod.Sms.ToString());
+            }
             if (backupCodesRemaining > 0)
             {
                 enabledMethods.Add(MfaMethod.BackupCode.ToString());
@@ -153,6 +157,8 @@ public sealed class MfaAttemptTrackingService(
             mfaConfig.UpdatedAt = SystemClock.UtcNow;
             mfaConfig.TotpSecretKey = null;
             mfaConfig.BackupCodes = null;
+            mfaConfig.SmsPhoneNumber = null;
+            mfaConfig.PushDeviceToken = null;
             mfaConfig.FailedAttempts = 0;
 
             await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);

@@ -15,6 +15,18 @@ namespace GameGuild.Identity.Authentication;
 ///     <para><b>SECURITY:</b> bulk grants are guarded like single grants — tenant-admin
 ///     (within the actor's own tenant) or SystemAdmin; <see cref="Guid.Empty"/> tenant IDs
 ///     (global defaults) additionally require <c>system:manage-global-defaults</c>.</para>
+///     <para><b>Transactionality (issues #302/#365):</b> the whole bulk runs inside the
+///     host pipeline's ambient transaction. Default (per-item) mode reports each user's
+///     outcome on <see cref="BulkPermissionResult"/> and commits the successful items —
+///     <see cref="TenantBulkPermissionResult"/> implements
+///     <see cref="GameGuild.ICommitOnFailureOutcome"/> so the partial-failure result is
+///     recognized by the transactional outcome classifier as a business failure whose
+///     completed mutations are deliberately retained. <see cref="BulkGrantTenantPermissionsCommand.Atomic"/>
+///     mode instead throws on the first failure, rolling the transaction back
+///     (all-or-nothing).</para>
+///     <para><b>Issue #310:</b> <see cref="BulkGrantTenantPermissionsCommand.ExpiresAt"/> and
+///     <see cref="BulkGrantTenantPermissionsCommand.Reason"/> are forwarded to every per-user
+///     grant (expiry envelope + audit reason) instead of being discarded.</para>
 /// </remarks>
 public sealed class BulkGrantTenantPermissionsCommandHandler(
     IPermissionBulkService bulkService,
@@ -29,6 +41,11 @@ public sealed class BulkGrantTenantPermissionsCommandHandler(
         CancellationToken cancellationToken)
     {
         BulkTenantPermissionGuards.EnsureGrantAuthorized(Actor, request.TenantId, logger, request.GrantedBy);
+
+        if (request.ExpiresAt.HasValue && request.ExpiresAt.Value <= SystemClock.UtcNow)
+        {
+            throw new InvalidOperationException("Bulk grant expiration must be in the future");
+        }
 
         var permissions = ToPermissionNames(request.Permissions);
         var userIds = request.UserIds.Where(id => id != Guid.Empty).Distinct().ToArray();
@@ -47,6 +64,8 @@ public sealed class BulkGrantTenantPermissionsCommandHandler(
                         request.TenantId,
                         permissions,
                         Guid.TryParse(request.GrantedBy, out var grantedBy) ? grantedBy : null,
+                        request.ExpiresAt,
+                        request.Reason,
                         cancellationToken)
                     .ConfigureAwait(false);
 
@@ -57,6 +76,16 @@ public sealed class BulkGrantTenantPermissionsCommandHandler(
                 logger.LogError(ex,
                     "Bulk grant failed for user {UserId} in tenant {TenantId}",
                     userId, request.TenantId);
+
+                if (request.Atomic)
+                {
+                    // All-or-nothing: let the exception escape so the ambient transaction
+                    // (UseCaseOperationBehavior) rolls back every already-granted user.
+                    throw new InvalidOperationException(
+                        $"Atomic bulk grant aborted after a per-user failure (user {userId}, tenant {request.TenantId}); the transaction is rolled back and no user keeps a grant.",
+                        ex);
+                }
+
                 result.Failed++;
                 result.Failures.Add(new UserBulkPermissionFailure
                 {
@@ -83,6 +112,12 @@ public sealed class BulkGrantTenantPermissionsCommandHandler(
 ///     <para><b>SECURITY:</b> same guards as bulk grant — tenant-admin within the actor's
 ///     own tenant or SystemAdmin; global defaults additionally require
 ///     <c>system:manage-global-defaults</c>.</para>
+///     <para><b>Issue #310:</b> revocation outcomes are counted by the service's boolean
+///     result — a user with no matching grant is reported as a per-user failure
+///     (<c>NoMatchingGrant</c>) instead of being counted as a successful revoke.</para>
+///     <para><b>Transactionality (issues #302/#365):</b> same contract as the bulk grant
+///     handler — per-item outcomes commit by default; <see cref="BulkRevokeTenantPermissionsCommand.Atomic"/>
+///     mode throws on the first failure and rolls the ambient transaction back.</para>
 /// </remarks>
 public sealed class BulkRevokeTenantPermissionsCommandHandler(
     IPermissionGrantService grantService,
@@ -110,20 +145,49 @@ public sealed class BulkRevokeTenantPermissionsCommandHandler(
         {
             try
             {
-                await grantService.RevokeTenantPermissionAsync(
+                var revoked = await grantService.RevokeTenantPermissionAsync(
                         userId,
                         request.TenantId,
                         permissions,
                         cancellationToken)
                     .ConfigureAwait(false);
 
-                result.Successful++;
+                if (revoked)
+                {
+                    result.Successful++;
+                }
+                else
+                {
+                    if (request.Atomic)
+                    {
+                        throw new InvalidOperationException(
+                            $"Atomic bulk revoke aborted: user {userId} in tenant {request.TenantId} has no matching grant; the transaction is rolled back.");
+                    }
+
+                    result.Failed++;
+                    result.Failures.Add(new UserBulkPermissionFailure
+                    {
+                        UserId = userId,
+                        Error = "NoMatchingGrant",
+                        Details = "The user has no matching permission grant to revoke"
+                    });
+                }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex,
                     "Bulk revoke failed for user {UserId} in tenant {TenantId}",
                     userId, request.TenantId);
+
+                if (request.Atomic)
+                {
+                    // All-or-nothing: let the exception escape so the ambient transaction
+                    // (UseCaseOperationBehavior) rolls back every already-revoked user.
+                    throw new InvalidOperationException(
+                        $"Atomic bulk revoke aborted after a per-user failure (user {userId}, tenant {request.TenantId}); the transaction is rolled back.",
+                        ex);
+                }
+
                 result.Failed++;
                 result.Failures.Add(new UserBulkPermissionFailure
                 {
@@ -192,7 +256,17 @@ internal static class BulkTenantPermissionGuards
 /// <summary>
 ///     Concrete bulk-result carrying per-user failures for tenant permission operations.
 /// </summary>
-public sealed class TenantBulkPermissionResult : BulkPermissionResult;
+/// <remarks>
+///     <para><b>Issues #302/#310:</b> implements <see cref="GameGuild.ICommitOnFailureOutcome"/>
+///     and exposes <see cref="BulkPermissionResult.IsFailure"/>/
+///     <see cref="BulkPermissionResult.IsSuccess"/>, so the host's transactional outcome
+///     classifier recognizes the partial-failure contract: a per-item (non-atomic) bulk
+///     command with collected failures is reported as a business failure whose completed
+///     mutations are deliberately retained — successful items commit while every failure is
+///     reported with its per-user entry. Atomic-mode failures never reach this result: the
+///     handler throws and the ambient transaction rolls everything back.</para>
+/// </remarks>
+public sealed class TenantBulkPermissionResult : BulkPermissionResult, GameGuild.ICommitOnFailureOutcome;
 
 /// <summary>
 ///     A per-user failure inside a bulk tenant permission operation.

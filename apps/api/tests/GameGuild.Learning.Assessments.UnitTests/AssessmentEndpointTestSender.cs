@@ -77,9 +77,15 @@ internal sealed class AssessmentEndpointTestSender(
 
             ClaimPeerReviewEndpointCommand command when peerReviewService is not null =>
                 await peerReviewService.ClaimAsync(command.AssessmentId, command.UserId).ConfigureAwait(false),
+            ClaimAuthorTestPeerReviewEndpointCommand command when peerReviewService is not null =>
+                await peerReviewService.ClaimAuthorTestAsync(
+                    command.TestRunId,
+                    command.ReviewerTestRunSubjectId,
+                    command.ActorUserId).ConfigureAwait(false),
             SubmitPeerReviewEndpointCommand command when peerReviewService is not null =>
                 await peerReviewService.SubmitReviewAsync(
-                    command.Review,
+                    command.ReviewId,
+                    command.ActorUserId,
                     command.Score,
                     command.Feedback,
                     command.RubricScores).ConfigureAwait(false),

@@ -195,7 +195,7 @@ public class FixedOverrideExchangeRateProviderTests
         var pinnedRate = new ExchangeRate("USD", "EUR", 0.92m, AsOf, "override");
         var provider = new FixedOverrideExchangeRateProvider(
             [pinnedRate],
-            new StubProvider((from, to) => marketRate));
+            new StubProvider((_, _) => marketRate));
 
         var served = await provider.GetRateAsync("USD", "EUR");
 
@@ -220,7 +220,7 @@ public class FixedOverrideExchangeRateProviderTests
     {
         var provider = new FixedOverrideExchangeRateProvider(
             [new ExchangeRate("USD", "EUR", 0.92m, AsOf, "override")],
-            new StubProvider((from, to) => null));
+            new StubProvider((_, _) => null));
 
         var served = await provider.GetRateAsync("USD", "JPY");
 
@@ -233,7 +233,7 @@ public class FixedOverrideExchangeRateProviderTests
         var innerRate = new ExchangeRate("EUR", "USD", 1.08m, AsOf, "market");
         var provider = new FixedOverrideExchangeRateProvider(
             [new ExchangeRate("USD", "EUR", 0.92m, AsOf, "override")],
-            new StubProvider((from, to) => innerRate));
+            new StubProvider((_, _) => innerRate));
 
         var reverse = await provider.GetRateAsync("EUR", "USD");
 

@@ -142,25 +142,27 @@ export function SignInForm({
               <FieldGroup>
                 <FieldDescription>
                   Confirm your sign-in with your authenticator app. This sign-in
-                  challenge expires after five minutes.
+                  challenge expires after five minutes. New to two-factor
+                  authentication? Enable it from Security in workspace settings
+                  after signing in.
                 </FieldDescription>
                 {mfaChallenge.availableMethods.includes("BackupCode") && (
-                    <Field>
-                      <FieldLabel htmlFor="mfa-method">
-                        Verification method
-                      </FieldLabel>
-                      <select
-                        id="mfa-method"
-                        name="method"
-                        defaultValue="Totp"
-                        disabled={isLoading}
-                        className="h-10 rounded border border-white/10 bg-slate-900 px-3"
-                      >
-                        <option value="Totp">Authenticator app</option>
-                        <option value="BackupCode">Recovery code</option>
-                      </select>
-                    </Field>
-                  )}
+                  <Field>
+                    <FieldLabel htmlFor="mfa-method">
+                      Verification method
+                    </FieldLabel>
+                    <select
+                      id="mfa-method"
+                      name="method"
+                      defaultValue="Totp"
+                      disabled={isLoading}
+                      className="h-10 rounded border border-white/10 bg-slate-900 px-3"
+                    >
+                      <option value="Totp">Authenticator app</option>
+                      <option value="BackupCode">Recovery code</option>
+                    </select>
+                  </Field>
+                )}
                 <Field>
                   <FieldLabel htmlFor="mfa-code">
                     Authentication code

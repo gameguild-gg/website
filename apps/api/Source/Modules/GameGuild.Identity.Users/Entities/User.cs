@@ -97,6 +97,7 @@ public class User : EntityBase, IUser
     /// </summary>
     [JsonIgnore]
     [MaxLength(512)]
+    [AuditSensitive]
     public string? PasswordHash { get; set; }
 
     /// <summary>
@@ -105,6 +106,7 @@ public class User : EntityBase, IUser
     /// </summary>
     [JsonIgnore]
     [MaxLength(2600)]
+    [AuditSensitive]
     public string? PasswordHistoryHashes { get; private set; }
 
     /// <summary>

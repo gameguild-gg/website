@@ -313,6 +313,25 @@ describe("SignInForm MFA", () => {
       screen.getByRole("button", { name: "Start sign-in again" }),
     ).toHaveClass("text-slate-200");
   });
+
+  it("never offers enrollment or reveals a TOTP secret in the sign-in challenge", () => {
+    mockAuth.mfaChallenge = {
+      mfaToken: "x".repeat(43),
+      availableMethods: ["TOTP"],
+    };
+    renderWithUser(<SignInForm />);
+
+    // Issue #838: enrollment lives exclusively in workspace settings; the
+    // login challenge must not expose the raw provisioning secret.
+    expect(
+      screen.queryByRole("button", { name: "Set up authenticator" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("LOCAL-AUTHENTICATOR-KEY")).not.toBeInTheDocument();
+    expect(mockAuth.signIn).not.toHaveBeenCalled();
+
+    // The challenge still accepts an existing authenticator code.
+    expect(screen.getByLabelText("Authentication code")).toBeInTheDocument();
+  });
 });
 
 describe('SignInForm providers slot composition', () => {

@@ -38,8 +38,8 @@ public class PostService : IPostService
     public Task<Result<IEnumerable<Post>>> GetPostsAsync(int skip = 0, int take = 50, CancellationToken cancellationToken = default) =>
         _crudService.GetPostsAsync(skip, take, cancellationToken);
 
-    public Task<Result<Post>> CreatePostAsync(Guid authorId, string content, PostVisibility visibility = PostVisibility.Public, string? mediaUrl = null, MediaType? mediaType = null, Guid? tenantId = null, CancellationToken cancellationToken = default) =>
-        _crudService.CreatePostAsync(authorId, content, visibility, mediaUrl, mediaType, tenantId, cancellationToken);
+    public Task<Result<Post>> CreatePostAsync(Guid authorId, string content, PostVisibility visibility = PostVisibility.Public, string? mediaUrl = null, MediaType? mediaType = null, Guid? tenantId = null, CancellationToken cancellationToken = default, Guid? mediaAssetReferenceId = null) =>
+        _crudService.CreatePostAsync(authorId, content, visibility, mediaUrl, mediaType, tenantId, cancellationToken, mediaAssetReferenceId);
 
     public Task<Result<Post>> UpdatePostAsync(Guid postId, Guid actorId, string content, CancellationToken cancellationToken = default) =>
         _crudService.UpdatePostAsync(postId, actorId, content, cancellationToken);

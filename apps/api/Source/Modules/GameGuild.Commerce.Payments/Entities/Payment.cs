@@ -56,6 +56,14 @@ public class Payment : EntityBase
     [Required]
     public decimal Amount { get; private set; }
 
+    /// <summary>
+    ///     Account-credit tender of this payment (issue #410 auto-apply): the portion of
+    ///     <see cref="Amount" /> settled by consuming the user's account credits before the
+    ///     payment method was charged. The provider charge is <c>Amount - CreditAppliedAmount</c>.
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal CreditAppliedAmount { get; private set; }
+
     /// <summary>ISO 4217 currency code (e.g., USD, EUR)</summary>
     [Required]
     [MaxLength(3)]
@@ -377,6 +385,33 @@ public class Payment : EntityBase
     {
         TransitionTo(PaymentStatus.Processing);
         BindExternalTransactionId(externalTransactionId);
+    }
+
+    /// <summary>
+    ///     Records the account-credit tender of this payment (issue #410 auto-apply): the
+    ///     amount actually consumed from the user's credit grants before the payment method
+    ///     was charged. Fails closed on non-positive or amount-exceeding values and on
+    ///     terminal payments.
+    /// </summary>
+    public void RecordCreditApplied(decimal amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Applied credit amount must be positive.", nameof(amount));
+        }
+
+        if (amount > Amount)
+        {
+            throw new InvalidOperationException("Applied credit cannot exceed the payment amount.");
+        }
+
+        if (Status is PaymentStatus.Cancelled)
+        {
+            throw new InvalidOperationException($"Cannot apply credit to a payment in status {Status}.");
+        }
+
+        CreditAppliedAmount = amount;
+        Touch();
     }
 
     /// <summary>Marks the payment as succeeded</summary>

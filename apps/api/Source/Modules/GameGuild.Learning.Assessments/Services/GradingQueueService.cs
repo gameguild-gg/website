@@ -76,6 +76,9 @@ public class GradingQueueService : IGradingQueueService
         }
 
         var submissionIds = rows.Select(row => row.Id).ToArray();
+        var reviewWork = await CanonicalReviewWorkProjection
+            .LoadAsync(_context, submissionIds)
+            .ConfigureAwait(false);
         var participants = submissionIds.Length == 0
             ? []
             : await _context.Set<Grading.Persistence.AssessmentSubmissionParticipant>()
@@ -130,6 +133,7 @@ public class GradingQueueService : IGradingQueueService
             if (groupId == null)
             {
                 var row = latestRows[0];
+                reviewWork.TryGetValue(row.Id, out var work);
                 items.Add(new GradingQueueItemDto(
                     row.Id,
                     row.Id,
@@ -142,12 +146,19 @@ public class GradingQueueService : IGradingQueueService
                     gradedMeta?.Passed,
                     IsGroup: false,
                     UserId: row.UserId,
-                    DisplayName: DisplayName(row.UserId ?? throw new InvalidOperationException("Individual submission is missing its user."))));
+                    DisplayName: DisplayName(row.UserId ?? throw new InvalidOperationException("Individual submission is missing its user.")),
+                    ActiveGradeRoundId: work?.GradeRoundId,
+                    ActiveGradeRoundStatus: work?.GradeRoundStatus,
+                    ActiveReviewStageId: work?.ReviewStageId,
+                    ActiveReviewMethod: work?.ReviewMethod,
+                    ActiveReviewStageStatus: work?.ReviewStageStatus,
+                    RequiresStaffReview: work?.RequiresStaffReview ?? false));
             }
             else
             {
                 var collective = latestRows.Single();
                 var group = groups.GetValueOrDefault(groupId.Value);
+                reviewWork.TryGetValue(collective.Id, out var work);
                 items.Add(new GradingQueueItemDto(
                     collective.Id,
                     collective.Id,
@@ -166,7 +177,13 @@ public class GradingQueueService : IGradingQueueService
                         .Select(participant => participant.UserId)
                         .Distinct()
                         .Select(DisplayName)
-                        .ToList()));
+                        .ToList(),
+                    ActiveGradeRoundId: work?.GradeRoundId,
+                    ActiveGradeRoundStatus: work?.GradeRoundStatus,
+                    ActiveReviewStageId: work?.ReviewStageId,
+                    ActiveReviewMethod: work?.ReviewMethod,
+                    ActiveReviewStageStatus: work?.ReviewStageStatus,
+                    RequiresStaffReview: work?.RequiresStaffReview ?? false));
             }
         }
 
@@ -189,7 +206,9 @@ public class GradingQueueService : IGradingQueueService
             sorted,
             Total: sorted.Count,
             NeedsGrading: sorted.Count(i =>
-                i.Status is SubmissionStatus.Submitted or SubmissionStatus.Late)));
+                i.ActiveGradeRoundId.HasValue
+                    ? i.RequiresStaffReview
+                    : i.Status is SubmissionStatus.Submitted or SubmissionStatus.Late)));
     }
 
     /// <summary>
