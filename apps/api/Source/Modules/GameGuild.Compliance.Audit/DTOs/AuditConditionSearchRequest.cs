@@ -8,6 +8,12 @@ namespace GameGuild.Compliance.Audit;
 public sealed class AuditConditionSearchRequest : IValidatableObject
 {
     /// <summary>
+    /// Gets or sets the tenant scope. Non-system callers are always clamped to the
+    /// tenant from their authenticated actor context.
+    /// </summary>
+    public Guid? TenantId { get; set; }
+
+    /// <summary>
     /// Gets or sets the root node of the condition tree applied to the search.
     /// </summary>
     [Required]

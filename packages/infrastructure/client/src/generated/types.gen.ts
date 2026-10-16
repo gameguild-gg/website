@@ -6036,6 +6036,37 @@ export interface ComplianceAuditAuditActorContext {
 export type ComplianceAuditAuditCategory =
   'General' | 'Authentication' | 'Authorization' | 'Permission' | 'User' | 'Admin' | 'Security' | 'Data' | 'System' | 'Tenant' | 'Privacy';
 
+/** A node of a nested audit log filter condition tree. A node is either a group that
+combines child nodes with a boolean operator or a field node that applies a single
+comparison to an audit field. */
+export interface ComplianceAuditAuditConditionNode {
+  /** Gets or sets the child nodes of a group node. */
+  children?: ComplianceAuditAuditConditionNode[] | null;
+  comparison?: ComplianceAuditAuditFilterComparison;
+  field?: ComplianceAuditAuditFilterField;
+  kind?: ComplianceAuditAuditConditionNodeKind;
+  operator?: ComplianceAuditAuditLogicalOperator;
+  /** Gets or sets the single comparison value of a field node. */
+  value?: string | null;
+  /** Gets or sets the value list of an GameGuild.Compliance.Audit.AuditFilterComparison.In comparison. */
+  values?: string[] | null;
+}
+
+/** Defines the kind of a condition tree node. */
+export type ComplianceAuditAuditConditionNodeKind = 'Group' | 'Field';
+
+/** Request to search audit log entries with a nested condition tree. */
+export interface ComplianceAuditAuditConditionSearchInput {
+  condition: ComplianceAuditAuditConditionNode;
+  /** Gets or sets the number of entries to skip. */
+  skip?: number;
+  /** Gets or sets the number of entries to take. */
+  take?: number;
+  /** Gets or sets the tenant scope. Non-system callers are always clamped to the
+tenant from their authenticated actor context. */
+  tenantId?: string | null;
+}
+
 /** Data model for Compliance Audit Audit Date Range Search Response. */
 export interface ComplianceAuditAuditDateRangeSearchOutput {
   activity?: ComplianceAuditAuditActivityBucketOutput[] | null;
@@ -6073,6 +6104,7 @@ export interface ComplianceAuditAuditExportInput {
   category?: ComplianceAuditAuditCategory;
   /** Ordered CSV columns. Omit to include every supported audit field. */
   columns?: string[] | null;
+  condition?: ComplianceAuditAuditConditionNode;
   endDate?: string | null;
   ipAddress?: string | null;
   /** Optional 1-based page number. Omit both pagination fields to export all matching rows. */
@@ -6102,6 +6134,13 @@ export interface ComplianceAuditAuditExportProgressOutput {
   totalRecords?: number;
   updatedAt?: string;
 }
+
+/** The comparison applied by a field node. */
+export type ComplianceAuditAuditFilterComparison = 'Equals' | 'NotEquals' | 'In' | 'GreaterThanOrEqual' | 'LessThanOrEqual';
+
+/** The audit log field targeted by a field node. */
+export type ComplianceAuditAuditFilterField =
+  'UserId' | 'ActionType' | 'ResourceType' | 'ResourceId' | 'Category' | 'RiskLevel' | 'Success' | 'CreatedAt' | 'IpAddress' | 'SearchText';
 
 /** Data model for Compliance Audit Audit Json Export Document. */
 export interface ComplianceAuditAuditJsonExportDocument {
@@ -6151,6 +6190,9 @@ export interface ComplianceAuditAuditLogDto {
   userAgent?: string | null;
   userId?: string | null;
 }
+
+/** Defines how a group node combines its children. */
+export type ComplianceAuditAuditLogicalOperator = 'And' | 'Or' | 'Not';
 
 /** Data model for Compliance Audit Audit Log Response. */
 export interface ComplianceAuditAuditLogOutput {
@@ -24433,15 +24475,21 @@ export let ComplianceAuditAuditActivityBucketOutputSchema: z.ZodType<ComplianceA
 export let ComplianceAuditAuditActivityBucketSizeSchema: z.ZodType<ComplianceAuditAuditActivityBucketSize>;
 export let ComplianceAuditAuditActorContextSchema: z.ZodType<ComplianceAuditAuditActorContext>;
 export let ComplianceAuditAuditCategorySchema: z.ZodType<ComplianceAuditAuditCategory>;
+export let ComplianceAuditAuditConditionNodeSchema: z.ZodType<ComplianceAuditAuditConditionNode>;
+export let ComplianceAuditAuditConditionNodeKindSchema: z.ZodType<ComplianceAuditAuditConditionNodeKind>;
+export let ComplianceAuditAuditConditionSearchInputSchema: z.ZodType<ComplianceAuditAuditConditionSearchInput>;
 export let ComplianceAuditAuditDateRangeSearchOutputSchema: z.ZodType<ComplianceAuditAuditDateRangeSearchOutput>;
 export let ComplianceAuditAuditEventContextSchema: z.ZodType<ComplianceAuditAuditEventContext>;
 export let ComplianceAuditAuditExportHistoryOutputSchema: z.ZodType<ComplianceAuditAuditExportHistoryOutput>;
 export let ComplianceAuditAuditExportInputSchema: z.ZodType<ComplianceAuditAuditExportInput>;
 export let ComplianceAuditAuditExportProgressOutputSchema: z.ZodType<ComplianceAuditAuditExportProgressOutput>;
+export let ComplianceAuditAuditFilterComparisonSchema: z.ZodType<ComplianceAuditAuditFilterComparison>;
+export let ComplianceAuditAuditFilterFieldSchema: z.ZodType<ComplianceAuditAuditFilterField>;
 export let ComplianceAuditAuditJsonExportDocumentSchema: z.ZodType<ComplianceAuditAuditJsonExportDocument>;
 export let ComplianceAuditAuditJsonExportPaginationSchema: z.ZodType<ComplianceAuditAuditJsonExportPagination>;
 export let ComplianceAuditAuditJsonExportRecordSchema: z.ZodType<ComplianceAuditAuditJsonExportRecord>;
 export let ComplianceAuditAuditLogDtoSchema: z.ZodType<ComplianceAuditAuditLogDto>;
+export let ComplianceAuditAuditLogicalOperatorSchema: z.ZodType<ComplianceAuditAuditLogicalOperator>;
 export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLogOutput>;
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
@@ -31272,6 +31320,33 @@ ComplianceAuditAuditCategorySchema = z.enum([
   'Privacy',
 ]);
 
+/** Zod schema for ComplianceAuditAuditConditionNode. A node of a nested audit log filter condition tree. A node is either a group that
+combines child nodes with a boolean operator or a field node that applies a single
+comparison to an audit field. */
+ComplianceAuditAuditConditionNodeSchema = z.object({
+  children: z
+    .array(z.lazy(() => ComplianceAuditAuditConditionNodeSchema))
+    .nullable()
+    .optional(),
+  comparison: z.lazy(() => ComplianceAuditAuditFilterComparisonSchema).optional(),
+  field: z.lazy(() => ComplianceAuditAuditFilterFieldSchema).optional(),
+  kind: z.lazy(() => ComplianceAuditAuditConditionNodeKindSchema).optional(),
+  operator: z.lazy(() => ComplianceAuditAuditLogicalOperatorSchema).optional(),
+  value: z.string().nullable().optional(),
+  values: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditConditionNodeKind. Defines the kind of a condition tree node. */
+ComplianceAuditAuditConditionNodeKindSchema = z.enum(['Group', 'Field']);
+
+/** Zod schema for ComplianceAuditAuditConditionSearchInput. Request to search audit log entries with a nested condition tree. */
+ComplianceAuditAuditConditionSearchInputSchema = z.object({
+  condition: z.lazy(() => ComplianceAuditAuditConditionNodeSchema),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditDateRangeSearchOutput. Data model for Compliance Audit Audit Date Range Search Response. */
 ComplianceAuditAuditDateRangeSearchOutputSchema = z.object({
   activity: z
@@ -31311,6 +31386,7 @@ ComplianceAuditAuditExportInputSchema = z.object({
   actionType: z.string().nullable().optional(),
   category: z.lazy(() => ComplianceAuditAuditCategorySchema).optional(),
   columns: z.array(z.string()).nullable().optional(),
+  condition: z.lazy(() => ComplianceAuditAuditConditionNodeSchema).optional(),
   endDate: z.string().datetime().nullable().optional(),
   ipAddress: z.string().nullable().optional(),
   pageNumber: z.number().int().min(1).max(2147483647).nullable().optional(),
@@ -31335,6 +31411,23 @@ ComplianceAuditAuditExportProgressOutputSchema = z.object({
   totalRecords: z.number().int().optional(),
   updatedAt: z.string().datetime().optional(),
 });
+
+/** Zod schema for ComplianceAuditAuditFilterComparison. The comparison applied by a field node. */
+ComplianceAuditAuditFilterComparisonSchema = z.enum(['Equals', 'NotEquals', 'In', 'GreaterThanOrEqual', 'LessThanOrEqual']);
+
+/** Zod schema for ComplianceAuditAuditFilterField. The audit log field targeted by a field node. */
+ComplianceAuditAuditFilterFieldSchema = z.enum([
+  'UserId',
+  'ActionType',
+  'ResourceType',
+  'ResourceId',
+  'Category',
+  'RiskLevel',
+  'Success',
+  'CreatedAt',
+  'IpAddress',
+  'SearchText',
+]);
 
 /** Zod schema for ComplianceAuditAuditJsonExportDocument. Data model for Compliance Audit Audit Json Export Document. */
 ComplianceAuditAuditJsonExportDocumentSchema = z.object({
@@ -31387,6 +31480,9 @@ ComplianceAuditAuditLogDtoSchema = z.object({
   userAgent: z.string().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
 });
+
+/** Zod schema for ComplianceAuditAuditLogicalOperator. Defines how a group node combines its children. */
+ComplianceAuditAuditLogicalOperatorSchema = z.enum(['And', 'Or', 'Not']);
 
 /** Zod schema for ComplianceAuditAuditLogOutput. Data model for Compliance Audit Audit Log Response. */
 ComplianceAuditAuditLogOutputSchema = z.object({

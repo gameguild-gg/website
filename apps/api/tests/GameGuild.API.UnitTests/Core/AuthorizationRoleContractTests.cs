@@ -140,6 +140,7 @@ public sealed class AuthorizationRoleContractTests
     [Theory]
     [InlineData(nameof(AuditController.GetAuditLogs), "Audit.Read")]
     [InlineData(nameof(AuditController.SearchAuditLogsByDateRange), "Audit.Read")]
+    [InlineData(nameof(AuditController.SearchAuditLogsWithConditions), "Audit.Read")]
     [InlineData(nameof(AuditController.SearchAuditLogsByActionType), "Audit.Read")]
     [InlineData(nameof(AuditController.GetAuditActionTypeTaxonomy), "Audit.Read")]
     [InlineData(nameof(AuditController.GetAuditStatistics), "Audit.Read")]

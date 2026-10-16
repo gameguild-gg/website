@@ -237,6 +237,7 @@ public class AuditController(
     /// <summary>Searches audit events using a nested condition tree with boolean logic.</summary>
     [HttpPost("search-filter")]
     [HttpPost("/api/audit/search-filter")]
+    [Authorize(Policy = Policies.AuditRead)]
     [ProducesResponseType(typeof(AuditLogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuditLogResponse>> SearchAuditLogsWithConditions([FromBody] AuditConditionSearchRequest request)
@@ -248,6 +249,13 @@ public class AuditController(
 
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
 
         _logger.LogInformation("Admin {AdminUserId} searching audit logs with condition filters", adminUserId.Value);
 

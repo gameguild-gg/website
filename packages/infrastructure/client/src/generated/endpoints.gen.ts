@@ -748,6 +748,21 @@ export const getApiAuditRetentionSimulationTemplatesEndpoint = {
 } as const;
 
 /**
+ * Searches audit events using a nested condition tree with boolean logic.
+ */
+export interface PostApiAuditSearchFilterInput {
+  body?: Types.ComplianceAuditAuditConditionSearchInput;
+}
+export type PostApiAuditSearchFilterOutput = Types.ComplianceAuditAuditLogOutput;
+export const postApiAuditSearchFilterEndpoint = {
+  operationId: 'postApiAuditSearchFilter' as const,
+  method: 'POST' as const,
+  path: '/api/audit/search-filter' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Returns the security alert queue for the current tenant.
  */
 export interface GetApiAuditSecurityEventsAlertsInput {
@@ -12559,6 +12574,7 @@ export interface GetAdminAuditLogsInput {
     StartDate?: string;
     EndDate?: string;
     IpAddress?: string;
+    SearchText?: string;
     Skip?: number;
     Take?: number;
   };
@@ -12777,6 +12793,21 @@ export const getAdminAuditLogsScheduledExportsHistoryEndpoint = {
   operationId: 'getAdminAuditLogsScheduledExportsHistory' as const,
   method: 'GET' as const,
   path: '/v1/admin/audit-logs/scheduled-exports/{exportId}/history' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Searches audit events using a nested condition tree with boolean logic.
+ */
+export interface PostAdminAuditLogsSearchFilterInput {
+  body?: Types.ComplianceAuditAuditConditionSearchInput;
+}
+export type PostAdminAuditLogsSearchFilterOutput = Types.ComplianceAuditAuditLogOutput;
+export const postAdminAuditLogsSearchFilterEndpoint = {
+  operationId: 'postAdminAuditLogsSearchFilter' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/search-filter' as const,
   tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
@@ -29621,6 +29652,7 @@ export const endpoints = {
   getApiAuditRetentionSimulationConfiguration: getApiAuditRetentionSimulationConfigurationEndpoint,
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
   getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
+  postApiAuditSearchFilter: postApiAuditSearchFilterEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
   postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
@@ -30387,6 +30419,7 @@ export const endpoints = {
   postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
   deleteAdminAuditLogsScheduledExports: deleteAdminAuditLogsScheduledExportsEndpoint,
   getAdminAuditLogsScheduledExportsHistory: getAdminAuditLogsScheduledExportsHistoryEndpoint,
+  postAdminAuditLogsSearchFilter: postAdminAuditLogsSearchFilterEndpoint,
   getAdminAuditLogsSearchByActionType: getAdminAuditLogsSearchByActionTypeEndpoint,
   getAdminAuditLogsSearchByActionTypeExport: getAdminAuditLogsSearchByActionTypeExportEndpoint,
   getAdminAuditLogsSearchByActionTypeTaxonomy: getAdminAuditLogsSearchByActionTypeTaxonomyEndpoint,

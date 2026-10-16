@@ -25,6 +25,7 @@ public sealed class SearchAuditLogsWithConditionsCommandHandler(IAuditService au
 
         var query = new AuditLogQuery
         {
+            TenantId = command.Request.TenantId,
             Condition = command.Request.Condition,
             Skip = command.Request.Skip,
             Take = Math.Min(command.Request.Take, 1000) // Cap at 1000 records
