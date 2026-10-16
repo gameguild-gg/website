@@ -1634,6 +1634,14 @@ export interface CommerceBillingBillingWebhookEventListItemDto {
   tenantId?: string | null;
 }
 
+/** Request body for the webhook signing-secret rotation. */
+export interface CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput {
+  /** The new signing secret exactly as configured at the provider. */
+  newSecret?: string | null;
+  /** Provider key (stripe, paypal, ...). */
+  providerKey?: string | null;
+}
+
 /** A security alert surfaced from the Compliance.Audit pipeline. */
 export interface CommerceBillingBillingWebhookSecurityAlertDto {
   id?: string;
@@ -1939,6 +1947,20 @@ export interface CommerceBillingValidatePricingLedgerDriftInput {
   sampleSize?: number;
   /** Inclusive window end (null = unbounded). */
   toUtc?: string | null;
+}
+
+/** Result of a recorded webhook signing-secret rotation. Never contains secret material. */
+export interface CommerceBillingWebhookSecretRotationResult {
+  /** Always true on creation; the previous secret verifies for the whole window. */
+  previousSecretStillAccepted?: boolean;
+  /** UTC instant after which the previous secret stops verifying. */
+  previousSecretValidUntilUtc?: string;
+  /** Normalized provider key. */
+  providerKey?: string | null;
+  /** UTC instant the rotation was recorded. */
+  rotatedAtUtc?: string;
+  /** The recorded rotation. */
+  rotationId?: string;
 }
 
 /** OpenAPI schema for Commerce Order Charge State. */
@@ -2712,6 +2734,58 @@ export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | '
 /** Risk band derived from the aggregate fraud score. */
 export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
 
+/** Health snapshot of one gateway circuit (issue #413). */
+export interface CommercePaymentsGatewayCircuitSnapshot {
+  /** Consecutive retriable failures recorded while closed. */
+  consecutiveFailures?: number;
+  /** Configured consecutive-failure threshold. */
+  failureThreshold?: number;
+  /** When the circuit last opened; null while closed. */
+  openedAtUtc?: string | null;
+  /** Provider identifier of the gateway. */
+  providerId?: string | null;
+  state?: CommercePaymentsGatewayCircuitState;
+}
+
+/** Circuit state of one payment gateway. */
+export type CommercePaymentsGatewayCircuitState = 'Closed' | 'Open' | 'HalfOpen';
+
+/** Combined read model of one reporting pass: rolling-window aggregates per gateway
+plus the current circuit-breaker snapshot of every known gateway. */
+export interface CommercePaymentsGatewayMetricsReport {
+  /** Circuit-breaker snapshot of every known gateway at generation time. */
+  circuitBreakers: CommercePaymentsGatewayCircuitSnapshot[] | null;
+  /** UTC instant the report was generated. */
+  generatedAtUtc: string;
+  /** Window aggregates (24h/7d/30d) per provider with payments in the window;
+providers without payments in a window are omitted from that window. */
+  windows: CommercePaymentsGatewayWindowMetrics[] | null;
+}
+
+/** Aggregated performance of one gateway over one rolling window, computed from
+persisted payment records (issue #413). */
+export interface CommercePaymentsGatewayWindowMetrics {
+  /** Payments recorded for the gateway inside the window. */
+  attempts?: number;
+  /** Mean of `ProcessedAt - CreatedAt` over succeeded payments, milliseconds; null
+when no succeeded payment has both timestamps. */
+  averageProcessingLatencyMs?: number | null;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Failed. */
+  failed?: number;
+  /** Provider identifier of the gateway. */
+  providerId?: string | null;
+  /** Inclusive window start (UTC). */
+  sinceUtc?: string;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Succeeded. */
+  succeeded?: number;
+  /** Succeeded / Attempts; 0 when no attempts. */
+  successRate?: number;
+  /** Payments still pending/processing/requiring action inside the window. */
+  unresolved?: number;
+  /** Window label (24h, 7d or 30d). */
+  window?: string | null;
+}
+
 /** Public (non-secret) view of a gift for the redemption preview endpoint. */
 export interface CommercePaymentsGiftPublicView {
   /** Gift id. */
@@ -2999,6 +3073,10 @@ export interface CommercePaymentsPaymentRecoveryMetrics {
 /** Result of payment processing */
 export interface CommercePaymentsPaymentResult {
   amount?: Money;
+  /** Account-credit tender applied automatically before the payment method was charged
+(issue #410 auto-apply); the provider charge is `Amount - CreditApplied`.
+Null when no credits were applied. */
+  creditApplied?: number | null;
   failureReason?: string | null;
   /** Invoice ID that this payment was applied to.
 Links payment to specific invoice for audit trail and preventing duplicate applications. */
@@ -3502,6 +3580,49 @@ export interface CommercePaymentsReferrerLeaderboardEntry {
   rewardedReferrals?: number;
 }
 
+/** Combined refund/dispute analytics read model (issue #419 follow-up). */
+export interface CommercePaymentsRefundAnalyticsReport {
+  /** Average hours from creation to resolution for resolved disputes; null when none resolved. */
+  averageDisputeResolutionHours?: number | null;
+  /** Refunded amount by currency for completed refunds in the window. */
+  completedRefundAmountByCurrency: Record<string, number> | null;
+  /** Dispute count by status in the window. */
+  disputeCountByStatus: {
+    Cancelled?: number;
+    Lost?: number;
+    PendingCustomerResponse?: number;
+    PendingMerchantResponse?: number;
+    Resolved?: number;
+    Submitted?: number;
+    UnderReview?: number;
+    Won?: number;
+  } | null;
+  /** Share of decided (won or lost) disputes among all disputes; null when there are none. */
+  disputeResolutionRate?: number | null;
+  /** Disputes lost by the merchant in the window. */
+  disputesLost: number;
+  /** Disputes won by the merchant in the window. */
+  disputesWon: number;
+  /** Share of won disputes among decided disputes; null when none were decided. */
+  disputeWinRate?: number | null;
+  /** Inclusive window start. */
+  fromUtc: string;
+  /** Refunded amount by lifecycle status in the window. */
+  refundAmountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** Refund count by currency in the window (all statuses). */
+  refundCountByCurrency: Record<string, number> | null;
+  /** Refund count by lifecycle status in the window. */
+  refundCountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** UTC-day breakdown of refund counts and completed amounts. */
+  refundsByDay: CommercePaymentsRefundDailyBucket[] | null;
+  /** Total disputes considered in the window. */
+  totalDisputeCount: number;
+  /** Total refunds considered in the window (all statuses). */
+  totalRefundCount: number;
+  /** Inclusive window end. */
+  toUtc: string;
+}
+
 /** Paged read model for the pending refund-approval queue. */
 export interface CommercePaymentsRefundApprovalQueuePage {
   /** Queue items for the requested page, oldest first. */
@@ -3512,6 +3633,16 @@ export interface CommercePaymentsRefundApprovalQueuePage {
   pageSize: number;
   /** Total queue size across all pages. */
   totalCount: number;
+}
+
+/** One UTC-day bucket of the refund period breakdown. */
+export interface CommercePaymentsRefundDailyBucket {
+  /** Sum of amounts of refunds completed that day. */
+  completedAmount?: number;
+  /** Refunds created that day (all statuses). */
+  count?: number;
+  /** UTC day (midnight) the bucket covers. */
+  date?: string;
 }
 
 /** Result of an approval or rejection decision on a refund request. */
@@ -5905,6 +6036,37 @@ export interface ComplianceAuditAuditActorContext {
 export type ComplianceAuditAuditCategory =
   'General' | 'Authentication' | 'Authorization' | 'Permission' | 'User' | 'Admin' | 'Security' | 'Data' | 'System' | 'Tenant' | 'Privacy';
 
+/** A node of a nested audit log filter condition tree. A node is either a group that
+combines child nodes with a boolean operator or a field node that applies a single
+comparison to an audit field. */
+export interface ComplianceAuditAuditConditionNode {
+  /** Gets or sets the child nodes of a group node. */
+  children?: ComplianceAuditAuditConditionNode[] | null;
+  comparison?: ComplianceAuditAuditFilterComparison;
+  field?: ComplianceAuditAuditFilterField;
+  kind?: ComplianceAuditAuditConditionNodeKind;
+  operator?: ComplianceAuditAuditLogicalOperator;
+  /** Gets or sets the single comparison value of a field node. */
+  value?: string | null;
+  /** Gets or sets the value list of an GameGuild.Compliance.Audit.AuditFilterComparison.In comparison. */
+  values?: string[] | null;
+}
+
+/** Defines the kind of a condition tree node. */
+export type ComplianceAuditAuditConditionNodeKind = 'Group' | 'Field';
+
+/** Request to search audit log entries with a nested condition tree. */
+export interface ComplianceAuditAuditConditionSearchInput {
+  condition: ComplianceAuditAuditConditionNode;
+  /** Gets or sets the number of entries to skip. */
+  skip?: number;
+  /** Gets or sets the number of entries to take. */
+  take?: number;
+  /** Gets or sets the tenant scope. Non-system callers are always clamped to the
+tenant from their authenticated actor context. */
+  tenantId?: string | null;
+}
+
 /** Data model for Compliance Audit Audit Date Range Search Response. */
 export interface ComplianceAuditAuditDateRangeSearchOutput {
   activity?: ComplianceAuditAuditActivityBucketOutput[] | null;
@@ -5942,6 +6104,7 @@ export interface ComplianceAuditAuditExportInput {
   category?: ComplianceAuditAuditCategory;
   /** Ordered CSV columns. Omit to include every supported audit field. */
   columns?: string[] | null;
+  condition?: ComplianceAuditAuditConditionNode;
   endDate?: string | null;
   ipAddress?: string | null;
   /** Optional 1-based page number. Omit both pagination fields to export all matching rows. */
@@ -5971,6 +6134,13 @@ export interface ComplianceAuditAuditExportProgressOutput {
   totalRecords?: number;
   updatedAt?: string;
 }
+
+/** The comparison applied by a field node. */
+export type ComplianceAuditAuditFilterComparison = 'Equals' | 'NotEquals' | 'In' | 'GreaterThanOrEqual' | 'LessThanOrEqual';
+
+/** The audit log field targeted by a field node. */
+export type ComplianceAuditAuditFilterField =
+  'UserId' | 'ActionType' | 'ResourceType' | 'ResourceId' | 'Category' | 'RiskLevel' | 'Success' | 'CreatedAt' | 'IpAddress' | 'SearchText';
 
 /** Data model for Compliance Audit Audit Json Export Document. */
 export interface ComplianceAuditAuditJsonExportDocument {
@@ -6020,6 +6190,9 @@ export interface ComplianceAuditAuditLogDto {
   userAgent?: string | null;
   userId?: string | null;
 }
+
+/** Defines how a group node combines its children. */
+export type ComplianceAuditAuditLogicalOperator = 'And' | 'Or' | 'Not';
 
 /** Data model for Compliance Audit Audit Log Response. */
 export interface ComplianceAuditAuditLogOutput {
@@ -11522,10 +11695,18 @@ export interface IdentityAuthorizationGetTenantPermissionsOutput {
   isSystemAdmin?: boolean;
   /** Gets whether the user is a tenant admin. */
   isTenantAdmin?: boolean;
-  /** Gets the list of permissions. */
+  /** Gets the 1-based page number this response represents (issue #307). */
+  page?: number;
+  /** Gets the page size that produced this response (issue #307). */
+  pageSize?: number;
+  /** Gets the list of permissions on the requested page. */
   permissions: string[] | null;
   /** Gets the tenant ID. */
   tenantId: string;
+  /** Gets the total number of permissions across all pages (issue #307). */
+  totalCount?: number;
+  /** Gets the total number of pages (issue #307). */
+  totalPages?: number;
   /** Gets the user ID. */
   userId: string;
 }
@@ -11566,6 +11747,18 @@ export interface IdentityAuthorizationGrantTenantPermissionCommand {
 
 /** Graph export formats */
 export type IdentityAuthorizationGraphExportFormat = 'None' | 'DOT' | 'JSON' | 'GraphML';
+
+/** Response of a global-permission validation. */
+export interface IdentityAuthorizationHasGlobalPermissionOutput {
+  /** Gets the reason the permission is not granted (when it is not). */
+  denialReason?: string | null;
+  /** Gets whether the global default baseline grants the permission. */
+  hasPermission: boolean;
+  /** Gets the permission that was validated. */
+  permission: string | null;
+  /** Gets the source of the decision (always the global-defaults layer). */
+  source: string | null;
+}
 
 /** Response indicating whether the user has the requested permission. */
 export interface IdentityAuthorizationHasPermissionOutput {
@@ -12372,7 +12565,11 @@ export type IdentityAuthorizationPermissionType =
   | 'AuditAccess'
   | 'SystemConfiguration'
   | 'BackupRestore'
-  | 'DataMigration';
+  | 'DataMigration'
+  | 'EditMetadata'
+  | 'Maintenance'
+  | 'Monitoring'
+  | 'Deployment';
 
 /** Result of updating permissions. */
 export interface IdentityAuthorizationPermissionUpdateResult {
@@ -15261,12 +15458,14 @@ export interface LearningAssessmentsAnonymousReviewSubmissionDto {
   assessment?: LearningAssessmentsAnonymousReviewAssessmentDto;
   attemptNumber?: number;
   codePayload?: string | null;
+  deliveryCanonicalJson?: string | null;
   filePayload?: string | null;
   mediaPayload?: string | null;
   projectPayload?: string | null;
+  responseEnvelopeCanonicalJson?: string | null;
   reviewId?: string;
   rubric?: LearningAssessmentsAnonymousReviewRubricDto;
-  status?: LearningAssessmentsPeerReviewStatus;
+  status?: LearningAssessmentsGradingPersistencePeerReviewClaimStatus;
   submissionStatus?: LearningAssessmentsSubmissionStatus;
   submittedAt?: string | null;
   textPayload?: string | null;
@@ -15386,6 +15585,11 @@ export interface LearningAssessmentsCanAttemptOutput {
   currentAttemptCount?: number;
 }
 
+/** Data model for Learning Assessments Claim Assessment Test Peer Review Request. */
+export interface LearningAssessmentsClaimAssessmentTestPeerReviewInput {
+  subjectId?: string;
+}
+
 /** Data model for Learning Assessments Course Assessment Analytics Dto. */
 export interface LearningAssessmentsCourseAssessmentAnalyticsDto {
   assessmentCount?: number;
@@ -15440,6 +15644,14 @@ export interface LearningAssessmentsCreateGroupInput {
 /** Request to create a group set. */
 export interface LearningAssessmentsCreateGroupSetInput {
   name?: string | null;
+}
+
+/** Data model for Learning Assessments Extend Peer Review Window Request. */
+export interface LearningAssessmentsExtendPeerReviewWindowInput {
+  deadlineAt?: string;
+  expectedStageVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
 }
 
 /** Data model for Learning Assessments Grade Result Release Response. */
@@ -15595,6 +15807,10 @@ export interface LearningAssessmentsGradingContractsGradeResultV1 {
   state?: string | null;
 }
 
+/** OpenAPI schema for Learning Assessments Grading Contracts Grade Round Status V1. */
+export type LearningAssessmentsGradingContractsGradeRoundStatusV1 =
+  'pending' | 'running' | 'awaiting-evidence' | 'awaiting-instructor-resolution' | 'failed' | 'finalized';
+
 /** OpenAPI schema for Learning Assessments Grading Contracts Result Release Mode. */
 export type LearningAssessmentsGradingContractsResultReleaseMode = 'immediate' | 'manual' | 'scheduled';
 
@@ -15607,8 +15823,18 @@ export type LearningAssessmentsGradingContractsReviewMethod = 'PeerReview' | 'AI
 /** Numeric review-workflow bitmask. Valid values are 0, 1, 2, 4, 8, 9, 10, 12, 16, and 24. */
 export type LearningAssessmentsGradingContractsReviewMethods = 0 | 1 | 2 | 4 | 8 | 9 | 10 | 12 | 16 | 24;
 
+/** OpenAPI schema for Learning Assessments Grading Contracts Review Stage Status V1. */
+export type LearningAssessmentsGradingContractsReviewStageStatusV1 =
+  'pending' | 'running' | 'awaiting-evidence' | 'awaiting-instructor-resolution' | 'completed' | 'failed';
+
 /** OpenAPI schema for Learning Assessments Grading Persistence Assessment Test Run Status. */
 export type LearningAssessmentsGradingPersistenceAssessmentTestRunStatus = 'Draft' | 'Running' | 'Completed' | 'Cancelled';
+
+/** OpenAPI schema for Learning Assessments Grading Persistence Grade Result Release Schedule Status. */
+export type LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus = 'Scheduled' | 'Cancelled' | 'Released';
+
+/** OpenAPI schema for Learning Assessments Grading Persistence Peer Review Claim Status. */
+export type LearningAssessmentsGradingPersistencePeerReviewClaimStatus = 'Assigned' | 'Submitted' | 'Expired' | 'Cancelled';
 
 /** OpenAPI schema for Learning Assessments Grading Persistence Persisted Grade Round Status. */
 export type LearningAssessmentsGradingPersistencePersistedGradeRoundStatus =
@@ -15616,6 +15842,10 @@ export type LearningAssessmentsGradingPersistencePersistedGradeRoundStatus =
 
 /** OpenAPI schema for Learning Assessments Grading Persistence Persisted Grading Execution Status. */
 export type LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus = 'Pending' | 'Running' | 'AwaitingReview' | 'Completed' | 'Failed';
+
+/** OpenAPI schema for Learning Assessments Grading Persistence Persisted Review Stage Status. */
+export type LearningAssessmentsGradingPersistencePersistedReviewStageStatus =
+  'Pending' | 'Running' | 'AwaitingEvidence' | 'AwaitingInstructorResolution' | 'Completed' | 'Failed';
 
 /** Assessment summary fields the SpeedGrader header and grading panel need. */
 export interface LearningAssessmentsGradingQueueAssessmentDto {
@@ -15638,13 +15868,19 @@ export interface LearningAssessmentsGradingQueueDto {
   total?: number;
 }
 
-/** One navigable queue entry = one student or group. SubmissionId is the row the grader opens:
-the target's LATEST attempt's row (the single row for individuals, the canonical Min(Id)
-row for groups; CanonicalSubmissionId mirrors it so clients can address group items by
-their canonical id). AssignmentScore/AssignmentPassed are the assignment-level grade from
+/** One navigable queue entry = one student or group. SubmissionId is the target's latest
+attempt and CanonicalSubmissionId mirrors it for existing clients. AssignmentScore and
+AssignmentPassed are the assignment-level grade from
 the target's LATEST GRADED attempt — they persist across resubmissions until a newer
-attempt is graded (one grade per assignment; regrades land on a fresh submission). */
+attempt is graded (one grade per assignment; regrades land on a fresh submission).
+When the submission has a grading execution, the active round/stage fields are the
+authoritative operational state and RequiresStaffReview drives the instructor queue. */
 export interface LearningAssessmentsGradingQueueItemDto {
+  activeGradeRoundId?: string | null;
+  activeGradeRoundStatus?: LearningAssessmentsGradingContractsGradeRoundStatusV1 | null;
+  activeReviewMethod?: LearningAssessmentsGradingContractsReviewMethod | null;
+  activeReviewStageId?: string | null;
+  activeReviewStageStatus?: LearningAssessmentsGradingContractsReviewStageStatusV1 | null;
   assignmentPassed?: boolean | null;
   assignmentScore?: LearningGradingContractsScoreValue | null;
   attemptCount?: number;
@@ -15656,6 +15892,7 @@ export interface LearningAssessmentsGradingQueueItemDto {
   isGroup?: boolean;
   isLate?: boolean;
   memberNames?: string[] | null;
+  requiresStaffReview?: boolean;
   status?: LearningAssessmentsSubmissionStatus;
   submissionId?: string;
   submittedAt?: string | null;
@@ -15680,6 +15917,7 @@ export interface LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1 {
   learnerVisibleResult?: LearningAssessmentsGradingContractsGradeResultV1;
   released?: boolean;
   requiresInstructorReview?: boolean;
+  selfReview?: LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1;
   status?: LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus;
   submittedResponse?: LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1;
 }
@@ -15702,6 +15940,20 @@ export interface LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1 {
   version?: number;
 }
 
+/** Data model for Learning Assessments Grading Runtime Assessment Test Run Subject Command V1. */
+export interface LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1 {
+  personaDisplayName?: string | null;
+  personaKey?: string | null;
+}
+
+/** Data model for Learning Assessments Grading Runtime Assessment Test Run Subject View V1. */
+export interface LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1 {
+  execution?: LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1;
+  personaDisplayName?: string | null;
+  personaKey?: string | null;
+  subjectId?: string;
+}
+
 /** Data model for Learning Assessments Grading Runtime Assessment Test Run View V1. */
 export interface LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1 {
   assessmentId?: string;
@@ -15713,7 +15965,17 @@ export interface LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1 {
   personaKey?: string | null;
   readyForPublication?: boolean;
   status?: LearningAssessmentsGradingPersistenceAssessmentTestRunStatus;
+  subjects?: LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1[] | null;
   testRunId?: string;
+}
+
+/** Data model for Learning Assessments Grading Runtime Cancel Scheduled Grade Result Release Command. */
+export interface LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand {
+  expectedRoundId?: string;
+  expectedScheduleVersion?: number;
+  expectedSubmissionVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
 }
 
 /** Data model for Learning Assessments Grading Runtime Gradebook Assessment Projection V1. */
@@ -15745,6 +16007,17 @@ export interface LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1 {
   weightPercent?: LearningGradingContractsPercentValue;
 }
 
+/** Data model for Learning Assessments Grading Runtime Grade Result Release Schedule View V1. */
+export interface LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1 {
+  cancelledAt?: string | null;
+  gradeRoundId?: string;
+  releasedAt?: string | null;
+  scheduledFor?: string;
+  scheduleId?: string;
+  status?: LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus;
+  version?: number;
+}
+
 /** Data model for Learning Assessments Grading Runtime Grade Round View V1. */
 export interface LearningAssessmentsGradingRuntimeGradeRoundViewV1 {
   finalizedAt?: string | null;
@@ -15753,6 +16026,7 @@ export interface LearningAssessmentsGradingRuntimeGradeRoundViewV1 {
   reasonDetail?: string | null;
   released?: boolean;
   releasedAt?: string | null;
+  releaseSchedule?: LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
   result?: LearningAssessmentsGradingContractsGradeResultV1;
   roundId?: string;
   roundNumber?: number;
@@ -15776,6 +16050,14 @@ export interface LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1 {
   schemaVersion?: number;
 }
 
+/** Data model for Learning Assessments Grading Runtime Peer Review Insufficiency Resolution V1. */
+export interface LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1 {
+  feedback?: string | null;
+  items?: LearningAssessmentsGradingRuntimeInstructorItemResolutionV1[] | null;
+  reason?: string | null;
+  schemaVersion?: number;
+}
+
 /** Data model for Learning Assessments Grading Runtime Regrade Execution Command. */
 export interface LearningAssessmentsGradingRuntimeRegradeExecutionCommand {
   idempotencyKey?: string | null;
@@ -15788,6 +16070,43 @@ export interface LearningAssessmentsGradingRuntimeReleaseGradeResultCommand {
   expectedSubmissionVersion?: number;
   idempotencyKey?: string | null;
   reason?: string | null;
+}
+
+/** Data model for Learning Assessments Grading Runtime Schedule Grade Result Release Command. */
+export interface LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand {
+  expectedRoundId?: string;
+  expectedScheduleVersion?: number;
+  expectedSubmissionVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
+  scheduledFor?: string;
+}
+
+/** Data model for Learning Assessments Grading Runtime Self Review Evidence V1. */
+export interface LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1 {
+  feedback?: string | null;
+  items?: LearningAssessmentsGradingRuntimeSelfReviewItemV1[] | null;
+  schemaVersion?: number;
+}
+
+/** Data model for Learning Assessments Grading Runtime Self Review Item V1. */
+export interface LearningAssessmentsGradingRuntimeSelfReviewItemV1 {
+  feedback?: string | null;
+  itemId?: string | null;
+  score?: LearningGradingContractsScoreValue;
+}
+
+/** Data model for Learning Assessments Grading Runtime Self Review Runtime State V1. */
+export interface LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1 {
+  draft?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
+  draftVersion?: number;
+  instructions?: string | null;
+  lastDraftActorId?: string | null;
+  requireFeedback?: boolean;
+  reviewStageId?: string;
+  status?: LearningAssessmentsGradingPersistencePersistedReviewStageStatus;
+  submittedByActorId?: string | null;
+  submittedEvidence?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
 }
 
 /** Group detail with member display names. */
@@ -15916,8 +16235,29 @@ export interface LearningAssessmentsPeerReviewClaimDto {
   reviewId?: string;
 }
 
-/** OpenAPI schema for Learning Assessments Peer Review Status. */
-export type LearningAssessmentsPeerReviewStatus = 'Assigned' | 'Submitted';
+/** Data model for Learning Assessments Peer Review Claim Result. */
+export interface LearningAssessmentsPeerReviewClaimResult {
+  maskedSubmission?: string | null;
+  reviewId?: string;
+}
+
+/** Data model for Learning Assessments Peer Review Claim View. */
+export interface LearningAssessmentsPeerReviewClaimView {
+  id?: string;
+  assessmentId?: string;
+  attemptNumber?: number;
+  claimedAt?: string;
+  deliveryCanonicalJson?: string | null;
+  leaseExpiresAt?: string;
+  responseEnvelopeCanonicalJson?: string | null;
+  reviewerTestRunSubjectId?: string | null;
+  reviewerUserId?: string | null;
+  reviewStageId?: string;
+  status?: LearningAssessmentsGradingPersistencePeerReviewClaimStatus;
+  submissionId?: string | null;
+  submittedAt?: string | null;
+  version?: number;
+}
 
 /** Body of a peer review submit: plain score XOR rubric scores (rubric rules enforced server-side),
 plus the mandatory feedback comment. */
@@ -15925,6 +16265,13 @@ export interface LearningAssessmentsPeerReviewSubmitInput {
   feedback?: string | null;
   rubricScores?: string | null;
   score?: LearningGradingContractsScoreValue | null;
+}
+
+/** Data model for Learning Assessments Reassign Peer Review Claim Request. */
+export interface LearningAssessmentsReassignPeerReviewClaimInput {
+  expectedClaimVersion?: number;
+  idempotencyKey?: string | null;
+  reason?: string | null;
 }
 
 /** THE anonymity boundary for reviewees: what a student sees of reviews they received.
@@ -15941,6 +16288,13 @@ export interface LearningAssessmentsReceivedPeerReviewDto {
 export interface LearningAssessmentsResolveInstructorReviewInput {
   idempotencyKey?: string | null;
   resolution?: LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1;
+  subjectId?: string | null;
+}
+
+/** Data model for Learning Assessments Resolve Peer Review Insufficiency Request. */
+export interface LearningAssessmentsResolvePeerReviewInsufficiencyInput {
+  idempotencyKey?: string | null;
+  resolution?: LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1;
 }
 
 /** Rubric criterion read shape. */
@@ -15965,6 +16319,13 @@ export interface LearningAssessmentsSaveCollectiveRuntimeDraftInput {
   response?: LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1;
 }
 
+/** Data model for Learning Assessments Save Collective Self Review Draft Request. */
+export interface LearningAssessmentsSaveCollectiveSelfReviewDraftInput {
+  evidence?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
+  expectedVersion?: number;
+  idempotencyKey?: string | null;
+}
+
 /** One criterion row of a rubric save request. */
 export interface LearningAssessmentsSaveRubricCriterionInput {
   description?: string | null;
@@ -15984,6 +16345,7 @@ export interface LearningAssessmentsStartAssessmentTestRunInput {
   personaDisplayName?: string | null;
   personaKey?: string | null;
   revisionId?: string;
+  subjects?: LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1[] | null;
 }
 
 /** Data model for Learning Assessments Start Collective Runtime Submission Request. */
@@ -16029,6 +16391,22 @@ export interface LearningAssessmentsSubmitAssessmentRuntimeInput {
   expectedDraftVersion?: number | null;
   idempotencyKey?: string | null;
   response?: LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1;
+  subjectId?: string | null;
+}
+
+/** Data model for Learning Assessments Submit Assessment Test Peer Review Request. */
+export interface LearningAssessmentsSubmitAssessmentTestPeerReviewInput {
+  feedback?: string | null;
+  rubricScores?: string | null;
+  score?: LearningGradingContractsScoreValue;
+}
+
+/** Data model for Learning Assessments Submit Self Review Request. */
+export interface LearningAssessmentsSubmitSelfReviewInput {
+  evidence?: LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1;
+  expectedDraftVersion?: number | null;
+  idempotencyKey?: string | null;
+  subjectId?: string | null;
 }
 
 /** One task item. Variant fields are null outside their type (GradingQueueItemDto precedent). */
@@ -23777,6 +24155,7 @@ export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<Comm
 export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
 export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
 export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventListItemDto>;
+export let CommerceBillingBillingWebhooksControllerRotateWebhookSecretInputSchema: z.ZodType<CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput>;
 export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
 export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
@@ -23796,6 +24175,7 @@ export let CommerceBillingPricingRuleImpactRowSchema: z.ZodType<CommerceBillingP
 export let CommerceBillingPromoCodeEffectivenessRowSchema: z.ZodType<CommerceBillingPromoCodeEffectivenessRow>;
 export let CommerceBillingStackingOutcomeRowSchema: z.ZodType<CommerceBillingStackingOutcomeRow>;
 export let CommerceBillingValidatePricingLedgerDriftInputSchema: z.ZodType<CommerceBillingValidatePricingLedgerDriftInput>;
+export let CommerceBillingWebhookSecretRotationResultSchema: z.ZodType<CommerceBillingWebhookSecretRotationResult>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
@@ -23865,6 +24245,10 @@ export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<Commerce
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
+export let CommercePaymentsGatewayCircuitSnapshotSchema: z.ZodType<CommercePaymentsGatewayCircuitSnapshot>;
+export let CommercePaymentsGatewayCircuitStateSchema: z.ZodType<CommercePaymentsGatewayCircuitState>;
+export let CommercePaymentsGatewayMetricsReportSchema: z.ZodType<CommercePaymentsGatewayMetricsReport>;
+export let CommercePaymentsGatewayWindowMetricsSchema: z.ZodType<CommercePaymentsGatewayWindowMetrics>;
 export let CommercePaymentsGiftPublicViewSchema: z.ZodType<CommercePaymentsGiftPublicView>;
 export let CommercePaymentsGiftPurchaseResultSchema: z.ZodType<CommercePaymentsGiftPurchaseResult>;
 export let CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema: z.ZodType<CommercePaymentsGiftsControllerPurchaseGiftRequestBody>;
@@ -23919,7 +24303,9 @@ export let CommercePaymentsReferralSignupResultSchema: z.ZodType<CommercePayment
 export let CommercePaymentsReferralStatsSchema: z.ZodType<CommercePaymentsReferralStats>;
 export let CommercePaymentsReferralStatusSchema: z.ZodType<CommercePaymentsReferralStatus>;
 export let CommercePaymentsReferrerLeaderboardEntrySchema: z.ZodType<CommercePaymentsReferrerLeaderboardEntry>;
+export let CommercePaymentsRefundAnalyticsReportSchema: z.ZodType<CommercePaymentsRefundAnalyticsReport>;
 export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
+export let CommercePaymentsRefundDailyBucketSchema: z.ZodType<CommercePaymentsRefundDailyBucket>;
 export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
 export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
 export let CommercePaymentsRefundRecordSchema: z.ZodType<CommercePaymentsRefundRecord>;
@@ -24089,15 +24475,21 @@ export let ComplianceAuditAuditActivityBucketOutputSchema: z.ZodType<ComplianceA
 export let ComplianceAuditAuditActivityBucketSizeSchema: z.ZodType<ComplianceAuditAuditActivityBucketSize>;
 export let ComplianceAuditAuditActorContextSchema: z.ZodType<ComplianceAuditAuditActorContext>;
 export let ComplianceAuditAuditCategorySchema: z.ZodType<ComplianceAuditAuditCategory>;
+export let ComplianceAuditAuditConditionNodeSchema: z.ZodType<ComplianceAuditAuditConditionNode>;
+export let ComplianceAuditAuditConditionNodeKindSchema: z.ZodType<ComplianceAuditAuditConditionNodeKind>;
+export let ComplianceAuditAuditConditionSearchInputSchema: z.ZodType<ComplianceAuditAuditConditionSearchInput>;
 export let ComplianceAuditAuditDateRangeSearchOutputSchema: z.ZodType<ComplianceAuditAuditDateRangeSearchOutput>;
 export let ComplianceAuditAuditEventContextSchema: z.ZodType<ComplianceAuditAuditEventContext>;
 export let ComplianceAuditAuditExportHistoryOutputSchema: z.ZodType<ComplianceAuditAuditExportHistoryOutput>;
 export let ComplianceAuditAuditExportInputSchema: z.ZodType<ComplianceAuditAuditExportInput>;
 export let ComplianceAuditAuditExportProgressOutputSchema: z.ZodType<ComplianceAuditAuditExportProgressOutput>;
+export let ComplianceAuditAuditFilterComparisonSchema: z.ZodType<ComplianceAuditAuditFilterComparison>;
+export let ComplianceAuditAuditFilterFieldSchema: z.ZodType<ComplianceAuditAuditFilterField>;
 export let ComplianceAuditAuditJsonExportDocumentSchema: z.ZodType<ComplianceAuditAuditJsonExportDocument>;
 export let ComplianceAuditAuditJsonExportPaginationSchema: z.ZodType<ComplianceAuditAuditJsonExportPagination>;
 export let ComplianceAuditAuditJsonExportRecordSchema: z.ZodType<ComplianceAuditAuditJsonExportRecord>;
 export let ComplianceAuditAuditLogDtoSchema: z.ZodType<ComplianceAuditAuditLogDto>;
+export let ComplianceAuditAuditLogicalOperatorSchema: z.ZodType<ComplianceAuditAuditLogicalOperator>;
 export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLogOutput>;
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
@@ -24643,6 +25035,7 @@ export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<Iden
 export let IdentityAuthorizationGrantContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationGrantContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationGraphExportFormatSchema: z.ZodType<IdentityAuthorizationGraphExportFormat>;
+export let IdentityAuthorizationHasGlobalPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasGlobalPermissionOutput>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationHistoricalInheritanceEdgeSchema: z.ZodType<IdentityAuthorizationHistoricalInheritanceEdge>;
 export let IdentityAuthorizationHistoricalResourceGrantSchema: z.ZodType<IdentityAuthorizationHistoricalResourceGrant>;
@@ -24910,11 +25303,13 @@ export let LearningAssessmentsAssessmentSubmissionDtoSchema: z.ZodType<LearningA
 export let LearningAssessmentsAssessmentTypeSchema: z.ZodType<LearningAssessmentsAssessmentType>;
 export let LearningAssessmentsAssignAssessmentGroupInputSchema: z.ZodType<LearningAssessmentsAssignAssessmentGroupInput>;
 export let LearningAssessmentsCanAttemptOutputSchema: z.ZodType<LearningAssessmentsCanAttemptOutput>;
+export let LearningAssessmentsClaimAssessmentTestPeerReviewInputSchema: z.ZodType<LearningAssessmentsClaimAssessmentTestPeerReviewInput>;
 export let LearningAssessmentsCourseAssessmentAnalyticsDtoSchema: z.ZodType<LearningAssessmentsCourseAssessmentAnalyticsDto>;
 export let LearningAssessmentsCreateAssessmentGroupInputSchema: z.ZodType<LearningAssessmentsCreateAssessmentGroupInput>;
 export let LearningAssessmentsCreateAssessmentInputSchema: z.ZodType<LearningAssessmentsCreateAssessmentInput>;
 export let LearningAssessmentsCreateGroupInputSchema: z.ZodType<LearningAssessmentsCreateGroupInput>;
 export let LearningAssessmentsCreateGroupSetInputSchema: z.ZodType<LearningAssessmentsCreateGroupSetInput>;
+export let LearningAssessmentsExtendPeerReviewWindowInputSchema: z.ZodType<LearningAssessmentsExtendPeerReviewWindowInput>;
 export let LearningAssessmentsGradeResultReleaseOutputSchema: z.ZodType<LearningAssessmentsGradeResultReleaseOutput>;
 export let LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult>;
 export let LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResult>;
@@ -24933,27 +25328,41 @@ export let LearningAssessmentsGradingContractsContentCompletionModeSchema: z.Zod
 export let LearningAssessmentsGradingContractsGradeItemResultV1Schema: z.ZodType<LearningAssessmentsGradingContractsGradeItemResultV1>;
 export let LearningAssessmentsGradingContractsGradeItemStateSchema: z.ZodType<LearningAssessmentsGradingContractsGradeItemState>;
 export let LearningAssessmentsGradingContractsGradeResultV1Schema: z.ZodType<LearningAssessmentsGradingContractsGradeResultV1>;
+export let LearningAssessmentsGradingContractsGradeRoundStatusV1Schema: z.ZodType<LearningAssessmentsGradingContractsGradeRoundStatusV1>;
 export let LearningAssessmentsGradingContractsResultReleaseModeSchema: z.ZodType<LearningAssessmentsGradingContractsResultReleaseMode>;
 export let LearningAssessmentsGradingContractsReviewExecutionContextSchema: z.ZodType<LearningAssessmentsGradingContractsReviewExecutionContext>;
 export let LearningAssessmentsGradingContractsReviewMethodSchema: z.ZodType<LearningAssessmentsGradingContractsReviewMethod>;
 export let LearningAssessmentsGradingContractsReviewMethodsSchema: z.ZodType<LearningAssessmentsGradingContractsReviewMethods>;
+export let LearningAssessmentsGradingContractsReviewStageStatusV1Schema: z.ZodType<LearningAssessmentsGradingContractsReviewStageStatusV1>;
 export let LearningAssessmentsGradingPersistenceAssessmentTestRunStatusSchema: z.ZodType<LearningAssessmentsGradingPersistenceAssessmentTestRunStatus>;
+export let LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatusSchema: z.ZodType<LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus>;
+export let LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePeerReviewClaimStatus>;
 export let LearningAssessmentsGradingPersistencePersistedGradeRoundStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePersistedGradeRoundStatus>;
 export let LearningAssessmentsGradingPersistencePersistedGradingExecutionStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus>;
+export let LearningAssessmentsGradingPersistencePersistedReviewStageStatusSchema: z.ZodType<LearningAssessmentsGradingPersistencePersistedReviewStageStatus>;
 export let LearningAssessmentsGradingQueueAssessmentDtoSchema: z.ZodType<LearningAssessmentsGradingQueueAssessmentDto>;
 export let LearningAssessmentsGradingQueueDtoSchema: z.ZodType<LearningAssessmentsGradingQueueDto>;
 export let LearningAssessmentsGradingQueueItemDtoSchema: z.ZodType<LearningAssessmentsGradingQueueItemDto>;
 export let LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1>;
 export let LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1>;
+export let LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1>;
+export let LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1>;
 export let LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1>;
+export let LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand>;
 export let LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1>;
 export let LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1>;
 export let LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1>;
+export let LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1>;
 export let LearningAssessmentsGradingRuntimeGradeRoundViewV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeGradeRoundViewV1>;
 export let LearningAssessmentsGradingRuntimeInstructorItemResolutionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeInstructorItemResolutionV1>;
 export let LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1>;
+export let LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1Schema: z.ZodType<LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1>;
 export let LearningAssessmentsGradingRuntimeRegradeExecutionCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeRegradeExecutionCommand>;
 export let LearningAssessmentsGradingRuntimeReleaseGradeResultCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeReleaseGradeResultCommand>;
+export let LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommandSchema: z.ZodType<LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand>;
+export let LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1>;
+export let LearningAssessmentsGradingRuntimeSelfReviewItemV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeSelfReviewItemV1>;
+export let LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1Schema: z.ZodType<LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1>;
 export let LearningAssessmentsGroupDetailDtoSchema: z.ZodType<LearningAssessmentsGroupDetailDto>;
 export let LearningAssessmentsGroupDtoSchema: z.ZodType<LearningAssessmentsGroupDto>;
 export let LearningAssessmentsGroupMemberDtoSchema: z.ZodType<LearningAssessmentsGroupMemberDto>;
@@ -24969,13 +25378,17 @@ export let LearningAssessmentsLearnerAssessmentSubmissionDtoSchema: z.ZodType<Le
 export let LearningAssessmentsLearnerInteractiveVideoAssessmentCueDtoSchema: z.ZodType<LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto>;
 export let LearningAssessmentsLinkInteractiveVideoCueInputSchema: z.ZodType<LearningAssessmentsLinkInteractiveVideoCueInput>;
 export let LearningAssessmentsPeerReviewClaimDtoSchema: z.ZodType<LearningAssessmentsPeerReviewClaimDto>;
-export let LearningAssessmentsPeerReviewStatusSchema: z.ZodType<LearningAssessmentsPeerReviewStatus>;
+export let LearningAssessmentsPeerReviewClaimResultSchema: z.ZodType<LearningAssessmentsPeerReviewClaimResult>;
+export let LearningAssessmentsPeerReviewClaimViewSchema: z.ZodType<LearningAssessmentsPeerReviewClaimView>;
 export let LearningAssessmentsPeerReviewSubmitInputSchema: z.ZodType<LearningAssessmentsPeerReviewSubmitInput>;
+export let LearningAssessmentsReassignPeerReviewClaimInputSchema: z.ZodType<LearningAssessmentsReassignPeerReviewClaimInput>;
 export let LearningAssessmentsReceivedPeerReviewDtoSchema: z.ZodType<LearningAssessmentsReceivedPeerReviewDto>;
 export let LearningAssessmentsResolveInstructorReviewInputSchema: z.ZodType<LearningAssessmentsResolveInstructorReviewInput>;
+export let LearningAssessmentsResolvePeerReviewInsufficiencyInputSchema: z.ZodType<LearningAssessmentsResolvePeerReviewInsufficiencyInput>;
 export let LearningAssessmentsRubricCriterionDtoSchema: z.ZodType<LearningAssessmentsRubricCriterionDto>;
 export let LearningAssessmentsRubricDtoSchema: z.ZodType<LearningAssessmentsRubricDto>;
 export let LearningAssessmentsSaveCollectiveRuntimeDraftInputSchema: z.ZodType<LearningAssessmentsSaveCollectiveRuntimeDraftInput>;
+export let LearningAssessmentsSaveCollectiveSelfReviewDraftInputSchema: z.ZodType<LearningAssessmentsSaveCollectiveSelfReviewDraftInput>;
 export let LearningAssessmentsSaveRubricCriterionInputSchema: z.ZodType<LearningAssessmentsSaveRubricCriterionInput>;
 export let LearningAssessmentsSaveRubricInputSchema: z.ZodType<LearningAssessmentsSaveRubricInput>;
 export let LearningAssessmentsStartAssessmentTestRunInputSchema: z.ZodType<LearningAssessmentsStartAssessmentTestRunInput>;
@@ -24987,6 +25400,8 @@ export let LearningAssessmentsSubmissionModalitySchema: z.ZodType<LearningAssess
 export let LearningAssessmentsSubmissionStatusSchema: z.ZodType<LearningAssessmentsSubmissionStatus>;
 export let LearningAssessmentsSubmitAssessmentInputSchema: z.ZodType<LearningAssessmentsSubmitAssessmentInput>;
 export let LearningAssessmentsSubmitAssessmentRuntimeInputSchema: z.ZodType<LearningAssessmentsSubmitAssessmentRuntimeInput>;
+export let LearningAssessmentsSubmitAssessmentTestPeerReviewInputSchema: z.ZodType<LearningAssessmentsSubmitAssessmentTestPeerReviewInput>;
+export let LearningAssessmentsSubmitSelfReviewInputSchema: z.ZodType<LearningAssessmentsSubmitSelfReviewInput>;
 export let LearningAssessmentsTaskItemDtoSchema: z.ZodType<LearningAssessmentsTaskItemDto>;
 export let LearningAssessmentsTasksDtoSchema: z.ZodType<LearningAssessmentsTasksDto>;
 export let LearningAssessmentsUpdateAssessmentGroupInputSchema: z.ZodType<LearningAssessmentsUpdateAssessmentGroupInput>;
@@ -27268,6 +27683,12 @@ CommerceBillingBillingWebhookEventListItemDtoSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput. Request body for the webhook signing-secret rotation. */
+CommerceBillingBillingWebhooksControllerRotateWebhookSecretInputSchema = z.object({
+  newSecret: z.string().nullable().optional(),
+  providerKey: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingBillingWebhookSecurityAlertDto. A security alert surfaced from the Compliance.Audit pipeline. */
 CommerceBillingBillingWebhookSecurityAlertDtoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -27488,6 +27909,15 @@ CommerceBillingValidatePricingLedgerDriftInputSchema = z.object({
   fromUtc: z.string().datetime().nullable().optional(),
   sampleSize: z.number().int().optional(),
   toUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingWebhookSecretRotationResult. Result of a recorded webhook signing-secret rotation. Never contains secret material. */
+CommerceBillingWebhookSecretRotationResultSchema = z.object({
+  previousSecretStillAccepted: z.boolean().optional(),
+  previousSecretValidUntilUtc: z.string().datetime().optional(),
+  providerKey: z.string().nullable().optional(),
+  rotatedAtUtc: z.string().datetime().optional(),
+  rotationId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrderChargeState. OpenAPI schema for Commerce Order Charge State. */
@@ -28180,6 +28610,40 @@ CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', '
 /** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
 CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
 
+/** Zod schema for CommercePaymentsGatewayCircuitSnapshot. Health snapshot of one gateway circuit (issue #413). */
+CommercePaymentsGatewayCircuitSnapshotSchema = z.object({
+  consecutiveFailures: z.number().int().optional(),
+  failureThreshold: z.number().int().optional(),
+  openedAtUtc: z.string().datetime().nullable().optional(),
+  providerId: z.string().nullable().optional(),
+  state: z.lazy(() => CommercePaymentsGatewayCircuitStateSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsGatewayCircuitState. Circuit state of one payment gateway. */
+CommercePaymentsGatewayCircuitStateSchema = z.enum(['Closed', 'Open', 'HalfOpen']);
+
+/** Zod schema for CommercePaymentsGatewayMetricsReport. Combined read model of one reporting pass: rolling-window aggregates per gateway
+plus the current circuit-breaker snapshot of every known gateway. */
+CommercePaymentsGatewayMetricsReportSchema = z.object({
+  circuitBreakers: z.array(z.lazy(() => CommercePaymentsGatewayCircuitSnapshotSchema)).nullable(),
+  generatedAtUtc: z.string().datetime(),
+  windows: z.array(z.lazy(() => CommercePaymentsGatewayWindowMetricsSchema)).nullable(),
+});
+
+/** Zod schema for CommercePaymentsGatewayWindowMetrics. Aggregated performance of one gateway over one rolling window, computed from
+persisted payment records (issue #413). */
+CommercePaymentsGatewayWindowMetricsSchema = z.object({
+  attempts: z.number().int().optional(),
+  averageProcessingLatencyMs: z.number().nullable().optional(),
+  failed: z.number().int().optional(),
+  providerId: z.string().nullable().optional(),
+  sinceUtc: z.string().datetime().optional(),
+  succeeded: z.number().int().optional(),
+  successRate: z.number().optional(),
+  unresolved: z.number().int().optional(),
+  window: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsGiftPublicView. Public (non-secret) view of a gift for the redemption preview endpoint. */
 CommercePaymentsGiftPublicViewSchema = z.object({
   id: z.string().uuid().optional(),
@@ -28401,6 +28865,7 @@ CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
 /** Zod schema for CommercePaymentsPaymentResult. Result of payment processing */
 CommercePaymentsPaymentResultSchema = z.object({
   amount: z.lazy(() => MoneySchema).optional(),
+  creditApplied: z.number().nullable().optional(),
   failureReason: z.string().nullable().optional(),
   invoiceId: z.string().uuid().nullable().optional(),
   paymentId: z.string().nullable().optional(),
@@ -28798,12 +29263,67 @@ CommercePaymentsReferrerLeaderboardEntrySchema = z.object({
   rewardedReferrals: z.number().int().optional(),
 });
 
+/** Zod schema for CommercePaymentsRefundAnalyticsReport. Combined refund/dispute analytics read model (issue #419 follow-up). */
+CommercePaymentsRefundAnalyticsReportSchema = z.object({
+  averageDisputeResolutionHours: z.number().nullable().optional(),
+  completedRefundAmountByCurrency: z.record(z.string(), z.number()).nullable(),
+  disputeCountByStatus: z
+    .object({
+      Cancelled: z.number().int(),
+      Lost: z.number().int(),
+      PendingCustomerResponse: z.number().int(),
+      PendingMerchantResponse: z.number().int(),
+      Resolved: z.number().int(),
+      Submitted: z.number().int(),
+      UnderReview: z.number().int(),
+      Won: z.number().int(),
+    })
+    .nullable(),
+  disputeResolutionRate: z.number().nullable().optional(),
+  disputesLost: z.number().int(),
+  disputesWon: z.number().int(),
+  disputeWinRate: z.number().nullable().optional(),
+  fromUtc: z.string().datetime(),
+  refundAmountByStatus: z
+    .object({
+      Approved: z.number(),
+      Completed: z.number(),
+      Failed: z.number(),
+      Pending: z.number(),
+      Processing: z.number(),
+      Rejected: z.number(),
+    })
+    .nullable(),
+  refundCountByCurrency: z.record(z.string(), z.number().int()).nullable(),
+  refundCountByStatus: z
+    .object({
+      Approved: z.number().int(),
+      Completed: z.number().int(),
+      Failed: z.number().int(),
+      Pending: z.number().int(),
+      Processing: z.number().int(),
+      Rejected: z.number().int(),
+    })
+    .nullable(),
+  refundsByDay: z.array(z.lazy(() => CommercePaymentsRefundDailyBucketSchema)).nullable(),
+  totalDisputeCount: z.number().int(),
+  totalRefundCount: z.number().int(),
+  toUtc: z.string().datetime(),
+});
+
 /** Zod schema for CommercePaymentsRefundApprovalQueuePage. Paged read model for the pending refund-approval queue. */
 CommercePaymentsRefundApprovalQueuePageSchema = z.object({
   items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
   page: z.number().int(),
   pageSize: z.number().int(),
   totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsRefundDailyBucket. One UTC-day bucket of the refund period breakdown. */
+CommercePaymentsRefundDailyBucketSchema = z.object({
+  completedAmount: z.number().optional(),
+  count: z.number().int().optional(),
+  date: z.string().datetime().optional(),
 });
 
 /** Zod schema for CommercePaymentsRefundDecisionResult. Result of an approval or rejection decision on a refund request. */
@@ -30800,6 +31320,33 @@ ComplianceAuditAuditCategorySchema = z.enum([
   'Privacy',
 ]);
 
+/** Zod schema for ComplianceAuditAuditConditionNode. A node of a nested audit log filter condition tree. A node is either a group that
+combines child nodes with a boolean operator or a field node that applies a single
+comparison to an audit field. */
+ComplianceAuditAuditConditionNodeSchema = z.object({
+  children: z
+    .array(z.lazy(() => ComplianceAuditAuditConditionNodeSchema))
+    .nullable()
+    .optional(),
+  comparison: z.lazy(() => ComplianceAuditAuditFilterComparisonSchema).optional(),
+  field: z.lazy(() => ComplianceAuditAuditFilterFieldSchema).optional(),
+  kind: z.lazy(() => ComplianceAuditAuditConditionNodeKindSchema).optional(),
+  operator: z.lazy(() => ComplianceAuditAuditLogicalOperatorSchema).optional(),
+  value: z.string().nullable().optional(),
+  values: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditConditionNodeKind. Defines the kind of a condition tree node. */
+ComplianceAuditAuditConditionNodeKindSchema = z.enum(['Group', 'Field']);
+
+/** Zod schema for ComplianceAuditAuditConditionSearchInput. Request to search audit log entries with a nested condition tree. */
+ComplianceAuditAuditConditionSearchInputSchema = z.object({
+  condition: z.lazy(() => ComplianceAuditAuditConditionNodeSchema),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditDateRangeSearchOutput. Data model for Compliance Audit Audit Date Range Search Response. */
 ComplianceAuditAuditDateRangeSearchOutputSchema = z.object({
   activity: z
@@ -30839,6 +31386,7 @@ ComplianceAuditAuditExportInputSchema = z.object({
   actionType: z.string().nullable().optional(),
   category: z.lazy(() => ComplianceAuditAuditCategorySchema).optional(),
   columns: z.array(z.string()).nullable().optional(),
+  condition: z.lazy(() => ComplianceAuditAuditConditionNodeSchema).optional(),
   endDate: z.string().datetime().nullable().optional(),
   ipAddress: z.string().nullable().optional(),
   pageNumber: z.number().int().min(1).max(2147483647).nullable().optional(),
@@ -30863,6 +31411,23 @@ ComplianceAuditAuditExportProgressOutputSchema = z.object({
   totalRecords: z.number().int().optional(),
   updatedAt: z.string().datetime().optional(),
 });
+
+/** Zod schema for ComplianceAuditAuditFilterComparison. The comparison applied by a field node. */
+ComplianceAuditAuditFilterComparisonSchema = z.enum(['Equals', 'NotEquals', 'In', 'GreaterThanOrEqual', 'LessThanOrEqual']);
+
+/** Zod schema for ComplianceAuditAuditFilterField. The audit log field targeted by a field node. */
+ComplianceAuditAuditFilterFieldSchema = z.enum([
+  'UserId',
+  'ActionType',
+  'ResourceType',
+  'ResourceId',
+  'Category',
+  'RiskLevel',
+  'Success',
+  'CreatedAt',
+  'IpAddress',
+  'SearchText',
+]);
 
 /** Zod schema for ComplianceAuditAuditJsonExportDocument. Data model for Compliance Audit Audit Json Export Document. */
 ComplianceAuditAuditJsonExportDocumentSchema = z.object({
@@ -30915,6 +31480,9 @@ ComplianceAuditAuditLogDtoSchema = z.object({
   userAgent: z.string().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
 });
+
+/** Zod schema for ComplianceAuditAuditLogicalOperator. Defines how a group node combines its children. */
+ComplianceAuditAuditLogicalOperatorSchema = z.enum(['And', 'Or', 'Not']);
 
 /** Zod schema for ComplianceAuditAuditLogOutput. Data model for Compliance Audit Audit Log Response. */
 ComplianceAuditAuditLogOutputSchema = z.object({
@@ -36305,8 +36873,12 @@ IdentityAuthorizationGetResourceUsersOutputSchema = z.object({
 IdentityAuthorizationGetTenantPermissionsOutputSchema = z.object({
   isSystemAdmin: z.boolean().optional(),
   isTenantAdmin: z.boolean().optional(),
+  page: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
   permissions: z.array(z.string()).nullable(),
   tenantId: z.string().uuid(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
   userId: z.string().uuid(),
 });
 
@@ -36335,6 +36907,14 @@ IdentityAuthorizationGrantTenantPermissionCommandSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationGraphExportFormat. Graph export formats */
 IdentityAuthorizationGraphExportFormatSchema = z.enum(['None', 'DOT', 'JSON', 'GraphML']);
+
+/** Zod schema for IdentityAuthorizationHasGlobalPermissionOutput. Response of a global-permission validation. */
+IdentityAuthorizationHasGlobalPermissionOutputSchema = z.object({
+  denialReason: z.string().nullable().optional(),
+  hasPermission: z.boolean(),
+  permission: z.string().nullable(),
+  source: z.string().nullable(),
+});
 
 /** Zod schema for IdentityAuthorizationHasPermissionOutput. Response indicating whether the user has the requested permission. */
 IdentityAuthorizationHasPermissionOutputSchema = z.object({
@@ -37007,6 +37587,10 @@ IdentityAuthorizationPermissionTypeSchema = z.enum([
   'SystemConfiguration',
   'BackupRestore',
   'DataMigration',
+  'EditMetadata',
+  'Maintenance',
+  'Monitoring',
+  'Deployment',
 ]);
 
 /** Zod schema for IdentityAuthorizationPermissionUpdateResult. Result of updating permissions. */
@@ -39306,12 +39890,14 @@ LearningAssessmentsAnonymousReviewSubmissionDtoSchema = z.object({
   assessment: z.lazy(() => LearningAssessmentsAnonymousReviewAssessmentDtoSchema).optional(),
   attemptNumber: z.number().int().optional(),
   codePayload: z.string().nullable().optional(),
+  deliveryCanonicalJson: z.string().nullable().optional(),
   filePayload: z.string().nullable().optional(),
   mediaPayload: z.string().nullable().optional(),
   projectPayload: z.string().nullable().optional(),
+  responseEnvelopeCanonicalJson: z.string().nullable().optional(),
   reviewId: z.string().uuid().optional(),
   rubric: z.lazy(() => LearningAssessmentsAnonymousReviewRubricDtoSchema).optional(),
-  status: z.lazy(() => LearningAssessmentsPeerReviewStatusSchema).optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema).optional(),
   submissionStatus: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
   submittedAt: z.string().datetime().nullable().optional(),
   textPayload: z.string().nullable().optional(),
@@ -39446,6 +40032,11 @@ LearningAssessmentsCanAttemptOutputSchema = z.object({
   currentAttemptCount: z.number().int().optional(),
 });
 
+/** Zod schema for LearningAssessmentsClaimAssessmentTestPeerReviewInput. Data model for Learning Assessments Claim Assessment Test Peer Review Request. */
+LearningAssessmentsClaimAssessmentTestPeerReviewInputSchema = z.object({
+  subjectId: z.string().uuid().optional(),
+});
+
 /** Zod schema for LearningAssessmentsCourseAssessmentAnalyticsDto. Data model for Learning Assessments Course Assessment Analytics Dto. */
 LearningAssessmentsCourseAssessmentAnalyticsDtoSchema = z.object({
   assessmentCount: z.number().int().optional(),
@@ -39509,6 +40100,14 @@ LearningAssessmentsCreateGroupInputSchema = z.object({
 /** Zod schema for LearningAssessmentsCreateGroupSetInput. Request to create a group set. */
 LearningAssessmentsCreateGroupSetInputSchema = z.object({
   name: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsExtendPeerReviewWindowInput. Data model for Learning Assessments Extend Peer Review Window Request. */
+LearningAssessmentsExtendPeerReviewWindowInputSchema = z.object({
+  deadlineAt: z.string().datetime().optional(),
+  expectedStageVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsGradeResultReleaseOutput. Data model for Learning Assessments Grade Result Release Response. */
@@ -39688,6 +40287,16 @@ LearningAssessmentsGradingContractsGradeResultV1Schema = z.object({
   state: z.string().nullable().optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingContractsGradeRoundStatusV1. OpenAPI schema for Learning Assessments Grading Contracts Grade Round Status V1. */
+LearningAssessmentsGradingContractsGradeRoundStatusV1Schema = z.enum([
+  'pending',
+  'running',
+  'awaiting-evidence',
+  'awaiting-instructor-resolution',
+  'failed',
+  'finalized',
+]);
+
 /** Zod schema for LearningAssessmentsGradingContractsResultReleaseMode. OpenAPI schema for Learning Assessments Grading Contracts Result Release Mode. */
 LearningAssessmentsGradingContractsResultReleaseModeSchema = z.enum(['immediate', 'manual', 'scheduled']);
 
@@ -39711,8 +40320,24 @@ LearningAssessmentsGradingContractsReviewMethodsSchema = z.union([
   z.literal(24),
 ]);
 
+/** Zod schema for LearningAssessmentsGradingContractsReviewStageStatusV1. OpenAPI schema for Learning Assessments Grading Contracts Review Stage Status V1. */
+LearningAssessmentsGradingContractsReviewStageStatusV1Schema = z.enum([
+  'pending',
+  'running',
+  'awaiting-evidence',
+  'awaiting-instructor-resolution',
+  'completed',
+  'failed',
+]);
+
 /** Zod schema for LearningAssessmentsGradingPersistenceAssessmentTestRunStatus. OpenAPI schema for Learning Assessments Grading Persistence Assessment Test Run Status. */
 LearningAssessmentsGradingPersistenceAssessmentTestRunStatusSchema = z.enum(['Draft', 'Running', 'Completed', 'Cancelled']);
+
+/** Zod schema for LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatus. OpenAPI schema for Learning Assessments Grading Persistence Grade Result Release Schedule Status. */
+LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatusSchema = z.enum(['Scheduled', 'Cancelled', 'Released']);
+
+/** Zod schema for LearningAssessmentsGradingPersistencePeerReviewClaimStatus. OpenAPI schema for Learning Assessments Grading Persistence Peer Review Claim Status. */
+LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema = z.enum(['Assigned', 'Submitted', 'Expired', 'Cancelled']);
 
 /** Zod schema for LearningAssessmentsGradingPersistencePersistedGradeRoundStatus. OpenAPI schema for Learning Assessments Grading Persistence Persisted Grade Round Status. */
 LearningAssessmentsGradingPersistencePersistedGradeRoundStatusSchema = z.enum([
@@ -39726,6 +40351,16 @@ LearningAssessmentsGradingPersistencePersistedGradeRoundStatusSchema = z.enum([
 
 /** Zod schema for LearningAssessmentsGradingPersistencePersistedGradingExecutionStatus. OpenAPI schema for Learning Assessments Grading Persistence Persisted Grading Execution Status. */
 LearningAssessmentsGradingPersistencePersistedGradingExecutionStatusSchema = z.enum(['Pending', 'Running', 'AwaitingReview', 'Completed', 'Failed']);
+
+/** Zod schema for LearningAssessmentsGradingPersistencePersistedReviewStageStatus. OpenAPI schema for Learning Assessments Grading Persistence Persisted Review Stage Status. */
+LearningAssessmentsGradingPersistencePersistedReviewStageStatusSchema = z.enum([
+  'Pending',
+  'Running',
+  'AwaitingEvidence',
+  'AwaitingInstructorResolution',
+  'Completed',
+  'Failed',
+]);
 
 /** Zod schema for LearningAssessmentsGradingQueueAssessmentDto. Assessment summary fields the SpeedGrader header and grading panel need. */
 LearningAssessmentsGradingQueueAssessmentDtoSchema = z.object({
@@ -39751,13 +40386,28 @@ LearningAssessmentsGradingQueueDtoSchema = z.object({
   total: z.number().int().optional(),
 });
 
-/** Zod schema for LearningAssessmentsGradingQueueItemDto. One navigable queue entry = one student or group. SubmissionId is the row the grader opens:
-the target's LATEST attempt's row (the single row for individuals, the canonical Min(Id)
-row for groups; CanonicalSubmissionId mirrors it so clients can address group items by
-their canonical id). AssignmentScore/AssignmentPassed are the assignment-level grade from
+/** Zod schema for LearningAssessmentsGradingQueueItemDto. One navigable queue entry = one student or group. SubmissionId is the target's latest
+attempt and CanonicalSubmissionId mirrors it for existing clients. AssignmentScore and
+AssignmentPassed are the assignment-level grade from
 the target's LATEST GRADED attempt — they persist across resubmissions until a newer
-attempt is graded (one grade per assignment; regrades land on a fresh submission). */
+attempt is graded (one grade per assignment; regrades land on a fresh submission).
+When the submission has a grading execution, the active round/stage fields are the
+authoritative operational state and RequiresStaffReview drives the instructor queue. */
 LearningAssessmentsGradingQueueItemDtoSchema = z.object({
+  activeGradeRoundId: z.string().uuid().nullable().optional(),
+  activeGradeRoundStatus: z
+    .lazy(() => LearningAssessmentsGradingContractsGradeRoundStatusV1Schema)
+    .nullable()
+    .optional(),
+  activeReviewMethod: z
+    .lazy(() => LearningAssessmentsGradingContractsReviewMethodSchema)
+    .nullable()
+    .optional(),
+  activeReviewStageId: z.string().uuid().nullable().optional(),
+  activeReviewStageStatus: z
+    .lazy(() => LearningAssessmentsGradingContractsReviewStageStatusV1Schema)
+    .nullable()
+    .optional(),
   assignmentPassed: z.boolean().nullable().optional(),
   assignmentScore: z
     .lazy(() => LearningGradingContractsScoreValueSchema)
@@ -39772,6 +40422,7 @@ LearningAssessmentsGradingQueueItemDtoSchema = z.object({
   isGroup: z.boolean().optional(),
   isLate: z.boolean().optional(),
   memberNames: z.array(z.string()).nullable().optional(),
+  requiresStaffReview: z.boolean().optional(),
   status: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
   submissionId: z.string().uuid().optional(),
   submittedAt: z.string().datetime().nullable().optional(),
@@ -39811,6 +40462,7 @@ LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1Schema = z.object({
   learnerVisibleResult: z.lazy(() => LearningAssessmentsGradingContractsGradeResultV1Schema).optional(),
   released: z.boolean().optional(),
   requiresInstructorReview: z.boolean().optional(),
+  selfReview: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1Schema).optional(),
   status: z.lazy(() => LearningAssessmentsGradingPersistencePersistedGradingExecutionStatusSchema).optional(),
   submittedResponse: z.lazy(() => LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1Schema).optional(),
 });
@@ -39833,6 +40485,20 @@ LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1Schema = z.object({
   version: z.number().int().optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1. Data model for Learning Assessments Grading Runtime Assessment Test Run Subject Command V1. */
+LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1Schema = z.object({
+  personaDisplayName: z.string().nullable().optional(),
+  personaKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1. Data model for Learning Assessments Grading Runtime Assessment Test Run Subject View V1. */
+LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1Schema = z.object({
+  execution: z.lazy(() => LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1Schema).optional(),
+  personaDisplayName: z.string().nullable().optional(),
+  personaKey: z.string().nullable().optional(),
+  subjectId: z.string().uuid().optional(),
+});
+
 /** Zod schema for LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1. Data model for Learning Assessments Grading Runtime Assessment Test Run View V1. */
 LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema = z.object({
   assessmentId: z.string().uuid().optional(),
@@ -39844,7 +40510,20 @@ LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema = z.object({
   personaKey: z.string().nullable().optional(),
   readyForPublication: z.boolean().optional(),
   status: z.lazy(() => LearningAssessmentsGradingPersistenceAssessmentTestRunStatusSchema).optional(),
+  subjects: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectViewV1Schema))
+    .nullable()
+    .optional(),
   testRunId: z.string().uuid().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand. Data model for Learning Assessments Grading Runtime Cancel Scheduled Grade Result Release Command. */
+LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommandSchema = z.object({
+  expectedRoundId: z.string().uuid().optional(),
+  expectedScheduleVersion: z.number().int().optional(),
+  expectedSubmissionVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1. Data model for Learning Assessments Grading Runtime Gradebook Assessment Projection V1. */
@@ -39882,6 +40561,17 @@ LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1Schema = z.object({
   weightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1. Data model for Learning Assessments Grading Runtime Grade Result Release Schedule View V1. */
+LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema = z.object({
+  cancelledAt: z.string().datetime().nullable().optional(),
+  gradeRoundId: z.string().uuid().optional(),
+  releasedAt: z.string().datetime().nullable().optional(),
+  scheduledFor: z.string().datetime().optional(),
+  scheduleId: z.string().uuid().optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistenceGradeResultReleaseScheduleStatusSchema).optional(),
+  version: z.number().int().optional(),
+});
+
 /** Zod schema for LearningAssessmentsGradingRuntimeGradeRoundViewV1. Data model for Learning Assessments Grading Runtime Grade Round View V1. */
 LearningAssessmentsGradingRuntimeGradeRoundViewV1Schema = z.object({
   finalizedAt: z.string().datetime().nullable().optional(),
@@ -39890,6 +40580,7 @@ LearningAssessmentsGradingRuntimeGradeRoundViewV1Schema = z.object({
   reasonDetail: z.string().nullable().optional(),
   released: z.boolean().optional(),
   releasedAt: z.string().datetime().nullable().optional(),
+  releaseSchedule: z.lazy(() => LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema).optional(),
   result: z.lazy(() => LearningAssessmentsGradingContractsGradeResultV1Schema).optional(),
   roundId: z.string().uuid().optional(),
   roundNumber: z.number().int().optional(),
@@ -39922,6 +40613,17 @@ LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1Schema = z.object({
   schemaVersion: z.number().int().optional(),
 });
 
+/** Zod schema for LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1. Data model for Learning Assessments Grading Runtime Peer Review Insufficiency Resolution V1. */
+LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1Schema = z.object({
+  feedback: z.string().nullable().optional(),
+  items: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeInstructorItemResolutionV1Schema))
+    .nullable()
+    .optional(),
+  reason: z.string().nullable().optional(),
+  schemaVersion: z.number().int().optional(),
+});
+
 /** Zod schema for LearningAssessmentsGradingRuntimeRegradeExecutionCommand. Data model for Learning Assessments Grading Runtime Regrade Execution Command. */
 LearningAssessmentsGradingRuntimeRegradeExecutionCommandSchema = z.object({
   idempotencyKey: z.string().nullable().optional(),
@@ -39934,6 +40636,46 @@ LearningAssessmentsGradingRuntimeReleaseGradeResultCommandSchema = z.object({
   expectedSubmissionVersion: z.number().int().optional(),
   idempotencyKey: z.string().nullable().optional(),
   reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand. Data model for Learning Assessments Grading Runtime Schedule Grade Result Release Command. */
+LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommandSchema = z.object({
+  expectedRoundId: z.string().uuid().optional(),
+  expectedScheduleVersion: z.number().int().optional(),
+  expectedSubmissionVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  scheduledFor: z.string().datetime().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1. Data model for Learning Assessments Grading Runtime Self Review Evidence V1. */
+LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema = z.object({
+  feedback: z.string().nullable().optional(),
+  items: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewItemV1Schema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.number().int().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeSelfReviewItemV1. Data model for Learning Assessments Grading Runtime Self Review Item V1. */
+LearningAssessmentsGradingRuntimeSelfReviewItemV1Schema = z.object({
+  feedback: z.string().nullable().optional(),
+  itemId: z.string().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1. Data model for Learning Assessments Grading Runtime Self Review Runtime State V1. */
+LearningAssessmentsGradingRuntimeSelfReviewRuntimeStateV1Schema = z.object({
+  draft: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
+  draftVersion: z.number().int().optional(),
+  instructions: z.string().nullable().optional(),
+  lastDraftActorId: z.string().uuid().nullable().optional(),
+  requireFeedback: z.boolean().optional(),
+  reviewStageId: z.string().uuid().optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistencePersistedReviewStageStatusSchema).optional(),
+  submittedByActorId: z.string().uuid().nullable().optional(),
+  submittedEvidence: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsGroupDetailDto. Group detail with member display names. */
@@ -40074,8 +40816,29 @@ LearningAssessmentsPeerReviewClaimDtoSchema = z.object({
   reviewId: z.string().uuid().optional(),
 });
 
-/** Zod schema for LearningAssessmentsPeerReviewStatus. OpenAPI schema for Learning Assessments Peer Review Status. */
-LearningAssessmentsPeerReviewStatusSchema = z.enum(['Assigned', 'Submitted']);
+/** Zod schema for LearningAssessmentsPeerReviewClaimResult. Data model for Learning Assessments Peer Review Claim Result. */
+LearningAssessmentsPeerReviewClaimResultSchema = z.object({
+  maskedSubmission: z.string().nullable().optional(),
+  reviewId: z.string().uuid().optional(),
+});
+
+/** Zod schema for LearningAssessmentsPeerReviewClaimView. Data model for Learning Assessments Peer Review Claim View. */
+LearningAssessmentsPeerReviewClaimViewSchema = z.object({
+  id: z.string().uuid().optional(),
+  assessmentId: z.string().uuid().optional(),
+  attemptNumber: z.number().int().optional(),
+  claimedAt: z.string().datetime().optional(),
+  deliveryCanonicalJson: z.string().nullable().optional(),
+  leaseExpiresAt: z.string().datetime().optional(),
+  responseEnvelopeCanonicalJson: z.string().nullable().optional(),
+  reviewerTestRunSubjectId: z.string().uuid().nullable().optional(),
+  reviewerUserId: z.string().uuid().nullable().optional(),
+  reviewStageId: z.string().uuid().optional(),
+  status: z.lazy(() => LearningAssessmentsGradingPersistencePeerReviewClaimStatusSchema).optional(),
+  submissionId: z.string().uuid().nullable().optional(),
+  submittedAt: z.string().datetime().nullable().optional(),
+  version: z.number().int().optional(),
+});
 
 /** Zod schema for LearningAssessmentsPeerReviewSubmitInput. Body of a peer review submit: plain score XOR rubric scores (rubric rules enforced server-side),
 plus the mandatory feedback comment. */
@@ -40086,6 +40849,13 @@ LearningAssessmentsPeerReviewSubmitInputSchema = z.object({
     .lazy(() => LearningGradingContractsScoreValueSchema)
     .nullable()
     .optional(),
+});
+
+/** Zod schema for LearningAssessmentsReassignPeerReviewClaimInput. Data model for Learning Assessments Reassign Peer Review Claim Request. */
+LearningAssessmentsReassignPeerReviewClaimInputSchema = z.object({
+  expectedClaimVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsReceivedPeerReviewDto. THE anonymity boundary for reviewees: what a student sees of reviews they received.
@@ -40105,6 +40875,13 @@ LearningAssessmentsReceivedPeerReviewDtoSchema = z.object({
 LearningAssessmentsResolveInstructorReviewInputSchema = z.object({
   idempotencyKey: z.string().nullable().optional(),
   resolution: z.lazy(() => LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1Schema).optional(),
+  subjectId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsResolvePeerReviewInsufficiencyInput. Data model for Learning Assessments Resolve Peer Review Insufficiency Request. */
+LearningAssessmentsResolvePeerReviewInsufficiencyInputSchema = z.object({
+  idempotencyKey: z.string().nullable().optional(),
+  resolution: z.lazy(() => LearningAssessmentsGradingRuntimePeerReviewInsufficiencyResolutionV1Schema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsRubricCriterionDto. Rubric criterion read shape. */
@@ -40132,6 +40909,13 @@ LearningAssessmentsSaveCollectiveRuntimeDraftInputSchema = z.object({
   response: z.lazy(() => LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1Schema).optional(),
 });
 
+/** Zod schema for LearningAssessmentsSaveCollectiveSelfReviewDraftInput. Data model for Learning Assessments Save Collective Self Review Draft Request. */
+LearningAssessmentsSaveCollectiveSelfReviewDraftInputSchema = z.object({
+  evidence: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
+  expectedVersion: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+});
+
 /** Zod schema for LearningAssessmentsSaveRubricCriterionInput. One criterion row of a rubric save request. */
 LearningAssessmentsSaveRubricCriterionInputSchema = z.object({
   description: z.string().nullable().optional(),
@@ -40154,6 +40938,10 @@ LearningAssessmentsStartAssessmentTestRunInputSchema = z.object({
   personaDisplayName: z.string().nullable().optional(),
   personaKey: z.string().nullable().optional(),
   revisionId: z.string().uuid().optional(),
+  subjects: z
+    .array(z.lazy(() => LearningAssessmentsGradingRuntimeAssessmentTestRunSubjectCommandV1Schema))
+    .nullable()
+    .optional(),
 });
 
 /** Zod schema for LearningAssessmentsStartCollectiveRuntimeSubmissionInput. Data model for Learning Assessments Start Collective Runtime Submission Request. */
@@ -40199,6 +40987,22 @@ LearningAssessmentsSubmitAssessmentRuntimeInputSchema = z.object({
   expectedDraftVersion: z.number().int().nullable().optional(),
   idempotencyKey: z.string().nullable().optional(),
   response: z.lazy(() => LearningAssessmentsGradingContractsAssessmentResponseEnvelopeV1Schema).optional(),
+  subjectId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsSubmitAssessmentTestPeerReviewInput. Data model for Learning Assessments Submit Assessment Test Peer Review Request. */
+LearningAssessmentsSubmitAssessmentTestPeerReviewInputSchema = z.object({
+  feedback: z.string().nullable().optional(),
+  rubricScores: z.string().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+});
+
+/** Zod schema for LearningAssessmentsSubmitSelfReviewInput. Data model for Learning Assessments Submit Self Review Request. */
+LearningAssessmentsSubmitSelfReviewInputSchema = z.object({
+  evidence: z.lazy(() => LearningAssessmentsGradingRuntimeSelfReviewEvidenceV1Schema).optional(),
+  expectedDraftVersion: z.number().int().nullable().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  subjectId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for LearningAssessmentsTaskItemDto. One task item. Variant fields are null outside their type (GradingQueueItemDto precedent). */

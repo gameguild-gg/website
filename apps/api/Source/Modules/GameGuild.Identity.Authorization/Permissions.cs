@@ -105,6 +105,9 @@ public static class Permissions
     /// <summary>Schedule and cancel scheduled content publication</summary>
     public const string ContentSchedule = ContentPermission.Keys.Schedule;
 
+    /// <summary>Edit content metadata (titles, tags, SEO fields, classification) without touching content (issue #333)</summary>
+    public const string ContentEditMetadata = ContentPermission.Keys.EditMetadata;
+
     // ========================
     // PROJECT PERMISSIONS
     // ========================
@@ -263,6 +266,15 @@ public static class Permissions
 
     /// <summary>Run data-migration assessments and migrations between providers (issue #386)</summary>
     public const string SystemDataMigration = DataMigrationPermission.Keys.Operate;
+
+    /// <summary>Execute maintenance operations (cleanup jobs, retention sweeps, index rebuilds) (issue #333)</summary>
+    public const string SystemMaintenance = SystemMaintenancePermission.Keys.Execute;
+
+    /// <summary>Read monitoring telemetry, health probes and operational metrics (issue #333)</summary>
+    public const string SystemMonitoring = SystemMaintenancePermission.Keys.Monitor;
+
+    /// <summary>Deploy artifacts and promote releases between environments (issue #333)</summary>
+    public const string SystemDeployment = DeploymentPermission.Keys.Deploy;
 
     // ========================
     // ASSETS PERMISSIONS

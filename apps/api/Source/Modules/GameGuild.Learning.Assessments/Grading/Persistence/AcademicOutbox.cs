@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using GameGuild.Learning.Assessments.Grading;
 
 namespace GameGuild.Learning.Assessments.Grading.Persistence;
 
@@ -160,6 +161,7 @@ public sealed class AcademicOutboxDispatcher(
             await consumer.ConsumeAsync(ToEvent(message), cancellationToken).ConfigureAwait(false);
             delivery.Confirm(SystemClock.UtcNow);
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            GradingOperationalMetrics.RecordOutboxConfirmed(message.EventType, delivery.ConsumerKey);
 
             var hasPendingDelivery = await context.Set<AcademicOutboxDelivery>()
                 .AsNoTracking()
@@ -191,6 +193,7 @@ public sealed class AcademicOutboxDispatcher(
         delivery.Fail(error, SystemClock.UtcNow.AddSeconds(delaySeconds));
         message.MarkFailed();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        GradingOperationalMetrics.RecordOutboxFailure(message.EventType, delivery.ConsumerKey);
     }
 
     private static AcademicOutboxEvent ToEvent(AcademicOutboxMessage message) => new(

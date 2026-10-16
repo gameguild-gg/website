@@ -3563,6 +3563,7 @@ Table "payments" {
   "OrderId" uuid
   "InvoiceId" uuid
   "Amount" numeric(18,2) [not null]
+  "CreditAppliedAmount" numeric(18,2) [not null]
   "Currency" "character varying(3)" [not null]
   "Status" integer [not null]
   "Provider" "character varying(50)" [not null]
@@ -5788,6 +5789,27 @@ Table "Users" {
     Id [pk, name: "PK_Users"]
     Email [unique, name: "IX_Users_Email"]
     Username [unique, name: "IX_Users_Username"]
+  }
+}
+
+Table "WebhookSecretRotations" {
+  "Id" uuid [not null]
+  "ProviderKey" "character varying(50)" [not null]
+  "EncryptedPreviousSecret" text [not null]
+  "EncryptedActiveSecret" text [not null]
+  "RotatedAtUtc" timestamp [not null]
+  "WindowEndsAtUtc" timestamp [not null]
+  "DeprecatedAtUtc" timestamp
+  "RotatedByUserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_WebhookSecretRotations"]
+    (ProviderKey, RotatedAtUtc) [name: "ix_webhook_secret_rotations_provider_rotated_at"]
   }
 }
 

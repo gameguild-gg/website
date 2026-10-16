@@ -315,7 +315,21 @@ public enum PermissionSource
     ///     content type. Contributes only the content-type qualified name
     ///     <c>{ContentTypeName}.{permission}</c>; subject to DENY-WINS.
     /// </summary>
-    ContentTypeGrant = 11
+    ContentTypeGrant = 11,
+
+    /// <summary>
+    ///     Content-type tenant default inherited through the registered hierarchy
+    ///     (issue #314): an ancestor type's tenant-default row, minted under the
+    ///     descendant's qualified name. Subject to DENY-WINS like every other layer.
+    /// </summary>
+    ContentTypeInheritedDefault = 12,
+
+    /// <summary>
+    ///     Direct content-type grant inherited through the registered hierarchy
+    ///     (issue #314): an ancestor type's user-specific row, minted under the
+    ///     descendant's qualified name. Subject to DENY-WINS like every other layer.
+    /// </summary>
+    ContentTypeInheritedGrant = 13
 }
 
 /// <summary>

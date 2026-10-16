@@ -38,7 +38,7 @@ Core Services:
 ## Integration: Openinary & Moderation
 
 ### Openinary Asset CDN
-The module integrates with Openinary for scalable, high-performance asset delivery and transformation. 
+The module integrates with Openinary for scalable, high-performance asset delivery and transformation.
 - **Backend:** Assets stored in Openinary are tagged with `BucketName="openinary"`.
 - **Dual-Path Logic:** The system transparently routes between legacy S3-compatible storage and Openinary based on the asset's backend record.
 - **Transformations:** Image transformations are handled by Openinary's URL-based transformation engine, removing the need for local processing.

@@ -38,9 +38,12 @@ public interface IGatewayMetricsService
     /// <summary>
     ///     Computes the 24h/7d/30d window aggregates for every provider found in the
     ///     payment records. Providers without payments in a window are omitted from that
-    ///     window's list (no zero-inflation).
+    ///     window's list (no zero-inflation). An optional tenant scope restricts the
+    ///     aggregated payment records to one tenant.
     /// </summary>
-    Task<IReadOnlyList<GatewayWindowMetrics>> GetWindowMetricsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<GatewayWindowMetrics>> GetWindowMetricsAsync(
+        Guid? tenantId = null,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -58,6 +61,7 @@ public sealed class GatewayMetricsService(IPaymentRepository paymentRepository) 
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<GatewayWindowMetrics>> GetWindowMetricsAsync(
+        Guid? tenantId = null,
         CancellationToken cancellationToken = default)
     {
         var now = SystemClock.UtcNow;
@@ -67,7 +71,7 @@ public sealed class GatewayMetricsService(IPaymentRepository paymentRepository) 
         {
             var since = now.Subtract(duration);
             var payments = await paymentRepository
-                .GetByDateRangeAsync(since, now, tenantId: null, cancellationToken)
+                .GetByDateRangeAsync(since, now, tenantId, cancellationToken)
                 .ConfigureAwait(false);
 
             metrics.AddRange(

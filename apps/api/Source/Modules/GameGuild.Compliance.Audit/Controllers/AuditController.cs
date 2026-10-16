@@ -104,6 +104,7 @@ public class AuditController(
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             IpAddress = request.IpAddress,
+            SearchText = request.SearchText,
             Skip = request.Skip,
             Take = Math.Min(request.Take, 1000) // Cap at 1000 records
         };
@@ -231,6 +232,38 @@ public class AuditController(
                 };
             }).ToList()
         });
+    }
+
+    /// <summary>Searches audit events using a nested condition tree with boolean logic.</summary>
+    [HttpPost("search-filter")]
+    [HttpPost("/api/audit/search-filter")]
+    [Authorize(Policy = Policies.AuditRead)]
+    [ProducesResponseType(typeof(AuditLogResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AuditLogResponse>> SearchAuditLogsWithConditions([FromBody] AuditConditionSearchRequest request)
+    {
+        if (!TryValidateModel(request))
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var adminUserId = GetCurrentUserId();
+        if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
+
+        _logger.LogInformation("Admin {AdminUserId} searching audit logs with condition filters", adminUserId.Value);
+
+        var result = await sender.Send(new SearchAuditLogsWithConditionsCommand(adminUserId.Value, request)).ConfigureAwait(false);
+
+        var response = new AuditLogResponse { Logs = result.Logs.Select(MapToDto).ToList(), TotalCount = result.TotalCount, Skip = request.Skip, Take = request.Take };
+
+        return Ok(response);
     }
 
     /// <summary>Searches audit events by multiple action types, groups, and taxonomy categories.</summary>

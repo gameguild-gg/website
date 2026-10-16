@@ -217,6 +217,9 @@ public sealed class ContentPermission : Permission
 
         /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
         public const string Schedule = "content:schedule";
+
+        /// <summary>Edit descriptive metadata (titles, tags, SEO fields, classification) without touching content (issue #333)</summary>
+        public const string EditMetadata = "content:edit-metadata";
     }
 
     /// <summary>Read content</summary>
@@ -236,6 +239,84 @@ public sealed class ContentPermission : Permission
 
     /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
     public static readonly ContentPermission Schedule = new(Keys.Schedule, "Schedule and cancel scheduled publication");
+
+    /// <summary>Edit descriptive metadata without touching content (issue #333)</summary>
+    public static readonly ContentPermission EditMetadata = new(Keys.EditMetadata, "Edit descriptive metadata (titles, tags, SEO fields, classification) without touching content");
+}
+
+/// <summary>
+///     Strongly-typed system maintenance and monitoring permission (issue #333).
+/// </summary>
+/// <remarks>
+///     System-level tier: <c>system:maintenance</c> governs operational maintenance
+///     surfaces (cleanup jobs, retention sweeps, index rebuilds); <c>system:monitoring</c>
+///     governs read-only monitoring telemetry (health probes, operational metrics).
+///     Fail-closed: nothing is implicitly granted by the presence of the other.
+/// </remarks>
+public sealed class SystemMaintenancePermission : Permission
+{
+    private SystemMaintenancePermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Contains(':') ? key.Split(':')[1] : key,
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Execute maintenance operations (cleanup jobs, retention sweeps, index rebuilds)</summary>
+        public const string Execute = "system:maintenance";
+
+        /// <summary>Read monitoring telemetry, health probes and operational metrics</summary>
+        public const string Monitor = "system:monitoring";
+    }
+
+    /// <summary>Execute maintenance operations (cleanup jobs, retention sweeps, index rebuilds)</summary>
+    public static readonly SystemMaintenancePermission Execute =
+        new(Keys.Execute, "Execute maintenance operations (cleanup jobs, retention sweeps, index rebuilds)");
+
+    /// <summary>Read monitoring telemetry, health probes and operational metrics</summary>
+    public static readonly SystemMaintenancePermission Monitor =
+        new(Keys.Monitor, "Read monitoring telemetry, health probes and operational metrics");
+}
+
+/// <summary>
+///     Strongly-typed deployment permission (issue #333).
+/// </summary>
+/// <remarks>
+///     System-level tier: <c>system:deploy</c> governs artifact deployment and release
+///     promotion between environments. Schema migrations themselves run in the host's
+///     startup pipeline; this key is the operational delegation point for HTTP-exposed
+///     deployment surfaces.
+/// </remarks>
+public sealed class DeploymentPermission : Permission
+{
+    private DeploymentPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Contains(':') ? key.Split(':')[1] : key,
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Deploy artifacts and promote releases between environments</summary>
+        public const string Deploy = "system:deploy";
+    }
+
+    /// <summary>Deploy artifacts and promote releases between environments</summary>
+    public static readonly DeploymentPermission Deploy =
+        new(Keys.Deploy, "Deploy artifacts and promote releases between environments");
 }
 
 /// <summary>

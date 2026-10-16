@@ -1020,6 +1020,8 @@ public sealed class AuthorizationCoverageCompletionTests
         PrivateActor(new GetTenantPermissionsQueryHandler(
             Mock.Of<IPermissionQueryService>(),
             accessor.Object,
+            Mock.Of<ITenantSecurityVersionStore>(),
+            new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()),
             NullLogger<GetTenantPermissionsQueryHandler>.Instance)).Should().BeSameAs(actor);
         PrivateActor(new GetEffectivePermissionsQueryHandler(
             accessor.Object,

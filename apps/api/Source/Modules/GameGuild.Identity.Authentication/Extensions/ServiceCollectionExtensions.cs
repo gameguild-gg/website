@@ -72,6 +72,11 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IPermissionService, PermissionService>();
 
+        // Content-type hierarchy for effective-permission resolution (issue #314):
+        // implements the Authorization module's IContentTypeHierarchyProvider contract
+        // over the registered ContentTypePermission rows (parent links + registration).
+        services.AddScoped<GameGuild.Identity.Authorization.IContentTypeHierarchyProvider, ContentTypePermissionHierarchyProvider>();
+
         // PLANNED: Register advanced authorization presentation services once implementations are created.
         // Requires: PermissionAuthorizationService, PermissionHierarchyService, PermissionTemplateService,
         //           BulkPermissionService, BulkOperationResultService, PermissionAnalyticsService, PermissionAuditService.

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
@@ -5,6 +6,8 @@ using GameGuild.Identity.Users;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Assessments.Grading.Persistence;
+using GameGuild.Learning.Assessments.Grading.Runtime;
 using GameGuild.Notifications;
 using GameGuild.Notifications.Services;
 using NotificationPriority = GameGuild.Notifications.NotificationPriority;
@@ -112,11 +115,8 @@ public class TasksAggregationTests
         var peer = await SeedAssessmentAsync(db, courseId, "Peer Lab",
             reviewMethods: ReviewMethods.PeerReview);
         ConfigurePeerReview(peer, 1);
-        var (victimId, targetRow) = await SeedRowAsync(db, peer.Id, "Victim", 1, SubmissionStatus.Submitted);
-        var review = AssessmentPeerReview.Create(peer.Id, targetRow.Id, studentId);
-        review.SubmitReview(Score(80), "solid work", null);
-        db.Add(review);
-        await db.SaveChangesAsync();
+        var (_, targetRow) = await SeedRowAsync(db, peer.Id, "Victim", 1, SubmissionStatus.Submitted);
+        await SeedCanonicalSubmittedPeerClaimAsync(db, peer, targetRow, studentId);
 
         var dto = await CreateService(db, studentId).GetTasksAsync(studentId, TenantId, isSystemAdmin: false);
 
@@ -325,11 +325,20 @@ public class TasksAggregationTests
         db.Add(review);
         await db.SaveChangesAsync();
 
-        var service = new PeerReviewAssignmentService(db, NullLogger<PeerReviewAssignmentService>.Instance);
-        var result = await service.SubmitReviewAsync(review, Score(85), "clear thesis, tight argument", null);
+        var service = new PeerReviewAssignmentService(
+            db,
+            new Mock<IGradingExecutionOrchestrator>().Object,
+            new AcademicOutboxWriter(db, []),
+            NullLogger<PeerReviewAssignmentService>.Instance);
+        var result = await service.SubmitReviewAsync(
+            review.Id,
+            reviewerId,
+            Score(85),
+            "clear thesis, tight argument",
+            null);
 
         result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("PeerReview.CanonicalRuntimeRequired");
+        result.Error.Code.Should().Be("PeerReviewClaim");
         var persisted = await db.Set<AssessmentPeerReview>().SingleAsync(value => value.Id == review.Id);
         persisted.Status.Should().Be(PeerReviewStatus.Assigned);
         persisted.Score.Should().BeNull();
@@ -526,6 +535,53 @@ public class TasksAggregationTests
         return (userId, row);
     }
 
+    private static async Task SeedCanonicalSubmittedPeerClaimAsync(
+        TestTasksDbContext db,
+        Assessment assessment,
+        AssessmentSubmission submission,
+        Guid reviewerId)
+    {
+        var revision = AssessmentDefinitionRevision.Create(
+            TenantId,
+            assessment.Id,
+            1,
+            "{}",
+            "{}",
+            Guid.NewGuid());
+        var execution = GradingExecution.CreateOfficial(TenantId, revision.Id, submission.Id);
+        var round = GradeRound.Create(TenantId, execution.Id, 1, assessment.MaxScore, "initial");
+        execution.SetActiveRound(round.Id);
+        var stage = ReviewStage.Create(
+            TenantId,
+            round.Id,
+            1,
+            new AssessmentReviewStageManifestV1(ReviewMethod.PeerReview, "peer-review", "1"));
+        var claim = PeerReviewClaim.CreateOfficial(
+            TenantId,
+            stage.Id,
+            reviewerId,
+            SystemClock.UtcNow.AddMinutes(30));
+        var payload = new PeerReviewEvidenceV1(
+            1,
+            claim.Id,
+            Score(80),
+            "solid work",
+            null,
+            reviewerId,
+            null);
+        var evidence = ReviewEvidence.CreateForActor(
+            TenantId,
+            stage.Id,
+            $"peer-claim:{claim.Id:N}",
+            "peer-review-evidence",
+            "1",
+            CanonicalJson.Serialize(JsonSerializer.SerializeToElement(payload, GradingJson.Options)),
+            reviewerId);
+        claim.Submit(evidence.Id, SystemClock.UtcNow);
+        db.AddRange(revision, execution, round, stage, claim, evidence);
+        await db.SaveChangesAsync();
+    }
+
     private static TestTasksDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<TestTasksDbContext>()
@@ -540,6 +596,7 @@ public class TasksAggregationTests
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             new AssessmentsModelConfiguration().Configure(modelBuilder);
+            new GradingPersistenceModelConfiguration().Configure(modelBuilder);
             // ponytail: minimal cross-module mapping; full mapping lives in ApplicationDbContext.
             modelBuilder.Entity<User>(b =>
             {

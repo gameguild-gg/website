@@ -273,7 +273,12 @@ public sealed class PiiRedactionService(
             {
                 for (var index = 0; index < array.Count; index++)
                 {
-                    array[index] = RewriteJsonNode(array[index], fieldName, rules, counter, context, tenantId);
+                    var current = array[index];
+                    var rewritten = RewriteJsonNode(current, fieldName, rules, counter, context, tenantId);
+                    if (!ReferenceEquals(current, rewritten))
+                    {
+                        array[index] = rewritten;
+                    }
                 }
                 return array;
             }
@@ -281,7 +286,12 @@ public sealed class PiiRedactionService(
             {
                 foreach (var key in map.Select(pair => pair.Key).ToList())
                 {
-                    map[key] = RewriteJsonNode(map[key], key, rules, counter, context, tenantId);
+                    var current = map[key];
+                    var rewritten = RewriteJsonNode(current, key, rules, counter, context, tenantId);
+                    if (!ReferenceEquals(current, rewritten))
+                    {
+                        map[key] = rewritten;
+                    }
                 }
                 return map;
             }
@@ -324,7 +334,12 @@ public sealed class PiiRedactionService(
             {
                 for (var index = 0; index < array.Count; index++)
                 {
-                    array[index] = RewriteJsonNodePlain(array[index], rules);
+                    var current = array[index];
+                    var rewritten = RewriteJsonNodePlain(current, rules);
+                    if (!ReferenceEquals(current, rewritten))
+                    {
+                        array[index] = rewritten;
+                    }
                 }
                 return array;
             }
@@ -332,7 +347,12 @@ public sealed class PiiRedactionService(
             {
                 foreach (var key in map.Select(pair => pair.Key).ToList())
                 {
-                    map[key] = RewriteJsonNodePlain(map[key], rules);
+                    var current = map[key];
+                    var rewritten = RewriteJsonNodePlain(current, rules);
+                    if (!ReferenceEquals(current, rewritten))
+                    {
+                        map[key] = rewritten;
+                    }
                 }
                 return map;
             }

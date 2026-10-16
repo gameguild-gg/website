@@ -39,6 +39,16 @@ public interface IGradingExecutionOrchestrator
         InstructorReviewResolutionV1 resolution,
         CancellationToken cancellationToken = default);
 
+    Task<GradingExecutionOutcome> AcceptReviewEvidenceAsync(
+        Guid executionId,
+        ReviewMethod method,
+        ReviewStageEvidenceV1 evidence,
+        CancellationToken cancellationToken = default);
+
+    Task<GradingExecutionOutcome> ResumeAsync(
+        Guid executionId,
+        CancellationToken cancellationToken = default);
+
     Task<GradingExecutionOutcome> RegradeAsync(
         Guid executionId,
         Guid actorId,
@@ -50,7 +60,8 @@ public sealed class GradingExecutionOrchestrator(
     IApplicationDbContext context,
     IAssessmentTypeAdapterResolver assessmentTypeAdapters,
     IReviewStageHandlerResolver stageHandlers,
-    IGradingFinalizationSink finalizationSink) : IGradingExecutionOrchestrator
+    IGradingFinalizationSink finalizationSink,
+    IAcademicOutboxWriter? outbox = null) : IGradingExecutionOrchestrator
 {
     public AssessmentExecutionDeliveryV1 MaterializeDelivery(
         GradingExecution execution,
@@ -178,72 +189,17 @@ public sealed class GradingExecutionOrchestrator(
         }
 
         var execution = await RequireExecutionAsync(executionId, cancellationToken).ConfigureAwait(false);
-        var revision = await RequireRevisionAsync(execution.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
-        var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         var round = await RequireActiveRoundAsync(execution, cancellationToken).ConfigureAwait(false);
-        if (round.Status == PersistedGradeRoundStatus.Finalized)
-        {
-            return await OutcomeAsync(execution, round, cancellationToken).ConfigureAwait(false);
-        }
-
         var stage = await context.Set<ReviewStage>()
             .Where(value => value.GradeRoundId == round.Id && value.ReviewMethod == ReviewMethod.InstructorReview)
             .OrderBy(value => value.Sequence)
             .SingleOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException("The active round does not contain an InstructorReview stage.");
-        if (stage.Status != PersistedReviewStageStatus.AwaitingInstructorResolution)
-        {
-            throw new InvalidOperationException("The instructor stage is not awaiting resolution.");
-        }
-
-        var projections = snapshot.Manifest.Items.ToDictionary(
-            item => item.ItemId,
-            item => ReadProjectionScore(snapshot.ItemProjections[item.ItemId]),
-            StringComparer.Ordinal);
-        var resolutions = resolution.Items.ToDictionary(item => RequireItemId(item.ItemId), StringComparer.Ordinal);
-        if (!projections.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(resolutions.Keys))
-        {
-            throw new ArgumentException("Instructor resolution must contain every item exactly once.", nameof(resolution));
-        }
-
-        foreach (var (itemId, item) in resolutions)
-        {
-            if (item.Score.CompareTo(ScoreValue.Zero) < 0 || item.Score.CompareTo(projections[itemId]) > 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(resolution), $"Instructor score for {itemId} is outside its maximum.");
-            }
-        }
-
-        Code.CodeRubricSnapshot.ValidateResolution(snapshot, resolution);
         var previous = await PreviousStageResultAsync(round.Id, stage.Sequence, cancellationToken).ConfigureAwait(false);
-        // Code's trusted worker emits redacted feedback on its single persisted item.
-        // An omitted optional instructor comment must not erase that feedback.
-        var codeAdapterVersion = snapshot.Manifest.Items.SingleOrDefault(item =>
-            item.ItemId == Code.CodeAssessmentContracts.ItemId &&
-            item.AdapterKey == Code.CodeAssessmentContracts.AdapterKey)?.AdapterVersion;
-        var previousCodeFeedback = snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType &&
-            Code.CodeAssessmentContracts.IsSupportedVersion(codeAdapterVersion)
-            ? previous?.Items.SingleOrDefault(item => item.ItemId == Code.CodeAssessmentContracts.ItemId &&
-                item.ReviewMethod == ReviewMethod.AutomatedReview &&
-                item.HandlerKey == Code.CodeAssessmentContracts.HandlerKey &&
-                item.HandlerVersion == codeAdapterVersion)?.Feedback
-            : null;
-        string? ResolveFeedback(string? supplied) => previousCodeFeedback is not null && string.IsNullOrWhiteSpace(supplied)
-            ? previousCodeFeedback : supplied;
-        var changedAutomatedScore = previous is not null && previous.Items.Any(previousItem =>
-            previousItem.Score.HasValue && resolutions[previousItem.ItemId].Score != previousItem.Score.Value);
-        if (changedAutomatedScore &&
-            snapshot.AuthoringSource.Policy.Review.Instructor?.RequireOverrideReason == true &&
-            string.IsNullOrWhiteSpace(resolution.OverrideReason))
-        {
-            throw new ArgumentException("An override reason is required when changing a previous review result.", nameof(resolution));
-        }
-
-        var evidenceKey = $"instructor-resolution:{round.RoundNumber}";
         var evidencePayload = new
         {
-            schemaVersion = 1,
+            resolution.SchemaVersion,
             executionId,
             roundId = round.Id,
             actorId,
@@ -253,40 +209,152 @@ public sealed class GradingExecutionOrchestrator(
             resolution.RubricScores,
             previousResult = previous,
         };
-        var evidenceCanonical = Serialize(evidencePayload);
-        context.Set<ReviewEvidence>().Add(ReviewEvidence.CreateForActor(
-            execution.TenantId,
-            stage.Id,
-            evidenceKey,
-            "instructor-review-evidence",
-            "1",
-            evidenceCanonical,
-            actorId));
-
-        var itemResults = snapshot.Manifest.Items.Select(item => new GradeItemResultV1(
-            item.ItemId,
-            GradeItemState.Graded,
-            resolutions[item.ItemId].Score,
-            projections[item.ItemId],
-            [evidenceKey],
+        return await AcceptReviewEvidenceAsync(
+            executionId,
             ReviewMethod.InstructorReview,
+            new ReviewStageEvidenceV1(
+                $"instructor-resolution:{round.Id:N}",
+                "instructor-review-evidence",
+                "1",
+                JsonSerializer.SerializeToElement(evidencePayload, GradingJson.Options),
+                ProducedByActorId: actorId),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<GradingExecutionOutcome> AcceptReviewEvidenceAsync(
+        Guid executionId,
+        ReviewMethod method,
+        ReviewStageEvidenceV1 evidence,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateEvidence(evidence);
+        await using var transaction = await GradingRuntimeDatabaseLock.AcquireExecutionAsync(
+            context,
+            executionId,
+            cancellationToken).ConfigureAwait(false);
+        var outcome = await AcceptReviewEvidenceCoreAsync(
+                executionId,
+                method,
+                evidence,
+                cancellationToken)
+            .ConfigureAwait(false);
+        await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
+        return outcome;
+    }
+
+    private async Task<GradingExecutionOutcome> AcceptReviewEvidenceCoreAsync(
+        Guid executionId,
+        ReviewMethod method,
+        ReviewStageEvidenceV1 evidence,
+        CancellationToken cancellationToken)
+    {
+        var execution = await RequireExecutionAsync(executionId, cancellationToken).ConfigureAwait(false);
+        var revision = await RequireRevisionAsync(execution.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
+        var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
+        var delivery = MaterializeDelivery(execution, revision);
+        var round = await RequireActiveRoundAsync(execution, cancellationToken).ConfigureAwait(false);
+        var stage = await context.Set<ReviewStage>()
+            .SingleOrDefaultAsync(
+                value => value.GradeRoundId == round.Id && value.ReviewMethod == method,
+                cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new InvalidOperationException($"The active round does not contain a {method} stage.");
+        var canonical = Serialize(evidence.Payload);
+        var existing = await context.Set<ReviewEvidence>()
+            .SingleOrDefaultAsync(
+                value => value.ReviewStageId == stage.Id && value.EvidenceKey == evidence.EvidenceKey,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (existing is not null &&
+            !string.Equals(existing.PayloadHash, CanonicalPayload.Hash(canonical), StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Evidence key was already used with a different payload.");
+        }
+
+        if (stage.Status == PersistedReviewStageStatus.Completed)
+        {
+            if (existing is null)
+            {
+                throw new InvalidOperationException($"The {method} stage is already complete and cannot accept new evidence.");
+            }
+
+            return await OutcomeAsync(execution, round, cancellationToken).ConfigureAwait(false);
+        }
+
+        var activeStage = await context.Set<ReviewStage>()
+            .Where(value => value.GradeRoundId == round.Id && value.Status != PersistedReviewStageStatus.Completed)
+            .OrderBy(value => value.Sequence)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new InvalidOperationException("The active round has no stage awaiting evidence.");
+        if (activeStage.Id != stage.Id)
+        {
+            throw new InvalidOperationException($"The active stage is {activeStage.ReviewMethod}, not {method}.");
+        }
+
+        var response = Deserialize<AssessmentResponseEnvelopeV1>(
+            execution.ResponseEnvelopeCanonicalJson ?? throw new InvalidOperationException("Submitted response is missing."),
+            "response envelope");
+        var request = new ReviewStageRequest(
+            execution.Id,
+            round.Id,
+            stage.Id,
+            execution.ExecutionContext,
+            revision.ExecutionSnapshotHash,
+            snapshot,
+            delivery,
+            response,
+            await PreviousStageResultAsync(round.Id, stage.Sequence, cancellationToken).ConfigureAwait(false),
             stage.HandlerKey,
             stage.HandlerVersion,
-            ResolveFeedback(resolutions[item.ItemId].Feedback))).ToArray();
-        var result = new GradeResultV1(
-            GradingContractVersions.GradeResult,
-            "final",
-            ScoreValue.Sum(itemResults.Select(item => item.Score!.Value)),
-            ScoreValue.Sum(itemResults.Select(item => item.MaxScore)),
-            itemResults,
-            [evidenceKey],
-            ResolveFeedback(resolution.Feedback));
-        GradingContractValidator.Validate(result);
-        PersistStageResult(execution, stage, result);
-        stage.Complete(SystemClock.UtcNow);
-        await FinalizeAsync(execution, round, result, snapshot, cancellationToken).ConfigureAwait(false);
+            stage.ProviderKey,
+            stage.ProviderPolicyVersion,
+            stage.EvidenceDeadlineAt);
+        var handler = stageHandlers.Resolve(method, stage.HandlerKey, stage.HandlerVersion, execution.ExecutionContext);
+        ReviewStageTransitionV1 transition;
+        if (existing is not null)
+        {
+            transition = await handler.TryCompleteAsync(
+                request,
+                await LoadStageEvidenceAsync(stage.Id, cancellationToken).ConfigureAwait(false),
+                cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            transition = await handler.AcceptEvidenceAsync(request, evidence, cancellationToken).ConfigureAwait(false);
+            context.Set<ReviewEvidence>().Add(CreateEvidence(execution.TenantId, stage.Id, evidence, canonical));
+            if (transition.Kind == ReviewStageTransitionKindV1.AwaitingEvidence)
+            {
+                var accumulatedEvidence = (await LoadStageEvidenceAsync(stage.Id, cancellationToken)
+                        .ConfigureAwait(false))
+                    .Append(evidence)
+                    .ToArray();
+                transition = await handler.TryCompleteAsync(request, accumulatedEvidence, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        ApplyTransition(execution, round, stage, snapshot, transition, persistResultEvidence: false);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return ToOutcome(execution, round, result);
+        if (transition.Kind == ReviewStageTransitionKindV1.Completed)
+        {
+            return await RunAvailableStagesAsync(
+                    execution,
+                    revision,
+                    snapshot,
+                    delivery,
+                    round,
+                    cancellationToken,
+                    stage.Id,
+                    transition.Result)
+                .ConfigureAwait(false);
+        }
+
+        return ToOutcome(
+            execution,
+            round,
+            transition.Result,
+            transition.Kind == ReviewStageTransitionKindV1.AwaitingInstructorResolution);
     }
 
     public async Task<GradingExecutionOutcome> RegradeAsync(
@@ -328,11 +396,29 @@ public sealed class GradingExecutionOrchestrator(
             actorId,
             reason);
         context.Set<GradeRound>().Add(round);
-        AddStages(round, snapshot);
+        var stages = AddStages(round, snapshot);
+        await ReuseHumanEvidenceAsync(previous, stages, cancellationToken).ConfigureAwait(false);
         execution.BeginRegrade(round.Id);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return await RunAvailableStagesAsync(execution, revision, snapshot, delivery, round, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    public async Task<GradingExecutionOutcome> ResumeAsync(
+        Guid executionId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await GradingRuntimeDatabaseLock.AcquireExecutionAsync(
+            context,
+            executionId,
+            cancellationToken).ConfigureAwait(false);
+        var execution = await RequireExecutionAsync(executionId, cancellationToken).ConfigureAwait(false);
+        var revision = await RequireRevisionAsync(execution.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
+        var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
+        var delivery = MaterializeDelivery(execution, revision);
+        var outcome = await ResumeAsync(execution, revision, snapshot, delivery, cancellationToken).ConfigureAwait(false);
+        await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
+        return outcome;
     }
 
     private async Task<GradingExecutionOutcome> ResumeAsync(
@@ -358,7 +444,9 @@ public sealed class GradingExecutionOrchestrator(
         AssessmentExecutionSnapshotV1 snapshot,
         AssessmentExecutionDeliveryV1 delivery,
         GradeRound round,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? resumedStageId = null,
+        GradeResultV1? resumedStageResult = null)
     {
         var response = Deserialize<AssessmentResponseEnvelopeV1>(
             execution.ResponseEnvelopeCanonicalJson ?? throw new InvalidOperationException("Submitted response is missing."),
@@ -373,18 +461,10 @@ public sealed class GradingExecutionOrchestrator(
         {
             if (stage.Status == PersistedReviewStageStatus.Completed)
             {
-                previousResult = await StageResultAsync(stage, cancellationToken).ConfigureAwait(false);
+                previousResult = stage.Id == resumedStageId && resumedStageResult is not null
+                    ? resumedStageResult
+                    : await StageResultAsync(stage, cancellationToken).ConfigureAwait(false);
                 continue;
-            }
-
-            if (stage.ReviewMethod == ReviewMethod.InstructorReview)
-            {
-                stageHandlers.Resolve(stage.ReviewMethod, stage.HandlerKey, stage.HandlerVersion, execution.ExecutionContext);
-                stage.AwaitInstructorResolution();
-                round.AwaitInstructorResolution();
-                execution.AwaitReview();
-                await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                return ToOutcome(execution, round, previousResult, true);
             }
 
             var handler = stageHandlers.Resolve(
@@ -392,32 +472,56 @@ public sealed class GradingExecutionOrchestrator(
                 stage.HandlerKey,
                 stage.HandlerVersion,
                 execution.ExecutionContext);
-            stage.Start(SystemClock.UtcNow);
-            var result = await handler.ExecuteAsync(
-                new ReviewStageRequest(
-                    execution.Id,
-                    round.Id,
-                    execution.ExecutionContext,
-                    revision.ExecutionSnapshotHash,
-                    snapshot,
-                    delivery,
-                    response,
-                    previousResult),
-                cancellationToken).ConfigureAwait(false);
-            GradingContractValidator.Validate(result);
-            ValidateStageResult(snapshot, stage, result);
-            PersistStageResult(execution, stage, result);
-            context.Set<ReviewEvidence>().Add(ReviewEvidence.CreateForService(
-                execution.TenantId,
+            var request = new ReviewStageRequest(
+                execution.Id,
+                round.Id,
                 stage.Id,
-                $"{stage.HandlerKey}:{stage.HandlerVersion}",
-                "review-stage-result",
-                "1",
-                Serialize(result),
-                $"{stage.HandlerKey}@{stage.HandlerVersion}"));
-            stage.Complete(SystemClock.UtcNow);
-            previousResult = result;
+                execution.ExecutionContext,
+                revision.ExecutionSnapshotHash,
+                snapshot,
+                delivery,
+                response,
+                previousResult,
+                stage.HandlerKey,
+                stage.HandlerVersion,
+                stage.ProviderKey,
+                stage.ProviderPolicyVersion,
+                stage.EvidenceDeadlineAt);
+            ReviewStageTransitionV1 transition;
+            if (stage.Status == PersistedReviewStageStatus.Pending)
+            {
+                stage.Start(SystemClock.UtcNow);
+                transition = await handler.StartAsync(request, cancellationToken).ConfigureAwait(false);
+                if (transition.Kind == ReviewStageTransitionKindV1.AwaitingEvidence)
+                {
+                    var existingEvidence = await LoadStageEvidenceAsync(stage.Id, cancellationToken).ConfigureAwait(false);
+                    if (existingEvidence.Count > 0)
+                    {
+                        transition = await handler.TryCompleteAsync(request, existingEvidence, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                }
+            }
+            else
+            {
+                transition = await handler.TryCompleteAsync(
+                    request,
+                    await LoadStageEvidenceAsync(stage.Id, cancellationToken).ConfigureAwait(false),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            ApplyTransition(execution, round, stage, snapshot, transition, persistResultEvidence: true);
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            if (transition.Kind != ReviewStageTransitionKindV1.Completed)
+            {
+                return ToOutcome(
+                    execution,
+                    round,
+                    transition.Result ?? previousResult,
+                    transition.Kind == ReviewStageTransitionKindV1.AwaitingInstructorResolution);
+            }
+
+            previousResult = transition.Result;
         }
 
         if (previousResult is null)
@@ -456,7 +560,22 @@ public sealed class GradingExecutionOrchestrator(
             var run = await context.Set<AssessmentTestRun>()
                 .SingleAsync(value => value.Id == subject.TestRunId, cancellationToken)
                 .ConfigureAwait(false);
-            run.Complete(finalizedAt);
+            var hasOtherNonTerminalExecution = await context.Set<GradingExecution>()
+                .Where(value => value.TestRunSubjectId.HasValue && value.Id != execution.Id)
+                .Join(
+                    context.Set<AssessmentTestRunSubject>().Where(value => value.TestRunId == run.Id),
+                    candidate => candidate.TestRunSubjectId,
+                    candidateSubject => (Guid?)candidateSubject.Id,
+                    (candidate, _) => candidate)
+                .AnyAsync(
+                    candidate => candidate.Status != PersistedGradingExecutionStatus.Completed &&
+                                 candidate.Status != PersistedGradingExecutionStatus.Failed,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            if (!hasOtherNonTerminalExecution)
+            {
+                run.Complete(finalizedAt);
+            }
             return;
         }
 
@@ -488,15 +607,256 @@ public sealed class GradingExecutionOrchestrator(
         return round;
     }
 
-    private void AddStages(GradeRound round, AssessmentExecutionSnapshotV1 snapshot)
+    private IReadOnlyList<ReviewStage> AddStages(GradeRound round, AssessmentExecutionSnapshotV1 snapshot)
     {
+        var stages = new List<ReviewStage>(snapshot.Manifest.Stages.Count);
         for (var index = 0; index < snapshot.Manifest.Stages.Count; index++)
         {
-            context.Set<ReviewStage>().Add(ReviewStage.Create(
+            var stage = ReviewStage.Create(
                 round.TenantId,
                 round.Id,
                 index + 1,
-                snapshot.Manifest.Stages[index]));
+                snapshot.Manifest.Stages[index]);
+            context.Set<ReviewStage>().Add(stage);
+            stages.Add(stage);
+        }
+
+        return stages;
+    }
+
+    private async Task ReuseHumanEvidenceAsync(
+        GradeRound supersededRound,
+        IReadOnlyList<ReviewStage> replacementStages,
+        CancellationToken cancellationToken)
+    {
+        var reusableMethods = new[] { ReviewMethod.SelfReview, ReviewMethod.PeerReview };
+        var previousStages = await context.Set<ReviewStage>()
+            .AsNoTracking()
+            .Where(value => value.GradeRoundId == supersededRound.Id &&
+                            value.Status == PersistedReviewStageStatus.Completed &&
+                            reusableMethods.Contains(value.ReviewMethod))
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (previousStages.Length == 0)
+        {
+            return;
+        }
+
+        var previousStageIds = previousStages.Select(value => value.Id).ToArray();
+        var previousEvidence = await context.Set<ReviewEvidence>()
+            .AsNoTracking()
+            .Where(value => previousStageIds.Contains(value.ReviewStageId) &&
+                            value.EvidenceType != "review-stage-result")
+            .OrderBy(value => value.CreatedAt)
+            .ThenBy(value => value.Id)
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var referencedIds = previousEvidence
+            .Where(value => value.SourceReviewEvidenceId.HasValue)
+            .Select(value => value.SourceReviewEvidenceId!.Value)
+            .Distinct()
+            .ToArray();
+        var sources = referencedIds.Length == 0
+            ? new Dictionary<Guid, ReviewEvidence>()
+            : await context.Set<ReviewEvidence>()
+                .AsNoTracking()
+                .Where(value => referencedIds.Contains(value.Id))
+                .ToDictionaryAsync(value => value.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+        foreach (var previousStage in previousStages)
+        {
+            var replacement = replacementStages.Single(value =>
+                value.Sequence == previousStage.Sequence && value.ReviewMethod == previousStage.ReviewMethod);
+            foreach (var prior in previousEvidence.Where(value => value.ReviewStageId == previousStage.Id))
+            {
+                var source = prior.SourceReviewEvidenceId.HasValue
+                    ? sources[prior.SourceReviewEvidenceId.Value]
+                    : prior;
+                context.Set<ReviewEvidence>().Add(ReviewEvidence.CreateReference(
+                    replacement.TenantId,
+                    replacement.Id,
+                    $"reused:{source.Id:N}",
+                    source,
+                    supersededRound.Id,
+                    "grading-regrade"));
+            }
+        }
+    }
+
+    private void ApplyTransition(
+        GradingExecution execution,
+        GradeRound round,
+        ReviewStage stage,
+        AssessmentExecutionSnapshotV1 snapshot,
+        ReviewStageTransitionV1 transition,
+        bool persistResultEvidence)
+    {
+        if (transition.SchemaVersion != 1)
+        {
+            throw new InvalidOperationException("Review stage transition schemaVersion must be 1.");
+        }
+
+        if (transition.EvidenceDeadlineAt.HasValue)
+        {
+            stage.SetEvidenceDeadline(transition.EvidenceDeadlineAt.Value);
+        }
+
+        if (transition.DurableRequest is not null)
+        {
+            if (!execution.TenantId.HasValue || outbox is null)
+            {
+                throw new InvalidOperationException("A durable review request requires a tenant-scoped outbox.");
+            }
+
+            outbox.Enqueue(
+                execution.TenantId.Value,
+                transition.DurableRequest.EventType,
+                transition.DurableRequest.SchemaVersion,
+                CanonicalJson.Serialize(transition.DurableRequest.Payload));
+        }
+
+        switch (transition.Kind)
+        {
+            case ReviewStageTransitionKindV1.Completed:
+            {
+                var result = transition.Result
+                    ?? throw new InvalidOperationException("A completed review stage transition requires a result.");
+                GradingContractValidator.Validate(result);
+                ValidateStageResult(snapshot, stage, result);
+                PersistStageResult(execution, stage, result);
+                if (persistResultEvidence)
+                {
+                    context.Set<ReviewEvidence>().Add(ReviewEvidence.CreateForService(
+                        execution.TenantId,
+                        stage.Id,
+                        $"stage-result:{stage.Id:N}",
+                        "review-stage-result",
+                        "1",
+                        Serialize(result),
+                        $"{stage.HandlerKey}@{stage.HandlerVersion}"));
+                }
+                stage.Complete(SystemClock.UtcNow);
+                break;
+            }
+            case ReviewStageTransitionKindV1.AwaitingEvidence:
+            case ReviewStageTransitionKindV1.RetryableFailure:
+                RequireNoResult(transition);
+                stage.AwaitEvidence();
+                round.AwaitEvidence();
+                execution.AwaitReview();
+                GradingOperationalMetrics.RecordReviewWait(stage.ReviewMethod, "awaiting-evidence");
+                break;
+            case ReviewStageTransitionKindV1.AwaitingInstructorResolution:
+                RequireNoResult(transition);
+                stage.AwaitInstructorResolution();
+                round.AwaitInstructorResolution();
+                execution.AwaitReview();
+                GradingOperationalMetrics.RecordReviewWait(stage.ReviewMethod, "awaiting-instructor-resolution");
+                break;
+            case ReviewStageTransitionKindV1.TerminalFailure:
+                RequireNoResult(transition);
+                var failedAt = SystemClock.UtcNow;
+                stage.Fail(failedAt);
+                round.Fail(failedAt);
+                execution.Fail(failedAt);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(transition), transition.Kind, "Review stage transition is unsupported.");
+        }
+    }
+
+    private async Task<IReadOnlyList<ReviewStageEvidenceV1>> LoadStageEvidenceAsync(
+        Guid stageId,
+        CancellationToken cancellationToken)
+    {
+        var evidence = await context.Set<ReviewEvidence>()
+            .AsNoTracking()
+            .Where(value => value.ReviewStageId == stageId && value.EvidenceType != "review-stage-result")
+            .OrderBy(value => value.CreatedAt)
+            .ThenBy(value => value.Id)
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var sourceIds = evidence
+            .Where(value => value.SourceReviewEvidenceId.HasValue)
+            .Select(value => value.SourceReviewEvidenceId!.Value)
+            .Distinct()
+            .ToArray();
+        var sources = sourceIds.Length == 0
+            ? new Dictionary<Guid, ReviewEvidence>()
+            : await context.Set<ReviewEvidence>()
+                .AsNoTracking()
+                .Where(value => sourceIds.Contains(value.Id))
+                .ToDictionaryAsync(value => value.Id, cancellationToken)
+                .ConfigureAwait(false);
+        return evidence.Select(value =>
+        {
+            var effective = value.SourceReviewEvidenceId.HasValue
+                ? sources[value.SourceReviewEvidenceId.Value]
+                : value;
+            return new ReviewStageEvidenceV1(
+                value.EvidenceKey,
+                effective.EvidenceType,
+                effective.SchemaVersion,
+                JsonSerializer.Deserialize<JsonElement>(effective.CanonicalJson, GradingJson.Options),
+                effective.ProducedByActorId,
+                effective.ProducedByService,
+                effective.ItemId);
+        }).ToArray();
+    }
+
+    private static ReviewEvidence CreateEvidence(
+        Guid? tenantId,
+        Guid stageId,
+        ReviewStageEvidenceV1 evidence,
+        string canonical)
+    {
+        if (evidence.ProducedByActorId.HasValue)
+        {
+            return ReviewEvidence.CreateForActor(
+                tenantId,
+                stageId,
+                evidence.EvidenceKey,
+                evidence.EvidenceType,
+                evidence.SchemaVersion,
+                canonical,
+                evidence.ProducedByActorId.Value,
+                evidence.ItemId);
+        }
+
+        return ReviewEvidence.CreateForService(
+            tenantId,
+            stageId,
+            evidence.EvidenceKey,
+            evidence.EvidenceType,
+            evidence.SchemaVersion,
+            canonical,
+            evidence.ProducedByService!,
+            evidence.ItemId);
+    }
+
+    private static void ValidateEvidence(ReviewStageEvidenceV1 evidence)
+    {
+        if (string.IsNullOrWhiteSpace(evidence.EvidenceKey) ||
+            string.IsNullOrWhiteSpace(evidence.EvidenceType) ||
+            string.IsNullOrWhiteSpace(evidence.SchemaVersion))
+        {
+            throw new ArgumentException("Evidence key, type, and schema version are required.", nameof(evidence));
+        }
+
+        var hasActor = evidence.ProducedByActorId.HasValue && evidence.ProducedByActorId != Guid.Empty;
+        var hasService = !string.IsNullOrWhiteSpace(evidence.ProducedByService);
+        if (hasActor == hasService)
+        {
+            throw new ArgumentException("Evidence must identify exactly one actor or service producer.", nameof(evidence));
+        }
+    }
+
+    private static void RequireNoResult(ReviewStageTransitionV1 transition)
+    {
+        if (transition.Result is not null)
+        {
+            throw new InvalidOperationException($"{transition.Kind} review stage transition cannot carry a result.");
         }
     }
 

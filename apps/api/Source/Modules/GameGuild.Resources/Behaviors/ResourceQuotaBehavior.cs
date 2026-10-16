@@ -169,7 +169,7 @@ public class ResourceQuotaBehavior<TRequest, TResponse> : IPipelineBehavior<TReq
                     tenantId,
                     resourceType,
                     amount,
-                    cancellationToken: cancellationToken
+                    cancellationToken: CancellationToken.None
                 ).ConfigureAwait(false);
                 quotaConsumed = false;
                 return response;
@@ -185,7 +185,7 @@ public class ResourceQuotaBehavior<TRequest, TResponse> : IPipelineBehavior<TReq
 
             return response;
         }
-        catch (QuotaExceededException)
+        catch (QuotaExceededException) when (!quotaConsumed)
         {
             // Re-throw quota exceptions (quota was not consumed)
             throw;
@@ -208,7 +208,7 @@ public class ResourceQuotaBehavior<TRequest, TResponse> : IPipelineBehavior<TReq
                     tenantId,
                     resourceType,
                     amount,
-                    cancellationToken: cancellationToken
+                    cancellationToken: CancellationToken.None
                 ).ConfigureAwait(false);
             }
             catch (Exception rollbackEx)

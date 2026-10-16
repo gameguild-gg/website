@@ -128,6 +128,26 @@ public sealed class CentralModuleAuditEventSinksTests
         (await relational.Set<AuditLog>().AsNoTracking().CountAsync()).Should().Be(1);
     }
 
+    [Fact]
+    public async Task RecordingInsideAnExistingOwningTransactionDoesNotOpenANestedTransaction()
+    {
+        await using var relational = new BridgeSqliteContext();
+        await relational.Database.EnsureCreatedAsync();
+        var sink = new CentralLearningAuditEventSink(relational, ActorAccessor(), Mock.Of<IHttpContextAccessor>());
+
+        await using var owner = await relational.Database.BeginTransactionAsync();
+        var participant = await relational.BeginAuditedMutationTransactionAsync();
+
+        participant.Should().BeNull();
+        await sink.RecordAsync(
+            new LearningAuditEvent("Learning.Enrollments.UserEnrolled", "Enrollment", "enrollment-1"),
+            CancellationToken.None);
+        await participant.CommitAuditedMutationAsync();
+        await owner.CommitAsync();
+
+        (await relational.Set<AuditLog>().AsNoTracking().CountAsync()).Should().Be(1);
+    }
+
     private (CentralContentPagesAuditEventSink Sink, Mock<DbSet<AuditLog>> AuditSet, Mock<IApplicationDbContext> Context) CreateContentSink(Guid? userId, Guid? tenantId)
     {
         var (auditSet, context) = CreateMocks();

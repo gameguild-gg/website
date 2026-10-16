@@ -1,13 +1,14 @@
 import { authenticatePersona, isMissing, request, unwrap } from "./api.mjs";
 import { getScenarioDefinition } from "./definitions.mjs";
 import {
-  readManifest,
+  createManifest,
+  readManifestForReset,
   removeScenarioSecrets,
   writeReport,
 } from "./manifest.mjs";
 
 export async function resetScenario(scenarioKey) {
-  const manifest = await readManifest(scenarioKey, { optional: true });
+  const manifest = await readManifestForReset(scenarioKey, { optional: true });
   if (!manifest) {
     return {
       scenario: scenarioKey,
@@ -29,10 +30,17 @@ export async function resetScenario(scenarioKey) {
     return report;
   }
 
-  const instructor = await authenticatePersona(manifest, "instructor", {
-    create: false,
-  });
-
+  const owner = await authenticateResetOwner(manifest);
+  if (owner.kind === "recreated-environment") {
+    skipped.push(
+      `stale manifest from tenant ${owner.previousTenantId}; the current local tenant is ${owner.currentTenantId}`,
+    );
+    const report = makeReport(manifest, removed, skipped, failures);
+    await removeScenarioSecrets(scenarioKey);
+    await writeReport(scenarioKey, report);
+    return report;
+  }
+  const instructor = owner.session;
   const courseResult =
     await instructor.modules.courses.getCoursesForGetCoursesById(
       resources.courseId,
@@ -49,13 +57,7 @@ export async function resetScenario(scenarioKey) {
       `Reset refused: course ${resources.courseId} does not contain ownership marker ${manifest.marker}.`,
     );
   }
-  if (failures.length > 0) {
-    await writeReport(
-      scenarioKey,
-      makeReport(manifest, removed, skipped, failures),
-    );
-    throw new Error(`Reset failed before deletion: ${failures.join("; ")}`);
-  }
+  await stopOnFailure(manifest, removed, skipped, failures);
 
   if (resources.courseGroupId && resources.courseId) {
     for (const key of ["learnerA", "learnerB"]) {
@@ -77,64 +79,74 @@ export async function resetScenario(scenarioKey) {
     await stopOnFailure(manifest, removed, skipped, failures);
   }
 
-  if (resources.assessmentId) {
-    let state = null;
-    try {
-      state = await request(instructor.client, "Read assessment before reset", {
-        method: "GET",
-        path: `/v1/assessments/${resources.assessmentId}/authoring-state`,
-      });
-    } catch {
-      state = null;
-    }
-    if (state?.published?.revisionId) {
-      const assessment = await instructor.modules.assessments.getAssessments(
-        resources.assessmentId,
-      );
-      if (assessment.ok && assessment.data.version != null) {
-        await remove(
-          "published assessment revision",
-          () =>
-            instructor.client.request({
-              method: "POST",
-              path: `/v1/assessments/${resources.assessmentId}/revisions/unpublish`,
-              body: {
-                expectedAssessmentVersion: assessment.data.version,
-                expectedRevisionId: state.published.revisionId,
-                idempotencyKey: `qgs-reset-${manifest.runId}`,
-              },
-              requiresAuth: true,
-            }),
-          removed,
-          skipped,
-          failures,
+  for (const { key, quiz, resources: quizResources } of scenarioQuizzes(
+    manifest,
+  ).reverse()) {
+    if (quizResources.assessmentId) {
+      let state = null;
+      try {
+        state = await request(
+          instructor.client,
+          `Read assessment ${key} before reset`,
+          {
+            method: "GET",
+            path: `/v1/assessments/${quizResources.assessmentId}/authoring-state`,
+          },
         );
+      } catch {
+        state = null;
       }
+      if (state?.published?.revisionId) {
+        const assessment = await instructor.modules.assessments.getAssessments(
+          quizResources.assessmentId,
+        );
+        if (assessment.ok && assessment.data.version != null) {
+          await remove(
+            `published assessment revision ${key}`,
+            () =>
+              instructor.client.request({
+                method: "POST",
+                path: `/v1/assessments/${quizResources.assessmentId}/revisions/unpublish`,
+                body: {
+                  expectedAssessmentVersion: assessment.data.version,
+                  expectedRevisionId: state.published.revisionId,
+                  idempotencyKey: `qgs-reset-${manifest.runId}-${key}`,
+                },
+                requiresAuth: true,
+              }),
+            removed,
+            skipped,
+            failures,
+          );
+        }
+      }
+      await stopOnFailure(manifest, removed, skipped, failures);
+      await disableContentGrading(
+        manifest,
+        quiz,
+        quizResources,
+        instructor,
+        removed,
+        skipped,
+        failures,
+      );
+      await stopOnFailure(manifest, removed, skipped, failures);
     }
-    await stopOnFailure(manifest, removed, skipped, failures);
-    await disableContentGrading(
-      manifest,
-      instructor,
-      removed,
-      skipped,
-      failures,
-    );
-    await stopOnFailure(manifest, removed, skipped, failures);
-  }
 
-  if (resources.contentId && resources.courseId) {
-    await remove(
-      `content ${resources.contentId}`,
-      () =>
-        instructor.modules.content.deleteCoursesContent(
-          resources.courseId,
-          resources.contentId,
-        ),
-      removed,
-      skipped,
-      failures,
-    );
-    await stopOnFailure(manifest, removed, skipped, failures);
+    if (quizResources.contentId) {
+      await remove(
+        `content ${key} (${quizResources.contentId})`,
+        () =>
+          instructor.modules.content.deleteCoursesContent(
+            resources.courseId,
+            quizResources.contentId,
+          ),
+        removed,
+        skipped,
+        failures,
+      );
+      await stopOnFailure(manifest, removed, skipped, failures);
+    }
   }
 
   if (resources.gradingGroupId) {
@@ -178,15 +190,79 @@ export async function resetScenario(scenarioKey) {
   return report;
 }
 
+export async function authenticateResetOwner(
+  manifest,
+  {
+    authenticate = authenticatePersona,
+    createProbeManifest = createManifest,
+  } = {},
+) {
+  try {
+    return {
+      kind: "authenticated",
+      session: await authenticate(manifest, "instructor", { create: false }),
+    };
+  } catch (authenticationError) {
+    const previousTenantId = manifest.environment?.tenantId;
+    if (!previousTenantId) throw authenticationError;
+
+    const probe = createProbeManifest({
+      definitionKey: manifest.definitionKey,
+      quizKeys: manifest.quizKeys,
+      apiBaseUrl: manifest.environment.apiBaseUrl,
+      webBaseUrl: manifest.environment.webBaseUrl,
+    });
+    let current;
+    try {
+      current = await authenticate(probe, "instructor");
+    } catch {
+      throw authenticationError;
+    }
+
+    const currentTenantId = current.identity?.tenantId;
+    if (!currentTenantId || currentTenantId === previousTenantId) {
+      throw authenticationError;
+    }
+    return {
+      kind: "recreated-environment",
+      previousTenantId,
+      currentTenantId,
+    };
+  }
+}
+
+function scenarioQuizzes(manifest) {
+  const definition = getScenarioDefinition(manifest.definitionKey);
+  if (manifest.resources.quizzes) {
+    return (manifest.quizKeys ?? Object.keys(manifest.resources.quizzes)).map(
+      (key) => ({
+        key,
+        quiz: definition.quizzes.find((candidate) => candidate.key === key),
+        resources: manifest.resources.quizzes[key],
+      }),
+    );
+  }
+  return [
+    {
+      key: definition.quiz?.key ?? definition.key,
+      quiz: definition.quiz,
+      resources: manifest.resources,
+    },
+  ];
+}
+
 async function disableContentGrading(
   manifest,
+  quiz,
+  quizResources,
   instructor,
   removed,
   skipped,
   failures,
 ) {
-  const { courseId, contentId, assessmentId } = manifest.resources;
-  if (!courseId || !contentId || !assessmentId) return;
+  const courseId = manifest.resources.courseId;
+  const { contentId, assessmentId } = quizResources;
+  if (!courseId || !contentId || !assessmentId || !quiz) return;
 
   const [contentResult, assessmentResult] = await Promise.all([
     instructor.modules.content.getCoursesContentById(courseId, contentId),
@@ -197,15 +273,11 @@ async function disableContentGrading(
     return;
   }
   if (!contentResult.ok) {
-    if (isMissing(contentResult.error)) {
-      failures.push(
-        `disable content grading: content ${contentId} is absent while assessment ${assessmentId} remains active`,
-      );
-    } else {
-      failures.push(
-        `read content before disabling grading: ${formatError(contentResult.error)}`,
-      );
-    }
+    failures.push(
+      isMissing(contentResult.error)
+        ? `disable content grading: content ${contentId} is absent while assessment ${assessmentId} remains active`
+        : `read content before disabling grading: ${formatError(contentResult.error)}`,
+    );
     return;
   }
   if (!assessmentResult.ok) {
@@ -217,8 +289,7 @@ async function disableContentGrading(
 
   const content = contentResult.data;
   const assessment = assessmentResult.data;
-  const definition = getScenarioDefinition(manifest.definitionKey);
-  const document = structuredClone(definition.quiz.document);
+  const document = structuredClone(quiz.document);
   delete document.grading;
   const result =
     await instructor.modules.assessments.putAssessmentsCourseContentDraft(

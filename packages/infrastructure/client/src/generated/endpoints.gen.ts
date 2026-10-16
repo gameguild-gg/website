@@ -748,6 +748,21 @@ export const getApiAuditRetentionSimulationTemplatesEndpoint = {
 } as const;
 
 /**
+ * Searches audit events using a nested condition tree with boolean logic.
+ */
+export interface PostApiAuditSearchFilterInput {
+  body?: Types.ComplianceAuditAuditConditionSearchInput;
+}
+export type PostApiAuditSearchFilterOutput = Types.ComplianceAuditAuditLogOutput;
+export const postApiAuditSearchFilterEndpoint = {
+  operationId: 'postApiAuditSearchFilter' as const,
+  method: 'POST' as const,
+  path: '/api/audit/search-filter' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Returns the security alert queue for the current tenant.
  */
 export interface GetApiAuditSecurityEventsAlertsInput {
@@ -6376,6 +6391,23 @@ export const postAuthorizationPermissionsSimulateEndpoint = {
 } as const;
 
 /**
+ * Validates a system-wide permission against the global default baseline (issue #307).
+ */
+export interface GetAuthorizationPermissionsGlobalCheckInput {
+  query?: {
+    permission?: string;
+  };
+}
+export type GetAuthorizationPermissionsGlobalCheckOutput = Types.IdentityAuthorizationHasGlobalPermissionOutput;
+export const getAuthorizationPermissionsGlobalCheckEndpoint = {
+  operationId: 'getAuthorizationPermissionsGlobalCheck' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/global:check' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Reconstructs a subject's effective permission state at a past instant
  * (issue #189: access rights at any point in time).
  */
@@ -6681,13 +6713,16 @@ export const getAuthorizationTenantsHasPermissionEndpoint = {
 } as const;
 
 /**
- * Gets all tenant-level permissions for a user.
+ * Gets all tenant-level permissions for a user (paginated, issue #298/#307).
  */
 export interface GetAuthorizationTenantsPermissionsInput {
   tenantId: string;
   query?: {
     userId?: string;
     includeEffective?: boolean;
+    page?: number;
+    pageSize?: number;
+    sortDescending?: boolean;
   };
 }
 export type GetAuthorizationTenantsPermissionsOutput = Types.IdentityAuthorizationGetTenantPermissionsOutput;
@@ -7853,6 +7888,29 @@ export const postBillingWebhooksPaypalEndpoint = {
   path: '/api/v1/billing/webhooks/paypal' as const,
   tags: ['CommerceBillingWebhooks'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * Rotate a provider's webhook signing secret (issue #408)
+ *
+ * Records a signing-secret rotation for one provider webhook endpoint. During the
+ * rotation window (Billing:Webhook:SecretRotationWindowHours, default 24h) deliveries
+ * signed with either the previous or the new secret verify (dual-secret verification);
+ * after the window the previous secret is automatically deprecated and rejected. The
+ * new secret is stored encrypted at rest and never appears in logs or the response.
+ * Requires the SystemAdmin policy; the acting administrator is taken from the
+ * authenticated actor, and the decision is audited.
+ */
+export interface PostBillingWebhooksSecretsRotateInput {
+  body?: Types.CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput;
+}
+export type PostBillingWebhooksSecretsRotateOutput = Types.CommerceBillingWebhookSecretRotationResult;
+export const postBillingWebhooksSecretsRotateEndpoint = {
+  operationId: 'postBillingWebhooksSecretsRotate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/webhooks/secrets:rotate' as const,
+  tags: ['CommerceBillingWebhooks'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -9113,6 +9171,24 @@ export const getPaymentsRetryAttemptsEndpoint = {
 } as const;
 
 /**
+ * Per-gateway health and performance metrics over the rolling 24h/7d/30d windows
+ * (issue #413 follow-up): success rates, average processing latency and volume per
+ * gateway, plus the live circuit-breaker state of every known gateway. Requires the
+ * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+ *
+ * Returns per-gateway rolling-window (24h/7d/30d) success rate, average processing latency and volume aggregates computed from payment records, together with the current circuit-breaker state of every known gateway. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+ */
+export type GetPaymentsGatewaysMetricsInput = void;
+export type GetPaymentsGatewaysMetricsOutput = Types.CommercePaymentsGatewayMetricsReport;
+export const getPaymentsGatewaysMetricsEndpoint = {
+  operationId: 'getPaymentsGatewaysMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/gateways/metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Payment success and failed-payment recovery metrics for an inclusive window.
  *
  * Aggregates the recovery analytics that billing administrators need to steer retry and
@@ -9132,6 +9208,29 @@ export const getPaymentsRecoveryMetricsEndpoint = {
   operationId: 'getPaymentsRecoveryMetrics' as const,
   method: 'GET' as const,
   path: '/api/v1/payments/recovery-metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Refund and dispute analytics for an inclusive window (issue #419 follow-up):
+ * refund counts and amounts by status, currency and UTC day, dispute resolution
+ * rates and the average time to resolution. Requires the
+ * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+ *
+ * Returns refund analytics for an inclusive window — counts and refunded amounts by status, currency and UTC day — plus dispute resolution rates (win/loss ratio of decided disputes) and the average time to dispute resolution. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+ */
+export interface GetPaymentsRefundsMetricsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetPaymentsRefundsMetricsOutput = Types.CommercePaymentsRefundAnalyticsReport;
+export const getPaymentsRefundsMetricsEndpoint = {
+  operationId: 'getPaymentsRefundsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/refunds/metrics' as const,
   tags: ['CommercePayments'] as const,
   requiresAuth: true,
 } as const;
@@ -12475,6 +12574,7 @@ export interface GetAdminAuditLogsInput {
     StartDate?: string;
     EndDate?: string;
     IpAddress?: string;
+    SearchText?: string;
     Skip?: number;
     Take?: number;
   };
@@ -12693,6 +12793,21 @@ export const getAdminAuditLogsScheduledExportsHistoryEndpoint = {
   operationId: 'getAdminAuditLogsScheduledExportsHistory' as const,
   method: 'GET' as const,
   path: '/v1/admin/audit-logs/scheduled-exports/{exportId}/history' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Searches audit events using a nested condition tree with boolean logic.
+ */
+export interface PostAdminAuditLogsSearchFilterInput {
+  body?: Types.ComplianceAuditAuditConditionSearchInput;
+}
+export type PostAdminAuditLogsSearchFilterOutput = Types.ComplianceAuditAuditLogOutput;
+export const postAdminAuditLogsSearchFilterEndpoint = {
+  operationId: 'postAdminAuditLogsSearchFilter' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/search-filter' as const,
   tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
@@ -13769,6 +13884,38 @@ export const getAssessmentsMySubmissionsEndpoint = {
 } as const;
 
 /**
+ * Extend an insufficient peer-review evidence window.
+ */
+export interface PostAssessmentsPeerReviewStagesExtendInput {
+  reviewStageId: string;
+  body?: Types.LearningAssessmentsExtendPeerReviewWindowInput;
+}
+export type PostAssessmentsPeerReviewStagesExtendOutput = void;
+export const postAssessmentsPeerReviewStagesExtendEndpoint = {
+  operationId: 'postAssessmentsPeerReviewStagesExtend' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-review-stages/{reviewStageId}/extend' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolve a peer stage whose evidence threshold was not reached before its deadline.
+ */
+export interface PostAssessmentsPeerReviewStagesResolveInsufficientInput {
+  reviewStageId: string;
+  body?: Types.LearningAssessmentsResolvePeerReviewInsufficiencyInput;
+}
+export type PostAssessmentsPeerReviewStagesResolveInsufficientOutput = void;
+export const postAssessmentsPeerReviewStagesResolveInsufficientEndpoint = {
+  operationId: 'postAssessmentsPeerReviewStagesResolveInsufficient' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-review-stages/{reviewStageId}/resolve-insufficient' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get the anonymous submission a claimed review refers to. Reviewer-only.
  */
 export interface GetAssessmentsPeerReviewsInput {
@@ -13784,8 +13931,23 @@ export const getAssessmentsPeerReviewsEndpoint = {
 } as const;
 
 /**
- * Legacy peer-review submit. Valid requests fail closed until peer review is implemented
- * as a canonical grading stage.
+ * Cancel an active claim so another eligible reviewer can claim the stage.
+ */
+export interface PostAssessmentsPeerReviewsReassignInput {
+  reviewId: string;
+  body?: Types.LearningAssessmentsReassignPeerReviewClaimInput;
+}
+export type PostAssessmentsPeerReviewsReassignOutput = void;
+export const postAssessmentsPeerReviewsReassignEndpoint = {
+  operationId: 'postAssessmentsPeerReviewsReassign' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/peer-reviews/{reviewId}/reassign' as const,
+  tags: ['LearningAssessmentsPeerReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Submit evidence for the canonical peer-review stage assigned to the learner.
  */
 export interface PostAssessmentsPeerReviewsSubmitInput {
   reviewId: string;
@@ -13860,6 +14022,58 @@ export const postAssessmentsRuntimeSubmissionsReleaseEndpoint = {
   operationId: 'postAssessmentsRuntimeSubmissionsRelease' as const,
   method: 'POST' as const,
   path: '/v1/assessments/runtime-submissions/{submissionId}/release' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsReleaseScheduleInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand;
+}
+export type PostAssessmentsRuntimeSubmissionsReleaseScheduleOutput = Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
+export const postAssessmentsRuntimeSubmissionsReleaseScheduleEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsReleaseSchedule' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/release-schedule' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsReleaseScheduleCancelInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand;
+}
+export type PostAssessmentsRuntimeSubmissionsReleaseScheduleCancelOutput = Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1;
+export const postAssessmentsRuntimeSubmissionsReleaseScheduleCancelEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsReleaseScheduleCancel' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/release-schedule/cancel' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRuntimeSubmissionsSelfReviewInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsSubmitSelfReviewInput;
+}
+export type PostAssessmentsRuntimeSubmissionsSelfReviewOutput = Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1;
+export const postAssessmentsRuntimeSubmissionsSelfReviewEndpoint = {
+  operationId: 'postAssessmentsRuntimeSubmissionsSelfReview' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/self-review' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAssessmentsRuntimeSubmissionsSelfReviewDraftInput {
+  submissionId: string;
+  body?: Types.LearningAssessmentsSaveCollectiveSelfReviewDraftInput;
+}
+export type PutAssessmentsRuntimeSubmissionsSelfReviewDraftOutput = Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1;
+export const putAssessmentsRuntimeSubmissionsSelfReviewDraftEndpoint = {
+  operationId: 'putAssessmentsRuntimeSubmissionsSelfReviewDraft' as const,
+  method: 'PUT' as const,
+  path: '/v1/assessments/runtime-submissions/{submissionId}/self-review/draft' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -13964,6 +14178,55 @@ export const postAssessmentsTestRunsInstructorReviewEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Gets the anonymous response held by a synthetic peer-review claim.
+ */
+export interface GetAssessmentsTestRunsPeerReviewsInput {
+  testRunId: string;
+  reviewId: string;
+}
+export type GetAssessmentsTestRunsPeerReviewsOutput = Types.LearningAssessmentsPeerReviewClaimView;
+export const getAssessmentsTestRunsPeerReviewsEndpoint = {
+  operationId: 'getAssessmentsTestRunsPeerReviews' as const,
+  method: 'GET' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/{reviewId}' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Submits synthetic peer evidence through the canonical review-stage lifecycle.
+ */
+export interface PostAssessmentsTestRunsPeerReviewsSubmitInput {
+  testRunId: string;
+  reviewId: string;
+  body?: Types.LearningAssessmentsSubmitAssessmentTestPeerReviewInput;
+}
+export type PostAssessmentsTestRunsPeerReviewsSubmitOutput = Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1;
+export const postAssessmentsTestRunsPeerReviewsSubmitEndpoint = {
+  operationId: 'postAssessmentsTestRunsPeerReviewsSubmit' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/{reviewId}/submit' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Claims an anonymous synthetic subject for peer review within an instructor test run.
+ */
+export interface PostAssessmentsTestRunsPeerReviewsClaimInput {
+  testRunId: string;
+  body?: Types.LearningAssessmentsClaimAssessmentTestPeerReviewInput;
+}
+export type PostAssessmentsTestRunsPeerReviewsClaimOutput = Types.LearningAssessmentsPeerReviewClaimResult;
+export const postAssessmentsTestRunsPeerReviewsClaimEndpoint = {
+  operationId: 'postAssessmentsTestRunsPeerReviewsClaim' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/peer-reviews/claim' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface PostAssessmentsTestRunsRestartInput {
   testRunId: string;
   body?: Types.LearningAssessmentsIdempotentRuntimeInput;
@@ -13973,6 +14236,19 @@ export const postAssessmentsTestRunsRestartEndpoint = {
   operationId: 'postAssessmentsTestRunsRestart' as const,
   method: 'POST' as const,
   path: '/v1/assessments/test-runs/{testRunId}/restart' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsTestRunsSelfReviewInput {
+  testRunId: string;
+  body?: Types.LearningAssessmentsSubmitSelfReviewInput;
+}
+export type PostAssessmentsTestRunsSelfReviewOutput = Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1;
+export const postAssessmentsTestRunsSelfReviewEndpoint = {
+  operationId: 'postAssessmentsTestRunsSelfReview' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/test-runs/{testRunId}/self-review' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -29376,6 +29652,7 @@ export const endpoints = {
   getApiAuditRetentionSimulationConfiguration: getApiAuditRetentionSimulationConfigurationEndpoint,
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
   getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
+  postApiAuditSearchFilter: postApiAuditSearchFilterEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
   postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
@@ -29774,6 +30051,7 @@ export const endpoints = {
   postAuthorizationPermissionTemplatesMigrationsRollback: postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint,
   getAuthorizationPermissionTemplatesVersions: getAuthorizationPermissionTemplatesVersionsEndpoint,
   postAuthorizationPermissionsSimulate: postAuthorizationPermissionsSimulateEndpoint,
+  getAuthorizationPermissionsGlobalCheck: getAuthorizationPermissionsGlobalCheckEndpoint,
   getAuthorizationPermissionsHistoryAt: getAuthorizationPermissionsHistoryAtEndpoint,
   getAuthorizationPermissionsHistoryInheritance: getAuthorizationPermissionsHistoryInheritanceEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
@@ -29858,6 +30136,7 @@ export const endpoints = {
   postBillingWebhooksApplePay: postBillingWebhooksApplePayEndpoint,
   postBillingWebhooksGooglePay: postBillingWebhooksGooglePayEndpoint,
   postBillingWebhooksPaypal: postBillingWebhooksPaypalEndpoint,
+  postBillingWebhooksSecretsRotate: postBillingWebhooksSecretsRotateEndpoint,
   getBillingWebhooksSecurity: getBillingWebhooksSecurityEndpoint,
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
@@ -29928,7 +30207,9 @@ export const endpoints = {
   postPaymentsRefund: postPaymentsRefundEndpoint,
   postPaymentsRetry: postPaymentsRetryEndpoint,
   getPaymentsRetryAttempts: getPaymentsRetryAttemptsEndpoint,
+  getPaymentsGatewaysMetrics: getPaymentsGatewaysMetricsEndpoint,
   getPaymentsRecoveryMetrics: getPaymentsRecoveryMetricsEndpoint,
+  getPaymentsRefundsMetrics: getPaymentsRefundsMetricsEndpoint,
   getPaymentsRetryingCandidates: getPaymentsRetryingCandidatesEndpoint,
   postPaymentsSetupIntents: postPaymentsSetupIntentsEndpoint,
   postPaymentsSubscriptionCheckoutsComplete: postPaymentsSubscriptionCheckoutsCompleteEndpoint,
@@ -30138,6 +30419,7 @@ export const endpoints = {
   postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
   deleteAdminAuditLogsScheduledExports: deleteAdminAuditLogsScheduledExportsEndpoint,
   getAdminAuditLogsScheduledExportsHistory: getAdminAuditLogsScheduledExportsHistoryEndpoint,
+  postAdminAuditLogsSearchFilter: postAdminAuditLogsSearchFilterEndpoint,
   getAdminAuditLogsSearchByActionType: getAdminAuditLogsSearchByActionTypeEndpoint,
   getAdminAuditLogsSearchByActionTypeExport: getAdminAuditLogsSearchByActionTypeExportEndpoint,
   getAdminAuditLogsSearchByActionTypeTaxonomy: getAdminAuditLogsSearchByActionTypeTaxonomyEndpoint,
@@ -30205,13 +30487,20 @@ export const endpoints = {
   putAssessmentsGroups: putAssessmentsGroupsEndpoint,
   deleteAssessmentsGroups: deleteAssessmentsGroupsEndpoint,
   getAssessmentsMySubmissions: getAssessmentsMySubmissionsEndpoint,
+  postAssessmentsPeerReviewStagesExtend: postAssessmentsPeerReviewStagesExtendEndpoint,
+  postAssessmentsPeerReviewStagesResolveInsufficient: postAssessmentsPeerReviewStagesResolveInsufficientEndpoint,
   getAssessmentsPeerReviews: getAssessmentsPeerReviewsEndpoint,
+  postAssessmentsPeerReviewsReassign: postAssessmentsPeerReviewsReassignEndpoint,
   postAssessmentsPeerReviewsSubmit: postAssessmentsPeerReviewsSubmitEndpoint,
   getAssessmentsRuntimeSubmissions: getAssessmentsRuntimeSubmissionsEndpoint,
   putAssessmentsRuntimeSubmissionsDraft: putAssessmentsRuntimeSubmissionsDraftEndpoint,
   postAssessmentsRuntimeSubmissionsInstructorReview: postAssessmentsRuntimeSubmissionsInstructorReviewEndpoint,
   postAssessmentsRuntimeSubmissionsRegrade: postAssessmentsRuntimeSubmissionsRegradeEndpoint,
   postAssessmentsRuntimeSubmissionsRelease: postAssessmentsRuntimeSubmissionsReleaseEndpoint,
+  postAssessmentsRuntimeSubmissionsReleaseSchedule: postAssessmentsRuntimeSubmissionsReleaseScheduleEndpoint,
+  postAssessmentsRuntimeSubmissionsReleaseScheduleCancel: postAssessmentsRuntimeSubmissionsReleaseScheduleCancelEndpoint,
+  postAssessmentsRuntimeSubmissionsSelfReview: postAssessmentsRuntimeSubmissionsSelfReviewEndpoint,
+  putAssessmentsRuntimeSubmissionsSelfReviewDraft: putAssessmentsRuntimeSubmissionsSelfReviewDraftEndpoint,
   postAssessmentsRuntimeSubmissionsSubmit: postAssessmentsRuntimeSubmissionsSubmitEndpoint,
   getAssessmentsSubmissionsForGetAssessmentsSubmissionsBySubmissionId: getAssessmentsSubmissionsForGetAssessmentsSubmissionsBySubmissionIdEndpoint,
   getAssessmentsSubmissionsPeerReviews: getAssessmentsSubmissionsPeerReviewsEndpoint,
@@ -30219,7 +30508,11 @@ export const endpoints = {
   postAssessmentsSubmissionsSubmit: postAssessmentsSubmissionsSubmitEndpoint,
   getAssessmentsTestRuns: getAssessmentsTestRunsEndpoint,
   postAssessmentsTestRunsInstructorReview: postAssessmentsTestRunsInstructorReviewEndpoint,
+  getAssessmentsTestRunsPeerReviews: getAssessmentsTestRunsPeerReviewsEndpoint,
+  postAssessmentsTestRunsPeerReviewsSubmit: postAssessmentsTestRunsPeerReviewsSubmitEndpoint,
+  postAssessmentsTestRunsPeerReviewsClaim: postAssessmentsTestRunsPeerReviewsClaimEndpoint,
   postAssessmentsTestRunsRestart: postAssessmentsTestRunsRestartEndpoint,
+  postAssessmentsTestRunsSelfReview: postAssessmentsTestRunsSelfReviewEndpoint,
   postAssessmentsTestRunsSubmit: postAssessmentsTestRunsSubmitEndpoint,
   getAssetLibraries: getAssetLibrariesEndpoint,
   postAssetLibrariesFolders: postAssetLibrariesFoldersEndpoint,

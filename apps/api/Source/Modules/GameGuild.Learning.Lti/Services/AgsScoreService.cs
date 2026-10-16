@@ -13,8 +13,8 @@ using Microsoft.IdentityModel.Tokens;
 namespace GameGuild.Learning.Lti;
 
 /// <summary>
-/// AGS score passback: on instructor grade release, posts the score to the platform
-/// line item mapped to the assessment. Fire-and-log — failures never propagate to grading.
+/// AGS score passback for a released grade. Technical failures propagate to the
+/// academic outbox consumer; absence of an assessment or user mapping is a valid no-op.
 /// </summary>
 public sealed class AgsScoreService(
     IApplicationDbContext context,
@@ -23,53 +23,62 @@ public sealed class AgsScoreService(
 {
     private const string AgsScoreScope = "https://purl.imsglobal.org/spec/lti-ags/scope/score";
 
-    public async Task PostScoreIfMappedAsync(Guid assessmentId, Guid userId, ScoreValue score, ScoreValue maxScore)
+    public async Task<LtiScorePassbackOutcome> PostScoreIfMappedAsync(
+        Guid assessmentId,
+        Guid userId,
+        ScoreValue score,
+        ScoreValue maxScore,
+        CancellationToken cancellationToken = default)
     {
-        try
+        var mapping = await context.Set<LtiLineItemMapping>()
+            .FirstOrDefaultAsync(m => m.AssessmentId == assessmentId, cancellationToken)
+            .ConfigureAwait(false);
+        if (mapping is null)
         {
-            var mapping = await context.Set<LtiLineItemMapping>()
-                .FirstOrDefaultAsync(m => m.AssessmentId == assessmentId)
-                .ConfigureAwait(false);
-            if (mapping is null)
-            {
-                return; // assessment not linked to a line item — nothing to pass back
-            }
-
-            var deployment = await context.Set<LtiDeployment>()
-                .FirstOrDefaultAsync(d => d.Id == mapping.DeploymentId && d.DeletedAt == null)
-                .ConfigureAwait(false);
-            if (deployment is null)
-            {
-                logger.LogWarning("LTI AGS: line item mapping {MappingId} references missing deployment {DeploymentId}", mapping.Id, mapping.DeploymentId);
-                return;
-            }
-
-            var userMapping = await context.Set<LtiUserMapping>()
-                .FirstOrDefaultAsync(u => u.DeploymentId == mapping.DeploymentId && u.UserId == userId)
-                .ConfigureAwait(false);
-            if (userMapping is null)
-            {
-                logger.LogInformation("LTI AGS: user {UserId} has no platform sub for deployment {DeploymentId}; skipping score passback", userId, mapping.DeploymentId);
-                return;
-            }
-
-            using var client = httpClientFactory.CreateClient(LtiModule.HttpClientName);
-            var accessToken = await GetPlatformAccessTokenAsync(client, deployment).ConfigureAwait(false);
-            if (accessToken is null)
-            {
-                return;
-            }
-
-            await PostScoreAsync(client, mapping, userMapping.Sub, score, maxScore, accessToken).ConfigureAwait(false);
+            return LtiScorePassbackOutcome.NotMapped;
         }
-        catch (Exception ex)
+
+        var deployment = await context.Set<LtiDeployment>()
+            .FirstOrDefaultAsync(d => d.Id == mapping.DeploymentId && d.DeletedAt == null, cancellationToken)
+            .ConfigureAwait(false);
+        if (deployment is null)
         {
-            // Never throw to the grading caller — a slow/broken platform must not fail the grade.
-            logger.LogError(ex, "LTI AGS: score passback failed for assessment {AssessmentId} user {UserId}", assessmentId, userId);
+            throw new InvalidOperationException(
+                $"LTI line item mapping {mapping.Id} references missing deployment {mapping.DeploymentId}.");
         }
+
+        var userMapping = await context.Set<LtiUserMapping>()
+            .FirstOrDefaultAsync(
+                u => u.DeploymentId == mapping.DeploymentId && u.UserId == userId,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (userMapping is null)
+        {
+            logger.LogInformation(
+                "LTI AGS: user {UserId} has no platform sub for deployment {DeploymentId}; skipping score passback",
+                userId,
+                mapping.DeploymentId);
+            return LtiScorePassbackOutcome.UserNotMapped;
+        }
+
+        using var client = httpClientFactory.CreateClient(LtiModule.HttpClientName);
+        var accessToken = await GetPlatformAccessTokenAsync(client, deployment, cancellationToken).ConfigureAwait(false);
+        await PostScoreAsync(
+                client,
+                mapping,
+                userMapping.Sub,
+                score,
+                maxScore,
+                accessToken,
+                cancellationToken)
+            .ConfigureAwait(false);
+        return LtiScorePassbackOutcome.Delivered;
     }
 
-    private async Task<string?> GetPlatformAccessTokenAsync(HttpClient client, LtiDeployment deployment)
+    private async Task<string> GetPlatformAccessTokenAsync(
+        HttpClient client,
+        LtiDeployment deployment,
+        CancellationToken cancellationToken)
     {
         // private_key_jwt client assertion signed with the tool key (RS256, kid = deployment.KeyId).
         var now = DateTime.UtcNow;
@@ -94,16 +103,20 @@ public sealed class AgsScoreService(
             ["scope"] = AgsScoreScope
         });
 
-        using var response = await client.PostAsync(deployment.AuthTokenUrl, form).ConfigureAwait(false);
+        using var response = await client.PostAsync(deployment.AuthTokenUrl, form, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogError("LTI AGS: token request to {TokenUrl} returned {StatusCode}", deployment.AuthTokenUrl, (int)response.StatusCode);
-            return null;
+            throw new HttpRequestException(
+                $"LTI AGS token request returned {(int)response.StatusCode}.",
+                null,
+                response.StatusCode);
         }
 
-        var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         using var doc = System.Text.Json.JsonDocument.Parse(json);
-        return doc.RootElement.TryGetProperty("access_token", out var token) ? token.GetString() : null;
+        return doc.RootElement.TryGetProperty("access_token", out var token) && !string.IsNullOrWhiteSpace(token.GetString())
+            ? token.GetString()!
+            : throw new JsonException("LTI AGS token response did not contain an access token.");
     }
 
     private async Task PostScoreAsync(
@@ -112,7 +125,8 @@ public sealed class AgsScoreService(
         string sub,
         ScoreValue score,
         ScoreValue maxScore,
-        string accessToken)
+        string accessToken,
+        CancellationToken cancellationToken)
     {
         var scoreUrl = mapping.LineItemUrl.TrimEnd('/') + "/scores";
         using var payloadStream = new MemoryStream();
@@ -134,10 +148,13 @@ public sealed class AgsScoreService(
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
         request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-        using var response = await client.SendAsync(request).ConfigureAwait(false);
+        using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogError("LTI AGS: score POST to {ScoreUrl} returned {StatusCode}", scoreUrl, (int)response.StatusCode);
+            throw new HttpRequestException(
+                $"LTI AGS score request returned {(int)response.StatusCode}.",
+                null,
+                response.StatusCode);
         }
     }
 

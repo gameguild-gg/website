@@ -50,7 +50,8 @@ public static class NotificationCategories
             or NotificationType.MonthlyStatement
             or NotificationType.InvoiceIssued
             or NotificationType.PaymentMethodExpiring
-            or NotificationType.WalletBalanceBelowThreshold => "Billing",
+            or NotificationType.WalletBalanceBelowThreshold
+            or NotificationType.CreditApplied => "Billing",
 
         NotificationType.EmailVerification
             or NotificationType.PasswordReset
