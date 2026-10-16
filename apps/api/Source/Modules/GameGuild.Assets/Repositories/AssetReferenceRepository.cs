@@ -27,6 +27,20 @@ public class AssetReferenceRepository : IAssetReferenceRepository
             .FirstOrDefaultAsync(x => x.Id == id, ct).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<AssetReference>> GetByIdsWithContentAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await _context.Set<AssetReference>()
+            .Include(x => x.Content)
+            .Where(x => ids.Contains(x.Id) && x.DeletedAt == null)
+            .ToListAsync(ct).ConfigureAwait(false);
+    }
+
     public async Task<IReadOnlyList<AssetReference>> GetByParentAsync(
         string parentResourceType,
         Guid parentResourceId,
