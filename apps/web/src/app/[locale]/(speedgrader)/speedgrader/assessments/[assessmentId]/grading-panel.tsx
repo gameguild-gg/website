@@ -179,14 +179,15 @@ function GradingPanelSession({
     submission?.execution.instructorVisibleResult?.state === 'final'
       ? submission.execution.instructorVisibleResult
       : null;
+  const activeRound = submission?.execution.history.find(
+    (round) => round.roundId === submission.execution.activeRoundId,
+  );
+  const activeRoundReleased = activeRound?.released === true;
   const canRelease = Boolean(
     submission &&
       finalResult &&
-      !submission.execution.released &&
-      submission.execution.activeRoundId,
-  );
-  const activeRound = submission?.execution.history.find(
-    (round) => round.roundId === submission.execution.activeRoundId,
+      activeRound?.status === 'finalized' &&
+      !activeRoundReleased,
   );
   const releaseSchedule = activeRound?.releaseSchedule ?? null;
   const scheduledReleaseTimestamp = Date.parse(releaseScheduledFor);
@@ -486,20 +487,20 @@ function GradingPanelSession({
               data-testid="result-release-status"
               aria-live="polite"
               className={
-                submission.execution.released
+                activeRoundReleased
                   ? 'space-y-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4'
                   : 'space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-4'
               }
             >
               <div className="flex items-start gap-3">
-                {submission.execution.released ? (
+                {activeRoundReleased ? (
                   <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
                 ) : (
                   <EyeOff className="mt-0.5 size-5 shrink-0 text-amber-600" />
                 )}
                 <div className="min-w-0 space-y-1">
                   <h2 className="text-sm font-semibold">
-                    {submission.execution.released
+                    {activeRoundReleased
                       ? 'Released to learner'
                       : 'Ready to release'}
                   </h2>
@@ -508,7 +509,7 @@ function GradingPanelSession({
                     {scoreUnitsToPoints(finalResult.maxScore)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {submission.execution.released
+                    {activeRoundReleased
                       ? 'The learner can now see the score and released feedback.'
                       : 'Grading is complete, but the learner cannot see the score or feedback until this result is released.'}
                   </p>
