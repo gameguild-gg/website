@@ -78,6 +78,7 @@ public static class OpenTelemetryExtensions
                     .AddHttpClientInstrumentation()
                     .AddMeter(
                         "GameGuild.API.RateLimiting",
+                        "GameGuild.Learning.Assessments.Grading",
                         "GameGuild.Identity.Authentication.PermissionBulkCheck",
                         "GameGuild.Identity.Authentication.RefreshTokens",
                         "GameGuild.Identity.Authorization.Cache");

@@ -7,6 +7,18 @@ namespace GameGuild.Learning.Assessments.Grading.Runtime;
 
 internal static class GradingRuntimeDatabaseLock
 {
+    private const string ExecutionMutationScope = "grading-execution";
+
+    public static Task<IDbContextTransaction?> AcquireExecutionAsync(
+        IApplicationDbContext context,
+        Guid executionId,
+        CancellationToken cancellationToken = default) =>
+        AcquireAsync(
+            context,
+            ExecutionMutationScope,
+            executionId,
+            cancellationToken: cancellationToken);
+
     public static async Task<IDbContextTransaction?> AcquireAsync(
         IApplicationDbContext context,
         string scope,

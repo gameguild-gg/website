@@ -7,17 +7,20 @@ import {
 } from "./api.mjs";
 import {
   checkpointIndex,
+  expectedFinalScore,
   getScenarioDefinition,
   hasInstructorReview,
+  hasPeerReview,
   nextApplicableCheckpoint,
 } from "./definitions.mjs";
-import { readManifest } from "./manifest.mjs";
+import { readManifest, selectedManifestQuizzes } from "./manifest.mjs";
 
 export async function verifyScenario(scenarioKey, { strict = true } = {}) {
   const manifest = await readManifest(scenarioKey);
   const definition = getScenarioDefinition(scenarioKey);
+  const quizzes = selectedManifestQuizzes(manifest);
   const checks = [];
-  let confirmed = "empty";
+  const confirmedByQuiz = {};
 
   await assertStackAvailable(
     manifest.environment.apiBaseUrl,
@@ -28,282 +31,40 @@ export async function verifyScenario(scenarioKey, { strict = true } = {}) {
   });
 
   try {
-    const resources = manifest.resources;
-    const course = unwrap(
-      await instructor.modules.courses.getCoursesForGetCoursesById(
-        resources.courseId,
-      ),
-      "Verify course",
-    );
-    expect(
-      course.slug === resources.courseSlug &&
-        course.title?.includes(manifest.marker),
-      "course ownership",
-      checks,
-      `expected marker ${manifest.marker}`,
-    );
-
-    const groups = unwrap(
-      await instructor.modules.assessments.getAssessmentsCourseGroups(
-        resources.courseId,
-      ),
-      "Verify assessment groups",
-    );
-    expect(
-      groups.some(
-        (group) =>
-          group.id === resources.gradingGroupId &&
-          group.name?.includes(manifest.marker) &&
-          group.weightPercent === definition.gradingGroup.weightPercent,
-      ),
-      "assessment group",
-      checks,
-      "group, ownership marker, or weight differs",
-    );
-
-    const content = unwrap(
-      await instructor.modules.content.getCoursesContentById(
-        resources.courseId,
-        resources.contentId,
-      ),
-      "Verify quiz content",
-    );
-    expect(
-      content.slug?.includes(manifest.marker) &&
-        content.type === "Questionnaire",
-      "quiz content",
-      checks,
-      "content is not the owned Questionnaire",
-    );
-
-    const assessment = unwrap(
-      await instructor.modules.assessments.getAssessments(
-        resources.assessmentId,
-      ),
-      "Verify assessment",
-    );
-    expect(
-      assessment.contentId === resources.contentId,
-      "assessment content link",
+    const course = await verifySharedResources(
+      manifest,
+      definition,
+      instructor,
       checks,
     );
-    expect(
-      assessment.assessmentGroupId === resources.gradingGroupId,
-      "assessment grading group",
-      checks,
-    );
-    expect(
-      assessment.reviewMethods === definition.reviewMethodValue,
-      "review workflow",
-      checks,
-      `expected ${definition.reviewMethodValue}, received ${assessment.reviewMethods}`,
-    );
-    expect(
-      assessment.resultReleaseMode === "manual",
-      "manual release policy",
-      checks,
-    );
-    expect(
-      assessment.maxScore === definition.expected.maxScore,
-      "canonical max score",
-      checks,
-      `expected ${definition.expected.maxScore}, received ${assessment.maxScore}`,
-    );
-    if (definition.subject === "collective") {
-      expect(
-        assessment.groupSetId === resources.groupSetId,
-        "collective group set",
-        checks,
-      );
-    }
-    confirmed = "authoring-ready";
-
-    const state = await request(instructor.client, "Verify authoring state", {
-      method: "GET",
-      path: `/v1/assessments/${resources.assessmentId}/authoring-state`,
-    });
-    if (
-      (state.candidate?.revisionId && state.candidateMatchesDraft) ||
-      (state.published?.revisionId && state.publishedMatchesDraft)
-    ) {
-      expect(
-        state.candidate?.revisionId === resources.candidateRevisionId ||
-          state.published?.revisionId === resources.candidateRevisionId ||
-          state.published?.revisionId === resources.publishedRevisionId,
-        "candidate revision identity",
-        checks,
-      );
-      confirmed = "test-run-ready";
-    }
-
-    const learner = manifest.personas.learnerA.userId
+    const learnerA = manifest.personas.learnerA.userId
       ? await authenticatePersona(manifest, "learnerA", { create: false })
+      : null;
+    const learnerB = manifest.personas.learnerB?.userId
+      ? await authenticatePersona(manifest, "learnerB", { create: false })
       : null;
     const outsider = manifest.personas.outsider.userId
       ? await authenticatePersona(manifest, "outsider", { create: false })
       : null;
-    const publishedRevisionId = state.published?.revisionId;
-    const learnerReady =
-      Boolean(publishedRevisionId) &&
-      course.status === "Published" &&
-      Boolean(manifest.personas.learnerA.enrollmentId);
 
-    if (learnerReady && learner && outsider) {
-      const learnerDashboard = await request(
-        learner.client,
-        "Verify learner dashboard",
-        {
-          method: "GET",
-          path: "/v1/learning/me/dashboard",
-        },
-      );
-      const learnerAccess = unwrap(
-        await learner.client.request({
-          method: "GET",
-          path: `/v1/courses/${resources.courseId}/access/capabilities`,
-          requiresAuth: true,
-        }),
-        "Verify learner capabilities",
-      );
-      const outsiderAccess = unwrap(
-        await outsider.client.request({
-          method: "GET",
-          path: `/v1/courses/${resources.courseId}/access/capabilities`,
-          requiresAuth: true,
-        }),
-        "Verify outsider capabilities",
-      );
-      expect(
-        learnerAccess.canLearn === true,
-        "learner enrollment access",
-        checks,
-      );
-      expect(
-        learnerDashboard.courses?.some(
-          (entry) =>
-            entry.courseId === resources.courseId &&
-            entry.enrollmentStatus === "Active",
-        ),
-        "learner dashboard membership",
-        checks,
-        "active course is missing from /v1/learning/me/dashboard",
-      );
-      expect(learnerAccess.canEdit === false, "learner cannot edit", checks);
-      expect(
-        outsiderAccess.canLearn === false,
-        "outsider denied learning access",
-        checks,
-      );
-      expect(
-        outsiderAccess.canAccessWorkspace === false,
-        "outsider denied workspace",
-        checks,
-      );
-
-      if (definition.subject === "collective") {
-        await verifyCollectiveGroup(manifest, instructor, checks);
-      }
-      confirmed = "learner-ready";
+    if (learnerA && outsider) {
+      await verifyPersonaAccess(manifest, course, learnerA, outsider, checks);
+    }
+    if (quizzes.some((quiz) => quiz.subject === "collective")) {
+      await verifyCollectiveGroup(manifest, instructor, checks);
     }
 
-    if (resources.submissionId && learner) {
-      const submission = await request(
-        learner.client,
-        "Verify official submission",
-        {
-          method: "GET",
-          path: `/v1/assessments/runtime-submissions/${resources.submissionId}`,
-        },
-      );
-      expect(
-        submission.definitionRevisionId === publishedRevisionId,
-        "submission frozen revision",
+    for (const quiz of quizzes) {
+      confirmedByQuiz[quiz.key] = await verifyQuiz({
+        manifest,
+        definition,
+        quiz,
+        course,
+        instructor,
+        learners: { learnerA, learnerB },
+        outsider,
         checks,
-      );
-      expect(
-        submission.status !== "InProgress",
-        "official response submitted",
-        checks,
-      );
-
-      if (outsider) {
-        const unauthorizedRead = await outsider.client.request({
-          method: "GET",
-          path: `/v1/assessments/runtime-submissions/${resources.submissionId}`,
-          requiresAuth: true,
-        });
-        expect(
-          !unauthorizedRead.ok && isForbidden(unauthorizedRead.error),
-          "outsider denied submission read",
-          checks,
-          unauthorizedRead.ok
-            ? "outsider unexpectedly read the submission"
-            : undefined,
-        );
-      }
-
-      if (submission.execution?.requiresInstructorReview) {
-        expect(
-          hasInstructorReview(definition),
-          "review-ready matches workflow",
-          checks,
-        );
-        expect(
-          submission.execution.learnerVisibleResult == null,
-          "result withheld before review/release",
-          checks,
-        );
-        confirmed = "review-ready";
-      } else {
-        const finalResult = getFinalResult(submission.execution);
-        if (!finalResult) {
-          expect(
-            false,
-            "final review result",
-            checks,
-            "execution does not contain a finalized result",
-          );
-        } else {
-          const expectedScore = hasInstructorReview(definition)
-            ? definition.expected.instructorScore
-            : definition.expected.automatedScore;
-          expect(
-            finalResult.score === expectedScore,
-            "final score",
-            checks,
-            `expected ${expectedScore}, received ${finalResult.score}`,
-          );
-          if (!submission.execution.released) {
-            expect(
-              submission.execution.learnerVisibleResult == null,
-              "manual release withholds learner result",
-              checks,
-            );
-            confirmed = "release-ready";
-          } else {
-            expect(
-              submission.execution.learnerVisibleResult?.score ===
-                expectedScore,
-              "released learner score",
-              checks,
-            );
-            const learnerB =
-              definition.subject === "collective"
-                ? await authenticatePersona(manifest, "learnerB", {
-                    create: false,
-                  })
-                : null;
-            await verifyGradebook(
-              manifest,
-              definition,
-              { learnerA: learner, learnerB },
-              { learnerA: submission.enrollmentId },
-              checks,
-            );
-            confirmed = "released";
-          }
-        }
-      }
+      });
     }
   } catch (error) {
     checks.push({
@@ -313,34 +74,341 @@ export async function verifyScenario(scenarioKey, { strict = true } = {}) {
     });
   }
 
-  return buildReport({ manifest, scenarioKey, confirmed, checks, strict });
+  return buildReport({
+    manifest,
+    definition,
+    scenarioKey,
+    confirmedByQuiz,
+    checks,
+    strict,
+  });
 }
 
-function buildReport({ manifest, scenarioKey, confirmed, checks, strict }) {
-  const declaredIndex = checkpointIndex(manifest.checkpoint);
-  const confirmedIndex = checkpointIndex(confirmed);
-  if (confirmedIndex < declaredIndex) {
-    checks.push({
-      name: "manifest checkpoint",
-      ok: false,
-      detail: `manifest declares ${manifest.checkpoint}, server confirms only ${confirmed}`,
-    });
-  } else {
-    checks.push({
-      name: "manifest checkpoint",
-      ok: true,
-      detail: `declared ${manifest.checkpoint}, confirmed ${confirmed}`,
-    });
+async function verifySharedResources(manifest, definition, instructor, checks) {
+  const resources = manifest.resources;
+  const course = unwrap(
+    await instructor.modules.courses.getCoursesForGetCoursesById(
+      resources.courseId,
+    ),
+    "Verify course",
+  );
+  expect(
+    course.slug === resources.courseSlug &&
+      course.title?.includes(manifest.marker),
+    "course ownership",
+    checks,
+    `expected marker ${manifest.marker}`,
+  );
+
+  const groups = unwrap(
+    await instructor.modules.assessments.getAssessmentsCourseGroups(
+      resources.courseId,
+    ),
+    "Verify assessment groups",
+  );
+  expect(
+    groups.some(
+      (group) =>
+        group.id === resources.gradingGroupId &&
+        group.name?.includes(manifest.marker) &&
+        group.weightPercent === definition.gradingGroup.weightPercent,
+    ),
+    "assessment group",
+    checks,
+    "group, ownership marker, or weight differs",
+  );
+  return course;
+}
+
+async function verifyPersonaAccess(
+  manifest,
+  course,
+  learner,
+  outsider,
+  checks,
+) {
+  if (course.status !== "Published") return;
+  const learnerDashboard = await request(
+    learner.client,
+    "Verify learner dashboard",
+    { method: "GET", path: "/v1/learning/me/dashboard" },
+  );
+  const learnerAccess = unwrap(
+    await learner.client.request({
+      method: "GET",
+      path: `/v1/courses/${manifest.resources.courseId}/access/capabilities`,
+      requiresAuth: true,
+    }),
+    "Verify learner capabilities",
+  );
+  const outsiderAccess = unwrap(
+    await outsider.client.request({
+      method: "GET",
+      path: `/v1/courses/${manifest.resources.courseId}/access/capabilities`,
+      requiresAuth: true,
+    }),
+    "Verify outsider capabilities",
+  );
+  expect(learnerAccess.canLearn === true, "learner enrollment access", checks);
+  expect(
+    learnerDashboard.courses?.some(
+      (entry) =>
+        entry.courseId === manifest.resources.courseId &&
+        entry.enrollmentStatus === "Active",
+    ),
+    "learner dashboard membership",
+    checks,
+    "active course is missing from /v1/learning/me/dashboard",
+  );
+  expect(learnerAccess.canEdit === false, "learner cannot edit", checks);
+  expect(
+    outsiderAccess.canLearn === false,
+    "outsider denied learning access",
+    checks,
+  );
+  expect(
+    outsiderAccess.canAccessWorkspace === false,
+    "outsider denied workspace",
+    checks,
+  );
+}
+
+async function verifyQuiz({
+  manifest,
+  quiz,
+  course,
+  instructor,
+  learners,
+  outsider,
+  checks,
+}) {
+  const resources = manifest.resources.quizzes[quiz.key];
+  const prefix = `[${quiz.key}]`;
+  let confirmed = "empty";
+
+  const content = unwrap(
+    await instructor.modules.content.getCoursesContentById(
+      manifest.resources.courseId,
+      resources.contentId,
+    ),
+    `Verify quiz content ${quiz.key}`,
+  );
+  expect(
+    content.slug === `${manifest.marker}-${quiz.key}` &&
+      content.type === "Questionnaire",
+    `${prefix} quiz content`,
+    checks,
+    "content is not the owned Questionnaire",
+  );
+
+  const assessment = unwrap(
+    await instructor.modules.assessments.getAssessments(resources.assessmentId),
+    `Verify assessment ${quiz.key}`,
+  );
+  expect(
+    assessment.contentId === resources.contentId,
+    `${prefix} assessment content link`,
+    checks,
+  );
+  expect(
+    assessment.assessmentGroupId === manifest.resources.gradingGroupId,
+    `${prefix} assessment grading group`,
+    checks,
+  );
+  expect(
+    assessment.reviewMethods === quiz.reviewMethodValue,
+    `${prefix} review workflow`,
+    checks,
+    `expected ${quiz.reviewMethodValue}, received ${assessment.reviewMethods}`,
+  );
+  expect(
+    assessment.resultReleaseMode === quiz.release,
+    `${prefix} release policy`,
+    checks,
+  );
+  expect(
+    assessment.maxScore === quiz.expected.maxScore,
+    `${prefix} canonical max score`,
+    checks,
+    `expected ${quiz.expected.maxScore}, received ${assessment.maxScore}`,
+  );
+  if (quiz.subject === "collective") {
+    expect(
+      assessment.groupSetId === manifest.resources.groupSetId,
+      `${prefix} collective group set`,
+      checks,
+    );
+  }
+  confirmed = "authoring-ready";
+
+  const state = await request(instructor.client, "Verify authoring state", {
+    method: "GET",
+    path: `/v1/assessments/${resources.assessmentId}/authoring-state`,
+  });
+  if (
+    (state.candidate?.revisionId && state.candidateMatchesDraft) ||
+    (state.published?.revisionId && state.publishedMatchesDraft)
+  ) {
+    expect(
+      state.candidate?.revisionId === resources.candidateRevisionId ||
+        state.published?.revisionId === resources.candidateRevisionId ||
+        state.published?.revisionId === resources.publishedRevisionId,
+      `${prefix} candidate revision identity`,
+      checks,
+    );
+    confirmed = "test-run-ready";
   }
 
+  const learnerReady =
+    Boolean(state.published?.revisionId) &&
+    course.status === "Published" &&
+    Boolean(manifest.personas.learnerA.enrollmentId);
+  if (learnerReady) confirmed = "learner-ready";
+
+  const submissionEntries = Object.entries(resources.submissions).filter(
+    ([, value]) => value.submissionId,
+  );
+  if (submissionEntries.length === 0) return confirmed;
+
+  let awaitingInstructor = false;
+  let allFinal = true;
+  let allReleased = true;
+  const expectedScore = expectedFinalScore(quiz);
+  for (const [personaKey, submissionResources] of submissionEntries) {
+    const submission = await request(
+      instructor.client,
+      `Verify official submission ${quiz.key}/${personaKey}`,
+      {
+        method: "GET",
+        path: `/v1/assessments/runtime-submissions/${submissionResources.submissionId}`,
+      },
+    );
+    expect(
+      submission.definitionRevisionId === state.published?.revisionId,
+      `${prefix} ${personaKey} frozen revision`,
+      checks,
+    );
+    expect(
+      normalizeStatus(submission.status) !== "inprogress",
+      `${prefix} ${personaKey} response submitted`,
+      checks,
+    );
+
+    if (outsider) {
+      const unauthorizedRead = await outsider.client.request({
+        method: "GET",
+        path: `/v1/assessments/runtime-submissions/${submissionResources.submissionId}`,
+        requiresAuth: true,
+      });
+      expect(
+        !unauthorizedRead.ok && isForbidden(unauthorizedRead.error),
+        `${prefix} outsider denied ${personaKey} submission read`,
+        checks,
+      );
+    }
+
+    if (submission.execution?.requiresInstructorReview) {
+      awaitingInstructor = true;
+      allFinal = false;
+      allReleased = false;
+      expect(
+        hasInstructorReview(quiz),
+        `${prefix} review-ready matches workflow`,
+        checks,
+      );
+      expect(
+        submission.execution.learnerVisibleResult == null,
+        `${prefix} result withheld before instructor review`,
+        checks,
+      );
+      continue;
+    }
+
+    const finalResult = getFinalResult(submission.execution);
+    if (!finalResult) {
+      allFinal = false;
+      allReleased = false;
+      expect(
+        false,
+        `${prefix} ${personaKey} final review result`,
+        checks,
+        "execution does not contain a finalized result",
+      );
+      continue;
+    }
+    expect(
+      finalResult.score === expectedScore,
+      `${prefix} ${personaKey} final score`,
+      checks,
+      `expected ${expectedScore}, received ${finalResult.score}`,
+    );
+    if (!submission.execution.released) {
+      allReleased = false;
+      expect(
+        submission.execution.learnerVisibleResult == null,
+        `${prefix} manual release withholds ${personaKey} result`,
+        checks,
+      );
+    } else {
+      expect(
+        submission.execution.learnerVisibleResult?.score === expectedScore,
+        `${prefix} ${personaKey} released learner score`,
+        checks,
+      );
+    }
+  }
+
+  if (awaitingInstructor) return "review-ready";
+  if (!allFinal) return "learner-ready";
+  if (!allReleased) return "release-ready";
+
+  await verifyGradebook(manifest, quiz, resources, learners, checks);
+  return "released";
+}
+
+function buildReport({
+  manifest,
+  definition,
+  scenarioKey,
+  confirmedByQuiz,
+  checks,
+  strict,
+}) {
+  for (const quiz of selectedManifestQuizzes(manifest)) {
+    const declared = manifest.resources.quizzes[quiz.key].checkpoint;
+    const confirmed = confirmedByQuiz[quiz.key] ?? "empty";
+    expect(
+      checkpointIndex(confirmed) >= checkpointIndex(declared),
+      `[${quiz.key}] manifest checkpoint`,
+      checks,
+      `manifest declares ${declared}, server confirms only ${confirmed}`,
+    );
+  }
+  const confirmedCheckpoint = Object.values(confirmedByQuiz).reduce(
+    (earliest, checkpoint) =>
+      checkpointIndex(checkpoint) < checkpointIndex(earliest)
+        ? checkpoint
+        : earliest,
+    "released",
+  );
   const report = {
     scenario: scenarioKey,
     runId: manifest.runId,
     declaredCheckpoint: manifest.checkpoint,
-    confirmedCheckpoint: confirmed,
+    confirmedCheckpoint,
+    checkpoints: Object.fromEntries(
+      selectedManifestQuizzes(manifest).map((quiz) => [
+        quiz.key,
+        {
+          declared: manifest.resources.quizzes[quiz.key].checkpoint,
+          confirmed: confirmedByQuiz[quiz.key] ?? "empty",
+        },
+      ]),
+    ),
     nextCheckpoint: nextApplicableCheckpoint(
-      getScenarioDefinition(scenarioKey),
-      confirmed,
+      definition,
+      confirmedCheckpoint,
+      selectedManifestQuizzes(manifest),
     ),
     healthy: checks.every((check) => check.ok),
     checkedAt: new Date().toISOString(),
@@ -360,14 +428,13 @@ function getFinalResult(execution) {
   if (!execution) return null;
   const visibleResult =
     execution.instructorVisibleResult ?? execution.learnerVisibleResult;
-  if (visibleResult?.state?.toLowerCase() === "final") return visibleResult;
-
+  if (normalizeStatus(visibleResult?.state) === "final") return visibleResult;
   const activeRound = execution.history?.find(
     (round) => round.roundId === execution.activeRoundId,
   );
   if (
-    activeRound?.status?.toLowerCase() === "finalized" &&
-    activeRound.result?.state?.toLowerCase() === "final"
+    normalizeStatus(activeRound?.status) === "finalized" &&
+    normalizeStatus(activeRound?.result?.state) === "final"
   ) {
     return activeRound.result;
   }
@@ -376,6 +443,7 @@ function getFinalResult(execution) {
 
 async function verifyCollectiveGroup(manifest, instructor, checks) {
   const resources = manifest.resources;
+  if (!resources.groupSetId || !resources.courseGroupId) return;
   const groups = unwrap(
     await instructor.modules.groupSets.getCoursesGroupSetsGroups(
       resources.courseId,
@@ -400,23 +468,18 @@ async function verifyCollectiveGroup(manifest, instructor, checks) {
   );
 }
 
-async function verifyGradebook(
-  manifest,
-  definition,
-  learners,
-  authoritativeEnrollmentIds,
-  checks,
-) {
+async function verifyGradebook(manifest, quiz, resources, learners, checks) {
   const personaKeys =
-    definition.subject === "collective"
+    quiz.subject === "collective"
       ? ["learnerA", "learnerB"]
-      : ["learnerA"];
+      : hasPeerReview(quiz)
+        ? ["learnerA", "learnerB"]
+        : ["learnerA"];
   const projectedSubmissionIds = [];
   for (const personaKey of personaKeys) {
-    const enrollmentId =
-      authoritativeEnrollmentIds[personaKey] ??
-      manifest.personas[personaKey].enrollmentId;
     const learner = learners[personaKey];
+    const enrollmentId = manifest.personas[personaKey].enrollmentId;
+    if (!learner || !enrollmentId) continue;
     const gradebook = await request(
       learner.client,
       "Verify released gradebook projection",
@@ -427,22 +490,23 @@ async function verifyGradebook(
     );
     const projection = (gradebook.groups ?? [])
       .flatMap((group) => group.assessments ?? [])
-      .find(
-        (assessment) =>
-          assessment.assessmentId === manifest.resources.assessmentId,
-      );
+      .find((assessment) => assessment.assessmentId === resources.assessmentId);
+    const expectedSubmission =
+      quiz.subject === "collective"
+        ? resources.submissions.learnerA.submissionId
+        : resources.submissions[personaKey]?.submissionId;
     expect(
       projection?.released === true &&
-        projection.submissionId === manifest.resources.submissionId,
-      `gradebook projection ${enrollmentId}`,
+        projection.submissionId === expectedSubmission,
+      `[${quiz.key}] gradebook projection ${personaKey}`,
       checks,
     );
     projectedSubmissionIds.push(projection?.submissionId);
   }
-  if (definition.subject === "collective") {
+  if (quiz.subject === "collective") {
     expect(
       new Set(projectedSubmissionIds).size === 1,
-      "single collective result projection",
+      `[${quiz.key}] single collective result projection`,
       checks,
     );
   }
@@ -451,4 +515,11 @@ async function verifyGradebook(
 function expect(condition, name, checks, detail) {
   const ok = Boolean(condition);
   checks.push({ name, ok, ...(!ok && detail ? { detail } : {}) });
+}
+
+function normalizeStatus(value) {
+  return String(value ?? "")
+    .replaceAll("-", "")
+    .replaceAll("_", "")
+    .toLowerCase();
 }

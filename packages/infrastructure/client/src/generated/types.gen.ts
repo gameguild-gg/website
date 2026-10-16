@@ -14746,11 +14746,13 @@ export interface LearningAssessmentsAnonymousReviewSubmissionDto {
   assessment?: LearningAssessmentsAnonymousReviewAssessmentDto;
   attemptNumber?: number;
   codePayload?: string | null;
+  deliveryCanonicalJson?: string | null;
   filePayload?: string | null;
   mediaPayload?: string | null;
   projectPayload?: string | null;
   reviewId?: string;
   rubric?: LearningAssessmentsAnonymousReviewRubricDto;
+  responseEnvelopeCanonicalJson?: string | null;
   status?: LearningAssessmentsPeerReviewStatus;
   submissionStatus?: LearningAssessmentsSubmissionStatus;
   submittedAt?: string | null;
@@ -38362,11 +38364,13 @@ LearningAssessmentsAnonymousReviewSubmissionDtoSchema = z.object({
   assessment: z.lazy(() => LearningAssessmentsAnonymousReviewAssessmentDtoSchema).optional(),
   attemptNumber: z.number().int().optional(),
   codePayload: z.string().nullable().optional(),
+  deliveryCanonicalJson: z.string().nullable().optional(),
   filePayload: z.string().nullable().optional(),
   mediaPayload: z.string().nullable().optional(),
   projectPayload: z.string().nullable().optional(),
   reviewId: z.string().uuid().optional(),
   rubric: z.lazy(() => LearningAssessmentsAnonymousReviewRubricDtoSchema).optional(),
+  responseEnvelopeCanonicalJson: z.string().nullable().optional(),
   status: z.lazy(() => LearningAssessmentsPeerReviewStatusSchema).optional(),
   submissionStatus: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
   submittedAt: z.string().datetime().nullable().optional(),

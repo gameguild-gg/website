@@ -13,12 +13,14 @@ import { Badge } from '@game-guild/ui/components/badge';
 import { Button } from '@game-guild/ui/components/button';
 import { Input } from '@game-guild/ui/components/input';
 import { Textarea } from '@game-guild/ui/components/textarea';
-import { CheckCircle2, EyeOff, Send } from 'lucide-react';
+import { CalendarClock, CalendarX, CheckCircle2, EyeOff, Send } from 'lucide-react';
 import {
+  cancelRuntimeSubmissionReleaseSchedule,
   getRuntimeSubmission,
   regradeRuntimeSubmission,
   releaseRuntimeSubmission,
   resolveRuntimeInstructorReview,
+  scheduleRuntimeSubmissionRelease,
 } from '@/lib/learning/grading-runtime-actions';
 import {
   pointsToScoreUnits,
@@ -62,6 +64,8 @@ function GradingPanelSession({
   const [criterionScores, setCriterionScores] = useState<Record<string, string>>({});
   const [overrideReason, setOverrideReason] = useState('');
   const [regradeReason, setRegradeReason] = useState('');
+  const [releaseScheduledFor, setReleaseScheduledFor] = useState('');
+  const [releaseScheduleReason, setReleaseScheduleReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +110,14 @@ function GradingPanelSession({
     setCriterionScores(Object.fromEntries(Object.entries(
       nextSubmission.execution.instructorVisibleRubricScores ?? {},
     ).map(([id, units]) => [id, String(scoreUnitsToPoints(units))])));
+    const activeRound = nextSubmission.execution.history.find(
+      (round) => round.roundId === nextSubmission.execution.activeRoundId,
+    );
+    setReleaseScheduledFor(
+      activeRound?.releaseSchedule?.status === 'scheduled'
+        ? toLocalDateTimeInput(activeRound.releaseSchedule.scheduledFor)
+        : '',
+    );
   }, []);
 
   useEffect(() => {
@@ -173,6 +185,15 @@ function GradingPanelSession({
       !submission.execution.released &&
       submission.execution.activeRoundId,
   );
+  const activeRound = submission?.execution.history.find(
+    (round) => round.roundId === submission.execution.activeRoundId,
+  );
+  const releaseSchedule = activeRound?.releaseSchedule ?? null;
+  const canSchedule = Boolean(
+    canRelease &&
+      releaseScheduledFor &&
+      Date.parse(releaseScheduledFor) > Date.now(),
+  );
 
   async function submitReview() {
     if (!submission || !canResolve) return;
@@ -217,6 +238,60 @@ function GradingPanelSession({
         expectedRoundId: submission.execution.activeRoundId,
       },
       'Released by instructor from SpeedGrader.',
+      createIdempotencyKey(),
+    );
+    setSubmitting(false);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    const refreshed = await getRuntimeSubmission(submission.submissionId);
+    if (refreshed.success) acceptRuntimeSubmission(refreshed.data);
+    router.refresh();
+  }
+
+  async function scheduleResultRelease() {
+    if (!submission || !submission.execution.activeRoundId || !canSchedule) return;
+    setSubmitting(true);
+    setError(null);
+    const result = await scheduleRuntimeSubmissionRelease(
+      {
+        submissionId: submission.submissionId,
+        version: submission.version,
+        expectedRoundId: submission.execution.activeRoundId,
+        expectedScheduleVersion: releaseSchedule?.version ?? 0,
+      },
+      new Date(releaseScheduledFor).toISOString(),
+      releaseScheduleReason.trim() || null,
+      createIdempotencyKey(),
+    );
+    setSubmitting(false);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    const refreshed = await getRuntimeSubmission(submission.submissionId);
+    if (refreshed.success) acceptRuntimeSubmission(refreshed.data);
+    router.refresh();
+  }
+
+  async function cancelScheduledRelease() {
+    if (
+      !submission ||
+      !submission.execution.activeRoundId ||
+      releaseSchedule?.status !== 'scheduled' ||
+      !releaseScheduleReason.trim()
+    ) return;
+    setSubmitting(true);
+    setError(null);
+    const result = await cancelRuntimeSubmissionReleaseSchedule(
+      {
+        submissionId: submission.submissionId,
+        version: submission.version,
+        expectedRoundId: submission.execution.activeRoundId,
+        expectedScheduleVersion: releaseSchedule.version,
+      },
+      releaseScheduleReason.trim(),
       createIdempotencyKey(),
     );
     setSubmitting(false);
@@ -435,15 +510,63 @@ function GradingPanelSession({
                 </div>
               </div>
               {canRelease && (
-                <Button
-                  type="button"
-                  data-testid="release-result"
-                  onClick={() => void releaseResult()}
-                  disabled={submitting}
-                >
-                  <Send className="size-4" />
-                  Release to learner
-                </Button>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      data-testid="release-result"
+                      onClick={() => void releaseResult()}
+                      disabled={submitting}
+                    >
+                      <Send className="size-4" />
+                      Release to learner
+                    </Button>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <Input
+                      aria-label="Scheduled release time"
+                      type="datetime-local"
+                      value={releaseScheduledFor}
+                      disabled={submitting}
+                      onChange={(event) => setReleaseScheduledFor(event.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      data-testid="schedule-result-release"
+                      onClick={() => void scheduleResultRelease()}
+                      disabled={submitting || !canSchedule}
+                    >
+                      <CalendarClock className="size-4" />
+                      {releaseSchedule?.status === 'scheduled' ? 'Reschedule' : 'Schedule'}
+                    </Button>
+                  </div>
+                  <Input
+                    aria-label="Release schedule reason"
+                    value={releaseScheduleReason}
+                    disabled={submitting}
+                    onChange={(event) => setReleaseScheduleReason(event.target.value)}
+                    placeholder="Reason for scheduling or cancellation"
+                  />
+                  {releaseSchedule?.status === 'scheduled' && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>
+                        Scheduled for {dateFormatter.format(new Date(releaseSchedule.scheduledFor))}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        data-testid="cancel-result-release-schedule"
+                        onClick={() => void cancelScheduledRelease()}
+                        disabled={submitting || !releaseScheduleReason.trim()}
+                      >
+                        <CalendarX className="size-4" />
+                        Cancel schedule
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
             </section>
           )}
@@ -526,4 +649,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function createIdempotencyKey(): string {
   return globalThis.crypto?.randomUUID?.() ?? `grading-${Date.now()}-${Math.random()}`;
+}
+
+function toLocalDateTimeInput(value: string): string {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }

@@ -13,7 +13,10 @@ import {
   type QuizLearnerEntry,
   type QuizPracticeEntry,
 } from '@game-guild/quiz';
-import type { AssessmentSubmissionRuntimeViewV1 } from '@game-guild/grading';
+import type {
+  AssessmentSubmissionRuntimeViewV1,
+  SelfReviewEvidenceV1,
+} from '@game-guild/grading';
 import {
   createQuizAnswerEnvelope,
   parseQuizAnswerEnvelope,
@@ -29,9 +32,12 @@ import {
 import { submitActivity } from '@/lib/courses/server-actions';
 import {
   getRuntimeSubmission,
+  saveCollectiveRuntimeSelfReviewDraft,
   startContentRuntimeSubmission,
   submitRuntimeSubmission,
+  submitRuntimeSelfReview,
 } from '@/lib/learning/grading-runtime-actions';
+import { SelfReviewForm } from '@/components/learning/grading/self-review-form';
 import { Clock, Code, FileText, MessageSquare, Play, Save, Send, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -92,6 +98,8 @@ export function ActivityComponent({
   >({});
   const startIdempotencyKey = useRef(createIdempotencyKey());
   const submitCommand = useRef<{ payload: string; key: string } | null>(null);
+  const selfReviewDraftCommand = useRef<{ payload: string; key: string } | null>(null);
+  const selfReviewSubmitCommand = useRef<{ payload: string; key: string } | null>(null);
 
   useEffect(() => {
     if (!existingSubmissionId || item.type !== 'quiz') return;
@@ -244,6 +252,69 @@ export function ActivityComponent({
     }
   };
 
+  const saveSelfReviewDraft = async (evidence: SelfReviewEvidenceV1) => {
+    if (!runtimeSubmission?.execution.selfReview) return;
+    const payload = JSON.stringify(evidence);
+    if (selfReviewDraftCommand.current?.payload !== payload) {
+      selfReviewDraftCommand.current = {
+        payload,
+        key: createIdempotencyKey(),
+      };
+    }
+    setIsSubmitting(true);
+    setRuntimeError(null);
+    const result = await saveCollectiveRuntimeSelfReviewDraft(
+      runtimeSubmission.submissionId,
+      evidence,
+      runtimeSubmission.execution.selfReview.draftVersion,
+      selfReviewDraftCommand.current.key,
+    );
+    setIsSubmitting(false);
+    if (!result.success) {
+      setRuntimeError(result.error);
+      return;
+    }
+    selfReviewDraftCommand.current = null;
+    setRuntimeSubmission(
+      result.data as AssessmentSubmissionRuntimeViewV1<QuizLearnerDeliveryItemV1>,
+    );
+  };
+
+  const submitSelfReview = async (evidence: SelfReviewEvidenceV1) => {
+    if (!runtimeSubmission?.execution.selfReview) return;
+    const payload = JSON.stringify(evidence);
+    if (selfReviewSubmitCommand.current?.payload !== payload) {
+      selfReviewSubmitCommand.current = {
+        payload,
+        key: createIdempotencyKey(),
+      };
+    }
+    setIsSubmitting(true);
+    setRuntimeError(null);
+    const result = await submitRuntimeSelfReview(
+      runtimeSubmission.submissionId,
+      evidence,
+      selfReviewSubmitCommand.current.key,
+      runtimeSubmission.courseGroupId
+        ? runtimeSubmission.execution.selfReview.draftVersion
+        : undefined,
+    );
+    setIsSubmitting(false);
+    if (!result.success) {
+      setRuntimeError(result.error);
+      return;
+    }
+    selfReviewSubmitCommand.current = null;
+    const nextSubmission =
+      result.data as AssessmentSubmissionRuntimeViewV1<QuizLearnerDeliveryItemV1>;
+    setRuntimeSubmission(nextSubmission);
+    const quiz = getQuizContent();
+    if (quiz.serverGraded) {
+      setQuizSubmissionResults(buildQuizSubmissionResults(nextSubmission, quiz));
+    }
+    if (nextSubmission.contentCompleted) onComplete();
+  };
+
   const calculateQuizScore = (
     quiz: Extract<QuizActivityContent, { serverGraded: false }>,
   ): number => {
@@ -381,6 +452,26 @@ export function ActivityComponent({
             </Button>
           )}
         </div>
+
+        {runtimeSubmission?.execution.submittedResponse &&
+          runtimeSubmission.execution.selfReview && (
+            <SelfReviewForm
+              items={quiz.questions.map((question) => ({
+                itemId: question.id,
+                label: question.data.stem || question.id,
+                maxScore:
+                  runtimeSubmission.execution.itemMaxScores[question.id] ?? 0,
+              }))}
+              state={runtimeSubmission.execution.selfReview}
+              busy={isSubmitting}
+              onSaveDraft={
+                runtimeSubmission.courseGroupId
+                  ? saveSelfReviewDraft
+                  : undefined
+              }
+              onSubmit={submitSelfReview}
+            />
+          )}
       </div>
     );
   };

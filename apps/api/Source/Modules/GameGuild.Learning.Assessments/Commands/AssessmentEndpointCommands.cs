@@ -1,4 +1,5 @@
 using GameGuild.CQRS;
+using GameGuild.Learning.Assessments.Grading.Runtime;
 using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments;
@@ -68,14 +69,84 @@ public sealed class CourseGroupEndpointCommandHandler(IGroupSetService service) 
 }
 
 public sealed record ClaimPeerReviewEndpointCommand(Guid AssessmentId, Guid UserId) : ICommand<Result<PeerReviewClaimResult>>;
-public sealed record SubmitPeerReviewEndpointCommand(AssessmentPeerReview Review, ScoreValue Score, string Feedback, string? RubricScores) : ICommand<Result<AssessmentPeerReview>>;
+public sealed record ClaimAuthorTestPeerReviewEndpointCommand(
+    Guid TestRunId,
+    Guid ReviewerTestRunSubjectId,
+    Guid ActorUserId) : ICommand<Result<PeerReviewClaimResult>>;
+public sealed record SubmitPeerReviewEndpointCommand(
+    Guid ReviewId,
+    Guid ActorUserId,
+    ScoreValue Score,
+    string Feedback,
+    string? RubricScores) : ICommand<Result<PeerReviewClaimView>>;
+public sealed record ExtendPeerReviewWindowEndpointCommand(
+    Guid ReviewStageId,
+    Guid ActorUserId,
+    int ExpectedStageVersion,
+    DateTime DeadlineAt,
+    string Reason,
+    string IdempotencyKey) : ICommand<Result>;
+public sealed record ReassignPeerReviewClaimEndpointCommand(
+    Guid ReviewId,
+    Guid ActorUserId,
+    int ExpectedClaimVersion,
+    string Reason,
+    string IdempotencyKey) : ICommand<Result>;
+public sealed record ResolvePeerReviewInsufficiencyEndpointCommand(
+    Guid ReviewStageId,
+    Guid ActorUserId,
+    PeerReviewInsufficiencyResolutionV1 Resolution,
+    string IdempotencyKey) : ICommand<Result>;
 
 public sealed class PeerReviewEndpointCommandHandler(IPeerReviewAssignmentService service) :
     ICommandHandler<ClaimPeerReviewEndpointCommand, Result<PeerReviewClaimResult>>,
-    ICommandHandler<SubmitPeerReviewEndpointCommand, Result<AssessmentPeerReview>>
+    ICommandHandler<ClaimAuthorTestPeerReviewEndpointCommand, Result<PeerReviewClaimResult>>,
+    ICommandHandler<SubmitPeerReviewEndpointCommand, Result<PeerReviewClaimView>>,
+    ICommandHandler<ExtendPeerReviewWindowEndpointCommand, Result>,
+    ICommandHandler<ReassignPeerReviewClaimEndpointCommand, Result>,
+    ICommandHandler<ResolvePeerReviewInsufficiencyEndpointCommand, Result>
 {
     public Task<Result<PeerReviewClaimResult>> Handle(ClaimPeerReviewEndpointCommand request, CancellationToken cancellationToken) => service.ClaimAsync(request.AssessmentId, request.UserId);
-    public Task<Result<AssessmentPeerReview>> Handle(SubmitPeerReviewEndpointCommand request, CancellationToken cancellationToken) => service.SubmitReviewAsync(request.Review, request.Score, request.Feedback, request.RubricScores);
+    public Task<Result<PeerReviewClaimResult>> Handle(ClaimAuthorTestPeerReviewEndpointCommand request, CancellationToken cancellationToken) =>
+        service.ClaimAuthorTestAsync(request.TestRunId, request.ReviewerTestRunSubjectId, request.ActorUserId);
+    public Task<Result<PeerReviewClaimView>> Handle(SubmitPeerReviewEndpointCommand request, CancellationToken cancellationToken) =>
+        service.SubmitReviewAsync(request.ReviewId, request.ActorUserId, request.Score, request.Feedback, request.RubricScores);
+
+    public async Task<Result> Handle(ExtendPeerReviewWindowEndpointCommand request, CancellationToken cancellationToken)
+    {
+        await service.ExtendEvidenceWindowAsync(
+            request.ReviewStageId,
+            request.ActorUserId,
+            request.ExpectedStageVersion,
+            request.DeadlineAt,
+            request.Reason,
+            request.IdempotencyKey,
+            cancellationToken).ConfigureAwait(false);
+        return Result.Success();
+    }
+
+    public async Task<Result> Handle(ReassignPeerReviewClaimEndpointCommand request, CancellationToken cancellationToken)
+    {
+        await service.ReassignClaimAsync(
+            request.ReviewId,
+            request.ActorUserId,
+            request.ExpectedClaimVersion,
+            request.Reason,
+            request.IdempotencyKey,
+            cancellationToken).ConfigureAwait(false);
+        return Result.Success();
+    }
+
+    public async Task<Result> Handle(ResolvePeerReviewInsufficiencyEndpointCommand request, CancellationToken cancellationToken)
+    {
+        await service.ResolveInsufficientEvidenceAsync(
+            request.ReviewStageId,
+            request.ActorUserId,
+            request.Resolution,
+            request.IdempotencyKey,
+            cancellationToken).ConfigureAwait(false);
+        return Result.Success();
+    }
 }
 
 public sealed record PutAssessmentRubricEndpointCommand(Guid AssessmentId, SaveRubricRequest Request) : ICommand<Result<RubricDto>>;

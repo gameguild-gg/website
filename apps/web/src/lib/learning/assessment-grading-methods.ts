@@ -18,7 +18,16 @@ export const ASSESSMENT_PRIMARY_REVIEW_METHODS = [
 export const AVAILABLE_PRIMARY_REVIEW_METHODS = [
   "AutomatedReview",
   "InstructorReview",
+  "PeerReview",
+  "SelfReview",
 ] as const satisfies readonly AssessmentReviewMethod[];
+
+export function isPrimaryReviewMethodAvailable(
+  method: AssessmentReviewMethod,
+): boolean {
+  return (AVAILABLE_PRIMARY_REVIEW_METHODS as readonly AssessmentReviewMethod[])
+    .includes(method);
+}
 
 export const REVIEW_METHOD_LABELS: Record<AssessmentReviewMethod, string> = {
   AutomatedReview: "Automated review",

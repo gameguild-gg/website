@@ -1,7 +1,11 @@
 import { spawn } from "node:child_process";
 import { REPO_ROOT, manifestPath } from "./manifest.mjs";
 
-export async function runBrowserScenario({ scenarioKey, headed = false }) {
+export async function runBrowserScenario({
+  scenarioKey,
+  quizKeys = [],
+  headed = false,
+}) {
   const args = [
     "exec",
     "playwright",
@@ -17,6 +21,7 @@ export async function runBrowserScenario({ scenarioKey, headed = false }) {
       ...process.env,
       E2E_RUN: "1",
       QUIZ_GRADING_SCENARIO: scenarioKey,
+      QUIZ_GRADING_QUIZZES: quizKeys.join(","),
       QUIZ_GRADING_SCENARIO_MANIFEST: manifestPath(scenarioKey),
     },
   });

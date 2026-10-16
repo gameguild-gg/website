@@ -1,3 +1,4 @@
+using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Grading.Contracts;
 
@@ -70,6 +71,21 @@ public sealed class CoreGradingCapabilityRegistration : IReviewCapabilityRegistr
             "instructor-review",
             "1",
             Contexts));
+        registry.Register(new ReviewCapabilityDescriptor(
+            ReviewMethod.SelfReview,
+            "self-review",
+            "1",
+            Contexts));
+        registry.Register(new ReviewCapabilityDescriptor(
+            ReviewMethod.PeerReview,
+            "peer-review",
+            "1",
+            Contexts));
+        registry.Register(new ReviewCapabilityDescriptor(
+            ReviewMethod.AIReview,
+            "ai-review",
+            "1",
+            Contexts));
     }
 }
 
@@ -121,5 +137,40 @@ public sealed class ReviewCapabilityRegistry : IReviewCapabilityRegistry
         {
             throw new InvalidOperationException($"Capability {key} is already registered with a different descriptor.");
         }
+    }
+}
+
+public sealed class AIReviewProviderRegistry : IAIReviewProviderRegistry
+{
+    private readonly IReadOnlyDictionary<string, IAIReviewProvider> _providers;
+
+    public AIReviewProviderRegistry(IEnumerable<IAIReviewProvider> providers)
+    {
+        var candidates = providers.ToArray();
+        var duplicate = candidates
+            .GroupBy(provider => provider.Key, StringComparer.Ordinal)
+            .FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null)
+        {
+            throw new InvalidOperationException($"More than one AI review provider is registered for {duplicate.Key}.");
+        }
+
+        _providers = candidates.ToDictionary(provider => provider.Key, StringComparer.Ordinal);
+    }
+
+    public IAIReviewProvider Resolve(
+        string providerKey,
+        string policyVersion,
+        ReviewExecutionContext context)
+    {
+        if (!_providers.TryGetValue(providerKey, out var provider) ||
+            !provider.PolicyVersions.Contains(policyVersion) ||
+            !provider.Contexts.Contains(context))
+        {
+            throw new InvalidOperationException(
+                $"AI review provider {providerKey}@{policyVersion} is unavailable for {context}.");
+        }
+
+        return provider;
     }
 }
