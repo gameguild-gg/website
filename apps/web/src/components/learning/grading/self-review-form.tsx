@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   SelfReviewEvidenceV1,
   SelfReviewRuntimeStateV1,
@@ -45,7 +45,19 @@ export function SelfReviewForm({
   const [localError, setLocalError] = useState<string | null>(null);
   const readOnly = state.status === 'completed' || state.submittedEvidence != null;
 
-  useEffect(() => {
+  const syncDeps: unknown[] = [
+    items,
+    state.draftVersion,
+    state.reviewStageId,
+    state.submittedEvidence,
+  ];
+  const [lastSyncDeps, setLastSyncDeps] = useState<unknown[] | null>(null);
+  if (
+    lastSyncDeps === null ||
+    lastSyncDeps.length !== syncDeps.length ||
+    lastSyncDeps.some((dep, index) => !Object.is(dep, syncDeps[index]))
+  ) {
+    setLastSyncDeps(syncDeps);
     const evidence = state.submittedEvidence ?? state.draft;
     const byItem = new Map(
       (evidence?.items ?? []).map((item) => [item.itemId, item]),
@@ -67,7 +79,7 @@ export function SelfReviewForm({
     );
     setOverallFeedback(evidence?.feedback ?? '');
     setLocalError(null);
-  }, [items, state.draftVersion, state.reviewStageId, state.submittedEvidence]);
+  }
 
   const evidence = useMemo(() => {
     try {

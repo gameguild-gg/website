@@ -103,7 +103,7 @@ import {
   Clock3,
   FileCode2,
   FileText,
-  Image,
+  Image as ImageIcon,
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -1160,7 +1160,7 @@ export function LessonAuthoringWorkspace({
               />
             }
           >
-            <Image className="size-4" />
+            <ImageIcon className="size-4" />
           </TooltipTrigger>
           <TooltipContent>Insert media</TooltipContent>
         </Tooltip>
