@@ -4,6 +4,7 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Tests.Audit.Unit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -110,6 +111,39 @@ public sealed class AuditTenantClampTests
     }
 
     [Fact]
+    public async Task SearchAuditLogsWithConditions_TenantActor_IsClampedToOwnTenant()
+    {
+        var (controller, auditService) = CreateAuditController(TenantAdminActor());
+        AuditLogQuery? captured = null;
+        auditService
+            .Setup(service => service.GetAuditLogsAsync(It.IsAny<AuditLogQuery>()))
+            .Callback<AuditLogQuery>(query => captured = query)
+            .ReturnsAsync([]);
+        auditService
+            .Setup(service => service.GetAuditLogCountAsync(It.IsAny<AuditLogQuery>()))
+            .ReturnsAsync(0);
+
+        var result = await controller.SearchAuditLogsWithConditions(ConditionSearchRequest());
+
+        result.Result.Should().BeOfType<OkObjectResult>();
+        captured.Should().NotBeNull();
+        captured!.TenantId.Should().Be(_tenantId);
+    }
+
+    [Fact]
+    public async Task SearchAuditLogsWithConditions_TenantActor_ForeignTenantRequest_IsForbidden()
+    {
+        var (controller, auditService) = CreateAuditController(TenantAdminActor());
+        var request = ConditionSearchRequest();
+        request.TenantId = Guid.NewGuid();
+
+        var result = await controller.SearchAuditLogsWithConditions(request);
+
+        result.Result.Should().BeOfType<ForbidResult>();
+        auditService.Verify(service => service.GetAuditLogsAsync(It.IsAny<AuditLogQuery>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ExportAuditLogs_TenantActor_ForeignTenantRequest_IsForbidden()
     {
         var (controller, _) = CreateAuditController(TenantAdminActor());
@@ -157,6 +191,17 @@ public sealed class AuditTenantClampTests
         IsAuthenticated = true
     };
 
+    private static AuditConditionSearchRequest ConditionSearchRequest() => new()
+    {
+        Condition = new AuditConditionNode
+        {
+            Kind = AuditConditionNodeKind.Field,
+            Field = AuditFilterField.ActionType,
+            Comparison = AuditFilterComparison.Equals,
+            Value = "ViewAuditLogs"
+        }
+    };
+
     private ActorContext SystemAdminActor() => new()
     {
         ActorKind = ActorKind.User,
@@ -184,7 +229,8 @@ public sealed class AuditTenantClampTests
             Mock.Of<IAuditExportWebhookNotifier>(),
             Mock.Of<IScheduledAuditExportService>())
         {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+            ObjectValidator = Mock.Of<IObjectModelValidator>()
         };
 
         return (controller, auditService);

@@ -51,6 +51,7 @@ public sealed class AuditExportCommandHandler(
             StartDate = command.Request.StartDate,
             EndDate = command.Request.EndDate,
             IpAddress = command.Request.IpAddress,
+            Condition = command.Request.Condition,
             Skip = command.Request.PageNumber.HasValue && command.Request.PageSize.HasValue
                 ? (command.Request.PageNumber.Value - 1) * command.Request.PageSize.Value
                 : 0,
