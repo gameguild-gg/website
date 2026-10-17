@@ -1,8 +1,22 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
+import {
+  QUESTION_TYPE_CASES,
+  QUESTION_TYPE_FIXTURE_PATH,
+  VALIDATION_CASES,
+  selectValidationCases,
+  validateCapabilityCatalog,
+} from "./capability-catalog.mjs";
 import {
   CHECKPOINTS,
   assertApplicableCheckpoint,
@@ -12,6 +26,7 @@ import {
   nextApplicableCheckpoint,
   requestHash,
   selectQuizDefinitions,
+  targetCheckpointForQuiz,
 } from "./definitions.mjs";
 import { resolveClientBuildTarget } from "./api.mjs";
 import { authenticateResetOwner } from "./cleanup.mjs";
@@ -21,7 +36,23 @@ import {
   validateManifest,
   withScenarioLock,
   writeJsonAtomic,
+  REPO_ROOT,
 } from "./manifest.mjs";
+import {
+  createValidationReport,
+  listValidationEvidence,
+  renderValidationReport,
+  sanitizeEvidence,
+  validationEvidenceDirectory,
+  validationRunDirectory,
+  writeValidationReport,
+} from "./report.mjs";
+import {
+  QUESTION_TYPE_DRIVER_KEYS,
+  getQuestionTypeDriver,
+  validateQuestionTypeDrivers,
+} from "./question-type-drivers.mjs";
+import { browserSpecsForScenario } from "./browser.mjs";
 import { buildScenarioUrls } from "./urls.mjs";
 
 test("scenario definitions expose canonical workflows and checkpoint applicability", () => {
@@ -89,6 +120,237 @@ test("review matrix keeps one isolated two-question quiz per executable workflow
     175,
     "instructor review owns the final score when it follows another review",
   );
+});
+
+test("validation catalog is exhaustive for quiz and fill-blank discriminants", async () => {
+  const source = await readFile(
+    resolve(
+      REPO_ROOT,
+      "packages/features/quiz/src/questions/question-types.ts",
+    ),
+    "utf8",
+  );
+  const quizTypes = enumValues(source, "QuizEntryType");
+  const fillTypes = enumValues(source, "FillBlankInputType");
+  const fixture = JSON.parse(
+    await readFile(QUESTION_TYPE_FIXTURE_PATH, "utf8"),
+  );
+
+  assert.deepEqual(
+    fixture.cases
+      .filter((candidate) => candidate.baseType)
+      .map((candidate) => candidate.quizEntryType)
+      .sort(),
+    quizTypes.sort(),
+  );
+  assert.deepEqual(
+    fixture.cases
+      .map((candidate) => candidate.fillBlankInputType)
+      .filter(Boolean)
+      .sort(),
+    fillTypes.sort(),
+  );
+  assert.equal(QUESTION_TYPE_CASES.length, 18);
+  assert.equal(
+    new Set(VALIDATION_CASES.map((candidate) => candidate.id)).size,
+    VALIDATION_CASES.length,
+  );
+  assert.throws(
+    () => validateCapabilityCatalog([...VALIDATION_CASES, VALIDATION_CASES[0]]),
+    /Duplicate validation case ID/,
+  );
+});
+
+test("catalog selection works by suite, stable ID and question type", () => {
+  assert.equal(
+    selectValidationCases({ suites: ["review"] }).every(
+      (candidate) => candidate.suite === "review",
+    ),
+    true,
+  );
+  assert.deepEqual(
+    selectValidationCases({ caseIds: ["QG-ITEM-ESSAY-001"] }).map(
+      (candidate) => candidate.key,
+    ),
+    ["essay"],
+  );
+  assert.deepEqual(
+    selectValidationCases({ questionTypes: ["FILL_IN_THE_BLANK"] }).map(
+      (candidate) => candidate.key,
+    ),
+    ["fill-text", "fill-number", "fill-dropdown", "fill-word-bank"],
+  );
+  assert.throws(
+    () => selectValidationCases({ caseIds: ["QG-UNKNOWN-001"] }),
+    /Unknown validation case selection/,
+  );
+  assert.throws(
+    () => selectValidationCases({ suites: ["unknown"] }),
+    /Unknown validation suite selection/,
+  );
+});
+
+test("recovery capabilities remain partial until their exact failure mode is proven", () => {
+  const pendingRecoveryCases = [
+    "QG-RECOVERY-DOUBLE-SUBMIT-001",
+    "QG-RECOVERY-STALE-RELEASE-001",
+    "QG-RECOVERY-REVIEW-CONTENTION-001",
+    "QG-RECOVERY-SESSION-REVOKED-001",
+  ];
+
+  for (const candidate of selectValidationCases({
+    caseIds: pendingRecoveryCases,
+  })) {
+    assert.equal(candidate.baseline.status, "partial");
+    assert.match(candidate.baseline.tracking, /^test-gap:/);
+    assert.ok(candidate.baseline.reason);
+  }
+});
+
+test("every question fixture has an explicit browser driver or blocker", () => {
+  assert.doesNotThrow(() => validateQuestionTypeDrivers());
+  assert.equal(QUESTION_TYPE_DRIVER_KEYS.length, 17);
+  for (const validationCase of QUESTION_TYPE_CASES) {
+    assert.equal(typeof getQuestionTypeDriver(validationCase), "function");
+    if (validationCase.browser.status !== "required") {
+      assert.ok(validationCase.browser.reason);
+      assert.ok(validationCase.baseline.tracking);
+    }
+  }
+});
+
+test("browser scenarios select review and question-type specs independently", () => {
+  assert.deepEqual(browserSpecsForScenario("review-matrix"), [
+    "e2e/learning/quiz-grading-scenario.spec.mjs",
+  ]);
+  assert.deepEqual(browserSpecsForScenario("question-type-matrix"), [
+    "e2e/learning/quiz-grading/authoring-roundtrip.spec.mjs",
+    "e2e/learning/quiz-grading/question-types.spec.mjs",
+  ]);
+  assert.equal(browserSpecsForScenario("acceptance-lab").length, 3);
+});
+
+test("question type and acceptance scenarios reuse catalog definitions", () => {
+  const matrix = getScenarioDefinition("question-type-matrix");
+  assert.deepEqual(
+    matrix.quizzes.map((quiz) => quiz.validationCaseId),
+    QUESTION_TYPE_CASES.map((candidate) => candidate.id),
+  );
+  for (const quiz of matrix.quizzes) {
+    assert.deepEqual(quiz.document.order, [["q1", "quiz"]]);
+    assert.equal(quiz.document.blocks.q1.type, quiz.questionType);
+    assert.equal(quiz.correctAnswer.payload.answers.q1.type, quiz.questionType);
+  }
+  const lab = getScenarioDefinition("acceptance-lab");
+  assert.equal(
+    QUESTION_TYPE_CASES.every((candidate) =>
+      lab.quizzes.some((quiz) => quiz.validationCaseId === candidate.id),
+    ),
+    true,
+  );
+  assert.doesNotThrow(() => assertApplicableCheckpoint(matrix, "released"));
+  assert.equal(
+    targetCheckpointForQuiz(
+      matrix,
+      "released",
+      matrix.quizzes.find((quiz) => quiz.key === "numeric"),
+    ),
+    "test-run-ready",
+  );
+  assert.doesNotThrow(() =>
+    assertApplicableCheckpoint(
+      matrix,
+      "released",
+      selectQuizDefinitions(matrix, ["single-choice", "essay"]),
+    ),
+  );
+});
+
+test("validation reports redact credentials and private answer material", async () => {
+  const manifest = fixtureManifest();
+  const report = createValidationReport({
+    manifest: {
+      ...manifest,
+      password: "unsafe",
+      answerKey: { correctAnswer: true },
+    },
+    scenarioReport: {
+      checks: [{ name: "[automated] final score", ok: true }],
+    },
+    cases: selectValidationCases({ caseIds: ["QG-REVIEW-AUTOMATED-001"] }),
+    now: new Date("2026-10-17T00:00:00.000Z"),
+  });
+  const serialized = JSON.stringify(report);
+  assert.doesNotMatch(serialized, /unsafe/);
+  assert.doesNotMatch(serialized, /correctAnswer/);
+  assert.match(renderValidationReport(report), /QG-REVIEW-AUTOMATED-001/);
+  assert.match(
+    validationRunDirectory(manifest.runId),
+    /test-results\/quiz-grading-validation/,
+  );
+
+  const artifacts = await writeValidationReport(report);
+  try {
+    const screenshotDirectory = resolve(
+      validationEvidenceDirectory(manifest.runId, "QG-REVIEW-AUTOMATED-001"),
+      "screenshots",
+    );
+    await mkdir(screenshotDirectory, { recursive: true });
+    await writeFile(resolve(screenshotDirectory, "result.png"), "evidence");
+    assert.equal(
+      JSON.parse(await readFile(artifacts.json, "utf8")).runId,
+      manifest.runId,
+    );
+    assert.match(
+      await readFile(artifacts.markdown, "utf8"),
+      /Quiz grading validation report/,
+    );
+    assert.deepEqual(
+      await listValidationEvidence(manifest.runId, "QG-REVIEW-AUTOMATED-001"),
+      ["evidence/QG-REVIEW-AUTOMATED-001/screenshots/result.png"],
+    );
+  } finally {
+    await rm(validationRunDirectory(manifest.runId), {
+      recursive: true,
+      force: true,
+    });
+  }
+});
+
+test("browser cases remain partial until a browser execution records a pass", () => {
+  const manifest = fixtureManifest();
+  const validationCase = selectValidationCases({
+    caseIds: ["QG-ITEM-SINGLE-CHOICE-001"],
+  })[0];
+  const prepared = createValidationReport({
+    manifest,
+    scenarioReport: { checks: [] },
+    cases: [validationCase],
+    completedAutomations: ["api"],
+  });
+  assert.equal(prepared.cases[0].status, "partial");
+  assert.equal(prepared.cases[0].execution.automationCompleted, false);
+
+  const browser = createValidationReport({
+    manifest,
+    scenarioReport: { checks: [] },
+    cases: [validationCase],
+    results: [{ caseId: validationCase.id, status: "pass" }],
+    completedAutomations: ["api", "browser"],
+  });
+  assert.equal(browser.cases[0].status, "pass");
+  assert.equal(browser.cases[0].reason, null);
+  assert.equal(browser.cases[0].execution.automationCompleted, true);
+});
+
+test("evidence sanitizer handles nested secrets and cycles", () => {
+  const value = { token: "secret", nested: { cookie: "session" } };
+  value.self = value;
+  assert.deepEqual(sanitizeEvidence(value), {
+    token: "[redacted]",
+    nested: { cookie: "[redacted]" },
+    self: "[circular]",
+  });
 });
 
 test("quiz selection is ordered, rejects unknown keys, and drives the next checkpoint", () => {
@@ -391,4 +653,12 @@ function fixtureManifest() {
     runId: "11111111-2222-4333-8444-555555555555",
     now: new Date("2026-10-09T00:00:00.000Z"),
   });
+}
+
+function enumValues(source, name) {
+  const match = source.match(
+    new RegExp(`export enum ${name} \\{([\\s\\S]*?)\\n\\}`),
+  );
+  assert.ok(match, `${name} declaration was not found`);
+  return [...match[1].matchAll(/=\s*"([A-Z_]+)"/g)].map((entry) => entry[1]);
 }

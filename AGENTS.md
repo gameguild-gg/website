@@ -79,3 +79,10 @@ fail the build or the test suite.
   `apps/api/Source/Modules/GameGuild.Identity.Authentication/AUTHORIZATION_ARCHITECTURE.md`
   (section "Platform Authorization Hardening") — update it when changing any invariant
   described there.
+
+## Quiz grading validation
+
+Changes to quiz delivery, assessment review, grading, release, or learner results must
+follow `docs/testing/quiz-grading/AGENT_PROTOCOL.md`. The executable capability catalog
+is the source of stable case IDs; generated reports are candidates and never update the
+canonical capability status without human review.
