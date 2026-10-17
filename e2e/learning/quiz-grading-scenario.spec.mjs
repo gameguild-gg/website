@@ -10,12 +10,17 @@ import {
 } from "../../apps/web/scripts/quiz-grading-scenario/api.mjs";
 import {
   checkpointIndex,
+  expectedFinalScore,
   getScenarioDefinition,
   hasInstructorReview,
+  hasPeerReview,
+  hasSelfReview,
+  selectQuizDefinitions,
 } from "../../apps/web/scripts/quiz-grading-scenario/definitions.mjs";
 import {
   evidenceDirectory,
   readManifest,
+  recomputeManifestCheckpoint,
   storageStatePath,
   writeManifest,
 } from "../../apps/web/scripts/quiz-grading-scenario/manifest.mjs";
@@ -24,76 +29,141 @@ import { buildScenarioUrls } from "../../apps/web/scripts/quiz-grading-scenario/
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 test.skip(!process.env.E2E_RUN, "Set E2E_RUN=1 to execute the local scenario.");
 
-test("quiz grading scenario follows the author, learner, review, and release journey", async ({
-  browser,
-}) => {
-  test.setTimeout(240_000);
-  const scenarioKey = process.env.QUIZ_GRADING_SCENARIO;
-  if (!scenarioKey) throw new Error("QUIZ_GRADING_SCENARIO is required.");
+const scenarioKey = process.env.QUIZ_GRADING_SCENARIO;
+const requestedQuizKeys = (process.env.QUIZ_GRADING_QUIZZES ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+if (!scenarioKey) {
+  test("quiz grading scenario requires a scenario key", () => {
+    throw new Error("QUIZ_GRADING_SCENARIO is required.");
+  });
+} else {
   const definition = getScenarioDefinition(scenarioKey);
-  const manifest = await readManifest(scenarioKey);
-  if (definition.subject === "collective") {
-    test.skip(
-      true,
-      "The collective scenario is covered through API verification in the MVP.",
-    );
+  const quizzes = selectQuizDefinitions(definition, requestedQuizKeys);
+
+  for (const quiz of quizzes) {
+    test(`${quiz.key}: ${quiz.reviewMethods.join(" -> ")} across its personas`, async ({
+      browser,
+    }) => {
+      test.setTimeout(360_000);
+      let manifest = await readManifest(scenarioKey);
+      if (!manifest.quizKeys.includes(quiz.key)) {
+        throw new Error(
+          `Quiz "${quiz.key}" was not provisioned in scenario "${scenarioKey}". Reset and prepare it with that quiz selected.`,
+        );
+      }
+      const resources = manifest.resources.quizzes[quiz.key];
+      if (
+        checkpointIndex(resources.checkpoint) < checkpointIndex("learner-ready")
+      ) {
+        throw new Error(
+          `Browser execution for "${quiz.key}" requires learner-ready; current checkpoint is ${resources.checkpoint}.`,
+        );
+      }
+      if (quiz.subject === "collective") {
+        test.skip(
+          true,
+          "The collective scenario remains covered through API verification.",
+        );
+      }
+
+      await mkdir(evidenceDirectory(scenarioKey), {
+        recursive: true,
+        mode: 0o700,
+      });
+      const instructor = await createPersonaPage(
+        browser,
+        manifest,
+        "instructor",
+      );
+      const learnerA = await createPersonaPage(browser, manifest, "learnerA");
+      const learnerB = hasPeerReview(quiz)
+        ? await createPersonaPage(browser, manifest, "learnerB")
+        : null;
+      const outsider = await createPersonaPage(browser, manifest, "outsider");
+      try {
+        await verifyAuthoringAndTestRun(instructor.page, manifest, quiz);
+        await verifyOutsiderGate(outsider.page, manifest, quiz);
+        await verifyLearnerCourseDiscovery(learnerA.page, manifest);
+
+        if (resources.checkpoint === "learner-ready") {
+          await ensureLearnerSubmission(
+            learnerA.page,
+            manifest,
+            quiz,
+            "learnerA",
+          );
+          if (learnerB) {
+            await ensureLearnerSubmission(
+              learnerB.page,
+              manifest,
+              quiz,
+              "learnerB",
+            );
+            await reviewAsPeer(learnerA.page, manifest, quiz, "learnerA");
+            await reviewAsPeer(learnerB.page, manifest, quiz, "learnerB");
+            await synchronizeSubmission(manifest, quiz, "learnerA");
+            await synchronizeSubmission(manifest, quiz, "learnerB");
+          }
+          advanceQuizCheckpoint(
+            manifest,
+            quiz.key,
+            hasInstructorReview(quiz) ? "review-ready" : "release-ready",
+          );
+          await persist(manifest);
+        }
+
+        if (
+          hasInstructorReview(quiz) &&
+          resources.checkpoint === "review-ready"
+        ) {
+          for (const personaKey of Object.keys(resources.submissions)) {
+            await reviewAsInstructor(
+              instructor.page,
+              manifest,
+              quiz,
+              personaKey,
+            );
+            await synchronizeSubmission(manifest, quiz, personaKey);
+          }
+          advanceQuizCheckpoint(manifest, quiz.key, "release-ready");
+          await persist(manifest);
+        }
+
+        if (resources.checkpoint === "release-ready") {
+          for (const personaKey of Object.keys(resources.submissions)) {
+            await releaseAsInstructor(
+              instructor.page,
+              manifest,
+              quiz,
+              personaKey,
+            );
+            await synchronizeSubmission(manifest, quiz, personaKey);
+          }
+          advanceQuizCheckpoint(manifest, quiz.key, "released");
+          await persist(manifest);
+        }
+
+        await verifyLearnerResult(learnerA.page, manifest, quiz);
+        if (learnerB) {
+          await verifyLearnerResult(learnerB.page, manifest, quiz);
+        }
+        instructor.failures.assertNone(`${quiz.key} instructor scenario`);
+        learnerA.failures.assertNone(`${quiz.key} learner A scenario`);
+        learnerB?.failures.assertNone(`${quiz.key} learner B scenario`);
+        outsider.failures.assertNone(`${quiz.key} outsider scenario`);
+      } finally {
+        await Promise.allSettled(
+          [instructor, learnerA, learnerB, outsider]
+            .filter(Boolean)
+            .map((persona) => persona.context.close()),
+        );
+      }
+    });
   }
-  if (checkpointIndex(manifest.checkpoint) < checkpointIndex("learner-ready")) {
-    throw new Error(
-      "Browser execution requires a scenario prepared through learner-ready.",
-    );
-  }
-
-  await mkdir(evidenceDirectory(scenarioKey), { recursive: true, mode: 0o700 });
-  const instructor = await createPersonaPage(browser, manifest, "instructor");
-  const learner = await createPersonaPage(browser, manifest, "learnerA");
-  const outsider = await createPersonaPage(browser, manifest, "outsider");
-  try {
-    await verifyAuthoringAndTestRun(instructor.page, manifest, definition);
-    await verifyOutsiderGate(outsider.page, manifest);
-    await verifyLearnerCourseDiscovery(learner.page, manifest);
-
-    if (manifest.checkpoint === "learner-ready") {
-      await submitAsLearner(learner.page, manifest);
-      await synchronizeSubmission(manifest);
-      manifest.checkpoint = hasInstructorReview(definition)
-        ? "review-ready"
-        : "release-ready";
-      manifest.urls = buildScenarioUrls(manifest);
-      await writeManifest(manifest);
-    }
-
-    if (
-      hasInstructorReview(definition) &&
-      manifest.checkpoint === "review-ready"
-    ) {
-      await reviewAsInstructor(instructor.page, manifest, definition);
-      manifest.checkpoint = "release-ready";
-      await synchronizeSubmission(manifest);
-      manifest.urls = buildScenarioUrls(manifest);
-      await writeManifest(manifest);
-    }
-
-    if (manifest.checkpoint === "release-ready") {
-      await releaseAsInstructor(instructor.page, manifest);
-      manifest.checkpoint = "released";
-      await synchronizeSubmission(manifest);
-      manifest.urls = buildScenarioUrls(manifest);
-      await writeManifest(manifest);
-    }
-
-    await verifyLearnerResult(learner.page, manifest, definition);
-    instructor.failures.assertNone("instructor scenario");
-    learner.failures.assertNone("learner scenario");
-    outsider.failures.assertNone("outsider scenario");
-  } finally {
-    await Promise.allSettled([
-      instructor.context.close(),
-      learner.context.close(),
-      outsider.context.close(),
-    ]);
-  }
-});
+}
 
 async function verifyLearnerCourseDiscovery(page, manifest) {
   await page.goto(manifest.urls.learnerCourses, {
@@ -126,32 +196,28 @@ async function createPersonaPage(browser, manifest, personaKey) {
 }
 
 async function browserSignIn(page, webBaseUrl, email, password) {
-  await page.goto(`${webBaseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
-  const result = await page.evaluate(
-    async ({ emailValue, passwordValue }) => {
-      const csrfResponse = await fetch("/api/auth/csrf", {
-        credentials: "include",
-      });
-      const csrf = await csrfResponse.json().catch(() => null);
-      if (!csrfResponse.ok || typeof csrf?.csrfToken !== "string") {
-        return { ok: false, stage: "csrf", status: csrfResponse.status };
-      }
-      const response = await fetch("/api/auth/signin/credentials", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: emailValue,
-          password: passwordValue,
-          csrfToken: csrf.csrfToken,
-          redirect: false,
-          redirectTo: "/",
-        }),
-      });
-      return { ok: response.ok, stage: "credentials", status: response.status };
-    },
-    { emailValue: email, passwordValue: password },
-  );
+  const request = page.context().request;
+  const csrfResponse = await request.get(`${webBaseUrl}/api/auth/csrf`);
+  const csrf = await csrfResponse.json().catch(() => null);
+  const result =
+    csrfResponse.ok() && typeof csrf?.csrfToken === "string"
+      ? await request
+          .post(`${webBaseUrl}/api/auth/signin/credentials`, {
+            headers: { "Content-Type": "application/json" },
+            data: {
+              email,
+              password,
+              csrfToken: csrf.csrfToken,
+              redirect: false,
+              redirectTo: "/",
+            },
+          })
+          .then((response) => ({
+            ok: response.ok(),
+            stage: "credentials",
+            status: response.status(),
+          }))
+      : { ok: false, stage: "csrf", status: csrfResponse.status() };
   if (!result.ok) {
     throw new Error(
       `Browser sign-in failed at ${result.stage} (HTTP ${result.status}).`,
@@ -160,152 +226,333 @@ async function browserSignIn(page, webBaseUrl, email, password) {
   assertSharedAuthCookie(await page.context().cookies([webBaseUrl]));
 }
 
-async function verifyAuthoringAndTestRun(page, manifest, definition) {
+async function verifyAuthoringAndTestRun(page, manifest, quiz) {
+  const resources = manifest.resources.quizzes[quiz.key];
+  const urls = manifest.urls.quizzes[quiz.key];
   const api = await authenticatePersona(manifest, "instructor", {
     create: false,
   });
-  const before = await readGradingQueue(api, manifest.resources.assessmentId);
-  await page.goto(manifest.urls.assessmentEditor, {
+  const before = await readGradingQueue(api, resources.assessmentId);
+  await refreshPersonaPage(page, manifest, "instructor");
+  await page.goto(urls.assessmentEditor, {
     waitUntil: "domcontentloaded",
   });
   await expect(
-    page
-      .getByRole("heading", { name: new RegExp(definition.quiz.title, "i") })
-      .first(),
+    page.getByRole("heading", { name: new RegExp(quiz.title, "i") }).first(),
   ).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Test assessment" }).click();
   await expect(
     page.getByRole("heading", { name: "Assessment test run" }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Start test run" }).click();
-  await page.getByRole("button", { name: "True", exact: true }).click();
-  await page.getByRole("button", { name: "Submit answer" }).click();
-  await page.getByRole("button", { name: "Run grading workflow" }).click();
-  if (hasInstructorReview(definition)) {
-    const score = page.locator("#test-score-q1");
-    await score.fill(String(definition.expected.instructorScore / 100));
-    await page
-      .getByRole("button", { name: "Complete instructor review" })
-      .click();
+
+  if (hasPeerReview(quiz)) {
+    const tabs = page.getByRole("tab");
+    await expect(tabs).toHaveCount(2);
+    for (let index = 0; index < 2; index += 1) {
+      await selectSyntheticSubject(tabs, index);
+      await answerTestRun(page, quiz);
+    }
+    for (let index = 1; index >= 0; index -= 1) {
+      await selectSyntheticSubject(tabs, index);
+      await page
+        .getByRole("button", { name: "Claim anonymous response" })
+        .click();
+      await page
+        .locator('input[id^="peer-score-"]')
+        .fill(String(quiz.expected.peerReviewScore / 100));
+      await page
+        .locator('textarea[id^="peer-feedback-"]')
+        .fill(`Synthetic peer feedback ${index + 1}.`);
+      await page.getByRole("button", { name: "Submit peer review" }).click();
+      await expect(
+        page.getByRole("button", { name: "Submit peer review" }),
+      ).toHaveCount(0, { timeout: 30_000 });
+    }
+    if (hasInstructorReview(quiz)) {
+      for (let index = 0; index < 2; index += 1) {
+        await selectSyntheticSubject(tabs, index);
+        await completeTestInstructorReview(page, quiz);
+      }
+    }
+  } else {
+    await answerTestRun(page, quiz);
+    if (hasSelfReview(quiz)) {
+      await completeSelfReview(page, quiz);
+    }
+    if (hasInstructorReview(quiz)) {
+      await completeTestInstructorReview(page, quiz);
+    }
   }
-  await expect(page.getByText("Diagnostic result")).toBeVisible({
+
+  await expect(page.getByText("Diagnostic result").first()).toBeVisible({
     timeout: 30_000,
   });
-  await screenshot(page, manifest, "01-test-run.png");
-
-  const after = await readGradingQueue(api, manifest.resources.assessmentId);
+  await screenshot(page, manifest, quiz.key, "01-test-run.png");
+  const after = await readGradingQueue(api, resources.assessmentId);
   expect(after.total ?? 0).toBe(before.total ?? 0);
 }
 
-async function verifyOutsiderGate(page, manifest) {
-  await page.goto(manifest.urls.learnerActivity, {
+async function selectSyntheticSubject(tabs, index) {
+  const tab = tabs.nth(index);
+  await tab.click();
+  await expect(tab).toHaveAttribute("aria-selected", "true");
+}
+
+async function answerTestRun(page, quiz) {
+  const first = page
+    .getByText(quiz.document.blocks.q1.stem, { exact: true })
+    .locator("..");
+  await first.getByRole("button", { name: "True", exact: true }).click();
+  await first.getByRole("button", { name: "Submit answer" }).click();
+  const second = page
+    .getByText(quiz.document.blocks.q2.stem, { exact: true })
+    .locator("..");
+  await second.getByRole("button", { name: "Four", exact: true }).click();
+  await second.getByRole("button", { name: "Submit answer" }).click();
+  await page.getByRole("button", { name: "Run grading workflow" }).click();
+  await expect(
+    page.getByRole("button", { name: "Run grading workflow" }),
+  ).toHaveCount(0, { timeout: 30_000 });
+}
+
+async function completeSelfReview(page, quiz) {
+  await page.locator("#self-score-q1").fill("1");
+  await page
+    .locator("#self-score-q2")
+    .fill(String((quiz.expected.selfReviewScore - 100) / 100));
+  await page
+    .getByLabel("Overall self-review feedback")
+    .fill("Scenario self review.");
+  await page.getByRole("button", { name: "Submit self review" }).click();
+  await expect(page.getByText("Self review submitted.")).toBeVisible({
+    timeout: 30_000,
+  });
+}
+
+async function completeTestInstructorReview(page, quiz) {
+  await page.locator("#test-score-q1").fill("1");
+  await page
+    .locator("#test-score-q2")
+    .fill(String((quiz.expected.instructorScore - 100) / 100));
+  await page
+    .getByRole("button", { name: "Complete instructor review" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Complete instructor review" }),
+  ).toHaveCount(0, { timeout: 30_000 });
+}
+
+async function verifyOutsiderGate(page, manifest, quiz) {
+  await page.goto(manifest.urls.quizzes[quiz.key].learnerActivity, {
     waitUntil: "domcontentloaded",
   });
   await expect(
     page.getByRole("heading", { name: "Join this course" }),
-  ).toBeVisible({
-    timeout: 60_000,
-  });
+  ).toBeVisible({ timeout: 60_000 });
   await expect(
     page.getByRole("button", { name: "Start Activity" }),
   ).toHaveCount(0);
-  await screenshot(page, manifest, "02-outsider-denied.png");
+  await screenshot(page, manifest, quiz.key, "02-outsider-denied.png");
 }
 
-async function submitAsLearner(page, manifest) {
-  await page.goto(manifest.urls.learnerActivity, {
+async function submitAsLearner(page, manifest, quiz, personaKey) {
+  await page.goto(manifest.urls.quizzes[quiz.key].learnerActivity, {
     waitUntil: "domcontentloaded",
   });
   await page.getByRole("button", { name: "Start Activity" }).click();
   await page.getByRole("button", { name: "True", exact: true }).click();
   await page.getByRole("button", { name: "Submit answer" }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Four", exact: true }).click();
+  await page.getByRole("button", { name: "Submit answer" }).click();
   await page.getByRole("button", { name: "Submit Quiz" }).click();
+  if (hasSelfReview(quiz)) {
+    await completeSelfReview(page, quiz);
+  }
   await expect(
     page
-      .getByText(/Submitted|result has not been released|instructor review/i)
+      .getByText(
+        /Submitted|result has not been released|instructor review|Self review submitted/i,
+      )
       .first(),
   ).toBeVisible({ timeout: 60_000 });
-  await screenshot(page, manifest, "03-learner-submitted.png");
+  await screenshot(page, manifest, quiz.key, `03-${personaKey}-submitted.png`);
 }
 
-async function reviewAsInstructor(page, manifest, definition) {
-  await page.goto(manifest.urls.speedGrader, { waitUntil: "domcontentloaded" });
+async function ensureLearnerSubmission(page, manifest, quiz, personaKey) {
+  const alreadySubmitted = await synchronizeSubmission(
+    manifest,
+    quiz,
+    personaKey,
+    { wait: false },
+  );
+  if (!alreadySubmitted) {
+    await submitAsLearner(page, manifest, quiz, personaKey);
+    await synchronizeSubmission(manifest, quiz, personaKey);
+  }
+  await persist(manifest);
+}
+
+async function reviewAsPeer(page, manifest, quiz, personaKey) {
+  const resources = manifest.resources.quizzes[quiz.key];
+  const assessmentId = resources.assessmentId;
+  const claimedReviewId = resources.peerReviewIds[personaKey];
+  if (claimedReviewId) {
+    await page.goto(`${manifest.urls.learnerReviews}/${claimedReviewId}`, {
+      waitUntil: "domcontentloaded",
+    });
+  } else {
+    await page.goto(manifest.urls.learnerReviews, {
+      waitUntil: "domcontentloaded",
+    });
+    const task = page.getByTestId(`review-task-${assessmentId}`);
+    await expect(task).toBeVisible({ timeout: 60_000 });
+    await Promise.all([
+      page.waitForURL(
+        (url) => /\/learn\/reviews\/[0-9a-f-]+$/i.test(url.pathname),
+        { timeout: 60_000 },
+      ),
+      task.getByRole("button", { name: "Review a peer" }).click(),
+    ]);
+    resources.peerReviewIds[personaKey] = new URL(page.url()).pathname
+      .split("/")
+      .at(-1);
+    await persist(manifest);
+  }
+  await expect(page.getByTestId("anonymous-header")).toBeVisible({
+    timeout: 60_000,
+  });
+  if (
+    await page
+      .getByText("Review already submitted.", { exact: true })
+      .isVisible()
+  ) {
+    return;
+  }
+  await page
+    .getByTestId("peer-score-input")
+    .fill(String(quiz.expected.peerReviewScore / 100));
+  await page
+    .getByTestId("peer-feedback")
+    .fill(`Peer feedback from ${personaKey}.`);
+  await page.getByTestId("submit-review").click();
+  await expect(page.getByRole("heading", { name: "Peer reviews" })).toBeVisible(
+    {
+      timeout: 60_000,
+    },
+  );
+  await persist(manifest);
+  await screenshot(
+    page,
+    manifest,
+    quiz.key,
+    `04-${personaKey}-peer-review.png`,
+  );
+}
+
+async function reviewAsInstructor(page, manifest, quiz, personaKey) {
+  const urls = manifest.urls.quizzes[quiz.key];
+  await refreshPersonaPage(page, manifest, "instructor");
+  await page.goto(urls.speedGraders[personaKey], {
+    waitUntil: "domcontentloaded",
+  });
   await expect(page.getByTestId("grading-panel")).toBeVisible({
     timeout: 60_000,
   });
+  await page.getByTestId("item-score-q1").fill("1");
   await page
-    .getByTestId("item-score-q1")
-    .fill(String(definition.expected.instructorScore / 100));
+    .getByTestId("item-score-q2")
+    .fill(String((quiz.expected.instructorScore - 100) / 100));
   await page.getByTestId("resolve-instructor-review").click();
-  await expect(page.getByText(/Final result:/)).toBeVisible({
+  await expect(page.getByText("Ready to release")).toBeVisible({
     timeout: 30_000,
   });
-  await screenshot(page, manifest, "04-instructor-reviewed.png");
+  await screenshot(
+    page,
+    manifest,
+    quiz.key,
+    `05-${personaKey}-instructor-reviewed.png`,
+  );
 }
 
-async function releaseAsInstructor(page, manifest) {
-  await page.goto(manifest.urls.speedGrader, { waitUntil: "domcontentloaded" });
+async function releaseAsInstructor(page, manifest, quiz, personaKey) {
+  const urls = manifest.urls.quizzes[quiz.key];
+  await refreshPersonaPage(page, manifest, "instructor");
+  await page.goto(urls.speedGraders[personaKey], {
+    waitUntil: "domcontentloaded",
+  });
   await expect(page.getByTestId("release-result")).toBeVisible({
     timeout: 60_000,
   });
   await page.getByTestId("release-result").click();
-  await expect(page.getByText("Released", { exact: true })).toBeVisible({
+  await expect(page.getByText("Released to learner")).toBeVisible({
     timeout: 30_000,
   });
-  await screenshot(page, manifest, "05-result-released.png");
+  await screenshot(page, manifest, quiz.key, `06-${personaKey}-released.png`);
 }
 
-async function verifyLearnerResult(page, manifest, definition) {
+async function verifyLearnerResult(page, manifest, quiz) {
   await page.goto(manifest.urls.learnerGrades, {
     waitUntil: "domcontentloaded",
   });
+  const gradeHeading = page.getByRole("heading", {
+    name: `[${manifest.marker}] ${quiz.title}`,
+    exact: true,
+  });
+  await expect(gradeHeading).toBeVisible({ timeout: 60_000 });
+  const gradeRow = gradeHeading.locator("xpath=ancestor::article");
   await expect(
-    page.getByText(new RegExp(definition.quiz.title, "i")).first(),
-  ).toBeVisible({ timeout: 60_000 });
-  await screenshot(page, manifest, "06-learner-gradebook.png");
+    gradeRow.getByText(
+      `${expectedFinalScore(quiz) / 100} / ${quiz.expected.maxScore / 100}`,
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await screenshot(page, manifest, quiz.key, "07-learner-gradebook.png");
 
-  await page.goto(manifest.urls.learnerActivity, {
+  await page.goto(manifest.urls.quizzes[quiz.key].learnerActivity, {
     waitUntil: "domcontentloaded",
   });
   await expect(
-    page.getByText(definition.quiz.document.blocks.q1.stem),
+    page.getByText(quiz.document.blocks.q1.stem, { exact: true }).first(),
   ).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByRole("button", { name: "Start Activity" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Submit Quiz" })).toBeDisabled();
-  const expectedScore = hasInstructorReview(definition)
-    ? definition.expected.instructorScore
-    : definition.expected.automatedScore;
   await expect(
-    page.getByText(
-      expectedScore === definition.expected.maxScore
-        ? "Excellent! That's correct!"
-        : "Not quite right. Try again!",
-    ),
-  ).toBeVisible();
-  await screenshot(page, manifest, "07-learner-restored-result.png");
+    page.getByRole("button", { name: "Start Activity" }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Submit Quiz" }),
+  ).toBeDisabled();
+  await screenshot(page, manifest, quiz.key, "08-learner-restored-result.png");
 }
 
-async function synchronizeSubmission(manifest) {
+async function synchronizeSubmission(
+  manifest,
+  quiz,
+  personaKey,
+  { wait = true } = {},
+) {
+  const resources = manifest.resources.quizzes[quiz.key];
   const instructor = await authenticatePersona(manifest, "instructor", {
     create: false,
   });
   const deadline = Date.now() + 30_000;
-  let submissionId = manifest.resources.submissionId;
-  while (!submissionId && Date.now() < deadline) {
-    const queue = await readGradingQueue(
-      instructor,
-      manifest.resources.assessmentId,
-    );
+  let submissionId = resources.submissions[personaKey].submissionId;
+  while (!submissionId) {
+    const queue = await readGradingQueue(instructor, resources.assessmentId);
     submissionId = queue.items?.find(
       (item) =>
-        item.userId === manifest.personas.learnerA.userId || item.isGroup,
+        item.userId === manifest.personas[personaKey].userId || item.isGroup,
     )?.submissionId;
-    if (!submissionId) await new Promise((resolve) => setTimeout(resolve, 500));
+    if (submissionId) break;
+    if (!wait) return false;
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `The ${personaKey} attempt for "${quiz.key}" did not reach the grading queue.`,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  if (!submissionId)
-    throw new Error(
-      "The submitted learner attempt did not reach the grading queue.",
-    );
   const submission = await request(
     instructor.client,
     "Synchronize runtime submission",
@@ -314,18 +561,41 @@ async function synchronizeSubmission(manifest) {
       path: `/v1/assessments/runtime-submissions/${submissionId}`,
     },
   );
-  manifest.resources.submissionId = submission.submissionId;
-  manifest.resources.gradingExecutionId =
-    submission.execution?.executionId ?? null;
-  manifest.resources.gradeResultId =
-    submission.execution?.activeRoundId ?? null;
+  const target = resources.submissions[personaKey];
+  target.submissionId = submission.submissionId;
+  target.gradingExecutionId = submission.execution?.executionId ?? null;
+  target.gradeResultId = submission.execution?.activeRoundId ?? null;
+  manifest.urls = buildScenarioUrls(manifest);
+  return true;
 }
 
-async function screenshot(page, manifest, name) {
-  await page.screenshot({
-    path: `${evidenceDirectory(manifest.definitionKey)}/${name}`,
-    fullPage: true,
-  });
+async function refreshPersonaPage(page, manifest, personaKey) {
+  const persona = manifest.personas[personaKey];
+  await browserSignIn(
+    page,
+    manifest.environment.webBaseUrl,
+    persona.email,
+    persona.password,
+  );
+}
+
+function advanceQuizCheckpoint(manifest, quizKey, checkpoint) {
+  const resources = manifest.resources.quizzes[quizKey];
+  if (checkpointIndex(checkpoint) > checkpointIndex(resources.checkpoint)) {
+    resources.checkpoint = checkpoint;
+  }
+  recomputeManifestCheckpoint(manifest);
+}
+
+async function persist(manifest) {
+  manifest.urls = buildScenarioUrls(manifest);
+  await writeManifest(manifest);
+}
+
+async function screenshot(page, manifest, quizKey, name) {
+  const directory = `${evidenceDirectory(manifest.definitionKey)}/${quizKey}`;
+  await mkdir(directory, { recursive: true, mode: 0o700 });
+  await page.screenshot({ path: `${directory}/${name}`, fullPage: true });
 }
 
 function readGradingQueue(session, assessmentId) {

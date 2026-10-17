@@ -1,4 +1,8 @@
 using FluentValidation;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 
 namespace GameGuild.Assets.Queries;
 
@@ -20,7 +24,10 @@ public sealed record ReportDto(
     string? ReviewNotes,
     DateTime CreatedAt,
     DateTime? ReviewedAt,
-    AssetDto? Asset);
+    AssetDto? Asset,
+    string[]? Labels,
+    Dictionary<string, double>? ModelScores,
+    string? Model);
 
 public sealed class GetModerationQueueValidator : AbstractValidator<GetModerationQueueQuery>
 {
@@ -91,9 +98,75 @@ public sealed class GetModerationQueueHandler : IRequestHandler<GetModerationQue
                 report.ReviewNotes,
                 report.CreatedAt,
                 report.ReviewedAt,
-                assetDto);
+                assetDto,
+                ExtractLabels(report),
+                ExtractModelScores(report),
+                ExtractModel(report));
         }).ToList();
 
         return result;
+    }
+
+    private static string[]? ExtractLabels(AssetReport report)
+    {
+        try
+        {
+            if (report.Reference?.Content != null && report.Reference.Content.ModerationLabels != null)
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<string[]>(report.Reference.Content.ModerationLabels);
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static Dictionary<string, double>? ExtractModelScores(AssetReport report)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(report.ReviewNotes))
+            {
+                var scoresPart = report.ReviewNotes.Split(';').FirstOrDefault(p => p.StartsWith("scores="));
+                if (scoresPart != null)
+                {
+                    var scoresStr = scoresPart["scores=".Length..];
+                    var scoresDict = new Dictionary<string, double>();
+                    foreach (var pair in scoresStr.Split(','))
+                    {
+                        var parts = pair.Split(':');
+                        if (parts.Length == 2 && double.TryParse(parts[1], out var score))
+                        {
+                            scoresDict[parts[0]] = score;
+                        }
+                    }
+                    return scoresDict;
+                }
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? ExtractModel(AssetReport report)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(report.ReviewNotes))
+            {
+                var modelPart = report.ReviewNotes.Split(';').FirstOrDefault(p => p.StartsWith("model="));
+                return modelPart?["model=".Length..];
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

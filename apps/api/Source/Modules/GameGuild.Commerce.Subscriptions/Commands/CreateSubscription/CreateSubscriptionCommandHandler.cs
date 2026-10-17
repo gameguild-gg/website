@@ -8,10 +8,20 @@ namespace GameGuild.Commerce.Subscriptions;
 /// </summary>
 public sealed class CreateSubscriptionCommandHandler(
     ISubscriptionRepository subscriptionRepository,
+    ISubscriptionPlanRepository planRepository,
     ILogger<CreateSubscriptionCommandHandler> logger) : ICommandHandler<CreateSubscriptionCommand, Guid>
 {
     public async Task<Guid> Handle(CreateSubscriptionCommand request, CancellationToken cancellationToken)
     {
+        // Issue #416: fail closed — an enterprise plan still carrying the -1 custom-quote
+        // sentinel cannot be checked out until a concrete price is configured.
+        var plan = await planRepository.GetByIdAsync(request.PlanId, cancellationToken).ConfigureAwait(false)
+            ?? throw new GameGuild.EntityNotFoundException("SubscriptionPlan", request.PlanId);
+        if (plan.RequiresCustomQuote())
+        {
+            throw new SubscriptionPlanCustomQuotePendingException(request.PlanId);
+        }
+
         var startDate = request.StartDate ?? SystemClock.UtcNow;
         var trialEndDate = request.TrialDays.HasValue ? startDate.AddDays(request.TrialDays.Value) : (DateTime?) null;
 

@@ -75,6 +75,8 @@ public static class ScimGroupPatchApplier
 
                 RemoveScalar(state, path);
                 break;
+            default:
+                throw ScimException.InvalidValue($"The patch operation '{op}' is not one of add, remove, replace.");
         }
     }
 
@@ -182,6 +184,8 @@ public static class ScimGroupPatchApplier
 
                 break;
             }
+            default:
+                throw ScimException.InvalidValue($"The patch operation '{op}' is not one of add, remove, replace.");
         }
     }
 

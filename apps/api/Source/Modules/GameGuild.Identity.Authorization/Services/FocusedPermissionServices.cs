@@ -597,7 +597,10 @@ public sealed class PermissionQueryService(
         // SECURITY (deny-by-default, #327): inactive or expired grants contribute nothing;
         // the row is treated as absent. Mirrors EffectivePermissionResolverService's
         // layer rule so list results can never widen an authorization decision.
-        if (!IsGrantEffective(existing)) return new List<string>();
+        if (!IsGrantEffective(existing))
+        {
+            return new List<string>();
+        }
 
         return existing.Permissions.ToList();
     }
@@ -693,13 +696,16 @@ public sealed class PermissionBulkService(
         Guid tenantId,
         string[] permissions,
         Guid? grantedBy = null,
+        DateTime? expiresAt = null,
+        string? reason = null,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
-            "Bulk granting permissions {Permissions} to {UserCount} users in tenant {TenantId}",
+            "Bulk granting permissions {Permissions} to {UserCount} users in tenant {TenantId} (expiresAt: {ExpiresAt})",
             string.Join(", ", permissions),
             userIds.Length,
-            tenantId);
+            tenantId,
+            expiresAt);
 
         var results = new List<TenantPermission>();
 
@@ -710,8 +716,8 @@ public sealed class PermissionBulkService(
                 tenantId,
                 permissions,
                 grantedBy,
-                null,
-                null,
+                expiresAt,
+                reason,
                 cancellationToken);
             results.Add(result);
         }

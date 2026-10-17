@@ -336,6 +336,21 @@ export type AssessmentRuntimeSubmissionStatus =
   | "returned"
   | "late";
 
+export type GradeResultReleaseScheduleStatus =
+  | "scheduled"
+  | "cancelled"
+  | "released";
+
+export interface GradeResultReleaseScheduleRuntimeViewV1 {
+  scheduleId: string;
+  gradeRoundId: string;
+  scheduledFor: string;
+  status: GradeResultReleaseScheduleStatus;
+  version: number;
+  cancelledAt: string | null;
+  releasedAt: string | null;
+}
+
 export interface GradeRoundRuntimeViewV1 {
   roundId: string;
   roundNumber: number;
@@ -348,6 +363,7 @@ export interface GradeRoundRuntimeViewV1 {
   result: GradeResultV1 | null;
   released: boolean;
   releasedAt: string | null;
+  releaseSchedule: GradeResultReleaseScheduleRuntimeViewV1 | null;
 }
 
 export interface AssessmentExecutionRuntimeViewV1<TLearnerPayload = unknown> {
@@ -374,6 +390,7 @@ export interface AssessmentExecutionRuntimeViewV1<TLearnerPayload = unknown> {
     criteria: Array<{ id: string; description: string; points: ScoreValue; order: number }>;
   } | null;
   instructorVisibleRubricScores?: Record<string, ScoreValue> | null;
+  selfReview?: SelfReviewRuntimeStateV1 | null;
 }
 
 export interface AssessmentTestRunRuntimeViewV1<TLearnerPayload = unknown> {
@@ -387,6 +404,14 @@ export interface AssessmentTestRunRuntimeViewV1<TLearnerPayload = unknown> {
   candidateStillMatchesDraft: boolean;
   readyForPublication: boolean;
   diagnostics: string[];
+  subjects?: AssessmentTestRunSubjectRuntimeViewV1<TLearnerPayload>[] | null;
+}
+
+export interface AssessmentTestRunSubjectRuntimeViewV1<TLearnerPayload = unknown> {
+  subjectId: string;
+  personaKey: string;
+  personaDisplayName: string;
+  execution: AssessmentExecutionRuntimeViewV1<TLearnerPayload>;
 }
 
 export interface AssessmentSubmissionRuntimeViewV1<TLearnerPayload = unknown> {
@@ -418,6 +443,57 @@ export interface InstructorReviewResolutionV1 {
   feedback?: string | null;
   overrideReason?: string | null;
   rubricScores?: Record<string, ScoreValue> | null;
+}
+
+export interface SelfReviewItemV1 {
+  itemId: string;
+  score: ScoreValue;
+  feedback?: string | null;
+}
+
+export interface SelfReviewEvidenceV1 {
+  schemaVersion: 1;
+  items: SelfReviewItemV1[];
+  feedback?: string | null;
+}
+
+export interface SelfReviewRuntimeStateV1 {
+  reviewStageId: string;
+  status: ReviewStageStatusV1;
+  instructions: string | null;
+  requireFeedback: boolean;
+  draftVersion: number;
+  draft: SelfReviewEvidenceV1 | null;
+  lastDraftActorId: string | null;
+  submittedEvidence: SelfReviewEvidenceV1 | null;
+  submittedByActorId: string | null;
+}
+
+export type PeerReviewClaimStatusV1 =
+  | "assigned"
+  | "submitted"
+  | "expired"
+  | "cancelled";
+
+export interface PeerReviewClaimResultV1 {
+  reviewId: string;
+  maskedSubmission: string;
+}
+
+export interface PeerReviewClaimRuntimeViewV1 {
+  id: string;
+  reviewStageId: string;
+  assessmentId: string;
+  submissionId: string | null;
+  reviewerUserId: string | null;
+  reviewerTestRunSubjectId: string | null;
+  status: PeerReviewClaimStatusV1;
+  version: number;
+  claimedAt: string;
+  leaseExpiresAt: string;
+  submittedAt: string | null;
+  attemptNumber: number;
+  responseEnvelopeCanonicalJson: string | null;
 }
 
 export class GradingContractValidationError extends Error {

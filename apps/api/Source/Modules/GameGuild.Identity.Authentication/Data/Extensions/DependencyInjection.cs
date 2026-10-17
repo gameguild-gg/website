@@ -130,6 +130,12 @@ public static class DataDependencyInjection
         // Core authentication services - focused sub-services
         services.AddScoped<IAuthAttemptService, AuthAttemptService>();
         services.AddScoped<ISuspiciousLoginAlertPublisher, SuspiciousLoginAlertPublisher>();
+        services.AddScoped<INewLoginAlertPublisher, NewLoginAlertPublisher>();
+        // Server-side device metadata: dependency-free user-agent parsing for every session;
+        // geolocation stays a pure abstraction (SharedKernel) with a no-op default so a host
+        // can plug in an offline GeoIP provider without touching this module.
+        services.TryAddSingleton<IUserAgentParser>(static _ => UserAgentParser.Shared);
+        services.TryAddSingleton<IGeolocationProvider>(static _ => NoOpGeolocationProvider.Instance);
         services.AddScoped<ILocalAuthService, LocalAuthService>();
         services.AddScoped<IOAuthAuthService, OAuthAuthService>();
         services.AddScoped<IPasswordService, PasswordService>();
@@ -172,6 +178,12 @@ public static class DataDependencyInjection
         services.AddScoped<ITotpMfaService, TotpMfaService>();
         services.AddScoped<IBackupCodeMfaService, BackupCodeMfaService>();
         services.AddScoped<IMfaAttemptTrackingService, MfaAttemptTrackingService>();
+        // SMS OTP factor (issue #244): code lifecycle + delivery through the Notifications SMS
+        // channel; the provider port (ISmsSender) is host-configured, fail-closed NoOp default.
+        services.AddScoped<ISmsMfaService, SmsMfaService>();
+        // Push approval factor, v1 contract (issue #259): challenge state in IDistributedCache
+        // (Redis path in production, mirroring the token revocation store).
+        services.AddScoped<IPushMfaService, PushMfaService>();
 
         // Composite MFA service for backward compatibility
         services.AddScoped<IMfaService, MfaService>();
@@ -220,6 +232,9 @@ public static class DataDependencyInjection
 
         // Register WebAuthn repository and sub-services
         services.AddScoped<IWebAuthnCredentialRepository, WebAuthnCredentialRepository>();
+        // Distributed challenge store (issue #234): IDistributedCache-backed (Redis in
+        // production), so ceremonies started on one instance complete on another.
+        services.AddScoped<IWebAuthnSessionStore, DistributedCacheWebAuthnSessionStore>();
         services.AddScoped<IWebAuthnRegistrationService, WebAuthnRegistrationService>();
         services.AddScoped<IWebAuthnAuthenticationService, WebAuthnAuthenticationSubService>();
         services.AddScoped<IWebAuthnCredentialManagementService, WebAuthnCredentialManagementService>();

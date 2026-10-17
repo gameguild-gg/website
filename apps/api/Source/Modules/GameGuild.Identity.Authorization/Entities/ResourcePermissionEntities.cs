@@ -10,8 +10,13 @@ namespace GameGuild.Identity.Authorization;
 ///     from the base; the required (non-nullable) subject and computed activity state hide
 ///     their optional base equivalents, mirroring the tenant-column pattern already used
 ///     by this entity.
+///     Implements the <see cref="IDacAttribute"/> contract (issues #318/#320): the grant
+///     subject is the DAC owner of the entry, the payload is the permission list, and the
+///     inheritance policy is <see cref="DacInheritancePolicy.InheritAndPropagate"/> for the
+///     owner row (the engine's owner override honors the owner's set at tenant parity and
+///     on the exact resource) and <see cref="DacInheritancePolicy.None"/> otherwise.
 /// </summary>
-public class ResourceUserPermission : PermissionBase
+public class ResourceUserPermission : PermissionBase, IDacAttribute
 {
     /// <summary>
     ///     Gets or sets the tenant ID this permission belongs to.
@@ -115,6 +120,32 @@ public class ResourceUserPermission : PermissionBase
     ///     Strings that do not map to a defined <see cref="PermissionType"/> are dropped.
     /// </summary>
     public override IReadOnlyList<PermissionType> GetGrantedPermissionTypes() { return ParsePermissionTypes(Permissions).ToList(); }
+
+    /// <summary>
+    ///     DAC attribute view (issues #318/#320): the grant subject is the owner of this
+    ///     entry (the required non-nullable subject is projected into the optional
+    ///     interface shape).
+    /// </summary>
+    Guid? IDacAttribute.Owner => UserId;
+
+    /// <summary>
+    ///     DAC attribute view: direct resource grants carry no owner-group concept in v1.
+    /// </summary>
+    string? IDacAttribute.OwnerGroup => null;
+
+    /// <summary>
+    ///     DAC attribute view: the granted permission entries.
+    /// </summary>
+    IReadOnlyList<string> IDacAttribute.PermissionList => Permissions;
+
+    /// <summary>
+    ///     DAC attribute view: the owner row's set is honored at tenant parity and on the
+    ///     exact resource by the engine's owner override (issues #372/#363), so it reports
+    ///     <see cref="DacInheritancePolicy.InheritAndPropagate"/>; every other row is scoped
+    ///     to the exact resource only.
+    /// </summary>
+    DacInheritancePolicy IDacAttribute.InheritancePolicy
+        => IsOwner ? DacInheritancePolicy.InheritAndPropagate : DacInheritancePolicy.None;
 
     /// <summary>
     ///     Effective-activity contract override: because this entity computes activity from

@@ -23,7 +23,7 @@ public class OidcFederationServiceTests : IDisposable
     private const string Authority = "https://login.corp.example.test";
     private const string Slug = "corp-idp";
     private const string ClientId = "gameguild-web";
-    private const string ClientSecret = "provider-secret";
+    private static readonly string ClientSecret = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
     private readonly RSA _signingKey = RSA.Create(2048);
     private readonly RSA _foreignKey = RSA.Create(2048);
@@ -141,6 +141,20 @@ public class OidcFederationServiceTests : IDisposable
     }
 
     // ── Callback: happy path + claim mapping ──────────────────────────────────
+
+    [Fact]
+    public async Task AuthenticateCallbackAsync_ForwardsEphemeralConfiguredClientSecret()
+    {
+        Convert.FromHexString(ClientSecret).Should().HaveCount(32);
+        using var stub = new StubOidcProvider(_signingKey);
+        var sut = CreateSut(AuthOptionsWith((Slug, ProviderOptions())), stub);
+
+        var identity = await sut.AuthenticateCallbackAsync(Slug, "auth-code", "state-1", "https://web.example.test/cb");
+
+        identity.ProviderKey.Should().Be("corp-sub-42");
+        stub.TokenHits.Should().Be(1);
+        stub.LastTokenRequestBody.Should().Contain($"client_secret={Uri.EscapeDataString(ClientSecret)}");
+    }
 
     [Fact]
     public async Task AuthenticateCallbackAsync_ValidToken_MapsClaims()
@@ -444,6 +458,8 @@ public class OidcFederationServiceTests : IDisposable
 
         public int TokenHits { get; private set; }
 
+        public string? LastTokenRequestBody { get; private set; }
+
         public IHttpClientFactory HttpClientFactory => _factory.Object;
 
         public void Dispose()
@@ -498,6 +514,7 @@ public class OidcFederationServiceTests : IDisposable
             if (request.Method == HttpMethod.Post && url.EndsWith("/token", StringComparison.OrdinalIgnoreCase))
             {
                 TokenHits++;
+                LastTokenRequestBody = request.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
                 if (TokenEndpointStatus != HttpStatusCode.OK)
                 {
                     return new HttpResponseMessage(TokenEndpointStatus) { Content = new StringContent("{\"error\":\"invalid_grant\"}") };

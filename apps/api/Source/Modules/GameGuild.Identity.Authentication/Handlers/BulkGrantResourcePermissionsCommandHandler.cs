@@ -44,12 +44,15 @@ public sealed class BulkGrantResourcePermissionsCommandHandler(
         {
             try
             {
+                // DeletedAt filter: a soft-deleted grant (history preservation, #360) is
+                // never reactivated in place — a new grant creates a fresh row.
                 var grant = await dbContext.Set<GenericResourcePermission>()
                     .FirstOrDefaultAsync(p =>
                             p.UserId == userId &&
                             p.TenantId == (request.TenantId == Guid.Empty ? null : request.TenantId) &&
                             p.ResourceId == request.ResourceId &&
-                            p.ResourceType == request.ResourceType,
+                            p.ResourceType == request.ResourceType &&
+                            p.DeletedAt == null,
                         cancellationToken)
                     .ConfigureAwait(false);
 
@@ -151,4 +154,10 @@ public sealed class BulkGrantResourcePermissionsCommandHandler(
 /// <summary>
 ///     Concrete bulk-result carrying per-user failures for resource permission operations.
 /// </summary>
-public sealed class ResourceBulkPermissionResult : BulkPermissionResult;
+/// <remarks>
+///     <b>Issues #302/#310:</b> same per-item contract as
+///     <see cref="TenantBulkPermissionResult"/> — <see cref="GameGuild.ICommitOnFailureOutcome"/>
+///     plus the inherited <see cref="BulkPermissionResult.IsFailure"/> keeps successful
+///     items committed while every per-user failure is reported.
+/// </remarks>
+public sealed class ResourceBulkPermissionResult : BulkPermissionResult, GameGuild.ICommitOnFailureOutcome;

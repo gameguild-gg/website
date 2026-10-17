@@ -173,6 +173,13 @@ public static class PaymentsModule
             .ValidateOnStart();
         services.AddHostedService<AccountCreditExpiryBackgroundService>();
 
+        // Account-credit auto-apply on invoice payments (issue #410 follow-up): disabled by
+        // default; when enabled the payment path consumes spendable credits (FIFO by expiry,
+        // capped at the invoice amount) before charging the payment method.
+        services.AddOptions<CreditAutoApplyOptions>()
+            .Bind(configuration.GetSection(CreditAutoApplyOptions.SectionName))
+            .ValidateOnStart();
+
         // Register controllers
         services.AddControllers().AddApplicationPart(typeof(PaymentsModule).Assembly);
 

@@ -31,6 +31,13 @@ public class PaymentResult
     public PaymentStatus Status { get; init; }
 
     /// <summary>
+    ///     Account-credit tender applied automatically before the payment method was charged
+    ///     (issue #410 auto-apply); the provider charge is <c>Amount - CreditApplied</c>.
+    ///     Null when no credits were applied.
+    /// </summary>
+    public decimal? CreditApplied { get; init; }
+
+    /// <summary>
     ///     Invoice ID that this payment was applied to.
     ///     Links payment to specific invoice for audit trail and preventing duplicate applications.
     /// </summary>

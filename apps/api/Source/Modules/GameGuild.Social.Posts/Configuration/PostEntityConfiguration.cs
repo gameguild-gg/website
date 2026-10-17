@@ -21,6 +21,8 @@ public class PostEntityConfiguration : IEntityTypeConfiguration<Post>
         builder.Property(p => p.MediaUrl)
             .HasMaxLength(2000);
 
+        builder.HasIndex(p => p.MediaAssetReferenceId);
+
         builder.HasIndex(p => p.AuthorId);
         builder.HasIndex(p => p.TenantId);
         builder.HasIndex(p => p.Visibility);

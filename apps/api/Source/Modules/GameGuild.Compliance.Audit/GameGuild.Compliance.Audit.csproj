@@ -9,6 +9,7 @@
     <ItemGroup>
         <PackageReference Include="JsonSchema.Net" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
         <PackageReference Include="System.ComponentModel.Annotations" />
     </ItemGroup>
 
@@ -19,8 +20,17 @@
     <ItemGroup>
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
         <ProjectReference Include="..\GameGuild.Identity.Authentication\GameGuild.Identity.Authentication.csproj" />
+        <ProjectReference Include="..\GameGuild.Identity.Context\GameGuild.Identity.Context.csproj" />
         <ProjectReference Include="..\GameGuild.Identity.Provisioning\GameGuild.Identity.Provisioning.csproj" />
         <ProjectReference Include="..\GameGuild.Identity.Authorization\GameGuild.Identity.Authorization.csproj" />
+        <!-- Central bridges for the module audit sinks (issues #180/#181/#184): the audit module
+             implements the sink interfaces owned by the content, learning, and teams modules.
+             Learning.Courses cannot be referenced here (Learning.Courses -> Commerce.Products ->
+             Compliance.Audit would close a cycle); its entity-level audit interceptor lives in the
+             host composition root instead. -->
+        <ProjectReference Include="..\GameGuild.Content.Pages\GameGuild.Content.Pages.csproj" />
+        <ProjectReference Include="..\GameGuild.Learning\GameGuild.Learning.csproj" />
+        <ProjectReference Include="..\GameGuild.Teams\GameGuild.Teams.csproj" />
     </ItemGroup>
 
 </Project>

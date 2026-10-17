@@ -20,13 +20,13 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-markdown": "^10.1.0",
-    "react-syntax-highlighter": "^16.1.1",
+    "react-syntax-highlighter": "^16.1.2",
     "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "vega": "^6.2.0",
-    "vega-lite": "^6.4.1"
+    "vega-lite": "^6.5.0"
   },
   "devDependencies": {
     "@game-guild/eslint-config": "workspace:*",

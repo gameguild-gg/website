@@ -838,6 +838,114 @@ export class LearningAssessmentsModule {
 
   /**
    */
+  async postAssessmentsRuntimeSubmissionsReleaseSchedule(
+    submissionId: string,
+    body: Types.LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommand,
+  ): Promise<Result<Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1, ApiError>> {
+    const url = `/v1/assessments/runtime-submissions/${submissionId}/release-schedule`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsGradingRuntimeScheduleGradeResultReleaseCommandSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async postAssessmentsRuntimeSubmissionsReleaseScheduleCancel(
+    submissionId: string,
+    body: Types.LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommand,
+  ): Promise<Result<Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1, ApiError>> {
+    const url = `/v1/assessments/runtime-submissions/${submissionId}/release-schedule/cancel`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsGradingRuntimeCancelScheduledGradeResultReleaseCommandSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingRuntimeGradeResultReleaseScheduleViewV1Schema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async postAssessmentsRuntimeSubmissionsSelfReview(
+    submissionId: string,
+    body: Types.LearningAssessmentsSubmitSelfReviewInput,
+  ): Promise<Result<Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1, ApiError>> {
+    const url = `/v1/assessments/runtime-submissions/${submissionId}/self-review`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsSubmitSelfReviewInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1Schema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async putAssessmentsRuntimeSubmissionsSelfReviewDraft(
+    submissionId: string,
+    body: Types.LearningAssessmentsSaveCollectiveSelfReviewDraftInput,
+  ): Promise<Result<Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1, ApiError>> {
+    const url = `/v1/assessments/runtime-submissions/${submissionId}/self-review/draft`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsSaveCollectiveSelfReviewDraftInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'PUT',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingRuntimeAssessmentSubmissionViewV1Schema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
   async postAssessmentsRuntimeSubmissionsSubmit(
     submissionId: string,
     body: Types.LearningAssessmentsSubmitAssessmentRuntimeInput,
@@ -954,6 +1062,84 @@ export class LearningAssessmentsModule {
   }
 
   /**
+   * Gets the anonymous response held by a synthetic peer-review claim.
+   */
+  async getAssessmentsTestRunsPeerReviews(testRunId: string, reviewId: string): Promise<Result<Types.LearningAssessmentsPeerReviewClaimView, ApiError>> {
+    const url = `/v1/assessments/test-runs/${testRunId}/peer-reviews/${reviewId}`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsPeerReviewClaimViewSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Submits synthetic peer evidence through the canonical review-stage lifecycle.
+   */
+  async postAssessmentsTestRunsPeerReviewsSubmit(
+    testRunId: string,
+    reviewId: string,
+    body: Types.LearningAssessmentsSubmitAssessmentTestPeerReviewInput,
+  ): Promise<Result<Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1, ApiError>> {
+    const url = `/v1/assessments/test-runs/${testRunId}/peer-reviews/${reviewId}/submit`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsSubmitAssessmentTestPeerReviewInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Claims an anonymous synthetic subject for peer review within an instructor test run.
+   */
+  async postAssessmentsTestRunsPeerReviewsClaim(
+    testRunId: string,
+    body: Types.LearningAssessmentsClaimAssessmentTestPeerReviewInput,
+  ): Promise<Result<Types.LearningAssessmentsPeerReviewClaimResult, ApiError>> {
+    const url = `/v1/assessments/test-runs/${testRunId}/peer-reviews/claim`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsClaimAssessmentTestPeerReviewInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsPeerReviewClaimResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    */
   async postAssessmentsTestRunsRestart(
     testRunId: string,
@@ -963,6 +1149,33 @@ export class LearningAssessmentsModule {
 
     // Validate request body
     const validatedBody = safeParse(Types.LearningAssessmentsIdempotentRuntimeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1Schema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async postAssessmentsTestRunsSelfReview(
+    testRunId: string,
+    body: Types.LearningAssessmentsSubmitSelfReviewInput,
+  ): Promise<Result<Types.LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1, ApiError>> {
+    const url = `/v1/assessments/test-runs/${testRunId}/self-review`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsSubmitSelfReviewInputSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',

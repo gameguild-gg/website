@@ -47,6 +47,17 @@ public sealed class TenantMembershipRolePermissionProvider(ITenantMemberReposito
             permissions.Add(UsersPermission.Keys.Delete);
             permissions.Add(UsersPermission.Keys.Admin);
             permissions.Add(UsersPermission.Keys.Manage);
+
+            // Administrative-tier capabilities (issue #294): tenant administrators keep
+            // member management, tenant settings and the self-service audit-read tier as
+            // first-class permission keys. Role administration (roles:manage) and audit
+            // exports (audit:export) are deliberately NOT granted implicitly — they are
+            // delegation-only capabilities so tenant owners cannot edit global roles or
+            // export compliance data without an explicit grant.
+            permissions.Add(ManageMembersPermission.Keys.Manage);
+            permissions.Add(ManageSettingsPermission.Keys.Read);
+            permissions.Add(ManageSettingsPermission.Keys.Manage);
+            permissions.Add(AuditPermission.Keys.Read);
         }
 
         return permissions.ToArray();

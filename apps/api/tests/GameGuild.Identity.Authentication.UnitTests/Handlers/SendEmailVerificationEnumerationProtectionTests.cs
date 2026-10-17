@@ -211,4 +211,140 @@ public sealed class SendEmailVerificationEnumerationProtectionTests
         protection.GetGenericErrorMessage("email_verification")
             .Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
     }
+    [Fact]
+    public async Task Handle_LogPrivacy_UnknownAccountRetainsGenericResponseWithoutIdentifier()
+    {
+        var email = $"unknown-{Guid.NewGuid():N}@privacy.example.test";
+        SetupUnknownUser(email);
+        var logger = new TestLogger<SendEmailVerificationCommandHandler>();
+        var subject = new SendEmailVerificationCommandHandler(_emailService.Object, _userRepository.Object, logger, _auditSink.Object);
+
+        var result = await subject.Handle(Command(email), CancellationToken.None);
+
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
+        _emailService.Invocations.Should().BeEmpty();
+        _auditSink.Invocations.Should().BeEmpty();
+        logger.Entries.Should().ContainSingle();
+        EmailLogPrivacyAssertions.RequirePrivateValuesAbsent(logger, email, LogRedaction.MaskEmail(email));
+    }
+
+    [Fact]
+    public async Task Handle_LogPrivacy_SuccessBindsDeliveryToResolvedAccount()
+    {
+        var userId = Guid.NewGuid();
+        var email = $"owner-{Guid.NewGuid():N}@privacy.example.test";
+        var suppliedEmail = $"other-{Guid.NewGuid():N}@privacy.example.test";
+        SetupKnownUser(userId, email);
+        _emailService.Setup(s => s.SendVerificationEmailAsync(email, "verification-token", "known-user"))
+            .Returns(Task.CompletedTask);
+        var logger = new TestLogger<SendEmailVerificationCommandHandler>();
+        var subject = new SendEmailVerificationCommandHandler(_emailService.Object, _userRepository.Object, logger, _auditSink.Object);
+
+        var result = await subject.Handle(Command(suppliedEmail, userId), CancellationToken.None);
+
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
+        _emailService.Verify(s => s.GenerateVerificationTokenAsync(userId, email), Times.Once);
+        _emailService.Verify(s => s.SendVerificationEmailAsync(email, "verification-token", "known-user"), Times.Once);
+        _auditSink.Invocations.Should().BeEmpty();
+        logger.Entries.Should().ContainSingle();
+        logger.Entries.Single().Properties.Should().Contain(pair => pair.Key == "UserId" && Equals(pair.Value, LogRedaction.RedactId(userId, "uid")));
+        EmailLogPrivacyAssertions.RequirePrivateValuesAbsent(logger, email, suppliedEmail, "verification-token", userId.ToString());
+    }
+
+    [Theory]
+    [InlineData(false, "message")]
+    [InlineData(false, "inner")]
+    [InlineData(false, "data")]
+    [InlineData(true, "message")]
+    [InlineData(true, "inner")]
+    [InlineData(true, "data")]
+    public async Task Handle_LogPrivacy_DeliveryFailureKeepsRetryAuditAndGenericResponse(bool generationFailure, string carrier)
+    {
+        var userId = Guid.NewGuid();
+        var email = $"owner-{Guid.NewGuid():N}@privacy.example.test";
+        var privateValue = $"private-token-{Guid.NewGuid():N}";
+        SetupKnownUser(userId, email);
+        var failure = EmailLogPrivacyAssertions.PrivateFailure(carrier, email + " " + privateValue);
+        if (generationFailure)
+        {
+            _emailService.Setup(s => s.GenerateVerificationTokenAsync(userId, email)).ThrowsAsync(failure);
+        }
+        else
+        {
+            _emailService.Setup(s => s.SendVerificationEmailAsync(email, "verification-token", "known-user")).ThrowsAsync(failure);
+        }
+        var logger = new TestLogger<SendEmailVerificationCommandHandler>();
+        var subject = new SendEmailVerificationCommandHandler(_emailService.Object, _userRepository.Object, logger, _auditSink.Object);
+
+        var result = await subject.Handle(Command(email), CancellationToken.None);
+
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
+        _emailService.Verify(s => s.GenerateVerificationTokenAsync(userId, email), Times.Exactly(2));
+        _emailService.Verify(s => s.SendVerificationEmailAsync(email, It.IsAny<string>(), It.IsAny<string?>()),
+            generationFailure ? Times.Never() : Times.Exactly(2));
+        _auditSink.Verify(s => s.RecordAsync(It.Is<AuthenticationAuditEvent>(e =>
+            e.ActionType == "Authentication.EmailVerificationDeliveryFailed" && e.UserId == userId && !e.Success),
+            It.IsAny<CancellationToken>()), Times.Once);
+        logger.Entries.Count(entry => entry.Level == LogLevel.Error).Should().Be(2);
+        logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Critical);
+        logger.Entries.Where(entry => entry.Level == LogLevel.Error || entry.Level == LogLevel.Critical)
+            .Should().OnlyContain(entry => entry.Properties.Any(pair => pair.Key == "ErrorType" && Equals(pair.Value, typeof(InvalidOperationException).FullName)));
+        EmailLogPrivacyAssertions.RequirePrivateValuesAbsent(logger, email, privateValue, "verification-token", userId.ToString());
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task Handle_LogPrivacy_AuditFailureDoesNotChangeGenericResponse(string carrier)
+    {
+        var userId = Guid.NewGuid();
+        var email = $"owner-{Guid.NewGuid():N}@privacy.example.test";
+        var privateValue = $"private-audit-{Guid.NewGuid():N}";
+        SetupKnownUser(userId, email);
+        _emailService.Setup(s => s.SendVerificationEmailAsync(email, "verification-token", "known-user"))
+            .ThrowsAsync(new InvalidOperationException("Delivery failure"));
+        _auditSink.Setup(s => s.RecordAsync(It.IsAny<AuthenticationAuditEvent>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(EmailLogPrivacyAssertions.PrivateFailure(carrier, email + " " + privateValue));
+        var logger = new TestLogger<SendEmailVerificationCommandHandler>();
+        var subject = new SendEmailVerificationCommandHandler(_emailService.Object, _userRepository.Object, logger, _auditSink.Object);
+
+        var result = await subject.Handle(Command(email), CancellationToken.None);
+
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
+        _emailService.Verify(s => s.SendVerificationEmailAsync(email, It.IsAny<string>(), It.IsAny<string?>()), Times.Exactly(2));
+        _auditSink.Verify(s => s.RecordAsync(It.Is<AuthenticationAuditEvent>(e => e.UserId == userId && !e.Success),
+            It.IsAny<CancellationToken>()), Times.Once);
+        logger.Entries.Count(entry => entry.Level == LogLevel.Error).Should().Be(3);
+        logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Critical);
+        EmailLogPrivacyAssertions.RequirePrivateValuesAbsent(logger, email, privateValue, "verification-token", userId.ToString());
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task Handle_LogPrivacy_TransientFailureRetriesWithoutFailureAudit(string carrier)
+    {
+        var userId = Guid.NewGuid();
+        var email = $"owner-{Guid.NewGuid():N}@privacy.example.test";
+        var privateValue = $"private-transient-{Guid.NewGuid():N}";
+        SetupKnownUser(userId, email);
+        var failure = EmailLogPrivacyAssertions.PrivateFailure(carrier, email + " " + privateValue);
+        var attempts = 0;
+        _emailService.Setup(s => s.SendVerificationEmailAsync(email, "verification-token", "known-user"))
+            .Returns(() => ++attempts == 1 ? Task.FromException(failure) : Task.CompletedTask);
+        var logger = new TestLogger<SendEmailVerificationCommandHandler>();
+        var subject = new SendEmailVerificationCommandHandler(_emailService.Object, _userRepository.Object, logger, _auditSink.Object);
+
+        var result = await subject.Handle(Command(email), CancellationToken.None);
+
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
+        attempts.Should().Be(2);
+        _auditSink.Invocations.Should().BeEmpty();
+        logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Error);
+        logger.Entries.Should().NotContain(entry => entry.Level == LogLevel.Critical);
+        EmailLogPrivacyAssertions.RequirePrivateValuesAbsent(logger, email, privateValue, "verification-token", userId.ToString());
+    }
+
 }

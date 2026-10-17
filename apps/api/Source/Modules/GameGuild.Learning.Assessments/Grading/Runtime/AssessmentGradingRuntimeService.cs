@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Authoring;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Persistence;
@@ -34,6 +35,13 @@ public interface IAssessmentGradingRuntimeService
         Guid actorId,
         InstructorReviewResolutionV1 resolution,
         string idempotencyKey,
+        Guid? subjectId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<AssessmentTestRunViewV1> SubmitTestSelfReviewAsync(
+        Guid testRunId,
+        Guid actorId,
+        SubmitSelfReviewCommand command,
         CancellationToken cancellationToken = default);
 
     Task<AssessmentTestRunViewV1> RestartTestRunAsync(
@@ -56,6 +64,18 @@ public interface IAssessmentGradingRuntimeService
         Guid submissionId,
         Guid actorId,
         SaveCollectiveAssessmentDraftCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<AssessmentSubmissionViewV1> SaveCollectiveSelfReviewDraftAsync(
+        Guid submissionId,
+        Guid actorId,
+        SaveCollectiveSelfReviewDraftCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<AssessmentSubmissionViewV1> SubmitOfficialSelfReviewAsync(
+        Guid submissionId,
+        Guid actorId,
+        SubmitSelfReviewCommand command,
         CancellationToken cancellationToken = default);
 
     Task<AssessmentSubmissionViewV1> SubmitOfficialAsync(
@@ -103,13 +123,13 @@ public sealed class AssessmentGradingRuntimeService(
             .SingleOrDefaultAsync(value => value.Id == command.RevisionId && value.AssessmentId == assessmentId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Prepared assessment revision was not found.");
+        var requestedSubjects = ResolveTestRunSubjects(command);
         var requestHash = Hash(new
         {
             schemaVersion = 1,
             assessmentId,
             command.RevisionId,
-            command.PersonaKey,
-            command.PersonaDisplayName,
+            subjects = requestedSubjects,
         });
         await using var transaction = await GradingRuntimeDatabaseLock.AcquireAsync(
             context,
@@ -126,20 +146,25 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetTestRunAsync(replay.ResourceId, actorId, cancellationToken).ConfigureAwait(false);
+        }
 
         var run = AssessmentTestRun.Create(assessment.TenantId, assessmentId, revision.Id, actorId);
         run.Start();
-        var subject = AssessmentTestRunSubject.Create(
-            assessment.TenantId,
-            run.Id,
-            RequireText(command.PersonaKey, nameof(command.PersonaKey)),
-            RequireText(command.PersonaDisplayName, nameof(command.PersonaDisplayName)));
-        var execution = GradingExecution.CreateAuthorTest(assessment.TenantId, revision.Id, subject.Id);
         context.Set<AssessmentTestRun>().Add(run);
-        context.Set<AssessmentTestRunSubject>().Add(subject);
-        context.Set<GradingExecution>().Add(execution);
-        orchestrator.MaterializeDelivery(execution, revision);
+        foreach (var requestedSubject in requestedSubjects)
+        {
+            var subject = AssessmentTestRunSubject.Create(
+                assessment.TenantId,
+                run.Id,
+                requestedSubject.PersonaKey,
+                requestedSubject.PersonaDisplayName);
+            var execution = GradingExecution.CreateAuthorTest(assessment.TenantId, revision.Id, subject.Id);
+            context.Set<AssessmentTestRunSubject>().Add(subject);
+            context.Set<GradingExecution>().Add(execution);
+            orchestrator.MaterializeDelivery(execution, revision);
+        }
         AddReceipt(
             tenantId,
             assessmentId,
@@ -150,7 +175,7 @@ public sealed class AssessmentGradingRuntimeService(
             new ResourceOutcome(1, run.Id));
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
-        return await BuildTestRunViewAsync(run, subject, execution, cancellationToken).ConfigureAwait(false);
+        return await BuildTestRunViewAsync(run, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<AssessmentTestRunViewV1> GetTestRunAsync(
@@ -164,19 +189,7 @@ public sealed class AssessmentGradingRuntimeService(
             .ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Assessment test run was not found.");
         if (run.CreatedByUserId != actorId) throw new UnauthorizedAccessException("Test run belongs to another instructor.");
-        var subject = await context.Set<AssessmentTestRunSubject>()
-            .AsNoTracking()
-            .Where(value => value.TestRunId == run.Id)
-            .OrderByDescending(value => value.CreatedAt)
-            .FirstAsync(cancellationToken)
-            .ConfigureAwait(false);
-        var execution = await context.Set<GradingExecution>()
-            .AsNoTracking()
-            .Where(value => value.TestRunSubjectId == subject.Id)
-            .OrderByDescending(value => value.CreatedAt)
-            .FirstAsync(cancellationToken)
-            .ConfigureAwait(false);
-        return await BuildTestRunViewAsync(run, subject, execution, cancellationToken).ConfigureAwait(false);
+        return await BuildTestRunViewAsync(run, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<AssessmentTestRunViewV1> SubmitTestRunAsync(
@@ -190,7 +203,11 @@ public sealed class AssessmentGradingRuntimeService(
             "submit-test-run",
             testRunId,
             cancellationToken: cancellationToken).ConfigureAwait(false);
-        var owned = await RequireOwnedTestExecutionAsync(testRunId, actorId, cancellationToken).ConfigureAwait(false);
+        var owned = await RequireOwnedTestExecutionAsync(
+            testRunId,
+            actorId,
+            command.TestRunSubjectId,
+            cancellationToken).ConfigureAwait(false);
         var requestHash = Hash(command.Response);
         var replay = await FindReceiptAsync(
             RequireTenant(owned.Run.TenantId),
@@ -222,6 +239,7 @@ public sealed class AssessmentGradingRuntimeService(
         Guid actorId,
         InstructorReviewResolutionV1 resolution,
         string idempotencyKey,
+        Guid? subjectId = null,
         CancellationToken cancellationToken = default)
     {
         await using var transaction = await GradingRuntimeDatabaseLock.AcquireAsync(
@@ -229,7 +247,8 @@ public sealed class AssessmentGradingRuntimeService(
             "resolve-test-instructor-review",
             testRunId,
             cancellationToken: cancellationToken).ConfigureAwait(false);
-        var owned = await RequireOwnedTestExecutionAsync(testRunId, actorId, cancellationToken).ConfigureAwait(false);
+        var owned = await RequireOwnedTestExecutionAsync(testRunId, actorId, subjectId, cancellationToken)
+            .ConfigureAwait(false);
         var requestHash = Hash(resolution);
         var replay = await FindReceiptAsync(
             RequireTenant(owned.Run.TenantId),
@@ -260,6 +279,53 @@ public sealed class AssessmentGradingRuntimeService(
         return await GetTestRunAsync(testRunId, actorId, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<AssessmentTestRunViewV1> SubmitTestSelfReviewAsync(
+        Guid testRunId,
+        Guid actorId,
+        SubmitSelfReviewCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await GradingRuntimeDatabaseLock.AcquireAsync(
+            context,
+            "submit-test-self-review",
+            testRunId,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var owned = await RequireOwnedTestExecutionAsync(
+            testRunId,
+            actorId,
+            command.TestRunSubjectId,
+            cancellationToken).ConfigureAwait(false);
+        var requestHash = Hash(command.Evidence);
+        var replay = await FindReceiptAsync(
+            RequireTenant(owned.Run.TenantId),
+            owned.Execution.Id,
+            "submit-test-self-review",
+            actorId,
+            command.IdempotencyKey,
+            requestHash,
+            cancellationToken).ConfigureAwait(false);
+        if (replay is null)
+        {
+            await orchestrator.AcceptReviewEvidenceAsync(
+                owned.Execution.Id,
+                ReviewMethod.SelfReview,
+                CreateSelfReviewEvidence(owned.Execution.Id, actorId, command.Evidence),
+                cancellationToken).ConfigureAwait(false);
+            AddReceipt(
+                RequireTenant(owned.Run.TenantId),
+                owned.Execution.Id,
+                "submit-test-self-review",
+                actorId,
+                command.IdempotencyKey,
+                requestHash,
+                new ResourceOutcome(1, owned.Run.Id));
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
+        return await GetTestRunAsync(testRunId, actorId, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<AssessmentTestRunViewV1> RestartTestRunAsync(
         Guid testRunId,
         Guid actorId,
@@ -271,15 +337,14 @@ public sealed class AssessmentGradingRuntimeService(
             "restart-test-run",
             testRunId,
             cancellationToken: cancellationToken).ConfigureAwait(false);
-        var owned = await RequireOwnedTestExecutionAsync(testRunId, actorId, cancellationToken).ConfigureAwait(false);
+        var owned = await RequireOwnedTestRunAsync(testRunId, actorId, cancellationToken).ConfigureAwait(false);
         var tenantId = RequireTenant(owned.Run.TenantId);
         var requestHash = Hash(new
         {
             schemaVersion = 1,
             testRunId,
             owned.Run.DefinitionRevisionId,
-            owned.Subject.PersonaKey,
-            owned.Subject.DisplayName,
+            subjects = owned.Subjects.Select(value => new { value.PersonaKey, value.DisplayName }),
         });
         var replay = await FindReceiptAsync(
             tenantId,
@@ -290,21 +355,26 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetTestRunAsync(replay.ResourceId, actorId, cancellationToken).ConfigureAwait(false);
+        }
 
         var revision = await RequireRevisionAsync(owned.Run.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
         var run = AssessmentTestRun.Create(owned.Run.TenantId, owned.Run.AssessmentId, revision.Id, actorId);
         run.Start();
-        var subject = AssessmentTestRunSubject.Create(
-            owned.Run.TenantId,
-            run.Id,
-            owned.Subject.PersonaKey,
-            owned.Subject.DisplayName);
-        var execution = GradingExecution.CreateAuthorTest(owned.Run.TenantId, revision.Id, subject.Id);
         context.Set<AssessmentTestRun>().Add(run);
-        context.Set<AssessmentTestRunSubject>().Add(subject);
-        context.Set<GradingExecution>().Add(execution);
-        orchestrator.MaterializeDelivery(execution, revision);
+        foreach (var current in owned.Subjects)
+        {
+            var subject = AssessmentTestRunSubject.Create(
+                owned.Run.TenantId,
+                run.Id,
+                current.PersonaKey,
+                current.DisplayName);
+            var execution = GradingExecution.CreateAuthorTest(owned.Run.TenantId, revision.Id, subject.Id);
+            context.Set<AssessmentTestRunSubject>().Add(subject);
+            context.Set<GradingExecution>().Add(execution);
+            orchestrator.MaterializeDelivery(execution, revision);
+        }
         AddReceipt(
             tenantId,
             testRunId,
@@ -315,7 +385,7 @@ public sealed class AssessmentGradingRuntimeService(
             new ResourceOutcome(1, run.Id));
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
-        return await BuildTestRunViewAsync(run, subject, execution, cancellationToken).ConfigureAwait(false);
+        return await BuildTestRunViewAsync(run, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<AssessmentSubmissionViewV1> StartIndividualSubmissionAsync(
@@ -351,7 +421,9 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false);
+        }
 
         var existingSubmission = await context.Set<AssessmentSubmission>()
             .Where(value => value.AssessmentId == assessmentId && value.EnrollmentId == command.EnrollmentId)
@@ -361,7 +433,9 @@ public sealed class AssessmentGradingRuntimeService(
         if (existingSubmission is not null)
         {
             if (existingSubmission.UserId != command.UserId)
+            {
                 throw new UnauthorizedAccessException("Submission belongs to another learner.");
+            }
             AddReceipt(
                 tenantId,
                 assessmentId,
@@ -376,7 +450,9 @@ public sealed class AssessmentGradingRuntimeService(
         }
 
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
+        {
             throw new InvalidOperationException("Assessment does not have a published executable revision.");
+        }
         var revision = await RequireRevisionAsync(assessment.PublishedDefinitionRevisionId.Value, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         ValidateStartPolicy(snapshot.AuthoringSource.Policy);
@@ -436,7 +512,9 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
+        {
             return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false);
+        }
 
         var existingSubmission = await context.Set<AssessmentSubmission>()
             .Where(value => value.AssessmentId == assessmentId && value.CourseGroupId == command.CourseGroupId)
@@ -460,18 +538,24 @@ public sealed class AssessmentGradingRuntimeService(
         }
 
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
+        {
             throw new InvalidOperationException("Assessment does not have a published executable revision.");
+        }
         var revision = await RequireRevisionAsync(assessment.PublishedDefinitionRevisionId.Value, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         ValidateStartPolicy(snapshot.AuthoringSource.Policy);
         if (!assessment.GroupSetId.HasValue)
+        {
             throw new InvalidOperationException("Assessment is not configured for collective submissions.");
+        }
         var groupSetBelongsToCourse = await context.Set<CourseGroupSet>()
             .AsNoTracking()
             .AnyAsync(value => value.Id == assessment.GroupSetId.Value && value.CourseId == assessment.CourseId, cancellationToken)
             .ConfigureAwait(false);
         if (!groupSetBelongsToCourse)
+        {
             throw new InvalidOperationException("Assessment group set does not belong to its course.");
+        }
         var group = await context.Set<CourseGroup>()
             .SingleOrDefaultAsync(value => value.Id == command.CourseGroupId && value.GroupSetId == assessment.GroupSetId.Value, cancellationToken)
             .ConfigureAwait(false)
@@ -485,7 +569,10 @@ public sealed class AssessmentGradingRuntimeService(
             .ConfigureAwait(false);
         if (!memberUserIds.Contains(command.ActorId))
             throw new UnauthorizedAccessException("Only a current group member can start the collective submission.");
-        if (memberUserIds.Length == 0) throw new InvalidOperationException("Course group has no members.");
+        if (memberUserIds.Length == 0)
+        {
+            throw new InvalidOperationException("Course group has no members.");
+        }
         var memberships = new List<(Guid EnrollmentId, Guid UserId)>();
         foreach (var userId in memberUserIds)
         {
@@ -588,6 +675,148 @@ public sealed class AssessmentGradingRuntimeService(
                 new ResourceOutcome(1, submissionId));
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
+        await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
+        return await GetSubmissionAsync(submissionId, actorId, false, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<AssessmentSubmissionViewV1> SaveCollectiveSelfReviewDraftAsync(
+        Guid submissionId,
+        Guid actorId,
+        SaveCollectiveSelfReviewDraftCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await GradingRuntimeDatabaseLock.AcquireAsync(
+            context,
+            "save-collective-self-review",
+            submissionId,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var owned = await RequireOfficialExecutionAsync(submissionId, cancellationToken).ConfigureAwait(false);
+        await RequireSubmissionActorAsync(owned.Submission, actorId, cancellationToken).ConfigureAwait(false);
+        if (!owned.Submission.IsCollective)
+        {
+            throw new InvalidOperationException("Self review draft sharing is available only for a collective submission.");
+        }
+
+        var requestHash = Hash(new
+        {
+            schemaVersion = 1,
+            submissionId,
+            command.ExpectedVersion,
+            command.Evidence,
+        });
+        var replay = await FindReceiptAsync(
+            RequireTenant(owned.Submission.TenantId),
+            owned.Execution.Id,
+            "save-collective-self-review-draft",
+            actorId,
+            command.IdempotencyKey,
+            requestHash,
+            cancellationToken).ConfigureAwait(false);
+        if (replay is null)
+        {
+            var stage = await RequireActiveReviewStageAsync(owned.Execution, ReviewMethod.SelfReview, cancellationToken)
+                .ConfigureAwait(false);
+            var currentVersion = await CurrentSelfReviewDraftVersionAsync(stage.Id, cancellationToken)
+                .ConfigureAwait(false);
+            if (command.ExpectedVersion != currentVersion)
+            {
+                throw new InvalidOperationException("The collective self review draft version is stale.");
+            }
+
+            var newVersion = currentVersion + 1;
+            var change = new
+            {
+                schemaVersion = 1,
+                previousVersion = currentVersion,
+                newVersion,
+                actorId,
+                idempotencyKey = command.IdempotencyKey,
+                requestHash,
+                evidence = command.Evidence,
+            };
+            context.Set<ReviewEvidence>().Add(ReviewEvidence.CreateForActor(
+                owned.Execution.TenantId,
+                stage.Id,
+                $"self-review-draft:{newVersion}",
+                "self-review-draft-change",
+                "1",
+                Serialize(change),
+                actorId));
+            AddReceipt(
+                RequireTenant(owned.Submission.TenantId),
+                owned.Execution.Id,
+                "save-collective-self-review-draft",
+                actorId,
+                command.IdempotencyKey,
+                requestHash,
+                new ResourceOutcome(1, submissionId));
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
+        return await GetSubmissionAsync(submissionId, actorId, false, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<AssessmentSubmissionViewV1> SubmitOfficialSelfReviewAsync(
+        Guid submissionId,
+        Guid actorId,
+        SubmitSelfReviewCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await GradingRuntimeDatabaseLock.AcquireAsync(
+            context,
+            "submit-official-self-review",
+            submissionId,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var owned = await RequireOfficialExecutionAsync(submissionId, cancellationToken).ConfigureAwait(false);
+        await RequireSubmissionActorAsync(owned.Submission, actorId, cancellationToken).ConfigureAwait(false);
+        var requestHash = Hash(new
+        {
+            schemaVersion = 1,
+            submissionId,
+            command.ExpectedDraftVersion,
+            command.Evidence,
+        });
+        var replay = await FindReceiptAsync(
+            RequireTenant(owned.Submission.TenantId),
+            owned.Execution.Id,
+            "submit-official-self-review",
+            actorId,
+            command.IdempotencyKey,
+            requestHash,
+            cancellationToken).ConfigureAwait(false);
+        if (replay is null)
+        {
+            var stage = await RequireActiveReviewStageAsync(owned.Execution, ReviewMethod.SelfReview, cancellationToken)
+                .ConfigureAwait(false);
+            var currentVersion = await CurrentSelfReviewDraftVersionAsync(stage.Id, cancellationToken)
+                .ConfigureAwait(false);
+            if (owned.Submission.IsCollective && command.ExpectedDraftVersion != currentVersion)
+            {
+                throw new InvalidOperationException("The collective self review draft version is stale.");
+            }
+
+            if (!owned.Submission.IsCollective && command.ExpectedDraftVersion.HasValue)
+            {
+                throw new InvalidOperationException("An individual self review does not have a shared draft version.");
+            }
+
+            await orchestrator.AcceptReviewEvidenceAsync(
+                owned.Execution.Id,
+                ReviewMethod.SelfReview,
+                CreateSelfReviewEvidence(owned.Execution.Id, actorId, command.Evidence),
+                cancellationToken).ConfigureAwait(false);
+            AddReceipt(
+                RequireTenant(owned.Submission.TenantId),
+                owned.Execution.Id,
+                "submit-official-self-review",
+                actorId,
+                command.IdempotencyKey,
+                requestHash,
+                new ResourceOutcome(1, submissionId));
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         await GradingRuntimeDatabaseLock.CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
         return await GetSubmissionAsync(submissionId, actorId, false, cancellationToken).ConfigureAwait(false);
     }
@@ -769,20 +998,54 @@ public sealed class AssessmentGradingRuntimeService(
 
     private async Task<AssessmentTestRunViewV1> BuildTestRunViewAsync(
         AssessmentTestRun run,
-        AssessmentTestRunSubject subject,
-        GradingExecution execution,
         CancellationToken cancellationToken)
     {
-        var executionView = await BuildExecutionViewAsync(execution, true, cancellationToken).ConfigureAwait(false);
+        var subjects = await context.Set<AssessmentTestRunSubject>()
+            .AsNoTracking()
+            .Where(value => value.TestRunId == run.Id)
+            .OrderBy(value => value.PersonaKey)
+            .ThenBy(value => value.Id)
+            .ToArrayAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (subjects.Length == 0)
+        {
+            throw new InvalidOperationException("Assessment test run does not contain a subject.");
+        }
+
+        var subjectIds = subjects.Select(value => value.Id).ToArray();
+        var executions = await context.Set<GradingExecution>()
+            .AsNoTracking()
+            .Where(value => value.TestRunSubjectId.HasValue && subjectIds.Contains(value.TestRunSubjectId.Value))
+            .ToDictionaryAsync(value => value.TestRunSubjectId!.Value, cancellationToken)
+            .ConfigureAwait(false);
+        var subjectViews = new List<AssessmentTestRunSubjectViewV1>(subjects.Length);
+        foreach (var subject in subjects)
+        {
+            if (!executions.TryGetValue(subject.Id, out var execution))
+            {
+                throw new InvalidOperationException($"Assessment test subject {subject.PersonaKey} has no execution.");
+            }
+
+            subjectViews.Add(new AssessmentTestRunSubjectViewV1(
+                subject.Id,
+                subject.PersonaKey,
+                subject.DisplayName,
+                await BuildExecutionViewAsync(execution, true, cancellationToken).ConfigureAwait(false)));
+        }
+
+        var primary = subjectViews[0];
         var state = await authoringService.GetStateAsync(run.AssessmentId, cancellationToken).ConfigureAwait(false);
         var candidateMatches = state.IsSuccess && state.Value.Candidate?.RevisionId == run.DefinitionRevisionId && state.Value.CandidateMatchesDraft;
         var ready = run.Status == AssessmentTestRunStatus.Completed && candidateMatches && state.IsSuccess && state.Value.Publish.Available;
         var diagnostics = new List<string>();
-        if (executionView.InstructorVisibleResult is { State: "partial" } partial)
+        foreach (var subject in subjectViews)
         {
-            diagnostics.AddRange(partial.Items
-                .Where(item => item.State != GradeItemState.Graded)
-                .Select(item => $"{item.ItemId}:{item.State.ToString().ToLowerInvariant()}"));
+            if (subject.Execution.InstructorVisibleResult is { State: "partial" } partial)
+            {
+                diagnostics.AddRange(partial.Items
+                    .Where(item => item.State != GradeItemState.Graded)
+                    .Select(item => $"{subject.PersonaKey}:{item.ItemId}:{item.State.ToString().ToLowerInvariant()}"));
+            }
         }
         if (!candidateMatches) diagnostics.Add("candidate-no-longer-matches-draft");
         return new AssessmentTestRunViewV1(
@@ -790,12 +1053,13 @@ public sealed class AssessmentGradingRuntimeService(
             run.AssessmentId,
             run.DefinitionRevisionId,
             run.Status,
-            subject.PersonaKey,
-            subject.DisplayName,
-            executionView,
+            primary.PersonaKey,
+            primary.PersonaDisplayName,
+            primary.Execution,
             candidateMatches,
             ready,
-            diagnostics);
+            diagnostics,
+            subjectViews);
     }
 
     private async Task<AssessmentSubmissionViewV1> BuildSubmissionViewAsync(
@@ -867,6 +1131,16 @@ public sealed class AssessmentGradingRuntimeService(
                 .ToDictionaryAsync(value => value.Id, value => value.ReleasedAt, cancellationToken)
                 .ConfigureAwait(false)
             : new Dictionary<Guid, DateTime>();
+        var releaseSchedules = execution.ExecutionContext == ReviewExecutionContext.OfficialSubmission && instructorView
+            ? await (
+                    from schedule in context.Set<GradeResultReleaseSchedule>().AsNoTracking()
+                    join round in context.Set<GradeRound>().AsNoTracking()
+                        on schedule.GradeRoundId equals round.Id
+                    where round.GradingExecutionId == execution.Id
+                    select schedule)
+                .ToDictionaryAsync(value => value.GradeRoundId, cancellationToken)
+                .ConfigureAwait(false)
+            : new Dictionary<Guid, GradeResultReleaseSchedule>();
 
         if (execution.ExecutionContext == ReviewExecutionContext.OfficialSubmission)
         {
@@ -906,7 +1180,17 @@ public sealed class AssessmentGradingRuntimeService(
                 round.FinalizedAt,
                 await BuildRoundResultAsync(round, cancellationToken).ConfigureAwait(false),
                 released,
-                released ? releasedAt : null));
+                released ? releasedAt : null,
+                releaseSchedules.TryGetValue(round.Id, out var schedule)
+                    ? new GradeResultReleaseScheduleViewV1(
+                        schedule.Id,
+                        schedule.GradeRoundId,
+                        schedule.ScheduledFor,
+                        schedule.Status,
+                        schedule.Version,
+                        schedule.CancelledAt,
+                        schedule.ReleasedAt)
+                    : null));
         }
 
         IReadOnlyDictionary<Guid, ScoreValue>? instructorRubricScores = null;
@@ -930,6 +1214,70 @@ public sealed class AssessmentGradingRuntimeService(
                 }
             }
         }
+
+        SelfReviewRuntimeStateV1? selfReview = null;
+        if (execution.ActiveGradeRoundId.HasValue)
+        {
+            var selfReviewStage = await context.Set<ReviewStage>()
+                .AsNoTracking()
+                .SingleOrDefaultAsync(
+                    value => value.GradeRoundId == execution.ActiveGradeRoundId.Value &&
+                        value.ReviewMethod == ReviewMethod.SelfReview,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            if (selfReviewStage is not null)
+            {
+                var evidenceRows = await context.Set<ReviewEvidence>()
+                    .AsNoTracking()
+                    .Where(value => value.ReviewStageId == selfReviewStage.Id &&
+                        (value.EvidenceType == "self-review-draft-change" ||
+                            value.EvidenceType == "self-review-evidence"))
+                    .OrderBy(value => value.CreatedAt)
+                    .ThenBy(value => value.Id)
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                long draftVersion = 0;
+                SelfReviewEvidenceV1? draft = null;
+                Guid? lastDraftActorId = null;
+                SelfReviewEvidenceV1? submittedEvidence = null;
+                Guid? submittedByActorId = null;
+                foreach (var evidenceRow in evidenceRows)
+                {
+                    using var document = JsonDocument.Parse(evidenceRow.CanonicalJson);
+                    if (evidenceRow.EvidenceType == "self-review-draft-change")
+                    {
+                        var version = document.RootElement.GetProperty("newVersion").GetInt64();
+                        if (version > draftVersion)
+                        {
+                            draftVersion = version;
+                            draft = document.RootElement.GetProperty("evidence")
+                                .Deserialize<SelfReviewEvidenceV1>(GradingJson.Options)
+                                ?? throw new JsonException("Self review draft evidence is invalid.");
+                            lastDraftActorId = evidenceRow.ProducedByActorId;
+                        }
+                    }
+                    else
+                    {
+                        submittedEvidence = document.RootElement.Deserialize<SelfReviewEvidenceV1>(GradingJson.Options)
+                            ?? throw new JsonException("Final self review evidence is invalid.");
+                        submittedByActorId = evidenceRow.ProducedByActorId;
+                    }
+                }
+
+                var policy = snapshot.AuthoringSource.Policy.Review.Self
+                    ?? throw new InvalidOperationException("SelfReview stage is missing its frozen policy.");
+                selfReview = new SelfReviewRuntimeStateV1(
+                    selfReviewStage.Id,
+                    selfReviewStage.Status,
+                    policy.Instructions,
+                    policy.RequireFeedback,
+                    draftVersion,
+                    draft,
+                    lastDraftActorId,
+                    submittedEvidence,
+                    submittedByActorId);
+            }
+        }
         return new AssessmentExecutionViewV1(
             execution.Id,
             execution.DefinitionRevisionId,
@@ -951,7 +1299,8 @@ public sealed class AssessmentGradingRuntimeService(
             instructorView && snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType &&
                 snapshot.ItemProjections[Code.CodeAssessmentContracts.ItemId].TryGetProperty("rubric", out var frozenRubric)
                 ? frozenRubric.Clone() : null,
-            instructorRubricScores);
+            instructorRubricScores,
+            selfReview);
     }
 
     private static ScoreValue ReadProjectionMaxScore(JsonElement projection)
@@ -1010,24 +1359,90 @@ public sealed class AssessmentGradingRuntimeService(
     private async Task<OwnedTestExecution> RequireOwnedTestExecutionAsync(
         Guid testRunId,
         Guid actorId,
+        Guid? subjectId,
+        CancellationToken cancellationToken)
+    {
+        var owned = await RequireOwnedTestRunAsync(testRunId, actorId, cancellationToken).ConfigureAwait(false);
+        var candidates = owned.Subjects;
+        var subject = subjectId.HasValue
+            ? candidates.SingleOrDefault(value => value.Id == subjectId.Value)
+                ?? throw new KeyNotFoundException("Assessment test run subject was not found.")
+            : candidates.Length == 1
+                ? candidates[0]
+                : throw new InvalidOperationException("A multi-subject test run requires an explicit subjectId.");
+        var execution = await context.Set<GradingExecution>()
+            .SingleAsync(value => value.TestRunSubjectId == subject.Id, cancellationToken)
+            .ConfigureAwait(false);
+        return new OwnedTestExecution(owned.Run, subject, execution);
+    }
+
+    private async Task<ReviewStage> RequireActiveReviewStageAsync(
+        GradingExecution execution,
+        ReviewMethod method,
+        CancellationToken cancellationToken)
+    {
+        if (!execution.ActiveGradeRoundId.HasValue)
+        {
+            throw new InvalidOperationException("Grading execution does not have an active round.");
+        }
+
+        var stage = await context.Set<ReviewStage>()
+            .SingleOrDefaultAsync(
+                value => value.GradeRoundId == execution.ActiveGradeRoundId.Value && value.ReviewMethod == method,
+                cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new InvalidOperationException($"The active round does not contain a {method} stage.");
+        if (stage.Status is PersistedReviewStageStatus.Completed or PersistedReviewStageStatus.Failed)
+        {
+            throw new InvalidOperationException($"The {method} stage is already terminal.");
+        }
+
+        return stage;
+    }
+
+    private Task<long> CurrentSelfReviewDraftVersionAsync(Guid stageId, CancellationToken cancellationToken) =>
+        context.Set<ReviewEvidence>()
+            .LongCountAsync(
+                value => value.ReviewStageId == stageId && value.EvidenceType == "self-review-draft-change",
+                cancellationToken);
+
+    private static ReviewStageEvidenceV1 CreateSelfReviewEvidence(
+        Guid executionId,
+        Guid actorId,
+        SelfReviewEvidenceV1 evidence) =>
+        new(
+            $"self-review-final:{executionId:N}",
+            "self-review-evidence",
+            "1",
+            JsonSerializer.SerializeToElement(evidence, GradingJson.Options),
+            ProducedByActorId: actorId);
+
+    private async Task<OwnedTestRun> RequireOwnedTestRunAsync(
+        Guid testRunId,
+        Guid actorId,
         CancellationToken cancellationToken)
     {
         var run = await context.Set<AssessmentTestRun>()
             .SingleOrDefaultAsync(value => value.Id == testRunId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Assessment test run was not found.");
-        if (run.CreatedByUserId != actorId) throw new UnauthorizedAccessException("Test run belongs to another instructor.");
-        var subject = await context.Set<AssessmentTestRunSubject>()
+        if (run.CreatedByUserId != actorId)
+        {
+            throw new UnauthorizedAccessException("Test run belongs to another instructor.");
+        }
+
+        var subjects = await context.Set<AssessmentTestRunSubject>()
             .Where(value => value.TestRunId == run.Id)
-            .OrderByDescending(value => value.CreatedAt)
-            .FirstAsync(cancellationToken)
+            .OrderBy(value => value.PersonaKey)
+            .ThenBy(value => value.Id)
+            .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
-        var execution = await context.Set<GradingExecution>()
-            .Where(value => value.TestRunSubjectId == subject.Id)
-            .OrderByDescending(value => value.CreatedAt)
-            .FirstAsync(cancellationToken)
-            .ConfigureAwait(false);
-        return new OwnedTestExecution(run, subject, execution);
+        if (subjects.Length == 0)
+        {
+            throw new InvalidOperationException("Assessment test run does not contain a subject.");
+        }
+
+        return new OwnedTestRun(run, subjects);
     }
 
     private async Task<OfficialExecution> RequireOfficialExecutionAsync(
@@ -1049,7 +1464,9 @@ public sealed class AssessmentGradingRuntimeService(
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException("Assessment submission does not have an official grading execution.");
         if (execution.ExecutionContext != ReviewExecutionContext.OfficialSubmission)
+        {
             throw new InvalidOperationException("Assessment submission is not bound to an official execution.");
+        }
         return new OfficialExecution(submission, execution);
     }
 
@@ -1059,7 +1476,10 @@ public sealed class AssessmentGradingRuntimeService(
         CancellationToken cancellationToken)
     {
         if (submission.UserId == actorId) return;
-        if (!submission.IsCollective) throw new UnauthorizedAccessException("Submission belongs to another learner.");
+        if (!submission.IsCollective)
+        {
+            throw new UnauthorizedAccessException("Submission belongs to another learner.");
+        }
         var participant = await context.Set<AssessmentSubmissionParticipant>()
             .AsNoTracking()
             .AnyAsync(value => value.SubmissionId == submission.Id && value.UserId == actorId, cancellationToken)
@@ -1080,7 +1500,10 @@ public sealed class AssessmentGradingRuntimeService(
                                value.Status != GameGuild.Learning.Enrollments.EnrollmentStatus.Expired,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (enrollmentExists) return;
+        if (enrollmentExists)
+        {
+            return;
+        }
         var canonicalEnrollmentExists = await ProgramEnrollmentAssessmentMembership.ActiveForCourse(context, courseId)
             .AnyAsync(value => value.Id == enrollmentId && value.UserId == userId, cancellationToken)
             .ConfigureAwait(false);
@@ -1094,7 +1517,10 @@ public sealed class AssessmentGradingRuntimeService(
             .AnyAsync(value => value.Id == enrollmentId && value.ProgramId == courseId && value.UserId == userId,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (!programUserExists) throw new UnauthorizedAccessException("Active course membership was not found.");
+        if (!programUserExists)
+        {
+            throw new UnauthorizedAccessException("Active course membership was not found.");
+        }
     }
 
     private async Task<Guid> ResolveMembershipIdAsync(
@@ -1136,7 +1562,9 @@ public sealed class AssessmentGradingRuntimeService(
     {
         var assessment = await RequireAssessmentAsync(assessmentId, cancellationToken).ConfigureAwait(false);
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
+        {
             throw new InvalidOperationException("Assessment does not have a published executable revision.");
+        }
         return assessment;
     }
 
@@ -1156,7 +1584,9 @@ public sealed class AssessmentGradingRuntimeService(
     private static void ValidateStartPolicy(AssessmentExecutionPolicyV1 policy)
     {
         if (!TryGetSubmissionTiming(policy, SystemClock.UtcNow, SystemClock.UtcNow, out _))
+        {
             throw new InvalidOperationException("Assessment is not currently available.");
+        }
         if (policy.MaxAttempts != 1)
             throw new InvalidOperationException("The current runtime supports exactly one attempt.");
     }
@@ -1276,6 +1706,28 @@ public sealed class AssessmentGradingRuntimeService(
             : throw new ArgumentException("Idempotency key cannot exceed 200 characters.", nameof(value));
     }
 
+    private static IReadOnlyList<AssessmentTestRunSubjectCommandV1> ResolveTestRunSubjects(
+        StartAssessmentTestRunCommand command)
+    {
+        var requested = command.Subjects is { Count: > 0 }
+            ? command.Subjects
+            : [new AssessmentTestRunSubjectCommandV1(command.PersonaKey, command.PersonaDisplayName)];
+        if (requested.Count > 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), "A test run cannot contain more than 16 subjects.");
+        }
+
+        var normalized = requested.Select(value => new AssessmentTestRunSubjectCommandV1(
+            RequireText(value.PersonaKey, nameof(value.PersonaKey)),
+            RequireText(value.PersonaDisplayName, nameof(value.PersonaDisplayName)))).ToArray();
+        if (normalized.Select(value => value.PersonaKey).Distinct(StringComparer.Ordinal).Count() != normalized.Length)
+        {
+            throw new ArgumentException("Test run persona keys must be unique.", nameof(command));
+        }
+
+        return normalized;
+    }
+
     private static string Hash<T>(T value) =>
         CanonicalJson.Sha256(JsonSerializer.SerializeToElement(value, GradingJson.Options));
 
@@ -1290,6 +1742,10 @@ public sealed class AssessmentGradingRuntimeService(
         AssessmentTestRun Run,
         AssessmentTestRunSubject Subject,
         GradingExecution Execution);
+
+    private sealed record OwnedTestRun(
+        AssessmentTestRun Run,
+        AssessmentTestRunSubject[] Subjects);
 
     private sealed record OfficialExecution(
         AssessmentSubmission Submission,

@@ -29,11 +29,11 @@ public sealed class SendEmailVerificationCommandHandler(
 
         if (user is null)
         {
-            logger.LogInformation("Email verification requested for unknown email {Email}", GameGuild.LogRedaction.MaskEmail(email));
+            logger.LogInformation("Email verification requested for an unknown account");
             return GenericResponse();
         }
 
-        logger.LogInformation("Sending email verification for user {UserId}", user.Id);
+        logger.LogInformation("Sending email verification for user {UserId}", LogRedaction.RedactId(user.Id, "uid"));
 
         // Recipient and token stay bound to the resolved account; an unknown account never
         // reaches token generation or delivery, so it cannot trigger observable side effects.
@@ -50,7 +50,8 @@ public sealed class SendEmailVerificationCommandHandler(
             catch (Exception exception)
             {
                 finalFailure = exception;
-                logger.LogError(exception, "Email verification delivery attempt {Attempt} failed for user {UserId}", attempt, user.Id);
+                logger.LogError("Email verification delivery attempt {Attempt} failed for user {UserId}: {ErrorType}",
+                    attempt, LogRedaction.RedactId(user.Id, "uid"), exception.GetType().FullName);
             }
         }
 
@@ -60,10 +61,10 @@ public sealed class SendEmailVerificationCommandHandler(
             // fail delivery, so a propagated failure would be an existence oracle). The loss is still
             // surfaced through a critical log and a security audit event instead of being silent.
             logger.LogCritical(
-                finalFailure,
-                "Email verification could not be durably queued for user {UserId} after {Attempts} attempts; public response stays enumeration-safe",
-                user.Id,
-                DeliveryAttempts);
+                "Email verification could not be durably queued for user {UserId} after {Attempts} attempts; public response stays enumeration-safe: {ErrorType}",
+                LogRedaction.RedactId(user.Id, "uid"),
+                DeliveryAttempts,
+                finalFailure?.GetType().FullName ?? "unknown");
 
             await RecordDeliveryFailureAuditAsync(user.Id, cancellationToken).ConfigureAwait(false);
         }
@@ -94,7 +95,8 @@ public sealed class SendEmailVerificationCommandHandler(
         catch (Exception exception)
         {
             // Audit delivery failure must never turn into a public error response.
-            logger.LogError(exception, "Could not record email verification delivery failure audit for user {UserId}", userId);
+            logger.LogError("Could not record email verification delivery failure audit for user {UserId}: {ErrorType}",
+                LogRedaction.RedactId(userId, "uid"), exception.GetType().FullName);
         }
     }
 }

@@ -62,6 +62,33 @@ public class AssetContentRepository : IAssetContentRepository
         return updated == 1;
     }
 
+    public async Task<bool> TryBeginModerationAsync(Guid id, CancellationToken ct = default)
+    {
+        var updated = await _context.Set<AssetContent>()
+            .Where(content => content.Id == id &&
+                (content.ModerationStatus == ModerationStatus.Pending ||
+                 content.ModerationStatus == ModerationStatus.Processing) &&
+                content.VirusScanStatus == VirusScanStatus.Clean)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(content => content.ModerationStatus, ModerationStatus.Processing),
+                ct)
+            .ConfigureAwait(false);
+
+        return updated == 1;
+    }
+
+    public async Task<IReadOnlyList<AssetContent>> GetPendingModerationQueueAsync(int limit = 100, CancellationToken ct = default)
+    {
+        return await _context.Set<AssetContent>()
+            .Where(x => x.VirusScanStatus == VirusScanStatus.Clean)
+            .Where(x => x.ModerationStatus == ModerationStatus.Pending ||
+                        x.ModerationStatus == ModerationStatus.Processing)
+            .OrderBy(x => x.CreatedAt)
+            .Take(limit)
+            .ToListAsync(ct).ConfigureAwait(false);
+    }
+
     public async Task<IReadOnlyList<AssetContent>> GetPendingModerationAsync(int limit = 100, CancellationToken ct = default)
     {
         return await _context.Set<AssetContent>()

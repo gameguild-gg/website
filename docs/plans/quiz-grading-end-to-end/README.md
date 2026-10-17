@@ -1,13 +1,15 @@
 # Quiz grading end-to-end
 
-Status: em implementação; Partes 1, 2, seu fechamento e o caminho crítico da
-Parte 3 concluídos. A Parte 4 possui gate de entrada aprovado e começa pela
-preparação `SEQ-12A`; os schemas de peer e release agendado ainda dependem de
-proposta e aprovação explícitas.
+Status: implementação das quatro partes concluída. A Parte 4 entregou o
+lifecycle comum, `SelfReview`, `PeerReview`, a porta durável de `AIReview`,
+release agendado e operação. A validação local de runtime, web, arquitetura e
+migrations passou; a reexecução HTTP + PostgreSQL está bloqueada antes do
+grading pela configuração externa de certificado de Data Protection do host de
+integração.
 
 Data: 2026-08-21.
 
-Atualizado: 2026-10-09.
+Atualizado: 2026-10-13.
 
 ## Objetivo
 

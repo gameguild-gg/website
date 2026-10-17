@@ -281,7 +281,11 @@ export class ComposedAssetRepository implements AssetRepository {
     const record = await this.get(uri);
     if (!record) throw new AssetError("missing", `Asset not found: ${uri}`);
     if (record.location.type === "provider") {
-      throw new AssetError("unsupported", "Remote rename is provider-specific");
+      const provider = this.providerFor(record);
+      if (!provider.rename) {
+        throw new AssetError("unsupported", `Provider ${provider.key} does not support remote rename`);
+      }
+      return provider.rename(record.id, name, this.context(provider.key));
     }
     return this.browser.rename(uri, name);
   }

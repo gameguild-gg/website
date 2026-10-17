@@ -142,7 +142,9 @@ export function SignInForm({
               <FieldGroup>
                 <FieldDescription>
                   Confirm your sign-in with your authenticator app. This sign-in
-                  challenge expires after five minutes.
+                  challenge expires after five minutes. New to two-factor
+                  authentication? Enable it from Security in workspace settings
+                  after signing in.
                 </FieldDescription>
                 {mfaChallenge.availableMethods.includes("BackupCode") && (
                     <Field>

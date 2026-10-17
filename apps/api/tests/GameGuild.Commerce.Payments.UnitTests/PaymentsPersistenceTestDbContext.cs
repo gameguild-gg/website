@@ -27,6 +27,8 @@ internal sealed class PaymentsPersistenceTestDbContext(DbContextOptions<Payments
         modelBuilder.Entity<AccountCreditInvoiceSettlement>();
         modelBuilder.Entity<GiftSubscription>();
         modelBuilder.Entity<Referral>();
+        modelBuilder.Entity<Refund>();
+        modelBuilder.Entity<PaymentDispute>();
         base.OnModelCreating(modelBuilder);
     }
 }

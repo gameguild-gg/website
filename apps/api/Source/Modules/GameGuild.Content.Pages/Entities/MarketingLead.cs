@@ -8,9 +8,10 @@ public static class MarketingLeadSources
 {
     public const string Contact = "contact";
     public const string Newsletter = "newsletter";
+    public const string CourseProposal = "course-proposal";
 
     private static readonly HashSet<string> ValidValues =
-    [Contact, Newsletter];
+    [Contact, Newsletter, CourseProposal];
 
     public static bool IsValid(string? value) =>
         !string.IsNullOrWhiteSpace(value) && ValidValues.Contains(value.Trim().ToLowerInvariant());
