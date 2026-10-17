@@ -122,10 +122,7 @@ export function RuntimeQuizTestRun({
   const activePeerClaim = peerClaims[activeSubjectKey] ?? null;
   const isPeerReview =
     (reviewMethods & REVIEW_METHOD_FLAGS.PeerReview) !== 0;
-  const items = useMemo(
-    () => (execution ? readQuizItems(execution) : []),
-    [execution],
-  );
+  const items = execution ? readQuizItems(execution) : [];
   const scoreRows = items.map((item) => {
     const raw = scores[item.itemId]?.points ?? '';
     let score: ScoreValue | null = null;
@@ -580,11 +577,11 @@ export function RuntimeQuizTestRun({
                       }
                       onAnswerChange={(answer) => updateAnswer(item.itemId, answer)}
                       onSubmit={(answer) => updateAnswer(item.itemId, answer, true)}
-                      submissionResult={readPlayerResult(
-                        execution!,
-                        item.itemId,
-                        recorded,
-                      )}
+                      submissionResult={
+                        execution
+                          ? readPlayerResult(execution, item.itemId, recorded)
+                          : undefined
+                      }
                       disabled={Boolean(execution?.submittedResponse)}
                     />
                   </section>
