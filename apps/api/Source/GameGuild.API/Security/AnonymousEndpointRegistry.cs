@@ -76,6 +76,9 @@ public static class AnonymousEndpointRegistry
             ["MfaRecoveryController.RequestMfaRecovery"] = "Starts lost-MFA recovery from an email; the response is enumeration-safe and sends only a cooling-off link.",
             ["MfaRecoveryController.ContinueMfaRecovery"] = "Redeems the single-use emailed request token after the cooling-off window; unknown tokens fail closed.",
             ["MfaRecoveryController.ConfirmMfaRecovery"] = "Consumes the single-use expiring confirmation token to disable MFA; unknown tokens fail closed.",
+            ["MfaController.SendSmsChallenge"] = "Sends a throttled one-time code to the already-enrolled phone; the code itself is the credential and unknown users get a generic failure.",
+            ["MfaController.IssuePushChallenge"] = "Issues a short-lived approval challenge to the already-enrolled device; the challenge bearer is the credential.",
+            ["MfaController.RespondPushChallenge"] = "Records the device's decision for a pending, unexpired challenge; unknown or expired challenges fail closed.",
             ["WebAuthnController.BeginAuthentication"] = "First half of the passkey ceremony; returns only a challenge.",
             ["WebAuthnController.CompleteAuthentication"] = "Second half of the passkey ceremony; issues tokens on proof of possession.",
             ["ServiceAccountTokenController.Token"] = "OAuth-style client-credential token issuance for service accounts.",
@@ -160,6 +163,8 @@ public static class AnonymousEndpointRegistry
 
             // ── Public intake forms ──
             ["MarketingLeadController.CreateLead"] = "Public contact form; rate limited and validated.",
+            ["CourseProposalsController.CreateProposal"] = "Public course-proposal submission form (issue #105); validated, audit-logged, stores no secrets.",
+            ["CourseProposalsController.GetProposalBySlug"] = "Public proposal detail surface; anonymous callers receive published proposals only.",
 
             // ── Asset delivery (per-request token + access-policy authorization) ──
             ["AssetsController.GetAsset"] = "Metadata fetch; access policy is enforced inside the asset access service.",

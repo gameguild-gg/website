@@ -83,6 +83,23 @@ export function classifyReleaseChanges(filePaths) {
 
   for (const rawPath of filePaths) {
     const filePath = normalizePath(rawPath);
+    // Changes to the gate itself must exercise the complete Economy contract,
+    // while remaining CI-only changes must not deploy runtime services.
+    if (
+      [
+        ".github/workflows/pr-verify.yml",
+        "scripts/ci/verify-economy.sh",
+        "scripts/ci/economy-gate.sh",
+        "scripts/ci/economy-projects.json",
+        "scripts/ci/economy-artifacts.sh",
+        "scripts/ci/economy-integration-shards.json",
+        "scripts/ci/classify-release-changes.mjs",
+        "scripts/ci/tests/verify-economy.sh",
+        "scripts/ci/tests/classify-release-changes.test.mjs",
+      ].includes(filePath)
+    ) {
+      classification.economyCritical = true;
+    }
     if (!filePath || isDocumentationOrCi(filePath)) continue;
 
     const isTest = testPathPattern.test(filePath);

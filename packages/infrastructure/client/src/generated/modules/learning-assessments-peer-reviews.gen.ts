@@ -37,6 +37,50 @@ export class LearningAssessmentsPeerReviewsModule {
   }
 
   /**
+   * Extend an insufficient peer-review evidence window.
+   */
+  async postAssessmentsPeerReviewStagesExtend(
+    reviewStageId: string,
+    body: Types.LearningAssessmentsExtendPeerReviewWindowInput,
+  ): Promise<Result<void, ApiError>> {
+    const url = `/v1/assessments/peer-review-stages/${reviewStageId}/extend`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsExtendPeerReviewWindowInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Resolve a peer stage whose evidence threshold was not reached before its deadline.
+   */
+  async postAssessmentsPeerReviewStagesResolveInsufficient(
+    reviewStageId: string,
+    body: Types.LearningAssessmentsResolvePeerReviewInsufficiencyInput,
+  ): Promise<Result<void, ApiError>> {
+    const url = `/v1/assessments/peer-review-stages/${reviewStageId}/resolve-insufficient`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsResolvePeerReviewInsufficiencyInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
    * Get the anonymous submission a claimed review refers to. Reviewer-only.
    */
   async getAssessmentsPeerReviews(reviewId: string): Promise<Result<Types.LearningAssessmentsAnonymousReviewSubmissionDto, ApiError>> {
@@ -58,8 +102,26 @@ export class LearningAssessmentsPeerReviewsModule {
   }
 
   /**
-   * Legacy peer-review submit. Valid requests fail closed until peer review is implemented
-   * as a canonical grading stage.
+   * Cancel an active claim so another eligible reviewer can claim the stage.
+   */
+  async postAssessmentsPeerReviewsReassign(reviewId: string, body: Types.LearningAssessmentsReassignPeerReviewClaimInput): Promise<Result<void, ApiError>> {
+    const url = `/v1/assessments/peer-reviews/${reviewId}/reassign`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsReassignPeerReviewClaimInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Submit evidence for the canonical peer-review stage assigned to the learner.
    */
   async postAssessmentsPeerReviewsSubmit(reviewId: string, body: Types.LearningAssessmentsPeerReviewSubmitInput): Promise<Result<void, ApiError>> {
     const url = `/v1/assessments/peer-reviews/${reviewId}/submit`;

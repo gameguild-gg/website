@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LearningAssessmentsAnonymousReviewSubmission } from '@game-guild/client';
+import { createQuizAnswerEnvelope, createQuizExecutionDelivery } from '@game-guild/grading-adapter-quiz';
+import { createSingleChoiceEntry, QuizEntryType, toQuizLearnerEntry } from '@game-guild/quiz';
 import { ReviewWorkspace } from './review-workspace';
 import { fetchPeerReviewWorkspace, submitPeerReview } from '@/lib/learning/actions-peer-review';
 
@@ -55,6 +57,35 @@ const submittedReview = {
   status: 'Submitted',
 } satisfies LearningAssessmentsAnonymousReviewSubmission;
 
+const canonicalQuizEntry = createSingleChoiceEntry('Which planet is closest to the Sun?');
+const canonicalQuizDelivery = toQuizLearnerEntry(canonicalQuizEntry);
+if (canonicalQuizDelivery.type !== QuizEntryType.SingleChoice) throw new Error('Unexpected quiz fixture type');
+const canonicalQuizReview = {
+  ...plainReview,
+  reviewId: 'review-runtime-quiz',
+  textPayload: undefined,
+  deliveryCanonicalJson: JSON.stringify(
+    createQuizExecutionDelivery('revision-1', 'snapshot-hash', [
+      {
+        schemaVersion: 1,
+        itemId: 'question-1',
+        itemType: canonicalQuizEntry.type,
+        maxScore: 5_000,
+        source: { contentType: 'quiz', itemId: 'question-1' },
+        authoringEntry: canonicalQuizEntry,
+      },
+    ]),
+  ),
+  responseEnvelopeCanonicalJson: JSON.stringify(
+    createQuizAnswerEnvelope({
+      'question-1': {
+        type: QuizEntryType.SingleChoice,
+        optionId: canonicalQuizDelivery.options[0]?.id ?? null,
+      },
+    }),
+  ),
+} satisfies LearningAssessmentsAnonymousReviewSubmission;
+
 function renderWorkspace(review: LearningAssessmentsAnonymousReviewSubmission) {
   actionsMock.fetchWorkspace.mockResolvedValue({ ok: true, review });
   return render(<ReviewWorkspace reviewId={review.reviewId ?? 'review-1'} />);
@@ -85,6 +116,15 @@ describe('ReviewWorkspace', () => {
     expect(screen.queryByText(/grace hopper/i)).not.toBeInTheDocument();
     expect(screen.queryByTestId('reviewee-name')).not.toBeInTheDocument();
     expect(screen.queryByTestId('reviewer-name')).not.toBeInTheDocument();
+  });
+
+  it('renders the canonical quiz delivery and anonymous submitted answer', async () => {
+    renderWorkspace(canonicalQuizReview);
+
+    expect(await screen.findByText('Which planet is closest to the Sun?')).toBeInTheDocument();
+    expect(screen.getByTestId('canonical-quiz-submission')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Anonymous response');
+    expect(screen.queryByText('This submission has no viewable payload.')).not.toBeInTheDocument();
   });
 
   it('submits a rubric review with the derived Σ score and rubricScores payload (partial credit)', async () => {

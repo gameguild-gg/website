@@ -13,7 +13,7 @@ public sealed class QuizAutomatedReviewStageHandler(QuizAssessmentTypeAdapter ad
     public string? ProviderPolicyVersion => null;
     public IReadOnlySet<ReviewExecutionContext> Contexts => adapter.Contexts;
 
-    public ValueTask<GradeResultV1> ExecuteAsync(
+    public async ValueTask<ReviewStageTransitionV1> StartAsync(
         ReviewStageRequest request,
         CancellationToken cancellationToken)
     {
@@ -35,13 +35,26 @@ public sealed class QuizAutomatedReviewStageHandler(QuizAssessmentTypeAdapter ad
             .Select(item => request.Snapshot.ItemProjections[item.ItemId])
             .ToArray();
         var normalizedResponse = adapter.DecodeResponse(request.Response, projections);
-        return adapter.EvaluateDeterministicAsync(
+        var result = await adapter.EvaluateDeterministicAsync(
             new DeterministicReviewRequest(
                 projections,
                 request.Delivery,
                 normalizedResponse,
                 Key,
                 Version),
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
+        return ReviewStageTransitionV1.Completed(result);
     }
+
+    public ValueTask<ReviewStageTransitionV1> AcceptEvidenceAsync(
+        ReviewStageRequest request,
+        ReviewStageEvidenceV1 evidence,
+        CancellationToken cancellationToken) =>
+        ValueTask.FromException<ReviewStageTransitionV1>(
+            new InvalidOperationException("AutomatedReview does not accept external evidence."));
+
+    public ValueTask<ReviewStageTransitionV1> TryCompleteAsync(
+        ReviewStageRequest request,
+        IReadOnlyList<ReviewStageEvidenceV1> evidence,
+        CancellationToken cancellationToken) => StartAsync(request, cancellationToken);
 }

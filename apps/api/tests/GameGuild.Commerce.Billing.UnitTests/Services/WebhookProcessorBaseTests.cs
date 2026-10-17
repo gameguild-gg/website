@@ -127,7 +127,7 @@ public class WebhookProcessorBaseTests
         var result = await _processor.TestValidateTenantContextAsync(
             tenantId,
             subscriptionId,
-            (t, s) => throw new Exception("Database error"));
+            (_, _) => throw new Exception("Database error"));
 
         // Assert
         result.IsValid.Should().BeFalse();

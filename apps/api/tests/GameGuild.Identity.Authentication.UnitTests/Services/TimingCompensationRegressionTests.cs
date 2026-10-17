@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Users;
@@ -356,101 +355,58 @@ public sealed class UserEnumerationProtectionCompensationTests
 {
     private const int ConfiguredWorkFactor = 10;
 
-    private static IPasswordHasher CreateRealHasher()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = ConfiguredWorkFactor.ToString()
-            })
-            .Build();
-        return new PasswordHasher(NullLogger<PasswordHasher>.Instance, configuration);
-    }
-
     private static UserEnumerationProtectionService CreateSut(IPasswordHasher? hasher = null)
     {
         return new UserEnumerationProtectionService(
             NullLogger<UserEnumerationProtectionService>.Instance,
             new Microsoft.Extensions.Caching.Memory.MemoryCache(Microsoft.Extensions.Options.Options.Create(
                 new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions())),
-            hasher ?? CreateRealHasher());
-    }
-
-    // A deterministic aged monotonic clock rules out the fixed top-up delay. Runner
-    // scheduling cannot turn the presence/absence of dummy work into a duration ratio.
-    private sealed class AgedClock : TimeProvider
-    {
-        private long timestamp;
-        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
-        public override long GetTimestamp() => timestamp;
-        public void Age() => timestamp += TimeSpan.FromMilliseconds(450).Ticks;
-        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
-            throw new InvalidOperationException($"An already-aged compensation window must not create a timer: {callback.Method.Name}, state {state?.GetType().Name ?? "null"}, due {dueTime}, period {period}.");
-    }
-
-    private sealed class DummyCostLogger : Microsoft.Extensions.Logging.ILogger<PasswordHasher>
-    {
-        public List<int> Costs { get; } = [];
-        public List<(Microsoft.Extensions.Logging.LogLevel Level, Microsoft.Extensions.Logging.EventId EventId, string Message, Exception? Exception)> Entries { get; } = [];
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
-        {
-            ArgumentNullException.ThrowIfNull(state);
-            return null;
-        }
-        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel level) =>
-            level is >= Microsoft.Extensions.Logging.LogLevel.Trace and < Microsoft.Extensions.Logging.LogLevel.None;
-        public void Log<TState>(Microsoft.Extensions.Logging.LogLevel level, Microsoft.Extensions.Logging.EventId eventId,
-            TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-        {
-            if (!IsEnabled(level)) { return; }
-            Entries.Add((level, eventId, formatter(state, exception), exception));
-            if (state is IEnumerable<KeyValuePair<string, object?>> values)
-            {
-                foreach (var pair in values)
-                {
-                    if (pair.Key == "WorkFactor" && pair.Value is int factor) { Costs.Add(factor); }
-                }
-            }
-        }
+            hasher ?? new RecordingDummyBcrypt(ConfiguredWorkFactor).Hasher);
     }
 
     private static AuthenticationTimingScope CreatePreAgedScope()
     {
-        var clock = new AgedClock();
-        var scope = new AuthenticationTimingScope(AuthenticationTimingOrigin.Start(clock));
-        clock.Age();
-        return scope;
+        var clock = new PreAgedClock();
+        var origin = AuthenticationTimingOrigin.Start(clock);
+        clock.Advance(TimeSpan.FromMilliseconds(450));
+        return new AuthenticationTimingScope(origin);
+    }
+
+    private sealed class PreAgedClock : TimeProvider
+    {
+        private long timestamp;
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+        public override long GetTimestamp() => timestamp;
+        public void Advance(TimeSpan elapsed) => timestamp += elapsed.Ticks;
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            ArgumentNullException.ThrowIfNull(callback);
+            var stateType = state?.GetType().Name ?? "null";
+            throw new InvalidOperationException(
+                $"A pre-aged window requested a timer: due={dueTime}, period={period}, callback={callback.Method.Name}, stateType={stateType}.");
+        }
     }
 
     [Fact]
     public async Task NoCredentialWork_RunsDummyVerificationAtTheConfiguredWorkFactor()
     {
-        var logger = new DummyCostLogger();
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = ConfiguredWorkFactor.ToString()
-        }).Build();
-        var hasher = new PasswordHasher(logger, configuration);
-        var sut = CreateSut(hasher);
+        var work = new RecordingDummyBcrypt(ConfiguredWorkFactor);
+        var sut = CreateSut(work.Hasher);
 
         await sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None);
 
-        logger.Entries.Should().ContainSingle(entry => entry.Level == Microsoft.Extensions.Logging.LogLevel.Debug &&
-            entry.EventId.Id == 0 && entry.Exception == null && entry.Message.Contains("Dummy", StringComparison.OrdinalIgnoreCase));
-        logger.Costs.Should().Equal(new[] { ConfiguredWorkFactor },
-            "the real hasher must complete exactly one dummy operation at the configured factor");
+        work.AssertCompletedWork(ConfiguredWorkFactor);
     }
 
     [Fact]
     public async Task CompletedCredentialWork_RunsNoDummyVerification()
     {
-        var hasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
-        var sut = CreateSut(hasher.Object);
+        var work = new RecordingDummyBcrypt(ConfiguredWorkFactor);
+        var sut = CreateSut(work.Hasher);
 
         await sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.Completed);
 
-        hasher.Verify(item => item.PerformDummyVerificationAsync(It.IsAny<CancellationToken>()), Times.Never);
-        hasher.VerifyNoOtherCalls();
+        work.Results.Should().BeEmpty("completed credential work must not be repeated");
     }
 
     [Fact]
@@ -459,24 +415,163 @@ public sealed class UserEnumerationProtectionCompensationTests
         var sut = CreateSut();
         var scope = new AuthenticationTimingScope();
 
-        var stopwatch = Stopwatch.StartNew();
         await sut.AddTimingProtectionDelayAsync(scope, CredentialWorkClassification.Completed);
-        stopwatch.Stop();
 
-        stopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(sut.GetBaseProcessingTime() - TimeSpan.FromMilliseconds(30),
+        scope.ElapsedSinceOrigin.Should().BeGreaterThanOrEqualTo(sut.GetBaseProcessingTime(),
             "the fixed target floor from the server-owned origin is preserved");
     }
 
     [Fact]
     public async Task DummyVerificationDelegatesToTheHasherExactlyOncePerUncompensatedWindow()
     {
-        var hasher = new Mock<IPasswordHasher>();
+        var hasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
         hasher.Setup(item => item.PerformDummyVerificationAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         var sut = CreateSut(hasher.Object);
 
-        await sut.AddTimingProtectionDelayAsync(new AuthenticationTimingScope(), CredentialWorkClassification.None);
+        await sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None);
 
         hasher.Verify(item => item.PerformDummyVerificationAsync(It.IsAny<CancellationToken>()), Times.Once);
+        hasher.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task DummyVerification_UsesReloadedConfiguredWorkFactor()
+    {
+        var work = new RecordingDummyBcrypt(ConfiguredWorkFactor);
+        var sut = CreateSut(work.Hasher);
+        await sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None);
+        work.Configuration[RecordingDummyBcrypt.PolicyKey] = "11";
+        work.Configuration.Reload();
+
+        await sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None);
+
+        work.AssertCompletedWork(ConfiguredWorkFactor, 11);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AlreadyCancelledCompensation_PerformsNoDummyWork(bool workCompleted)
+    {
+        var work = new RecordingDummyBcrypt(ConfiguredWorkFactor);
+        var sut = CreateSut(work.Hasher);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            sut.CompleteAuthenticationTimingAsync(CreatePreAgedScope().Origin, workCompleted, new CancellationToken(true)));
+
+        work.Results.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CancellationAfterRealDummyWork_IsPropagated()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var work = new RecordingDummyBcrypt(ConfiguredWorkFactor) { AfterHash = cancellation.Cancel };
+        var sut = CreateSut(work.Hasher);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            sut.CompleteAuthenticationTimingAsync(CreatePreAgedScope().Origin, false, cancellation.Token));
+
+        work.AssertCompletedWork(ConfiguredWorkFactor);
+    }
+
+    [Theory]
+    [InlineData(9)]
+    [InlineData(17)]
+    public async Task InvalidWorkFactor_FailsBeforeDummyWork(int workFactor)
+    {
+        var work = new RecordingDummyBcrypt(workFactor);
+        var sut = CreateSut(work.Hasher);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None));
+
+        work.Results.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DummyWorkFailure_IsPropagatedWithoutClaimingCompletion()
+    {
+        var failure = new InvalidOperationException("Synthetic dummy-work failure.");
+        var work = new RecordingDummyBcrypt(ConfiguredWorkFactor) { AfterHash = () => throw failure };
+        var sut = CreateSut(work.Hasher);
+
+        var observed = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None));
+
+        observed.Should().BeSameAs(failure);
+        work.AssertCompletedWork(ConfiguredWorkFactor);
+    }
+
+    [Fact]
+    public async Task Compensation_DoesNotCompleteBeforeDummyWorkReturns()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var work = new RecordingDummyBcrypt(ConfiguredWorkFactor)
+        {
+            AfterHash = () =>
+            {
+                started.SetResult();
+                release.Task.GetAwaiter().GetResult();
+            }
+        };
+        var sut = CreateSut(work.Hasher);
+        var compensation = sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None);
+
+        try
+        {
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            compensation.IsCompleted.Should().BeFalse("the response must wait for the actual BCrypt work to return");
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+
+        await compensation;
+        work.AssertCompletedWork(ConfiguredWorkFactor);
+    }
+}
+
+internal sealed class RecordingDummyBcrypt
+{
+    internal const string PolicyKey = "PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor";
+    internal IConfigurationRoot Configuration { get; }
+    internal PasswordHasher Hasher { get; }
+    internal List<(string Material, int WorkFactor, string Hash)> Results { get; } = [];
+    internal Action? AfterHash { get; init; }
+
+    internal RecordingDummyBcrypt(int workFactor)
+    {
+        Configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            [PolicyKey] = workFactor.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        }).Build();
+        Hasher = new PasswordHasher(NullLogger<PasswordHasher>.Instance, Configuration, (material, factor) =>
+        {
+            var hash = BCrypt.Net.BCrypt.HashPassword(material, factor);
+            Results.Add((material, factor, hash));
+            AfterHash?.Invoke();
+            return hash;
+        });
+    }
+
+    internal void AssertCompletedWork(params int[] expectedFactors)
+    {
+        Results.Should().HaveCount(expectedFactors.Length);
+        for (var index = 0; index < expectedFactors.Length; index++)
+        {
+            var result = Results[index];
+            result.Material.Should().Be(PasswordHasher.DummyCredentialMaterial);
+            result.WorkFactor.Should().Be(expectedFactors[index]);
+            result.Hash.Should().HaveLength(60);
+            result.Hash.Substring(4, 2).Should().Be(
+                expectedFactors[index].ToString("00", System.Globalization.CultureInfo.InvariantCulture),
+                "the cost must be present in the real BCrypt output");
+            BCrypt.Net.BCrypt.Verify(result.Material, result.Hash).Should().BeTrue(
+                "the dummy path must complete real BCrypt work using its supplied material");
+        }
     }
 }
 
@@ -558,30 +653,12 @@ public sealed class PasswordVerificationWorkClassificationTests
     [Fact]
     public async Task PerformDummyVerification_CompletesAtTheConfiguredWorkFactor()
     {
-        var sut = (PasswordHasher)CreateSut();
+        var work = new RecordingDummyBcrypt(10);
+        IPasswordHasher sut = work.Hasher;
 
-        var hash = await sut.GenerateDummyCredentialHashAsync(CancellationToken.None);
+        await sut.PerformDummyVerificationAsync();
 
-        hash.Split('$')[2].Should().Be("10");
-        BCrypt.Net.BCrypt.Verify(PasswordHasher.DummyCredentialMaterial, hash).Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task DummyCredentialHash_UsesReloadedPolicyAndReturnsRealBcryptOutput()
-    {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"
-        }).Build();
-        var sut = new PasswordHasher(NullLogger<PasswordHasher>.Instance, configuration);
-        var first = await sut.GenerateDummyCredentialHashAsync(CancellationToken.None);
-        configuration["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "11";
-        configuration.Reload();
-        var second = await sut.GenerateDummyCredentialHashAsync(CancellationToken.None);
-
-        first.Split('$')[2].Should().Be("10"); second.Split('$')[2].Should().Be("11");
-        BCrypt.Net.BCrypt.Verify(PasswordHasher.DummyCredentialMaterial, first).Should().BeTrue();
-        BCrypt.Net.BCrypt.Verify(PasswordHasher.DummyCredentialMaterial, second).Should().BeTrue();
+        work.AssertCompletedWork(10);
     }
 
     [Fact]
@@ -599,8 +676,10 @@ public sealed class PasswordVerificationWorkClassificationTests
     [Fact]
     public async Task PerformDummyVerification_ConcreteNoArgumentOverloadCompletes()
     {
-        var sut = (PasswordHasher)CreateSut();
+        var work = new RecordingDummyBcrypt(10);
 
-        await sut.PerformDummyVerificationAsync();
+        await work.Hasher.PerformDummyVerificationAsync();
+
+        work.AssertCompletedWork(10);
     }
 }

@@ -858,6 +858,30 @@ export class AuthModule {
   }
 
   /**
+   * Read the caller's current authentication state (issue #221): session validity and
+   * expiry, token version, active-session count and MFA enrollment state.
+   *
+   * Returns the caller's current session validity, session expiry, token version, active-session count and MFA enrollment state. Anonymous access is not viable: the state describes the authenticated caller's own session.
+   */
+  async getAuthSessionState(): Promise<Result<Types.IdentityAuthenticationAuthSessionStateDto, ApiError>> {
+    const url = '/v1/auth/session-state';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationAuthSessionStateDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Authenticate a user with email and password
    *
    * Authenticates a user with email and password credentials, returning access and refresh tokens.

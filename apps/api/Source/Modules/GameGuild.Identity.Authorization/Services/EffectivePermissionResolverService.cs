@@ -81,7 +81,9 @@ public sealed class EffectivePermissionResolverService(
     IEnumerable<IPermissionEvaluationExtension>? evaluationExtensions = null,
     IEvaluationDenialThrottleService? denialThrottle = null,
     IExternalAuthorizationDecisionProvider? externalDecisionProvider = null,
-    IResourceOwnershipProvider? ownershipProvider = null
+    IResourceOwnershipProvider? ownershipProvider = null,
+    IContentTypePermissionGrantRepository? contentTypePermissionGrantRepository = null,
+    IContentTypeHierarchyProvider? contentTypeHierarchyProvider = null
 ) : IEffectivePermissionResolver
 {
     private readonly AuthorizationOptions _authOptions = authorizationOptions.Value;
@@ -209,7 +211,20 @@ public sealed class EffectivePermissionResolverService(
             }
         }
 
-        // Layer 8: Resource grants — only when the context names this exact resource.
+        // Layer 8: Content-type grants (issues #360/#365) — only when the context names a
+        // content type (explicitly, or derived from the resource type: a resource of type
+        // T is content of content type T). Each applicable row mints ONLY the
+        // content-type qualified name {ContentTypeName}.{permission}, so a content-type
+        // grant never conveys a tenant-wide (unqualified) permission and never applies to
+        // another content type; inheritance still flows downward because the same
+        // qualified name is what layer-Auto checks consult for every resource of the
+        // type. Deny entries subtract the same qualified name (DENY-WINS).
+        if (contentTypePermissionGrantRepository is not null)
+        {
+            await AddContentTypePermissionLayerAsync(context, allows, denies, sources, ct).ConfigureAwait(false);
+        }
+
+        // Layer 9: Resource grants — only when the context names this exact resource.
         // Resource grants never contribute to tenant-wide results (context isolation).
         var inForceResourceGrants = new List<ResourceUserPermission>();
         if (context.HasResource)
@@ -631,6 +646,126 @@ public sealed class EffectivePermissionResolverService(
         }
 
         denies.UnionWith(layer.DenyPermissions);
+    }
+
+    /// <summary>
+    ///     Content-type grant layer (issues #360/#365). For every content type named by
+    ///     the context (explicit <see cref="EffectivePermissionContext.ContentType"/>, plus
+    ///     the resource type for resource contexts), loads the applicable
+    ///     <see cref="ContentTypePermissionGrant"/> rows — the tenant default
+    ///     (<c>UserId = null</c>) first, then the user-specific row — and mints each allow
+    ///     entry as the content-type qualified name <c>{ContentTypeName}.{permission}</c>,
+    ///     attributing <see cref="PermissionSource.ContentTypeDefault"/> /
+    ///     <see cref="PermissionSource.ContentTypeGrant"/>. Deny entries subtract the same
+    ///     qualified name (DENY-WINS).
+    ///     <para>
+    ///         Qualified-only minting keeps the layer scoped: a content-type grant never
+    ///         conveys a tenant-wide (unqualified) permission and never applies to another
+    ///         content type, while tenant-layer grants still satisfy layer-Auto checks
+    ///         (inheritance flows tenant → content-type → resource, not upward). Inactive
+    ///         or expired rows contribute nothing (fail-closed), and rows of other users,
+    ///         tenants or content types are never consulted (context isolation).
+    ///     </para>
+    /// </summary>
+    private async Task AddContentTypePermissionLayerAsync(
+        EffectivePermissionContext context,
+        HashSet<string> allows,
+        HashSet<string> denies,
+        Dictionary<string, PermissionSource> sources,
+        CancellationToken ct)
+    {
+        var contentTypeNames = new List<string>();
+        if (context.HasContentType)
+        {
+            contentTypeNames.Add(context.ContentType!.Trim());
+        }
+
+        // A resource of type T is content of content type T: deriving the content type
+        // from the resource type is what makes content-type grants apply to every
+        // resource of the type (ct → resource inheritance).
+        if (context.HasResource)
+        {
+            var resourceTypeName = context.ResourceType!.Trim();
+            if (!contentTypeNames.Contains(resourceTypeName, StringComparer.Ordinal))
+            {
+                contentTypeNames.Add(resourceTypeName);
+            }
+        }
+
+        foreach (var contentTypeName in contentTypeNames)
+        {
+            await AddContentTypeGrantRowAsync(null, PermissionSource.ContentTypeDefault, contentTypeName, context, allows, denies, sources, ct).ConfigureAwait(false);
+            await AddContentTypeGrantRowAsync(context.UserId, PermissionSource.ContentTypeGrant, contentTypeName, context, allows, denies, sources, ct).ConfigureAwait(false);
+
+            // Hierarchy inheritance (issue #314): grants on registered ancestor content
+            // types apply to this type too, minted under THIS type's qualified name so
+            // exact-name checks for the descendant find them. Inheritance flows
+            // downward only; a cycle-broken or unregistered chain contributes nothing.
+            if (contentTypeHierarchyProvider is not null)
+            {
+                var ancestors = await contentTypeHierarchyProvider
+                    .GetAncestorsAsync(contentTypeName, context.TenantId, ct)
+                    .ConfigureAwait(false);
+                foreach (var ancestor in ancestors)
+                {
+                    await AddContentTypeGrantRowAsync(null, PermissionSource.ContentTypeInheritedDefault, ancestor, context, allows, denies, sources, ct, inheritInto: contentTypeName).ConfigureAwait(false);
+                    await AddContentTypeGrantRowAsync(context.UserId, PermissionSource.ContentTypeInheritedGrant, ancestor, context, allows, denies, sources, ct, inheritInto: contentTypeName).ConfigureAwait(false);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Adds the contribution of one <see cref="ContentTypePermissionGrant"/> row
+    ///     (inactive, expired, soft-deleted or absent rows contribute nothing). When
+    ///     <paramref name="inheritInto"/> is set, the row's permissions mint under the
+    ///     descendant's qualified name instead of the row's own content type (hierarchy
+    ///     inheritance, issue #314).
+    /// </summary>
+    private async Task AddContentTypeGrantRowAsync(
+        Guid? userId,
+        PermissionSource source,
+        string contentTypeName,
+        EffectivePermissionContext context,
+        HashSet<string> allows,
+        HashSet<string> denies,
+        Dictionary<string, PermissionSource> sources,
+        CancellationToken ct,
+        string? inheritInto = null)
+    {
+        var row = await contentTypePermissionGrantRepository!
+            .GetBySubjectAndContentTypeAsync(userId, context.TenantId, contentTypeName, ct)
+            .ConfigureAwait(false);
+        if (row is null || !row.IsActive || row.IsExpired())
+        {
+            return;
+        }
+
+        var mintFor = inheritInto ?? contentTypeName;
+
+        foreach (var permission in row.Permissions)
+        {
+            if (string.IsNullOrWhiteSpace(permission))
+            {
+                continue;
+            }
+
+            var qualified = $"{mintFor}.{permission.Trim()}";
+            if (allows.Add(qualified))
+            {
+                sources[qualified] = source;
+            }
+        }
+
+        foreach (var denied in row.DenyPermissions)
+        {
+            if (string.IsNullOrWhiteSpace(denied))
+            {
+                continue;
+            }
+
+            denies.Add($"{mintFor}.{denied.Trim()}");
+        }
     }
 
     private static EffectivePermissions FailClosed(EffectivePermissionContext context)

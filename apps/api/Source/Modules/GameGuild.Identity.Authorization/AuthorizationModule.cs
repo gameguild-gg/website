@@ -85,6 +85,14 @@ public class AuthorizationModule : ModuleBase
         modelBuilder.ApplyConfiguration(new DataMaskingRuleConfiguration());
         modelBuilder.ApplyConfiguration(new TenantPermissionConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionTemplateConfiguration());
+        modelBuilder.ApplyConfiguration(new ContentTypePermissionGrantConfiguration());
+
+        // Template lifecycle (issues #369/#370): version snapshots, migration execution
+        // records and per-target instantiation provenance.
+        modelBuilder.ApplyConfiguration(new PermissionTemplateVersionConfiguration());
+        modelBuilder.ApplyConfiguration(new PermissionTemplateMigrationConfiguration());
+        modelBuilder.ApplyConfiguration(new PermissionTemplateInstantiationConfiguration());
+
         modelBuilder.ApplyConfiguration(new PermissionAuditLogConfiguration());
 
         // RBAC: Dynamic roles with deny permission support

@@ -148,6 +148,25 @@ export class AssetsModule {
   }
 
   /**
+   * Attach an asset reference to a parent resource, or detach it (null body fields).
+   */
+  async postAssetsRebindParent(id: string, body: Types.AssetsControllersRebindAssetParentInput): Promise<Result<void, ApiError>> {
+    const url = `/v1/assets/${id}:rebind-parent`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.AssetsControllersRebindAssetParentInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
    * Report an asset for moderation.
    */
   async postAssetsReport(id: string, body: Types.AssetsControllersReportAssetInput): Promise<Result<void, ApiError>> {

@@ -79,6 +79,8 @@ public static class ScimUserPatchApplier
 
                 RemoveAttribute(state, path);
                 break;
+            default:
+                throw ScimException.InvalidValue($"The patch operation '{op}' is not one of add, remove, replace.");
         }
     }
 

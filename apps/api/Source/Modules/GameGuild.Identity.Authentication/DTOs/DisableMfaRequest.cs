@@ -8,8 +8,8 @@ namespace GameGuild.Identity.Authentication;
 public class DisableMfaRequest
 {
     /// <summary>
-    ///     TOTP confirmation code
+    ///     The account password, re-verified before MFA is disabled (issue #244).
     /// </summary>
     [Required]
-    public string Code { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }

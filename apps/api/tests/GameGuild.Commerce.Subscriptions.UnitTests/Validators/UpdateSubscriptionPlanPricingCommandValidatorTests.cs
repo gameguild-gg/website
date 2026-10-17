@@ -22,12 +22,22 @@ public class UpdateSubscriptionPlanPricingCommandValidatorTests
     [Fact]
     public void Validate_Fails_WhenMonthlyPriceIsNegative()
     {
-        var result = _validator.Validate(new UpdateSubscriptionPlanPricingCommand(Guid.NewGuid(), -1, null));
+        // -2 is below the enterprise custom-quote sentinel (-1) and must be rejected;
+        // the sentinel itself is valid and tested separately below.
+        var result = _validator.Validate(new UpdateSubscriptionPlanPricingCommand(Guid.NewGuid(), -2, null));
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
             e.PropertyName == nameof(UpdateSubscriptionPlanPricingCommand.MonthlyPriceInCents) &&
-            e.ErrorMessage.Contains("greater than or equal to 0"));
+            e.ErrorMessage.Contains("custom-quote sentinel"));
+    }
+
+    [Fact]
+    public void Validate_Passes_ForEnterpriseSentinelPrice()
+    {
+        var result = _validator.Validate(new UpdateSubscriptionPlanPricingCommand(Guid.NewGuid(), -1, null));
+
+        result.IsValid.Should().BeTrue("the -1 custom-quote sentinel is a valid enterprise plan price");
     }
 
     [Fact]

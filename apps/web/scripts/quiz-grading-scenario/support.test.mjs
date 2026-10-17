@@ -7,11 +7,14 @@ import {
   CHECKPOINTS,
   assertApplicableCheckpoint,
   checkpointIndex,
+  expectedFinalScore,
   getScenarioDefinition,
   nextApplicableCheckpoint,
   requestHash,
+  selectQuizDefinitions,
 } from "./definitions.mjs";
 import { resolveClientBuildTarget } from "./api.mjs";
+import { authenticateResetOwner } from "./cleanup.mjs";
 import {
   assertLocalUrl,
   createManifest,
@@ -50,6 +53,58 @@ test("scenario definitions expose canonical workflows and checkpoint applicabili
       "learner-ready",
     ),
     "review-ready",
+  );
+});
+
+test("review matrix keeps one isolated two-question quiz per executable workflow", () => {
+  const definition = getScenarioDefinition("review-matrix");
+  assert.deepEqual(
+    definition.quizzes.map((quiz) => quiz.key),
+    [
+      "automated",
+      "instructor",
+      "automated-instructor",
+      "self",
+      "self-instructor",
+      "peer",
+      "peer-instructor",
+    ],
+  );
+  for (const quiz of definition.quizzes) {
+    assert.deepEqual(quiz.document.order, [
+      ["q1", "quiz"],
+      ["q2", "quiz"],
+    ]);
+    assert.deepEqual(Object.keys(quiz.correctAnswer.payload.answers), [
+      "q1",
+      "q2",
+    ]);
+    assert.equal(quiz.expected.maxScore, 200);
+  }
+  assert.equal(expectedFinalScore(definition.quizzes[0]), 200);
+  assert.equal(expectedFinalScore(definition.quizzes[3]), 175);
+  assert.equal(expectedFinalScore(definition.quizzes[5]), 175);
+  assert.equal(
+    expectedFinalScore(definition.quizzes[2]),
+    175,
+    "instructor review owns the final score when it follows another review",
+  );
+});
+
+test("quiz selection is ordered, rejects unknown keys, and drives the next checkpoint", () => {
+  const definition = getScenarioDefinition("review-matrix");
+  const selected = selectQuizDefinitions(definition, ["peer", "self"]);
+  assert.deepEqual(
+    selected.map((quiz) => quiz.key),
+    ["self", "peer"],
+  );
+  assert.equal(
+    nextApplicableCheckpoint(definition, "learner-ready", selected),
+    "release-ready",
+  );
+  assert.throws(
+    () => selectQuizDefinitions(definition, ["ai"]),
+    /has no quiz ai/,
   );
 });
 
@@ -146,6 +201,80 @@ test("persona credentials are stable, compact, and unique where required", () =>
   });
 });
 
+test("reset discards a stale manifest only after proving the local tenant changed", async () => {
+  const manifest = fixtureManifest();
+  manifest.environment.tenantId = "11111111-1111-4111-8111-111111111111";
+  const authenticationError = new Error("stale credentials");
+  const calls = [];
+  const result = await authenticateResetOwner(manifest, {
+    authenticate: async (candidate, personaKey, options) => {
+      calls.push({ candidate, personaKey, options });
+      if (calls.length === 1) throw authenticationError;
+      return {
+        identity: {
+          tenantId: "22222222-2222-4222-8222-222222222222",
+        },
+      };
+    },
+  });
+
+  assert.deepEqual(result, {
+    kind: "recreated-environment",
+    previousTenantId: "11111111-1111-4111-8111-111111111111",
+    currentTenantId: "22222222-2222-4222-8222-222222222222",
+  });
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0].options, { create: false });
+  assert.equal(calls[1].candidate.environment.tenantId, null);
+});
+
+test("reset keeps the manifest when credentials fail in the same tenant", async () => {
+  const manifest = fixtureManifest();
+  manifest.environment.tenantId = "11111111-1111-4111-8111-111111111111";
+  const authenticationError = new Error("invalid credentials");
+  let calls = 0;
+
+  await assert.rejects(
+    authenticateResetOwner(manifest, {
+      authenticate: async () => {
+        calls += 1;
+        if (calls === 1) throw authenticationError;
+        return {
+          identity: {
+            tenantId: "11111111-1111-4111-8111-111111111111",
+          },
+        };
+      },
+    }),
+    (error) => error === authenticationError,
+  );
+});
+
+test("review matrix manifest creates peer personas and isolated quiz resources", () => {
+  const manifest = createManifest({
+    definitionKey: "review-matrix",
+    apiBaseUrl: "http://localhost:8080",
+    webBaseUrl: "http://localhost:3000",
+    quizKeys: ["automated", "peer"],
+    runId: "11111111-2222-4333-8444-555555555555",
+  });
+  assert.deepEqual(manifest.quizKeys, ["automated", "peer"]);
+  assert.ok(manifest.personas.learnerB);
+  assert.deepEqual(Object.keys(manifest.resources.quizzes), [
+    "automated",
+    "peer",
+  ]);
+  assert.deepEqual(
+    Object.keys(manifest.resources.quizzes.automated.submissions),
+    ["learnerA"],
+  );
+  assert.deepEqual(Object.keys(manifest.resources.quizzes.peer.submissions), [
+    "learnerA",
+    "learnerB",
+  ]);
+  assert.equal(validateManifest(manifest, "review-matrix"), manifest);
+});
+
 test("atomic JSON writer replaces the target and restricts file permissions", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "qgs-atomic-"));
   const target = resolve(root, "nested", "manifest.json");
@@ -218,10 +347,13 @@ test("all browser URLs come from the centralized manifest builder", () => {
   const manifest = fixtureManifest();
   Object.assign(manifest.resources, {
     courseSlug: "scenario-course",
+  });
+  Object.assign(manifest.resources.quizzes.automated, {
     contentId: "content-id",
     assessmentId: "assessment-id",
-    submissionId: "submission-id",
   });
+  manifest.resources.quizzes.automated.submissions.learnerA.submissionId =
+    "submission-id";
   const urls = buildScenarioUrls(manifest);
   assert.equal(urls.learnerHome, "http://localhost:3000/en-US/learn");
   assert.equal(
@@ -233,12 +365,20 @@ test("all browser URLs come from the centralized manifest builder", () => {
     "http://localhost:3000/en-US/learn/courses/scenario-course",
   );
   assert.equal(
-    urls.learnerActivity,
+    urls.quizzes.automated.learnerActivity,
     "http://localhost:3000/en-US/learn/courses/scenario-course/activities/assessment-assessment-id",
   );
-  assert.match(urls.speedGrader, /submission=submission-id/);
   assert.match(
-    urls.assessmentEditor,
+    urls.quizzes.automated.speedGraders.learnerA,
+    /submission=submission-id/,
+  );
+  assert.equal(
+    urls.learnerActivity,
+    urls.quizzes.automated.learnerActivity,
+    "single-quiz scenarios retain concise URL aliases",
+  );
+  assert.match(
+    urls.quizzes.automated.assessmentEditor,
     /workspace\/learning\/courses\/scenario-course/,
   );
 });

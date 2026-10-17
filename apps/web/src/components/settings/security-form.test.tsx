@@ -79,7 +79,7 @@ describe('SecurityForm', () => {
       screen.queryByRole('button', { name: 'Set up two-factor authentication' }),
     ).not.toBeInTheDocument();
     expect(screen.getByTestId('disable-panel')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Disable MFA' })).toBeInTheDocument();
   });
 
   it('shows backup codes exactly once after completing setup and discards them on confirm', async () => {
@@ -108,16 +108,18 @@ describe('SecurityForm', () => {
     );
   });
 
-  it('calls disableMfa with the entered code from the disable panel', async () => {
+  it('calls disableMfa with the entered password from the disable panel', async () => {
     const user = userEvent.setup();
     renderForm({ initialEnabled: true });
 
-    const disableInput = screen.getByRole('textbox', { name: 'Verification code' });
-    await user.type(disableInput, '987654');
-    fireEvent.click(screen.getByRole('button', { name: 'Disable' }));
+    const disableInput = screen.getByLabelText('Account password');
+    await user.type(disableInput, 'correct-horse-battery-staple');
+    fireEvent.click(screen.getByRole('button', { name: 'Disable MFA' }));
 
     await waitFor(() => {
-      expect(actionMocks.disableMfa).toHaveBeenCalledWith({ code: '987654' });
+      expect(actionMocks.disableMfa).toHaveBeenCalledWith({
+        password: 'correct-horse-battery-staple',
+      });
     });
     await waitFor(() => {
       expect(screen.getByTestId('mfa-status')).toHaveTextContent(

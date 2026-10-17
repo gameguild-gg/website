@@ -50,6 +50,7 @@ import type {
 import {
   ASSESSMENT_PRIMARY_REVIEW_METHODS,
   buildReviewWorkflow,
+  isPrimaryReviewMethodAvailable,
   readReviewWorkflow,
   REVIEW_METHOD_LABELS,
   type AssessmentReviewMethod,
@@ -1131,6 +1132,10 @@ export function AssessmentEditor({
                         <RuntimeQuizTestRun
                           assessmentId={assessment.id}
                           revisionId={authoringState.candidate.revisionId}
+                          reviewMethods={assessment.reviewMethods}
+                          peerReviewsRequired={readPeerReviewsRequired(
+                            assessment.reviewConfigurationCanonicalJson,
+                          )}
                           disabled={
                             isLifecyclePending ||
                             !authoringState.candidateMatchesDraft
@@ -1218,8 +1223,13 @@ export function AssessmentEditor({
                     <SelectContent>
                       <SelectGroup>
                         {ASSESSMENT_PRIMARY_REVIEW_METHODS.map((method) => (
-                          <SelectItem key={method} value={method}>
+                          <SelectItem
+                            key={method}
+                            value={method}
+                            disabled={!isPrimaryReviewMethodAvailable(method)}
+                          >
                             {REVIEW_METHOD_LABELS[method]}
+                            {method === "AIReview" && " (provider required)"}
                           </SelectItem>
                         ))}
                       </SelectGroup>

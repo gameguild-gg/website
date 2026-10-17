@@ -10,13 +10,19 @@ public sealed record TerminateUserSessionsCommand(
 public sealed record RefreshUserSessionCommand(Guid SessionId) : ICommand<bool>;
 public sealed record TrustDeviceCommand(Guid UserId, string DeviceFingerprint, string DeviceName) : ICommand<bool>;
 public sealed record RevokeTrustedDeviceCommand(Guid UserId, Guid DeviceId) : ICommand<bool>;
+/// <summary>
+///     Names or renames one of the acting user's own active sessions. The acting user is bound
+///     by the controller from the authenticated principal, never from the request body.
+/// </summary>
+public sealed record RenameSessionCommand(Guid UserId, Guid SessionId, string Name) : ICommand<bool>;
 
 public sealed class SessionMutationCommandHandler(ISessionManagementService sessionService) :
     ICommandHandler<TerminateSessionCommand, bool>,
     ICommandHandler<TerminateUserSessionsCommand, int>,
     ICommandHandler<RefreshUserSessionCommand, bool>,
     ICommandHandler<TrustDeviceCommand, bool>,
-    ICommandHandler<RevokeTrustedDeviceCommand, bool>
+    ICommandHandler<RevokeTrustedDeviceCommand, bool>,
+    ICommandHandler<RenameSessionCommand, bool>
 {
     public Task<bool> Handle(TerminateSessionCommand command, CancellationToken cancellationToken) =>
         sessionService.TerminateSessionAsync(command.SessionId, command.Reason, cancellationToken);
@@ -40,4 +46,7 @@ public sealed class SessionMutationCommandHandler(ISessionManagementService sess
 
     public Task<bool> Handle(RevokeTrustedDeviceCommand command, CancellationToken cancellationToken) =>
         sessionService.RevokeTrustedDeviceAsync(command.UserId, command.DeviceId, cancellationToken);
+
+    public Task<bool> Handle(RenameSessionCommand command, CancellationToken cancellationToken) =>
+        sessionService.RenameSessionAsync(command.UserId, command.SessionId, command.Name, cancellationToken);
 }

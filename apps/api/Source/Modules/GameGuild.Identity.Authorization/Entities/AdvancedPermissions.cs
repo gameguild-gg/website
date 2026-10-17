@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using GameGuild.CQRS.Models;
 
 namespace GameGuild.Identity.Authorization;
@@ -409,6 +410,7 @@ public class DelegatedAdminScope
 /// <summary>
 ///     Represents a versioned snapshot of a permission template
 /// </summary>
+[Table("PermissionTemplateVersions")]
 public class PermissionTemplateVersion
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -465,6 +467,7 @@ public class PermissionTemplateVersion
 /// <summary>
 ///     Represents a migration plan for template version upgrades
 /// </summary>
+[Table("PermissionTemplateMigrations")]
 public class PermissionTemplateMigration
 {
     public Guid Id { get; set; } = Guid.NewGuid();

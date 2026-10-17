@@ -11,10 +11,14 @@ using GameGuild.Learning.Assessments.QuizAdapter;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
 using GameGuild.Learning.Grading.Contracts;
+using GameGuild.Notifications;
+using GameGuild.Notifications.Configuration;
+using GameGuild.Notifications.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace GameGuild.Learning.Assessments.Tests;
@@ -213,6 +217,735 @@ public sealed class AssessmentGradingRuntimeTests
     }
 
     [Fact]
+    public async Task AuthorTest_SelfReviewSupportsMultipleSyntheticSubjectsWithoutAcademicEffects()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.SelfReview,
+            TrueFalseQuiz(),
+            Publish: false));
+        var run = await harness.Runtime.StartTestRunAsync(
+            harness.AssessmentId,
+            harness.InstructorId,
+            new StartAssessmentTestRunCommand(
+                harness.RevisionId,
+                "learner-a",
+                "Learner A",
+                "self-multipersona-start",
+                [
+                    new AssessmentTestRunSubjectCommandV1("learner-a", "Learner A"),
+                    new AssessmentTestRunSubjectCommandV1("learner-b", "Learner B"),
+                ]));
+
+        run.Subjects.Should().HaveCount(2);
+        var subjects = run.Subjects!;
+        var learnerA = subjects.Single(subject => subject.PersonaKey == "learner-a");
+        var learnerB = subjects.Single(subject => subject.PersonaKey == "learner-b");
+        await harness.Runtime.SubmitTestRunAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "self-a-answer", TestRunSubjectId: learnerA.SubjectId));
+        var first = await harness.Runtime.SubmitTestSelfReviewAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitSelfReviewCommand(SelfEvidence(150), "self-a-review", TestRunSubjectId: learnerA.SubjectId));
+
+        first.Status.Should().Be(AssessmentTestRunStatus.Running);
+        first.Subjects!.Single(subject => subject.SubjectId == learnerA.SubjectId)
+            .Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(150));
+        await harness.Runtime.SubmitTestRunAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(false), "self-b-answer", TestRunSubjectId: learnerB.SubjectId));
+        var completed = await harness.Runtime.SubmitTestSelfReviewAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitSelfReviewCommand(SelfEvidence(100), "self-b-review", TestRunSubjectId: learnerB.SubjectId));
+
+        completed.Status.Should().Be(AssessmentTestRunStatus.Completed);
+        completed.Subjects!.Single(subject => subject.SubjectId == learnerB.SubjectId)
+            .Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(100));
+        (await harness.Context.Set<AssessmentSubmission>().CountAsync()).Should().Be(0);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(0);
+        (await harness.Context.Set<GradeResultRelease>().CountAsync()).Should().Be(0);
+        (await harness.AcademicEventTypes()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AuthorTest_SelfReviewCanHandOffToInstructorReview()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.SelfReview | ReviewMethods.InstructorReview,
+            TrueFalseQuiz(),
+            Publish: false));
+        var run = await harness.StartTestRunAsync();
+        await harness.Runtime.SubmitTestRunAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "self-instructor-answer"));
+
+        var afterSelf = await harness.Runtime.SubmitTestSelfReviewAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitSelfReviewCommand(SelfEvidence(125), "self-instructor-self-review"));
+
+        afterSelf.Status.Should().Be(AssessmentTestRunStatus.Running);
+        afterSelf.Execution.RequiresInstructorReview.Should().BeTrue();
+
+        var completed = await harness.Runtime.ResolveTestInstructorReviewAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            Resolution(("q1", 175)),
+            "self-instructor-final-review");
+
+        completed.Status.Should().Be(AssessmentTestRunStatus.Completed);
+        completed.Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(175));
+        (await harness.Context.Set<AssessmentSubmission>().CountAsync()).Should().Be(0);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(0);
+        (await harness.AcademicEventTypes()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task OfficialSelfReview_FinalizesOneResultAndRequiresTheFrozenSubject()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.SelfReview,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000));
+        var started = await harness.StartIndividualAsync("self-official-start");
+        var awaiting = await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "self-official-answer"));
+
+        awaiting.Status.Should().Be(SubmissionStatus.Submitted);
+        var outsiderSubmit = () => harness.Runtime.SubmitOfficialSelfReviewAsync(
+            started.SubmissionId,
+            harness.Learner2Id,
+            new SubmitSelfReviewCommand(SelfEvidence(125), "self-outsider"));
+        await outsiderSubmit.Should().ThrowAsync<UnauthorizedAccessException>();
+
+        var completed = await harness.Runtime.SubmitOfficialSelfReviewAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitSelfReviewCommand(SelfEvidence(125), "self-official-review"));
+        var replay = await harness.Runtime.SubmitOfficialSelfReviewAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitSelfReviewCommand(SelfEvidence(125), "self-official-review"));
+        var instructorView = await harness.Runtime.GetSubmissionAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            true);
+
+        completed.Status.Should().Be(SubmissionStatus.Graded);
+        instructorView.Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(125));
+        replay.Execution.ActiveRoundId.Should().Be(completed.Execution.ActiveRoundId);
+        (await harness.Context.Set<ReviewEvidence>().CountAsync(value =>
+            value.EvidenceType == "self-review-evidence")).Should().Be(1);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task OfficialSelfReviewCanHandOffToInstructorReview()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.SelfReview | ReviewMethods.InstructorReview,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000));
+        var started = await harness.StartIndividualAsync("self-instructor-official-start");
+        await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "self-instructor-official-answer"));
+
+        var afterSelf = await harness.Runtime.SubmitOfficialSelfReviewAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitSelfReviewCommand(SelfEvidence(125), "self-instructor-official-self-review"));
+
+        afterSelf.Status.Should().Be(SubmissionStatus.Submitted);
+        afterSelf.Execution.RequiresInstructorReview.Should().BeTrue();
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(0);
+
+        var reviewed = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            Resolution(("q1", 175)),
+            "self-instructor-official-final-review");
+
+        reviewed.Status.Should().Be(SubmissionStatus.Graded);
+        reviewed.Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(175));
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task OfficialSelfReview_RegradeReusesFinalEvidenceByReference()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.SelfReview,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000));
+        var started = await harness.StartIndividualAsync("self-regrade-start");
+        await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "self-regrade-answer"));
+        var first = await harness.Runtime.SubmitOfficialSelfReviewAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitSelfReviewCommand(SelfEvidence(125), "self-regrade-review"));
+
+        var regraded = await harness.Runtime.RegradeOfficialAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            new RegradeExecutionCommand("self-regrade", "Recalculate from frozen evidence"));
+
+        regraded.Status.Should().Be(SubmissionStatus.Graded);
+        regraded.Execution.ActiveRoundId!.Value.Should().NotBe(first.Execution.ActiveRoundId!.Value);
+        regraded.Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(125));
+        var submittedEvidence = await harness.Context.Set<ReviewEvidence>()
+            .SingleAsync(value => value.EvidenceType == "self-review-evidence");
+        submittedEvidence.ProducedByActorId.Should().Be(harness.Learner1Id);
+        var reference = await harness.Context.Set<ReviewEvidence>()
+            .SingleAsync(value => value.EvidenceType == "review-evidence-reference");
+        reference.SourceReviewEvidenceId.Should().Be(submittedEvidence.Id);
+        reference.ProducedByService.Should().Be("grading-regrade");
+    }
+
+    [Fact]
+    public async Task CollectiveSelfReview_UsesOneVersionedDraftAndOneFinalEvidence()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.SelfReview,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000,
+            Collective: true));
+        var started = await harness.Runtime.StartCollectiveSubmissionAsync(
+            harness.AssessmentId,
+            new StartCollectiveSubmissionCommand(harness.CourseGroupId!.Value, harness.Learner1Id, "self-group-start"));
+        await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "self-group-answer", 0));
+
+        await harness.Runtime.SaveCollectiveSelfReviewDraftAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SaveCollectiveSelfReviewDraftCommand(SelfEvidence(100), 0, "self-group-draft-1"));
+        await harness.Runtime.SaveCollectiveSelfReviewDraftAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SaveCollectiveSelfReviewDraftCommand(SelfEvidence(100), 0, "self-group-draft-1"));
+        var stale = () => harness.Runtime.SaveCollectiveSelfReviewDraftAsync(
+            started.SubmissionId,
+            harness.Learner2Id,
+            new SaveCollectiveSelfReviewDraftCommand(SelfEvidence(125), 0, "self-group-stale"));
+        await stale.Should().ThrowAsync<InvalidOperationException>().WithMessage("*stale*");
+        await harness.Runtime.SaveCollectiveSelfReviewDraftAsync(
+            started.SubmissionId,
+            harness.Learner2Id,
+            new SaveCollectiveSelfReviewDraftCommand(SelfEvidence(150), 1, "self-group-draft-2"));
+
+        var completed = await harness.Runtime.SubmitOfficialSelfReviewAsync(
+            started.SubmissionId,
+            harness.Learner2Id,
+            new SubmitSelfReviewCommand(SelfEvidence(150), "self-group-final", 2));
+        var instructorView = await harness.Runtime.GetSubmissionAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            true);
+        completed.Status.Should().Be(SubmissionStatus.Graded);
+        instructorView.Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(150));
+        (await harness.Context.Set<ReviewEvidence>().CountAsync(value =>
+            value.EvidenceType == "self-review-draft-change")).Should().Be(2);
+        (await harness.Context.Set<ReviewEvidence>().CountAsync(value =>
+            value.EvidenceType == "self-review-evidence")).Should().Be(1);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(2);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AuthorTest_PeerReviewUsesSyntheticSubjectsAndOptionallyHandsOffToInstructor(
+        bool requireInstructorReview)
+    {
+        var methods = ReviewMethods.PeerReview |
+                      (requireInstructorReview ? ReviewMethods.InstructorReview : ReviewMethods.None);
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            methods,
+            TrueFalseQuiz(),
+            Publish: false));
+        var run = await harness.Runtime.StartTestRunAsync(
+            harness.AssessmentId,
+            harness.InstructorId,
+            new StartAssessmentTestRunCommand(
+                harness.RevisionId,
+                "learner-a",
+                "Learner A",
+                "peer-test-start",
+                [
+                    new AssessmentTestRunSubjectCommandV1("learner-a", "Learner A"),
+                    new AssessmentTestRunSubjectCommandV1("learner-b", "Learner B"),
+                ]));
+        var subjects = run.Subjects!;
+        var learnerA = subjects.Single(subject => subject.PersonaKey == "learner-a");
+        var learnerB = subjects.Single(subject => subject.PersonaKey == "learner-b");
+
+        await harness.Runtime.SubmitTestRunAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "peer-a-answer", TestRunSubjectId: learnerA.SubjectId));
+        await harness.Runtime.SubmitTestRunAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(false), "peer-b-answer", TestRunSubjectId: learnerB.SubjectId));
+
+        var claimA = await harness.PeerReviews.ClaimAuthorTestAsync(
+            run.TestRunId,
+            learnerA.SubjectId,
+            harness.InstructorId);
+        claimA.IsSuccess.Should().BeTrue();
+
+        (await harness.PeerReviews.SubmitReviewAsync(
+            claimA.Value.ReviewId,
+            harness.InstructorId,
+            ScoreValue.FromUnits(125),
+            "Synthetic learner A review",
+            null)).IsSuccess.Should().BeTrue();
+
+        // Receiving a review must not remove a synthetic learner's independent
+        // obligation to review another submitted response.
+        var claimB = await harness.PeerReviews.ClaimAuthorTestAsync(
+            run.TestRunId,
+            learnerB.SubjectId,
+            harness.InstructorId);
+        claimB.IsSuccess.Should().BeTrue();
+        (await harness.PeerReviews.SubmitReviewAsync(
+            claimB.Value.ReviewId,
+            harness.InstructorId,
+            ScoreValue.FromUnits(175),
+            "Synthetic learner B review",
+            null)).IsSuccess.Should().BeTrue();
+
+        var afterPeer = await harness.Runtime.GetTestRunAsync(run.TestRunId, harness.InstructorId);
+        if (requireInstructorReview)
+        {
+            afterPeer.Status.Should().Be(AssessmentTestRunStatus.Running);
+            afterPeer.Subjects.Should().OnlyContain(subject => subject.Execution.RequiresInstructorReview);
+            await harness.Runtime.ResolveTestInstructorReviewAsync(
+                run.TestRunId,
+                harness.InstructorId,
+                Resolution(("q1", 150)),
+                "peer-test-instructor-a",
+                learnerA.SubjectId);
+            afterPeer = await harness.Runtime.ResolveTestInstructorReviewAsync(
+                run.TestRunId,
+                harness.InstructorId,
+                Resolution(("q1", 160)),
+                "peer-test-instructor-b",
+                learnerB.SubjectId);
+        }
+
+        afterPeer.Status.Should().Be(AssessmentTestRunStatus.Completed);
+        afterPeer.Subjects.Should().OnlyContain(subject =>
+            subject.Execution.InstructorVisibleResult != null &&
+            subject.Execution.InstructorVisibleResult.State == "final");
+        (await harness.Context.Set<AssessmentSubmission>().CountAsync()).Should().Be(0);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(0);
+        (await harness.Context.Set<GradeResultRelease>().CountAsync()).Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OfficialPeerReview_FinalizesIndividualSubmissionsAndReusesEvidenceOnRegrade(
+        bool requireInstructorReview)
+    {
+        var methods = ReviewMethods.PeerReview |
+                      (requireInstructorReview ? ReviewMethods.InstructorReview : ReviewMethods.None);
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            methods,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000));
+        var first = await harness.StartIndividualAsync("peer-first-start");
+        var second = await harness.StartIndividualAsync(
+            "peer-second-start",
+            harness.Enrollment2Id,
+            harness.Learner2Id);
+        await harness.Runtime.SubmitOfficialAsync(
+            first.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "peer-first-answer"));
+        await harness.Runtime.SubmitOfficialAsync(
+            second.SubmissionId,
+            harness.Learner2Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(false), "peer-second-answer"));
+
+        var firstReviewerClaim = await harness.PeerReviews.ClaimAsync(harness.AssessmentId, harness.Learner1Id);
+        var secondReviewerClaim = await harness.PeerReviews.ClaimAsync(harness.AssessmentId, harness.Learner2Id);
+        firstReviewerClaim.IsSuccess.Should().BeTrue();
+        secondReviewerClaim.IsSuccess.Should().BeTrue();
+        (await harness.PeerReviews.GetReviewAsync(firstReviewerClaim.Value.ReviewId))!.SubmissionId
+            .Should().Be(second.SubmissionId);
+        (await harness.PeerReviews.GetReviewAsync(secondReviewerClaim.Value.ReviewId))!.SubmissionId
+            .Should().Be(first.SubmissionId);
+
+        (await harness.PeerReviews.SubmitReviewAsync(
+            firstReviewerClaim.Value.ReviewId,
+            harness.Learner1Id,
+            ScoreValue.FromUnits(125),
+            "Review for the second learner",
+            null)).IsSuccess.Should().BeTrue();
+        (await harness.PeerReviews.SubmitReviewAsync(
+            secondReviewerClaim.Value.ReviewId,
+            harness.Learner2Id,
+            ScoreValue.FromUnits(175),
+            "Review for the first learner",
+            null)).IsSuccess.Should().BeTrue();
+
+        if (requireInstructorReview)
+        {
+            await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+                first.SubmissionId,
+                harness.InstructorId,
+                Resolution(("q1", 180)),
+                "peer-first-instructor");
+            await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+                second.SubmissionId,
+                harness.InstructorId,
+                Resolution(("q1", 140)),
+                "peer-second-instructor");
+        }
+
+        var firstResult = await harness.Runtime.GetSubmissionAsync(
+            first.SubmissionId,
+            harness.InstructorId,
+            true);
+        var secondResult = await harness.Runtime.GetSubmissionAsync(
+            second.SubmissionId,
+            harness.InstructorId,
+            true);
+        firstResult.Status.Should().Be(SubmissionStatus.Graded);
+        secondResult.Status.Should().Be(SubmissionStatus.Graded);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(2);
+
+        if (!requireInstructorReview)
+        {
+            var regraded = await harness.Runtime.RegradeOfficialAsync(
+                first.SubmissionId,
+                harness.InstructorId,
+                new RegradeExecutionCommand("peer-regrade", "Recalculate frozen peer evidence"));
+            regraded.Status.Should().Be(SubmissionStatus.Graded);
+            regraded.Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(175));
+            var original = await harness.Context.Set<ReviewEvidence>()
+                .SingleAsync(value => value.EvidenceType == "peer-review-evidence" &&
+                                      value.ProducedByActorId == harness.Learner2Id);
+            var reused = await harness.Context.Set<ReviewEvidence>()
+                .SingleAsync(value => value.SourceReviewEvidenceId == original.Id);
+            reused.EvidenceType.Should().Be("review-evidence-reference");
+        }
+    }
+
+    [Fact]
+    public async Task CollectivePeerReview_ExcludesEveryTargetParticipantAndGradesOncePerGroup()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.PeerReview,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000,
+            Collective: true));
+        var groupSetId = await harness.Context.Set<CourseGroupSet>().Select(value => value.Id).SingleAsync();
+        var learner3Id = Guid.NewGuid();
+        var learner4Id = Guid.NewGuid();
+        var secondGroup = CourseGroup.Create(groupSetId, "Team Two", 4);
+        var enrollment3 = Enrollment.Create(harness.CourseId, learner3Id);
+        var enrollment4 = Enrollment.Create(harness.CourseId, learner4Id);
+        enrollment3.TenantId = harness.TenantId;
+        enrollment4.TenantId = harness.TenantId;
+        harness.Context.Set<CourseGroup>().Add(secondGroup);
+        harness.Context.Set<CourseGroupMember>().AddRange(
+            CourseGroupMember.Create(secondGroup.Id, learner3Id),
+            CourseGroupMember.Create(secondGroup.Id, learner4Id));
+        harness.Context.Set<Enrollment>().AddRange(enrollment3, enrollment4);
+        await harness.Context.SaveChangesAsync();
+
+        var first = await harness.Runtime.StartCollectiveSubmissionAsync(
+            harness.AssessmentId,
+            new StartCollectiveSubmissionCommand(harness.CourseGroupId!.Value, harness.Learner1Id, "peer-group-one"));
+        var second = await harness.Runtime.StartCollectiveSubmissionAsync(
+            harness.AssessmentId,
+            new StartCollectiveSubmissionCommand(secondGroup.Id, learner3Id, "peer-group-two"));
+        await harness.Runtime.SubmitOfficialAsync(
+            first.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "peer-group-one-answer", 0));
+        await harness.Runtime.SubmitOfficialAsync(
+            second.SubmissionId,
+            learner3Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(false), "peer-group-two-answer", 0));
+
+        var learner1Claim = await harness.PeerReviews.ClaimAsync(harness.AssessmentId, harness.Learner1Id);
+        var learner3Claim = await harness.PeerReviews.ClaimAsync(harness.AssessmentId, learner3Id);
+        learner1Claim.IsSuccess.Should().BeTrue();
+        learner3Claim.IsSuccess.Should().BeTrue();
+        var learner1Target = await harness.PeerReviews.GetReviewAsync(learner1Claim.Value.ReviewId);
+        var learner3Target = await harness.PeerReviews.GetReviewAsync(learner3Claim.Value.ReviewId);
+        learner1Target!.SubmissionId.Should().Be(second.SubmissionId);
+        learner3Target!.SubmissionId.Should().Be(first.SubmissionId);
+        (await harness.Context.Set<AssessmentSubmissionParticipant>().AnyAsync(value =>
+            value.SubmissionId == learner1Target.SubmissionId && value.UserId == harness.Learner1Id)).Should().BeFalse();
+        (await harness.Context.Set<AssessmentSubmissionParticipant>().AnyAsync(value =>
+            value.SubmissionId == learner3Target.SubmissionId && value.UserId == learner3Id)).Should().BeFalse();
+
+        (await harness.PeerReviews.SubmitReviewAsync(
+            learner1Claim.Value.ReviewId,
+            harness.Learner1Id,
+            ScoreValue.FromUnits(110),
+            "Team Two review",
+            null)).IsSuccess.Should().BeTrue();
+        (await harness.PeerReviews.SubmitReviewAsync(
+            learner3Claim.Value.ReviewId,
+            learner3Id,
+            ScoreValue.FromUnits(190),
+            "Team One review",
+            null)).IsSuccess.Should().BeTrue();
+
+        (await harness.Context.Set<AssessmentSubmission>().CountAsync()).Should().Be(2);
+        (await harness.Context.Set<GradeRound>().CountAsync()).Should().Be(2);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(4);
+    }
+
+    [Fact]
+    public async Task OfficialPeerReview_DeadlineOperationsPreserveEvidenceAndRequireExplicitResolution()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.PeerReview,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000));
+        var target = await harness.StartIndividualAsync("peer-operations-target");
+        var reviewer = await harness.StartIndividualAsync(
+            "peer-operations-reviewer",
+            harness.Enrollment2Id,
+            harness.Learner2Id);
+        await harness.Runtime.SubmitOfficialAsync(
+            target.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "peer-operations-target-answer"));
+        await harness.Runtime.SubmitOfficialAsync(
+            reviewer.SubmissionId,
+            harness.Learner2Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(false), "peer-operations-reviewer-answer"));
+
+        var claimed = await harness.PeerReviews.ClaimAsync(harness.AssessmentId, harness.Learner2Id);
+        claimed.IsSuccess.Should().BeTrue();
+        var claim = await harness.PeerReviews.GetReviewAsync(claimed.Value.ReviewId);
+        claim!.SubmissionId.Should().Be(target.SubmissionId);
+        await harness.PeerReviews.ReassignClaimAsync(
+            claim.Id,
+            harness.InstructorId,
+            claim.Version,
+            "Reviewer unavailable",
+            "peer-reassign");
+        await harness.PeerReviews.ReassignClaimAsync(
+            claim.Id,
+            harness.InstructorId,
+            claim.Version,
+            "Reviewer unavailable",
+            "peer-reassign");
+
+        var execution = await harness.Context.Set<GradingExecution>()
+            .SingleAsync(value => value.AssessmentSubmissionId == target.SubmissionId);
+        var stage = await harness.Context.Set<ReviewStage>()
+            .SingleAsync(value => value.GradeRoundId == execution.ActiveGradeRoundId &&
+                                  value.ReviewMethod == ReviewMethod.PeerReview);
+        harness.Context.Entry(stage).Property(value => value.EvidenceDeadlineAt).CurrentValue =
+            SystemClock.UtcNow.AddSeconds(-1);
+        await harness.Context.SaveChangesAsync();
+
+        var deadlines = new ReviewStageDeadlineProcessor(
+            harness.Context,
+            harness.Orchestrator,
+            NullLogger<ReviewStageDeadlineProcessor>.Instance);
+        (await deadlines.ProcessDueAsync()).Should().Be(1);
+        stage = await harness.Context.Set<ReviewStage>().SingleAsync(value => value.Id == stage.Id);
+        stage.Status.Should().Be(PersistedReviewStageStatus.AwaitingInstructorResolution);
+        (await harness.Context.Set<AssessmentGradebookEntry>()
+            .CountAsync(value => value.SubmissionId == target.SubmissionId)).Should().Be(0);
+
+        var expectedStageVersion = stage.Version;
+        var extendedDeadline = SystemClock.UtcNow.AddMinutes(30);
+        await harness.PeerReviews.ExtendEvidenceWindowAsync(
+            stage.Id,
+            harness.InstructorId,
+            expectedStageVersion,
+            extendedDeadline,
+            "Allow another reviewer",
+            "peer-extend");
+        await harness.PeerReviews.ExtendEvidenceWindowAsync(
+            stage.Id,
+            harness.InstructorId,
+            expectedStageVersion,
+            extendedDeadline,
+            "Allow another reviewer",
+            "peer-extend");
+        stage = await harness.Context.Set<ReviewStage>().SingleAsync(value => value.Id == stage.Id);
+        stage.Status.Should().Be(PersistedReviewStageStatus.AwaitingEvidence);
+
+        harness.Context.Entry(stage).Property(value => value.EvidenceDeadlineAt).CurrentValue =
+            SystemClock.UtcNow.AddSeconds(-1);
+        await harness.Context.SaveChangesAsync();
+        (await deadlines.ProcessDueAsync()).Should().Be(1);
+        stage = await harness.Context.Set<ReviewStage>().SingleAsync(value => value.Id == stage.Id);
+        stage.Status.Should().Be(PersistedReviewStageStatus.AwaitingInstructorResolution);
+
+        var resolution = new PeerReviewInsufficiencyResolutionV1(
+            1,
+            [new InstructorItemResolutionV1("q1", ScoreValue.FromUnits(125), "Resolved by instructor")],
+            "Minimum peer evidence was not reached",
+            "Instructor resolved the incomplete peer stage");
+        await harness.PeerReviews.ResolveInsufficientEvidenceAsync(
+            stage.Id,
+            harness.InstructorId,
+            resolution,
+            "peer-resolve-insufficient");
+        await FluentActions.Invoking(() => harness.PeerReviews.ResolveInsufficientEvidenceAsync(
+                stage.Id,
+                harness.InstructorId,
+                resolution with { Feedback = "Different resolution" },
+                "peer-resolve-insufficient"))
+            .Should().ThrowAsync<InvalidOperationException>();
+        await harness.PeerReviews.ResolveInsufficientEvidenceAsync(
+            stage.Id,
+            harness.InstructorId,
+            resolution,
+            "peer-resolve-insufficient");
+
+        var completed = await harness.Runtime.GetSubmissionAsync(
+            target.SubmissionId,
+            harness.InstructorId,
+            true);
+        completed.Status.Should().Be(SubmissionStatus.Graded);
+        completed.Execution.InstructorVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(125));
+        (await harness.Context.Set<ReviewEvidence>().CountAsync(value =>
+            value.ReviewStageId == stage.Id &&
+            value.EvidenceType == "peer-review-insufficiency-resolution")).Should().Be(1);
+        (await harness.Context.Set<GradingCommandReceipt>().CountAsync(value =>
+            value.ResourceId == stage.Id &&
+            value.CommandType == "resolve-peer-review-insufficiency")).Should().Be(1);
+        (await harness.Context.Set<PeerReviewClaim>().SingleAsync(value => value.Id == claim.Id))
+            .Status.Should().Be(PeerReviewClaimStatus.Cancelled);
+        (await harness.Context.Set<AssessmentGradebookEntry>()
+            .CountAsync(value => value.SubmissionId == target.SubmissionId)).Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AuthorTest_AIReviewUsesDurableIdempotentEvidenceAndOptionallyHandsOffToInstructor(
+        bool requireInstructorReview)
+    {
+        var methods = ReviewMethods.AIReview |
+                      (requireInstructorReview ? ReviewMethods.InstructorReview : ReviewMethods.None);
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            methods,
+            TrueFalseQuiz(),
+            Publish: false));
+        var run = await harness.StartTestRunAsync();
+        var awaitingAI = await harness.Runtime.SubmitTestRunAsync(
+            run.TestRunId,
+            harness.InstructorId,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "ai-test-answer"));
+        awaitingAI.Status.Should().Be(AssessmentTestRunStatus.Running);
+        var request = await harness.Context.Set<AcademicOutboxMessage>()
+            .SingleAsync(value => value.EventType == "ai-review-requested");
+
+        if (requireInstructorReview)
+        {
+            harness.AIProvider.FailNext = true;
+            var transientFailure = () => harness.DispatchAIReviewAsync(request.Id);
+            await transientFailure.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*temporarily unavailable*");
+            (await harness.Context.Set<ReviewEvidence>().CountAsync(value =>
+                value.EvidenceType == "ai-review-response")).Should().Be(0);
+        }
+
+        await harness.DispatchAIReviewAsync(request.Id);
+        await harness.DispatchAIReviewAsync(request.Id);
+        (await harness.Context.Set<ReviewEvidence>().CountAsync(value =>
+            value.EvidenceType == "ai-review-response")).Should().Be(1);
+        var afterAI = await harness.Runtime.GetTestRunAsync(run.TestRunId, harness.InstructorId);
+        if (requireInstructorReview)
+        {
+            afterAI.Execution.RequiresInstructorReview.Should().BeTrue();
+            afterAI = await harness.Runtime.ResolveTestInstructorReviewAsync(
+                run.TestRunId,
+                harness.InstructorId,
+                Resolution(("q1", 175)),
+                "ai-test-instructor");
+        }
+
+        afterAI.Status.Should().Be(AssessmentTestRunStatus.Completed);
+        afterAI.Execution.InstructorVisibleResult!.State.Should().Be("final");
+        (await harness.Context.Set<AssessmentSubmission>().CountAsync()).Should().Be(0);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task OfficialCollectiveAIReviewCreatesANewDurableRequestForRegrade()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.AIReview,
+            TrueFalseQuiz(),
+            GradebookWeightUnits: 5000,
+            Collective: true));
+        var started = await harness.Runtime.StartCollectiveSubmissionAsync(
+            harness.AssessmentId,
+            new StartCollectiveSubmissionCommand(harness.CourseGroupId!.Value, harness.Learner1Id, "ai-group-start"));
+        await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner2Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "ai-group-answer", 0));
+        var firstRequest = await harness.Context.Set<AcademicOutboxMessage>()
+            .SingleAsync(value => value.EventType == "ai-review-requested");
+        await harness.DispatchAIReviewAsync(firstRequest.Id);
+        var firstResult = await harness.Runtime.GetSubmissionAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            true);
+        firstResult.Status.Should().Be(SubmissionStatus.Graded);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(2);
+
+        var regrading = await harness.Runtime.RegradeOfficialAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            new RegradeExecutionCommand("ai-group-regrade", "Run the frozen provider policy again"));
+        regrading.Status.Should().Be(SubmissionStatus.Graded);
+        regrading.Execution.LearnerVisibleResult.Should().BeNull();
+        var secondRequest = await harness.Context.Set<AcademicOutboxMessage>()
+            .SingleAsync(value => value.EventType == "ai-review-requested" && value.Id != firstRequest.Id);
+        await harness.DispatchAIReviewAsync(secondRequest.Id);
+
+        var regraded = await harness.Runtime.GetSubmissionAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            true);
+        regraded.Status.Should().Be(SubmissionStatus.Graded);
+        harness.AIProvider.RequestIds.Distinct().Should().HaveCount(2);
+        regraded.Execution.History.Should().HaveCount(2);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(2);
+    }
+
+    [Fact]
+    public void AIReviewWithoutACompatibleProviderFailsClosed()
+    {
+        var registry = new AIReviewProviderRegistry([]);
+        var resolve = () => registry.Resolve("missing", "1", ReviewExecutionContext.OfficialSubmission);
+
+        resolve.Should().Throw<InvalidOperationException>()
+            .WithMessage("*unavailable for OfficialSubmission*");
+    }
+
+    [Fact]
     public async Task OfficialIndividual_RetainsThenReleasesOneCanonicalResultAndSurvivesUnpublish()
     {
         await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
@@ -398,6 +1131,280 @@ public sealed class AssessmentGradingRuntimeTests
         learnerGradebook.CoursePercentUnits.Should().Be(5000);
         (await harness.AcademicEventTypes()).Should().BeEquivalentTo(
             ["grade-result-finalized", "grade-result-release-requested", "grade-result-released"]);
+    }
+
+    [Fact]
+    public async Task ReleasedResult_FansOutToNotificationAndPassbackWithoutRecalculatingGrade()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.AutomatedReview,
+            TrueFalseQuiz(),
+            ResultReleaseMode.Manual,
+            ContentCompletionMode.OnReleaseAndPass,
+            PassingScoreUnits: 150,
+            GradebookWeightUnits: 5000));
+        var started = await harness.StartIndividualAsync("consumer-start");
+        var submitted = await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "consumer-submit"));
+        await harness.Release.ReleaseByActorAsync(
+            submitted.SubmissionId,
+            submitted.Execution.ActiveRoundId!.Value,
+            submitted.Version,
+            harness.InstructorId,
+            "consumer-release",
+            "Reviewed");
+        var message = await harness.Context.Set<AcademicOutboxMessage>()
+            .SingleAsync(value => value.EventType == "grade-result-released");
+        var outboxEvent = new AcademicOutboxEvent(
+            message.Id,
+            message.TenantId,
+            message.EventType,
+            message.EventSchemaVersion,
+            message.PayloadCanonicalJson,
+            message.PayloadHash,
+            message.OccurredAt);
+
+        var notifications = new Mock<INotificationService>(MockBehavior.Strict);
+        notifications.Setup(service => service.SendAsync(
+                harness.Learner1Id,
+                NotificationType.AssessmentGraded,
+                "Assessment result available",
+                "Your assessment score and feedback are now available.",
+                NotificationChannel.InApp,
+                harness.TenantId,
+                "/learn",
+                NotificationPriority.Normal,
+                message.Id,
+                "GradeResultReleased",
+                null,
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success(Notification.Create(
+                harness.Learner1Id,
+                NotificationType.AssessmentGraded,
+                NotificationChannel.InApp,
+                "Assessment result available",
+                "Your assessment score and feedback are now available.",
+                harness.TenantId,
+                "/learn",
+                referenceEntityId: message.Id,
+                referenceEntityType: "GradeResultReleased")));
+        var passback = new Mock<ILtiScorePassback>(MockBehavior.Strict);
+        passback.Setup(service => service.PostScoreIfMappedAsync(
+                harness.AssessmentId,
+                harness.Learner1Id,
+                ScoreValue.FromUnits(200),
+                ScoreValue.FromUnits(200),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(LtiScorePassbackOutcome.Delivered);
+        using var services = new ServiceCollection()
+            .AddSingleton(notifications.Object)
+            .AddSingleton(passback.Object)
+            .BuildServiceProvider();
+
+        await new GradeReleaseNotificationConsumer(harness.Context, services)
+            .ConsumeAsync(outboxEvent, default);
+        await new GradeReleasePassbackConsumer(harness.Context, services)
+            .ConsumeAsync(outboxEvent, default);
+
+        notifications.VerifyAll();
+        passback.VerifyAll();
+        var persistedNotification = Notification.Create(
+            harness.Learner1Id,
+            NotificationType.AssessmentGraded,
+            NotificationChannel.InApp,
+            "Assessment result available",
+            "Your assessment score and feedback are now available.",
+            harness.TenantId,
+            "/learn",
+            referenceEntityId: message.Id,
+            referenceEntityType: "GradeResultReleased");
+        harness.Context.Set<Notification>().Add(persistedNotification);
+        await harness.Context.SaveChangesAsync();
+        await new GradeReleaseNotificationConsumer(harness.Context, services)
+            .ConsumeAsync(outboxEvent, default);
+        notifications.Verify(service => service.SendAsync(
+            It.IsAny<Guid?>(),
+            It.IsAny<NotificationType>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<NotificationChannel>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<NotificationPriority>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<string?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        (await harness.Context.Set<AssessmentGradebookEntry>().CountAsync()).Should().Be(1);
+        (await harness.Context.Set<GradeResultRelease>().CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task OfficialScheduledRelease_IsVersionedCancellableAndReleasedExactlyOnceWhenDue()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.AutomatedReview,
+            TrueFalseQuiz(),
+            ResultReleaseMode.Manual,
+            GradebookWeightUnits: 5000));
+        var started = await harness.StartIndividualAsync("scheduled-release-start");
+        var submitted = await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "scheduled-release-submit"));
+        var roundId = submitted.Execution.ActiveRoundId!.Value;
+        var firstDueAt = harness.Clock.GetUtcNow().AddMinutes(30).UtcDateTime;
+
+        var scheduled = await harness.ReleaseSchedules.ScheduleByActorAsync(
+            submitted.SubmissionId,
+            roundId,
+            submitted.Version,
+            0,
+            firstDueAt,
+            harness.InstructorId,
+            "schedule-release",
+            "Publish after review window");
+        var replay = await harness.ReleaseSchedules.ScheduleByActorAsync(
+            submitted.SubmissionId,
+            roundId,
+            submitted.Version,
+            0,
+            firstDueAt,
+            harness.InstructorId,
+            "schedule-release",
+            "Publish after review window");
+
+        replay.Should().BeEquivalentTo(scheduled);
+        var staleReschedule = () => harness.ReleaseSchedules.ScheduleByActorAsync(
+            submitted.SubmissionId,
+            roundId,
+            submitted.Version,
+            0,
+            firstDueAt.AddMinutes(15),
+            harness.InstructorId,
+            "stale-reschedule",
+            null);
+        await staleReschedule.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*schedule version is stale*");
+
+        var rescheduled = await harness.ReleaseSchedules.ScheduleByActorAsync(
+            submitted.SubmissionId,
+            roundId,
+            submitted.Version,
+            scheduled.Version,
+            firstDueAt.AddMinutes(15),
+            harness.InstructorId,
+            "reschedule-release",
+            null);
+        var cancelled = await harness.ReleaseSchedules.CancelByActorAsync(
+            submitted.SubmissionId,
+            roundId,
+            submitted.Version,
+            rescheduled.Version,
+            harness.InstructorId,
+            "cancel-release",
+            "Additional review required");
+        cancelled.Status.Should().Be(GradeResultReleaseScheduleStatus.Cancelled);
+        var restored = await harness.ReleaseSchedules.ScheduleByActorAsync(
+            submitted.SubmissionId,
+            roundId,
+            submitted.Version,
+            cancelled.Version,
+            firstDueAt,
+            harness.InstructorId,
+            "restore-release",
+            "Review completed");
+
+        (await harness.ReleaseSchedules.ReleaseDueBatchAsync()).Should().Be(0);
+        harness.Clock.Advance(TimeSpan.FromMinutes(31));
+        (await harness.ReleaseSchedules.ReleaseDueBatchAsync()).Should().Be(1);
+        (await harness.ReleaseSchedules.ReleaseDueBatchAsync()).Should().Be(0);
+
+        var persisted = await harness.Context.Set<GradeResultReleaseSchedule>()
+            .SingleAsync(value => value.Id == restored.ScheduleId);
+        persisted.Status.Should().Be(GradeResultReleaseScheduleStatus.Released);
+        (await harness.Context.Set<GradeResultRelease>()
+            .CountAsync(value => value.GradeRoundId == roundId)).Should().Be(1);
+        (await harness.Context.Set<AcademicOutboxMessage>()
+            .CountAsync(value => value.EventType == "grade-result-released")).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task OfficialScheduledRelease_RegradeKeepsEachRoundIndependentAndLearnerSeesLatestReleasedRound()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.InstructorReview,
+            TrueFalseQuiz(),
+            ResultReleaseMode.Manual,
+            GradebookWeightUnits: 5000));
+        var started = await harness.StartIndividualAsync("scheduled-regrade-start");
+        await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "scheduled-regrade-submit"));
+        var first = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            Resolution(("q1", 100)),
+            "scheduled-first-review");
+        var firstRoundId = first.Execution.ActiveRoundId!.Value;
+        var firstDueAt = harness.Clock.GetUtcNow().AddMinutes(20).UtcDateTime;
+
+        await harness.Runtime.RegradeOfficialAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            new RegradeExecutionCommand("scheduled-open-regrade", "Correct the score"));
+        var second = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            Resolution(("q1", 175)),
+            "scheduled-second-review");
+        var secondRoundId = second.Execution.ActiveRoundId!.Value;
+        secondRoundId.Should().NotBe(firstRoundId);
+
+        await harness.ReleaseSchedules.ScheduleByServiceAsync(
+            started.SubmissionId,
+            firstRoundId,
+            first.Version,
+            firstDueAt,
+            "grading.scheduled-release-request.v1",
+            "old-round-schedule-event",
+            "Frozen policy for the first round");
+        await harness.ReleaseSchedules.ScheduleByActorAsync(
+            started.SubmissionId,
+            secondRoundId,
+            second.Version,
+            0,
+            firstDueAt.AddMinutes(20),
+            harness.InstructorId,
+            "schedule-second-round",
+            "Publish corrected result later");
+
+        harness.Clock.Advance(TimeSpan.FromMinutes(21));
+        (await harness.ReleaseSchedules.ReleaseDueBatchAsync()).Should().Be(1);
+        var afterFirstRelease = await harness.Runtime.GetSubmissionAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            false);
+        afterFirstRelease.Execution.LearnerVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(100));
+        afterFirstRelease.Execution.History.Should().ContainSingle();
+
+        harness.Clock.Advance(TimeSpan.FromMinutes(20));
+        (await harness.ReleaseSchedules.ReleaseDueBatchAsync()).Should().Be(1);
+        (await harness.ReleaseSchedules.ReleaseDueBatchAsync()).Should().Be(0);
+        var afterSecondRelease = await harness.Runtime.GetSubmissionAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            false);
+        afterSecondRelease.Execution.LearnerVisibleResult!.Score.Should().Be(ScoreValue.FromUnits(175));
+        afterSecondRelease.Execution.History.Should().HaveCount(2);
+        (await harness.Context.Set<GradeResultRelease>().CountAsync()).Should().Be(2);
+        (await harness.Context.Set<AcademicOutboxMessage>()
+            .CountAsync(value => value.EventType == "grade-result-released")).Should().Be(2);
     }
 
     [Fact]
@@ -741,6 +1748,12 @@ public sealed class AssessmentGradingRuntimeTests
             "Instructor feedback",
             overrideReason);
 
+    private static SelfReviewEvidenceV1 SelfEvidence(int scoreUnits) =>
+        new(
+            1,
+            [new SelfReviewItemV1("q1", ScoreValue.FromUnits(scoreUnits), "Self assessment")],
+            "Self-review complete");
+
     private static JsonElement TrueFalseQuiz() => Json("""
         {
           "schemaVersion": 1,
@@ -846,12 +1859,78 @@ public sealed class AssessmentGradingRuntimeTests
             CodeToolchainIdentity toolchain, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            toolchain.Should().Be(CodeToolchainIdentity.Version1);
+            toolchain.Should().Be(CodeToolchainIdentity.Version2);
             definition.Tests.Private.Should().ContainSingle().Which.Should().BeOfType<StandardTest>()
                 .Which.Stdout.Should().Be("private-code-secret");
             files.GetProperty("main.cpp").GetProperty("content").GetString().Should().Contain("submitted-code");
             return Task.FromResult(new CodeExecutionReceipt(
                 definition.Tests.Public.Concat(definition.Tests.Private).Select(_ => true).ToArray(), new string('a', 64)));
+        }
+    }
+
+    private sealed class ControlledAIReviewProvider : IAIReviewProvider
+    {
+        public const string ProviderKey = "controlled-ai";
+
+        public string Key => ProviderKey;
+        public IReadOnlySet<string> PolicyVersions { get; } = new HashSet<string>(StringComparer.Ordinal) { "1" };
+        public IReadOnlySet<ReviewExecutionContext> Contexts { get; } = new HashSet<ReviewExecutionContext>
+        {
+            ReviewExecutionContext.AuthorTest,
+            ReviewExecutionContext.OfficialSubmission,
+        };
+        public bool FailNext { get; set; }
+        public List<Guid> RequestIds { get; } = [];
+
+        public ValueTask<AIReviewProviderResponseV1> ReviewAsync(
+            AIReviewProviderRequestV1 request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            RequestIds.Add(request.RequestId);
+            if (FailNext)
+            {
+                FailNext = false;
+                throw new InvalidOperationException("Controlled provider is temporarily unavailable.");
+            }
+
+            var items = request.Snapshot.Manifest.Items.Select(item =>
+            {
+                var maximum = ScoreValue.FromUnits(request.Snapshot.ItemProjections[item.ItemId]
+                    .GetProperty("maxScore")
+                    .GetInt32());
+                return new GradeItemResultV1(
+                    item.ItemId,
+                    GradeItemState.Graded,
+                    maximum,
+                    maximum,
+                    [$"ai-request:{request.RequestId:N}"],
+                    ReviewMethod.AIReview,
+                    "ai-review",
+                    "1",
+                    "Controlled AI review",
+                    ProviderKey);
+            }).ToArray();
+            var result = new GradeResultV1(
+                GradingContractVersions.GradeResult,
+                "final",
+                ScoreValue.Sum(items.Select(item => item.Score!.Value)),
+                ScoreValue.Sum(items.Select(item => item.MaxScore)),
+                items,
+                [$"ai-request:{request.RequestId:N}"],
+                "Controlled AI review");
+            return ValueTask.FromResult(new AIReviewProviderResponseV1(
+                1,
+                request.RequestId,
+                request.GradingExecutionId,
+                request.GradeRoundId,
+                request.ReviewStageId,
+                request.ExecutionSnapshotHash,
+                request.ProviderKey,
+                request.ProviderPolicyVersion,
+                "controlled-model",
+                "1",
+                result));
         }
     }
 
@@ -873,7 +1952,13 @@ public sealed class AssessmentGradingRuntimeTests
             AssessmentAuthoringService authoring,
             AssessmentGradingRuntimeService runtime,
             GradeReleaseService release,
+            GradeResultReleaseScheduleService releaseSchedules,
             AssessmentGradebookProjectionService gradebook,
+            PeerReviewAssignmentService peerReviews,
+            IGradingExecutionOrchestrator orchestrator,
+            AIReviewProviderRegistry aiProviders,
+            ControlledAIReviewProvider aiProvider,
+            MutableTimeProvider clock,
             Guid tenantId,
             Guid courseId,
             Guid assessmentId,
@@ -889,7 +1974,13 @@ public sealed class AssessmentGradingRuntimeTests
             Authoring = authoring;
             Runtime = runtime;
             Release = release;
+            ReleaseSchedules = releaseSchedules;
             Gradebook = gradebook;
+            PeerReviews = peerReviews;
+            Orchestrator = orchestrator;
+            AIProviders = aiProviders;
+            AIProvider = aiProvider;
+            Clock = clock;
             TenantId = tenantId;
             CourseId = courseId;
             AssessmentId = assessmentId;
@@ -906,7 +1997,13 @@ public sealed class AssessmentGradingRuntimeTests
         public AssessmentAuthoringService Authoring { get; }
         public AssessmentGradingRuntimeService Runtime { get; }
         public GradeReleaseService Release { get; }
+        public GradeResultReleaseScheduleService ReleaseSchedules { get; }
         public AssessmentGradebookProjectionService Gradebook { get; }
+        public PeerReviewAssignmentService PeerReviews { get; }
+        public IGradingExecutionOrchestrator Orchestrator { get; }
+        public AIReviewProviderRegistry AIProviders { get; }
+        public ControlledAIReviewProvider AIProvider { get; }
+        public MutableTimeProvider Clock { get; }
         public Guid TenantId { get; }
         public Guid CourseId { get; }
         public Guid AssessmentId { get; }
@@ -953,16 +2050,29 @@ public sealed class AssessmentGradingRuntimeTests
             var instructorHandler = new InstructorReviewStageHandler();
             var automatedHandler = new QuizAutomatedReviewStageHandler(quizAdapter);
             var codeAdapter = new CodeAssessmentTypeAdapter(new PassingCodeExecutor());
-            IReviewStageHandler[] handlers = [instructorHandler, automatedHandler, new CodeAutomatedReviewStageHandler(codeAdapter)];
+            var aiProvider = new ControlledAIReviewProvider();
+            var aiProviders = new AIReviewProviderRegistry([aiProvider]);
+            IReviewStageHandler[] handlers =
+            [
+                instructorHandler,
+                new SelfReviewStageHandler(),
+                new PeerReviewStageHandler(),
+                new AIReviewStageHandler(),
+                automatedHandler,
+                new CodeAutomatedReviewStageHandler(codeAdapter),
+            ];
             var adapters = new AssessmentTypeAdapterResolver(registry, [quizAdapter, codeAdapter]);
             var policies = new AssessmentExecutionPolicyResolver(registry);
             var stages = new ReviewStageHandlerResolver(registry, handlers);
-            var outbox = new AcademicOutboxWriter(context, [new RouteOnlyReleaseConsumer()]);
+            var outbox = new AcademicOutboxWriter(
+                context,
+                [new RouteOnlyReleaseConsumer(), new RouteOnlyAIReviewConsumer()]);
             var authoring = new AssessmentAuthoringService(
                 context,
                 adapters,
                 policies,
                 stages,
+                aiProviders,
                 handlers,
                 outbox,
                 NullLogger<AssessmentAuthoringService>.Instance);
@@ -986,9 +2096,7 @@ public sealed class AssessmentGradingRuntimeTests
                     MaxAttempts: 1,
                     ContentCompletionMode: options.CompletionMode,
                     ResultReleaseMode: options.ReleaseMode,
-                    ReviewConfigurationCanonicalJson: options.ContentType == ProgramContentType.Code &&
-                        options.ReviewMethods.HasFlag(ReviewMethods.InstructorReview)
-                        ? "{\"schemaVersion\":1,\"instructor\":{\"requireOverrideReason\":false}}" : null));
+                    ReviewConfigurationCanonicalJson: ReviewConfiguration(options)));
             saved.IsSuccess.Should().BeTrue();
             var assessment = await context.Set<Assessment>().SingleAsync();
 
@@ -1040,15 +2148,33 @@ public sealed class AssessmentGradingRuntimeTests
 
             var gradebook = new AssessmentGradebookProjectionService(context, outbox);
             var sink = new OfficialGradingFinalizationSink(context, outbox, gradebook);
-            var orchestrator = new GradingExecutionOrchestrator(context, adapters, stages, sink);
+            var orchestrator = new GradingExecutionOrchestrator(context, adapters, stages, sink, outbox);
             var runtime = new AssessmentGradingRuntimeService(context, orchestrator, authoring, sink);
             var release = new GradeReleaseService(context, outbox, sink);
+            var clock = new MutableTimeProvider(DateTimeOffset.UtcNow.AddHours(-1));
+            var releaseSchedules = new GradeResultReleaseScheduleService(
+                context,
+                outbox,
+                release,
+                clock,
+                NullLogger<GradeResultReleaseScheduleService>.Instance);
+            var peerReviews = new PeerReviewAssignmentService(
+                context,
+                orchestrator,
+                outbox,
+                NullLogger<PeerReviewAssignmentService>.Instance);
             return new RuntimeHarness(
                 context,
                 authoring,
                 runtime,
                 release,
+                releaseSchedules,
                 gradebook,
+                peerReviews,
+                orchestrator,
+                aiProviders,
+                aiProvider,
+                clock,
                 tenantId,
                 courseId,
                 assessment.Id,
@@ -1091,7 +2217,71 @@ public sealed class AssessmentGradingRuntimeTests
                 .Select(message => message.EventType)
                 .ToArrayAsync();
 
+        public async Task DispatchAIReviewAsync(Guid messageId)
+        {
+            var message = await Context.Set<AcademicOutboxMessage>()
+                .SingleAsync(value => value.Id == messageId && value.EventType == "ai-review-requested");
+            using var services = new ServiceCollection()
+                .AddSingleton<IGradingExecutionOrchestrator>(Orchestrator)
+                .BuildServiceProvider();
+            var consumer = new AIReviewRequestConsumer(AIProviders, services);
+            await consumer.ConsumeAsync(new AcademicOutboxEvent(
+                message.Id,
+                message.TenantId,
+                message.EventType,
+                message.EventSchemaVersion,
+                message.PayloadCanonicalJson,
+                message.PayloadHash,
+                message.OccurredAt), default);
+        }
+
         public ValueTask DisposeAsync() => Context.DisposeAsync();
+
+        private static string? ReviewConfiguration(RuntimeOptions options)
+        {
+            if (!options.ReviewMethods.HasFlag(ReviewMethods.SelfReview) &&
+                !options.ReviewMethods.HasFlag(ReviewMethods.PeerReview) &&
+                !options.ReviewMethods.HasFlag(ReviewMethods.AIReview) &&
+                !options.ReviewMethods.HasFlag(ReviewMethods.InstructorReview))
+            {
+                return null;
+            }
+
+            return JsonSerializer.Serialize(new
+            {
+                schemaVersion = 1,
+                self = options.ReviewMethods.HasFlag(ReviewMethods.SelfReview)
+                    ? new { instructions = "Assess your response.", requireFeedback = true }
+                    : null,
+                peer = options.ReviewMethods.HasFlag(ReviewMethods.PeerReview)
+                    ? new
+                    {
+                        reviewsPerReviewer = 1,
+                        reviewsRequiredPerSubmission = 1,
+                        minimumReviewsToFinalize = 1,
+                        aggregation = "mean",
+                        claimLeaseMinutes = 30,
+                        evidenceWindowMinutes = 60,
+                        onInsufficientEvidence = "await-instructor-resolution",
+                    }
+                    : null,
+                ai = options.ReviewMethods.HasFlag(ReviewMethods.AIReview)
+                    ? new { providerKey = ControlledAIReviewProvider.ProviderKey, policyVersion = "1" }
+                    : null,
+                instructor = options.ReviewMethods.HasFlag(ReviewMethods.InstructorReview)
+                    ? new { requireOverrideReason = false }
+                    : null,
+            }, GradingJson.Options);
+        }
+    }
+
+    private sealed class MutableTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        private DateTimeOffset _utcNow = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Advance(TimeSpan duration) => _utcNow = _utcNow.Add(duration);
     }
 
     private sealed class RouteOnlyReleaseConsumer : IAcademicOutboxConsumer
@@ -1102,6 +2292,16 @@ public sealed class AssessmentGradingRuntimeTests
 
         public Task ConsumeAsync(AcademicOutboxEvent message, CancellationToken cancellationToken) =>
             throw new NotSupportedException("The runtime tests invoke the release command explicitly.");
+    }
+
+    private sealed class RouteOnlyAIReviewConsumer : IAcademicOutboxConsumer
+    {
+        public string Key => "grading.ai-review-request.v1";
+        public IReadOnlySet<string> EventTypes { get; } =
+            new HashSet<string>(StringComparer.Ordinal) { "ai-review-requested" };
+
+        public Task ConsumeAsync(AcademicOutboxEvent message, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("The runtime tests dispatch AI review requests explicitly.");
     }
 
     private sealed class RuntimeTestContext(DbContextOptions<RuntimeTestContext> options)
@@ -1131,6 +2331,7 @@ public sealed class AssessmentGradingRuntimeTests
             new AssessmentsModelConfiguration().Configure(modelBuilder);
             new GradingPersistenceModelConfiguration().Configure(modelBuilder);
             new EnrollmentConfiguration().Configure(modelBuilder.Entity<Enrollment>());
+            new NotificationConfiguration().Configure(modelBuilder.Entity<Notification>());
             modelBuilder.Entity<ProgramContent>(entity =>
             {
                 entity.Ignore(value => value.Program);

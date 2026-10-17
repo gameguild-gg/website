@@ -146,6 +146,36 @@ export class AuthSessionsModule {
 
     return result;
   }
+
+  /**
+   * Name or rename one of the current user's own sessions
+   *
+   * Assigns a user-defined name to one of the current user's own active sessions. The acting user is taken from the authenticated principal, never from the body.
+   */
+  async patchAuthSessionsName(
+    sessionId: string,
+    body: Types.IdentityAuthenticationRenameSessionInput,
+  ): Promise<Result<Types.IdentityAuthenticationSessionSuccessOutput, ApiError>> {
+    const url = `/v1/auth/sessions/${sessionId}/name`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationRenameSessionInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'PATCH',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSessionSuccessOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
 }
 
 export function createAuthSessionsModule(client: ApiClient): AuthSessionsModule {

@@ -138,7 +138,7 @@ public sealed class GradeReleaseService(
             return replay;
         }
 
-        if (expectedSubmissionVersion.HasValue && submission.Version != expectedSubmissionVersion.Value)
+        if (service is null && expectedSubmissionVersion.HasValue && submission.Version != expectedSubmissionVersion.Value)
         {
             throw new InvalidOperationException("The submission version is stale.");
         }
@@ -147,7 +147,8 @@ public sealed class GradeReleaseService(
             .SingleOrDefaultAsync(value => value.AssessmentSubmissionId == submissionId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException("Submission does not have a grading execution.");
-        if (execution.ExecutionContext != ReviewExecutionContext.OfficialSubmission || execution.ActiveGradeRoundId != expectedRoundId)
+        if (execution.ExecutionContext != ReviewExecutionContext.OfficialSubmission ||
+            (service is null && execution.ActiveGradeRoundId != expectedRoundId))
         {
             throw new InvalidOperationException("The expected round is not the active official result.");
         }

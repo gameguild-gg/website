@@ -59,7 +59,7 @@ public class CertificateAnchoringTests
     {
         await using var context = CertificateAnchoringDbContext.Create();
         var anchoring = new RecordingCertificateAnchoring();
-        var service = new CertificateService(context, NullLogger<CertificateService>.Instance, anchoring);
+        var service = new CertificateService(context, NullLogger<CertificateService>.Instance, new NoopLearningAuditEventSink(), anchoring);
         var (templateId, enrollmentId, userId, courseId) = SeedTemplateAndIssue(service, context);
 
         var result = await service.IssueCertificateAsync(templateId, enrollmentId, userId, courseId);
@@ -76,6 +76,7 @@ public class CertificateAnchoringTests
         var service = new CertificateService(
             context,
             NullLogger<CertificateService>.Instance,
+            new NoopLearningAuditEventSink(),
             new ThrowingCertificateAnchoring());
         var (templateId, enrollmentId, userId, courseId) = SeedTemplateAndIssue(service, context);
 
@@ -90,7 +91,7 @@ public class CertificateAnchoringTests
     {
         await using var context = CertificateAnchoringDbContext.Create();
         var anchoring = new RecordingCertificateAnchoring();
-        var service = new CertificateService(context, NullLogger<CertificateService>.Instance, anchoring);
+        var service = new CertificateService(context, NullLogger<CertificateService>.Instance, new NoopLearningAuditEventSink(), anchoring);
         var (templateId, enrollmentId, userId, courseId) = SeedTemplateAndIssue(service, context);
         var issued = await service.IssueCertificateAsync(templateId, enrollmentId, userId, courseId);
 
@@ -108,6 +109,7 @@ public class CertificateAnchoringTests
         var service = new CertificateService(
             context,
             NullLogger<CertificateService>.Instance,
+            new NoopLearningAuditEventSink(),
             new ThrowingCertificateAnchoring());
         var (templateId, enrollmentId, userId, courseId) = SeedTemplateAndIssue(service, context);
         var issued = await service.IssueCertificateAsync(templateId, enrollmentId, userId, courseId);

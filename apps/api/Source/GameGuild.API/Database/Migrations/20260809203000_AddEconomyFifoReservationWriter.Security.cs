@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddEconomyFifoReservationWriter
+public partial class AddEconomyFifoReservationWriter : Migration
 {
     private static void InstallFifoReservationWriter(MigrationBuilder migrationBuilder)
     {

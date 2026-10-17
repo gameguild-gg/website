@@ -16,6 +16,30 @@ export class ComplianceAuditReplayModule {
   constructor(private readonly client: ApiClient) {}
 
   /**
+   * Readable capture alias (issue #169): the same bounded, durably audited
+   *             selection as the POST capture, addressed by query parameters so an investigator can
+   *             link and re-fetch one frozen range. The response is never cacheable.
+   */
+  async getApiAuditReplaySnapshots(query?: { start?: string; end?: string }): Promise<Result<Types.ComplianceAuditAuditReplaySnapshotOutput, ApiError>> {
+    const url = '/api/audit/replay/snapshots';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditReplaySnapshotOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
    *
    * Null tenant context selects global-only rows. SHA256 detects content changes against
@@ -33,6 +57,63 @@ export class ComplianceAuditReplayModule {
       method: 'POST',
       path: url,
       body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditReplaySnapshotOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Reconstructs the chronological incident timeline of one client-held snapshot
+   *             (issue #169). The document is revalidated against every capture invariant and its
+   *             canonical serialization must match the expected digest; otherwise nothing is returned.
+   *
+   * The reconstruction adds per-user journeys and per-session summaries. A digest
+   *             match detects content changes; it does not establish provenance, actor attribution or
+   *             source clock synchronization.
+   */
+  async postApiAuditReplaySnapshotsReconstruct(
+    body: Types.ComplianceAuditReconstructAuditReplayInput,
+  ): Promise<Result<Types.ComplianceAuditAuditReplayReconstructionOutput, ApiError>> {
+    const url = '/api/audit/replay/snapshots:reconstruct';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditReconstructAuditReplayInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditReplayReconstructionOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Readable capture alias (issue #169): the same bounded, durably audited
+   *             selection as the POST capture, addressed by query parameters so an investigator can
+   *             link and re-fetch one frozen range. The response is never cacheable.
+   */
+  async getAdminAuditLogsReplaySnapshots(query?: { start?: string; end?: string }): Promise<Result<Types.ComplianceAuditAuditReplaySnapshotOutput, ApiError>> {
+    const url = '/v1/admin/audit-logs/replay/snapshots';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
       requiresAuth: true,
     });
 
@@ -69,6 +150,39 @@ export class ComplianceAuditReplayModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.ComplianceAuditAuditReplaySnapshotOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Reconstructs the chronological incident timeline of one client-held snapshot
+   *             (issue #169). The document is revalidated against every capture invariant and its
+   *             canonical serialization must match the expected digest; otherwise nothing is returned.
+   *
+   * The reconstruction adds per-user journeys and per-session summaries. A digest
+   *             match detects content changes; it does not establish provenance, actor attribution or
+   *             source clock synchronization.
+   */
+  async postAdminAuditLogsReplaySnapshotsReconstruct(
+    body: Types.ComplianceAuditReconstructAuditReplayInput,
+  ): Promise<Result<Types.ComplianceAuditAuditReplayReconstructionOutput, ApiError>> {
+    const url = '/v1/admin/audit-logs/replay/snapshots:reconstruct';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditReconstructAuditReplayInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditReplayReconstructionOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

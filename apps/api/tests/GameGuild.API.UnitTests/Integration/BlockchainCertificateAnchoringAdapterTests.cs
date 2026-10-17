@@ -33,7 +33,7 @@ public class BlockchainCertificateAnchoringAdapterTests
                 capturedPayload = data;
                 capturedType = type;
             })
-            .ReturnsAsync((Guid userId, string data, string type) => BlockchainCertificateAnchorResult.Success(
+            .ReturnsAsync((Guid _, string data, string _) => BlockchainCertificateAnchorResult.Success(
                 "0xtx", "local", BlockchainCertificateCanonicalizer.ComputeSha256Hex(data), 1L, DateTime.UtcNow));
 
         var certificate = CreateCertificate();
@@ -83,7 +83,7 @@ public class BlockchainCertificateAnchoringAdapterTests
         var blockchain = new Mock<IBlockchainCertificateService>();
         blockchain
             .Setup(service => service.AnchorCertificateAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync((Guid userId, string data, string type) => BlockchainCertificateAnchorResult.Success(
+            .ReturnsAsync((Guid _, string data, string _) => BlockchainCertificateAnchorResult.Success(
                 "0xanchor", "local", BlockchainCertificateCanonicalizer.ComputeSha256Hex(data), 1L, DateTime.UtcNow));
         blockchain
             .Setup(service => service.RevokeCertificateAsync(It.IsAny<string>(), It.IsAny<string>()))

@@ -1,115 +1,55 @@
+using GameGuild.Assets.Security;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Assets.BackgroundServices;
 
 /// <summary>
-/// Background service for garbage collection of orphaned content.
+/// Hosted wrapper that periodically runs asset garbage collection through the
+/// options-driven scoped <see cref="IAssetGarbageCollectionService"/> (which owns
+/// grace period, reference-count double-check, and legal-hold/IsDeletable safety).
 /// </summary>
-public class AssetGarbageCollectionService : BackgroundService
+public sealed class AssetGarbageCollectionService(
+    IServiceScopeFactory scopeFactory,
+    IOptions<AssetGarbageCollectionOptions> options,
+    ILogger<AssetGarbageCollectionService> logger) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<AssetGarbageCollectionService> _logger;
-    private readonly TimeSpan _interval = TimeSpan.FromHours(1);
-    private readonly TimeSpan _gracePeriod = TimeSpan.FromHours(24);
-
-    public AssetGarbageCollectionService(
-        IServiceProvider serviceProvider,
-        ILogger<AssetGarbageCollectionService> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
+    private readonly AssetGarbageCollectionOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Asset Garbage Collection service starting");
+        if (!_options.Enabled)
+        {
+            logger.LogInformation("Asset garbage collection is disabled");
+            return;
+        }
 
+        var delay = TimeSpan.FromHours(Math.Max(1, _options.MinIntervalHours));
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await RunGarbageCollectionAsync(stoppingToken).ConfigureAwait(false);
+                using var scope = scopeFactory.CreateScope();
+                var garbageCollection = scope.ServiceProvider
+                    .GetRequiredService<IAssetGarbageCollectionService>();
+                var result = await garbageCollection.RunGarbageCollectionAsync(stoppingToken)
+                    .ConfigureAwait(false);
+                logger.LogInformation(
+                    "Asset garbage collection cycle: {Processed} processed, {Deleted} deleted, {Skipped} skipped",
+                    result.ItemsProcessed, result.ItemsDeleted, result.ItemsSkipped);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during asset garbage collection");
-                throw;
+                logger.LogError(ex, "Asset garbage collection cycle failed");
             }
 
-            await Task.Delay(_interval, stoppingToken).ConfigureAwait(false);
+            await Task.Delay(delay, stoppingToken).ConfigureAwait(false);
         }
     }
-
-    private async Task RunGarbageCollectionAsync(CancellationToken ct)
-    {
-        using var scope = _serviceProvider.CreateScope();
-        var contentRepository = scope.ServiceProvider.GetRequiredService<IAssetContentRepository>();
-        var storageService = scope.ServiceProvider.GetRequiredService<IAssetStorageService>();
-        var transformedRepository = scope.ServiceProvider.GetRequiredService<ITransformedAssetRepository>();
-
-        // Get candidates for deletion
-        var candidates = await contentRepository.GetGarbageCollectionCandidatesAsync(
-            _gracePeriod,
-            100,
-            ct).ConfigureAwait(false);
-
-        if (candidates.Count == 0)
-        {
-            _logger.LogDebug("No content marked for garbage collection");
-            return;
-        }
-
-        _logger.LogInformation(
-            "Processing {Count} content items for garbage collection",
-            candidates.Count);
-
-        var deleted = 0;
-        var failed = 0;
-
-        foreach (var content in candidates)
-        {
-            try
-            {
-                // Delete transformed versions first
-                await transformedRepository.DeleteBySourceAsync(content.Id, ct).ConfigureAwait(false);
-
-                // Delete from storage
-                await storageService.DeleteAsync(content.BucketName, content.ObjectKey, ct).ConfigureAwait(false);
-
-                content.AddIntegrationEvent(CreateObjectDeletedEvent(content));
-                await contentRepository.DeleteAsync(content.Id, ct).ConfigureAwait(false);
-
-                deleted++;
-
-                _logger.LogDebug(
-                    "Deleted orphaned content {ContentId} (hash: {Hash})",
-                    content.Id, content.ContentHash);
-            }
-            catch (Exception ex)
-            {
-                failed++;
-                _logger.LogWarning(
-                    ex,
-                    "Failed to delete content {ContentId}",
-                    content.Id);
-                throw;
-            }
-        }
-
-        _logger.LogInformation(
-            "Garbage collection completed: {Deleted} deleted, {Failed} failed",
-            deleted, failed);
-    }
-
-    private static AssetObjectDeletedEvent CreateObjectDeletedEvent(AssetContent content) =>
-        new(content.Id, content.ContentHash, content.SizeBytes, "object-storage")
-        {
-            TenantId = content.TenantId ?? DurableIntegrationEventTenants.Platform,
-            ActorId = DurableIntegrationEventActors.System,
-            AggregateType = nameof(AssetContent),
-            AggregateId = content.Id.ToString(),
-            CorrelationId = Guid.NewGuid()
-        };
 }

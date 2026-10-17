@@ -31,6 +31,17 @@ public class PaymentMethodRepository(
             .ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<PaymentMethod>> ListByGatewayIdAsync(string gatewayProvider, string gatewayPaymentMethodId, CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug("Listing payment methods by gateway ID {GatewayPaymentMethodId}", gatewayPaymentMethodId);
+        return await Query
+            .Where(pm => pm.GatewayProvider == gatewayProvider
+                         && pm.GatewayPaymentMethodId == gatewayPaymentMethodId)
+            .OrderByDescending(pm => pm.CreatedAt)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<PaymentMethod?> GetDeletedByGatewayIdAsync(Guid tenantId, string gatewayProvider, string gatewayPaymentMethodId, CancellationToken cancellationToken = default)
     {
         return await Entities

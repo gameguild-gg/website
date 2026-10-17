@@ -248,7 +248,7 @@ public sealed class TeamsControllerTests : IDisposable
     private TeamsController Controller()
     {
         var authorization = new TeamAuthorizationService(_context, _actorAccessor.Object);
-        var sender = new DirectHandlerSender(new TeamEndpointCommandHandler(_context));
+        var sender = new DirectHandlerSender(new TeamEndpointCommandHandler(_context, new NoopTeamsAuditEventSink(), _actorAccessor.Object));
         return new TeamsController(_context, _actorAccessor.Object, authorization, _quotaEnforcer.Object, sender);
     }
 

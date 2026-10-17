@@ -41,6 +41,18 @@ public interface IAssetContentRepository
     Task<IReadOnlyList<AssetContent>> GetPendingModerationAsync(int limit = 100, CancellationToken ct = default);
 
     /// <summary>
+    /// Atomically claims pending/processing content for automated moderation
+    /// (compare-and-set: only one worker wins per item).
+    /// </summary>
+    Task<bool> TryBeginModerationAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets clean-content items awaiting automated moderation
+    /// (Pending or Processing status).
+    /// </summary>
+    Task<IReadOnlyList<AssetContent>> GetPendingModerationQueueAsync(int limit = 100, CancellationToken ct = default);
+
+    /// <summary>
     /// Gets assets eligible for garbage collection.
     /// </summary>
     Task<IReadOnlyList<AssetContent>> GetGarbageCollectionCandidatesAsync(

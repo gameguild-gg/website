@@ -270,7 +270,8 @@ public class SubscriptionQueryAndExternalIdService(
             subscription.ExternalCustomerId,
             billingCycleNumber,
             billingPeriodStart,
-            billingPeriodEnd);
+            billingPeriodEnd,
+            subscription.CreatedByUserId);
     }
 
     public async Task SetExternalCustomerIdAsync(Guid subscriptionId, string externalCustomerId, CancellationToken cancellationToken = default)

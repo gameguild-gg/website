@@ -13,14 +13,30 @@ public class AutoModerationOptions
     public bool Enabled { get; set; } = true;
 
     /// <summary>
+    /// Worker polling interval in seconds.
+    /// </summary>
+    public int ModerationPollingIntervalSeconds { get; set; } = 5;
+
+    /// <summary>
+    /// Consecutive classification failures per content item before the item is
+    /// dead-lettered to NeedsReview (never auto-approved).
+    /// </summary>
+    public int MaxConsecutiveFailures { get; set; } = 3;
+
+    /// <summary>
+    /// Per-item classification timeout in seconds (vLLM lane is slow under load).
+    /// </summary>
+    public int ClassificationTimeoutSeconds { get; set; } = 120;
+
+    /// <summary>
     /// Confidence threshold for auto-approval (0.0-1.0).
     /// </summary>
-    public double AutoApprovalThreshold { get; set; } = 0.95;
+    public double AutoApprovalThreshold { get; set; } = 0.80;
 
     /// <summary>
     /// Confidence threshold for auto-rejection (0.0-1.0).
     /// </summary>
-    public double AutoRejectionThreshold { get; set; } = 0.9;
+    public double AutoRejectionThreshold { get; set; } = 0.75;
 
     /// <summary>
     /// MIME types that require human review regardless of auto-moderation score.

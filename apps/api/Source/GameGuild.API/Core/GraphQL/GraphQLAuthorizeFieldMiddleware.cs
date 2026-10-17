@@ -266,6 +266,15 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
             permissionContext = EffectivePermissionContext.ForResource(
                 userId, tenantId, rule.ResourceType!, resourceId.Value.ToString("D"));
         }
+        else if (rule.IsContentTypeScoped)
+        {
+            // Content-type scoped rules (issues #360/#365/#320) route through the
+            // engine's content-type layer: content-type grants mint the qualified
+            // {ContentType}.{Permission} names checked below, tenant-layer grants still
+            // satisfy the unqualified names (Auto inheritance), DENY-WINS applies.
+            permissionContext = EffectivePermissionContext.ForContentType(
+                userId, tenantId, rule.ContentType!);
+        }
         else
         {
             permissionContext = EffectivePermissionContext.ForTenant(userId, tenantId);
@@ -280,10 +289,23 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
                 return PermissionCheck.Deny("actor_context_unavailable", resourceId);
             }
 
-            var names = keys.Select(key => key.ToString()).ToArray();
+            // Layer-aware satisfaction (content-type scoped rules, issues #360/#365):
+            // each permission key is satisfied by EITHER the content-type qualified name
+            // (the engine's content-type grant layer) OR the unqualified tenant name
+            // (inheritance: a tenant-layer grant satisfies a content-type scoped rule).
+            // The All/Any composition applies across keys, never across a key's names.
+            var contentType = rule.IsContentTypeScoped ? rule.ContentType : null;
+            bool Satisfies(PermissionType key)
+            {
+                var name = key.ToString();
+                return contentType is null
+                    ? permissions.HasPermission(name)
+                    : permissions.HasPermission(name) || permissions.HasPermission($"{contentType}.{name}");
+            }
+
             var granted = rule.Mode == GraphQLAuthorizationMode.Any
-                ? permissions.HasAnyPermission(names)
-                : permissions.HasAllPermissions(names);
+                ? keys.Any(Satisfies)
+                : keys.All(Satisfies);
             return granted
                 ? PermissionCheck.Ok(resourceId)
                 : PermissionCheck.Deny("permission_denied", resourceId);
