@@ -1,6 +1,7 @@
 # Programa de validação e auditoria de capacidades de Quiz + Grading
 
-Status: proposto; pronto para implementação incremental.
+Status: implementado em baseline; matrizes browser e fotografia de capacidades
+continuam evoluindo pelos IDs estáveis deste programa.
 
 Data: 2026-10-17.
 

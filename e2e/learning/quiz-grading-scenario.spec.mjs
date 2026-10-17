@@ -17,13 +17,14 @@ import {
   hasSelfReview,
   selectQuizDefinitions,
 } from "../../apps/web/scripts/quiz-grading-scenario/definitions.mjs";
+import { getValidationCase } from "../../apps/web/scripts/quiz-grading-scenario/capability-catalog.mjs";
 import {
-  evidenceDirectory,
   readManifest,
   recomputeManifestCheckpoint,
   storageStatePath,
   writeManifest,
 } from "../../apps/web/scripts/quiz-grading-scenario/manifest.mjs";
+import { validationEvidenceDirectory } from "../../apps/web/scripts/quiz-grading-scenario/report.mjs";
 import { buildScenarioUrls } from "../../apps/web/scripts/quiz-grading-scenario/urls.mjs";
 
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
@@ -41,7 +42,9 @@ if (!scenarioKey) {
   });
 } else {
   const definition = getScenarioDefinition(scenarioKey);
-  const quizzes = selectQuizDefinitions(definition, requestedQuizKeys);
+  const quizzes = selectQuizDefinitions(definition, requestedQuizKeys).filter(
+    (quiz) => !quiz.validationCaseId,
+  );
 
   for (const quiz of quizzes) {
     test(`${quiz.key}: ${quiz.reviewMethods.join(" -> ")} across its personas`, async ({
@@ -69,10 +72,6 @@ if (!scenarioKey) {
         );
       }
 
-      await mkdir(evidenceDirectory(scenarioKey), {
-        recursive: true,
-        mode: 0o700,
-      });
       const instructor = await createPersonaPage(
         browser,
         manifest,
@@ -593,7 +592,8 @@ async function persist(manifest) {
 }
 
 async function screenshot(page, manifest, quizKey, name) {
-  const directory = `${evidenceDirectory(manifest.definitionKey)}/${quizKey}`;
+  const caseId = getValidationCase(quizKey).id;
+  const directory = `${validationEvidenceDirectory(manifest.runId, caseId)}/screenshots`;
   await mkdir(directory, { recursive: true, mode: 0o700 });
   await page.screenshot({ path: `${directory}/${name}`, fullPage: true });
 }

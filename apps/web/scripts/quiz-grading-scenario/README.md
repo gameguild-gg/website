@@ -43,6 +43,65 @@ The existing single-workflow scenarios remain available, as does
 `collective-automated-instructor` for API verification of one shared group
 submission.
 
+## Capability Validation
+
+The runner also owns three validation-oriented scenarios:
+
+| Scenario                  | Purpose                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `question-type-matrix`    | One quiz for each of the 14 question types and four fill-blank variants         |
+| `lifecycle-access-matrix` | Stable deterministic quizzes for lifecycle, release, and access cases           |
+| `acceptance-lab`          | Review and question-type matrices in one persistent course for human inspection |
+
+Inspect the stable capability catalog without starting the application:
+
+```bash
+pnpm grading:scenario catalog
+pnpm grading:scenario catalog --suite question-type
+pnpm grading:scenario catalog --case QG-ITEM-ESSAY-001
+```
+
+Run one question case or all currently executable question types:
+
+```bash
+pnpm grading:scenario test \
+  --scenario question-type-matrix \
+  --case QG-ITEM-MATCHING-PARTIAL-001 \
+  --fresh
+
+pnpm grading:scenario test \
+  --scenario question-type-matrix \
+  --fresh
+```
+
+`--question-type` accepts a `QuizEntryType` value or a question fixture key.
+Case and type filters may be repeated or comma-separated. Cases that are
+unsupported, need a product decision, or have an external blocker are reported
+with their stable ID and are not treated as passing browser tests.
+In complete matrices, those quizzes stop at their declared maximum checkpoint
+while supported quizzes continue. Currently unkeyed rating, numeric, and
+formula stop at `test-run-ready`; the runner does not add `InstructorReview` as
+an undeclared workaround.
+
+The repository-level profiles are:
+
+```bash
+pnpm grading:validation:contracts # no running application required
+pnpm grading:validation:smoke     # bounded real-persona browser set
+pnpm grading:validation:full      # all executable browser matrices
+pnpm grading:validation:lab       # persistent human exploration course
+```
+
+Every prepare, verify, or test command with catalog cases writes a sanitized
+candidate report to:
+
+```text
+apps/web/test-results/quiz-grading-validation/<run-id>/
+```
+
+See `docs/testing/quiz-grading/README.md` for status semantics, evidence rules,
+and the reviewed product snapshot.
+
 ## Manual Testing
 
 Prepare the complete course for instructor-only authoring and Test Run work:
@@ -130,10 +189,11 @@ When a full matrix manifest already exists, `--quiz` selects which browser
 tests run without rebuilding the course. Without an existing manifest,
 `--quiz` also determines which quizzes are provisioned.
 
-Screenshots are grouped by quiz under:
+Screenshots are grouped by stable case ID and referenced by the candidate
+report under:
 
 ```text
-apps/web/test-results/quiz-grading-scenarios/review-matrix/evidence/<quiz-key>/
+apps/web/test-results/quiz-grading-validation/<run-id>/evidence/<case-id>/screenshots/
 ```
 
 Playwright traces are retained on failure. The runner preserves the scenario
