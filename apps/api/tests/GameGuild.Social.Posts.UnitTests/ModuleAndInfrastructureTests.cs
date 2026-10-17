@@ -125,7 +125,7 @@ public class PostsControllerConstructorTests
     [Fact]
     public void PostCommentsController_CanBeInstantiated()
     {
-        var sut = new PostCommentsController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>(), Mock.Of<ISender>());
+        var sut = new PostCommentsController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>(), Mock.Of<ISender>(), Mock.Of<ISocialMediaAssetService>());
         sut.Should().NotBeNull();
     }
 
