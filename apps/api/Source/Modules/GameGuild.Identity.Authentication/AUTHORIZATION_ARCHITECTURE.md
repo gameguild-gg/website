@@ -54,6 +54,53 @@ The native first-factor challenge now continues through CSRF-protected web enrol
 
 # Authorization Architecture Documentation
 
+## 2026-10-14 settings-based MFA enrollment and lost-device recovery checkpoint — #838
+
+Enrollment at sign-in is removed. `POST /v1/auth/mfa/sign-in/enrollment`
+(`AuthController.StartMfaSignInEnrollment`, its command, handler and DTOs) is deleted;
+the stale-entry architecture test (`ControllerAuthorizationArchitectureTests`,
+`Allowlist_ContainsNoStaleEntries`) enforces that its allowlist row went with it.
+Authenticated TOTP setup and completion on `MfaController`
+(`POST /v1/auth/mfa/totp:setup` / `POST /v1/auth/mfa/totp:complete`) are the only
+enrollment path. The setup response now carries `expiresAt` from the persisted
+`SetupExpiresAt` (default 10 minutes, `MfaOptions.SetupSessionDurationMinutes`,
+bounded 1–60). The sign-in challenge-completion branch is retained so users already
+mid-enrollment can still finish through `POST /v1/auth/mfa/sign-in/complete`.
+
+Lost-MFA-device recovery is three anonymous endpoints on `MfaRecoveryController`
+(`POST /v1/auth/mfa/recovery:request|continue|confirm`), each reviewed in the host
+allowlist with a justification. Responses are enumeration-safe and generic: `request`
+never reveals account existence, MFA state, or a live request, and applies a
+10-minute per-email-hash rate limit (`IMemoryCache`, sized entries keyed by the
+normalized email digest; raw addresses never enter cache keys). The 7-day cooling-off
+window and status machine are persisted in the `MfaRecoveryRequest` entity; a
+filtered unique index (`ux_mfa_recovery_requests_active_user`) allows one active row
+per user. The flow is user-pull (no scheduler): `continue` exchanges the emailed
+request token after cooldown for a second single-use confirmation token expiring in
+one hour; `confirm` consumes it and disables MFA through the shared disable path
+(secret and backup codes cleared, all tokens revoked, sessions terminated per the
+existing option). Both tokens are stored as SHA-256 hashes with constant-time
+comparison; single-use consumption is the persisted status transition. A successful
+2FA sign-in cancels any live recovery request — proof of possession obsoletes it
+(`SignInMfaService`).
+
+Admin-assisted reset is `POST /v1/admin/users/{userId}/mfa:reset`
+(`AdminMfaController`, class-level `[Authorize]`). The guard runs inside
+`AdminResetUserMfaCommandHandler`: SystemAdmin, or a tenant administrator holding
+`permissions:manage` whose tenant matches the target user's tenant; cross-tenant
+resets are denied otherwise. It reuses the shared disable path, cancels any live
+recovery request, bumps the tenant security version (`ITenantSecurityVersionStore`)
+and writes a `PermissionAuditLog` entry; the acting administrator comes from
+`IActorContextAccessor`, never from the request.
+
+Disable hardening: the `POST /v1/auth/mfa:disable` request field is renamed
+`password` → `code` because it verifies a TOTP confirmation code; the shared disable
+path now revokes all user tokens unconditionally, in addition to the option-gated
+session termination.
+
+Allowlist delta: +3 `MfaRecoveryController` entries, −1
+`AuthController.StartMfaSignInEnrollment`. All changes shipped (#838).
+
 ## 2026-10-08 native limited MFA enrollment checkpoint — #145
 
 The limited enrollment route is bound solely to the persisted first-factor challenge.
@@ -2287,6 +2334,16 @@ enrollment. Successful TOTP confirmation records setup completion. Cancellation
 propagates through the verifier and orchestrator.
 New enrollments have a fixed persisted expiration which failed attempts cannot
 extend; legacy pending rows use the prior timestamp fallback.
+
+Lost-device recovery requests are DB-backed `MfaRecoveryRequest` rows with check
+constraints on cooldown ordering, status and token-shape; a filtered unique index
+allows one active request per user. Both emailed tokens are opaque 32-byte values
+stored as SHA-256 hashes and compared in constant time; consumption is the persisted
+status transition, and unknown/expired/consumed tokens share one generic denial.
+Recovery start is enumeration-safe and rate-limited per email hash; the shared
+disable path performs the actual reset. A successful second-factor sign-in cancels
+any live recovery request, and the admin-assisted reset cancels one while bumping
+the tenant security version and writing a permission audit entry (#838).
 
 ### Polymorphic Password Entry Point
 

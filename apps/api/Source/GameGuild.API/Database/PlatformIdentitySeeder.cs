@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using GameGuild.Identity.Tenants;
+using GameGuild.Identity.Authentication;
 
 namespace GameGuild.API.Database;
 
@@ -14,6 +15,7 @@ internal sealed record PlatformIdentitySeedOptions(
     string TenantSlug,
     string TenantDescription,
     string AdminTenantRole,
+    string? AdminTotpSecret = null,
     bool ForcePasswordReset = true);
 
 internal sealed record PlatformIdentitySeedResult(
@@ -27,6 +29,8 @@ internal static class PlatformIdentitySeeder
         ApplicationDbContext dbContext,
         ILogger? logger,
         PlatformIdentitySeedOptions options,
+        IEncryptionService? encryptionService = null,
+        IUserMfaConfigurationRepository? mfaConfigRepository = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
@@ -42,6 +46,33 @@ internal static class PlatformIdentitySeeder
                 options,
                 cancellationToken)
             .ConfigureAwait(false);
+
+        if (!string.IsNullOrWhiteSpace(options.AdminTotpSecret) && encryptionService != null && mfaConfigRepository != null)
+        {
+            var mfaConfig = await mfaConfigRepository.GetByUserIdAsync(adminUser.Id, cancellationToken)
+                .ConfigureAwait(false);
+            var isNewConfiguration = mfaConfig is null;
+            mfaConfig ??= new UserMfaConfiguration { Id = Guid.NewGuid(), UserId = adminUser.Id };
+
+            mfaConfig.PreferredMethod = MfaMethod.Totp;
+            mfaConfig.TotpSecretKey = encryptionService.Encrypt(options.AdminTotpSecret);
+            mfaConfig.IsEnabled = true;
+            mfaConfig.IsSetupComplete = true;
+            mfaConfig.SetupExpiresAt = null;
+            mfaConfig.QrCodeSetupData = null;
+            mfaConfig.UpdatedAt = SystemClock.UtcNow;
+
+            if (isNewConfiguration)
+            {
+                await mfaConfigRepository.CreateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
+            }
+
+            logger?.LogInformation("Seeded deterministic TOTP secret for administrator: {Email}", LogRedaction.MaskEmail(options.AdminEmail));
+        }
 
         return new PlatformIdentitySeedResult(adminUser, tenant, membership);
     }

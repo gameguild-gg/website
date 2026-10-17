@@ -511,35 +511,6 @@ export class AuthModule {
   }
 
   /**
-   * Provision the first TOTP factor using only the limited first-factor challenge.
-   *
-   * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
-   */
-  async postAuthMfaSignInEnrollment(
-    body: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput,
-  ): Promise<Result<Types.IdentityAuthenticationMfaSignInEnrollmentOutput, ApiError>> {
-    const url = '/v1/auth/mfa/sign-in/enrollment';
-
-    // Validate request body
-    const validatedBody = safeParse(Types.IdentityAuthenticationStartMfaSignInEnrollmentInputSchema, body, 'request');
-
-    const result = await this.client.request({
-      method: 'POST',
-      path: url,
-      body: validatedBody,
-      requiresAuth: false,
-    });
-
-    // Validate response
-    if (result.ok) {
-      const validatedData = safeParse(Types.IdentityAuthenticationMfaSignInEnrollmentOutputSchema, result.data, 'response');
-      return { ok: true, data: validatedData };
-    }
-
-    return result;
-  }
-
-  /**
    * Discover federation providers for an email domain
    *
    * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.

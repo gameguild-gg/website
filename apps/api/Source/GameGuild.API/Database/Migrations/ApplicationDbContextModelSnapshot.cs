@@ -16361,6 +16361,75 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("mfaattempt", "gameguild.authentication");
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.MfaRecoveryRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ConfirmationTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmation_token_expires_at");
+
+                    b.Property<string>("ConfirmationTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("confirmation_token_hash");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CooldownEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cooldown_ends_at");
+
+                    b.Property<string>("RequestTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_token_hash");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_mfa_recovery_requests_active_user")
+                        .HasFilter("status IN ('Pending', 'AwaitingConfirmation')");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_mfa_recovery_requests_tenant_status");
+
+                    b.ToTable("mfa_recovery_requests", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_mfa_recovery_cooldown", "cooldown_ends_at >= requested_at");
+
+                            t.HasCheckConstraint("ck_mfa_recovery_status", "status IN ('Pending', 'AwaitingConfirmation', 'Completed', 'Cancelled', 'Expired')");
+
+                            t.HasCheckConstraint("ck_mfa_recovery_tokens", "(request_token_hash IS NULL AND confirmation_token_hash IS NULL AND confirmation_token_expires_at IS NULL)\nOR (request_token_hash ~ '^[a-f0-9]{64}$')");
+                        });
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")

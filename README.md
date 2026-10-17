@@ -53,8 +53,21 @@ pnpm install
 ### 2. Start local infrastructure
 
 ```bash
-docker compose -f compose.yaml up -d postgres redis garage
+docker compose -f compose.yaml up -d postgres redis garage garage-init openinary
 ```
+
+This also provisions the Openinary asset-CDN container (`http://localhost:3003`).
+It stores originals in the local Garage bucket and auto-creates an admin + API
+key on first boot. To enable asset uploads through it:
+
+```bash
+# one-time: copy the generated API key from the first-boot log
+docker compose -f compose.yaml logs openinary | grep "API Key:"
+# paste it into .env as OPENINARY_UPLOAD_API_KEY=... (and Assets__Openinary__ApiKey for
+# local `pnpm dev` runs), then restart the api if it's running
+```
+
+Without the key everything else works — uploads just fall back to the S3 path.
 
 ### 3. Restore and build the API
 

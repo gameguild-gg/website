@@ -44,7 +44,6 @@ export function SignInForm({
     error,
     clearError,
     mfaChallenge,
-    mfaEnrollmentBackupCodes,
     clearMfa,
   } = useAuth();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -122,7 +121,7 @@ export function SignInForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {providers && !mfaChallenge && !mfaEnrollmentBackupCodes?.length && (
+          {providers && !mfaChallenge && (
             <>
               <div className="mb-6">{providers}</div>
               <div className="flex w-full items-center gap-3 text-xs text-slate-400">
@@ -132,28 +131,7 @@ export function SignInForm({
               </div>
             </>
           )}
-          {mfaEnrollmentBackupCodes?.length ? (
-            <FieldGroup>
-              <FieldDescription>
-                Save these recovery codes securely. They are shown once and each
-                code can be used once.
-              </FieldDescription>
-              <ul aria-label="Recovery codes" className="space-y-1 font-mono">
-                {mfaEnrollmentBackupCodes.map((code) => (
-                  <li key={code}>{code}</li>
-                ))}
-              </ul>
-              <Button
-                type="button"
-                onClick={() => {
-                  clearMfa();
-                  window.location.href = redirectTo;
-                }}
-              >
-                I saved my codes — continue
-              </Button>
-            </FieldGroup>
-          ) : mfaChallenge ? (
+          {mfaChallenge ? (
             <form
               method="post"
               onSubmit={(event) => {
@@ -169,22 +147,22 @@ export function SignInForm({
                   after signing in.
                 </FieldDescription>
                 {mfaChallenge.availableMethods.includes("BackupCode") && (
-                  <Field>
-                    <FieldLabel htmlFor="mfa-method">
-                      Verification method
-                    </FieldLabel>
-                    <select
-                      id="mfa-method"
-                      name="method"
-                      defaultValue="Totp"
-                      disabled={isLoading}
-                      className="h-10 rounded border border-white/10 bg-slate-900 px-3"
-                    >
-                      <option value="Totp">Authenticator app</option>
-                      <option value="BackupCode">Recovery code</option>
-                    </select>
-                  </Field>
-                )}
+                    <Field>
+                      <FieldLabel htmlFor="mfa-method">
+                        Verification method
+                      </FieldLabel>
+                      <select
+                        id="mfa-method"
+                        name="method"
+                        defaultValue="Totp"
+                        disabled={isLoading}
+                        className="h-10 rounded border border-white/10 bg-slate-900 px-3"
+                      >
+                        <option value="Totp">Authenticator app</option>
+                        <option value="BackupCode">Recovery code</option>
+                      </select>
+                    </Field>
+                  )}
                 <Field>
                   <FieldLabel htmlFor="mfa-code">
                     Authentication code
@@ -209,6 +187,7 @@ export function SignInForm({
                   type="button"
                   variant="ghost"
                   disabled={isLoading}
+                  className="text-slate-200 hover:bg-white/10 hover:text-white"
                   onClick={() => {
                     clearMfa();
                   }}

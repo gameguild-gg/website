@@ -103,13 +103,12 @@ describe('native limited MFA through Next handlers', () => {
     const response = await createHandlers(config).POST(request('signin/credentials', { mfaToken, method: 'Totp', code: '123456', redirect: false }));
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.mfaEnrollmentBackupCodes).toEqual(['one-time-code']);
+    expect(body).not.toHaveProperty('mfaEnrollmentBackupCodes');
     expect(body).not.toHaveProperty('mfaToken');
     const cookie = response.headers.get('set-cookie')!;
     const sessionToken = decodeURIComponent(cookie.match(/__me\.session-token=([^;]+)/)![1]);
     const jwt = await decodeJWT({ token: sessionToken, secret: config.secret });
     expect(jwt?.accessToken).toBe('verified-access');
-    expect(jwt).not.toHaveProperty('mfaEnrollmentBackupCodes');
     expect(JSON.stringify(jwt)).not.toContain('one-time-code');
     expect(JSON.stringify(jwt)).not.toContain(mfaToken);
   });

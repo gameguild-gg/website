@@ -298,40 +298,20 @@ describe("SignInForm MFA", () => {
     });
   });
 
-  it("never offers enrollment or reveals a TOTP secret in the sign-in challenge", () => {
+  it("gives challenge buttons explicit light-on-dark text (light-mode contrast)", () => {
     mockAuth.mfaChallenge = {
       mfaToken: "x".repeat(43),
-      availableMethods: ["TOTP"],
+      availableMethods: ["TOTP", "BackupCode"],
     };
-    mockAuth.startMfaEnrollment.mockResolvedValue({
-      success: true,
-      secretKey: "LOCAL-AUTHENTICATOR-KEY",
-      expiresAt: new Date(Date.now() + 300000).toISOString(),
-      qrCodeUri: "otpauth://totp/Example",
-    });
     renderWithUser(<SignInForm />);
 
-    // Issue #838: enrollment lives exclusively in workspace settings; the
-    // login challenge must not expose the raw provisioning secret.
+    // Dark card + light-mode variant tokens = white-on-white without these overrides.
+    expect(screen.getByLabelText("Verification method")).toHaveClass(
+      "border-white/10",
+    );
     expect(
-      screen.queryByRole("button", { name: "Set up authenticator" }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText("LOCAL-AUTHENTICATOR-KEY")).not.toBeInTheDocument();
-    expect(mockAuth.startMfaEnrollment).not.toHaveBeenCalled();
-    expect(mockAuth.signIn).not.toHaveBeenCalled();
-
-    // The challenge still accepts an existing authenticator code.
-    expect(screen.getByLabelText("Authentication code")).toBeInTheDocument();
-  });
-
-  it("displays recovery codes once and offers acknowledgment", () => {
-    mockAuth.mfaEnrollmentBackupCodes = ["ONE-TIME-RECOVERY"];
-    renderWithUser(<SignInForm />);
-    expect(screen.getByText("ONE-TIME-RECOVERY")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "I saved my codes — continue" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Start sign-in again" }),
+    ).toHaveClass("text-slate-200");
   });
 });
 

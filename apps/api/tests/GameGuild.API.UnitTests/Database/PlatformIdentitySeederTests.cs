@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using GameGuild.API.Database;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
+using GameGuild.Identity.Authentication;
+using Moq;
 
 namespace GameGuild.API.UnitTests.Database;
 
@@ -166,6 +168,55 @@ public sealed class PlatformIdentitySeederTests
 
         await nullContext.Should().ThrowAsync<ArgumentNullException>();
         await nullOptions.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task SeedAsync_ProvisionsTotpMfaConfiguration_WhenSecretIsProvided()
+    {
+        await using var dbContext = CreateDbContext();
+        var options = CreateOptions() with { AdminTotpSecret = "SECRET123" };
+
+        var mockEncryption = new Mock<IEncryptionService>();
+        mockEncryption.Setup(x => x.Encrypt("SECRET123")).Returns("ENCRYPTED_SECRET");
+
+        var mockMfaRepo = new Mock<IUserMfaConfigurationRepository>();
+        mockMfaRepo.Setup(x => x.GetByUserIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMfaConfiguration)null!);
+
+        var result = await PlatformIdentitySeeder.SeedAsync(
+            dbContext,
+            NullLogger<ApplicationDbContext>.Instance,
+            options,
+            mockEncryption.Object,
+            mockMfaRepo.Object);
+
+        mockMfaRepo.Verify(x => x.CreateAsync(It.Is<UserMfaConfiguration>(c =>
+            c.UserId == result.AdminUser.Id &&
+            c.TotpSecretKey == "ENCRYPTED_SECRET" &&
+            c.IsEnabled == true &&
+            c.IsSetupComplete == true &&
+            c.PreferredMethod == MfaMethod.Totp
+        ), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SeedAsync_DoesNotProvisionMfa_WhenSecretIsMissing()
+    {
+        await using var dbContext = CreateDbContext();
+        var options = CreateOptions(); // AdminTotpSecret is null
+
+        var mockEncryption = new Mock<IEncryptionService>();
+        var mockMfaRepo = new Mock<IUserMfaConfigurationRepository>();
+
+        await PlatformIdentitySeeder.SeedAsync(
+            dbContext,
+            NullLogger<ApplicationDbContext>.Instance,
+            options,
+            mockEncryption.Object,
+            mockMfaRepo.Object);
+
+        mockMfaRepo.Verify(x => x.CreateAsync(It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockMfaRepo.Verify(x => x.UpdateAsync(It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     public static TheoryData<string> InvalidOptions => new()

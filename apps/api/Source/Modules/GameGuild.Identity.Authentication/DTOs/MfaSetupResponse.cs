@@ -15,6 +15,11 @@ public class MfaSetupResponse
     
     public string? QrCodeUri { get; set; }
     
+    /// <summary>
+    ///     When the pending TOTP setup session expires
+    /// </summary>
+    public DateTimeOffset ExpiresAt { get; set; }
+    
     public string[] BackupCodes { get; set; } = [];
 
     public static MfaSetupResponse Success(string secretKey, string qrCodeData) { return new MfaSetupResponse { IsSuccess = true, SecretKey = secretKey, QrCodeData = qrCodeData }; }
