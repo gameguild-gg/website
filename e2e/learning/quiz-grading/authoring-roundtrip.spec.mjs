@@ -49,29 +49,20 @@ if (!scenarioKey) {
       try {
         const url = manifest.urls.quizzes[quiz.key].contentEditor;
         await instructor.page.goto(url, { waitUntil: "domcontentloaded" });
-        await expect(
-          instructor.page
-            .getByRole("heading", {
-              name: new RegExp(quiz.title, "i"),
-            })
-            .first(),
-        ).toBeVisible({ timeout: 60_000 });
-        await expect(
-          instructor.page
-            .getByDisplayValue(validationCase.fixture.entry.stem, {
-              exact: true,
-            })
-            .first(),
-        ).toBeVisible({ timeout: 60_000 });
+        await expectAuthoredProjection(
+          instructor.page,
+          manifest,
+          quiz,
+          validationCase,
+        );
 
         await instructor.page.reload({ waitUntil: "domcontentloaded" });
-        await expect(
-          instructor.page
-            .getByDisplayValue(validationCase.fixture.entry.stem, {
-              exact: true,
-            })
-            .first(),
-        ).toBeVisible({ timeout: 60_000 });
+        await expectAuthoredProjection(
+          instructor.page,
+          manifest,
+          quiz,
+          validationCase,
+        );
         await captureValidationEvidence(
           instructor.page,
           manifest,
@@ -84,4 +75,20 @@ if (!scenarioKey) {
       }
     });
   }
+}
+
+async function expectAuthoredProjection(page, manifest, quiz, validationCase) {
+  await expect(page.getByRole("textbox", { name: "Lesson title" })).toHaveValue(
+    `[${manifest.marker}] ${quiz.title}`,
+    { timeout: 60_000 },
+  );
+
+  await page.getByRole("button", { name: "Edit question 1" }).click();
+  const editor = page.getByRole("dialog", { name: "Quiz Builder" });
+  await expect(editor).toBeVisible({ timeout: 60_000 });
+  await expect(editor.getByLabel("Question")).toHaveValue(
+    validationCase.fixture.entry.stem,
+  );
+  await editor.getByRole("button", { name: "Close quiz editor" }).click();
+  await expect(editor).toHaveCount(0);
 }
