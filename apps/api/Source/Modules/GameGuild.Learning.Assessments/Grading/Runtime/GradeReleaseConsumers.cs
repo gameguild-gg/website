@@ -1,6 +1,7 @@
 using System.Text.Json;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Persistence;
+using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
 using GameGuild.Learning.Grading.Contracts;
 using GameGuild.Notifications;
@@ -28,7 +29,10 @@ public sealed class GradeReleaseNotificationConsumer(
         }
 
         var payload = Parse(message);
-        var recipients = await ResolveRecipientsAsync(context, payload.ParticipantEnrollmentIds, cancellationToken)
+        var recipients = await GradeReleaseRecipientResolver.ResolveUserIdsAsync(
+                context,
+                payload.ParticipantEnrollmentIds,
+                cancellationToken)
             .ConfigureAwait(false);
         foreach (var recipientId in recipients)
         {
@@ -84,34 +88,6 @@ public sealed class GradeReleaseNotificationConsumer(
         return payload;
     }
 
-    internal static async Task<Guid[]> ResolveRecipientsAsync(
-        IApplicationDbContext context,
-        IReadOnlyCollection<Guid> enrollmentIds,
-        CancellationToken cancellationToken) =>
-        (await ResolveRecipientEnrollmentsAsync(context, enrollmentIds, cancellationToken).ConfigureAwait(false))
-        .Select(value => value.UserId)
-        .Distinct()
-        .ToArray();
-
-    internal static async Task<GradeReleaseRecipient[]> ResolveRecipientEnrollmentsAsync(
-        IApplicationDbContext context,
-        IReadOnlyCollection<Guid> enrollmentIds,
-        CancellationToken cancellationToken)
-    {
-        var distinctIds = enrollmentIds.Distinct().ToArray();
-        var enrollments = await context.Set<Enrollment>()
-            .AsNoTracking()
-            .Where(value => distinctIds.Contains(value.Id))
-            .Select(value => new GradeReleaseRecipient(value.Id, value.UserId))
-            .ToArrayAsync(cancellationToken)
-            .ConfigureAwait(false);
-        if (enrollments.Length != distinctIds.Length)
-        {
-            throw new InvalidOperationException("A released result references an unknown enrollment.");
-        }
-
-        return enrollments;
-    }
 }
 
 public sealed class GradeReleasePassbackConsumer(
@@ -141,7 +117,7 @@ public sealed class GradeReleasePassbackConsumer(
             throw new InvalidOperationException("Only a finalized grade round can be passed back.");
         }
 
-        var recipients = await GradeReleaseNotificationConsumer.ResolveRecipientEnrollmentsAsync(
+        var recipients = await GradeReleaseRecipientResolver.ResolveAsync(
                 context,
                 payload.ParticipantEnrollmentIds,
                 cancellationToken)
@@ -262,6 +238,75 @@ internal sealed record GradeResultReleasedPayload(
     Guid[] ParticipantEnrollmentIds);
 
 internal sealed record GradeReleaseRecipient(Guid EnrollmentId, Guid UserId);
+
+internal static class GradeReleaseRecipientResolver
+{
+    public static async Task<Guid[]> ResolveUserIdsAsync(
+        IApplicationDbContext context,
+        IReadOnlyCollection<Guid> enrollmentIds,
+        CancellationToken cancellationToken) =>
+        (await ResolveAsync(context, enrollmentIds, cancellationToken).ConfigureAwait(false))
+        .Select(value => value.UserId)
+        .Distinct()
+        .ToArray();
+
+    public static async Task<GradeReleaseRecipient[]> ResolveAsync(
+        IApplicationDbContext context,
+        IReadOnlyCollection<Guid> enrollmentIds,
+        CancellationToken cancellationToken)
+    {
+        var distinctIds = enrollmentIds.Distinct().ToArray();
+        var resolved = new List<GradeReleaseRecipient>();
+        if (IsMapped<Enrollment>(context))
+        {
+            resolved.AddRange(await context.Set<Enrollment>()
+                .AsNoTracking()
+                .Where(value => distinctIds.Contains(value.Id))
+                .Select(value => new GradeReleaseRecipient(value.Id, value.UserId))
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false));
+        }
+
+        if (IsMapped<ProgramEnrollment>(context))
+        {
+            resolved.AddRange(await context.Set<ProgramEnrollment>()
+                .AsNoTracking()
+                .Where(value => distinctIds.Contains(value.Id))
+                .Select(value => new GradeReleaseRecipient(value.Id, value.UserId))
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false));
+        }
+
+        if (IsMapped<ProgramUser>(context))
+        {
+            resolved.AddRange(await context.Set<ProgramUser>()
+                .AsNoTracking()
+                .Where(value => distinctIds.Contains(value.Id))
+                .Select(value => new GradeReleaseRecipient(value.Id, value.UserId))
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false));
+        }
+
+        var recipientsByEnrollment = resolved
+            .GroupBy(value => value.EnrollmentId)
+            .ToDictionary(
+                value => value.Key,
+                value => value.Select(recipient => recipient.UserId).Distinct().ToArray());
+        if (distinctIds.Length == 0 ||
+            distinctIds.Any(id =>
+                !recipientsByEnrollment.TryGetValue(id, out var recipientIds) || recipientIds.Length != 1))
+        {
+            throw new InvalidOperationException("A released result references an unknown or ambiguous enrollment.");
+        }
+
+        return distinctIds
+            .Select(id => new GradeReleaseRecipient(id, recipientsByEnrollment[id][0]))
+            .ToArray();
+    }
+
+    private static bool IsMapped<TEntity>(IApplicationDbContext context) where TEntity : class =>
+        context is not DbContext dbContext || dbContext.Model.FindEntityType(typeof(TEntity)) is not null;
+}
 
 internal sealed record CanonicalReleasedRound(
     Guid SubmissionId,

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Persistence;
-using GameGuild.Learning.Enrollments;
 using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -281,22 +280,13 @@ public sealed class GradeReleaseService(
         CancellationToken cancellationToken)
     {
         var distinctEnrollmentIds = enrollmentIds.Distinct().ToArray();
-        var recipientIds = await context.Set<Enrollment>()
-            .AsNoTracking()
-            .Where(value => distinctEnrollmentIds.Contains(value.Id))
-            .Select(value => value.UserId)
-            .Distinct()
+        var recipientIds = (await GradeReleaseRecipientResolver.ResolveUserIdsAsync(
+                context,
+                distinctEnrollmentIds,
+                cancellationToken)
+            .ConfigureAwait(false))
             .OrderBy(value => value)
-            .ToArrayAsync(cancellationToken)
-            .ConfigureAwait(false);
-        if (recipientIds.Length == 0 ||
-            await context.Set<Enrollment>()
-                .AsNoTracking()
-                .CountAsync(value => distinctEnrollmentIds.Contains(value.Id), cancellationToken)
-                .ConfigureAwait(false) != distinctEnrollmentIds.Length)
-        {
-            throw new InvalidOperationException("A released result references an unknown enrollment.");
-        }
+            .ToArray();
 
         foreach (var recipientId in recipientIds)
         {
