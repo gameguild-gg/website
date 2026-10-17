@@ -16,12 +16,14 @@ public class UserSession
     /// </summary>
     [Required]
     [MaxLength(512)]
+    [AuditSensitive]
     public string RefreshToken { get; set; } = string.Empty;
 
     /// <summary>
     ///     Access token hash (for tracking, not storage)
     /// </summary>
     [MaxLength(128)]
+    [AuditSensitive]
     public string? AccessTokenHash { get; set; }
 
     /// <summary>

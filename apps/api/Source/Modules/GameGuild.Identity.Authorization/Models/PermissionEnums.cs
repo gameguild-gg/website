@@ -727,6 +727,72 @@ public enum PermissionType
     /// </summary>
     Configure = 203,
 
+    /// <summary>
+    ///     Administrative permission to manage tenant members (add, remove, suspend, re-role)
+    ///     and membership invites (issue #294)
+    /// </summary>
+    ManageMembers = 204,
+
+    /// <summary>
+    ///     Administrative permission to create, modify, delete and assign tenant roles
+    ///     (issue #294)
+    /// </summary>
+    ManageRoles = 205,
+
+    /// <summary>
+    ///     Administrative permission to read and change tenant settings, feature flags,
+    ///     business rules and system limits (issue #294)
+    /// </summary>
+    ManageSettings = 206,
+
+    /// <summary>
+    ///     Permission to read audit logs, security events and audit statistics
+    ///     (issue #294; distinct from the content-audit <see cref="Audit"/> action)
+    /// </summary>
+    AuditAccess = 207,
+
+    /// <summary>
+    ///     System permission to manage infrastructure configuration (cache management,
+    ///     signing keys, provider configuration) (issue #386)
+    /// </summary>
+    SystemConfiguration = 208,
+
+    /// <summary>
+    ///     System permission to execute backup, snapshot, restore and event-recovery
+    ///     operations (issue #386)
+    /// </summary>
+    BackupRestore = 209,
+
+    /// <summary>
+    ///     System permission to run data-migration assessments and migrations between
+    ///     providers (issue #386)
+    /// </summary>
+    DataMigration = 210,
+
+    /// <summary>
+    ///     Permission to edit an entity's descriptive metadata without touching its
+    ///     content (titles, tags, SEO fields, classification labels) (issue #333)
+    /// </summary>
+    EditMetadata = 211,
+
+    /// <summary>
+    ///     System permission to execute maintenance operations (cleanup jobs, retention
+    ///     sweeps, index rebuilds) (issue #333)
+    /// </summary>
+    Maintenance = 212,
+
+    /// <summary>
+    ///     System permission to read monitoring telemetry, health probes and operational
+    ///     metrics (issue #333)
+    /// </summary>
+    Monitoring = 213,
+
+    /// <summary>
+    ///     System permission to deploy artifacts and promote releases between
+    ///     environments (issue #333)
+    /// </summary>
+    Deployment = 214,
+
     #endregion
 }
 

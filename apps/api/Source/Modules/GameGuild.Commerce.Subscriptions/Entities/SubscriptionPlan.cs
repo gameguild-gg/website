@@ -118,6 +118,20 @@ public class SubscriptionPlan : EntityBase, ISubscriptionPlan
     public bool IsActive { get; set; } = true;
 
     /// <summary>
+    ///     Commercial classification of the plan (issue #416): free plans are priced at zero and
+    ///     enterprise plans may carry the -1 custom-quote sentinel. Defaults to <c>Paid</c>, which
+    ///     is also the classification of every pre-existing row.
+    /// </summary>
+    public SubscriptionPlanType Type { get; set; } = SubscriptionPlanType.Paid;
+
+    /// <summary>
+    ///     Plan-level annual billing discount in percent (issue #416). Applied when deriving the
+    ///     annual price (<c>monthly x 12</c>) for plans without an explicit annual price or interval
+    ///     price point. The default of 0 keeps the derived price unchanged.
+    /// </summary>
+    public decimal AnnualDiscountPercent { get; set; } = 0m;
+
+    /// <summary>
     ///     Maximum number of users allowed in this plan (null = unlimited)
     /// </summary>
     public int? MaxUsers { get; set; }
@@ -171,13 +185,34 @@ public class SubscriptionPlan : EntityBase, ISubscriptionPlan
     }
 
     /// <summary>
-    ///     Updates pricing information
+    ///     Updates pricing information. Annual discount is optional and defaults to the
+    ///     current value (issue #416). Plan-type pricing invariants are enforced fail-closed.
     /// </summary>
-    public void UpdatePricing(long monthlyPriceInCents, long? annualPriceInCents = null)
+    public void UpdatePricing(long monthlyPriceInCents, long? annualPriceInCents = null, decimal? annualDiscountPercent = null)
     {
+        var discount = annualDiscountPercent ?? AnnualDiscountPercent;
+        SubscriptionPlanPricingRules.Validate(Type, monthlyPriceInCents, annualPriceInCents);
+        SubscriptionPlanPricingRules.ValidateAnnualDiscountPercent(discount);
         MonthlyPriceInCents = monthlyPriceInCents;
         AnnualPriceInCents = annualPriceInCents;
+        AnnualDiscountPercent = discount;
     }
+
+    /// <summary>
+    ///     Reclassifies the plan type (issue #416), validating the existing prices against the
+    ///     target type's invariants before committing the change.
+    /// </summary>
+    public void Reclassify(SubscriptionPlanType type)
+    {
+        SubscriptionPlanPricingRules.Validate(type, MonthlyPriceInCents, AnnualPriceInCents);
+        Type = type;
+    }
+
+    /// <summary>
+    ///     True while this enterprise plan still carries the -1 custom-quote sentinel and is
+    ///     therefore blocked from checkout (issue #416).
+    /// </summary>
+    public bool RequiresCustomQuote() => SubscriptionPlanPricingRules.RequiresCustomQuote(Type, MonthlyPriceInCents);
 
     /// <summary>
     ///     Updates plan limits

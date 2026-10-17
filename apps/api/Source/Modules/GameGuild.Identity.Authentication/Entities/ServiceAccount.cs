@@ -26,6 +26,7 @@ public class ServiceAccount
     /// </summary>
     [Required]
     [MaxLength(256)]
+    [AuditSensitive]
     public string ClientSecretHash { get; set; } = string.Empty;
 
     /// <summary>

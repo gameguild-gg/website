@@ -458,6 +458,15 @@ The Authentication module provides comprehensive authentication, authorization, 
 ### Commands & Queries
 ✅ **ALL IMPLEMENTED** - 30+ ABAC and conditional policy commands with handlers
 
+### Effective-Resolution ABAC Overlay (issue #293)
+✅ **IMPLEMENTED** - `AbacPolicyEvaluator` interprets `AttributeExpression` (JSON
+operator form) and `ConditionExpression` (boolean expression form) on the policy
+entity, and the built-in `AbacPolicyEvaluationExtension` folds matching deny
+policies into every effective-permission resolution (targeted actions subtract
+themselves; untargeted denies subtract everything; ABAC allows never mint grants).
+`TestAbacExpressionCommand` is backed by a real handler validating/evaluating the
+JSON operator form against a hypothetical context.
+
 ### Status
 ✅ **FULLY IMPLEMENTED**: Advanced attribute-based and conditional access control.
 

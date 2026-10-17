@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class RequireConfirmedFragmentReservationSources
+public partial class RequireConfirmedFragmentReservationSources : Migration
 {
     private static void InstallConfirmedFragmentReservationSourceGuard(MigrationBuilder migrationBuilder)
     {

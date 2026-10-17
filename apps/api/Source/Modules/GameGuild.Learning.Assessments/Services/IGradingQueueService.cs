@@ -40,12 +40,13 @@ public sealed record GradingQueueAssessmentDto(
     RubricDto? Rubric);
 
 /// <summary>
-/// One navigable queue entry = one student or group. SubmissionId is the row the grader opens:
-/// the target's LATEST attempt's row (the single row for individuals, the canonical Min(Id)
-/// row for groups; CanonicalSubmissionId mirrors it so clients can address group items by
-/// their canonical id). AssignmentScore/AssignmentPassed are the assignment-level grade from
+/// One navigable queue entry = one student or group. SubmissionId is the target's latest
+/// attempt and CanonicalSubmissionId mirrors it for existing clients. AssignmentScore and
+/// AssignmentPassed are the assignment-level grade from
 /// the target's LATEST GRADED attempt — they persist across resubmissions until a newer
 /// attempt is graded (one grade per assignment; regrades land on a fresh submission).
+/// When the submission has a grading execution, the active round/stage fields are the
+/// authoritative operational state and RequiresStaffReview drives the instructor queue.
 /// </summary>
 public sealed record GradingQueueItemDto(
     Guid SubmissionId,
@@ -62,4 +63,10 @@ public sealed record GradingQueueItemDto(
     string? DisplayName = null,
     Guid? GroupId = null,
     string? GroupName = null,
-    IReadOnlyList<string>? MemberNames = null);
+    IReadOnlyList<string>? MemberNames = null,
+    Guid? ActiveGradeRoundId = null,
+    GradeRoundStatusV1? ActiveGradeRoundStatus = null,
+    Guid? ActiveReviewStageId = null,
+    ReviewMethod? ActiveReviewMethod = null,
+    ReviewStageStatusV1? ActiveReviewStageStatus = null,
+    bool RequiresStaffReview = false);

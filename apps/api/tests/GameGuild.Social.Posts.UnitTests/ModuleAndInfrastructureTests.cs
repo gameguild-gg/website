@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.Assets;
 using GameGuild.CQRS;
 using GameGuild.Social.Assets.SocialMedia;
 using GameGuild.Identity.Context.Actors;
@@ -39,6 +40,7 @@ public class PostsModuleTests
         provider.GetService<IPostContentReferenceService>().Should().NotBeNull();
         provider.GetService<IPostService>().Should().NotBeNull();
         provider.GetService<IPostAnnouncementService>().Should().NotBeNull();
+        provider.GetService<IAssetUsageGuard>().Should().NotBeNull();
     }
 }
 

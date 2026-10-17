@@ -27,7 +27,7 @@ public sealed class UpdateSubscriptionPlanPricingCommandHandler(ISubscriptionPla
         UpdateSubscriptionPlanPricingCommand request,
         CancellationToken cancellationToken)
     {
-        plan.UpdatePricing(request.MonthlyPriceInCents, request.AnnualPriceInCents);
+        plan.UpdatePricing(request.MonthlyPriceInCents, request.AnnualPriceInCents, request.AnnualDiscountPercent);
         return Task.CompletedTask;
     }
 }

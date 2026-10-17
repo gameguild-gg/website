@@ -15,6 +15,7 @@ Resolution always takes an `EffectivePermissionContext`:
 |---|---|---|
 | `UserId` | yes (non-empty) | The acting user. `Guid.Empty` is invalid. |
 | `TenantId` | yes (non-empty) | Tenant scope. Tenant comes from the request context, never from a route/body value. `Guid.Empty` or `null` is invalid. |
+| `ContentType` | no | The content-type layer (issues #360/#365). Standalone (a content-type scoped resolution) or alongside a resource pair; when absent on a resource context, the content type is derived from the resource type (a resource of type `T` is content of content type `T`). Blank values are treated as absent. |
 | `ResourceType` + `ResourceId` | no | The resource layer. Both must be present together or both absent. |
 
 **Fail-closed:** a missing or invalid context (empty user or tenant, half-specified
@@ -40,10 +41,20 @@ warning is logged. Invalid context never falls back to global defaults.
    (`IsGrantInForce`). Only tenant-scoped (resource-unscoped) elevations contribute,
    and `admin:*` is never grantable through elevation. JIT grants remain subject to
    DENY-WINS and are attributed to `PermissionSource.TemporaryElevation`.
-8. **Resource grants** — `ResourceUserPermission` rows for the current user and tenant.
+8. **Content-type grants** (issues #360/#365) — `ContentTypePermissionGrant` rows for
+   the context content type: the tenant default row (`UserId = null`, every user of the
+   tenant for the type) first, then the user-specific row. Each allow entry is minted as
+   the content-type qualified name `{ContentTypeName}.{permission}` — **qualified-only**,
+   so a content-type grant never conveys a tenant-wide (unqualified) permission and never
+   applies to another content type. Deny entries subtract the same qualified name
+   (DENY-WINS). Rows contribute only while active and unexpired, and they are consulted
+   only when the context names the content type explicitly or through its resource type
+   (ct → resource inheritance: the grant applies to every resource of the type).
+   Attribution: `PermissionSource.ContentTypeDefault` / `PermissionSource.ContentTypeGrant`.
+9. **Resource grants** — `ResourceUserPermission` rows for the current user and tenant.
    They contribute **only** when the context carries the exact matching
    (`ResourceType`, `ResourceId`) pair.
-9. **Owner override** (issue #372) — runs right after the resource-grant layer; see
+10. **Owner override** (issue #372) — runs right after the resource-grant layer; see
    [Owner override (issue #372)](#owner-override-issue-372). When the context names an
    exact resource and the user holds an unrevoked, unexpired ownership designation for
    that (tenant, user, resource) tuple, the owner's recorded permission set is minted
@@ -51,7 +62,7 @@ warning is logged. Invalid context never falls back to global defaults.
    `{ResourceType}.{ResourceId}.{Permission}` (DAC resource-layer parity), attributed
    `PermissionSource.Owner`. The deny interaction is configurable and the default is
    fail-closed.
-10. **External authorization decisions** (issue #146) — a registered
+11. **External authorization decisions** (issue #146) — a registered
    `IExternalAuthorizationDecisionProvider` (for example the OAuth2 client-credentials
    HTTP provider under `Authorization:ExternalDecision`) is consulted for every
    locally-allowed permission after all local layers and evaluation extensions. The
@@ -60,8 +71,28 @@ warning is logged. Invalid context never falls back to global defaults.
    [External authorization-decision layer](#external-authorization-decision-layer-issue-146).
 
 Rows in layers 4–6 contribute only while **active and unexpired**
-(`IsActive == true` and `ExpiresAt` is null or in the future). Resource grants contribute
-only while **unrevoked and unexpired**.
+(`IsActive == true` and `ExpiresAt` is null or in the future). Content-type grant rows
+follow the same rule. Resource grants contribute only while **unrevoked and unexpired**.
+
+### Content-type layer and the three-layer inheritance (issues #360/#365)
+
+The canonical three-layer model is **tenant → content-type → resource**:
+
+- **Downward inheritance** holds by name shape: a tenant-layer grant mints the
+  unqualified name (`Read`), which satisfies layer-`Auto` checks at the content-type and
+  resource layers; a content-type grant mints `{ContentType}.{permission}`, which
+  satisfies layer-`Auto` checks for every resource of that type; a resource-scoped
+  resolution additionally consults owner-minted `{Type}.{Id}.{permission}` names.
+- **Upward isolation** holds because scoped layers mint only qualified names: a
+  content-type grant never mints the unqualified name (it cannot widen into a
+  tenant-wide capability), and a grant for one content type never applies to another.
+- **Explicit layer checks stay strict**: `PermissionLayer.ContentType` checks only
+  `{ContentType}.{permission}` and `PermissionLayer.Resource` checks only
+  `{ResourceType}.{ResourceId}.{permission}`; only `Auto` walks the inheritance chain.
+- The declarative surface (`ResourcePermissionAuthorizationFilter` content-type/resource
+  markers, `RequireDac*` attributes and the GraphQL `@authorize` directive's
+  `contentType`) resolves through this layer via `IDacPermissionResolver` — no
+  tenant-composite name fallback remains.
 
 ## Precedence, conflicts and inheritance
 

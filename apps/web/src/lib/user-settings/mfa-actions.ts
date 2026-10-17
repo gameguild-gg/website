@@ -138,10 +138,10 @@ export async function getMfaBackupCodesStatus(): Promise<
   return { ok: true, data: result.data };
 }
 
-/** Disables MFA for the current user after TOTP/backup-code confirmation. */
-export async function disableMfa(params: { code: string }): Promise<MfaActionResult<void>> {
+/** Disables MFA for the current user after password re-verification (issue #244). */
+export async function disableMfa(params: { password: string }): Promise<MfaActionResult<void>> {
   const mfa = getMfaModule();
-  const result = await mfa.postAuthMfaDisable({ code: params.code });
+  const result = await mfa.postAuthMfaDisable({ password: params.password });
 
   if (!result.ok) {
     return { ok: false, error: toError(result.error.message, 'Unable to disable 2FA.') };

@@ -443,4 +443,40 @@ describe("GameGuildRemoteAssetProvider", () => {
       "The asset delete failed",
     );
   });
+
+  it("renames a remote asset through the authenticated proxy", async () => {
+    const provider = new GameGuildRemoteAssetProvider();
+    const newName = "renamed-diagram.png";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({
+          ...apiAsset(),
+          displayName: newName,
+        }), { status: 200 }),
+      ),
+    );
+    const record = await provider.rename(assetId, newName, { scope });
+    expect(record?.name).toBe(newName);
+
+    const requestUrl = new URL(
+      String(vi.mocked(fetch).mock.calls[0]?.[0]),
+      "http://localhost",
+    );
+    expect(requestUrl.pathname).toBe(`/api/assets/${assetId}`);
+    const options = vi.mocked(fetch).mock.calls[0]?.[1];
+    expect(options?.method).toBe("PATCH");
+    expect(JSON.parse(options?.body as string)).toEqual({ displayName: newName });
+  });
+
+  it("surfaces rename failures as typed AssetErrors", async () => {
+    const provider = new GameGuildRemoteAssetProvider();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(new Response(null, { status: 403 })),
+    );
+    await expect(provider.rename(assetId, "fail.png", { scope })).rejects.toThrow(
+      "The asset rename failed",
+    );
+  });
 });

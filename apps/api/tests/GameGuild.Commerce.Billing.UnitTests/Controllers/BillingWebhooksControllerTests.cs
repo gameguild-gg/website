@@ -301,7 +301,8 @@ public class BillingWebhooksControllerTests
         adminActions.Should().BeEquivalentTo(
             [nameof(BillingWebhooksController.GetWebhookEvent),
              nameof(BillingWebhooksController.RetryWebhookEvent),
-             nameof(BillingWebhooksController.GetWebhookSecuritySummary)]);
+             nameof(BillingWebhooksController.GetWebhookSecuritySummary),
+             nameof(BillingWebhooksController.RotateSecret)]);
 
         foreach (var method in controllerType.GetMethods()
                      .Where(method => method.IsDefined(typeof(AuthorizeAttribute), true)))

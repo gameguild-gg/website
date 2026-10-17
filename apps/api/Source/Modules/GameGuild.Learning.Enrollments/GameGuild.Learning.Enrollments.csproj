@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
+        <ProjectReference Include="..\GameGuild.Learning\GameGuild.Learning.csproj" />
         <ProjectReference Include="..\GameGuild.Learning.Courses\GameGuild.Learning.Courses.csproj" />
         <ProjectReference Include="..\GameGuild.Identity.Users\GameGuild.Identity.Users.csproj" />
     </ItemGroup>

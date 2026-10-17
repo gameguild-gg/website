@@ -16,4 +16,12 @@ public sealed record BulkGrantTenantPermissionsCommand : ICommand<BulkPermission
     public string? GrantedBy { get; init; }
 
     public string? Reason { get; init; }
+
+    /// <summary>
+    ///     All-or-nothing mode (issues #302/#365): when set, the first per-user failure
+    ///     aborts the bulk grant and throws, rolling back the ambient transaction so no
+    ///     user keeps a partial grant. The default (unset) is per-item semantics: each
+    ///     user's outcome is reported independently and successful items commit.
+    /// </summary>
+    public bool Atomic { get; init; }
 }

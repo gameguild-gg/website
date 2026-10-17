@@ -7,7 +7,7 @@
  * - Not enrolled: "Set up authenticator" → QR + manual secret → code →
  *   backup codes shown exactly once → confirm returns to enrolled state.
  * - Enrolled: status card + backup-code count, regenerate (confirm),
- *   disable (code). No setup path is rendered while enrolled.
+ *   disable (password). No setup path is rendered while enrolled.
  *
  * Backup codes live in client state only until the user confirms having
  * saved them, then are discarded — the API never re-serves them.
@@ -52,7 +52,7 @@ export function SecurityForm({
   const [remainingCount, setRemainingCount] = React.useState(initialBackupCodesRemaining);
   const [setup, setSetup] = React.useState<SetupSession | null>(null);
   const [verifyCode, setVerifyCode] = React.useState('');
-  const [disableCode, setDisableCode] = React.useState('');
+  const [disablePassword, setDisablePassword] = React.useState('');
   const [backupCodes, setBackupCodes] = React.useState<string[] | null>(null);
   const [isPending, startTransition] = React.useTransition();
 
@@ -110,14 +110,14 @@ export function SecurityForm({
 
   function handleDisable() {
     startTransition(async () => {
-      const result = await disableMfa({ code: disableCode });
+      const result = await disableMfa({ password: disablePassword });
       if (!result.ok) {
         saveFailed();
         return;
       }
       setIsEnabled(false);
       setRemainingCount(null);
-      setDisableCode('');
+      setDisablePassword('');
     });
   }
 
@@ -162,24 +162,24 @@ export function SecurityForm({
           </Field>
 
           <Field data-testid="disable-panel">
-            <FieldLabel>{t('disableTitle')}</FieldLabel>
-            <FieldDescription>{t('disableConfirmCode')}</FieldDescription>
+            <FieldLabel>{t('mfa.disable.title')}</FieldLabel>
+            <FieldDescription>{t('mfa.disable.description')}</FieldDescription>
             <div className="mt-3 flex items-center gap-3">
               <Input
-                inputMode="text"
-                autoComplete="off"
-                className="w-44 font-mono"
-                value={disableCode}
-                onChange={(event) => setDisableCode(event.target.value)}
-                aria-label={t('codeLabel')}
+                type="password"
+                autoComplete="current-password"
+                className="w-44"
+                value={disablePassword}
+                onChange={(event) => setDisablePassword(event.target.value)}
+                aria-label={t('mfa.disable.passwordLabel')}
                 disabled={isPending}
               />
               <Button
                 variant="destructive"
                 onClick={handleDisable}
-                disabled={isPending || disableCode.length === 0}
+                disabled={isPending || disablePassword.length === 0}
               >
-                {t('disable')}
+                {t('mfa.disable.confirm')}
               </Button>
             </div>
           </Field>

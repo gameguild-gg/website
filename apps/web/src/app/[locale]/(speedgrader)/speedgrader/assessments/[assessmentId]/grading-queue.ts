@@ -44,6 +44,32 @@ export type SpeedgraderGradingQueue = {
     isLate?: boolean;
     submittedAt?: string | null;
     isGroup?: boolean;
+    activeGradeRoundId?: string | null;
+    activeGradeRoundStatus?:
+      | 'pending'
+      | 'running'
+      | 'awaiting-evidence'
+      | 'awaiting-instructor-resolution'
+      | 'failed'
+      | 'finalized'
+      | null;
+    activeReviewStageId?: string | null;
+    activeReviewMethod?:
+      | 'AutomatedReview'
+      | 'InstructorReview'
+      | 'SelfReview'
+      | 'PeerReview'
+      | 'AIReview'
+      | null;
+    activeReviewStageStatus?:
+      | 'pending'
+      | 'running'
+      | 'awaiting-evidence'
+      | 'awaiting-instructor-resolution'
+      | 'completed'
+      | 'failed'
+      | null;
+    requiresStaffReview?: boolean;
   }> | null;
   total?: number;
   needsGrading?: number;

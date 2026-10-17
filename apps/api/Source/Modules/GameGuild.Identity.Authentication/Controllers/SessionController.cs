@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -114,6 +113,44 @@ public sealed class SessionController(ISessionManagementService sessionService, 
         return Ok(new SessionSuccessResponse { Message = "Session terminated successfully" });
     }
 
+    /// <summary>
+    ///     Name or rename one of the current user's own sessions
+    /// </summary>
+    /// <param name="sessionId">Session identifier to name</param>
+    /// <param name="body">Rename request carrying the new session name</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Success confirmation</returns>
+    [HttpPatch("v{version:apiVersion}/auth/sessions/{sessionId:guid}/name")]
+    [EndpointSummary("Name or rename a session")]
+    [EndpointDescription("Assigns a user-defined name to one of the current user's own active sessions. The acting user is taken from the authenticated principal, never from the body.")]
+    [ProducesResponseType<SessionSuccessResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<SessionRenameErrorResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RenameSession(Guid sessionId, [FromBody] RenameSessionRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var userId = GetCurrentUserId();
+
+        var name = body.Name?.Trim() ?? string.Empty;
+        if (name.Length is < 1 or > SessionManagementService.MaxSessionNameLength)
+        {
+            return BadRequest(new SessionRenameErrorResponse
+            {
+                Error = $"Session name must be between 1 and {SessionManagementService.MaxSessionNameLength} characters"
+            });
+        }
+
+        var success = await sender.Send(new RenameSessionCommand(userId, sessionId, name), ct).ConfigureAwait(false);
+
+        if (!success)
+        {
+            return NotFound(new SessionErrorResponse { Error = "Session not found" });
+        }
+
+        return Ok(new SessionSuccessResponse { Message = "Session renamed successfully" });
+    }
+
     #endregion
 
     #region Bulk Operations - /v1/auth/sessions:action
@@ -219,36 +256,12 @@ public sealed class SessionController(ISessionManagementService sessionService, 
 
     private static DeviceInfo? ParseDeviceInfo(string? deviceInfoJson)
     {
-        if (string.IsNullOrEmpty(deviceInfoJson))
-        {
-            return null;
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<DeviceInfo>(deviceInfoJson);
-        }
-        catch
-        {
-            return null;
-        }
+        return SessionEnrichmentJson.DeserializeDeviceInfo(deviceInfoJson);
     }
 
     private static LocationInfo? ParseLocation(string? locationJson)
     {
-        if (string.IsNullOrEmpty(locationJson))
-        {
-            return null;
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<LocationInfo>(locationJson);
-        }
-        catch
-        {
-            return null;
-        }
+        return SessionEnrichmentJson.DeserializeLocation(locationJson);
     }
 
     private static string GenerateDeviceFingerprint(string ipAddress, string userAgent)
@@ -298,4 +311,26 @@ public sealed record SessionTerminationResponse
     ///     Number of sessions terminated
     /// </summary>
     public required int TerminatedCount { get; init; }
+}
+
+/// <summary>
+///     Request to name or rename one of the current user's own sessions
+/// </summary>
+public sealed record RenameSessionRequest
+{
+    /// <summary>
+    ///     User-defined session name (1–64 characters, trimmed)
+    /// </summary>
+    public required string Name { get; init; }
+}
+
+/// <summary>
+///     Error response for session rename validation failures
+/// </summary>
+public sealed record SessionRenameErrorResponse
+{
+    /// <summary>
+    ///     Error message
+    /// </summary>
+    public required string Error { get; init; }
 }

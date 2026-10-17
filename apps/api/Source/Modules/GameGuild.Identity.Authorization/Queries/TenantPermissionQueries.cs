@@ -2,6 +2,7 @@ using GameGuild.CQRS;
 using GameGuild.CQRS.Models;
 using GameGuild.Identity.Context.Actors;
 
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authorization;
@@ -11,6 +12,16 @@ namespace GameGuild.Identity.Authorization;
 /// <summary>
 ///     Query to get all tenant-level permissions for a user.
 /// </summary>
+/// <remarks>
+///     <para><b>Pagination and sorting (issues #307/#298):</b> the permission list is
+///     returned one page at a time (default 50 items, capped at 200) with an explicit
+///     total count, sorted by permission name unless <see cref="SortDescending"/> is set.</para>
+///     <para><b>Response caching (issue #307):</b> the resolved list is cached in the
+///     platform's sized <see cref="IMemoryCache"/> (every entry carries a <c>Size</c>
+///     estimate). The cache key embeds the tenant's current security version, so any
+///     permission mutation (which bumps the version) immediately misses; a short TTL
+///     bounds staleness for version-independent reads.</para>
+/// </remarks>
 public sealed record GetTenantPermissionsQuery : IQuery<GetTenantPermissionsResponse>
 {
     /// <summary>
@@ -27,6 +38,21 @@ public sealed record GetTenantPermissionsQuery : IQuery<GetTenantPermissionsResp
     ///     Gets whether to include effective permissions (from roles, groups, etc).
     /// </summary>
     public bool IncludeEffective { get; init; } = true;
+
+    /// <summary>
+    ///     Gets the 1-based page number to return (issue #307).
+    /// </summary>
+    public int Page { get; init; } = 1;
+
+    /// <summary>
+    ///     Gets the page size (1-200, default 50; issue #307).
+    /// </summary>
+    public int PageSize { get; init; } = 50;
+
+    /// <summary>
+    ///     Gets whether to sort descending by permission name (issue #307).
+    /// </summary>
+    public bool SortDescending { get; init; }
 }
 
 /// <summary>
@@ -45,7 +71,7 @@ public sealed record GetTenantPermissionsResponse
     public required Guid TenantId { get; init; }
 
     /// <summary>
-    ///     Gets the list of permissions.
+    ///     Gets the list of permissions on the requested page.
     /// </summary>
     public required List<string> Permissions { get; init; }
 
@@ -58,6 +84,26 @@ public sealed record GetTenantPermissionsResponse
     ///     Gets whether the user is a system admin.
     /// </summary>
     public bool IsSystemAdmin { get; init; }
+
+    /// <summary>
+    ///     Gets the 1-based page number this response represents (issue #307).
+    /// </summary>
+    public int Page { get; init; } = 1;
+
+    /// <summary>
+    ///     Gets the page size that produced this response (issue #307).
+    /// </summary>
+    public int PageSize { get; init; } = 50;
+
+    /// <summary>
+    ///     Gets the total number of permissions across all pages (issue #307).
+    /// </summary>
+    public int TotalCount { get; init; }
+
+    /// <summary>
+    ///     Gets the total number of pages (issue #307).
+    /// </summary>
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling(TotalCount / (double)PageSize) : 0;
 }
 
 /// <summary>
@@ -66,9 +112,15 @@ public sealed record GetTenantPermissionsResponse
 public sealed class GetTenantPermissionsQueryHandler(
     IPermissionQueryService queryService,
     IActorContextAccessor actorContextAccessor,
+    ITenantSecurityVersionStore securityVersionStore,
+    IMemoryCache memoryCache,
     ILogger<GetTenantPermissionsQueryHandler> logger)
     : IQueryHandler<GetTenantPermissionsQuery, GetTenantPermissionsResponse>
 {
+    private const int MaxPageSize = 200;
+    private const int DefaultPageSize = 50;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
+
     private ActorContext Actor => actorContextAccessor.ActorContext;
 
     public async Task<GetTenantPermissionsResponse> Handle(GetTenantPermissionsQuery request, CancellationToken cancellationToken)
@@ -115,27 +167,172 @@ public sealed class GetTenantPermissionsQueryHandler(
             throw new UnauthorizedAccessException("Reading another user's tenant permissions requires user-read access");
         }
 
-        // Get permissions based on request
-        var permissions = request.IncludeEffective
-            ? await queryService.GetEffectivePermissionsAsync(targetUserId, tenantId, cancellationToken).ConfigureAwait(false)
-            : await queryService.GetTenantPermissionsAsync(targetUserId, tenantId, cancellationToken).ConfigureAwait(false);
+        // Cache the full resolved list (issue #307): the key embeds the tenant's current
+        // security version, so every permission mutation (which bumps the version)
+        // invalidates immediately, and a short TTL bounds any residual staleness. The
+        // entry carries a Size estimate so it is charged against the platform cache's
+        // SizeLimit proportionally to the payload.
+        var securityVersion = await securityVersionStore
+            .GetVersionAsync(tenantId.Value.ToString(), cancellationToken)
+            .ConfigureAwait(false);
+        var cacheKey = $"permissions:tenant-list:{tenantId.Value}:{targetUserId}:{request.IncludeEffective}:v{securityVersion}";
+
+        List<string> permissions;
+        if (memoryCache.TryGetValue(cacheKey, out List<string>? cached) && cached is not null)
+        {
+            permissions = cached;
+        }
+        else
+        {
+            permissions = await ResolvePermissionsAsync(targetUserId, tenantId, request.IncludeEffective, cancellationToken).ConfigureAwait(false);
+            memoryCache.Set(
+                cacheKey,
+                permissions,
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheTtl,
+                    Size = 256 + (long)permissions.Count * 64
+                });
+        }
+
+        var sorted = request.SortDescending
+            ? permissions.OrderByDescending(p => p, StringComparer.OrdinalIgnoreCase)
+            : permissions.OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
+
+        var pageSize = Math.Clamp(request.PageSize <= 0 ? DefaultPageSize : request.PageSize, 1, MaxPageSize);
+        var page = Math.Max(request.Page, 1);
+        var totalCount = permissions.Count;
+        var paged = sorted.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         var isTenantAdmin = permissions.Contains("TenantAdmin") || permissions.Contains("Admin");
         var isSystemAdmin = permissions.Contains("SystemAdmin");
 
         logger.LogInformation(
-            "Found {PermissionCount} permissions for user {UserId} in tenant {TenantId}",
-            permissions.Count,
+            "Found {PermissionCount} permissions for user {UserId} in tenant {TenantId} (page {Page}/{TotalPages})",
+            totalCount,
             targetUserId,
-            tenantId);
+            tenantId,
+            page,
+            pageSize > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 0);
 
         return new GetTenantPermissionsResponse
         {
             UserId = targetUserId,
             TenantId = tenantId,
-            Permissions = permissions,
+            Permissions = paged,
             IsTenantAdmin = isTenantAdmin,
-            IsSystemAdmin = isSystemAdmin
+            IsSystemAdmin = isSystemAdmin,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+    }
+
+    private async Task<List<string>> ResolvePermissionsAsync(
+        Guid targetUserId,
+        TenantId tenantId,
+        bool includeEffective,
+        CancellationToken cancellationToken) => includeEffective
+        ? await queryService.GetEffectivePermissionsAsync(targetUserId, tenantId, cancellationToken).ConfigureAwait(false)
+        : await queryService.GetTenantPermissionsAsync(targetUserId, tenantId, cancellationToken).ConfigureAwait(false);
+}
+
+// ==================== HAS GLOBAL PERMISSION (issue #307) ====================
+
+/// <summary>
+///     Query validating a system-wide (global-default) permission: does the platform's
+///     data-driven global baseline (the resolver's Layer 4 source) grant the requested
+///     permission to everyone (issue #307).
+/// </summary>
+/// <remarks>
+///     This is the global-scope counterpart of the tenant permission check: it
+///     answers "would any authenticated subject have this permission before tenant and
+///     user layers apply", not "does this specific user have it" (that is effective
+///     resolution). Guarded: system administration or the
+///     <c>system:manage-global-defaults</c> permission is required (fail-closed otherwise).
+/// </remarks>
+public sealed record HasGlobalPermissionQuery : IQuery<HasGlobalPermissionResponse>
+{
+    /// <summary>
+    ///     Gets the permission to validate against the global defaults.
+    /// </summary>
+    public required string Permission { get; init; }
+}
+
+/// <summary>
+///     Response of a global-permission validation.
+/// </summary>
+public sealed record HasGlobalPermissionResponse
+{
+    /// <summary>
+    ///     Gets whether the global default baseline grants the permission.
+    /// </summary>
+    public required bool HasPermission { get; init; }
+
+    /// <summary>
+    ///     Gets the permission that was validated.
+    /// </summary>
+    public required string Permission { get; init; }
+
+    /// <summary>
+    ///     Gets the source of the decision (always the global-defaults layer).
+    /// </summary>
+    public required string Source { get; init; }
+
+    /// <summary>
+    ///     Gets the reason the permission is not granted (when it is not).
+    /// </summary>
+    public string? DenialReason { get; init; }
+}
+
+/// <summary>
+///     Handler for <see cref="HasGlobalPermissionQuery"/>.
+/// </summary>
+public sealed class HasGlobalPermissionQueryHandler(
+    IPermissionQueryService queryService,
+    IActorContextAccessor actorContextAccessor,
+    ILogger<HasGlobalPermissionQueryHandler> logger)
+    : IQueryHandler<HasGlobalPermissionQuery, HasGlobalPermissionResponse>
+{
+    private ActorContext Actor => actorContextAccessor.ActorContext;
+
+    public async Task<HasGlobalPermissionResponse> Handle(HasGlobalPermissionQuery request, CancellationToken cancellationToken)
+    {
+        if (!Actor.IsAuthenticated)
+        {
+            throw new UnauthorizedAccessException("User not authenticated");
+        }
+
+        // Fail-closed guard: the global baseline affects every tenant, so only system
+        // administrators or explicit manage-global-defaults holders may query it.
+        if (!Actor.IsSystemAdmin && !Actor.HasPermission(SystemPermission.Keys.ManageGlobalDefaults))
+        {
+            logger.LogWarning(
+                "Actor {ActorId} attempted to validate a global permission without '{Permission}'",
+                Actor.SubjectId, SystemPermission.Keys.ManageGlobalDefaults);
+            throw new UnauthorizedAccessException(
+                $"Validating global permissions requires system administration or the '{SystemPermission.Keys.ManageGlobalDefaults}' permission");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Permission))
+        {
+            throw new ArgumentException("Permission is required", nameof(request));
+        }
+
+        var defaults = await queryService.GetGlobalDefaultPermissionsAsync(cancellationToken).ConfigureAwait(false);
+        var hasPermission = defaults.Contains(request.Permission, StringComparer.OrdinalIgnoreCase);
+
+        logger.LogInformation(
+            "Global permission validation for '{Permission}': {HasPermission}",
+            request.Permission,
+            hasPermission);
+
+        return new HasGlobalPermissionResponse
+        {
+            HasPermission = hasPermission,
+            Permission = request.Permission,
+            Source = "GlobalDefault",
+            DenialReason = hasPermission ? null : "The permission is not part of the global default baseline"
         };
     }
 }

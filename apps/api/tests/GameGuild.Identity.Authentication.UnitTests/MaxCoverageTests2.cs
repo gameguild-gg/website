@@ -228,9 +228,11 @@ public class MfaControllerCovTests
         SetUser(_userId);
     }
 
-    private void SetUser(Guid userId)
+    private void SetUser(Guid userId) => SetControllerUser(_controller, userId);
+
+    private static void SetControllerUser(MfaController controller, Guid userId)
     {
-        _controller.ControllerContext = new ControllerContext
+        controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext
             {
@@ -353,24 +355,58 @@ public class MfaControllerCovTests
     }
 
     [Fact]
-    public async Task InitiateSmsSetup_WhenSmsProviderIsNotConfigured_ReturnsServiceUnavailable()
+    public async Task InitiateSmsSetup_WhenCodeQueued_ReturnsMaskedPhone()
     {
-        var result = await _controller.InitiateSmsSetup(
+        // Issue #244: the 503 stub is gone; setup goes through the SMS factor service.
+        var sms = new Mock<ISmsMfaService>();
+        var push = new Mock<IPushMfaService>();
+        var controller = new MfaController(_mfaService.Object, new CommandHandlerSender(_mfaService.Object, sms.Object, push.Object));
+        SetControllerUser(controller, _userId);
+        sms.Setup(s => s.StartEnrollmentAsync(_userId, "+1234567890", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SmsMfaChallengeResult { Success = true, PhoneNumberMasked = "***-***-7890", ExpiresInSeconds = 600 });
+
+        var result = await controller.InitiateSmsSetup(
             new SmsMfaSetupRequest { PhoneNumber = "+1234567890" }, CancellationToken.None);
-        var serviceUnavailable = result.Should().BeOfType<ObjectResult>().Subject;
-        serviceUnavailable.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
-        serviceUnavailable.Value.Should().BeOfType<MfaErrorResponse>();
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var payload = ok.Value.Should().BeOfType<SmsMfaSetupResponse>().Subject;
+        payload.PhoneNumberMasked.Should().Be("***-***-7890");
+        payload.ExpiresInSeconds.Should().Be(600);
     }
 
     [Fact]
-    public async Task CompleteSmsSetup_WhenSmsProviderIsNotConfigured_ReturnsServiceUnavailable()
+    public async Task InitiateSmsSetup_WhenThrottled_ReturnsBadRequest()
     {
-        var result = await _controller.CompleteSmsSetup(
-            new CompleteMfaSetupRequest { Code = "123456", SecretKey = "KEY" },
+        var sms = new Mock<ISmsMfaService>();
+        var push = new Mock<IPushMfaService>();
+        var controller = new MfaController(_mfaService.Object, new CommandHandlerSender(_mfaService.Object, sms.Object, push.Object));
+        SetControllerUser(controller, _userId);
+        sms.Setup(s => s.StartEnrollmentAsync(_userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SmsMfaChallengeResult { Success = false, PhoneNumberMasked = string.Empty, ExpiresInSeconds = 0, Message = "A verification code was sent recently." });
+
+        var result = await controller.InitiateSmsSetup(
+            new SmsMfaSetupRequest { PhoneNumber = "+1234567890" }, CancellationToken.None);
+
+        var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+        badRequest.Value.Should().BeOfType<MfaErrorResponse>().Which.Error.Should().Contain("sent recently");
+    }
+
+    [Fact]
+    public async Task CompleteSmsSetup_WhenCodeInvalid_ReturnsBadRequest()
+    {
+        var sms = new Mock<ISmsMfaService>();
+        var push = new Mock<IPushMfaService>();
+        var controller = new MfaController(_mfaService.Object, new CommandHandlerSender(_mfaService.Object, sms.Object, push.Object));
+        SetControllerUser(controller, _userId);
+        sms.Setup(s => s.CompleteEnrollmentAsync(_userId, "000000", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MfaVerificationResult { Success = false, Message = "Invalid or expired SMS code" });
+
+        var result = await controller.CompleteSmsSetup(
+            new CompleteMfaSetupRequest { Code = "000000", SecretKey = "KEY" },
             CancellationToken.None);
-        var serviceUnavailable = result.Should().BeOfType<ObjectResult>().Subject;
-        serviceUnavailable.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
-        serviceUnavailable.Value.Should().BeOfType<MfaErrorResponse>();
+
+        var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+        badRequest.Value.Should().BeOfType<MfaErrorResponse>().Which.Error.Should().Contain("Invalid or expired");
     }
 
     [Fact]
@@ -398,7 +434,7 @@ public class MfaControllerCovTests
             .ReturnsAsync(true);
 
         var result = await _controller.DisableMfa(
-            new DisableMfaRequest { Code = "123456" }, CancellationToken.None);
+            new DisableMfaRequest { Password = "123456" }, CancellationToken.None);
         result.Should().BeOfType<OkObjectResult>();
     }
 
@@ -410,7 +446,7 @@ public class MfaControllerCovTests
             .ReturnsAsync(false);
 
         var result = await _controller.DisableMfa(
-            new DisableMfaRequest { Code = "000000" }, CancellationToken.None);
+            new DisableMfaRequest { Password = "000000" }, CancellationToken.None);
         result.Should().BeOfType<BadRequestObjectResult>();
     }
 }
@@ -1194,8 +1230,8 @@ public class SessionMfaDtoCovTests
     [Fact]
     public void DisableMfaRequest_Properties()
     {
-        var r = new DisableMfaRequest { Code = "123456" };
-        r.Code.Should().Be("123456");
+        var r = new DisableMfaRequest { Password = "hunter2" };
+        r.Password.Should().Be("hunter2");
     }
 
     [Fact]

@@ -12,6 +12,7 @@ import { quizDocumentToGradingItems } from "./grading-projection";
 import {
   quizContentItemsToStorage,
 } from "./storage";
+import { normalizeQuizRules, type QuizRules } from "./rules";
 import type {
   QuizContentDocument,
   QuizContentDocumentInput,
@@ -70,6 +71,7 @@ export function syncQuizContentGrading(
 
 export function quizContentItemsToDocument({
   items,
+  rules,
   grading,
 }: QuizContentDocumentInput): QuizContentDocument {
   const storage = quizContentItemsToStorage(items);
@@ -77,6 +79,7 @@ export function quizContentItemsToDocument({
     schemaVersion: QUIZ_CONTENT_SCHEMA_VERSION,
     order: storage.order,
     blocks: storage.blocks,
+    ...(normalizeQuizRules(rules) ? { rules: normalizeQuizRules(rules) } : {}),
   };
   if (grading) {
     document = {
@@ -85,4 +88,24 @@ export function quizContentItemsToDocument({
     };
   }
   return assertQuizContentDocument(document);
+}
+
+/** Reads the quiz-level rules (issue #432); undefined when none are configured. */
+export function readQuizContentRules(
+  document: QuizContentDocument,
+): QuizRules | undefined {
+  return document.rules;
+}
+
+/** Returns a copy of `document` with `rules` replaced (or removed when omitted). */
+export function updateQuizContentRules(
+  document: QuizContentDocument,
+  rules: QuizRules | null | undefined,
+): QuizContentDocument {
+  const normalized = normalizeQuizRules(rules);
+  if (!normalized) {
+    const { rules: _rules, ...withoutRules } = document;
+    return withoutRules;
+  }
+  return { ...document, rules: normalized };
 }

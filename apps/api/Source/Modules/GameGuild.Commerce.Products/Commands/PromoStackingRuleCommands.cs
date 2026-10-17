@@ -109,14 +109,38 @@ public sealed class UpdatePromoStackingRuleCommandHandler(
         var rule = await repository.GetByIdAsync(request.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new PromoStackingRuleNotFoundException(request.Id);
 
-        if (request.Description != null) rule.Description = request.Description;
-        if (request.IsActive.HasValue) rule.IsActive = request.IsActive.Value;
-        if (request.Priority.HasValue) rule.Priority = request.Priority.Value;
-        if (request.MaxStackableCount.HasValue) rule.MaxStackableCount = request.MaxStackableCount.Value;
-        if (request.AllowExclusiveStacking.HasValue) rule.AllowExclusiveStacking = request.AllowExclusiveStacking.Value;
-        if (request.MaxTotalDiscountPercentage.HasValue) rule.MaxTotalDiscountPercentage = request.MaxTotalDiscountPercentage.Value;
-        if (request.MaxTotalDiscountAmount.HasValue) rule.MaxTotalDiscountAmount = request.MaxTotalDiscountAmount.Value;
-        if (request.ConflictStrategy.HasValue) rule.ConflictStrategy = request.ConflictStrategy.Value;
+        if (request.Description != null)
+        {
+            rule.Description = request.Description;
+        }
+        if (request.IsActive.HasValue)
+        {
+            rule.IsActive = request.IsActive.Value;
+        }
+        if (request.Priority.HasValue)
+        {
+            rule.Priority = request.Priority.Value;
+        }
+        if (request.MaxStackableCount.HasValue)
+        {
+            rule.MaxStackableCount = request.MaxStackableCount.Value;
+        }
+        if (request.AllowExclusiveStacking.HasValue)
+        {
+            rule.AllowExclusiveStacking = request.AllowExclusiveStacking.Value;
+        }
+        if (request.MaxTotalDiscountPercentage.HasValue)
+        {
+            rule.MaxTotalDiscountPercentage = request.MaxTotalDiscountPercentage.Value;
+        }
+        if (request.MaxTotalDiscountAmount.HasValue)
+        {
+            rule.MaxTotalDiscountAmount = request.MaxTotalDiscountAmount.Value;
+        }
+        if (request.ConflictStrategy.HasValue)
+        {
+            rule.ConflictStrategy = request.ConflictStrategy.Value;
+        }
 
         rule.Touch();
         await repository.UpdateAsync(rule, cancellationToken).ConfigureAwait(false);

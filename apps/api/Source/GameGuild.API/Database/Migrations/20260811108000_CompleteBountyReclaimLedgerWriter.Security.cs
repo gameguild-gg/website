@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class CompleteBountyReclaimLedgerWriter
+public partial class CompleteBountyReclaimLedgerWriter : Migration
 {
     private static void InstallBountyReclaimLedgerWriter(MigrationBuilder migrationBuilder)
     {

@@ -358,4 +358,50 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
 
         return Ok(summary);
     }
+
+    /// <summary>
+    ///     Rotate a provider's webhook signing secret (issue #408)
+    /// </summary>
+    /// <param name="body">Rotation request (provider key and the new secret exactly as configured at the provider).</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Rotation record: when the previous secret stops being accepted</returns>
+    /// <remarks>
+    ///     Records a signing-secret rotation for one provider webhook endpoint. During the
+    ///     rotation window (Billing:Webhook:SecretRotationWindowHours, default 24h) deliveries
+    ///     signed with either the previous or the new secret verify (dual-secret verification);
+    ///     after the window the previous secret is automatically deprecated and rejected. The
+    ///     new secret is stored encrypted at rest and never appears in logs or the response.
+    ///     Requires the SystemAdmin policy; the acting administrator is taken from the
+    ///     authenticated actor, and the decision is audited.
+    /// </remarks>
+    [HttpPost("secrets:rotate")]
+    [Authorize(Policy = Policies.SystemAdmin)]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("Rotate a provider webhook signing secret")]
+    [EndpointDescription(
+        "Records a webhook signing-secret rotation for a provider. During the rotation window both the previous and the new secret verify (dual-secret verification); after the window the previous secret is automatically deprecated and rejected. Secrets are stored encrypted at rest. Requires the SystemAdmin policy."
+    )]
+    [ProducesResponseType<WebhookSecretRotationResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RotateSecret([FromBody] RotateWebhookSecretRequest body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await sender.Send(
+                new RotateWebhookSecretCommand(body.ProviderKey, body.NewSecret), ct).ConfigureAwait(false);
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { error = exception.Message });
+        }
+    }
+
+    /// <summary>Request body for the webhook signing-secret rotation.</summary>
+    /// <param name="ProviderKey">Provider key (stripe, paypal, ...).</param>
+    /// <param name="NewSecret">The new signing secret exactly as configured at the provider.</param>
+    public sealed record RotateWebhookSecretRequest(string ProviderKey, string NewSecret);
 }

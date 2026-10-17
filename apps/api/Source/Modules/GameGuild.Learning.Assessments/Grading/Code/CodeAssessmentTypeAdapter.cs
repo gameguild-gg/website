@@ -14,7 +14,9 @@ public static class CodeAssessmentContracts
     public static string ContentType { get; } = "coding-assignment";
     public static string AdapterKey { get; } = "code-assessment-type";
     public static string HandlerKey { get; } = "code-wasm-review";
-    public static string Version { get; } = "1";
+    public static string LegacyVersion { get; } = "1";
+    public static string Version { get; } = "2";
+    public static bool IsSupportedVersion(string? version) => version == LegacyVersion || version == Version;
     public static string PayloadSchema { get; } = "code-files/v1";
     public static string ItemId { get; } = "code";
     public static int MaxResponseBytes { get; } = 2_000_000;
@@ -27,12 +29,33 @@ public static class CodeAssessmentContracts
     };
 }
 
-public sealed class CodeAssessmentTypeAdapter(ICodeAssessmentExecutor executor) : IAssessmentTypeAdapter
+public sealed class CodeAssessmentTypeAdapter : IAssessmentTypeAdapter
 {
+    private readonly ICodeAssessmentExecutor _executor;
+    private readonly CodeToolchainIdentity _toolchain;
+
+    public CodeAssessmentTypeAdapter(ICodeAssessmentExecutor executor)
+        : this(executor, CodeAssessmentContracts.Version)
+    {
+    }
+
+    private CodeAssessmentTypeAdapter(ICodeAssessmentExecutor executor, string version)
+    {
+        _executor = executor ?? throw new ArgumentNullException(nameof(executor));
+        _toolchain = CodeToolchainIdentity.ForAdapterVersion(version);
+        Version = version;
+        ReviewHandlers = new Dictionary<ReviewMethod, AssessmentReviewHandlerBinding>
+        {
+            [ReviewMethod.AutomatedReview] = new(CodeAssessmentContracts.HandlerKey, version),
+        };
+    }
+
+    public static CodeAssessmentTypeAdapter ForVersion1(ICodeAssessmentExecutor executor) =>
+        new(executor, CodeAssessmentContracts.LegacyVersion);
     public string Key => CodeAssessmentContracts.AdapterKey;
-    public string Version => CodeAssessmentContracts.Version;
+    public string Version { get; }
     public string ContentType => CodeAssessmentContracts.ContentType;
-    public bool IsCurrentForAuthoring => true;
+    public bool IsCurrentForAuthoring => Version == CodeAssessmentContracts.Version;
     public ProgramContentType ProgramContentType => ProgramContentType.Code;
     public AssessmentType AssessmentType => AssessmentType.Assignment;
     public SubmissionModality SubmissionModalities => SubmissionModality.Code;
@@ -41,10 +64,7 @@ public sealed class CodeAssessmentTypeAdapter(ICodeAssessmentExecutor executor) 
         ReviewExecutionContext.AuthorTest,
         ReviewExecutionContext.OfficialSubmission,
     };
-    public IReadOnlyDictionary<ReviewMethod, AssessmentReviewHandlerBinding> ReviewHandlers { get; } = new Dictionary<ReviewMethod, AssessmentReviewHandlerBinding>
-    {
-        [ReviewMethod.AutomatedReview] = new(CodeAssessmentContracts.HandlerKey, CodeAssessmentContracts.Version),
-    };
+    public IReadOnlyDictionary<ReviewMethod, AssessmentReviewHandlerBinding> ReviewHandlers { get; }
 
     public AssessmentAuthoringProjectionV1 ProjectAuthoring(JsonElement authoringDocument)
     {
@@ -99,7 +119,7 @@ public sealed class CodeAssessmentTypeAdapter(ICodeAssessmentExecutor executor) 
 
         var maxScore = ScoreValue.FromPoints(definition.Grading.MaxScore.ToString(CultureInfo.InvariantCulture));
         var content = JsonSerializer.SerializeToElement(definition, CodeAssessmentContracts.ContentJson);
-        var projection = JsonSerializer.SerializeToElement(new { schemaVersion = 1, itemId = CodeAssessmentContracts.ItemId, itemType = "code", maxScore, source = new { contentType = ContentType, itemId = CodeAssessmentContracts.ItemId }, definition = content, toolchain = CodeToolchainIdentity.Version1, }, GradingJson.Options);
+        var projection = JsonSerializer.SerializeToElement(new { schemaVersion = 1, itemId = CodeAssessmentContracts.ItemId, itemType = "code", maxScore, source = new { contentType = ContentType, itemId = CodeAssessmentContracts.ItemId }, definition = content, toolchain = _toolchain, }, GradingJson.Options);
         return new AssessmentAuthoringProjectionV1(ContentType, content, new ContentGradingDefinitionV2(2, new Dictionary<string, GradingItemAuthoringV2> { [CodeAssessmentContracts.ItemId] = new(), }), [new AssessmentAuthoringItemProjectionV1(CodeAssessmentContracts.ItemId, "code", maxScore, projection, Key, Version)]);
     }
 
@@ -179,12 +199,12 @@ public sealed class CodeAssessmentTypeAdapter(ICodeAssessmentExecutor executor) 
         var definition = ReadDefinition(request.ProjectedItems[0].GetProperty("definition"));
         var files = request.NormalizedResponse.GetProperty("files");
         var toolchain = JsonSerializer.Deserialize<CodeToolchainIdentity>(request.ProjectedItems[0].GetProperty("toolchain"), GradingJson.Options);
-        if (toolchain != CodeToolchainIdentity.Version1)
+        if (toolchain != _toolchain)
         {
-            throw new InvalidOperationException("Code review requires its frozen version 1 toolchain.");
+            throw new InvalidOperationException("Code review requires its frozen version " + Version + " toolchain.");
         }
 
-        var result = await executor.ExecuteAsync(definition, files, toolchain, cancellationToken).ConfigureAwait(false);
+        var result = await _executor.ExecuteAsync(definition, files, toolchain, cancellationToken).ConfigureAwait(false);
         var tests = definition.Tests.Public.Concat(definition.Tests.Private).ToArray();
         if (result.Passed.Count != tests.Length || result.ReceiptHash.Length != 64 || result.ReceiptHash.Any(character => !char.IsAsciiHexDigitLower(character)))
         {
@@ -244,6 +264,14 @@ public sealed record CodeExecutionReceipt(IReadOnlyList<bool> Passed, string Rec
 public sealed record CodeToolchainIdentity(string ArtifactVersion, string RuntimeAbi, string ToolchainLockHash)
 {
     public static CodeToolchainIdentity Version1 { get; } = new("4.4.0", "emception-browser-v1", "eb7e07aacb067ae32910fbebcb3762902da756b1a7ce64746f14f77a25057720");
+    public static CodeToolchainIdentity Version2 { get; } = new("4.4.1", "emception-browser-v1", "405e9f1fdd936ba31e11247fa1f901eaee24c4fcf641e343505df75c3d539b37");
+
+    public static CodeToolchainIdentity ForAdapterVersion(string version) => version switch
+    {
+        "1" => Version1,
+        "2" => Version2,
+        _ => throw new InvalidOperationException("Unsupported frozen Code adapter version."),
+    };
 }
 
 public interface ICodeAssessmentExecutor
@@ -260,12 +288,14 @@ public sealed class CodeAutomatedReviewStageHandler(CodeAssessmentTypeAdapter ad
 {
     public ReviewMethod Method => ReviewMethod.AutomatedReview;
     public string Key => CodeAssessmentContracts.HandlerKey;
-    public string Version => CodeAssessmentContracts.Version;
+    public string Version => adapter.Version;
     public string? ProviderKey => null;
     public string? ProviderPolicyVersion => null;
     public IReadOnlySet<ReviewExecutionContext> Contexts => adapter.Contexts;
 
-    public ValueTask<GradeResultV1> ExecuteAsync(ReviewStageRequest request, CancellationToken cancellationToken)
+    public async ValueTask<ReviewStageTransitionV1> StartAsync(
+        ReviewStageRequest request,
+        CancellationToken cancellationToken)
     {
         GradingContractValidator.ValidateBindings(request.ExecutionSnapshotHash, request.Snapshot, request.Delivery, request.Response);
         if (request.Snapshot.Manifest.Items.Any(item => item.AdapterKey != adapter.Key || item.AdapterVersion != Version))
@@ -275,8 +305,23 @@ public sealed class CodeAutomatedReviewStageHandler(CodeAssessmentTypeAdapter ad
 
         var projections = request.Snapshot.Manifest.Items.Select(item => request.Snapshot.ItemProjections[item.ItemId]).ToArray();
         var response = adapter.DecodeResponse(request.Response, projections);
-        return adapter.EvaluateDeterministicAsync(new DeterministicReviewRequest(projections, request.Delivery, response, Key, Version), cancellationToken);
+        var result = await adapter.EvaluateDeterministicAsync(
+            new DeterministicReviewRequest(projections, request.Delivery, response, Key, Version),
+            cancellationToken).ConfigureAwait(false);
+        return ReviewStageTransitionV1.Completed(result);
     }
+
+    public ValueTask<ReviewStageTransitionV1> AcceptEvidenceAsync(
+        ReviewStageRequest request,
+        ReviewStageEvidenceV1 evidence,
+        CancellationToken cancellationToken) =>
+        ValueTask.FromException<ReviewStageTransitionV1>(
+            new InvalidOperationException("AutomatedReview does not accept external evidence."));
+
+    public ValueTask<ReviewStageTransitionV1> TryCompleteAsync(
+        ReviewStageRequest request,
+        IReadOnlyList<ReviewStageEvidenceV1> evidence,
+        CancellationToken cancellationToken) => StartAsync(request, cancellationToken);
 }
 
 public sealed class CodeCapabilityRegistration : IReviewCapabilityRegistration
@@ -288,7 +333,10 @@ public sealed class CodeCapabilityRegistration : IReviewCapabilityRegistration
             ReviewExecutionContext.AuthorTest,
             ReviewExecutionContext.OfficialSubmission,
         };
-        registry.Register(new ExecutableComponentDescriptor(ExecutableComponentKind.AssessmentTypeAdapter, CodeAssessmentContracts.AdapterKey, CodeAssessmentContracts.Version, contexts));
-        registry.Register(new ReviewCapabilityDescriptor(ReviewMethod.AutomatedReview, CodeAssessmentContracts.HandlerKey, CodeAssessmentContracts.Version, contexts));
+        foreach (var version in new[] { CodeAssessmentContracts.LegacyVersion, CodeAssessmentContracts.Version })
+        {
+            registry.Register(new ExecutableComponentDescriptor(ExecutableComponentKind.AssessmentTypeAdapter, CodeAssessmentContracts.AdapterKey, version, contexts));
+            registry.Register(new ReviewCapabilityDescriptor(ReviewMethod.AutomatedReview, CodeAssessmentContracts.HandlerKey, version, contexts));
+        }
     }
 }

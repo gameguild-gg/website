@@ -25,6 +25,17 @@ public class AuditLogQuery
 
     public string? IpAddress { get; set; }
 
+    /// <summary>
+    /// Free-text search over descriptions and serialized context/metadata, matched in
+    /// the database (ILIKE). Null or empty means no filter.
+    /// </summary>
+    public string? SearchText { get; set; }
+
+    /// <summary>
+    /// Optional nested condition tree combined with the flat filters above. Null means no tree filter.
+    /// </summary>
+    public AuditConditionNode? Condition { get; set; }
+
     public int Skip { get; set; } = 0;
 
     public int Take { get; set; } = 100;

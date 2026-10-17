@@ -19,6 +19,7 @@ public interface IBlogPostService
     Task RemoveCoauthorAsync(Guid actorUserId, Guid postId, Guid coauthorUserId, CancellationToken ct = default);
     Task<BlogPost> TransferPrimaryAsync(Guid actorUserId, Guid postId, Guid newPrimaryUserId, CancellationToken ct = default);
     Task<BlogPost> PublishAsync(Guid actorUserId, Guid postId, CancellationToken ct = default);
+    Task<BlogPost> PublishAsync(Guid actorUserId, Guid postId, Guid? ogImageAssetReferenceId, CancellationToken ct = default);
     Task<BlogPost> UnpublishAsync(Guid actorUserId, Guid postId, CancellationToken ct = default);
     Task DeleteAsync(Guid actorUserId, Guid postId, CancellationToken ct = default);
     Task<BlogComment> AddCommentAsync(Guid actorUserId, Guid postId, string content, Guid? parentCommentId, CancellationToken ct = default);
@@ -40,7 +41,8 @@ public sealed class BlogPostService(
     IApplicationDbContext context,
     IBlogSlugService slugService,
     IUserModerationService moderationService,
-    IPublicationAnnouncer announcer) : IBlogPostService
+    IPublicationAnnouncer announcer,
+    BlogAssetManifestService assetManifest) : IBlogPostService
 {
     private const int PageSize = 12;
 
@@ -176,13 +178,39 @@ public sealed class BlogPostService(
         return post;
     }
 
-    public async Task<BlogPost> PublishAsync(Guid actorUserId, Guid postId, CancellationToken ct = default)
+    public Task<BlogPost> PublishAsync(Guid actorUserId, Guid postId, CancellationToken ct = default)
+        => PublishAsync(actorUserId, postId, ogImageAssetReferenceId: null, ct);
+
+    public async Task<BlogPost> PublishAsync(Guid actorUserId, Guid postId, Guid? ogImageAssetReferenceId, CancellationToken ct = default)
     {
         var post = await RequirePostAsync(postId, ct).ConfigureAwait(false);
         RequirePrimary(post, actorUserId, "Only the primary author can publish.");
         if (post.Status == BlogPostStatus.Published)
         {
             return post;
+        }
+
+        // Safe-to-serve gate: every body asset:// URI must resolve to approved+clean content; fails closed naming the asset id.
+        var ogImageUrl = await assetManifest
+            .ValidatePublishAssetsAsync(post, actorUserId, ogImageAssetReferenceId, ct)
+            .ConfigureAwait(false);
+        if (ogImageUrl is not null)
+        {
+            post.ApplyDraftEdit(
+                post.Revision,
+                title: null,
+                content: null,
+                jsonBody: null,
+                excerpt: null,
+                tags: null,
+                metaTitle: null,
+                metaDescription: null,
+                ogImageUrl: ogImageUrl,
+                canonicalUrlOverride: null,
+                twitterCard: null,
+                structuredDataOverride: null,
+                allowComments: null,
+                readTimeMinutes: null);
         }
 
         post.Publish();

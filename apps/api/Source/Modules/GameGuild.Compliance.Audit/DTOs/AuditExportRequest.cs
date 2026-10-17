@@ -24,6 +24,8 @@ public sealed class AuditExportRequest : IValidatableObject
 
     public string? IpAddress { get; set; }
 
+    public AuditConditionNode? Condition { get; set; }
+
     /// <summary>Optional 1-based page number. Omit both pagination fields to export all matching rows.</summary>
     [Range(1, int.MaxValue)]
     public int? PageNumber { get; set; }
@@ -64,6 +66,11 @@ public sealed class AuditExportRequest : IValidatableObject
             yield return new ValidationResult(
                 "StartDate must be earlier than or equal to EndDate.",
                 [nameof(StartDate), nameof(EndDate)]);
+        }
+
+        foreach (var result in AuditConditionTreeValidator.Validate(Condition, nameof(Condition)))
+        {
+            yield return result;
         }
     }
 }

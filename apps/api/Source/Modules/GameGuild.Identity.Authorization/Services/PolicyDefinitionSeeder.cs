@@ -921,6 +921,375 @@ public sealed class PolicyDefinitionSeeder
         };
 
         // ========================
+        // ADMINISTRATIVE PERMISSION POLICIES (issue #294)
+        // ========================
+        // Tenant-scoped administrative tier. The role fallback preserves the previous
+        // blanket TenantAdmin/SystemAdmin access; the granular key makes each capability
+        // independently delegable (principle of least privilege). Tenant administrative
+        // membership roles (owner/admin) also receive the keys through the role-permission
+        // providers, so the permission path serves them as well.
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.MembersManage,
+            Description = "Add, remove, suspend and re-role tenant members, and manage membership invites",
+            RequireAuthentication = true,
+            IsTenantScoped = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "TenantMatch",
+                    "Description": "Ensure user belongs to the request tenant",
+                    "Enabled": true
+                },
+                {
+                    "Type": "AnyOf",
+                    "Description": "Tenant/system administrators or users with members:manage",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["TenantAdmin", "SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["members:manage"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.RolesManage,
+            Description = "Create, modify, delete and assign tenant roles",
+            RequireAuthentication = true,
+            IsTenantScoped = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "TenantMatch",
+                    "Description": "Ensure user belongs to the request tenant",
+                    "Enabled": true
+                },
+                {
+                    "Type": "AnyOf",
+                    "Description": "System administrators or users delegated roles:manage (role administration stays delegable-only for tenant roles)",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["roles:manage"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.SettingsRead,
+            Description = "Read tenant settings, feature flags and system limits",
+            RequireAuthentication = true,
+            IsTenantScoped = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "TenantMatch",
+                    "Description": "Ensure user belongs to the request tenant",
+                    "Enabled": true
+                },
+                {
+                    "Type": "AnyOf",
+                    "Description": "Tenant/system administrators or users with settings:read",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["TenantAdmin", "SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["settings:read"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.SettingsManage,
+            Description = "Change tenant settings, feature flags, business rules and system limits",
+            RequireAuthentication = true,
+            IsTenantScoped = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "TenantMatch",
+                    "Description": "Ensure user belongs to the request tenant",
+                    "Enabled": true
+                },
+                {
+                    "Type": "AnyOf",
+                    "Description": "Tenant/system administrators or users with settings:manage",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["TenantAdmin", "SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["settings:manage"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.AuditRead,
+            Description = "Read and investigate audit logs, security events and audit statistics (tenant-administered self-service tier)",
+            RequireAuthentication = true,
+            IsTenantScoped = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "TenantMatch",
+                    "Description": "Ensure user belongs to the request tenant",
+                    "Enabled": true
+                },
+                {
+                    "Type": "AnyOf",
+                    "Description": "Tenant/system administrators or users with audit:read; non-system callers are clamped to their own tenant's rows by the audit controllers",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["TenantAdmin", "SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["audit:read"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        // ========================
+        // SYSTEM PERMISSION POLICIES (issue #386)
+        // ========================
+        // System-level tier: platform-wide operational surfaces. No TenantMatch rule —
+        // these operations are not tenant-scoped (matching the previous blanket
+        // SystemAdmin shape); the permission evaluators bypass SystemAdmin role holders
+        // and fail closed for everyone else without a valid grant.
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.AuditExport,
+            Description = "Export audit logs and schedule recurring compliance exports",
+            RequireAuthentication = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "AnyOf",
+                    "Description": "System administrators or users delegated audit:export",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["audit:export"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.SystemConfigurationManage,
+            Description = "Manage infrastructure configuration (cache management, signing keys, provider configuration)",
+            RequireAuthentication = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "AnyOf",
+                    "Description": "System administrators or users delegated system:manage-configuration",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["system:manage-configuration"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.SystemBackupRestore,
+            Description = "Execute backup, snapshot, restore and event-recovery operations",
+            RequireAuthentication = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "AnyOf",
+                    "Description": "System administrators or users delegated system:backup-restore",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["system:backup-restore"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = Policies.SystemDataMigration,
+            Description = "Run data-migration assessments and migrations between providers",
+            RequireAuthentication = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "AnyOf",
+                    "Description": "System administrators or users delegated system:data-migration",
+                    "Rules": [
+                        {
+                            "Type": "RequireAnyRole",
+                            "Params": {
+                                "roles": ["SystemAdmin"]
+                            },
+                            "Enabled": true
+                        },
+                        {
+                            "Type": "RequireAnyPermission",
+                            "Params": {
+                                "permissions": ["system:data-migration"]
+                            },
+                            "Enabled": true
+                        }
+                    ],
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
+        // ========================
         // FEATURE FLAG POLICIES
         // ========================
         yield return new PolicyDefinitionEntity

@@ -2,8 +2,13 @@ using GameGuild.Notifications.Services;
 using GameGuild.Notifications.Services.Email;
 using GameGuild.Notifications.Services.Email.Renderers;
 using GameGuild.Notifications.Services.Email.Handlers;
+using GameGuild.Notifications.Services.Push;
+using GameGuild.Notifications.Services.Sms;
 using GameGuild.Identity.Tenants;
+using GameGuild.Push;
+using GameGuild.Sms;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace GameGuild.Notifications;
 
@@ -38,6 +43,21 @@ public static class NotificationsModule
         services.AddScoped<DigestRenderer>();
         services.AddScoped<DigestDispatcherService>();
         services.AddHostedService<DigestDispatcherBackgroundService>();
+
+        // SMS dispatch pipeline (delivery port ISmsSender is registered by the API host; the
+        // module keeps only the no-op fallback so isolated module tests never need a provider).
+        services.TryAddSingleton<ISmsSender>(static _ => NoOpSmsSender.Instance);
+        services.AddOptions<SmsDispatcherOptions>()
+            .BindConfiguration("Notifications:SmsDispatcher");
+        services.AddScoped<SmsDispatcherService>();
+        services.AddHostedService<SmsDispatcherBackgroundService>();
+
+        // Mobile-push dispatch pipeline (delivery port IPushSender likewise host-provided).
+        services.TryAddSingleton<IPushSender>(static _ => NoOpPushSender.Instance);
+        services.AddOptions<PushDispatcherOptions>()
+            .BindConfiguration("Notifications:PushDispatcher");
+        services.AddScoped<PushDispatcherService>();
+        services.AddHostedService<PushDispatcherBackgroundService>();
 
         // Tenant invite renderer. Registered here (not in the producing Identity.Tenants module) because
         // Identity.Tenants cannot reference GameGuild.Notifications (circular: Tenants -> Notifications -> Users -> Tenants).

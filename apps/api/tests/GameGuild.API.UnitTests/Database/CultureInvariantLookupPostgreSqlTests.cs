@@ -103,7 +103,7 @@ public sealed class CultureInvariantLookupPostgreSqlTests(CultureInvariantLookup
         var folders = new Mock<IAssetFolderAuthorizationService>(MockBehavior.Strict);
         folders.Setup(service => service.CanReadFolderAsync(It.IsAny<AssetFolder>(), actorId, tenantId, request.Token))
             .ReturnsAsync((AssetFolder folder, Guid _, Guid? _, CancellationToken _) => folder.Id != hidden.Id);
-        var service = new AssetLibraryService(context, [parent.Object], access.Object, folders.Object);
+        var service = new AssetLibraryService(context, [parent.Object], access.Object, folders.Object, Mock.Of<IAssetContentRepository>());
 
         using var culture = new CultureScope(cultureName);
         var result = await service.GetAsync("IDENTITY", resourceId, actorId, tenantId, request.Token);
@@ -234,7 +234,7 @@ public sealed class CultureInvariantLookupPostgreSqlTests(CultureInvariantLookup
     }
 
     private static AssetLibraryService CreateService(ApplicationDbContext context, Mock<IAssetParentAuthorizationResolver> parent) =>
-        new(context, [parent.Object], Mock.Of<IAssetAccessService>(MockBehavior.Strict), Mock.Of<IAssetFolderAuthorizationService>(MockBehavior.Strict));
+        new(context, [parent.Object], Mock.Of<IAssetAccessService>(MockBehavior.Strict), Mock.Of<IAssetFolderAuthorizationService>(MockBehavior.Strict), Mock.Of<IAssetContentRepository>());
 
     private static AssetContent CreateContent() => new("lookup-tests", Guid.NewGuid().ToString("N"),
         Guid.NewGuid().ToString("N"), "application/octet-stream", 1, null, null) { Id = Guid.NewGuid() };

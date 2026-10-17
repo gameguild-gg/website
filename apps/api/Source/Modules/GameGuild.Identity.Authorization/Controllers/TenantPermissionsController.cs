@@ -77,13 +77,16 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     }
 
     /// <summary>
-    ///     Gets all tenant-level permissions for a user.
+    ///     Gets all tenant-level permissions for a user (paginated, issue #298/#307).
     /// </summary>
     /// <param name="tenantId">The tenant ID.</param>
     /// <param name="userId">Optional user ID (defaults to current user).</param>
     /// <param name="includeEffective">Whether to include effective permissions from roles/groups.</param>
+    /// <param name="page">1-based page number.</param>
+    /// <param name="pageSize">Page size (1-200, default 50).</param>
+    /// <param name="sortDescending">Sort permission names descending.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of tenant permissions.</returns>
+    /// <returns>One page of tenant permissions with total counts.</returns>
     /// <response code="200">Permissions retrieved successfully.</response>
     /// <response code="400">Invalid request.</response>
     /// <response code="401">User is not authenticated.</response>
@@ -95,14 +98,46 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
         [FromRoute] Guid tenantId,
         [FromQuery] Guid? userId,
         [FromQuery] bool includeEffective = true,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] bool sortDescending = false,
         CancellationToken cancellationToken = default)
     {
         var query = new GetTenantPermissionsQuery
         {
             TenantId = new TenantId(tenantId),
             UserId = userId,
-            IncludeEffective = includeEffective
+            IncludeEffective = includeEffective,
+            Page = page,
+            PageSize = pageSize,
+            SortDescending = sortDescending
         };
+
+        var result = await sender.Send(query, cancellationToken).ConfigureAwait(false);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     Validates a system-wide permission against the global default baseline (issue #307).
+    /// </summary>
+    /// <param name="permission">The permission to validate.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the global baseline grants the permission.</returns>
+    /// <response code="200">Validation completed.</response>
+    /// <response code="400">Invalid request.</response>
+    /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">Requires system administration or system:manage-global-defaults.</response>
+    [HttpGet("~/api/v{version:apiVersion}/authorization/permissions/global:check")]
+    [ProducesResponseType(typeof(HasGlobalPermissionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> HasGlobalPermission(
+        [FromQuery] string permission,
+        CancellationToken cancellationToken)
+    {
+        var query = new HasGlobalPermissionQuery { Permission = permission };
 
         var result = await sender.Send(query, cancellationToken).ConfigureAwait(false);
 

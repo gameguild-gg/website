@@ -38,7 +38,7 @@ public class PermissionBulkServiceTests
         _grantServiceMock
             .Setup(x => x.GrantTenantPermissionAsync(
                 It.IsAny<Guid?>(), tenantId, permissions, It.IsAny<Guid?>(), null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid? uid, Guid? tid, string[] p, Guid? g, DateTime? e, string? r, CancellationToken _) =>
+            .ReturnsAsync((Guid? uid, Guid? tid, string[] p, Guid? _, DateTime? _, string? _, CancellationToken _) =>
                 new TenantPermission { UserId = uid, TenantId = tid, Permissions = p });
 
         var results = await _sut.BulkGrantTenantPermissionAsync(userIds, tenantId, permissions);
@@ -54,6 +54,30 @@ public class PermissionBulkServiceTests
     {
         var results = await _sut.BulkGrantTenantPermissionAsync(Array.Empty<Guid>(), Guid.NewGuid(), new[] { "read" });
         results.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task BulkGrantTenantPermissionAsync_ForwardsExpiryAndReasonToEveryGrant()
+    {
+        var tenantId = Guid.NewGuid();
+        var userIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var permissions = new[] { "read" };
+        var expiresAt = SystemClock.UtcNow.AddHours(4);
+        var reason = "bulk elevation (issue #310)";
+
+        _grantServiceMock
+            .Setup(x => x.GrantTenantPermissionAsync(
+                It.IsAny<Guid?>(), tenantId, permissions, It.IsAny<Guid?>(), expiresAt, reason, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid? uid, Guid? tid, string[] p, Guid? _, DateTime? _, string? _, CancellationToken _) =>
+                new TenantPermission { UserId = uid, TenantId = tid, Permissions = p });
+
+        var results = await _sut.BulkGrantTenantPermissionAsync(
+            userIds, tenantId, permissions, grantedBy: null, expiresAt, reason);
+
+        results.Should().HaveCount(2);
+        _grantServiceMock.Verify(
+            x => x.GrantTenantPermissionAsync(It.IsAny<Guid?>(), tenantId, permissions, It.IsAny<Guid?>(), expiresAt, reason, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
     }
 
     // ── JoinTenantAsync ──────────────────────────────────────

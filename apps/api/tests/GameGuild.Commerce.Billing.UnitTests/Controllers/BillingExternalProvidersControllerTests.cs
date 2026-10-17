@@ -236,17 +236,29 @@ public class BillingExternalProvidersControllerTests
     }
 
     [Fact]
-    public void Every_Action_Should_Require_The_SystemAdmin_Policy()
+    public void Every_Action_Should_Require_Its_SystemPermissionTier_Policy()
     {
-        // Anonymous requests are challenged (401) and authenticated non-admin
-        // requests are forbidden (403) by the declarative policy; the in-controller
-        // guard adds a fail-closed runtime layer.
+        // Issue #386: provider configuration is gated by SystemConfiguration.Manage and
+        // the migration dry-run by System.DataMigration (SystemAdmin role or the
+        // delegated permission). Anonymous requests are challenged (401) and
+        // authenticated non-admin requests are forbidden (403) by the declarative
+        // policy; the in-controller guard adds a fail-closed runtime layer.
+        var expectedPolicies = new Dictionary<string, string>
+        {
+            [nameof(BillingExternalProvidersController.ListProviders)] = Policies.SystemConfigurationManage,
+            [nameof(BillingExternalProvidersController.GetProvider)] = Policies.SystemConfigurationManage,
+            [nameof(BillingExternalProvidersController.EnableProvider)] = Policies.SystemConfigurationManage,
+            [nameof(BillingExternalProvidersController.DisableProvider)] = Policies.SystemConfigurationManage,
+            [nameof(BillingExternalProvidersController.MigrationDryRun)] = Policies.SystemDataMigration
+        };
+
         var actions = typeof(BillingExternalProvidersController)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
             .Where(method => method.IsPublic && !method.IsSpecialName)
             .ToList();
 
         actions.Should().NotBeEmpty();
+        actions.Select(action => action.Name).Should().BeEquivalentTo(expectedPolicies.Keys);
 
         foreach (var action in actions)
         {
@@ -256,7 +268,8 @@ public class BillingExternalProvidersControllerTests
                 .ContainSingle($"action {action.Name} must carry exactly one [Authorize]")
                 .Subject;
 
-            authorize.Policy.Should().Be(Policies.SystemAdmin, $"action {action.Name} must require the SystemAdmin policy");
+            authorize.Policy.Should().Be(expectedPolicies[action.Name],
+                $"action {action.Name} must require its system permission tier policy (#386)");
             authorize.Roles.Should().BeNullOrEmpty();
         }
     }
