@@ -260,7 +260,7 @@
         },
         "disable": {
           "title": "Desativar MFA",
-          "description": "Informe a senha da conta para desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
+           "description": "Informe a senha da conta para re-verificar e desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
           "passwordLabel": "Senha da conta",
           "cancel": "Cancelar",
           "confirm": "Desativar MFA",
