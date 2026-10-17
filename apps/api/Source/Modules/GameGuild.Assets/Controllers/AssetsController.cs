@@ -625,6 +625,37 @@ public class AssetsController(
     }
 
     /// <summary>
+    /// Attach an asset reference to a parent resource, or detach it (null body fields).
+    /// </summary>
+    [HttpPost("{id:guid}:rebind-parent")]
+    public async Task<IActionResult> RebindParent(
+        Guid id,
+        [FromBody] RebindAssetParentRequest request,
+        CancellationToken ct = default)
+    {
+        if (!Actor.SubjectIdAsGuid.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var command = new RebindAssetParentCommand(
+            id,
+            Actor.SubjectIdAsGuid.Value,
+            Actor.TenantId,
+            request.ParentResourceType,
+            request.ParentResourceId);
+
+        var result = await sender.Send(command, ct).ConfigureAwait(false);
+
+        if (result == null)
+        {
+            return BadRequest(new ProblemDetails { Title = "Unable to rebind asset parent" });
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Delete an asset.
     /// </summary>
     [HttpDelete("{id:guid}")]
@@ -802,6 +833,10 @@ public class AssetsController(
 public sealed record UpdateAssetRequest(
     string? DisplayName = null,
     AssetAccessPolicy? AccessPolicy = null);
+
+public sealed record RebindAssetParentRequest(
+    string? ParentResourceType = null,
+    Guid? ParentResourceId = null);
 
 public sealed record ReportAssetRequest(
     ReportReason Reason,

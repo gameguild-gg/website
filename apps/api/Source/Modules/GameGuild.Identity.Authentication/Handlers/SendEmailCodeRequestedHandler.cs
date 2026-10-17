@@ -22,7 +22,7 @@ public sealed class SendEmailCodeRequestedHandler(
             var user = await userRepository.GetByEmailAsync(notification.Email, cancellationToken).ConfigureAwait(false);
             if (user is null)
             {
-                logger.LogWarning("Email-code requested for unknown email {Email}", LogRedaction.MaskEmail(notification.Email));
+                logger.LogWarning("Email-code requested for an unknown account in tenant {TenantId}", notification.TenantId);
                 return;
             }
 
@@ -48,12 +48,13 @@ public sealed class SendEmailCodeRequestedHandler(
                 throw new InvalidOperationException("Authentication notification was not durably queued.");
             }
 
-            logger.LogInformation("Email-code email queued for {Email}", LogRedaction.MaskEmail(notification.Email));
+            logger.LogInformation("Email-code email queued for user {UserId} in tenant {TenantId}",
+                LogRedaction.RedactId(user.Id, "uid"), notification.TenantId);
         }
         catch (Exception ex)
         {
-            logger.LogError("Error queueing email-code email to {Email}: {ErrorType}",
-                LogRedaction.MaskEmail(notification.Email), ex.GetType().Name);
+            logger.LogError("Error queueing email-code email in tenant {TenantId}: {ErrorType}",
+                notification.TenantId, ex.GetType().FullName);
             throw; // Queue persistence failed; do not acknowledge a lost notification.
         }
     }

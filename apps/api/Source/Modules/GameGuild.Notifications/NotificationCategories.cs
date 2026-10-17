@@ -17,7 +17,9 @@ public static class NotificationCategories
         NotificationType.PasswordReset,
         NotificationType.MagicLink,
         NotificationType.EmailCode,
-        NotificationType.TenantInvite
+        NotificationType.TenantInvite,
+        NotificationType.SmsMfaCode,
+        NotificationType.PushMfaChallenge
     ];
 
     /// <summary>
@@ -48,13 +50,16 @@ public static class NotificationCategories
             or NotificationType.MonthlyStatement
             or NotificationType.InvoiceIssued
             or NotificationType.PaymentMethodExpiring
-            or NotificationType.WalletBalanceBelowThreshold => "Billing",
+            or NotificationType.WalletBalanceBelowThreshold
+            or NotificationType.CreditApplied => "Billing",
 
         NotificationType.EmailVerification
             or NotificationType.PasswordReset
             or NotificationType.MagicLink
             or NotificationType.EmailCode
-            or NotificationType.TenantInvite => "Transactional",
+            or NotificationType.TenantInvite
+            or NotificationType.SmsMfaCode
+            or NotificationType.PushMfaChallenge => "Transactional",
 
         _ => "System"
     };

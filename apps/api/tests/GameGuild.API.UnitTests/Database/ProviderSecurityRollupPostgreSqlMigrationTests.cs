@@ -254,8 +254,11 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
 
     private static async Task AssertAtomicWebhookClaimAsync(string connectionString)
     {
-        await using var firstContext = CreateContext(connectionString);
-        await using var secondContext = CreateContext(connectionString);
+        // This assertion intentionally runs the current repository against a historical
+        // schema from before the universal audit table existed. Production contexts cannot
+        // disable capture; only this internal migration harness bypasses the newer concern.
+        await using var firstContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
+        await using var secondContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
         var firstRepository = new BillingWebhookRepository(
             firstContext,
             NullLogger<BillingWebhookRepository>.Instance);
@@ -277,14 +280,18 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
             DateTime.UtcNow.AddMinutes(-1))).Should().BeFalse();
     }
 
-    private static ApplicationDbContext CreateContext(string connectionString)
+    private static ApplicationDbContext CreateContext(
+        string connectionString,
+        bool enableEntityChangeAuditCapture = true)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseNpgsql(connectionString, npgsql =>
                 npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName))
             .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
-        return new ApplicationDbContext(options);
+        return enableEntityChangeAuditCapture
+            ? new ApplicationDbContext(options)
+            : new ApplicationDbContext(options, enableEntityChangeAuditCapture: false);
     }
 
     private static async Task ExecuteAsync(NpgsqlConnection connection, string sql)

@@ -22,6 +22,7 @@ vi.mock('next-intl', () => ({
       'nav.localization': 'Language & region',
       'nav.privacy': 'Privacy',
       'nav.accessibility': 'Accessibility',
+      'nav.security': 'Security',
     })[key] ?? key,
 }));
 
@@ -40,6 +41,10 @@ describe('SettingsNav', () => {
     expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute(
       'href',
       '/workspace/settings/profile',
+    );
+    expect(screen.getByRole('link', { name: 'Security' })).toHaveAttribute(
+      'href',
+      '/workspace/settings/security',
     );
   });
 

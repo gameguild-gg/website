@@ -16,6 +16,14 @@ public interface IPaymentMethodRepository
     Task<PaymentMethod?> GetByGatewayIdAsync(Guid tenantId, string gatewayProvider, string gatewayPaymentMethodId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Lists every live (non-deleted) payment method across tenants that references the
+    ///     given gateway token. Gateway payment-method ids are globally unique per provider,
+    ///     so provider webhooks (for example Stripe <c>payment_method.updated</c>, issue #414)
+    ///     resolve their target through this cross-tenant lookup instead of a tenant hint.
+    /// </summary>
+    Task<IReadOnlyList<PaymentMethod>> ListByGatewayIdAsync(string gatewayProvider, string gatewayPaymentMethodId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Loads a soft-deleted payment method by gateway reference within a tenant
     ///     (used to restore a previously removed token).
     /// </summary>

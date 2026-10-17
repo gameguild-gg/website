@@ -41,6 +41,15 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         builder.Property(x => x.Metadata)
             .HasMaxLength(4000);
 
+        // Plan-type classification and annual-discount derivation (issue #416).
+        builder.Property(x => x.Type)
+            .HasConversion<int>()
+            .HasDefaultValue(SubscriptionPlanType.Paid);
+
+        builder.Property(x => x.AnnualDiscountPercent)
+            .HasPrecision(5, 2)
+            .HasDefaultValue(0m);
+
         // Relationship configurations
         builder.HasMany(x => x.Subscriptions)
             .WithOne(s => s.Plan)

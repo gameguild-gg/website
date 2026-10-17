@@ -136,7 +136,9 @@ public class NotificationPreferenceService(
         NotificationType.PasswordReset,
         NotificationType.MagicLink,
         NotificationType.EmailCode,
-        NotificationType.TenantInvite
+        NotificationType.TenantInvite,
+        NotificationType.SmsMfaCode,
+        NotificationType.PushMfaChallenge
     ];
 
     public async Task<NotificationDeliveryDecision> DecideDeliveryAsync(

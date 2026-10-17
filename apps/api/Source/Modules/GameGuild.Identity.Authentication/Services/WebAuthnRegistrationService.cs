@@ -11,6 +11,7 @@ namespace GameGuild.Identity.Authentication;
 public class WebAuthnRegistrationService(
     IFido2 fido2,
     IWebAuthnCredentialRepository credentialRepository,
+    IWebAuthnSessionStore sessionStore,
     ILogger<WebAuthnRegistrationService> logger) : IWebAuthnRegistrationService
 {
     public async Task<WebAuthnRegistrationOptionsResult> BeginRegistrationAsync(
@@ -63,13 +64,13 @@ public class WebAuthnRegistrationService(
                 AttestationPreference = AttestationConveyancePreference.None
             });
 
-            // Store session for later verification
-            var sessionId = WebAuthnSessionStore.Store(new WebAuthnSessionStore.WebAuthnSession
+            // Store session for later verification (distributed challenge store, issue #234)
+            var sessionId = await sessionStore.StoreRegistrationSessionAsync(new WebAuthnSession
             {
                 UserId = userId,
                 Challenge = options.Challenge,
                 RegistrationOptions = options
-            });
+            }, cancellationToken).ConfigureAwait(false);
 
             return new WebAuthnRegistrationOptionsResult
             {
@@ -108,8 +109,8 @@ public class WebAuthnRegistrationService(
                 return new WebAuthnRegistrationResult { Success = false, Error = "Invalid attestation response" };
             }
 
-            // Find the session by searching for matching userId
-            var session = WebAuthnSessionStore.FindByUser(userId, s => s.RegistrationOptions != null);
+            // Find the session for this user
+            var session = await sessionStore.FindRegistrationSessionAsync(userId, cancellationToken).ConfigureAwait(false);
             if (session?.RegistrationOptions == null)
             {
                 return new WebAuthnRegistrationResult { Success = false, Error = "Registration session not found or expired" };
@@ -129,7 +130,7 @@ public class WebAuthnRegistrationService(
             }, cancellationToken);
 
             // Remove the session
-            WebAuthnSessionStore.RemoveByUser(userId);
+            await sessionStore.RemoveRegistrationSessionAsync(userId, cancellationToken).ConfigureAwait(false);
 
             // Determine authenticator type
             var authenticatorType = attestationResponseObj.Response.Transports?.Contains(AuthenticatorTransport.Internal) == true

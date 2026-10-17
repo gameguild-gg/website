@@ -34,6 +34,7 @@ public class ApiKey : EntityBase
     /// </summary>
     [Required]
     [MaxLength(64)]
+    [AuditSensitive]
     public string KeyHash { get; set; } = string.Empty;
 
     /// <summary>
@@ -159,7 +160,10 @@ public class ApiKey : EntityBase
     {
         if (!IsActive) return false;
         if (RevokedAt.HasValue) return false;
-        if (IsRotationGraceExpired()) return false;
+        if (IsRotationGraceExpired())
+        {
+            return false;
+        }
         if (ExpiresAt.HasValue && ExpiresAt.Value < SystemClock.UtcNow) return false;
         return true;
     }

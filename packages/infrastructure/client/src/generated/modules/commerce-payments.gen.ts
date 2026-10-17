@@ -292,6 +292,32 @@ export class CommercePaymentsModule {
   }
 
   /**
+   * Per-gateway health and performance metrics over the rolling 24h/7d/30d windows
+   * (issue #413 follow-up): success rates, average processing latency and volume per
+   * gateway, plus the live circuit-breaker state of every known gateway. Requires the
+   * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+   *
+   * Returns per-gateway rolling-window (24h/7d/30d) success rate, average processing latency and volume aggregates computed from payment records, together with the current circuit-breaker state of every known gateway. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+   */
+  async getPaymentsGatewaysMetrics(): Promise<Result<Types.CommercePaymentsGatewayMetricsReport, ApiError>> {
+    const url = '/api/v1/payments/gateways/metrics';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsGatewayMetricsReportSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Payment success and failed-payment recovery metrics for an inclusive window.
    *
    * Aggregates the recovery analytics that billing administrators need to steer retry and
@@ -316,6 +342,33 @@ export class CommercePaymentsModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.CommercePaymentsPaymentRecoveryMetricsSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Refund and dispute analytics for an inclusive window (issue #419 follow-up):
+   * refund counts and amounts by status, currency and UTC day, dispute resolution
+   * rates and the average time to resolution. Requires the
+   * `payments:admin` permission; non-admin actors are scoped to their own tenant.
+   *
+   * Returns refund analytics for an inclusive window — counts and refunded amounts by status, currency and UTC day — plus dispute resolution rates (win/loss ratio of decided disputes) and the average time to dispute resolution. Requires the payments:admin permission; non-admin actors are scoped to their own tenant.
+   */
+  async getPaymentsRefundsMetrics(query?: { fromUtc?: string; toUtc?: string }): Promise<Result<Types.CommercePaymentsRefundAnalyticsReport, ApiError>> {
+    const url = '/api/v1/payments/refunds/metrics';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsRefundAnalyticsReportSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

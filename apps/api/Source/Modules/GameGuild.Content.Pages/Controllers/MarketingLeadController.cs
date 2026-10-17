@@ -76,7 +76,7 @@ public class MarketingLeadController(IMarketingLeadService marketingLeadService,
 
         if (!MarketingLeadSources.IsValid(source))
         {
-            errors[nameof(dto.Source)] = ["Source must be either 'contact' or 'newsletter'."];
+            errors[nameof(dto.Source)] = ["Source must be one of: contact, newsletter, course-proposal."];
         }
 
         if (topic is not null && !MarketingLeadTopics.IsValid(topic))

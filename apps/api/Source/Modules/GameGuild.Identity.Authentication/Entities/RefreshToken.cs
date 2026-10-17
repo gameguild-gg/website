@@ -19,6 +19,7 @@ public class RefreshToken
 
     [Required]
     [MaxLength(500)]
+    [AuditSensitive]
     public string Token { get; set; } = string.Empty;
 
     public DateTime ExpiresAt { get; set; }
@@ -31,6 +32,7 @@ public class RefreshToken
     public DateTime? RevokedAt { get; set; }
 
     [MaxLength(500)]
+    [AuditSensitive]
     public string? ReplacedByToken { get; set; }
 
     [Required]

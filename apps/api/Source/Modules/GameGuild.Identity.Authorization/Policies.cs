@@ -175,6 +175,41 @@ public static class Policies
     public const string UsersDeleteSelf = "Users.DeleteSelf";
 
     // ========================
+    // ADMINISTRATIVE PERMISSION POLICIES (issue #294)
+    // ========================
+
+    /// <summary>Add, remove, suspend and re-role tenant members, and manage membership invites</summary>
+    public const string MembersManage = "Members.Manage";
+
+    /// <summary>Create, modify, delete and assign tenant roles</summary>
+    public const string RolesManage = "Roles.Manage";
+
+    /// <summary>Read tenant settings, feature flags and system limits</summary>
+    public const string SettingsRead = "Settings.Read";
+
+    /// <summary>Change tenant settings, feature flags, business rules and system limits</summary>
+    public const string SettingsManage = "Settings.Manage";
+
+    /// <summary>Read and investigate audit logs, security events and audit statistics (tenant-administered self-service tier)</summary>
+    public const string AuditRead = "Audit.Read";
+
+    /// <summary>Export audit logs and schedule recurring compliance exports</summary>
+    public const string AuditExport = "Audit.Export";
+
+    // ========================
+    // SYSTEM PERMISSION POLICIES (issue #386)
+    // ========================
+
+    /// <summary>Manage infrastructure configuration (cache management, signing keys, provider configuration)</summary>
+    public const string SystemConfigurationManage = "SystemConfiguration.Manage";
+
+    /// <summary>Execute backup, snapshot, restore and event-recovery operations</summary>
+    public const string SystemBackupRestore = "System.BackupRestore";
+
+    /// <summary>Run data-migration assessments and migrations between providers</summary>
+    public const string SystemDataMigration = "System.DataMigration";
+
+    // ========================
     // POLICY REGISTRY & VALIDATION
     // ========================
 
@@ -210,7 +245,11 @@ public static class Policies
         // Employees
         EmployeesRead, EmployeesCreate, EmployeesUpdate, EmployeesDelete,
         // Users - Self
-        UsersReadSelf, UsersEditSelf, UsersDeleteSelf
+        UsersReadSelf, UsersEditSelf, UsersDeleteSelf,
+        // Administrative permissions (issue #294)
+        MembersManage, RolesManage, SettingsRead, SettingsManage, AuditRead, AuditExport,
+        // System permissions (issue #386)
+        SystemConfigurationManage, SystemBackupRestore, SystemDataMigration
     };
 
     /// <summary>

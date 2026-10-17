@@ -30,6 +30,12 @@
       "@game-guild/dotnet-wasm": [
         "../../packages/infrastructure/wasm/dotnet/src/index.ts"
       ],
+      "@game-guild/assets/*": [
+        "../../packages/assets/src/*"
+      ],
+      "@game-guild/lexical-surface/*": [
+        "../../packages/features/lexical-surface/src/*"
+      ],
       "@game-guild/ui/*": [
         "../../packages/ui/src/*"
       ],

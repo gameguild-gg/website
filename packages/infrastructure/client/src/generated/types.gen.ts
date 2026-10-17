@@ -1299,6 +1299,12 @@ export interface AssetsControllersMarkNonDeletableInput {
   reason?: string | null;
 }
 
+/** Data model for Assets Controllers Rebind Asset Parent Request. */
+export interface AssetsControllersRebindAssetParentInput {
+  parentResourceId?: string | null;
+  parentResourceType?: string | null;
+}
+
 /** Data model for Assets Controllers Report Asset Request. */
 export interface AssetsControllersReportAssetInput {
   description?: string | null;
@@ -1628,6 +1634,14 @@ export interface CommerceBillingBillingWebhookEventListItemDto {
   tenantId?: string | null;
 }
 
+/** Request body for the webhook signing-secret rotation. */
+export interface CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput {
+  /** The new signing secret exactly as configured at the provider. */
+  newSecret?: string | null;
+  /** Provider key (stripe, paypal, ...). */
+  providerKey?: string | null;
+}
+
 /** A security alert surfaced from the Compliance.Audit pipeline. */
 export interface CommerceBillingBillingWebhookSecurityAlertDto {
   id?: string;
@@ -1933,6 +1947,20 @@ export interface CommerceBillingValidatePricingLedgerDriftInput {
   sampleSize?: number;
   /** Inclusive window end (null = unbounded). */
   toUtc?: string | null;
+}
+
+/** Result of a recorded webhook signing-secret rotation. Never contains secret material. */
+export interface CommerceBillingWebhookSecretRotationResult {
+  /** Always true on creation; the previous secret verifies for the whole window. */
+  previousSecretStillAccepted?: boolean;
+  /** UTC instant after which the previous secret stops verifying. */
+  previousSecretValidUntilUtc?: string;
+  /** Normalized provider key. */
+  providerKey?: string | null;
+  /** UTC instant the rotation was recorded. */
+  rotatedAtUtc?: string;
+  /** The recorded rotation. */
+  rotationId?: string;
 }
 
 /** OpenAPI schema for Commerce Order Charge State. */
@@ -2706,6 +2734,58 @@ export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | '
 /** Risk band derived from the aggregate fraud score. */
 export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
 
+/** Health snapshot of one gateway circuit (issue #413). */
+export interface CommercePaymentsGatewayCircuitSnapshot {
+  /** Consecutive retriable failures recorded while closed. */
+  consecutiveFailures?: number;
+  /** Configured consecutive-failure threshold. */
+  failureThreshold?: number;
+  /** When the circuit last opened; null while closed. */
+  openedAtUtc?: string | null;
+  /** Provider identifier of the gateway. */
+  providerId?: string | null;
+  state?: CommercePaymentsGatewayCircuitState;
+}
+
+/** Circuit state of one payment gateway. */
+export type CommercePaymentsGatewayCircuitState = 'Closed' | 'Open' | 'HalfOpen';
+
+/** Combined read model of one reporting pass: rolling-window aggregates per gateway
+plus the current circuit-breaker snapshot of every known gateway. */
+export interface CommercePaymentsGatewayMetricsReport {
+  /** Circuit-breaker snapshot of every known gateway at generation time. */
+  circuitBreakers: CommercePaymentsGatewayCircuitSnapshot[] | null;
+  /** UTC instant the report was generated. */
+  generatedAtUtc: string;
+  /** Window aggregates (24h/7d/30d) per provider with payments in the window;
+providers without payments in a window are omitted from that window. */
+  windows: CommercePaymentsGatewayWindowMetrics[] | null;
+}
+
+/** Aggregated performance of one gateway over one rolling window, computed from
+persisted payment records (issue #413). */
+export interface CommercePaymentsGatewayWindowMetrics {
+  /** Payments recorded for the gateway inside the window. */
+  attempts?: number;
+  /** Mean of `ProcessedAt - CreatedAt` over succeeded payments, milliseconds; null
+when no succeeded payment has both timestamps. */
+  averageProcessingLatencyMs?: number | null;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Failed. */
+  failed?: number;
+  /** Provider identifier of the gateway. */
+  providerId?: string | null;
+  /** Inclusive window start (UTC). */
+  sinceUtc?: string;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Succeeded. */
+  succeeded?: number;
+  /** Succeeded / Attempts; 0 when no attempts. */
+  successRate?: number;
+  /** Payments still pending/processing/requiring action inside the window. */
+  unresolved?: number;
+  /** Window label (24h, 7d or 30d). */
+  window?: string | null;
+}
+
 /** Public (non-secret) view of a gift for the redemption preview endpoint. */
 export interface CommercePaymentsGiftPublicView {
   /** Gift id. */
@@ -2993,6 +3073,10 @@ export interface CommercePaymentsPaymentRecoveryMetrics {
 /** Result of payment processing */
 export interface CommercePaymentsPaymentResult {
   amount?: Money;
+  /** Account-credit tender applied automatically before the payment method was charged
+(issue #410 auto-apply); the provider charge is `Amount - CreditApplied`.
+Null when no credits were applied. */
+  creditApplied?: number | null;
   failureReason?: string | null;
   /** Invoice ID that this payment was applied to.
 Links payment to specific invoice for audit trail and preventing duplicate applications. */
@@ -3496,6 +3580,49 @@ export interface CommercePaymentsReferrerLeaderboardEntry {
   rewardedReferrals?: number;
 }
 
+/** Combined refund/dispute analytics read model (issue #419 follow-up). */
+export interface CommercePaymentsRefundAnalyticsReport {
+  /** Average hours from creation to resolution for resolved disputes; null when none resolved. */
+  averageDisputeResolutionHours?: number | null;
+  /** Refunded amount by currency for completed refunds in the window. */
+  completedRefundAmountByCurrency: Record<string, number> | null;
+  /** Dispute count by status in the window. */
+  disputeCountByStatus: {
+    Cancelled?: number;
+    Lost?: number;
+    PendingCustomerResponse?: number;
+    PendingMerchantResponse?: number;
+    Resolved?: number;
+    Submitted?: number;
+    UnderReview?: number;
+    Won?: number;
+  } | null;
+  /** Share of decided (won or lost) disputes among all disputes; null when there are none. */
+  disputeResolutionRate?: number | null;
+  /** Disputes lost by the merchant in the window. */
+  disputesLost: number;
+  /** Disputes won by the merchant in the window. */
+  disputesWon: number;
+  /** Share of won disputes among decided disputes; null when none were decided. */
+  disputeWinRate?: number | null;
+  /** Inclusive window start. */
+  fromUtc: string;
+  /** Refunded amount by lifecycle status in the window. */
+  refundAmountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** Refund count by currency in the window (all statuses). */
+  refundCountByCurrency: Record<string, number> | null;
+  /** Refund count by lifecycle status in the window. */
+  refundCountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** UTC-day breakdown of refund counts and completed amounts. */
+  refundsByDay: CommercePaymentsRefundDailyBucket[] | null;
+  /** Total disputes considered in the window. */
+  totalDisputeCount: number;
+  /** Total refunds considered in the window (all statuses). */
+  totalRefundCount: number;
+  /** Inclusive window end. */
+  toUtc: string;
+}
+
 /** Paged read model for the pending refund-approval queue. */
 export interface CommercePaymentsRefundApprovalQueuePage {
   /** Queue items for the requested page, oldest first. */
@@ -3506,6 +3633,16 @@ export interface CommercePaymentsRefundApprovalQueuePage {
   pageSize: number;
   /** Total queue size across all pages. */
   totalCount: number;
+}
+
+/** One UTC-day bucket of the refund period breakdown. */
+export interface CommercePaymentsRefundDailyBucket {
+  /** Sum of amounts of refunds completed that day. */
+  completedAmount?: number;
+  /** Refunds created that day (all statuses). */
+  count?: number;
+  /** UTC day (midnight) the bucket covers. */
+  date?: string;
 }
 
 /** Result of an approval or rejection decision on a refund request. */
@@ -5584,6 +5721,10 @@ export interface CommerceSubscriptionsSubscriptionPlan {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
+  /** Plan-level annual billing discount in percent (issue #416). Applied when deriving the
+annual price (`monthly x 12`) for plans without an explicit annual price or interval
+price point. The default of 0 keeps the derived price unchanged. */
+  annualDiscountPercent?: number;
   /** Annual price in the smallest currency unit (with potential discount) */
   annualPriceInCents?: number | null;
   /** Timestamp when the entity was created.
@@ -5638,6 +5779,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   tenantId?: string | null;
   /** Trial period in days (0 = no trial) */
   trialPeriodDays?: number;
+  type?: CommerceSubscriptionsSubscriptionPlanType;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
   updatedAt: string;
@@ -5688,6 +5830,7 @@ export interface CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdate
 
 /** Data model for Commerce Subscriptions Subscription Plan Operations Controller+Update Pricing Request. */
 export interface CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdatePricingInput {
+  annualDiscountPercent?: number | null;
   annualPriceInCents?: number | null;
   monthlyPriceInCents?: number;
 }
@@ -5707,15 +5850,25 @@ export interface CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlan
 
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Create Plan Request. */
 export interface CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInput {
+  annualDiscountPercent?: number;
   currency?: string | null;
   description?: string | null;
+  features?: string | null;
+  hasAdvancedAnalytics?: boolean | null;
+  hasCustomBranding?: boolean | null;
+  hasPrioritySupport?: boolean | null;
+  maxApiCallsPerMonth?: number | null;
+  maxStorageMb?: number | null;
+  maxUsers?: number | null;
   monthlyPriceInCents?: number;
   name?: string | null;
   slug?: string | null;
+  type?: CommerceSubscriptionsSubscriptionPlanType;
 }
 
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Put Subscription Plan Request. */
 export interface CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInput {
+  annualDiscountPercent?: number | null;
   annualPriceInCents?: number | null;
   description?: string | null;
   features?: string | null;
@@ -5730,7 +5883,12 @@ export interface CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscrip
   slug?: string | null;
   sortOrder?: number | null;
   trialPeriodDays?: number | null;
+  type?: CommerceSubscriptionsSubscriptionPlanType;
 }
+
+/** Commercial classification of a subscription plan (issue #416). Trial offers are not a
+type: every type can carry `TrialPeriodDays` configuration. */
+export type CommerceSubscriptionsSubscriptionPlanType = 'Free' | 'Paid' | 'Enterprise';
 
 /** Request to create a subscription */
 export interface CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput {
@@ -5878,6 +6036,37 @@ export interface ComplianceAuditAuditActorContext {
 export type ComplianceAuditAuditCategory =
   'General' | 'Authentication' | 'Authorization' | 'Permission' | 'User' | 'Admin' | 'Security' | 'Data' | 'System' | 'Tenant' | 'Privacy';
 
+/** A node of a nested audit log filter condition tree. A node is either a group that
+combines child nodes with a boolean operator or a field node that applies a single
+comparison to an audit field. */
+export interface ComplianceAuditAuditConditionNode {
+  /** Gets or sets the child nodes of a group node. */
+  children?: ComplianceAuditAuditConditionNode[] | null;
+  comparison?: ComplianceAuditAuditFilterComparison;
+  field?: ComplianceAuditAuditFilterField;
+  kind?: ComplianceAuditAuditConditionNodeKind;
+  operator?: ComplianceAuditAuditLogicalOperator;
+  /** Gets or sets the single comparison value of a field node. */
+  value?: string | null;
+  /** Gets or sets the value list of an GameGuild.Compliance.Audit.AuditFilterComparison.In comparison. */
+  values?: string[] | null;
+}
+
+/** Defines the kind of a condition tree node. */
+export type ComplianceAuditAuditConditionNodeKind = 'Group' | 'Field';
+
+/** Request to search audit log entries with a nested condition tree. */
+export interface ComplianceAuditAuditConditionSearchInput {
+  condition: ComplianceAuditAuditConditionNode;
+  /** Gets or sets the number of entries to skip. */
+  skip?: number;
+  /** Gets or sets the number of entries to take. */
+  take?: number;
+  /** Gets or sets the tenant scope. Non-system callers are always clamped to the
+tenant from their authenticated actor context. */
+  tenantId?: string | null;
+}
+
 /** Data model for Compliance Audit Audit Date Range Search Response. */
 export interface ComplianceAuditAuditDateRangeSearchOutput {
   activity?: ComplianceAuditAuditActivityBucketOutput[] | null;
@@ -5915,6 +6104,7 @@ export interface ComplianceAuditAuditExportInput {
   category?: ComplianceAuditAuditCategory;
   /** Ordered CSV columns. Omit to include every supported audit field. */
   columns?: string[] | null;
+  condition?: ComplianceAuditAuditConditionNode;
   endDate?: string | null;
   ipAddress?: string | null;
   /** Optional 1-based page number. Omit both pagination fields to export all matching rows. */
@@ -5944,6 +6134,13 @@ export interface ComplianceAuditAuditExportProgressOutput {
   totalRecords?: number;
   updatedAt?: string;
 }
+
+/** The comparison applied by a field node. */
+export type ComplianceAuditAuditFilterComparison = 'Equals' | 'NotEquals' | 'In' | 'GreaterThanOrEqual' | 'LessThanOrEqual';
+
+/** The audit log field targeted by a field node. */
+export type ComplianceAuditAuditFilterField =
+  'UserId' | 'ActionType' | 'ResourceType' | 'ResourceId' | 'Category' | 'RiskLevel' | 'Success' | 'CreatedAt' | 'IpAddress' | 'SearchText';
 
 /** Data model for Compliance Audit Audit Json Export Document. */
 export interface ComplianceAuditAuditJsonExportDocument {
@@ -5993,6 +6190,9 @@ export interface ComplianceAuditAuditLogDto {
   userAgent?: string | null;
   userId?: string | null;
 }
+
+/** Defines how a group node combines its children. */
+export type ComplianceAuditAuditLogicalOperator = 'And' | 'Or' | 'Not';
 
 /** Data model for Compliance Audit Audit Log Response. */
 export interface ComplianceAuditAuditLogOutput {
@@ -6111,6 +6311,43 @@ export interface ComplianceAuditAuditRelatedAction {
   correlationCount?: number;
 }
 
+/** Reconstructed timeline of one verified snapshot (issue #169): chronological events,
+            per-user journeys and per-session summaries. The digest is repeated in a response header. */
+export interface ComplianceAuditAuditReplayReconstructionOutput {
+  capturedAtUtc?: string | null;
+  endUtc?: string | null;
+  events?: ComplianceAuditAuditReplaySnapshotEvent[] | null;
+  failedCount?: number;
+  sessions?: ComplianceAuditAuditReplaySessionSummary[] | null;
+  sha256?: string | null;
+  startUtc?: string | null;
+  tenantId?: string | null;
+  totalCount?: number;
+  users?: ComplianceAuditAuditReplayUserJourney[] | null;
+}
+
+/** Per-session summary: the parallel activity of one session and the subjects seen in it. */
+export interface ComplianceAuditAuditReplaySessionSummary {
+  eventCount?: number;
+  failedCount?: number;
+  firstAtUtc?: string | null;
+  lastAtUtc?: string | null;
+  sessionId?: string | null;
+  userIds?: string[] | null;
+}
+
+/** Client-held snapshot document posted for reconstruction (issue #169).
+            Field order mirrors the canonical capture document so the reconstructed bytes are deterministic. */
+export interface ComplianceAuditAuditReplaySnapshotDocument {
+  capturedAtUtc?: string | null;
+  endUtc?: string | null;
+  events?: ComplianceAuditAuditReplaySnapshotEvent[] | null;
+  schemaVersion?: number;
+  startUtc?: string | null;
+  tenantId?: string | null;
+  totalCount?: number;
+}
+
 /** Safe event fields shared with the Web replay core. UserId may identify a subject;
             it must not be presented as verified attribution without additional source evidence. */
 export interface ComplianceAuditAuditReplaySnapshotEvent {
@@ -6135,6 +6372,16 @@ export interface ComplianceAuditAuditReplaySnapshotOutput {
   startUtc?: string | null;
   tenantId?: string | null;
   totalCount?: number;
+}
+
+/** Per-user journey: chronological activity of one subject across the captured window. */
+export interface ComplianceAuditAuditReplayUserJourney {
+  eventCount?: number;
+  failedCount?: number;
+  firstSeenAtUtc?: string | null;
+  lastSeenAtUtc?: string | null;
+  sessionIds?: string[] | null;
+  userId?: string | null;
 }
 
 /** Data model for Compliance Audit Audit Resource Context. */
@@ -6767,6 +7014,12 @@ export interface ComplianceAuditPiiTokenResolutionOutput {
   token?: string | null;
   useCount?: number;
   value?: string | null;
+}
+
+/** Client-held snapshot plus the digest it was captured with (issue #169). */
+export interface ComplianceAuditReconstructAuditReplayInput {
+  document?: ComplianceAuditAuditReplaySnapshotDocument;
+  sha256?: string | null;
 }
 
 /** Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
@@ -7489,6 +7742,22 @@ export type ContentPagesContentResourceStatus = 'Draft' | 'InReview' | 'Publishe
 /** The type of content resource. */
 export type ContentPagesContentResourceType = 'Article' | 'Tutorial' | 'Documentation' | 'Video' | 'Download' | 'ExternalLink' | 'Course' | 'Custom';
 
+/** Course proposal as rendered by the CRM or the public detail page. */
+export interface ContentPagesCourseProposalDto {
+  id?: string;
+  audience?: string | null;
+  courseTitle?: string | null;
+  createdAt?: string;
+  metadata?: string | null;
+  pitch?: string | null;
+  proposerEmail?: string | null;
+  proposerName?: string | null;
+  publishedAt?: string | null;
+  slug?: string | null;
+  status?: string | null;
+  updatedAt?: string | null;
+}
+
 /** Data model for Content Pages Create Content Resource Dto. */
 export interface ContentPagesCreateContentResourceDto {
   body?: string | null;
@@ -7513,6 +7782,16 @@ export interface ContentPagesCreateContentResourceDto {
   tags?: string | null;
   title?: string | null;
   videoUrl?: string | null;
+}
+
+/** Public submission payload for the creator pipeline (issue #105). */
+export interface ContentPagesCreateCourseProposalDto {
+  audience?: string | null;
+  courseTitle: string;
+  metadata?: string | null;
+  pitch?: string | null;
+  proposerEmail: string;
+  proposerName: string;
 }
 
 /** Data model for Content Pages Create Marketing Lead Dto. */
@@ -7705,6 +7984,15 @@ export interface ContentPagesUpdateContentResourceDto {
   tags?: string | null;
   title?: string | null;
   videoUrl?: string | null;
+}
+
+/** CRM-side update payload: status transitions and content edits. */
+export interface ContentPagesUpdateCourseProposalDto {
+  audience?: string | null;
+  courseTitle?: string | null;
+  metadata?: string | null;
+  pitch?: string | null;
+  status?: string | null;
 }
 
 /** Data model for Content Pages Update Page Dto. */
@@ -9691,6 +9979,24 @@ export interface IdentityAuthenticationAssignRoleToUserInput {
 /** Multi-step authentication flow steps */
 export type IdentityAuthenticationAuthenticationStep = 'PrimaryCredential' | 'MfaVerification' | 'DeviceTrust' | 'RiskChallenge';
 
+/** The v1 session-state projection (issue #221). GameGuild.Identity.Authentication.AuthSessionStateDto.SessionValid is false when the
+token is not session-bound or the bound session row is expired, terminated or missing —
+the surface reports that state instead of trusting the token alone. GameGuild.Identity.Authentication.AuthSessionStateDto.TokenRevoked
+is null when the token carries no issued-at claim, so no revocation verdict is claimed. */
+export interface IdentityAuthenticationAuthSessionStateDto {
+  activeSessionCount?: number;
+  mfaEnrolled?: boolean;
+  mfaVerifiedInCurrentToken?: boolean;
+  sessionExpiresAtUtc?: string | null;
+  sessionId?: string | null;
+  sessionLastUsedAtUtc?: string | null;
+  sessionTerminationReason?: string | null;
+  sessionValid?: boolean;
+  tokenRevoked?: boolean | null;
+  tokenVersion?: number | null;
+  userId?: string;
+}
+
 /** Backup codes response */
 export interface IdentityAuthenticationBackupCodesOutput {
   codes?: string[] | null;
@@ -9924,8 +10230,8 @@ export interface IdentityAuthenticationDeviceInfo {
 
 /** Request to disable MFA */
 export interface IdentityAuthenticationDisableMfaInput {
-  /** TOTP confirmation code */
-  code: string;
+  /** The account password, re-verified before MFA is disabled (issue #244). */
+  password: string;
 }
 
 /** Request to initiate Discord OAuth sign-in */
@@ -10161,7 +10467,7 @@ export interface IdentityAuthenticationMfaErrorOutput {
 }
 
 /** Supported MFA methods */
-export type IdentityAuthenticationMfaMethod = 'Totp' | 'BackupCode' | 'Sms' | 'Email' | 'WebAuthn';
+export type IdentityAuthenticationMfaMethod = 'Totp' | 'BackupCode' | 'Sms' | 'Email' | 'WebAuthn' | 'Push';
 
 /** Information about an MFA method */
 export interface IdentityAuthenticationMfaMethodInfo {
@@ -10399,6 +10705,34 @@ export interface IdentityAuthenticationProcessOrchestratedAuthenticationStepRequ
   webAuthnAssertion?: string | null;
 }
 
+/** Request to issue a push MFA challenge */
+export interface IdentityAuthenticationPushMfaChallengeInput {
+  /** User identifier whose enrolled device receives the challenge */
+  userId: string;
+}
+
+/** Response carrying an issued push challenge */
+export interface IdentityAuthenticationPushMfaChallengeOutput {
+  /** Opaque challenge identifier the device answers with */
+  challengeId: string | null;
+  /** Seconds until the challenge expires (fallback to TOTP on timeout) */
+  expiresInSeconds: number;
+}
+
+/** Request to register a push MFA device */
+export interface IdentityAuthenticationPushMfaDeviceInput {
+  /** Device registration token from the mobile platform (FCM/APNs) */
+  deviceToken: string | null;
+}
+
+/** Device's answer to a push MFA challenge */
+export interface IdentityAuthenticationPushMfaRespondInput {
+  /** true to approve the sign-in, false to deny it */
+  approved: boolean;
+  /** Opaque challenge identifier from the push payload */
+  challengeId: string | null;
+}
+
 /** Request DTO for refreshing tokens */
 export interface IdentityAuthenticationRefreshTokenInput {
   refreshToken: string;
@@ -10409,6 +10743,12 @@ export interface IdentityAuthenticationRefreshTokenInput {
 export interface IdentityAuthenticationRemoveRoleFromUserInput {
   roleId?: string;
   userId?: string;
+}
+
+/** Request to name or rename one of the current user's own sessions */
+export interface IdentityAuthenticationRenameSessionInput {
+  /** User-defined session name (1–64 characters, trimmed) */
+  name: string | null;
 }
 
 /** Request to send a one-time email sign-in code. */
@@ -10573,6 +10913,12 @@ export interface IdentityAuthenticationSessionOutput {
   location?: IdentityAuthenticationLocationInfo;
 }
 
+/** Error response for session rename validation failures */
+export interface IdentityAuthenticationSessionRenameErrorOutput {
+  /** Error message */
+  error: string | null;
+}
+
 /** Security analysis result for a session */
 export interface IdentityAuthenticationSessionSecurityAnalysis {
   activeSessionCount?: number;
@@ -10662,6 +11008,12 @@ identity provider for this sign-in. Null for non-federated flows. */
   user?: IdentityAuthenticationUserDto;
   /** User ID */
   userId?: string;
+}
+
+/** Request for an SMS sign-in challenge */
+export interface IdentityAuthenticationSmsMfaChallengeInput {
+  /** User identifier whose enrolled phone receives the code */
+  userId: string;
 }
 
 /** Request to setup SMS MFA */
@@ -11038,6 +11390,28 @@ export interface IdentityAuthorizationCommandsRequestJitElevationCommand {
   tenantId?: string | null;
 }
 
+/** Response row for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+export interface IdentityAuthorizationContentTypePermissionGrantDto {
+  /** Gets the grant row id. */
+  id: string;
+  /** Gets the content type name. */
+  contentTypeName: string | null;
+  /** Gets the denied permission entries. */
+  denyPermissions: string[] | null;
+  /** Gets the optional expiration instant. */
+  expiresAt?: string | null;
+  /** Gets when the row was granted. */
+  grantedAt?: string;
+  /** Gets whether the row is active. */
+  isActive?: boolean;
+  /** Gets the allowed permission entries. */
+  permissions: string[] | null;
+  /** Gets the tenant scope. */
+  tenantId: string;
+  /** Gets the grant subject (null = tenant default). */
+  userId?: string | null;
+}
+
 /** Data model for Identity Authorization Controllers Approve Elevation Request. */
 export interface IdentityAuthorizationControllersApproveElevationInput {
   comments?: string | null;
@@ -11118,6 +11492,27 @@ export interface IdentityAuthorizationCreatePermissionApprovalCommand {
   tenantId?: CQRSModelsTenantId;
 }
 
+/** Creates a permission template (issue #369 template CRUD lifecycle). */
+export interface IdentityAuthorizationCreatePermissionTemplateCommand {
+  /** Optional category for organization. */
+  category?: string | null;
+  /** Optional change note recorded on the version snapshot. */
+  changeNotes?: string | null;
+  /** Template description. */
+  description: string | null;
+  /** Whether the template is a system template (immutable once created). */
+  isSystemTemplate?: boolean;
+  /** Optional minimum tenant tier. */
+  minimumTier?: string | null;
+  /** Template name (unique). */
+  name: string | null;
+  /** Raw permissions the template grants. */
+  permissions?: string[] | null;
+  /** Dynamic role names the template grants (issue #369 role templates). A
+non-empty set makes this a role template. */
+  roleKeys?: string[] | null;
+}
+
 /** Request payload for declining an invitation. */
 export interface IdentityAuthorizationDeclineInvitationInput {
   /** Optional reason for declining. */
@@ -11154,6 +11549,20 @@ export interface IdentityAuthorizationDelegatedAdminScope {
 
 /** Type of delegated admin scope */
 export type IdentityAuthorizationDelegatedAdminScopeType = 'None' | 'Department' | 'Team' | 'Role' | 'Resource' | 'Custom';
+
+/** Adds explicit DENY-WINS entries to a content-type grant row. Guarded like the
+grant command. */
+export interface IdentityAuthorizationDenyContentTypePermissionGrantCommand {
+  /** Gets the content type name. */
+  contentTypeName: string | null;
+  /** Gets the permissions to deny. */
+  permissions: string[] | null;
+  /** Gets the optional reason (audit trail). */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+  /** Gets the deny subject (null addresses the tenant default row). */
+  userId?: string | null;
+}
 
 /** Command to deny tenant-level permissions from a user.
 Denied permissions take precedence over allowed permissions (DENY-WINS). */
@@ -11277,6 +11686,14 @@ export interface IdentityAuthorizationExternalRoleDefinition {
   priority?: number;
 }
 
+/** Response envelope for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+export interface IdentityAuthorizationGetContentTypePermissionGrantsOutput {
+  /** Gets the matching grant rows. */
+  grants: IdentityAuthorizationContentTypePermissionGrantDto[] | null;
+  /** Gets the tenant scope. */
+  tenantId: string;
+}
+
 /** Response containing grants that are about to expire in a tenant. */
 export interface IdentityAuthorizationGetExpiringTenantPermissionsOutput {
   /** Gets the grants expiring within the requested window, ordered by expiration instant. */
@@ -11316,12 +11733,39 @@ export interface IdentityAuthorizationGetTenantPermissionsOutput {
   isSystemAdmin?: boolean;
   /** Gets whether the user is a tenant admin. */
   isTenantAdmin?: boolean;
-  /** Gets the list of permissions. */
+  /** Gets the 1-based page number this response represents (issue #307). */
+  page?: number;
+  /** Gets the page size that produced this response (issue #307). */
+  pageSize?: number;
+  /** Gets the list of permissions on the requested page. */
   permissions: string[] | null;
   /** Gets the tenant ID. */
   tenantId: string;
+  /** Gets the total number of permissions across all pages (issue #307). */
+  totalCount?: number;
+  /** Gets the total number of pages (issue #307). */
+  totalPages?: number;
   /** Gets the user ID. */
   userId: string;
+}
+
+/**     Grants content-type scoped permissions (layer 2 of the 3-layer DAC model,
+issues #360/#365). Guarded: only system administrators or tenant administrators of
+the target tenant may grant; versioned and audited inside
+GameGuild.Identity.Authorization.IContentTypePermissionGrantService. */
+export interface IdentityAuthorizationGrantContentTypePermissionGrantCommand {
+  /** Gets the content type name (e.g. `Project`). */
+  contentTypeName: string | null;
+  /** Gets the optional expiration instant. */
+  expiresAt?: string | null;
+  /** Gets the permissions to grant (e.g. ["Read", "Write"]). */
+  permissions: string[] | null;
+  /** Gets the optional reason (audit trail). */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+  /** Gets the grant subject. Null edits the tenant default row (every user of the
+tenant for this content type). */
+  userId?: string | null;
 }
 
 /** Command to grant tenant-level permissions to a user. */
@@ -11341,6 +11785,18 @@ export interface IdentityAuthorizationGrantTenantPermissionCommand {
 
 /** Graph export formats */
 export type IdentityAuthorizationGraphExportFormat = 'None' | 'DOT' | 'JSON' | 'GraphML';
+
+/** Response of a global-permission validation. */
+export interface IdentityAuthorizationHasGlobalPermissionOutput {
+  /** Gets the reason the permission is not granted (when it is not). */
+  denialReason?: string | null;
+  /** Gets whether the global default baseline grants the permission. */
+  hasPermission: boolean;
+  /** Gets the permission that was validated. */
+  permission: string | null;
+  /** Gets the source of the decision (always the global-defaults layer). */
+  source: string | null;
+}
 
 /** Response indicating whether the user has the requested permission. */
 export interface IdentityAuthorizationHasPermissionOutput {
@@ -11409,6 +11865,18 @@ export interface IdentityAuthorizationInheritanceHistoryEvent {
   timestamp?: string;
 }
 
+/** Request body for template instantiation. */
+export interface IdentityAuthorizationInstantiateTemplateInput {
+  /** When true, return the preview without applying anything. */
+  dryRun?: boolean;
+  /** Reason recorded in the audit log. */
+  reason?: string | null;
+  /** The target users. */
+  targetUserIds?: string[] | null;
+  /** The tenant receiving the template (defaults to the acting tenant). */
+  tenantId?: string | null;
+}
+
 /** Result of performing an invitation lifecycle action. */
 export interface IdentityAuthorizationInvitationActionResult {
   errorMessage?: string | null;
@@ -11444,6 +11912,23 @@ export interface IdentityAuthorizationJitElevationInput {
   tenantId?: CQRSModelsTenantId;
   updatedAt?: string | null;
 }
+
+/** Request body for template migration. */
+export interface IdentityAuthorizationMigrateTemplateInput {
+  /** Batch size for per-batch progress commits (default 25). */
+  batchSize?: number;
+  /** When true, return the plan without applying anything. */
+  dryRun?: boolean;
+  /** Reason recorded in the audit log. */
+  reason?: string | null;
+  /** Optional tenant filter (null = every tenant that instantiated the template). */
+  tenantIds?: string[] | null;
+  /** The target version number. */
+  toVersion: number;
+}
+
+/** Migration status */
+export type IdentityAuthorizationMigrationStatus = 'None' | 'Planned' | 'Scheduled' | 'InProgress' | 'Completed' | 'Failed' | 'RolledBack' | 'Cancelled';
 
 /** A user affected by a simulated permission change, with the reason. */
 export interface IdentityAuthorizationModelsImpactedUser {
@@ -11797,6 +12282,41 @@ export interface IdentityAuthorizationPermissionRestorationResult {
   tenantId?: string | null;
 }
 
+/** Result of a what-if permission simulation (issue #374). GameGuild.Identity.Authorization.PermissionSimulationResult.Applied is
+always false: a simulation never mutates state. */
+export interface IdentityAuthorizationPermissionSimulationResult {
+  /** The effective permission set after the hypothetical change. */
+  after?: string[] | null;
+  /** Always false — a simulation is a pure dry-run. */
+  applied?: boolean;
+  /** The effective permission set before the hypothetical change. */
+  before?: string[] | null;
+  /** False when the resolution context was invalid and the before set is fail-closed empty. */
+  contextValid?: boolean;
+  /** Permissions the hypothetical change would grant. */
+  granted?: string[] | null;
+  /** Revokes that cannot apply because the grant is static and non-deniable. */
+  nonRevocableRevokes?: string[] | null;
+  /** The resource scope id (user subjects with a resource scope). */
+  resourceId?: string | null;
+  /** The resource scope type (user subjects with a resource scope). */
+  resourceType?: string | null;
+  /** Permissions the hypothetical change would revoke. */
+  revoked?: string[] | null;
+  /** The simulated role name (role subjects). */
+  roleKey?: string | null;
+  subjectKind?: IdentityAuthorizationPermissionSimulationSubjectKind;
+  /** The tenant scope. */
+  tenantId?: string;
+  /** Permissions unaffected by the hypothetical change. */
+  unchanged?: string[] | null;
+  /** The simulated user (user subjects). */
+  userId?: string | null;
+}
+
+/** Kind of subject a what-if simulation is run against (issue #374). */
+export type IdentityAuthorizationPermissionSimulationSubjectKind = 'User' | 'Role' | 'Tenant';
+
 /** One planned change of a synchronization import. */
 export interface IdentityAuthorizationPermissionSyncChange {
   /** Change kind: `role.create`, `role.update`, `permissions.grant`, `permissions.revoke`, `permissions.deny`, `permissions.removeDeny`. */
@@ -11819,6 +12339,148 @@ export interface IdentityAuthorizationPermissionSyncImportResult {
   isValid?: boolean;
   /** Validation problems (empty when valid). */
   validationErrors?: string[] | null;
+}
+
+/** Per-target entry of a template instantiation result / dry-run preview. */
+export interface IdentityAuthorizationPermissionTemplateInstantiationEntryResult {
+  /** Permissions that would be (or were) granted from the template. */
+  permissionsToGrant?: string[] | null;
+  /** Dynamic roles that would be (or were) assigned from the template. */
+  rolesToAssign?: string[] | null;
+  /** The target user. */
+  userId?: string;
+}
+
+/** Result of instantiating a permission template into a tenant (or its dry-run
+preview), issue #369. */
+export interface IdentityAuthorizationPermissionTemplateInstantiationResult {
+  /** Whether the instantiation was applied (false for dry runs). */
+  applied?: boolean;
+  /** Targets with at least one change. */
+  appliedTargets?: number;
+  /** Per-target plan detail. */
+  entries?: IdentityAuthorizationPermissionTemplateInstantiationEntryResult[] | null;
+  /** Total permission grants in the plan. */
+  permissionGrants?: number;
+  /** Total role assignments in the plan. */
+  roleAssignments?: number;
+  /** Targets already fully covered (no change needed). */
+  skippedTargets?: number;
+  /** The instantiated template id. */
+  templateId?: string;
+  /** The instantiated template name. */
+  templateName: string | null;
+  /** The template version that was (or would be) applied. */
+  templateVersion?: number;
+  /** The tenant scope (null in the result when it came from the actor context). */
+  tenantId?: string | null;
+  /** Total targets considered. */
+  totalTargets?: number;
+}
+
+/** Result of a permission template migration (or dry-run preview) / rollback,
+issue #370. */
+export interface IdentityAuthorizationPermissionTemplateMigrationResult {
+  /** Permissions the migration adds across targets. */
+  addedPermissions?: string[] | null;
+  /** How many distinct tenants are affected. */
+  affectedTenantCount?: number;
+  /** Whether this was a dry run. */
+  dryRun?: boolean;
+  /** Failed targets. */
+  failureCount?: number;
+  /** The lowest source version among the targets. */
+  fromVersion?: number;
+  /** The migration id (durable progress handle). */
+  migrationId?: string;
+  /** Migration progress percentage (0 for dry runs). */
+  progressPercentage?: number;
+  /** Permissions the migration removes across targets. */
+  removedPermissions?: string[] | null;
+  /** Skipped targets (unknown source version or no effective change). */
+  skippedCount?: number;
+  status?: IdentityAuthorizationMigrationStatus;
+  /** Successfully migrated targets. */
+  successCount?: number;
+  /** The migrated template id. */
+  templateId?: string;
+  /** The migrated template name. */
+  templateName: string | null;
+  /** Total targets considered. */
+  totalCount?: number;
+  /** The target version. */
+  toVersion?: number;
+}
+
+/** Result of a permission template mutation (create/update, issue #369). */
+export interface IdentityAuthorizationPermissionTemplateMutationResult {
+  /** Whether the template was created (as opposed to updated). */
+  created?: boolean;
+  /** Whether the template is active. */
+  isActive?: boolean;
+  /** Whether the template is a system template. */
+  isSystemTemplate?: boolean;
+  /** The template's raw permissions after the mutation. */
+  permissions?: string[] | null;
+  /** The template's role keys after the mutation (role templates). */
+  roleKeys?: string[] | null;
+  /** The template id. */
+  templateId?: string;
+  /** The template name. */
+  templateName: string | null;
+  /** The template version number after the mutation. */
+  version?: number;
+}
+
+/** Read model for one permission template (issue #369). */
+export interface IdentityAuthorizationPermissionTemplateSummary {
+  /** The template id. */
+  id?: string;
+  /** Template category. */
+  category?: string | null;
+  /** Latest version number from the append-only history. */
+  currentVersion?: number;
+  /** The template description. */
+  description?: string | null;
+  /** Whether the template is active. */
+  isActive?: boolean;
+  /** True when the template grants at least one role (role template). */
+  isRoleTemplate?: boolean;
+  /** Whether this is an immutable system template. */
+  isSystemTemplate?: boolean;
+  /** Minimum tenant tier required to use the template. */
+  minimumTier?: string | null;
+  /** The unique template name. */
+  name: string | null;
+  /** Raw permissions the template grants. */
+  permissions?: string[] | null;
+  /** Dynamic role names the template grants (role templates). */
+  roleKeys?: string[] | null;
+}
+
+/** Read model for one permission template version snapshot (issue #370). */
+export interface IdentityAuthorizationPermissionTemplateVersionSummary {
+  /** Permissions added relative to the previous version. */
+  addedPermissions?: string[] | null;
+  /** The change note. */
+  changeNotes?: string | null;
+  changeType?: IdentityAuthorizationTemplateChangeType;
+  /** When the version was created. */
+  createdAt?: string;
+  /** Who created the version. */
+  createdByUserId?: string;
+  /** The template name at this version. */
+  name?: string | null;
+  /** Checksum of the permission set. */
+  permissionHash?: string | null;
+  /** The full permission set at this version. */
+  permissions?: string[] | null;
+  /** Permissions removed relative to the previous version. */
+  removedPermissions?: string[] | null;
+  /** Permissions unchanged relative to the previous version. */
+  unchangedPermissions?: string[] | null;
+  /** The version number. */
+  versionNumber?: number;
 }
 
 /** Data model for Identity Authorization Permission Trend. */
@@ -11934,7 +12596,18 @@ export type IdentityAuthorizationPermissionType =
   | 'SystemAdmin'
   | 'TenantAdmin'
   | 'UserManagement'
-  | 'Configure';
+  | 'Configure'
+  | 'ManageMembers'
+  | 'ManageRoles'
+  | 'ManageSettings'
+  | 'AuditAccess'
+  | 'SystemConfiguration'
+  | 'BackupRestore'
+  | 'DataMigration'
+  | 'EditMetadata'
+  | 'Maintenance'
+  | 'Monitoring'
+  | 'Deployment';
 
 /** Result of updating permissions. */
 export interface IdentityAuthorizationPermissionUpdateResult {
@@ -11984,6 +12657,14 @@ last known state before removal). */
 
 /** Which policy family a GameGuild.Identity.Authorization.PolicyVersionHistory row snapshots. */
 export type IdentityAuthorizationPolicyVersionKind = 'None' | 'ConditionalPolicy' | 'PolicyDefinition';
+
+/** Request body for the instantiation dry-run preview. */
+export interface IdentityAuthorizationPreviewInstantiationInput {
+  /** The target users. */
+  targetUserIds?: string[] | null;
+  /** The tenant receiving the template (defaults to the acting tenant). */
+  tenantId?: string | null;
+}
 
 /** Command to remove deny entries from a user's permissions. */
 export interface IdentityAuthorizationRemoveDenyPermissionsCommand {
@@ -12069,6 +12750,18 @@ export interface IdentityAuthorizationResourceUser {
   userId: string;
 }
 
+/** Revokes content-type scoped permissions. Guarded like the grant command; the row
+is soft-deleted once its payload is empty (permission history preservation). */
+export interface IdentityAuthorizationRevokeContentTypePermissionGrantCommand {
+  /** Gets the content type name. */
+  contentTypeName: string | null;
+  /** Gets the permissions to revoke. */
+  permissions: string[] | null;
+  tenantId: CQRSModelsTenantId;
+  /** Gets the grant subject (null addresses the tenant default row). */
+  userId?: string | null;
+}
+
 /** Command to revoke tenant-level permissions from a user. */
 export interface IdentityAuthorizationRevokeTenantPermissionCommand {
   /** Gets the permissions to revoke. */
@@ -12080,6 +12773,12 @@ export interface IdentityAuthorizationRevokeTenantPermissionCommand {
   tenantId: CQRSModelsTenantId;
   /** Gets the user ID to revoke permissions from. */
   userId: string;
+}
+
+/** Request body for migration rollback. */
+export interface IdentityAuthorizationRollbackMigrationInput {
+  /** Reason recorded in the audit log. */
+  reason: string | null;
 }
 
 /** Command to set global default permissions.
@@ -12149,6 +12848,29 @@ export interface IdentityAuthorizationShareResult {
   userId?: string | null;
 }
 
+/** What-if permission simulation (issue #374): computes the before/after effective
+permission diff for a hypothetical grant/revoke delta <b>without applying
+anything</b>. The command is a pure dry-run — it performs no writes, bumps no
+security versions and writes no audit entries. */
+export interface IdentityAuthorizationSimulatePermissionChangeCommand {
+  /** Hypothetical permission grants. */
+  grants?: string[] | null;
+  /** Optional resource scope for user-subject resolution (type + id). */
+  resourceId?: string | null;
+  /** Optional resource scope for user-subject resolution (type + id). */
+  resourceType?: string | null;
+  /** Hypothetical permission revokes (applied as DENY-WINS denies). */
+  revokes?: string[] | null;
+  /** The subject role name (required for GameGuild.Identity.Authorization.PermissionSimulationSubjectKind.Role). */
+  roleKey?: string | null;
+  subjectKind: IdentityAuthorizationPermissionSimulationSubjectKind;
+  /** The tenant scope. Defaults to the acting tenant. A system administrator may
+target any tenant; every other actor is pinned to their own tenant. */
+  tenantId?: string | null;
+  /** The subject user (required for GameGuild.Identity.Authorization.PermissionSimulationSubjectKind.User). */
+  userId?: string | null;
+}
+
 /** Action taken to resolve SoD violation */
 export type IdentityAuthorizationSoDResolutionAction =
   'None' | 'RevokePermission' | 'RevokeRole' | 'GrantException' | 'ImplementCompensatingControl' | 'TransferOwnership' | 'NoAction';
@@ -12210,6 +12932,34 @@ export interface IdentityAuthorizationSoDViolation {
 
 /** Status of SoD violation */
 export type IdentityAuthorizationSoDViolationStatus = 'None' | 'Active' | 'Acknowledged' | 'Mitigated' | 'Resolved' | 'Excepted' | 'FalsePositive';
+
+/** Template change type for versioning */
+export type IdentityAuthorizationTemplateChangeType = 'None' | 'Major' | 'Minor' | 'Patch' | 'Hotfix';
+
+/** Updates a permission template (issue #369 template CRUD lifecycle). Every accepted
+update appends a new GameGuild.Identity.Authorization.PermissionTemplateVersion snapshot with the
+computed permission diff (issue #370 version bump on template update). */
+export interface IdentityAuthorizationUpdatePermissionTemplateCommand {
+  /** The new category (unchanged when null). */
+  category?: string | null;
+  /** Change note recorded on the new version snapshot. */
+  changeNotes?: string | null;
+  changeType?: IdentityAuthorizationTemplateChangeType;
+  /** The new description (unchanged when null). */
+  description?: string | null;
+  /** The new active flag (unchanged when null). */
+  isActive?: boolean | null;
+  /** The new minimum tier (unchanged when null). */
+  minimumTier?: string | null;
+  /** The new name (unchanged when null). */
+  name?: string | null;
+  /** The new permission set (replaces the current set when provided). */
+  permissions?: string[] | null;
+  /** The new role-key set (replaces the current set when provided). */
+  roleKeys?: string[] | null;
+  /** The template to update. */
+  templateId: string;
+}
 
 /** Command to update a specific user's permissions on a resource. */
 export interface IdentityAuthorizationUpdateUserPermissionsCommand {
@@ -23408,6 +24158,7 @@ export let AssetsControllersContentModerationInputSchema: z.ZodType<AssetsContro
 export let AssetsControllersCopyAssetReferenceInputSchema: z.ZodType<AssetsControllersCopyAssetReferenceInput>;
 export let AssetsControllersCreateAssetFolderInputSchema: z.ZodType<AssetsControllersCreateAssetFolderInput>;
 export let AssetsControllersMarkNonDeletableInputSchema: z.ZodType<AssetsControllersMarkNonDeletableInput>;
+export let AssetsControllersRebindAssetParentInputSchema: z.ZodType<AssetsControllersRebindAssetParentInput>;
 export let AssetsControllersReportAssetInputSchema: z.ZodType<AssetsControllersReportAssetInput>;
 export let AssetsControllersRestrictAssetFolderInputSchema: z.ZodType<AssetsControllersRestrictAssetFolderInput>;
 export let AssetsControllersReviewReportInputSchema: z.ZodType<AssetsControllersReviewReportInput>;
@@ -23442,6 +24193,7 @@ export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<Comm
 export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
 export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
 export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventListItemDto>;
+export let CommerceBillingBillingWebhooksControllerRotateWebhookSecretInputSchema: z.ZodType<CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput>;
 export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
 export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
@@ -23461,6 +24213,7 @@ export let CommerceBillingPricingRuleImpactRowSchema: z.ZodType<CommerceBillingP
 export let CommerceBillingPromoCodeEffectivenessRowSchema: z.ZodType<CommerceBillingPromoCodeEffectivenessRow>;
 export let CommerceBillingStackingOutcomeRowSchema: z.ZodType<CommerceBillingStackingOutcomeRow>;
 export let CommerceBillingValidatePricingLedgerDriftInputSchema: z.ZodType<CommerceBillingValidatePricingLedgerDriftInput>;
+export let CommerceBillingWebhookSecretRotationResultSchema: z.ZodType<CommerceBillingWebhookSecretRotationResult>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
@@ -23530,6 +24283,10 @@ export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<Commerce
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
+export let CommercePaymentsGatewayCircuitSnapshotSchema: z.ZodType<CommercePaymentsGatewayCircuitSnapshot>;
+export let CommercePaymentsGatewayCircuitStateSchema: z.ZodType<CommercePaymentsGatewayCircuitState>;
+export let CommercePaymentsGatewayMetricsReportSchema: z.ZodType<CommercePaymentsGatewayMetricsReport>;
+export let CommercePaymentsGatewayWindowMetricsSchema: z.ZodType<CommercePaymentsGatewayWindowMetrics>;
 export let CommercePaymentsGiftPublicViewSchema: z.ZodType<CommercePaymentsGiftPublicView>;
 export let CommercePaymentsGiftPurchaseResultSchema: z.ZodType<CommercePaymentsGiftPurchaseResult>;
 export let CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema: z.ZodType<CommercePaymentsGiftsControllerPurchaseGiftRequestBody>;
@@ -23584,7 +24341,9 @@ export let CommercePaymentsReferralSignupResultSchema: z.ZodType<CommercePayment
 export let CommercePaymentsReferralStatsSchema: z.ZodType<CommercePaymentsReferralStats>;
 export let CommercePaymentsReferralStatusSchema: z.ZodType<CommercePaymentsReferralStatus>;
 export let CommercePaymentsReferrerLeaderboardEntrySchema: z.ZodType<CommercePaymentsReferrerLeaderboardEntry>;
+export let CommercePaymentsRefundAnalyticsReportSchema: z.ZodType<CommercePaymentsRefundAnalyticsReport>;
 export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
+export let CommercePaymentsRefundDailyBucketSchema: z.ZodType<CommercePaymentsRefundDailyBucket>;
 export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
 export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
 export let CommercePaymentsRefundRecordSchema: z.ZodType<CommercePaymentsRefundRecord>;
@@ -23732,6 +24491,7 @@ export let CommerceSubscriptionsSubscriptionPlanOperationsControllerValidateLimi
 export let CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInput>;
 export let CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInput>;
 export let CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInput>;
+export let CommerceSubscriptionsSubscriptionPlanTypeSchema: z.ZodType<CommerceSubscriptionsSubscriptionPlanType>;
 export let CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput>;
 export let CommerceSubscriptionsSubscriptionsControllerPatchSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionsControllerPatchSubscriptionInput>;
 export let CommerceSubscriptionsSubscriptionsControllerPutSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsSubscriptionsControllerPutSubscriptionInput>;
@@ -23753,15 +24513,21 @@ export let ComplianceAuditAuditActivityBucketOutputSchema: z.ZodType<ComplianceA
 export let ComplianceAuditAuditActivityBucketSizeSchema: z.ZodType<ComplianceAuditAuditActivityBucketSize>;
 export let ComplianceAuditAuditActorContextSchema: z.ZodType<ComplianceAuditAuditActorContext>;
 export let ComplianceAuditAuditCategorySchema: z.ZodType<ComplianceAuditAuditCategory>;
+export let ComplianceAuditAuditConditionNodeSchema: z.ZodType<ComplianceAuditAuditConditionNode>;
+export let ComplianceAuditAuditConditionNodeKindSchema: z.ZodType<ComplianceAuditAuditConditionNodeKind>;
+export let ComplianceAuditAuditConditionSearchInputSchema: z.ZodType<ComplianceAuditAuditConditionSearchInput>;
 export let ComplianceAuditAuditDateRangeSearchOutputSchema: z.ZodType<ComplianceAuditAuditDateRangeSearchOutput>;
 export let ComplianceAuditAuditEventContextSchema: z.ZodType<ComplianceAuditAuditEventContext>;
 export let ComplianceAuditAuditExportHistoryOutputSchema: z.ZodType<ComplianceAuditAuditExportHistoryOutput>;
 export let ComplianceAuditAuditExportInputSchema: z.ZodType<ComplianceAuditAuditExportInput>;
 export let ComplianceAuditAuditExportProgressOutputSchema: z.ZodType<ComplianceAuditAuditExportProgressOutput>;
+export let ComplianceAuditAuditFilterComparisonSchema: z.ZodType<ComplianceAuditAuditFilterComparison>;
+export let ComplianceAuditAuditFilterFieldSchema: z.ZodType<ComplianceAuditAuditFilterField>;
 export let ComplianceAuditAuditJsonExportDocumentSchema: z.ZodType<ComplianceAuditAuditJsonExportDocument>;
 export let ComplianceAuditAuditJsonExportPaginationSchema: z.ZodType<ComplianceAuditAuditJsonExportPagination>;
 export let ComplianceAuditAuditJsonExportRecordSchema: z.ZodType<ComplianceAuditAuditJsonExportRecord>;
 export let ComplianceAuditAuditLogDtoSchema: z.ZodType<ComplianceAuditAuditLogDto>;
+export let ComplianceAuditAuditLogicalOperatorSchema: z.ZodType<ComplianceAuditAuditLogicalOperator>;
 export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLogOutput>;
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
@@ -23774,8 +24540,12 @@ export let ComplianceAuditAuditQueryTemplateSchema: z.ZodType<ComplianceAuditAud
 export let ComplianceAuditAuditQueryValidateApiInputSchema: z.ZodType<ComplianceAuditAuditQueryValidateApiInput>;
 export let ComplianceAuditAuditQueryValidationOutputSchema: z.ZodType<ComplianceAuditAuditQueryValidationOutput>;
 export let ComplianceAuditAuditRelatedActionSchema: z.ZodType<ComplianceAuditAuditRelatedAction>;
+export let ComplianceAuditAuditReplayReconstructionOutputSchema: z.ZodType<ComplianceAuditAuditReplayReconstructionOutput>;
+export let ComplianceAuditAuditReplaySessionSummarySchema: z.ZodType<ComplianceAuditAuditReplaySessionSummary>;
+export let ComplianceAuditAuditReplaySnapshotDocumentSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotDocument>;
 export let ComplianceAuditAuditReplaySnapshotEventSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotEvent>;
 export let ComplianceAuditAuditReplaySnapshotOutputSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotOutput>;
+export let ComplianceAuditAuditReplayUserJourneySchema: z.ZodType<ComplianceAuditAuditReplayUserJourney>;
 export let ComplianceAuditAuditResourceContextSchema: z.ZodType<ComplianceAuditAuditResourceContext>;
 export let ComplianceAuditAuditRetentionComplianceViolationSchema: z.ZodType<ComplianceAuditAuditRetentionComplianceViolation>;
 export let ComplianceAuditAuditRetentionConfigurationOutputSchema: z.ZodType<ComplianceAuditAuditRetentionConfigurationOutput>;
@@ -23842,6 +24612,7 @@ export let ComplianceAuditPiiRuleActionSchema: z.ZodType<ComplianceAuditPiiRuleA
 export let ComplianceAuditPiiRulePatternTypeSchema: z.ZodType<ComplianceAuditPiiRulePatternType>;
 export let ComplianceAuditPiiRuleScopeSchema: z.ZodType<ComplianceAuditPiiRuleScope>;
 export let ComplianceAuditPiiTokenResolutionOutputSchema: z.ZodType<ComplianceAuditPiiTokenResolutionOutput>;
+export let ComplianceAuditReconstructAuditReplayInputSchema: z.ZodType<ComplianceAuditReconstructAuditReplayInput>;
 export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
@@ -23911,7 +24682,9 @@ export let ComplianceKYCSumSubWebhookIngestionResultSchema: z.ZodType<Compliance
 export let ContentPagesContentResourceDtoSchema: z.ZodType<ContentPagesContentResourceDto>;
 export let ContentPagesContentResourceStatusSchema: z.ZodType<ContentPagesContentResourceStatus>;
 export let ContentPagesContentResourceTypeSchema: z.ZodType<ContentPagesContentResourceType>;
+export let ContentPagesCourseProposalDtoSchema: z.ZodType<ContentPagesCourseProposalDto>;
 export let ContentPagesCreateContentResourceDtoSchema: z.ZodType<ContentPagesCreateContentResourceDto>;
+export let ContentPagesCreateCourseProposalDtoSchema: z.ZodType<ContentPagesCreateCourseProposalDto>;
 export let ContentPagesCreateMarketingLeadDtoSchema: z.ZodType<ContentPagesCreateMarketingLeadDto>;
 export let ContentPagesCreatePageDtoSchema: z.ZodType<ContentPagesCreatePageDto>;
 export let ContentPagesCreatePageSectionDtoSchema: z.ZodType<ContentPagesCreatePageSectionDto>;
@@ -23924,6 +24697,7 @@ export let ContentPagesPageTypeSchema: z.ZodType<ContentPagesPageType>;
 export let ContentPagesSectionTypeSchema: z.ZodType<ContentPagesSectionType>;
 export let ContentPagesSitemapEntryDtoSchema: z.ZodType<ContentPagesSitemapEntryDto>;
 export let ContentPagesUpdateContentResourceDtoSchema: z.ZodType<ContentPagesUpdateContentResourceDto>;
+export let ContentPagesUpdateCourseProposalDtoSchema: z.ZodType<ContentPagesUpdateCourseProposalDto>;
 export let ContentPagesUpdatePageDtoSchema: z.ZodType<ContentPagesUpdatePageDto>;
 export let ContentPagesUpdatePageSectionDtoSchema: z.ZodType<ContentPagesUpdatePageSectionDto>;
 export let ContentStatusSchema: z.ZodType<ContentStatus>;
@@ -24123,6 +24897,7 @@ export let IdentityAuthenticationAdminResetUserMfaOutputSchema: z.ZodType<Identi
 export let IdentityAuthenticationApiKeyDtoSchema: z.ZodType<IdentityAuthenticationApiKeyDto>;
 export let IdentityAuthenticationAssignRoleToUserInputSchema: z.ZodType<IdentityAuthenticationAssignRoleToUserInput>;
 export let IdentityAuthenticationAuthenticationStepSchema: z.ZodType<IdentityAuthenticationAuthenticationStep>;
+export let IdentityAuthenticationAuthSessionStateDtoSchema: z.ZodType<IdentityAuthenticationAuthSessionStateDto>;
 export let IdentityAuthenticationBackupCodesOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesOutput>;
 export let IdentityAuthenticationBackupCodesStatusOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesStatusOutput>;
 export let IdentityAuthenticationBeginWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationBeginWebAuthnAuthenticationInput>;
@@ -24199,8 +24974,13 @@ export let IdentityAuthenticationPasswordResetResultSchema: z.ZodType<IdentityAu
 export let IdentityAuthenticationPatchServiceAccountInputSchema: z.ZodType<IdentityAuthenticationPatchServiceAccountInput>;
 export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<IdentityAuthenticationPolymorphicSignInInput>;
 export let IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema: z.ZodType<IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto>;
+export let IdentityAuthenticationPushMfaChallengeInputSchema: z.ZodType<IdentityAuthenticationPushMfaChallengeInput>;
+export let IdentityAuthenticationPushMfaChallengeOutputSchema: z.ZodType<IdentityAuthenticationPushMfaChallengeOutput>;
+export let IdentityAuthenticationPushMfaDeviceInputSchema: z.ZodType<IdentityAuthenticationPushMfaDeviceInput>;
+export let IdentityAuthenticationPushMfaRespondInputSchema: z.ZodType<IdentityAuthenticationPushMfaRespondInput>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
+export let IdentityAuthenticationRenameSessionInputSchema: z.ZodType<IdentityAuthenticationRenameSessionInput>;
 export let IdentityAuthenticationRequestEmailCodeInputSchema: z.ZodType<IdentityAuthenticationRequestEmailCodeInput>;
 export let IdentityAuthenticationRequestMagicLinkInputSchema: z.ZodType<IdentityAuthenticationRequestMagicLinkInput>;
 export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<IdentityAuthenticationRequestPasswordResetInput>;
@@ -24219,10 +24999,12 @@ export let IdentityAuthenticationServiceAccountAuditLogOutputSchema: z.ZodType<I
 export let IdentityAuthenticationServiceAccountCreatedOutputSchema: z.ZodType<IdentityAuthenticationServiceAccountCreatedOutput>;
 export let IdentityAuthenticationServiceAccountOutputSchema: z.ZodType<IdentityAuthenticationServiceAccountOutput>;
 export let IdentityAuthenticationSessionOutputSchema: z.ZodType<IdentityAuthenticationSessionOutput>;
+export let IdentityAuthenticationSessionRenameErrorOutputSchema: z.ZodType<IdentityAuthenticationSessionRenameErrorOutput>;
 export let IdentityAuthenticationSessionSecurityAnalysisSchema: z.ZodType<IdentityAuthenticationSessionSecurityAnalysis>;
 export let IdentityAuthenticationSessionSuccessOutputSchema: z.ZodType<IdentityAuthenticationSessionSuccessOutput>;
 export let IdentityAuthenticationSessionTerminationOutputSchema: z.ZodType<IdentityAuthenticationSessionTerminationOutput>;
 export let IdentityAuthenticationSignInOutputSchema: z.ZodType<IdentityAuthenticationSignInOutput>;
+export let IdentityAuthenticationSmsMfaChallengeInputSchema: z.ZodType<IdentityAuthenticationSmsMfaChallengeInput>;
 export let IdentityAuthenticationSmsMfaSetupInputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupInput>;
 export let IdentityAuthenticationSmsMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupOutput>;
 export let IdentityAuthenticationStepUpChallengeOutputSchema: z.ZodType<IdentityAuthenticationStepUpChallengeOutput>;
@@ -24261,6 +25043,7 @@ export let IdentityAuthorizationCommandsCreateSoDRuleCommandSchema: z.ZodType<Id
 export let IdentityAuthorizationCommandsDelegatePermissionsCommandSchema: z.ZodType<IdentityAuthorizationCommandsDelegatePermissionsCommand>;
 export let IdentityAuthorizationCommandsGrantDelegatedAdminCommandSchema: z.ZodType<IdentityAuthorizationCommandsGrantDelegatedAdminCommand>;
 export let IdentityAuthorizationCommandsRequestJitElevationCommandSchema: z.ZodType<IdentityAuthorizationCommandsRequestJitElevationCommand>;
+export let IdentityAuthorizationContentTypePermissionGrantDtoSchema: z.ZodType<IdentityAuthorizationContentTypePermissionGrantDto>;
 export let IdentityAuthorizationControllersApproveElevationInputSchema: z.ZodType<IdentityAuthorizationControllersApproveElevationInput>;
 export let IdentityAuthorizationControllersApproveItemInputSchema: z.ZodType<IdentityAuthorizationControllersApproveItemInput>;
 export let IdentityAuthorizationControllersCompleteCampaignInputSchema: z.ZodType<IdentityAuthorizationControllersCompleteCampaignInput>;
@@ -24272,9 +25055,11 @@ export let IdentityAuthorizationControllersRevokeElevationInputSchema: z.ZodType
 export let IdentityAuthorizationControllersRevokeItemInputSchema: z.ZodType<IdentityAuthorizationControllersRevokeItemInput>;
 export let IdentityAuthorizationControllersUpdateSoDRuleInputSchema: z.ZodType<IdentityAuthorizationControllersUpdateSoDRuleInput>;
 export let IdentityAuthorizationCreatePermissionApprovalCommandSchema: z.ZodType<IdentityAuthorizationCreatePermissionApprovalCommand>;
+export let IdentityAuthorizationCreatePermissionTemplateCommandSchema: z.ZodType<IdentityAuthorizationCreatePermissionTemplateCommand>;
 export let IdentityAuthorizationDeclineInvitationInputSchema: z.ZodType<IdentityAuthorizationDeclineInvitationInput>;
 export let IdentityAuthorizationDelegatedAdminScopeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScope>;
 export let IdentityAuthorizationDelegatedAdminScopeTypeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScopeType>;
+export let IdentityAuthorizationDenyContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationDenyContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationDenyTenantPermissionCommand>;
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
@@ -24284,13 +25069,16 @@ export let IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema: z
 export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
 export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
 export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
+export let IdentityAuthorizationGetContentTypePermissionGrantsOutputSchema: z.ZodType<IdentityAuthorizationGetContentTypePermissionGrantsOutput>;
 export let IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetExpiringTenantPermissionsOutput>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
 export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetTenantPermissionsOutput>;
+export let IdentityAuthorizationGrantContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationGrantContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationGraphExportFormatSchema: z.ZodType<IdentityAuthorizationGraphExportFormat>;
+export let IdentityAuthorizationHasGlobalPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasGlobalPermissionOutput>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationHistoricalInheritanceEdgeSchema: z.ZodType<IdentityAuthorizationHistoricalInheritanceEdge>;
 export let IdentityAuthorizationHistoricalResourceGrantSchema: z.ZodType<IdentityAuthorizationHistoricalResourceGrant>;
@@ -24298,8 +25086,11 @@ export let IdentityAuthorizationHistoricalRoleAssignmentSchema: z.ZodType<Identi
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
 export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInheritanceHistoryEventSchema: z.ZodType<IdentityAuthorizationInheritanceHistoryEvent>;
+export let IdentityAuthorizationInstantiateTemplateInputSchema: z.ZodType<IdentityAuthorizationInstantiateTemplateInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
+export let IdentityAuthorizationMigrateTemplateInputSchema: z.ZodType<IdentityAuthorizationMigrateTemplateInput>;
+export let IdentityAuthorizationMigrationStatusSchema: z.ZodType<IdentityAuthorizationMigrationStatus>;
 export let IdentityAuthorizationModelsImpactedUserSchema: z.ZodType<IdentityAuthorizationModelsImpactedUser>;
 export let IdentityAuthorizationModelsPermissionGraphSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraph>;
 export let IdentityAuthorizationModelsPermissionGraphCycleSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphCycle>;
@@ -24323,8 +25114,16 @@ export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<Iden
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
 export let IdentityAuthorizationPermissionHistoryAtSnapshotSchema: z.ZodType<IdentityAuthorizationPermissionHistoryAtSnapshot>;
 export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
+export let IdentityAuthorizationPermissionSimulationResultSchema: z.ZodType<IdentityAuthorizationPermissionSimulationResult>;
+export let IdentityAuthorizationPermissionSimulationSubjectKindSchema: z.ZodType<IdentityAuthorizationPermissionSimulationSubjectKind>;
 export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
 export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
+export let IdentityAuthorizationPermissionTemplateInstantiationEntryResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateInstantiationEntryResult>;
+export let IdentityAuthorizationPermissionTemplateInstantiationResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateInstantiationResult>;
+export let IdentityAuthorizationPermissionTemplateMigrationResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateMigrationResult>;
+export let IdentityAuthorizationPermissionTemplateMutationResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateMutationResult>;
+export let IdentityAuthorizationPermissionTemplateSummarySchema: z.ZodType<IdentityAuthorizationPermissionTemplateSummary>;
+export let IdentityAuthorizationPermissionTemplateVersionSummarySchema: z.ZodType<IdentityAuthorizationPermissionTemplateVersionSummary>;
 export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthorizationPermissionTrend>;
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
@@ -24332,23 +25131,29 @@ export let IdentityAuthorizationPermissionUsageMetricsSchema: z.ZodType<Identity
 export let IdentityAuthorizationPolicyVersionChangeTypeSchema: z.ZodType<IdentityAuthorizationPolicyVersionChangeType>;
 export let IdentityAuthorizationPolicyVersionHistorySchema: z.ZodType<IdentityAuthorizationPolicyVersionHistory>;
 export let IdentityAuthorizationPolicyVersionKindSchema: z.ZodType<IdentityAuthorizationPolicyVersionKind>;
+export let IdentityAuthorizationPreviewInstantiationInputSchema: z.ZodType<IdentityAuthorizationPreviewInstantiationInput>;
 export let IdentityAuthorizationRemoveDenyPermissionsCommandSchema: z.ZodType<IdentityAuthorizationRemoveDenyPermissionsCommand>;
 export let IdentityAuthorizationRemoveUserAccessCommandSchema: z.ZodType<IdentityAuthorizationRemoveUserAccessCommand>;
 export let IdentityAuthorizationResourceAccessPatternSchema: z.ZodType<IdentityAuthorizationResourceAccessPattern>;
 export let IdentityAuthorizationResourceInvitationDtoSchema: z.ZodType<IdentityAuthorizationResourceInvitationDto>;
 export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizationResourceUser>;
+export let IdentityAuthorizationRevokeContentTypePermissionGrantCommandSchema: z.ZodType<IdentityAuthorizationRevokeContentTypePermissionGrantCommand>;
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
+export let IdentityAuthorizationRollbackMigrationInputSchema: z.ZodType<IdentityAuthorizationRollbackMigrationInput>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetTenantDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationSetTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationShareResourceCommandSchema: z.ZodType<IdentityAuthorizationShareResourceCommand>;
 export let IdentityAuthorizationShareResultSchema: z.ZodType<IdentityAuthorizationShareResult>;
+export let IdentityAuthorizationSimulatePermissionChangeCommandSchema: z.ZodType<IdentityAuthorizationSimulatePermissionChangeCommand>;
 export let IdentityAuthorizationSoDResolutionActionSchema: z.ZodType<IdentityAuthorizationSoDResolutionAction>;
 export let IdentityAuthorizationSoDRuleSchema: z.ZodType<IdentityAuthorizationSoDRule>;
 export let IdentityAuthorizationSoDRuleTypeSchema: z.ZodType<IdentityAuthorizationSoDRuleType>;
 export let IdentityAuthorizationSoDSeveritySchema: z.ZodType<IdentityAuthorizationSoDSeverity>;
 export let IdentityAuthorizationSoDViolationSchema: z.ZodType<IdentityAuthorizationSoDViolation>;
 export let IdentityAuthorizationSoDViolationStatusSchema: z.ZodType<IdentityAuthorizationSoDViolationStatus>;
+export let IdentityAuthorizationTemplateChangeTypeSchema: z.ZodType<IdentityAuthorizationTemplateChangeType>;
+export let IdentityAuthorizationUpdatePermissionTemplateCommandSchema: z.ZodType<IdentityAuthorizationUpdatePermissionTemplateCommand>;
 export let IdentityAuthorizationUpdateUserPermissionsCommandSchema: z.ZodType<IdentityAuthorizationUpdateUserPermissionsCommand>;
 export let IdentityAuthorizationUserActivitySummarySchema: z.ZodType<IdentityAuthorizationUserActivitySummary>;
 export let IdentityProvisioningCreateScimProvisioningTokenInputSchema: z.ZodType<IdentityProvisioningCreateScimProvisioningTokenInput>;
@@ -26618,6 +27423,12 @@ AssetsControllersMarkNonDeletableInputSchema = z.object({
   reason: z.string().nullable().optional(),
 });
 
+/** Zod schema for AssetsControllersRebindAssetParentInput. Data model for Assets Controllers Rebind Asset Parent Request. */
+AssetsControllersRebindAssetParentInputSchema = z.object({
+  parentResourceId: z.string().uuid().nullable().optional(),
+  parentResourceType: z.string().nullable().optional(),
+});
+
 /** Zod schema for AssetsControllersReportAssetInput. Data model for Assets Controllers Report Asset Request. */
 AssetsControllersReportAssetInputSchema = z.object({
   description: z.string().nullable().optional(),
@@ -26915,6 +27726,12 @@ CommerceBillingBillingWebhookEventListItemDtoSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingWebhooksControllerRotateWebhookSecretInput. Request body for the webhook signing-secret rotation. */
+CommerceBillingBillingWebhooksControllerRotateWebhookSecretInputSchema = z.object({
+  newSecret: z.string().nullable().optional(),
+  providerKey: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingBillingWebhookSecurityAlertDto. A security alert surfaced from the Compliance.Audit pipeline. */
 CommerceBillingBillingWebhookSecurityAlertDtoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -27135,6 +27952,15 @@ CommerceBillingValidatePricingLedgerDriftInputSchema = z.object({
   fromUtc: z.string().datetime().nullable().optional(),
   sampleSize: z.number().int().optional(),
   toUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingWebhookSecretRotationResult. Result of a recorded webhook signing-secret rotation. Never contains secret material. */
+CommerceBillingWebhookSecretRotationResultSchema = z.object({
+  previousSecretStillAccepted: z.boolean().optional(),
+  previousSecretValidUntilUtc: z.string().datetime().optional(),
+  providerKey: z.string().nullable().optional(),
+  rotatedAtUtc: z.string().datetime().optional(),
+  rotationId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrderChargeState. OpenAPI schema for Commerce Order Charge State. */
@@ -27827,6 +28653,40 @@ CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', '
 /** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
 CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
 
+/** Zod schema for CommercePaymentsGatewayCircuitSnapshot. Health snapshot of one gateway circuit (issue #413). */
+CommercePaymentsGatewayCircuitSnapshotSchema = z.object({
+  consecutiveFailures: z.number().int().optional(),
+  failureThreshold: z.number().int().optional(),
+  openedAtUtc: z.string().datetime().nullable().optional(),
+  providerId: z.string().nullable().optional(),
+  state: z.lazy(() => CommercePaymentsGatewayCircuitStateSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsGatewayCircuitState. Circuit state of one payment gateway. */
+CommercePaymentsGatewayCircuitStateSchema = z.enum(['Closed', 'Open', 'HalfOpen']);
+
+/** Zod schema for CommercePaymentsGatewayMetricsReport. Combined read model of one reporting pass: rolling-window aggregates per gateway
+plus the current circuit-breaker snapshot of every known gateway. */
+CommercePaymentsGatewayMetricsReportSchema = z.object({
+  circuitBreakers: z.array(z.lazy(() => CommercePaymentsGatewayCircuitSnapshotSchema)).nullable(),
+  generatedAtUtc: z.string().datetime(),
+  windows: z.array(z.lazy(() => CommercePaymentsGatewayWindowMetricsSchema)).nullable(),
+});
+
+/** Zod schema for CommercePaymentsGatewayWindowMetrics. Aggregated performance of one gateway over one rolling window, computed from
+persisted payment records (issue #413). */
+CommercePaymentsGatewayWindowMetricsSchema = z.object({
+  attempts: z.number().int().optional(),
+  averageProcessingLatencyMs: z.number().nullable().optional(),
+  failed: z.number().int().optional(),
+  providerId: z.string().nullable().optional(),
+  sinceUtc: z.string().datetime().optional(),
+  succeeded: z.number().int().optional(),
+  successRate: z.number().optional(),
+  unresolved: z.number().int().optional(),
+  window: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsGiftPublicView. Public (non-secret) view of a gift for the redemption preview endpoint. */
 CommercePaymentsGiftPublicViewSchema = z.object({
   id: z.string().uuid().optional(),
@@ -28048,6 +28908,7 @@ CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
 /** Zod schema for CommercePaymentsPaymentResult. Result of payment processing */
 CommercePaymentsPaymentResultSchema = z.object({
   amount: z.lazy(() => MoneySchema).optional(),
+  creditApplied: z.number().nullable().optional(),
   failureReason: z.string().nullable().optional(),
   invoiceId: z.string().uuid().nullable().optional(),
   paymentId: z.string().nullable().optional(),
@@ -28445,12 +29306,67 @@ CommercePaymentsReferrerLeaderboardEntrySchema = z.object({
   rewardedReferrals: z.number().int().optional(),
 });
 
+/** Zod schema for CommercePaymentsRefundAnalyticsReport. Combined refund/dispute analytics read model (issue #419 follow-up). */
+CommercePaymentsRefundAnalyticsReportSchema = z.object({
+  averageDisputeResolutionHours: z.number().nullable().optional(),
+  completedRefundAmountByCurrency: z.record(z.string(), z.number()).nullable(),
+  disputeCountByStatus: z
+    .object({
+      Cancelled: z.number().int(),
+      Lost: z.number().int(),
+      PendingCustomerResponse: z.number().int(),
+      PendingMerchantResponse: z.number().int(),
+      Resolved: z.number().int(),
+      Submitted: z.number().int(),
+      UnderReview: z.number().int(),
+      Won: z.number().int(),
+    })
+    .nullable(),
+  disputeResolutionRate: z.number().nullable().optional(),
+  disputesLost: z.number().int(),
+  disputesWon: z.number().int(),
+  disputeWinRate: z.number().nullable().optional(),
+  fromUtc: z.string().datetime(),
+  refundAmountByStatus: z
+    .object({
+      Approved: z.number(),
+      Completed: z.number(),
+      Failed: z.number(),
+      Pending: z.number(),
+      Processing: z.number(),
+      Rejected: z.number(),
+    })
+    .nullable(),
+  refundCountByCurrency: z.record(z.string(), z.number().int()).nullable(),
+  refundCountByStatus: z
+    .object({
+      Approved: z.number().int(),
+      Completed: z.number().int(),
+      Failed: z.number().int(),
+      Pending: z.number().int(),
+      Processing: z.number().int(),
+      Rejected: z.number().int(),
+    })
+    .nullable(),
+  refundsByDay: z.array(z.lazy(() => CommercePaymentsRefundDailyBucketSchema)).nullable(),
+  totalDisputeCount: z.number().int(),
+  totalRefundCount: z.number().int(),
+  toUtc: z.string().datetime(),
+});
+
 /** Zod schema for CommercePaymentsRefundApprovalQueuePage. Paged read model for the pending refund-approval queue. */
 CommercePaymentsRefundApprovalQueuePageSchema = z.object({
   items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
   page: z.number().int(),
   pageSize: z.number().int(),
   totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsRefundDailyBucket. One UTC-day bucket of the refund period breakdown. */
+CommercePaymentsRefundDailyBucketSchema = z.object({
+  completedAmount: z.number().optional(),
+  count: z.number().int().optional(),
+  date: z.string().datetime().optional(),
 });
 
 /** Zod schema for CommercePaymentsRefundDecisionResult. Result of an approval or rejection decision on a refund request. */
@@ -30139,6 +31055,7 @@ CommerceSubscriptionsSubscriptionNotificationsControllerResendSubscriptionNotifi
 /** Zod schema for CommerceSubscriptionsSubscriptionPlan. Represents a subscription plan that defines features, limits, and pricing for tenants */
 CommerceSubscriptionsSubscriptionPlanSchema = z.object({
   id: z.string().uuid().optional(),
+  annualDiscountPercent: z.number().optional(),
   annualPriceInCents: z.number().int().nullable().optional(),
   createdAt: z.string().datetime(),
   currency: z.string().min(1).max(3),
@@ -30176,6 +31093,7 @@ CommerceSubscriptionsSubscriptionPlanSchema = z.object({
     .optional(),
   tenantId: z.string().uuid().nullable().optional(),
   trialPeriodDays: z.number().int().optional(),
+  type: z.lazy(() => CommerceSubscriptionsSubscriptionPlanTypeSchema).optional(),
   updatedAt: z.string().datetime(),
   version: z.number().int().optional(),
 });
@@ -30221,6 +31139,7 @@ CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdateLimitsInputSchema
 
 /** Zod schema for CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdatePricingInput. Data model for Commerce Subscriptions Subscription Plan Operations Controller+Update Pricing Request. */
 CommerceSubscriptionsSubscriptionPlanOperationsControllerUpdatePricingInputSchema = z.object({
+  annualDiscountPercent: z.number().nullable().optional(),
   annualPriceInCents: z.number().int().nullable().optional(),
   monthlyPriceInCents: z.number().int().optional(),
 });
@@ -30240,15 +31159,25 @@ CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInputSchema = z.
 
 /** Zod schema for CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInput. Data model for Commerce Subscriptions Subscription Plans Crud Controller+Create Plan Request. */
 CommerceSubscriptionsSubscriptionPlansCrudControllerCreatePlanInputSchema = z.object({
+  annualDiscountPercent: z.number().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  features: z.string().nullable().optional(),
+  hasAdvancedAnalytics: z.boolean().nullable().optional(),
+  hasCustomBranding: z.boolean().nullable().optional(),
+  hasPrioritySupport: z.boolean().nullable().optional(),
+  maxApiCallsPerMonth: z.number().int().nullable().optional(),
+  maxStorageMb: z.number().int().nullable().optional(),
+  maxUsers: z.number().int().nullable().optional(),
   monthlyPriceInCents: z.number().int().optional(),
   name: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
+  type: z.lazy(() => CommerceSubscriptionsSubscriptionPlanTypeSchema).optional(),
 });
 
 /** Zod schema for CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInput. Data model for Commerce Subscriptions Subscription Plans Crud Controller+Put Subscription Plan Request. */
 CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSchema = z.object({
+  annualDiscountPercent: z.number().nullable().optional(),
   annualPriceInCents: z.number().int().nullable().optional(),
   description: z.string().nullable().optional(),
   features: z.string().nullable().optional(),
@@ -30263,7 +31192,12 @@ CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSche
   slug: z.string().nullable().optional(),
   sortOrder: z.number().int().nullable().optional(),
   trialPeriodDays: z.number().int().nullable().optional(),
+  type: z.lazy(() => CommerceSubscriptionsSubscriptionPlanTypeSchema).optional(),
 });
+
+/** Zod schema for CommerceSubscriptionsSubscriptionPlanType. Commercial classification of a subscription plan (issue #416). Trial offers are not a
+type: every type can carry `TrialPeriodDays` configuration. */
+CommerceSubscriptionsSubscriptionPlanTypeSchema = z.enum(['Free', 'Paid', 'Enterprise']);
 
 /** Zod schema for CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput. Request to create a subscription */
 CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInputSchema = z.object({
@@ -30429,6 +31363,33 @@ ComplianceAuditAuditCategorySchema = z.enum([
   'Privacy',
 ]);
 
+/** Zod schema for ComplianceAuditAuditConditionNode. A node of a nested audit log filter condition tree. A node is either a group that
+combines child nodes with a boolean operator or a field node that applies a single
+comparison to an audit field. */
+ComplianceAuditAuditConditionNodeSchema = z.object({
+  children: z
+    .array(z.lazy(() => ComplianceAuditAuditConditionNodeSchema))
+    .nullable()
+    .optional(),
+  comparison: z.lazy(() => ComplianceAuditAuditFilterComparisonSchema).optional(),
+  field: z.lazy(() => ComplianceAuditAuditFilterFieldSchema).optional(),
+  kind: z.lazy(() => ComplianceAuditAuditConditionNodeKindSchema).optional(),
+  operator: z.lazy(() => ComplianceAuditAuditLogicalOperatorSchema).optional(),
+  value: z.string().nullable().optional(),
+  values: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditConditionNodeKind. Defines the kind of a condition tree node. */
+ComplianceAuditAuditConditionNodeKindSchema = z.enum(['Group', 'Field']);
+
+/** Zod schema for ComplianceAuditAuditConditionSearchInput. Request to search audit log entries with a nested condition tree. */
+ComplianceAuditAuditConditionSearchInputSchema = z.object({
+  condition: z.lazy(() => ComplianceAuditAuditConditionNodeSchema),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditDateRangeSearchOutput. Data model for Compliance Audit Audit Date Range Search Response. */
 ComplianceAuditAuditDateRangeSearchOutputSchema = z.object({
   activity: z
@@ -30468,6 +31429,7 @@ ComplianceAuditAuditExportInputSchema = z.object({
   actionType: z.string().nullable().optional(),
   category: z.lazy(() => ComplianceAuditAuditCategorySchema).optional(),
   columns: z.array(z.string()).nullable().optional(),
+  condition: z.lazy(() => ComplianceAuditAuditConditionNodeSchema).optional(),
   endDate: z.string().datetime().nullable().optional(),
   ipAddress: z.string().nullable().optional(),
   pageNumber: z.number().int().min(1).max(2147483647).nullable().optional(),
@@ -30492,6 +31454,23 @@ ComplianceAuditAuditExportProgressOutputSchema = z.object({
   totalRecords: z.number().int().optional(),
   updatedAt: z.string().datetime().optional(),
 });
+
+/** Zod schema for ComplianceAuditAuditFilterComparison. The comparison applied by a field node. */
+ComplianceAuditAuditFilterComparisonSchema = z.enum(['Equals', 'NotEquals', 'In', 'GreaterThanOrEqual', 'LessThanOrEqual']);
+
+/** Zod schema for ComplianceAuditAuditFilterField. The audit log field targeted by a field node. */
+ComplianceAuditAuditFilterFieldSchema = z.enum([
+  'UserId',
+  'ActionType',
+  'ResourceType',
+  'ResourceId',
+  'Category',
+  'RiskLevel',
+  'Success',
+  'CreatedAt',
+  'IpAddress',
+  'SearchText',
+]);
 
 /** Zod schema for ComplianceAuditAuditJsonExportDocument. Data model for Compliance Audit Audit Json Export Document. */
 ComplianceAuditAuditJsonExportDocumentSchema = z.object({
@@ -30544,6 +31523,9 @@ ComplianceAuditAuditLogDtoSchema = z.object({
   userAgent: z.string().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
 });
+
+/** Zod schema for ComplianceAuditAuditLogicalOperator. Defines how a group node combines its children. */
+ComplianceAuditAuditLogicalOperatorSchema = z.enum(['And', 'Or', 'Not']);
 
 /** Zod schema for ComplianceAuditAuditLogOutput. Data model for Compliance Audit Audit Log Response. */
 ComplianceAuditAuditLogOutputSchema = z.object({
@@ -30648,6 +31630,55 @@ ComplianceAuditAuditRelatedActionSchema = z.object({
   correlationCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditAuditReplayReconstructionOutput. Reconstructed timeline of one verified snapshot (issue #169): chronological events,
+            per-user journeys and per-session summaries. The digest is repeated in a response header. */
+ComplianceAuditAuditReplayReconstructionOutputSchema = z.object({
+  capturedAtUtc: z.string().nullable().optional(),
+  endUtc: z.string().nullable().optional(),
+  events: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySnapshotEventSchema))
+    .nullable()
+    .optional(),
+  failedCount: z.number().int().optional(),
+  sessions: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySessionSummarySchema))
+    .nullable()
+    .optional(),
+  sha256: z.string().nullable().optional(),
+  startUtc: z.string().nullable().optional(),
+  tenantId: z.string().nullable().optional(),
+  totalCount: z.number().int().optional(),
+  users: z
+    .array(z.lazy(() => ComplianceAuditAuditReplayUserJourneySchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySessionSummary. Per-session summary: the parallel activity of one session and the subjects seen in it. */
+ComplianceAuditAuditReplaySessionSummarySchema = z.object({
+  eventCount: z.number().int().optional(),
+  failedCount: z.number().int().optional(),
+  firstAtUtc: z.string().nullable().optional(),
+  lastAtUtc: z.string().nullable().optional(),
+  sessionId: z.string().nullable().optional(),
+  userIds: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySnapshotDocument. Client-held snapshot document posted for reconstruction (issue #169).
+            Field order mirrors the canonical capture document so the reconstructed bytes are deterministic. */
+ComplianceAuditAuditReplaySnapshotDocumentSchema = z.object({
+  capturedAtUtc: z.string().nullable().optional(),
+  endUtc: z.string().nullable().optional(),
+  events: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySnapshotEventSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.number().int().optional(),
+  startUtc: z.string().nullable().optional(),
+  tenantId: z.string().nullable().optional(),
+  totalCount: z.number().int().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditReplaySnapshotEvent. Safe event fields shared with the Web replay core. UserId may identify a subject;
             it must not be presented as verified attribution without additional source evidence. */
 ComplianceAuditAuditReplaySnapshotEventSchema = z.object({
@@ -30675,6 +31706,16 @@ ComplianceAuditAuditReplaySnapshotOutputSchema = z.object({
   startUtc: z.string().nullable().optional(),
   tenantId: z.string().nullable().optional(),
   totalCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplayUserJourney. Per-user journey: chronological activity of one subject across the captured window. */
+ComplianceAuditAuditReplayUserJourneySchema = z.object({
+  eventCount: z.number().int().optional(),
+  failedCount: z.number().int().optional(),
+  firstSeenAtUtc: z.string().nullable().optional(),
+  lastSeenAtUtc: z.string().nullable().optional(),
+  sessionIds: z.array(z.string()).nullable().optional(),
+  userId: z.string().nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditAuditResourceContext. Data model for Compliance Audit Audit Resource Context. */
@@ -31348,6 +32389,12 @@ ComplianceAuditPiiTokenResolutionOutputSchema = z.object({
   token: z.string().nullable().optional(),
   useCount: z.number().int().optional(),
   value: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditReconstructAuditReplayInput. Client-held snapshot plus the digest it was captured with (issue #169). */
+ComplianceAuditReconstructAuditReplayInputSchema = z.object({
+  document: z.lazy(() => ComplianceAuditAuditReplaySnapshotDocumentSchema).optional(),
+  sha256: z.string().nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditResolveSecurityAlertInput. Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
@@ -32081,6 +33128,22 @@ ContentPagesContentResourceStatusSchema = z.enum(['Draft', 'InReview', 'Publishe
 /** Zod schema for ContentPagesContentResourceType. The type of content resource. */
 ContentPagesContentResourceTypeSchema = z.enum(['Article', 'Tutorial', 'Documentation', 'Video', 'Download', 'ExternalLink', 'Course', 'Custom']);
 
+/** Zod schema for ContentPagesCourseProposalDto. Course proposal as rendered by the CRM or the public detail page. */
+ContentPagesCourseProposalDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  audience: z.string().nullable().optional(),
+  courseTitle: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  metadata: z.string().nullable().optional(),
+  pitch: z.string().nullable().optional(),
+  proposerEmail: z.string().nullable().optional(),
+  proposerName: z.string().nullable().optional(),
+  publishedAt: z.string().datetime().nullable().optional(),
+  slug: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().nullable().optional(),
+});
+
 /** Zod schema for ContentPagesCreateContentResourceDto. Data model for Content Pages Create Content Resource Dto. */
 ContentPagesCreateContentResourceDtoSchema = z.object({
   body: z.string().nullable().optional(),
@@ -32105,6 +33168,16 @@ ContentPagesCreateContentResourceDtoSchema = z.object({
   tags: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for ContentPagesCreateCourseProposalDto. Public submission payload for the creator pipeline (issue #105). */
+ContentPagesCreateCourseProposalDtoSchema = z.object({
+  audience: z.string().max(2000).nullable().optional(),
+  courseTitle: z.string().min(1).max(200),
+  metadata: z.string().max(4000).nullable().optional(),
+  pitch: z.string().max(4000).nullable().optional(),
+  proposerEmail: z.string().email().min(1).max(200),
+  proposerName: z.string().min(1).max(120),
 });
 
 /** Zod schema for ContentPagesCreateMarketingLeadDto. Data model for Content Pages Create Marketing Lead Dto. */
@@ -32301,6 +33374,15 @@ ContentPagesUpdateContentResourceDtoSchema = z.object({
   tags: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for ContentPagesUpdateCourseProposalDto. CRM-side update payload: status transitions and content edits. */
+ContentPagesUpdateCourseProposalDtoSchema = z.object({
+  audience: z.string().max(2000).nullable().optional(),
+  courseTitle: z.string().max(200).nullable().optional(),
+  metadata: z.string().max(4000).nullable().optional(),
+  pitch: z.string().max(4000).nullable().optional(),
+  status: z.string().max(40).nullable().optional(),
 });
 
 /** Zod schema for ContentPagesUpdatePageDto. Data model for Content Pages Update Page Dto. */
@@ -34405,6 +35487,24 @@ IdentityAuthenticationAssignRoleToUserInputSchema = z.object({
 /** Zod schema for IdentityAuthenticationAuthenticationStep. Multi-step authentication flow steps */
 IdentityAuthenticationAuthenticationStepSchema = z.enum(['PrimaryCredential', 'MfaVerification', 'DeviceTrust', 'RiskChallenge']);
 
+/** Zod schema for IdentityAuthenticationAuthSessionStateDto. The v1 session-state projection (issue #221). GameGuild.Identity.Authentication.AuthSessionStateDto.SessionValid is false when the
+token is not session-bound or the bound session row is expired, terminated or missing —
+the surface reports that state instead of trusting the token alone. GameGuild.Identity.Authentication.AuthSessionStateDto.TokenRevoked
+is null when the token carries no issued-at claim, so no revocation verdict is claimed. */
+IdentityAuthenticationAuthSessionStateDtoSchema = z.object({
+  activeSessionCount: z.number().int().optional(),
+  mfaEnrolled: z.boolean().optional(),
+  mfaVerifiedInCurrentToken: z.boolean().optional(),
+  sessionExpiresAtUtc: z.string().datetime().nullable().optional(),
+  sessionId: z.string().uuid().nullable().optional(),
+  sessionLastUsedAtUtc: z.string().datetime().nullable().optional(),
+  sessionTerminationReason: z.string().nullable().optional(),
+  sessionValid: z.boolean().optional(),
+  tokenRevoked: z.boolean().nullable().optional(),
+  tokenVersion: z.number().int().nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationBackupCodesOutput. Backup codes response */
 IdentityAuthenticationBackupCodesOutputSchema = z.object({
   codes: z.array(z.string()).nullable().optional(),
@@ -34603,7 +35703,7 @@ IdentityAuthenticationDeviceInfoSchema = z.object({
 
 /** Zod schema for IdentityAuthenticationDisableMfaInput. Request to disable MFA */
 IdentityAuthenticationDisableMfaInputSchema = z.object({
-  code: z.string().min(1),
+  password: z.string().min(1),
 });
 
 /** Zod schema for IdentityAuthenticationDiscordAuthorizeInput. Request to initiate Discord OAuth sign-in */
@@ -34786,7 +35886,7 @@ IdentityAuthenticationMfaErrorOutputSchema = z.object({
 });
 
 /** Zod schema for IdentityAuthenticationMfaMethod. Supported MFA methods */
-IdentityAuthenticationMfaMethodSchema = z.enum(['Totp', 'BackupCode', 'Sms', 'Email', 'WebAuthn']);
+IdentityAuthenticationMfaMethodSchema = z.enum(['Totp', 'BackupCode', 'Sms', 'Email', 'WebAuthn', 'Push']);
 
 /** Zod schema for IdentityAuthenticationMfaMethodInfo. Information about an MFA method */
 IdentityAuthenticationMfaMethodInfoSchema = z.object({
@@ -34979,6 +36079,28 @@ IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema = z.
   webAuthnAssertion: z.string().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationPushMfaChallengeInput. Request to issue a push MFA challenge */
+IdentityAuthenticationPushMfaChallengeInputSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+/** Zod schema for IdentityAuthenticationPushMfaChallengeOutput. Response carrying an issued push challenge */
+IdentityAuthenticationPushMfaChallengeOutputSchema = z.object({
+  challengeId: z.string().nullable(),
+  expiresInSeconds: z.number().int(),
+});
+
+/** Zod schema for IdentityAuthenticationPushMfaDeviceInput. Request to register a push MFA device */
+IdentityAuthenticationPushMfaDeviceInputSchema = z.object({
+  deviceToken: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationPushMfaRespondInput. Device's answer to a push MFA challenge */
+IdentityAuthenticationPushMfaRespondInputSchema = z.object({
+  approved: z.boolean(),
+  challengeId: z.string().nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationRefreshTokenInput. Request DTO for refreshing tokens */
 IdentityAuthenticationRefreshTokenInputSchema = z.object({
   refreshToken: z.string().min(1),
@@ -34989,6 +36111,11 @@ IdentityAuthenticationRefreshTokenInputSchema = z.object({
 IdentityAuthenticationRemoveRoleFromUserInputSchema = z.object({
   roleId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRenameSessionInput. Request to name or rename one of the current user's own sessions */
+IdentityAuthenticationRenameSessionInputSchema = z.object({
+  name: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationRequestEmailCodeInput. Request to send a one-time email sign-in code. */
@@ -35139,6 +36266,11 @@ IdentityAuthenticationSessionOutputSchema = z.object({
   location: z.lazy(() => IdentityAuthenticationLocationInfoSchema).optional(),
 });
 
+/** Zod schema for IdentityAuthenticationSessionRenameErrorOutput. Error response for session rename validation failures */
+IdentityAuthenticationSessionRenameErrorOutputSchema = z.object({
+  error: z.string().nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationSessionSecurityAnalysis. Security analysis result for a session */
 IdentityAuthenticationSessionSecurityAnalysisSchema = z.object({
   activeSessionCount: z.number().int().optional(),
@@ -35199,6 +36331,11 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
   user: z.lazy(() => IdentityAuthenticationUserDtoSchema).optional(),
   userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSmsMfaChallengeInput. Request for an SMS sign-in challenge */
+IdentityAuthenticationSmsMfaChallengeInputSchema = z.object({
+  userId: z.string().uuid(),
 });
 
 /** Zod schema for IdentityAuthenticationSmsMfaSetupInput. Request to setup SMS MFA */
@@ -35540,6 +36677,19 @@ IdentityAuthorizationCommandsRequestJitElevationCommandSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationContentTypePermissionGrantDto. Response row for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+IdentityAuthorizationContentTypePermissionGrantDtoSchema = z.object({
+  id: z.string().uuid(),
+  contentTypeName: z.string().nullable(),
+  denyPermissions: z.array(z.string()).nullable(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  grantedAt: z.string().datetime().optional(),
+  isActive: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable(),
+  tenantId: z.string().uuid(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationControllersApproveElevationInput. Data model for Identity Authorization Controllers Approve Elevation Request. */
 IdentityAuthorizationControllersApproveElevationInputSchema = z.object({
   comments: z.string().nullable().optional(),
@@ -35614,6 +36764,18 @@ IdentityAuthorizationCreatePermissionApprovalCommandSchema = z.object({
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema).optional(),
 });
 
+/** Zod schema for IdentityAuthorizationCreatePermissionTemplateCommand. Creates a permission template (issue #369 template CRUD lifecycle). */
+IdentityAuthorizationCreatePermissionTemplateCommandSchema = z.object({
+  category: z.string().nullable().optional(),
+  changeNotes: z.string().nullable().optional(),
+  description: z.string().nullable(),
+  isSystemTemplate: z.boolean().optional(),
+  minimumTier: z.string().nullable().optional(),
+  name: z.string().nullable(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationDeclineInvitationInput. Request payload for declining an invitation. */
 IdentityAuthorizationDeclineInvitationInputSchema = z.object({
   reason: z.string().nullable().optional(),
@@ -35649,6 +36811,16 @@ IdentityAuthorizationDelegatedAdminScopeSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationDelegatedAdminScopeType. Type of delegated admin scope */
 IdentityAuthorizationDelegatedAdminScopeTypeSchema = z.enum(['None', 'Department', 'Team', 'Role', 'Resource', 'Custom']);
+
+/** Zod schema for IdentityAuthorizationDenyContentTypePermissionGrantCommand. Adds explicit DENY-WINS entries to a content-type grant row. Guarded like the
+grant command. */
+IdentityAuthorizationDenyContentTypePermissionGrantCommandSchema = z.object({
+  contentTypeName: z.string().nullable(),
+  permissions: z.array(z.string()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+  userId: z.string().uuid().nullable().optional(),
+});
 
 /** Zod schema for IdentityAuthorizationDenyTenantPermissionCommand. Command to deny tenant-level permissions from a user.
 Denied permissions take precedence over allowed permissions (DENY-WINS). */
@@ -35738,6 +36910,12 @@ IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
   priority: z.number().int().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationGetContentTypePermissionGrantsOutput. Response envelope for GameGuild.Identity.Authorization.GetContentTypePermissionGrantsQuery. */
+IdentityAuthorizationGetContentTypePermissionGrantsOutputSchema = z.object({
+  grants: z.array(z.lazy(() => IdentityAuthorizationContentTypePermissionGrantDtoSchema)).nullable(),
+  tenantId: z.string().uuid(),
+});
+
 /** Zod schema for IdentityAuthorizationGetExpiringTenantPermissionsOutput. Response containing grants that are about to expire in a tenant. */
 IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema = z.object({
   expiring: z.array(z.lazy(() => IdentityAuthorizationExpiringTenantPermissionSchema)).nullable(),
@@ -35768,9 +36946,26 @@ IdentityAuthorizationGetResourceUsersOutputSchema = z.object({
 IdentityAuthorizationGetTenantPermissionsOutputSchema = z.object({
   isSystemAdmin: z.boolean().optional(),
   isTenantAdmin: z.boolean().optional(),
+  page: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
   permissions: z.array(z.string()).nullable(),
   tenantId: z.string().uuid(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
   userId: z.string().uuid(),
+});
+
+/** Zod schema for IdentityAuthorizationGrantContentTypePermissionGrantCommand.     Grants content-type scoped permissions (layer 2 of the 3-layer DAC model,
+issues #360/#365). Guarded: only system administrators or tenant administrators of
+the target tenant may grant; versioned and audited inside
+GameGuild.Identity.Authorization.IContentTypePermissionGrantService. */
+IdentityAuthorizationGrantContentTypePermissionGrantCommandSchema = z.object({
+  contentTypeName: z.string().nullable(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  permissions: z.array(z.string()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+  userId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationGrantTenantPermissionCommand. Command to grant tenant-level permissions to a user. */
@@ -35785,6 +36980,14 @@ IdentityAuthorizationGrantTenantPermissionCommandSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationGraphExportFormat. Graph export formats */
 IdentityAuthorizationGraphExportFormatSchema = z.enum(['None', 'DOT', 'JSON', 'GraphML']);
+
+/** Zod schema for IdentityAuthorizationHasGlobalPermissionOutput. Response of a global-permission validation. */
+IdentityAuthorizationHasGlobalPermissionOutputSchema = z.object({
+  denialReason: z.string().nullable().optional(),
+  hasPermission: z.boolean(),
+  permission: z.string().nullable(),
+  source: z.string().nullable(),
+});
 
 /** Zod schema for IdentityAuthorizationHasPermissionOutput. Response indicating whether the user has the requested permission. */
 IdentityAuthorizationHasPermissionOutputSchema = z.object({
@@ -35845,6 +37048,14 @@ IdentityAuthorizationInheritanceHistoryEventSchema = z.object({
   timestamp: z.string().datetime().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationInstantiateTemplateInput. Request body for template instantiation. */
+IdentityAuthorizationInstantiateTemplateInputSchema = z.object({
+  dryRun: z.boolean().optional(),
+  reason: z.string().nullable().optional(),
+  targetUserIds: z.array(z.string().uuid()).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
 IdentityAuthorizationInvitationActionResultSchema = z.object({
   errorMessage: z.string().nullable().optional(),
@@ -35880,6 +37091,18 @@ IdentityAuthorizationJitElevationInputSchema = z.object({
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema).optional(),
   updatedAt: z.string().datetime().nullable().optional(),
 });
+
+/** Zod schema for IdentityAuthorizationMigrateTemplateInput. Request body for template migration. */
+IdentityAuthorizationMigrateTemplateInputSchema = z.object({
+  batchSize: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  reason: z.string().nullable().optional(),
+  tenantIds: z.array(z.string().uuid()).nullable().optional(),
+  toVersion: z.number().int(),
+});
+
+/** Zod schema for IdentityAuthorizationMigrationStatus. Migration status */
+IdentityAuthorizationMigrationStatusSchema = z.enum(['None', 'Planned', 'Scheduled', 'InProgress', 'Completed', 'Failed', 'RolledBack', 'Cancelled']);
 
 /** Zod schema for IdentityAuthorizationModelsImpactedUser. A user affected by a simulated permission change, with the reason. */
 IdentityAuthorizationModelsImpactedUserSchema = z.object({
@@ -36187,6 +37410,28 @@ IdentityAuthorizationPermissionRestorationResultSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionSimulationResult. Result of a what-if permission simulation (issue #374). GameGuild.Identity.Authorization.PermissionSimulationResult.Applied is
+always false: a simulation never mutates state. */
+IdentityAuthorizationPermissionSimulationResultSchema = z.object({
+  after: z.array(z.string()).nullable().optional(),
+  applied: z.boolean().optional(),
+  before: z.array(z.string()).nullable().optional(),
+  contextValid: z.boolean().optional(),
+  granted: z.array(z.string()).nullable().optional(),
+  nonRevocableRevokes: z.array(z.string()).nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  revoked: z.array(z.string()).nullable().optional(),
+  roleKey: z.string().nullable().optional(),
+  subjectKind: z.lazy(() => IdentityAuthorizationPermissionSimulationSubjectKindSchema).optional(),
+  tenantId: z.string().uuid().optional(),
+  unchanged: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSimulationSubjectKind. Kind of subject a what-if simulation is run against (issue #374). */
+IdentityAuthorizationPermissionSimulationSubjectKindSchema = z.enum(['User', 'Role', 'Tenant']);
+
 /** Zod schema for IdentityAuthorizationPermissionSyncChange. One planned change of a synchronization import. */
 IdentityAuthorizationPermissionSyncChangeSchema = z.object({
   kind: z.string().nullable().optional(),
@@ -36204,6 +37449,94 @@ IdentityAuthorizationPermissionSyncImportResultSchema = z.object({
   dryRun: z.boolean().optional(),
   isValid: z.boolean().optional(),
   validationErrors: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateInstantiationEntryResult. Per-target entry of a template instantiation result / dry-run preview. */
+IdentityAuthorizationPermissionTemplateInstantiationEntryResultSchema = z.object({
+  permissionsToGrant: z.array(z.string()).nullable().optional(),
+  rolesToAssign: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateInstantiationResult. Result of instantiating a permission template into a tenant (or its dry-run
+preview), issue #369. */
+IdentityAuthorizationPermissionTemplateInstantiationResultSchema = z.object({
+  applied: z.boolean().optional(),
+  appliedTargets: z.number().int().optional(),
+  entries: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionTemplateInstantiationEntryResultSchema))
+    .nullable()
+    .optional(),
+  permissionGrants: z.number().int().optional(),
+  roleAssignments: z.number().int().optional(),
+  skippedTargets: z.number().int().optional(),
+  templateId: z.string().uuid().optional(),
+  templateName: z.string().nullable(),
+  templateVersion: z.number().int().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalTargets: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateMigrationResult. Result of a permission template migration (or dry-run preview) / rollback,
+issue #370. */
+IdentityAuthorizationPermissionTemplateMigrationResultSchema = z.object({
+  addedPermissions: z.array(z.string()).nullable().optional(),
+  affectedTenantCount: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  failureCount: z.number().int().optional(),
+  fromVersion: z.number().int().optional(),
+  migrationId: z.string().uuid().optional(),
+  progressPercentage: z.number().optional(),
+  removedPermissions: z.array(z.string()).nullable().optional(),
+  skippedCount: z.number().int().optional(),
+  status: z.lazy(() => IdentityAuthorizationMigrationStatusSchema).optional(),
+  successCount: z.number().int().optional(),
+  templateId: z.string().uuid().optional(),
+  templateName: z.string().nullable(),
+  totalCount: z.number().int().optional(),
+  toVersion: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateMutationResult. Result of a permission template mutation (create/update, issue #369). */
+IdentityAuthorizationPermissionTemplateMutationResultSchema = z.object({
+  created: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  isSystemTemplate: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+  templateId: z.string().uuid().optional(),
+  templateName: z.string().nullable(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateSummary. Read model for one permission template (issue #369). */
+IdentityAuthorizationPermissionTemplateSummarySchema = z.object({
+  id: z.string().uuid().optional(),
+  category: z.string().nullable().optional(),
+  currentVersion: z.number().int().optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  isRoleTemplate: z.boolean().optional(),
+  isSystemTemplate: z.boolean().optional(),
+  minimumTier: z.string().nullable().optional(),
+  name: z.string().nullable(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateVersionSummary. Read model for one permission template version snapshot (issue #370). */
+IdentityAuthorizationPermissionTemplateVersionSummarySchema = z.object({
+  addedPermissions: z.array(z.string()).nullable().optional(),
+  changeNotes: z.string().nullable().optional(),
+  changeType: z.lazy(() => IdentityAuthorizationTemplateChangeTypeSchema).optional(),
+  createdAt: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  name: z.string().nullable().optional(),
+  permissionHash: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  removedPermissions: z.array(z.string()).nullable().optional(),
+  unchangedPermissions: z.array(z.string()).nullable().optional(),
+  versionNumber: z.number().int().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionTrend. Data model for Identity Authorization Permission Trend. */
@@ -36320,6 +37653,17 @@ IdentityAuthorizationPermissionTypeSchema = z.enum([
   'TenantAdmin',
   'UserManagement',
   'Configure',
+  'ManageMembers',
+  'ManageRoles',
+  'ManageSettings',
+  'AuditAccess',
+  'SystemConfiguration',
+  'BackupRestore',
+  'DataMigration',
+  'EditMetadata',
+  'Maintenance',
+  'Monitoring',
+  'Deployment',
 ]);
 
 /** Zod schema for IdentityAuthorizationPermissionUpdateResult. Result of updating permissions. */
@@ -36359,6 +37703,12 @@ IdentityAuthorizationPolicyVersionHistorySchema = z.object({
 
 /** Zod schema for IdentityAuthorizationPolicyVersionKind. Which policy family a GameGuild.Identity.Authorization.PolicyVersionHistory row snapshots. */
 IdentityAuthorizationPolicyVersionKindSchema = z.enum(['None', 'ConditionalPolicy', 'PolicyDefinition']);
+
+/** Zod schema for IdentityAuthorizationPreviewInstantiationInput. Request body for the instantiation dry-run preview. */
+IdentityAuthorizationPreviewInstantiationInputSchema = z.object({
+  targetUserIds: z.array(z.string().uuid()).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
 
 /** Zod schema for IdentityAuthorizationRemoveDenyPermissionsCommand. Command to remove deny entries from a user's permissions. */
 IdentityAuthorizationRemoveDenyPermissionsCommandSchema = z.object({
@@ -36415,6 +37765,15 @@ IdentityAuthorizationResourceUserSchema = z.object({
   userId: z.string().uuid(),
 });
 
+/** Zod schema for IdentityAuthorizationRevokeContentTypePermissionGrantCommand. Revokes content-type scoped permissions. Guarded like the grant command; the row
+is soft-deleted once its payload is empty (permission history preservation). */
+IdentityAuthorizationRevokeContentTypePermissionGrantCommandSchema = z.object({
+  contentTypeName: z.string().nullable(),
+  permissions: z.array(z.string()).nullable(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+  userId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationRevokeTenantPermissionCommand. Command to revoke tenant-level permissions from a user. */
 IdentityAuthorizationRevokeTenantPermissionCommandSchema = z.object({
   permissions: z.array(z.string()).nullable(),
@@ -36422,6 +37781,11 @@ IdentityAuthorizationRevokeTenantPermissionCommandSchema = z.object({
   revokedBy: z.string().uuid(),
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
   userId: z.string().uuid(),
+});
+
+/** Zod schema for IdentityAuthorizationRollbackMigrationInput. Request body for migration rollback. */
+IdentityAuthorizationRollbackMigrationInputSchema = z.object({
+  reason: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthorizationSetGlobalDefaultPermissionsCommand. Command to set global default permissions.
@@ -36471,6 +37835,21 @@ IdentityAuthorizationShareResultSchema = z.object({
   invitationLink: z.string().nullable().optional(),
   isNewUser: z.boolean().optional(),
   success: z.boolean().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationSimulatePermissionChangeCommand. What-if permission simulation (issue #374): computes the before/after effective
+permission diff for a hypothetical grant/revoke delta <b>without applying
+anything</b>. The command is a pure dry-run — it performs no writes, bumps no
+security versions and writes no audit entries. */
+IdentityAuthorizationSimulatePermissionChangeCommandSchema = z.object({
+  grants: z.array(z.string()).nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  revokes: z.array(z.string()).nullable().optional(),
+  roleKey: z.string().nullable().optional(),
+  subjectKind: z.lazy(() => IdentityAuthorizationPermissionSimulationSubjectKindSchema),
+  tenantId: z.string().uuid().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
 });
 
@@ -36551,6 +37930,25 @@ IdentityAuthorizationSoDViolationSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationSoDViolationStatus. Status of SoD violation */
 IdentityAuthorizationSoDViolationStatusSchema = z.enum(['None', 'Active', 'Acknowledged', 'Mitigated', 'Resolved', 'Excepted', 'FalsePositive']);
+
+/** Zod schema for IdentityAuthorizationTemplateChangeType. Template change type for versioning */
+IdentityAuthorizationTemplateChangeTypeSchema = z.enum(['None', 'Major', 'Minor', 'Patch', 'Hotfix']);
+
+/** Zod schema for IdentityAuthorizationUpdatePermissionTemplateCommand. Updates a permission template (issue #369 template CRUD lifecycle). Every accepted
+update appends a new GameGuild.Identity.Authorization.PermissionTemplateVersion snapshot with the
+computed permission diff (issue #370 version bump on template update). */
+IdentityAuthorizationUpdatePermissionTemplateCommandSchema = z.object({
+  category: z.string().nullable().optional(),
+  changeNotes: z.string().nullable().optional(),
+  changeType: z.lazy(() => IdentityAuthorizationTemplateChangeTypeSchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().nullable().optional(),
+  minimumTier: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+  templateId: z.string().uuid(),
+});
 
 /** Zod schema for IdentityAuthorizationUpdateUserPermissionsCommand. Command to update a specific user's permissions on a resource. */
 IdentityAuthorizationUpdateUserPermissionsCommandSchema = z.object({
@@ -47023,8 +48421,12 @@ export type ComplianceFERPAFerpaInspectionRequest = ComplianceFERPAFerpaInspecti
 export { ComplianceFERPAFerpaInspectionRequestDtoSchema as ComplianceFERPAFerpaInspectionRequestSchema };
 export type ContentPagesContentResource = ContentPagesContentResourceDto;
 export { ContentPagesContentResourceDtoSchema as ContentPagesContentResourceSchema };
+export type ContentPagesCourseProposal = ContentPagesCourseProposalDto;
+export { ContentPagesCourseProposalDtoSchema as ContentPagesCourseProposalSchema };
 export type ContentPagesCreateContentResource = ContentPagesCreateContentResourceDto;
 export { ContentPagesCreateContentResourceDtoSchema as ContentPagesCreateContentResourceSchema };
+export type ContentPagesCreateCourseProposal = ContentPagesCreateCourseProposalDto;
+export { ContentPagesCreateCourseProposalDtoSchema as ContentPagesCreateCourseProposalSchema };
 export type ContentPagesCreateMarketingLead = ContentPagesCreateMarketingLeadDto;
 export { ContentPagesCreateMarketingLeadDtoSchema as ContentPagesCreateMarketingLeadSchema };
 export type ContentPagesCreatePage = ContentPagesCreatePageDto;
@@ -47043,6 +48445,8 @@ export type ContentPagesSitemapEntry = ContentPagesSitemapEntryDto;
 export { ContentPagesSitemapEntryDtoSchema as ContentPagesSitemapEntrySchema };
 export type ContentPagesUpdateContentResource = ContentPagesUpdateContentResourceDto;
 export { ContentPagesUpdateContentResourceDtoSchema as ContentPagesUpdateContentResourceSchema };
+export type ContentPagesUpdateCourseProposal = ContentPagesUpdateCourseProposalDto;
+export { ContentPagesUpdateCourseProposalDtoSchema as ContentPagesUpdateCourseProposalSchema };
 export type ContentPagesUpdatePage = ContentPagesUpdatePageDto;
 export { ContentPagesUpdatePageDtoSchema as ContentPagesUpdatePageSchema };
 export type ContentPagesUpdatePageSection = ContentPagesUpdatePageSectionDto;
@@ -47073,6 +48477,8 @@ export type GameJamsJamSubmission = GameJamsJamSubmissionDto;
 export { GameJamsJamSubmissionDtoSchema as GameJamsJamSubmissionSchema };
 export type IdentityAuthenticationApiKey = IdentityAuthenticationApiKeyDto;
 export { IdentityAuthenticationApiKeyDtoSchema as IdentityAuthenticationApiKeySchema };
+export type IdentityAuthenticationAuthSessionState = IdentityAuthenticationAuthSessionStateDto;
+export { IdentityAuthenticationAuthSessionStateDtoSchema as IdentityAuthenticationAuthSessionStateSchema };
 export type IdentityAuthenticationDiscordCallbackRequest = IdentityAuthenticationDiscordCallbackRequestDto;
 export { IdentityAuthenticationDiscordCallbackRequestDtoSchema as IdentityAuthenticationDiscordCallbackRequestSchema };
 export type IdentityAuthenticationGitHubCallbackRequest = IdentityAuthenticationGitHubCallbackRequestDto;
@@ -47091,6 +48497,8 @@ export type IdentityAuthenticationProcessOrchestratedAuthenticationStepRequest =
 export { IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema as IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
+export type IdentityAuthorizationContentTypePermissionGrant = IdentityAuthorizationContentTypePermissionGrantDto;
+export { IdentityAuthorizationContentTypePermissionGrantDtoSchema as IdentityAuthorizationContentTypePermissionGrantSchema };
 export type IdentityAuthorizationEffectivePermission = IdentityAuthorizationEffectivePermissionDto;
 export { IdentityAuthorizationEffectivePermissionDtoSchema as IdentityAuthorizationEffectivePermissionSchema };
 export type IdentityAuthorizationResourceInvitation = IdentityAuthorizationResourceInvitationDto;

@@ -23,9 +23,9 @@
     "@game-guild/quiz-content": "workspace:^",
     "@game-guild/ui": "workspace:^",
     "lexical": "^0.52.0",
-    "lucide-react": "^1.52.0",
+    "lucide-react": "^1.55.0",
     "mathlive": "^0.111.0",
-    "react-hook-form": "^7.89.0"
+    "react-hook-form": "^7.90.0"
   },
   "peerDependencies": {
     "react": "^19.2.0",

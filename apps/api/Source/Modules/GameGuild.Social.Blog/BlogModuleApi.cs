@@ -15,8 +15,10 @@ public static class BlogDependencyInjection
     {
         services.AddScoped<IBlogSlugService, BlogSlugService>();
         services.AddScoped<IPublicationAnnouncer, PublicationAnnouncerAdapter>();
-        services.AddScoped<IBlogPostService, BlogPostService>();
+        services.AddScoped<BlogAssetManifestService>();
+        services.AddScoped<IBlogPostService>(provider => ActivatorUtilities.CreateInstance<BlogPostService>(provider));
         services.AddScoped<IBlogViewCounterService, BlogViewCounterService>();
+        services.AddScoped<GameGuild.Assets.IAssetUsageGuard, Services.BlogAssetUsageGuard>();
 
         services.AddSingleton<IBlogAuthoringAiRunQueue, BlogAuthoringAiRunQueue>();
         services.AddScoped<IBlogAuthoringAiService, BlogAuthoringAiService>();

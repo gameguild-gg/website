@@ -3,8 +3,13 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Content.Pages;
 
 /// <summary>EF Core implementation of <see cref="IPageService"/>.</summary>
-public sealed class PageService(IApplicationDbContext db) : IPageService
+public sealed class PageService(
+    IApplicationDbContext db,
+    IContentPagesAuditEventSink auditSink,
+    IRequestContextAccessor? requestContextAccessor = null) : IPageService
 {
+    private Guid? ActingUserId => requestContextAccessor?.CurrentUserId;
+
     // ──── Pages ────
 
     public async Task<Page?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
@@ -68,7 +73,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         };
 
         db.Set<Page>().Add(page);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageCreated", "Page", page.Id.ToString(), ActingUserId, page.TenantId,
+                $"Page '{page.Title}' created", Metadata: new { page.Slug, page.PageType, page.Locale }), token),
+            ct).ConfigureAwait(false);
         return page;
     }
 
@@ -101,7 +110,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         if (dto.SortOrder.HasValue) page.SortOrder = dto.SortOrder.Value;
         if (dto.ScheduledPublishAt.HasValue) page.ScheduledPublishAt = dto.ScheduledPublishAt;
 
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageUpdated", "Page", page.Id.ToString(), ActingUserId, page.TenantId,
+                $"Page '{page.Title}' updated", Metadata: new { page.Slug, page.Status }), token),
+            ct).ConfigureAwait(false);
         return page;
     }
 
@@ -111,7 +124,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         if (page is null) return false;
 
         page.SoftDelete();
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageDeleted", "Page", page.Id.ToString(), ActingUserId, page.TenantId,
+                $"Page '{page.Title}' deleted", Metadata: new { page.Slug }), token),
+            ct).ConfigureAwait(false);
         return true;
     }
 
@@ -123,7 +140,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         page.Status = PageStatus.Published;
         page.PublishedAt ??= DateTime.UtcNow;
         page.PublishedBy = userId;
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PagePublished", "Page", page.Id.ToString(), userId, page.TenantId,
+                $"Page '{page.Title}' published", Metadata: new { page.Slug, page.Locale }), token),
+            ct).ConfigureAwait(false);
         return page;
     }
 
@@ -133,7 +154,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         if (page is null) return null;
 
         page.Status = PageStatus.Draft;
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageUnpublished", "Page", page.Id.ToString(), ActingUserId, page.TenantId,
+                $"Page '{page.Title}' unpublished", Metadata: new { page.Slug }), token),
+            ct).ConfigureAwait(false);
         return page;
     }
 
@@ -164,7 +189,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         };
 
         db.Set<PageSection>().Add(section);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageSectionCreated", "PageSection", section.Id.ToString(), ActingUserId, section.TenantId,
+                $"Section '{section.Heading}' added to page {pageId}", Metadata: new { PageId = pageId, section.SectionType }), token),
+            ct).ConfigureAwait(false);
         return section;
     }
 
@@ -181,7 +210,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         if (dto.IsVisible.HasValue) section.IsVisible = dto.IsVisible.Value;
         if (dto.CssClasses is not null) section.CssClasses = dto.CssClasses;
 
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageSectionUpdated", "PageSection", section.Id.ToString(), ActingUserId, section.TenantId,
+                $"Section '{section.Heading}' updated", Metadata: new { section.PageId }), token),
+            ct).ConfigureAwait(false);
         return section;
     }
 
@@ -191,7 +224,11 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
         if (section is null) return false;
 
         section.SoftDelete();
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageSectionDeleted", "PageSection", section.Id.ToString(), ActingUserId, section.TenantId,
+                $"Section '{section.Heading}' deleted", Metadata: new { section.PageId }), token),
+            ct).ConfigureAwait(false);
         return true;
     }
 
@@ -208,6 +245,10 @@ public sealed class PageService(IApplicationDbContext db) : IPageService
             if (section is not null) section.SortOrder = i;
         }
 
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await db.SaveWithRequiredAuditAsync(
+            token => auditSink.RecordAsync(new ContentPagesAuditEvent(
+                "Content.Pages.PageSectionsReordered", "Page", pageId.ToString(), ActingUserId, sections.FirstOrDefault()?.TenantId,
+                $"{orderedIds.Count} sections reordered on page {pageId}", Metadata: new { PageId = pageId, OrderedIds = orderedIds.Count }), token),
+            ct).ConfigureAwait(false);
     }
 }

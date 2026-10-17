@@ -49,4 +49,5 @@ export interface RemoteAssetProvider {
   download(record: AssetRecord, context: AssetProviderContext): Promise<AssetDownload>;
   resolveUrl(record: AssetRecord, context: AssetProviderContext): Promise<ResolvedAssetUrl>;
   delete?(record: AssetRecord, context: AssetProviderContext): Promise<void>;
+  rename?(id: string, displayName: string, context: AssetProviderContext): Promise<AssetRecord>;
 }

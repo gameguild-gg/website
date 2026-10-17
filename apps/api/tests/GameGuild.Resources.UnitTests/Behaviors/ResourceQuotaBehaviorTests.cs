@@ -214,6 +214,77 @@ public class ResourceQuotaBehaviorTests
     }
 
     [Fact]
+    public async Task Handle_RollsBackQuota_WhenCommandHandlerThrowsQuotaExceededException()
+    {
+        var tenantId = Guid.NewGuid();
+        var command = new TestQuotaCommand();
+        _actorContextAccessorMock.Setup(x => x.ActorContext).Returns(CreateActorContext(tenantId));
+        _quotaServiceMock
+            .Setup(x => x.TryAtomicConsumeAsync(
+                tenantId,
+                ResourceUsageType.Users,
+                1L,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, 5L, 10L));
+
+        var commandException = new QuotaExceededException(
+            ResourceUsageType.Assets,
+            currentUsage: 10,
+            limit: 10,
+            tenantId);
+        _nextMock.Setup(x => x()).ThrowsAsync(commandException);
+
+        var exception = await Assert.ThrowsAsync<QuotaExceededException>(
+            () => _behavior.Handle(command, _nextMock.Object, CancellationToken.None));
+
+        exception.Should().BeSameAs(commandException);
+        _quotaServiceMock.Verify(
+            x => x.DecrementUsageAsync(
+                tenantId,
+                ResourceUsageType.Users,
+                1L,
+                null,
+                null,
+                CancellationToken.None),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_RollsBackQuota_WithIndependentToken_WhenRequestIsCancelled()
+    {
+        var tenantId = Guid.NewGuid();
+        var command = new TestQuotaCommand();
+        _actorContextAccessorMock.Setup(x => x.ActorContext).Returns(CreateActorContext(tenantId));
+        _quotaServiceMock
+            .Setup(x => x.TryAtomicConsumeAsync(
+                tenantId,
+                ResourceUsageType.Users,
+                1L,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, 5L, 10L));
+
+        using var cancellation = new CancellationTokenSource();
+        _nextMock.Setup(x => x()).Returns(() =>
+        {
+            cancellation.Cancel();
+            return Task.FromCanceled<Unit>(cancellation.Token);
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _behavior.Handle(command, _nextMock.Object, cancellation.Token));
+
+        _quotaServiceMock.Verify(
+            x => x.DecrementUsageAsync(
+                tenantId,
+                ResourceUsageType.Users,
+                1L,
+                null,
+                null,
+                CancellationToken.None),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_LogsError_WhenRollbackFails()
     {
         // Arrange
@@ -356,6 +427,18 @@ public class ResourceQuotaBehaviorTests
 
         return (Guid?)method!.Invoke(null, new object?[] { response });
     }
+
+    private static ActorContext CreateActorContext(Guid tenantId) => new()
+    {
+        ActorKind = ActorKind.User,
+        SubjectId = Guid.NewGuid().ToString(),
+        TenantId = tenantId,
+        Roles = new HashSet<string>(),
+        Permissions = new HashSet<string>(),
+        TypedAttributes = ActorAttributes.Empty,
+        AuthScheme = "Bearer",
+        IsAuthenticated = true
+    };
 
     private sealed class ResponseWithId
     {

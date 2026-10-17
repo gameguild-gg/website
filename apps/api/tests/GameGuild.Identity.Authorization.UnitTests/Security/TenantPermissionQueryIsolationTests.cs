@@ -82,9 +82,14 @@ public sealed class TenantPermissionQueryIsolationTests
                 .WithRoles(roles)
                 .Build());
 
+        var securityVersionStore = Mock.Of<ITenantSecurityVersionStore>(store =>
+            store.GetVersionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()) == Task.FromResult(1L));
+
         return new GetTenantPermissionsQueryHandler(
             queryService.Object,
             accessor.Object,
+            securityVersionStore,
+            new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()),
             NullLogger<GetTenantPermissionsQueryHandler>.Instance);
     }
 }

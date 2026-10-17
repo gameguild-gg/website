@@ -118,26 +118,86 @@ public sealed class PatchPromoCodeHandler(IPromoCodeRepository repository) : ICo
         }
 
         // Apply only non-null values (partial update)
-        if (request.Name != null) promoCode.Name = request.Name;
-        if (request.Description != null) promoCode.Description = request.Description;
-        if (request.Type.HasValue) promoCode.Type = request.Type.Value;
-        if (request.DiscountPercentage.HasValue) promoCode.DiscountPercentage = request.DiscountPercentage;
-        if (request.DiscountAmount.HasValue) promoCode.DiscountAmount = request.DiscountAmount;
-        if (request.MaxDiscountAmount.HasValue) promoCode.MaxDiscountAmount = request.MaxDiscountAmount;
-        if (request.Currency != null) promoCode.Currency = request.Currency;
-        if (request.MinimumOrderAmount.HasValue) promoCode.MinimumOrderAmount = request.MinimumOrderAmount;
-        if (request.MaxUses.HasValue) promoCode.MaxUses = request.MaxUses;
-        if (request.MaxUsesPerUser.HasValue) promoCode.MaxUsesPerUser = request.MaxUsesPerUser;
-        if (request.FreeTrialExtensionDays.HasValue) promoCode.FreeTrialExtensionDays = request.FreeTrialExtensionDays;
-        if (request.DurationMonths.HasValue) promoCode.DurationMonths = request.DurationMonths;
-        if (request.ApplyToRenewal.HasValue) promoCode.ApplyToRenewal = request.ApplyToRenewal.Value;
-        if (request.ValidFrom.HasValue) promoCode.ValidFrom = request.ValidFrom;
-        if (request.ValidUntil.HasValue) promoCode.ValidUntil = request.ValidUntil;
-        if (request.IsActive.HasValue) promoCode.IsActive = request.IsActive.Value;
-        if (request.IsExclusive.HasValue) promoCode.IsExclusive = request.IsExclusive.Value;
-        if (request.StackingPriority.HasValue) promoCode.StackingPriority = request.StackingPriority.Value;
-        if (request.CampaignId != null) promoCode.CampaignId = string.IsNullOrWhiteSpace(request.CampaignId) ? null : request.CampaignId;
-        if (request.ProductId.HasValue) promoCode.ProductId = request.ProductId;
+        if (request.Name != null)
+        {
+            promoCode.Name = request.Name;
+        }
+        if (request.Description != null)
+        {
+            promoCode.Description = request.Description;
+        }
+        if (request.Type.HasValue)
+        {
+            promoCode.Type = request.Type.Value;
+        }
+        if (request.DiscountPercentage.HasValue)
+        {
+            promoCode.DiscountPercentage = request.DiscountPercentage;
+        }
+        if (request.DiscountAmount.HasValue)
+        {
+            promoCode.DiscountAmount = request.DiscountAmount;
+        }
+        if (request.MaxDiscountAmount.HasValue)
+        {
+            promoCode.MaxDiscountAmount = request.MaxDiscountAmount;
+        }
+        if (request.Currency != null)
+        {
+            promoCode.Currency = request.Currency;
+        }
+        if (request.MinimumOrderAmount.HasValue)
+        {
+            promoCode.MinimumOrderAmount = request.MinimumOrderAmount;
+        }
+        if (request.MaxUses.HasValue)
+        {
+            promoCode.MaxUses = request.MaxUses;
+        }
+        if (request.MaxUsesPerUser.HasValue)
+        {
+            promoCode.MaxUsesPerUser = request.MaxUsesPerUser;
+        }
+        if (request.FreeTrialExtensionDays.HasValue)
+        {
+            promoCode.FreeTrialExtensionDays = request.FreeTrialExtensionDays;
+        }
+        if (request.DurationMonths.HasValue)
+        {
+            promoCode.DurationMonths = request.DurationMonths;
+        }
+        if (request.ApplyToRenewal.HasValue)
+        {
+            promoCode.ApplyToRenewal = request.ApplyToRenewal.Value;
+        }
+        if (request.ValidFrom.HasValue)
+        {
+            promoCode.ValidFrom = request.ValidFrom;
+        }
+        if (request.ValidUntil.HasValue)
+        {
+            promoCode.ValidUntil = request.ValidUntil;
+        }
+        if (request.IsActive.HasValue)
+        {
+            promoCode.IsActive = request.IsActive.Value;
+        }
+        if (request.IsExclusive.HasValue)
+        {
+            promoCode.IsExclusive = request.IsExclusive.Value;
+        }
+        if (request.StackingPriority.HasValue)
+        {
+            promoCode.StackingPriority = request.StackingPriority.Value;
+        }
+        if (request.CampaignId != null)
+        {
+            promoCode.CampaignId = string.IsNullOrWhiteSpace(request.CampaignId) ? null : request.CampaignId;
+        }
+        if (request.ProductId.HasValue)
+        {
+            promoCode.ProductId = request.ProductId;
+        }
         
         promoCode.Touch();
         

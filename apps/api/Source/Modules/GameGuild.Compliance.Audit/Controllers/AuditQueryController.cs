@@ -17,7 +17,7 @@ namespace GameGuild.Compliance.Audit;
 [Microsoft.AspNetCore.Http.Tags("compliance/audit/queries")]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/audit-queries")]
-[Authorize(Policy = Policies.SystemAdmin)]
+[Authorize(Policy = Policies.AuditRead)]
 public class AuditQueryController(
     ISender sender,
     IAuditQueryDslParser parser,

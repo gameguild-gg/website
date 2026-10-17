@@ -62,6 +62,31 @@ export class ComplianceAuditModule {
   }
 
   /**
+   * Searches audit events using a nested condition tree with boolean logic.
+   */
+  async postApiAuditSearchFilter(body: Types.ComplianceAuditAuditConditionSearchInput): Promise<Result<Types.ComplianceAuditAuditLogOutput, ApiError>> {
+    const url = '/api/audit/search-filter';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditConditionSearchInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditLogOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Get audit logs with filtering and pagination
    */
   async getAdminAuditLogs(query?: {
@@ -75,6 +100,7 @@ export class ComplianceAuditModule {
     StartDate?: string;
     EndDate?: string;
     IpAddress?: string;
+    SearchText?: string;
     Skip?: number;
     Take?: number;
   }): Promise<Result<Types.ComplianceAuditAuditLogOutput, ApiError>> {
@@ -280,6 +306,31 @@ export class ComplianceAuditModule {
     });
 
     return result as Result<Types.ComplianceAuditAuditExportHistoryOutput[], ApiError>;
+  }
+
+  /**
+   * Searches audit events using a nested condition tree with boolean logic.
+   */
+  async postAdminAuditLogsSearchFilter(body: Types.ComplianceAuditAuditConditionSearchInput): Promise<Result<Types.ComplianceAuditAuditLogOutput, ApiError>> {
+    const url = '/v1/admin/audit-logs/search-filter';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditConditionSearchInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditLogOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 
   /**

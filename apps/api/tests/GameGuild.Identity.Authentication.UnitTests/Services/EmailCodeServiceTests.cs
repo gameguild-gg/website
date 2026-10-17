@@ -165,6 +165,23 @@ public sealed class EmailCodeServiceTests : IDisposable
         (await _service.VerifyEmailCodeAsync(Email, renewed)).Success.Should().BeTrue();
     }
 
+
+    [Fact]
+    public async Task VerifyEmailCodeAsync_LogPrivacy_UnknownCodeKeepsGenericFailureWithoutEmailOrCode()
+    {
+        var logger = new GameGuild.Identity.Authentication.UnitTests.Handlers.TestLogger<EmailCodeService>();
+        var subject = new EmailCodeService(logger, _cache);
+        var email = $"unknown-{Guid.NewGuid():N}@privacy.example.test";
+        const string code = "942761";
+
+        var result = await subject.VerifyEmailCodeAsync(email, code);
+
+        result.Success.Should().BeFalse();
+        result.FailureReason.Should().Be("Invalid code");
+        logger.Entries.Should().ContainSingle();
+        GameGuild.Identity.Authentication.UnitTests.Handlers.EmailLogPrivacyAssertions.RequirePrivateValuesAbsent(logger, email, code, LogRedaction.MaskEmail(email));
+    }
+
     private static string WrongCode(string code)
     {
         var digit = code[0] == '0' ? '1' : '0';
