@@ -260,7 +260,7 @@
         },
         "disable": {
           "title": "Disable MFA",
-          "description": "Enter your account password to turn off multi-factor authentication. All enrolled factors and recovery codes are removed.",
+          "description": "Enter your account password to re-verify and turn off multi-factor authentication. All enrolled factors and recovery codes are removed.",
           "passwordLabel": "Account password",
           "cancel": "Cancel",
           "confirm": "Disable MFA",

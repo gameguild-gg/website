@@ -577,11 +577,11 @@ export function RuntimeQuizTestRun({
                       }
                       onAnswerChange={(answer) => updateAnswer(item.itemId, answer)}
                       onSubmit={(answer) => updateAnswer(item.itemId, answer, true)}
-                      submissionResult={readPlayerResult(
-                        execution,
-                        item.itemId,
-                        recorded,
-                      )}
+                      submissionResult={
+                        execution
+                          ? readPlayerResult(execution, item.itemId, recorded)
+                          : undefined
+                      }
                       disabled={Boolean(execution?.submittedResponse)}
                     />
                   </section>
