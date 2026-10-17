@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 import {
+  archiveForeignChangesets,
   assertOnlyEmceptionPackageManifests,
   readEmceptionReleaseVersion,
   synchronizeEmceptionRuntimePeers,
@@ -18,6 +19,10 @@ function run(command, args, options = {}) {
 }
 
 export async function versionEmception() {
+  const archived = await archiveForeignChangesets(repoRoot);
+  if (archived.length > 0) {
+    console.log(`[version-emception] Archived non-Emception changesets to .changeset/archive/: ${archived.join(', ')}`);
+  }
   run(pnpm, ['exec', 'changeset', 'version']);
   await synchronizeEmceptionRuntimePeers(repoRoot);
   const version = await readEmceptionReleaseVersion(repoRoot);

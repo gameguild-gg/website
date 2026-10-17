@@ -58,9 +58,12 @@ test('temporary registry failure retries the same digest and then succeeds', () 
 test('exhausted retries remain a failure with a bounded attempt count', () => {
   const result = mockedPull(99, image);
   assert.equal(result.status, 1);
-  assert.deepEqual(result.images, Array(6).fill(image));
-  assert.deepEqual(result.delays, [5, 10, 20, 40, 80, 160]);
-  assert.match(result.stderr, /still failing after 6 attempts/);
+  assert.deepEqual(result.images, Array(12).fill(image));
+  assert.deepEqual(
+    result.delays,
+    [5, 10, 20, 40, 80, 160, 160, 160, 160, 160, 160, 160],
+  );
+  assert.match(result.stderr, /still failing after 12 attempts/);
 });
 
 test('configured image is a single literal argument, not shell code', () => {
