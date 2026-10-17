@@ -15,7 +15,6 @@ import type {
   IdentityAuthenticationMfaConfigurationOutput,
 } from '@game-guild/client';
 import { GeneratedApi } from '@game-guild/client';
-import { revalidatePath } from 'next/cache';
 
 import { getUserSettingsApiClient } from './api-client';
 
@@ -136,17 +135,4 @@ export async function getMfaBackupCodesStatus(): Promise<
   }
 
   return { ok: true, data: result.data };
-}
-
-/** Disables MFA for the current user after password re-verification (issue #244). */
-export async function disableMfa(params: { password: string }): Promise<MfaActionResult<void>> {
-  const mfa = getMfaModule();
-  const result = await mfa.postAuthMfaDisable({ password: params.password });
-
-  if (!result.ok) {
-    return { ok: false, error: toError(result.error.message, 'Unable to disable 2FA.') };
-  }
-
-  revalidatePath('/', 'layout');
-  return { ok: true, data: undefined };
 }
