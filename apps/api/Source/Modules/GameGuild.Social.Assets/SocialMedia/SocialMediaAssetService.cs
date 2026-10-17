@@ -119,6 +119,10 @@ public interface ISocialMediaAssetService
         Guid ownerId,
         Guid? tenantId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<Guid, SocialMediaProcessingState>> GetProcessingStatesAsync(
+        IReadOnlyCollection<Guid> assetReferenceIds,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class SocialMediaAssetService(IAssetReferenceRepository references) : ISocialMediaAssetService
@@ -173,5 +177,26 @@ public sealed class SocialMediaAssetService(IAssetReferenceRepository references
 
         var descriptor = await InspectOwnedAsync(assetReferenceId, ownerId, cancellationToken).ConfigureAwait(false);
         return descriptor?.State == SocialMediaProcessingState.Ready ? descriptor : null;
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, SocialMediaProcessingState>> GetProcessingStatesAsync(
+        IReadOnlyCollection<Guid> assetReferenceIds,
+        CancellationToken cancellationToken = default)
+    {
+        var states = new Dictionary<Guid, SocialMediaProcessingState>();
+        if (assetReferenceIds.Count == 0)
+        {
+            return states;
+        }
+
+        var loaded = await references.GetByIdsWithContentAsync(assetReferenceIds, cancellationToken).ConfigureAwait(false);
+        foreach (var reference in loaded)
+        {
+            states[reference.Id] = reference.Content is null
+                ? SocialMediaProcessingState.Rejected
+                : SocialMediaAssetPolicy.GetProcessingState(reference.Content);
+        }
+
+        return states;
     }
 }

@@ -37,7 +37,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetPublicPostsAsync(skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
@@ -48,7 +48,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetPostByIdAsync(postId, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(PostMappings.MapToDto(result.Value!))
+            ? Ok((await PostMappings.MapPublicDtosAsync(new[] { result.Value! }, socialMediaAssets, cancellationToken).ConfigureAwait(false)).Single())
             : NotFound(result.Error);
     }
 
@@ -75,7 +75,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetTrendingPostsAsync(skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
@@ -86,7 +86,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetPostsByAuthorAsync(authorId, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
@@ -118,7 +118,7 @@ public class PostsCrudController(
 
         var result = await postService.SearchPostsAsync(q, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
