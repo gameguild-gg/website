@@ -6,7 +6,8 @@
  * and verifies the cmake configure → ninja build → wasi-run pipeline.
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import type { Page } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Helpers (same pattern as compile.spec.ts / build-tools.spec.ts)

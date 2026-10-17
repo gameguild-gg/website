@@ -163,6 +163,8 @@ test('Emception versioning rejects package manifests outside the seven-package r
   ];
 
   assert.doesNotThrow(() => assertOnlyEmceptionPackageManifests(allowed));
+  assert.doesNotThrow(() =>
+    assertOnlyEmceptionPackageManifests([...allowed, 'demos/emception-ide-next/package.json']));
   assert.throws(
     () => assertOnlyEmceptionPackageManifests([...allowed, 'packages/infrastructure/ui-emception/package.json']),
     /outside the Emception release group/,
@@ -258,5 +260,46 @@ test('maintained source and documentation use only canonical Toolchain paths', a
 
   for (const filename of filenames) {
     assert.doesNotMatch(await readFile(filename, 'utf8'), stalePath, `${filename} references a removed Toolchain path`);
+  }
+});
+
+test('versioning archives changesets targeting packages outside the Emception release group', async () => {
+  const { archiveForeignChangesets } = await import(
+    '../../../../scripts/devops/emception-release-policy.mjs'
+  );
+  const root = await mkdtemp(path.join(tmpdir(), 'emception-archive-'));
+  try {
+    const packageDirectories = ['core', 'toolchain', 'browser', 'xterm', 'react', 'webcomponent', 'ide'];
+    const packageNames = [
+      'emception',
+      '@gameguild/emception-toolchain',
+      '@gameguild/emception-browser',
+      '@gameguild/emception-xterm',
+      '@gameguild/emception-react',
+      '@gameguild/emception-webcomponent',
+      '@gameguild/emception-ide',
+    ];
+    for (const [index, directory] of packageDirectories.entries()) {
+      const manifest = path.join(root, 'tools', 'emception', 'packages', directory, 'package.json');
+      await mkdir(path.dirname(manifest), { recursive: true });
+      await writeFile(manifest, JSON.stringify({ name: packageNames[index], version: '1.0.0' }));
+    }
+    await mkdir(path.join(root, '.changeset'), { recursive: true });
+    await writeFile(path.join(root, '.changeset', 'README.md'), '# Changesets\n');
+    await writeFile(path.join(root, '.changeset', 'emception-only.md'), "---\n'emception': minor\n---\nbody\n");
+    await writeFile(path.join(root, '.changeset', 'foreign.md'), '---\n"@game-guild/client": patch\n---\nbody\n');
+    await writeFile(path.join(root, '.changeset', 'mixed.md'), "---\n'emception': minor\n'@game-guild/ui': patch\n---\nbody\n");
+
+    const archived = await archiveForeignChangesets(root);
+
+    assert.deepEqual(archived.sort(), ['.changeset/foreign.md', '.changeset/mixed.md']);
+    assert.ok(await readFile(path.join(root, '.changeset', 'emception-only.md'), 'utf8'));
+    assert.ok(await readFile(path.join(root, '.changeset', 'README.md'), 'utf8'));
+    assert.match(
+      await readFile(path.join(root, '.changeset', 'archive', 'foreign.md'), 'utf8'),
+      /@game-guild\/client/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });
