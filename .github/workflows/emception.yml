@@ -404,13 +404,13 @@ jobs:
           pr-title: "chore(release): version Emception packages"
 
       - name: Publish validated packages
-        if: steps.changesets.outputs.hasChangesets == 'false'
+        if: steps.changesets.outputs.has-changesets == 'false'
         run: pnpm run publish:emception
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Tag the published Emception release
-        if: steps.changesets.outputs.hasChangesets == 'false'
+        if: steps.changesets.outputs.has-changesets == 'false'
         shell: bash
         run: |
           VERSION="$(node -p "require('./tools/emception/packages/core/package.json').version")"
