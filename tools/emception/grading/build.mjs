@@ -33,6 +33,7 @@ await build({
       { find: 'emception/testing', replacement: resolve(root, 'packages/core/src/testing/index.ts') },
       { find: 'emception', replacement: resolve(root, 'packages/core/src/index.ts') },
       { find: '@gameguild/emception-browser', replacement: resolve(root, 'packages/browser/src/index.ts') },
+      { find: '@gameguild/emception-xterm', replacement: resolve(root, 'packages/xterm/src/index.ts') },
     ],
   },
   build: {

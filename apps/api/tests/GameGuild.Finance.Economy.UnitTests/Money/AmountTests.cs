@@ -61,20 +61,30 @@ public sealed class AmountTests
         (new UsdNanoAmount(7) * 3).Should().Be(new UsdNanoAmount(21));
         (new HardCoinAmount(2) < new HardCoinAmount(3)).Should().BeTrue();
         (new HardCoinAmount(3) > new HardCoinAmount(2)).Should().BeTrue();
-        (new HardCoinAmount(2) <= new HardCoinAmount(2)).Should().BeTrue();
-        (new HardCoinAmount(2) >= new HardCoinAmount(2)).Should().BeTrue();
         new HardCoinAmount(2).CompareTo(new HardCoinAmount(3)).Should().BeNegative();
         (new SoftCoinAmount(3) > new SoftCoinAmount(2)).Should().BeTrue();
         (new SoftCoinAmount(2) < new SoftCoinAmount(3)).Should().BeTrue();
-        (new SoftCoinAmount(2) <= new SoftCoinAmount(2)).Should().BeTrue();
-        (new SoftCoinAmount(2) >= new SoftCoinAmount(2)).Should().BeTrue();
         new SoftCoinAmount(3).CompareTo(new SoftCoinAmount(2)).Should().BePositive();
         (new UsdNanoAmount(2) < new UsdNanoAmount(3)).Should().BeTrue();
         (new UsdNanoAmount(3) > new UsdNanoAmount(2)).Should().BeTrue();
-        (new UsdNanoAmount(2) <= new UsdNanoAmount(2)).Should().BeTrue();
-        (new UsdNanoAmount(2) >= new UsdNanoAmount(2)).Should().BeTrue();
         new UsdNanoAmount(2).CompareTo(new UsdNanoAmount(2)).Should().Be(0);
         UsdNanoAmount.Zero.Should().Be(new UsdNanoAmount(0));
+    }
+
+    [Theory]
+    [InlineData(0L, 0L, true, true)]
+    [InlineData(2L, 2L, true, true)]
+    [InlineData(2L, 3L, true, false)]
+    [InlineData(3L, 2L, false, true)]
+    [InlineData(long.MaxValue, long.MaxValue, true, true)]
+    public void Amounts_CompareBothOperandsAtInclusiveBoundaries(long left, long right, bool lessOrEqual, bool greaterOrEqual)
+    {
+        (new HardCoinAmount(left) <= new HardCoinAmount(right)).Should().Be(lessOrEqual);
+        (new HardCoinAmount(left) >= new HardCoinAmount(right)).Should().Be(greaterOrEqual);
+        (new SoftCoinAmount(left) <= new SoftCoinAmount(right)).Should().Be(lessOrEqual);
+        (new SoftCoinAmount(left) >= new SoftCoinAmount(right)).Should().Be(greaterOrEqual);
+        (new UsdNanoAmount(left) <= new UsdNanoAmount(right)).Should().Be(lessOrEqual);
+        (new UsdNanoAmount(left) >= new UsdNanoAmount(right)).Should().Be(greaterOrEqual);
     }
 
     [Fact]
