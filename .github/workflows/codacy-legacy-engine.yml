@@ -80,3 +80,59 @@ jobs:
           name: codacy-legacy-engine-${{ github.event.pull_request.head.sha }}
           path: engine-evidence
           if-no-files-found: error
+
+  analyze-repository:
+    name: Complete selected-source ESLint pass
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ENGINE_IMAGE: codacy/codacy-eslint@sha256:01b7b1444a44d33aba5db47aa0f244c889ab24de35a5960536f8ff2b6ca206f1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-node-workspace
+      - name: Preserve complete selected-source inputs
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p engine-analysis
+          git ls-files -z > engine-analysis/tracked-files.nul
+          printf '%s\n' "$CANDIDATE_HEAD" > engine-analysis/head.txt
+          git rev-parse HEAD > engine-analysis/checkout.txt
+          git rev-parse 'HEAD^{tree}' > engine-analysis/tree.txt
+          printf '%s\n' "$ENGINE_IMAGE" > engine-analysis/engine-image.txt
+      - name: Build the same hash-guarded engine
+        run: |
+          docker pull "$ENGINE_IMAGE"
+          docker build --network=none --progress=plain -t gameguild-codacy-engine-analysis .codacy/legacy-eslint
+      - name: Analyze every selected tracked source
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          docker_status=0
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --user "$(id -u):$(id -g)" \
+            -e NODE_OPTIONS=--max-old-space-size=6144 \
+            -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/evidence/tracked-files.nul \
+            -v "$PWD:/src:ro" -v "$PWD/engine-analysis:/evidence" \
+            gameguild-codacy-engine-analysis \
+            node /src/.codacy/legacy-eslint/analyze-repository.cjs /evidence \
+            > engine-analysis/disposable-tool-output.log 2>&1 || docker_status=$?
+          evidence_status=0
+          GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            node .codacy/legacy-eslint/analyze-repository.cjs --finalize "$PWD/engine-analysis" \
+            || evidence_status=$?
+          if [ "$docker_status" -ne 0 ]; then exit "$docker_status"; fi
+          exit "$evidence_status"
+      - name: Upload source coverage and redacted diagnostic metadata
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-legacy-analysis-${{ github.event.pull_request.head.sha }}
+          path: |
+            engine-analysis/*.json
+            engine-analysis/*.jsonl
+            engine-analysis/*.txt
+            engine-analysis/*.nul
+          if-no-files-found: error

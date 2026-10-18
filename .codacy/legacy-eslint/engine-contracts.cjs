@@ -9,6 +9,7 @@ const { test } = require('node:test');
 const {
   decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
 } = require('./project-configuration.cjs');
+const { publicDiagnostics, engineRule, analysisStatus } = require('./analyze-repository.cjs');
 
 // These contracts run only inside the pinned hosted engine. No repository
 // dependency installation, cloud configuration change or issue upload is made.
@@ -249,4 +250,50 @@ test('Node compatibility follows root and package engines while preserving unsup
   assert(check('import { styleText } from "node:util";\nstyleText("bold", "text");', root.settings)
     .some((issue) => issue.ruleId === ruleId && /20\.12\.0/u.test(issue.message)),
   'A newer builtin must still fail for the declared Node20.0 minimum');
+});
+
+test('configuration comments cannot hide the requested code diagnostics', async () => {
+  const options = repositoryProfile(await projection());
+  assert.equal(options.baseConfig.noInlineConfig, true);
+  const linter = new Linter();
+  const messages = linter.verify('/* eslint-disable no-undef */\nmissingGlobal();', {
+    noInlineConfig: options.baseConfig.noInlineConfig,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+    rules: { 'no-undef': 'error' },
+  });
+  assert(messages.some((message) => message.ruleId === 'no-undef'));
+});
+
+test('public analysis evidence omits security locations and all message text', () => {
+  const categories = new Map([['security-node/example', 'Security'], ['no-undef', 'ErrorProne']]);
+  const sensitive = publicDiagnostics([{
+    ruleId: 'security-node/example', severity: 2, line: 12, column: 4,
+    message: 'private-fixture-value',
+  }], 'src/private-fixture.ts', categories);
+  assert.deepEqual(sensitive.diagnostics, []);
+  assert.deepEqual(sensitive.securityCounts, { 'security-node/example': 1 });
+  assert(!JSON.stringify(sensitive).includes('private-fixture'));
+  const ordinary = publicDiagnostics([{
+    ruleId: 'no-undef', severity: 2, line: 1, column: 1,
+    message: 'private-fixture-value', source: 'private-fixture-value',
+  }], 'src/public.ts', categories);
+  assert.equal(ordinary.diagnostics[0].ruleId, 'no-undef');
+  assert(!JSON.stringify(ordinary).includes('private-fixture-value'));
+  assert.equal(engineRule({ ruleId: 'no-undef' }, categories), 'no-undef');
+  assert.equal(engineRule({ message: 'private-fixture-value\nRule: "no-undef"' }, categories), 'no-undef');
+  assert.equal(engineRule({ ruleId: 'private-fixture-value' }, categories), null);
+});
+
+test('complete analysis requires every file and preserves all failure states', () => {
+  const clean = { selected: 2, attempted: 2, processed: 2, allFilesProcessed: true,
+    engineErrors: 0, configurationErrors: 0, fatalParsing: 0, diagnosticCount: 0 };
+  assert.deepEqual(analysisStatus(clean, 0), { completeAnalysisCertified: true, analysisGatePassed: true });
+  for (const field of ['engineErrors', 'configurationErrors', 'fatalParsing']) {
+    assert.equal(analysisStatus({ ...clean, [field]: 1 }, 0).analysisGatePassed, false);
+  }
+  assert.equal(analysisStatus({ ...clean, processed: 1 }, 0).completeAnalysisCertified, false);
+  assert.equal(analysisStatus({ ...clean, selected: 0 }, 0).completeAnalysisCertified, false);
+  assert.equal(analysisStatus(clean, 1).completeAnalysisCertified, false);
+  assert.deepEqual(analysisStatus({ ...clean, diagnosticCount: 1 }, 0),
+    { completeAnalysisCertified: true, analysisGatePassed: false });
 });

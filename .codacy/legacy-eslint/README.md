@@ -68,6 +68,19 @@ take precedence, with no rule disabled. Contracts demonstrate the prior Node16
 fallback warning for `node:test`, acceptance under Node20, the retained Node18
 restriction and detection of a builtin newer than the Node20.0 minimum.
 
+The separate complete-source pass installs the repository's frozen workspace
+dependencies in hosted CI, then lints every selected file using the repaired
+engine. Inline config comments cannot suppress requested diagnostics. Each
+started/processed/crashed file is recorded and all remaining files are attempted
+after a rule exception. Parser errors, missing rules, exceptions, diagnostics or
+unreviewed tool output keep the pass failing. The 30-minute job budget is not a
+latency guarantee; an incomplete pass cannot be accepted as a complete scan.
+
+Public analysis artifacts contain rule IDs, categories and code-quality
+locations without messages, snippets or fixes. Security results have aggregate
+rule counts only. Raw tool output is disposable and is not uploaded. Detailed
+security evidence and remediation decisions remain in private managed storage.
+
 ## Evidence
 
 The `Codacy legacy engine contracts` workflow runs in hosted GitHub Actions.

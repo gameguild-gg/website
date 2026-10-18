@@ -134,6 +134,7 @@ function createRepositoryProfile(projection, nodeTargets) {
     baseConfig: {
       ...projection.options.baseConfig,
       ignorePatterns: ['!**/*'],
+      noInlineConfig: true,
       settings: { ...settings, node: { ...settings.node, version: root.version } },
       overrides: [
         ...projection.options.baseConfig.overrides,
