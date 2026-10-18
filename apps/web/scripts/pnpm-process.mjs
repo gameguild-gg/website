@@ -7,6 +7,59 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+const windowsPaths = path.win32;
+const relativeEntries = [
+  "pnpm.exe",
+  "node_modules/pnpm/bin/pnpm.cjs",
+  "node_modules/corepack/dist/pnpm.js",
+  "pnpm.cjs",
+];
+
+function resolveOptions(options = {}) {
+  return Object.fromEntries(Object.entries({
+    platform: process.platform,
+    nodePath: process.execPath,
+    env: process.env,
+    fileExists: existsSync,
+  }).map(([key, fallback]) => {
+    const value = options[key];
+    return [key, value === undefined ? fallback : value];
+  }));
+}
+
+function searchDirectories(env, nodePath) {
+  // Node selects the first PATH key in lexical order on Windows.
+  const pathKey = Object.keys(env).filter((key) => key.toLowerCase() === "path").sort()[0];
+  const searchPath = (pathKey && env[pathKey]) || "";
+  return new Set([
+    ...searchPath.split(";").filter(Boolean),
+    env.PNPM_HOME,
+    windowsPaths.dirname(nodePath),
+  ].filter((directory) => typeof directory === "string" && directory.length > 0));
+}
+
+/**
+ * @param {NodeJS.ProcessEnv} env - Environment used for executable discovery.
+ * @param {string} nodePath - Node executable used to locate adjacent shims.
+ * @param {(candidate: string) => boolean} fileExists - File existence probe.
+ * @returns {string | undefined} The first supported executable or script.
+ */
+function findWindowsExecutable(env, nodePath, fileExists) {
+  const managedEntry = [env.npm_execpath]
+    .filter((entry) => typeof entry === "string" && windowsPaths.isAbsolute(entry) &&
+      /^pnpm\.(?:cjs|mjs|js)$/i.test(windowsPaths.basename(entry)))
+    .find((entry) => fileExists(entry));
+  if (managedEntry) return managedEntry;
+
+  for (const directory of searchDirectories(env, nodePath)) {
+    const executable = relativeEntries
+      .map((relative) => windowsPaths.join(directory, relative))
+      .find((candidate) => fileExists(candidate));
+    if (executable) return executable;
+  }
+  return undefined;
+}
+
 /**
  * Resolve the command and argument vector that spawn a pnpm process without a
  * shell on the current platform.
@@ -15,54 +68,17 @@ import path from "node:path";
  * @param {{platform?: NodeJS.Platform, nodePath?: string, env?: NodeJS.ProcessEnv, fileExists?: (candidate: string) => boolean}} [options] - Injectable environment for testing.
  * @returns {{command: string, args: string[]}} The spawn target for pnpm.
  */
-export function resolvePnpmProcess(
-  args,
-  {
-    platform = process.platform,
-    nodePath = process.execPath,
-    env = process.env,
-    fileExists = existsSync,
-  } = {},
-) {
+export function resolvePnpmProcess(args, options) {
+  const { platform, nodePath, env, fileExists } = resolveOptions(options);
   if (platform !== "win32") return { command: "pnpm", args };
 
-  const paths = path.win32;
-  const entry = env.npm_execpath;
-  if (
-    entry &&
-    paths.isAbsolute(entry) &&
-    /^pnpm\.(?:cjs|mjs|js)$/i.test(paths.basename(entry)) &&
-    fileExists(entry)
-  ) {
-    return { command: nodePath, args: [entry, ...args] };
+  const executable = findWindowsExecutable(env, nodePath, fileExists);
+  if (!executable) {
+    throw new Error(
+      "Cannot find a pnpm executable or JavaScript entry point. Run this script through pnpm or install pnpm on PATH.",
+    );
   }
-
-  // Node selects the first key in lexical order when Windows environment
-  // objects contain differently cased copies of PATH.
-  const pathKey = Object.keys(env)
-    .filter((key) => key.toLowerCase() === "path")
-    .sort()[0];
-  const searchPath = (pathKey && env[pathKey]) || "";
-  const directories = [
-    ...searchPath.split(";").filter(Boolean),
-    env.PNPM_HOME,
-    paths.dirname(nodePath),
-  ];
-  for (const directory of new Set(directories)) {
-    if (typeof directory !== "string" || directory.length === 0) continue;
-    const executable = paths.join(directory, "pnpm.exe");
-    if (fileExists(executable)) return { command: executable, args };
-    for (const relative of [
-      "node_modules/pnpm/bin/pnpm.cjs",
-      "node_modules/corepack/dist/pnpm.js",
-      "pnpm.cjs",
-    ]) {
-      const candidate = paths.join(directory, relative);
-      if (fileExists(candidate))
-        return { command: nodePath, args: [candidate, ...args] };
-    }
-  }
-  throw new Error(
-    "Cannot find a pnpm executable or JavaScript entry point. Run this script through pnpm or install pnpm on PATH.",
-  );
+  return /\.exe$/i.test(executable)
+    ? { command: executable, args }
+    : { command: nodePath, args: [executable, ...args] };
 }

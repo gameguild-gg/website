@@ -95,11 +95,6 @@ public static class CanonicalJson
             throw new JsonException("JCS does not support non-finite numbers.");
         }
 
-        if (value == 0d)
-        {
-            return "0";
-        }
-
         var negative = value < 0d;
         var raw = Math.Abs(value).ToString("R", CultureInfo.InvariantCulture);
         var exponentSeparator = raw.IndexOfAny(['E', 'e']);
@@ -112,6 +107,7 @@ public static class CanonicalJson
         var digits = mantissa.Replace(".", string.Empty, StringComparison.Ordinal).TrimStart('0');
         if (digits.Length == 0)
         {
+            // Both IEEE 754 signed zeros reduce to an empty digit sequence.
             return "0";
         }
 

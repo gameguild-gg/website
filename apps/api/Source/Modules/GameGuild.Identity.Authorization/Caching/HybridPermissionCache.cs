@@ -136,7 +136,7 @@ public interface IHybridPermissionCache
 ///     Result of a cache lookup for value types.
 /// </summary>
 /// <typeparam name="T">The value type.</typeparam>
-public readonly struct CacheResult<T> where T : struct
+public readonly struct CacheResult<T> : IEquatable<CacheResult<T>> where T : struct
 {
     /// <summary>
     ///     Whether the value was found in the cache.
@@ -157,6 +157,20 @@ public readonly struct CacheResult<T> where T : struct
     ///     Creates a miss result.
     /// </summary>
     public static CacheResult<T> Miss() => new() { Found = false, Value = default };
+
+    /// <inheritdoc />
+    public bool Equals(CacheResult<T> other) =>
+        Found == other.Found && EqualityComparer<T>.Default.Equals(Value, other.Value);
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => obj is CacheResult<T> other && Equals(other);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(Found, Value);
+
+    public static bool operator ==(CacheResult<T> left, CacheResult<T> right) => left.Equals(right);
+
+    public static bool operator !=(CacheResult<T> left, CacheResult<T> right) => !left.Equals(right);
 }
 
 /// <summary>
