@@ -8,7 +8,7 @@ source "$script_dir/disposable-postgres.sh"
 # shellcheck source=pull-ci-image.sh
 source "$script_dir/pull-ci-image.sh"
 cd "$repository_root"
-postgres_image="${GAMEGUILD_TEST_POSTGRES_17_IMAGE:-public.ecr.aws/docker/library/postgres:17-alpine}"
+postgres_image="${GAMEGUILD_TEST_POSTGRES_17_IMAGE:-mirror.gcr.io/library/postgres:17-alpine}"
 
 # Capture selection before starting infrastructure; a failed selector must fail
 # the job, rather than silently falling back through a process substitution.
