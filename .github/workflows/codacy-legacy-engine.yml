@@ -23,6 +23,10 @@ jobs:
       ENGINE_IMAGE: codacy/codacy-eslint@sha256:01b7b1444a44d33aba5db47aa0f244c889ab24de35a5960536f8ff2b6ca206f1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Preserve the complete tracked-file manifest
+        run: |
+          mkdir -p engine-evidence
+          git ls-files -z > engine-evidence/tracked-files.nul
       - name: Pull the pinned public engine release
         run: docker pull "$ENGINE_IMAGE"
       - name: Verify the original failures and effective pattern inventory
@@ -31,6 +35,7 @@ jobs:
           set -o pipefail
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
             -e GAMEGUILD_ENGINE_EXPECT_REPAIRED=false \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/src/engine-evidence/tracked-files.nul \
             -v "$PWD:/src:ro" "$ENGINE_IMAGE" \
             node --test --test-reporter=tap /src/.codacy/legacy-eslint/engine-contracts.cjs \
             2>&1 | tee engine-evidence/original.tap
@@ -44,6 +49,7 @@ jobs:
           set -o pipefail
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
             -e GAMEGUILD_ENGINE_EXPECT_REPAIRED=true \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/src/engine-evidence/tracked-files.nul \
             -v "$PWD:/src:ro" gameguild-codacy-engine-contracts \
             node --test --test-reporter=tap /src/.codacy/legacy-eslint/engine-contracts.cjs \
             2>&1 | tee engine-evidence/repaired.tap
@@ -51,6 +57,7 @@ jobs:
         run: |
           set -o pipefail
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/src/engine-evidence/tracked-files.nul \
             -v "$PWD:/src:ro" gameguild-codacy-engine-contracts \
             node /src/.codacy/legacy-eslint/project-configuration.cjs \
             | tee engine-evidence/projected-configuration.json
@@ -65,6 +72,7 @@ jobs:
           git rev-parse 'HEAD^{tree}' > engine-evidence/tree.txt
           printf '%s\n' "$ENGINE_IMAGE" > engine-evidence/engine-image.txt
           sha256sum .codacy/legacy-eslint/effective-patterns.json > engine-evidence/profile.sha256
+          sha256sum engine-evidence/tracked-files.nul > engine-evidence/manifest.sha256
       - name: Upload original and repaired evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

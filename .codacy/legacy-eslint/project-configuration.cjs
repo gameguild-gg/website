@@ -104,13 +104,93 @@ async function createProjection(snapshot, catalog, engineRequire) {
   };
 }
 
-module.exports = { decodeParameter, projectInput, createProjection };
+function readNodeTargets(packageManifestFiles, rootDir = '/src') {
+  const targets = [];
+  for (const filename of packageManifestFiles) {
+    assert(!path.posix.isAbsolute(filename) && !/^[A-Za-z]:/u.test(filename) && !filename.split('/').includes('..')
+      && !filename.includes('\\') && path.posix.basename(filename) === 'package.json',
+    'A package manifest must be inside the repository');
+    const manifest = JSON.parse(readFileSync(path.join(rootDir, filename), 'utf8'));
+    const version = manifest.engines?.node;
+    if (version === undefined) continue;
+    assert(typeof version === 'string' && version.length > 0, `${filename}: invalid engines.node`);
+    targets.push({ packageJson: filename, directory: path.posix.dirname(filename), version });
+  }
+  assert(targets.some((target) => target.packageJson === 'package.json'),
+    'The repository must declare its root Node target');
+  return targets.sort((left, right) => left.directory.split('/').length - right.directory.split('/').length
+    || left.directory.localeCompare(right.directory));
+}
+
+function createRepositoryProfile(projection, nodeTargets) {
+  const root = nodeTargets.find((target) => target.packageJson === 'package.json');
+  assert(root, 'The root Node engine declaration is required');
+  const settings = projection.options.baseConfig.settings;
+  const scopedTargets = nodeTargets.filter((target) => target.packageJson !== 'package.json');
+  return {
+    ...projection.options,
+    // Force inclusion through a supported config-file property. Do not depend
+    // on the programmatic ignore:false option, which .eslintrc cannot declare.
+    baseConfig: {
+      ...projection.options.baseConfig,
+      ignorePatterns: ['!**/*'],
+      settings: { ...settings, node: { ...settings.node, version: root.version } },
+      overrides: [
+        ...projection.options.baseConfig.overrides,
+        ...scopedTargets.map((target) => ({
+          files: [`${target.directory}/**/*`],
+          settings: { node: { ...settings.node, version: target.version } },
+        })),
+      ],
+    },
+  };
+}
+
+function selectTrackedFiles(raw) {
+  assert(Buffer.isBuffer(raw), 'Expected the raw NUL-delimited Git manifest');
+  const text = raw.toString('utf8');
+  assert(Buffer.from(text, 'utf8').equals(raw), 'Git paths must roundtrip as UTF-8');
+  assert(text.endsWith('\0'), 'Git manifest must retain its final NUL delimiter');
+  const files = text.slice(0, -1).split('\0');
+  assert(files.length > 0 && files.every(Boolean), 'Git manifest must contain file paths');
+  assert.equal(new Set(files).size, files.length, 'Git manifest contains duplicate paths');
+  for (const filename of files) {
+    assert(!path.posix.isAbsolute(filename) && !/^[A-Za-z]:/u.test(filename)
+      && !filename.includes('\\') && !filename.split('/').includes('..'),
+    'Git manifest must contain repository-relative POSIX paths');
+  }
+  // Keep the legacy engine's extensions and the additional JS/TS module
+  // extensions covered by the root configuration. No path exclusions apply.
+  const extensions = ['js', 'mjs', 'cjs', 'jsx', 'ts', 'mts', 'cts', 'tsx', 'jsm', 'vue'];
+  const sourceFiles = files.filter((filename) =>
+    extensions.includes(path.posix.extname(filename).slice(1)));
+  assert(sourceFiles.length > 0, 'No supported source files were selected');
+  return {
+    manifestSha256: createHash('sha256').update(raw).digest('hex'),
+    trackedFileCount: files.length,
+    packageManifestFiles: files.filter((filename) => path.posix.basename(filename) === 'package.json'),
+    sourceFileCount: sourceFiles.length,
+    extensions,
+    sourceFiles,
+    directoryOrFileExclusions: [],
+    fullLintComplete: false,
+    scope: 'Tracked files with supported JS/TS/Vue extensions. Other languages remain owned by their scanners; this inventory is not a completed lint result.',
+  };
+}
+
+module.exports = {
+  decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
+};
 
 if (require.main === module) {
   const snapshot = JSON.parse(readFileSync(path.join(__dirname, 'effective-patterns.json'), 'utf8'));
   const catalog = JSON.parse(readFileSync('/docs/patterns.json', 'utf8'));
   const engineRequire = createRequire('/node_modules/package.json');
   createProjection(snapshot, catalog, engineRequire).then((projection) => {
+    assert(process.env.GAMEGUILD_CODACY_TRACKED_FILES, 'A complete tracked-file manifest is required');
+    projection.selection = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
+    projection.nodeTargets = readNodeTargets(projection.selection.packageManifestFiles);
+    projection.repositoryOptions = createRepositoryProfile(projection, projection.nodeTargets);
     process.stdout.write(`${JSON.stringify(projection, null, 2)}\n`);
   }).catch((error) => {
     process.stderr.write(`${error.stack}\n`);

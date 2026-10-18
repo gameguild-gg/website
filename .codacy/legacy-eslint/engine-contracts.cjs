@@ -6,7 +6,9 @@ const { readFileSync } = require('node:fs');
 const { createRequire } = require('node:module');
 const path = require('node:path');
 const { test } = require('node:test');
-const { decodeParameter, projectInput, createProjection } = require('./project-configuration.cjs');
+const {
+  decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
+} = require('./project-configuration.cjs');
 
 // These contracts run only inside the pinned hosted engine. No repository
 // dependency installation, cloud configuration change or issue upload is made.
@@ -138,6 +140,12 @@ function projection() {
   return projectionPromise;
 }
 
+function repositoryProfile(result) {
+  assert(process.env.GAMEGUILD_CODACY_TRACKED_FILES, 'The hosted Git manifest is required');
+  const selected = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
+  return createRepositoryProfile(result, readNodeTargets(selected.packageManifestFiles));
+}
+
 test('the actual engine projects all 2631 requested rules with their exact effective options', async () => {
   const result = await projection();
   assert.equal(result.receipt.enabledPatterns, 2631);
@@ -158,4 +166,87 @@ test('the complete projected profile loads for JavaScript and TypeScript in the 
     assert([2, 'error'].includes(config.rules.complexity[0]), 'Complexity must retain error severity');
     assert.deepEqual(config.rules.complexity.slice(1), [4]);
   }
+});
+
+test('the repository profile admits libraries and tests while preserving every rule and option', async () => {
+  const result = await projection();
+  const original = JSON.stringify(result.options);
+  const options = repositoryProfile(result);
+  assert.equal(JSON.stringify(result.options), original, 'Do not mutate the historical engine projection');
+  assert.deepEqual(options.baseConfig.rules, result.options.baseConfig.rules);
+  assert.deepEqual(options.baseConfig.overrides.slice(0, result.options.baseConfig.overrides.length),
+    result.options.baseConfig.overrides);
+  assert(options.baseConfig.overrides.slice(result.options.baseConfig.overrides.length)
+    .every((override) => override.rules === undefined), 'Node target overrides must not change rules');
+  assert.deepEqual(options.baseConfig.ignorePatterns, ['!**/*']);
+  assert.equal(options.ignore, result.options.ignore, 'Retain the engine ignore mechanism');
+  const { ESLint } = engineRequire('eslint');
+  const inherited = new ESLint(result.options);
+  const corrected = new ESLint(options);
+  for (const filename of ['apps/web/src/lib/learning/grading-runtime-actions.ts',
+    'scripts/ci/tests/eslint-root-config.test.mjs']) {
+    assert.equal(await inherited.isPathIgnored(`/src/${filename}`), true,
+      `The inherited exclusion must be demonstrated for ${filename}`);
+    assert.equal(await corrected.isPathIgnored(`/src/${filename}`), false,
+      `A repository source file must be admitted: ${filename}`);
+  }
+});
+
+test('tracked-source selection covers all supported extensions without dropping directories', () => {
+  const paths = ['src/main.js', 'scripts/main.mjs', 'scripts/main.cjs', 'ui/main.jsx',
+    'src/main.ts', 'src/main.mts', 'src/main.cts', 'ui/main.tsx', 'vendor/main.jsm',
+    'ui/main.vue', 'tests/example.test.mjs', 'examples/lib/runtime.js',
+    '.codacy/legacy-eslint/engine-contracts.cjs', 'src/Space Name.js',
+    'src/line\nbreak.js', 'README.md', 'Program.cs'];
+  const selection = selectTrackedFiles(Buffer.from(`${paths.join('\0')}\0`));
+  assert.deepEqual(selection.sourceFiles, paths.slice(0, -2));
+  assert.deepEqual(selection.directoryOrFileExclusions, []);
+  assert.equal(selection.trackedFileCount, 17);
+  assert.equal(selection.sourceFileCount, 15);
+  assert.throws(() => selectTrackedFiles(Buffer.from('../outside.js\0')));
+  assert.throws(() => selectTrackedFiles(Buffer.from('/outside.js\0')));
+  assert.throws(() => selectTrackedFiles(Buffer.from('C:/outside.js\0')));
+  assert.throws(() => selectTrackedFiles(Buffer.from('src/main.js')));
+  assert.throws(() => selectTrackedFiles(Buffer.from('src/main.js\0src/main.js\0')));
+  assert.throws(() => selectTrackedFiles(Buffer.from([255, 0])));
+});
+
+test('the actual engine admits every supported source file in the complete Git manifest', async () => {
+  assert(process.env.GAMEGUILD_CODACY_TRACKED_FILES, 'The hosted Git manifest is required');
+  const selected = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
+  const { ESLint } = engineRequire('eslint');
+  const eslint = new ESLint(repositoryProfile(await projection()));
+  for (const filename of selected.sourceFiles) {
+    assert.equal(await eslint.isPathIgnored(`/src/${filename}`), false,
+      `Tracked source must not disappear from analysis: ${filename}`);
+  }
+});
+
+test('Node compatibility follows root and package engines while preserving unsupported-feature detection', async () => {
+  const { ESLint } = engineRequire('eslint');
+  const eslint = new ESLint(repositoryProfile(await projection()));
+  const root = await eslint.calculateConfigForFile('/src/tools/emception/grading/browser-launch-options.test.mjs');
+  const client = await eslint.calculateConfigForFile('/src/packages/infrastructure/client/src/index.ts');
+  assert.equal(root.settings.node.version, '>=20.0.0');
+  assert.equal(client.settings.node.version, '>=18.0.0');
+  const ruleId = 'n/no-unsupported-features/node-builtins';
+  const check = (source, settings) => {
+    const linter = new Linter();
+    linter.defineRule(ruleId, engineRequire('eslint-plugin-n').rules['no-unsupported-features/node-builtins']);
+    return linter.verify(source, {
+      env: { node: true, es2022: true },
+      parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+      settings,
+      rules: { [ruleId]: root.rules[ruleId] },
+    }, { filename: '/src/tools/emception/grading/browser-launch-options.test.mjs' });
+  };
+  const nodeTest = 'import { test } from "node:test";\ntest("works", () => {});';
+  const oldSettings = { ...root.settings, node: { ...root.settings.node, version: '>=16.0.0' } };
+  assert(check(nodeTest, oldSettings).some((issue) => issue.ruleId === ruleId && /20\.0\.0/u.test(issue.message)));
+  assert.deepEqual(check(nodeTest, root.settings), []);
+  assert(check(nodeTest, client.settings).some((issue) => issue.ruleId === ruleId),
+    'The independently supported Node18 client must retain its stricter compatibility check');
+  assert(check('import { styleText } from "node:util";\nstyleText("bold", "text");', root.settings)
+    .some((issue) => issue.ruleId === ruleId && /20\.12\.0/u.test(issue.message)),
+  'A newer builtin must still fail for the declared Node20.0 minimum');
 });
