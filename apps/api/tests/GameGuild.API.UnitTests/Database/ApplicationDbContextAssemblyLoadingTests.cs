@@ -18,13 +18,16 @@ public sealed class ApplicationDbContextAssemblyLoadingTests
     [Fact]
     public void AssemblyLoadingProbes_RunInAnExclusiveCollection()
     {
-        var collection = typeof(ApplicationDbContextAssemblyLoadingTests).GetCustomAttribute<CollectionAttribute>();
-        var definition = typeof(AssemblyLoadingProbeCollection).GetCustomAttribute<CollectionDefinitionAttribute>();
+        var collection = typeof(ApplicationDbContextAssemblyLoadingTests).GetCustomAttributesData()
+            .Single(attribute => attribute.AttributeType == typeof(CollectionAttribute));
+        var definition = typeof(AssemblyLoadingProbeCollection).GetCustomAttributesData()
+            .Single(attribute => attribute.AttributeType == typeof(CollectionDefinitionAttribute));
 
-        collection.Should().NotBeNull();
-        collection!.Name.Should().Be(AssemblyLoadingProbeCollection.Name);
-        definition.Should().NotBeNull();
-        definition!.DisableParallelization.Should().BeTrue();
+        collection.ConstructorArguments.Should().ContainSingle().Which.Value.Should().Be(AssemblyLoadingProbeCollection.Name);
+        definition.ConstructorArguments.Should().ContainSingle().Which.Value.Should().Be(AssemblyLoadingProbeCollection.Name);
+        definition.NamedArguments.Should()
+            .ContainSingle(argument => argument.MemberName == nameof(CollectionDefinitionAttribute.DisableParallelization))
+            .Which.TypedValue.Value.Should().Be(true);
     }
 
     [Fact]
