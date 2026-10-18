@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Suppression-count ratchet: fails if any package's total suppressed-violation
  * count grew vs the checked-in budget (lint-budgets.json).
