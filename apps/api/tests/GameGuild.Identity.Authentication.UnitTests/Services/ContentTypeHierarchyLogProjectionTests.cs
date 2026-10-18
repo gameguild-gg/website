@@ -84,11 +84,11 @@ public sealed class ContentTypeHierarchyLogProjectionTests
     {
         public List<LogEntry> Entries { get; } = [];
 
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        IDisposable? ILogger.BeginScope<TState>(TState state) => null;
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+        bool ILogger.IsEnabled(LogLevel logLevel) => true;
 
-        public void Log<TState>(
+        void ILogger.Log<TState>(
             LogLevel logLevel,
             EventId eventId,
             TState state,
