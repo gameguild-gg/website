@@ -132,12 +132,34 @@ export async function captureValidationEvidence(page, manifest, caseId, name) {
 }
 
 export async function expectQuestionVisible(page, validationCase) {
+  await expect(questionLocator(page, validationCase)).toBeVisible({
+    timeout: 60_000,
+  });
+}
+
+export async function startActivity(page, readyLocator) {
+  const trigger = page.getByRole("button", { name: "Start Activity" });
+  let lastError;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (await readyLocator.isVisible().catch(() => false)) return;
+    await trigger.click();
+    try {
+      await readyLocator.waitFor({ state: "visible", timeout: 10_000 });
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+
+export function questionLocator(page, validationCase) {
   const { entry } = validationCase.fixture;
   const prompt = entry.stem
     .split(/___|\b_[^_]+_\b/)
     .map((value) => value.trim())
     .find((value) => value.length > 0);
-  await expect(
-    page.getByText(prompt ?? entry.stem, { exact: false }).first(),
-  ).toBeVisible({ timeout: 60_000 });
+  return page.getByText(prompt ?? entry.stem, { exact: false }).first();
 }
