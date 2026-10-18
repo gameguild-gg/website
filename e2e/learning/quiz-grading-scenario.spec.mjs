@@ -422,7 +422,12 @@ async function reviewAsPeer(page, manifest, quiz, personaKey) {
     await page.goto(manifest.urls.learnerReviews, {
       waitUntil: "domcontentloaded",
     });
-    const task = page.getByTestId(`review-task-${assessmentId}`);
+    const reviewPanel = page.getByRole("tabpanel", {
+      name: "To review",
+      exact: true,
+    });
+    await expect(reviewPanel).toBeVisible({ timeout: 60_000 });
+    const task = reviewPanel.getByTestId(`review-task-${assessmentId}`);
     await expect(task).toBeVisible({ timeout: 60_000 });
     await Promise.all([
       page.waitForURL(
