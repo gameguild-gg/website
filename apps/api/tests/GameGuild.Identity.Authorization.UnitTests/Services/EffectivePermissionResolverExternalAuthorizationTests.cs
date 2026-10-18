@@ -1,5 +1,7 @@
 using FluentAssertions;
 using GameGuild.CQRS.Models;
+using GameGuild.Identity.Authorization.UnitTests.TestSupport;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -45,7 +47,9 @@ public class EffectivePermissionResolverExternalAuthorizationTests
             .ReturnsAsync((IReadOnlyList<ResourceUserPermission>)[]);
     }
 
-    private EffectivePermissionResolverService CreateSut(Guid? systemAccountId = null) =>
+    private EffectivePermissionResolverService CreateSut(
+        Guid? systemAccountId = null,
+        ILogger<EffectivePermissionResolverService>? logger = null) =>
         new(
             _repository.Object,
             _rbacResolver.Object,
@@ -55,7 +59,7 @@ public class EffectivePermissionResolverExternalAuthorizationTests
             {
                 SystemAccountId = systemAccountId ?? SystemAccountId
             }),
-            NullLogger<EffectivePermissionResolverService>.Instance,
+            logger ?? NullLogger<EffectivePermissionResolverService>.Instance,
             externalDecisionProvider: _externalProvider.Object);
 
     private void SetupDirectGrant(string[] permissions, string[] denyPermissions) =>
@@ -73,6 +77,32 @@ public class EffectivePermissionResolverExternalAuthorizationTests
         _externalProvider
             .Setup(p => p.EvaluateAsync(It.IsAny<ExternalAuthorizationQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ExternalAuthorizationQuery query, CancellationToken _) => decide(query));
+
+    [Theory]
+    [InlineData("policy-7", "policy-7")]
+    [InlineData("deny\r\nforged", "deny␀␀forged")]
+    [InlineData("deny\0\t\u0085\u2028\u2029forged", "deny␀␀␀␀␀forged")]
+    public async Task ExternalDeny_ProjectsReasonOnlyInLogs_AndRetainsVeto(string reason, string renderedReason)
+    {
+        SetupDirectGrant(["reports:read", "other:read"], []);
+        var decision = ExternalAuthorizationDecision.Deny(reason);
+        SetupExternal(query => query.Permission == "reports:read" ? decision : ExternalAuthorizationDecision.NotApplicable);
+        var logger = new SpyLogger<EffectivePermissionResolverService>();
+
+        var result = await CreateSut(logger: logger).ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().NotContain("reports:read");
+        result.Permissions.Should().Contain("other:read");
+        decision.Reasons.Should().Equal(reason);
+        var entry = logger.Entries.Should().ContainSingle(e =>
+            e.Message.StartsWith("External authorization decision provider denied permission", StringComparison.Ordinal)).Which;
+        entry.Level.Should().Be(LogLevel.Debug);
+        entry.Message.Should().EndWith(": " + renderedReason);
+        foreach (var log in logger.Entries)
+        {
+            log.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
+        }
+    }
 
     // ── External deny overrides local allow ─────────────────────────────────
 

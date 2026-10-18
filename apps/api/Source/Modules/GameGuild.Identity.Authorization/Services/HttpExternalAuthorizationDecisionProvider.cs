@@ -110,7 +110,7 @@ public sealed class HttpExternalAuthorizationDecisionProvider(
         {
             logger.LogWarning(
                 "External authorization decision endpoint returned an unknown decision value '{DecisionValue}' for permission {Permission} - failing {FailMode}.",
-                response.Decision, query.Permission, _options.FailMode);
+                LogRedaction.Sanitize(response.Decision), LogRedaction.Sanitize(query.Permission), _options.FailMode);
             return Unavailable("external-authorization-unknown-decision");
         }
 
@@ -119,8 +119,8 @@ public sealed class HttpExternalAuthorizationDecisionProvider(
         {
             logger.LogInformation(
                 "External authorization decision endpoint denied permission {Permission} for user {UserId} in tenant {TenantId}: {Reasons}",
-                // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
-                query.Permission, query.UserId, query.TenantId, string.Join("; ", decision.Reasons));
+                LogRedaction.Sanitize(query.Permission), query.UserId, query.TenantId,
+                LogRedaction.Sanitize(string.Join("; ", decision.Reasons)));
         }
 
         return decision;
@@ -155,7 +155,7 @@ public sealed class HttpExternalAuthorizationDecisionProvider(
             {
                 logger.LogWarning(
                     "External authorization decision endpoint answered {StatusCode} for permission {Permission} - failing {FailMode}.",
-                    (int)response.StatusCode, query.Permission, _options.FailMode);
+                    (int)response.StatusCode, LogRedaction.Sanitize(query.Permission), _options.FailMode);
                 return null;
             }
 
@@ -172,7 +172,7 @@ public sealed class HttpExternalAuthorizationDecisionProvider(
             logger.LogWarning(
                 exception,
                 "External authorization decision request for permission {Permission} failed - failing {FailMode}.",
-                query.Permission, _options.FailMode);
+                LogRedaction.Sanitize(query.Permission), _options.FailMode);
             return null;
         }
     }
