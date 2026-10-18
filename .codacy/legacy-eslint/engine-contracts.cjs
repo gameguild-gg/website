@@ -6,6 +6,7 @@ const { readFileSync } = require('node:fs');
 const { createRequire } = require('node:module');
 const path = require('node:path');
 const { test } = require('node:test');
+const { decodeParameter, projectInput, createProjection } = require('./project-configuration.cjs');
 
 // These contracts run only inside the pinned hosted engine. No repository
 // dependency installation, cloud configuration change or issue upload is made.
@@ -99,5 +100,62 @@ test('all effective IDs exist in the pinned engine catalog with parameter defini
     for (const parameter of row.parameters) {
       assert(names.has(parameter.name), `${row.patternId}: unknown parameter ${parameter.name}`);
     }
+  }
+});
+
+test('parameter projection preserves strings, false, zero, arrays and objects without coercion', () => {
+  assert.equal(decodeParameter('false', true), false);
+  assert.equal(decodeParameter('0', 4), 0);
+  assert.equal(decodeParameter('', 'default'), '');
+  assert.equal(decodeParameter('false', 'default'), 'false');
+  assert.deepEqual(decodeParameter('["one","two"]', []), ['one', 'two']);
+  assert.deepEqual(decodeParameter('{"enabled":false}', {}), { enabled: false });
+  assert.throws(() => decodeParameter('"false"', true));
+  assert.throws(() => decodeParameter('[]', {}));
+  assert.throws(() => decodeParameter('1', undefined));
+
+  const catalog = JSON.parse(readFileSync('/docs/patterns.json', 'utf8'));
+  const input = projectInput(snapshot, catalog);
+  assert.equal(input.tools[0].patterns.length, 2631);
+  assert.equal(input.tools[0].patterns.reduce((count, row) => count + row.parameters.length, 0), 512);
+  const complexity = input.tools[0].patterns.find((row) => row.patternId === 'complexity');
+  assert.deepEqual(complexity.parameters, [{ name: 'unnamedParam', value: 4 }]);
+  const dictionary = input.tools[0].patterns.find((row) => row.patternId === 'spellcheck_spell-checker');
+  const values = Object.fromEntries(dictionary.parameters.map(({ name, value }) => [name, value]));
+  assert.equal(values.comments, true);
+  assert.equal(values.ignoreRequire, false);
+  assert.equal(values.minLength, 1);
+  assert.equal(values.lang, 'en_US');
+  assert.deepEqual(values.skipWords, ['dict', 'aff', 'hunspellchecker', 'hunspell', 'utils',
+    'Pnpm', 'Toolchain', 'gunzip', 'gzip', 'gzipped', 'mjs', 'mkdtemp', 'os', 'pnpm',
+    'readdir', 'realpath', 'sep', 'tmpdir', 'tsc', 'unlink']);
+});
+
+let projectionPromise;
+function projection() {
+  projectionPromise ??= createProjection(snapshot,
+    JSON.parse(readFileSync('/docs/patterns.json', 'utf8')), engineRequire);
+  return projectionPromise;
+}
+
+test('the actual engine projects all 2631 requested rules with their exact effective options', async () => {
+  const result = await projection();
+  assert.equal(result.receipt.enabledPatterns, 2631);
+  assert.equal(result.receipt.projectedRules, 2631);
+  assert.equal(result.receipt.nonemptyParameterSets, 247);
+  assert.equal(result.receipt.rawParameters, 512);
+  assert.equal(result.receipt.allRuleIdsAndOptionsMatched, true);
+  assert.equal(result.receipt.activeScannerChanged, false);
+});
+
+test('the complete projected profile loads for JavaScript and TypeScript in the actual engine', async () => {
+  const result = await projection();
+  const { ESLint } = engineRequire('eslint');
+  const eslint = new ESLint(result.options);
+  for (const filename of ['scripts/lint-budget.mjs', 'apps/web/src/lib/learning/grading-runtime-actions.ts']) {
+    const config = await eslint.calculateConfigForFile(`/src/${filename}`);
+    assert(config && Object.keys(config.rules).length > 0, `No effective configuration for ${filename}`);
+    assert([2, 'error'].includes(config.rules.complexity[0]), 'Complexity must retain error severity');
+    assert.deepEqual(config.rules.complexity.slice(1), [4]);
   }
 });

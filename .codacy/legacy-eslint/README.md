@@ -39,6 +39,16 @@ it does not prove file coverage, a complete generated ESLint configuration,
 framework context, parameter value interpretation or scanner migration parity.
 Those checks remain required before changing the active scanner.
 
+`project-configuration.cjs` prepares the complete received-pattern input using
+the pinned catalog's parameter types, then uses the image's own seed defaulting
+and configuration creator. It checks every generated rule ID and option before
+exporting the candidate to a hosted artifact. Strings, `false`, zero, arrays and
+objects retain their types. Unknown IDs, parameters or default types fail.
+The contracts also load this complete candidate through the actual ESLint API
+for JavaScript and TypeScript. This projection retains and records the wrapper's
+inherited ignores/overrides; adequate file coverage and correct framework/runtime
+contexts still require separate work. It is not an activated scanner profile.
+
 ## Evidence
 
 The `Codacy legacy engine contracts` workflow runs in hosted GitHub Actions.

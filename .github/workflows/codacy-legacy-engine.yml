@@ -32,7 +32,7 @@ jobs:
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
             -e GAMEGUILD_ENGINE_EXPECT_REPAIRED=false \
             -v "$PWD:/src:ro" "$ENGINE_IMAGE" \
-            node --test /src/.codacy/legacy-eslint/engine-contracts.cjs \
+            node --test --test-reporter=tap /src/.codacy/legacy-eslint/engine-contracts.cjs \
             2>&1 | tee engine-evidence/original.tap
       - name: Build an isolated repaired engine
         run: |
@@ -45,8 +45,15 @@ jobs:
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
             -e GAMEGUILD_ENGINE_EXPECT_REPAIRED=true \
             -v "$PWD:/src:ro" gameguild-codacy-engine-contracts \
-            node --test /src/.codacy/legacy-eslint/engine-contracts.cjs \
+            node --test --test-reporter=tap /src/.codacy/legacy-eslint/engine-contracts.cjs \
             2>&1 | tee engine-evidence/repaired.tap
+      - name: Export the complete received-pattern configuration candidate
+        run: |
+          set -o pipefail
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            -v "$PWD:/src:ro" gameguild-codacy-engine-contracts \
+            node /src/.codacy/legacy-eslint/project-configuration.cjs \
+            | tee engine-evidence/projected-configuration.json
       - name: Record source and immutable engine identity
         if: always()
         env:
