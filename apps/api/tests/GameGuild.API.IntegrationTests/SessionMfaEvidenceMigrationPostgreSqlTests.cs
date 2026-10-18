@@ -32,8 +32,13 @@ public sealed class SessionMfaEvidenceMigrationPostgreSqlTests(ApiPostgreSqlFixt
             IpAddress = "127.0.0.1", UserAgent = "Synthetic migration client", IsActive = true,
             ExpiresAt = DateTime.UtcNow.AddDays(1), LastUsedAt = DateTime.UtcNow
         };
-        db.Set<UserSession>().Add(session);
-        await db.SaveChangesAsync();
+        // Seed the historical schema before the entity-change audit table existed.
+        // The verification context above keeps normal audit capture enabled.
+        await using (var seed = new ApplicationDbContext(options, enableEntityChangeAuditCapture: false))
+        {
+            seed.Set<UserSession>().Add(session);
+            await seed.SaveChangesAsync();
+        }
         await migrator.MigrateAsync(migration);
         Assert.Empty(await db.Set<SessionMfaEvidence>().AsNoTracking().ToListAsync());
         Assert.True((await db.Set<UserSession>().AsNoTracking().SingleAsync(row => row.Id == session.Id)).IsActive);

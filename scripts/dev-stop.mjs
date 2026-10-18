@@ -114,9 +114,9 @@ function listPosixProcesses() {
   return parsePosixProcessList(output);
 }
 
-function discoverDevProcesses() {
+async function discoverDevProcesses() {
   const candidates = new Map();
-  const registrations = listRegisteredDevProcesses();
+  const registrations = await listRegisteredDevProcesses();
   const processes = listPosixProcesses();
   const processByPid = new Map(processes.map((entry) => [entry.pid, entry]));
 
@@ -205,7 +205,7 @@ async function waitForProcessTargets(targets, timeoutMilliseconds) {
 }
 
 async function stopOrchestrators() {
-  const processes = discoverDevProcesses();
+  const processes = await discoverDevProcesses();
   if (processes.length === 0) {
     console.log("[dev:stop] no managed development orchestrator is running");
     return;

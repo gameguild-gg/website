@@ -9,7 +9,7 @@ import { resolveDevelopmentDataProtectionEnvironment } from "./dev-data-protecti
 import { registerDevProcess } from "./dev-runtime.mjs";
 import { resolvePnpmProcess } from "../apps/web/scripts/pnpm-process.mjs";
 
-registerDevProcess("dev-fast");
+await registerDevProcess("dev-fast");
 
 const API_PORT = 8080;
 const API_HEALTH_URL = `http://localhost:${API_PORT}/health`;
