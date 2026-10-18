@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { CODE_TOOLCHAIN_V1, CODE_TOOLCHAIN_V2 } from "../../../tools/emception/grading/toolchain-binding.mjs";
+import { CODE_TOOLCHAIN_V1, CODE_TOOLCHAIN_V2, CODE_TOOLCHAIN_V3 } from "../../../tools/emception/grading/toolchain-binding.mjs";
 import { verifyCodingCycleToolchain } from "./coding-cycle-toolchain-support.mjs";
 
 async function withManifest(manifest, run) {
@@ -20,7 +20,7 @@ async function withManifest(manifest, run) {
 function verifiedManifest() {
   return {
     schemaVersion: 2,
-    ...CODE_TOOLCHAIN_V2,
+    ...CODE_TOOLCHAIN_V3,
     buildReceiptHash: "a".repeat(64),
     buildFingerprint: "b".repeat(64),
   };
@@ -63,8 +63,10 @@ test("the actual runner verifies synced artifacts before starting PostgreSQL", a
   assert.ok(verify < postgres);
 });
 
-test("retained version 1 artifacts cannot initialize a new version 2 assessment", async () => {
-  await withManifest({ ...verifiedManifest(), ...CODE_TOOLCHAIN_V1 }, async (filename) => {
-    await assert.rejects(verifyCodingCycleToolchain(filename), /verified artifacts matching its frozen toolchain/);
+for (const [version, identity] of [[1, CODE_TOOLCHAIN_V1], [2, CODE_TOOLCHAIN_V2]]) {
+  test(`retained version ${version} artifacts cannot initialize a new version 3 assessment`, async () => {
+    await withManifest({ ...verifiedManifest(), ...identity }, async (filename) => {
+      await assert.rejects(verifyCodingCycleToolchain(filename), /verified artifacts matching its frozen toolchain/);
+    });
   });
-});
+}

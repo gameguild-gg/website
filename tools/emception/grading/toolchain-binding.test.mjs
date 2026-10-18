@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { CODE_TOOLCHAIN_V1, CODE_TOOLCHAIN_V2, requireFrozenCodeToolchain } from './toolchain-binding.mjs';
+import { CODE_TOOLCHAIN_V1, CODE_TOOLCHAIN_V2, CODE_TOOLCHAIN_V3, requireFrozenCodeToolchain } from './toolchain-binding.mjs';
 
 function canonicalLockHash(lock) {
   function sortDeep(value) {
@@ -20,13 +20,13 @@ function manifestFor(identity) {
     buildReceiptHash: 'a'.repeat(64), buildFingerprint: 'b'.repeat(64) };
 }
 
-test('current adapter version 2 matches the reviewed patched lock, ABI and package', async () => {
+test('current adapter version 3 matches the reviewed patched lock, ABI and package', async () => {
   const [lock, config, pkg] = await Promise.all([
     'toolchain/toolchain.lock.json', 'toolchain/toolchain.config.json', 'packages/toolchain/package.json',
   ].map(async (path) => JSON.parse(await readFile(new URL('../' + path, import.meta.url), 'utf8'))));
-  assert.equal(canonicalLockHash(lock), CODE_TOOLCHAIN_V2.toolchainLockHash);
-  assert.equal(config.runtimeAbi, CODE_TOOLCHAIN_V2.runtimeAbi);
-  assert.equal(pkg.version, CODE_TOOLCHAIN_V2.artifactVersion);
+  assert.equal(canonicalLockHash(lock), CODE_TOOLCHAIN_V3.toolchainLockHash);
+  assert.equal(config.runtimeAbi, CODE_TOOLCHAIN_V3.runtimeAbi);
+  assert.equal(pkg.version, CODE_TOOLCHAIN_V3.artifactVersion);
 });
 
 test('version 1 retains its original lock and is not rebound to the patched compiler', async () => {
@@ -40,7 +40,17 @@ test('version 1 retains its original lock and is not rebound to the patched comp
   assert.notEqual(CODE_TOOLCHAIN_V1.artifactVersion, CODE_TOOLCHAIN_V2.artifactVersion);
 });
 
-for (const [version, identity] of [[1, CODE_TOOLCHAIN_V1], [2, CODE_TOOLCHAIN_V2]]) {
+test('version 2 retains its exact package identity and reviewed lock', async () => {
+  const lock = JSON.parse(await readFile(new URL('./frozen-toolchains/code-v2-lock.json', import.meta.url), 'utf8'));
+  assert.equal(canonicalLockHash(lock), CODE_TOOLCHAIN_V2.toolchainLockHash);
+  assert.deepEqual(CODE_TOOLCHAIN_V2, {
+    artifactVersion: '4.4.1', runtimeAbi: 'emception-browser-v1',
+    toolchainLockHash: '405e9f1fdd936ba31e11247fa1f901eaee24c4fcf641e343505df75c3d539b37',
+  });
+  assert.notEqual(CODE_TOOLCHAIN_V2.artifactVersion, CODE_TOOLCHAIN_V3.artifactVersion);
+});
+
+for (const [version, identity] of [[1, CODE_TOOLCHAIN_V1], [2, CODE_TOOLCHAIN_V2], [3, CODE_TOOLCHAIN_V3]]) {
   test('version ' + version + ' matches the server adapter source constants', async () => {
     const source = await readFile(new URL('../../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Code/CodeAssessmentTypeAdapter.cs', import.meta.url), 'utf8');
     for (const value of Object.values(identity)) assert.ok(source.includes('"' + value + '"'));
@@ -64,7 +74,11 @@ for (const [version, identity] of [[1, CODE_TOOLCHAIN_V1], [2, CODE_TOOLCHAIN_V2
   });
 }
 
-test('both directions reject cross-version compiler artifacts', () => {
-  assert.throws(() => requireFrozenCodeToolchain(CODE_TOOLCHAIN_V1, manifestFor(CODE_TOOLCHAIN_V2)));
-  assert.throws(() => requireFrozenCodeToolchain(CODE_TOOLCHAIN_V2, manifestFor(CODE_TOOLCHAIN_V1)));
-});
+for (const [version, identity] of [[1, CODE_TOOLCHAIN_V1], [2, CODE_TOOLCHAIN_V2], [3, CODE_TOOLCHAIN_V3]]) {
+  for (const [otherVersion, otherIdentity] of [[1, CODE_TOOLCHAIN_V1], [2, CODE_TOOLCHAIN_V2], [3, CODE_TOOLCHAIN_V3]]) {
+    if (version === otherVersion) continue;
+    test('version ' + version + ' rejects version ' + otherVersion + ' compiler artifacts', () => {
+      assert.throws(() => requireFrozenCodeToolchain(identity, manifestFor(otherIdentity)));
+    });
+  }
+}

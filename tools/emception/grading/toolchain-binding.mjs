@@ -12,11 +12,17 @@ export const CODE_TOOLCHAIN_V2 = Object.freeze({
   toolchainLockHash: '405e9f1fdd936ba31e11247fa1f901eaee24c4fcf641e343505df75c3d539b37',
 });
 
+export const CODE_TOOLCHAIN_V3 = Object.freeze({
+  artifactVersion: '4.5.0',
+  runtimeAbi: 'emception-browser-v1',
+  toolchainLockHash: '405e9f1fdd936ba31e11247fa1f901eaee24c4fcf641e343505df75c3d539b37',
+});
+
 export function requireFrozenCodeToolchain(binding, manifest) {
   const names = Object.keys(CODE_TOOLCHAIN_V1);
   if (!binding || Object.keys(binding).length !== names.length ||
       names.some((name) => !Object.hasOwn(binding, name)) ||
-      ![CODE_TOOLCHAIN_V1, CODE_TOOLCHAIN_V2].some((identity) =>
+      ![CODE_TOOLCHAIN_V1, CODE_TOOLCHAIN_V2, CODE_TOOLCHAIN_V3].some((identity) =>
         names.every((name) => binding[name] === identity[name]))) {
     throw new Error('Unsupported frozen Code toolchain identity.');
   }

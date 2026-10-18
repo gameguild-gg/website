@@ -71,24 +71,30 @@ of running its sandbox. Supply these API configuration values as absolute paths:
 | `CodeGradingWorker:BrowserDirectory` | Optional Playwright browser installation directory |
 | `CodeGradingWorker:DeadlineSeconds` | 1–300; default 300 |
 
-Current authoring uses Code adapter/handler version 2, artifact version `4.4.1`,
-ABI `emception-browser-v1` and canonical patched lock hash
-`0fe7f8b3f9e24facd491c64c7474ea2a39b04e710664c2966e43eafec2ba2df7`.
-Version 1 remains registered for historical execution, keeps artifact version
-`4.4.0` and its immutable reviewed lock hash
-`eb7e07aacb067ae32910fbebcb3762902da756b1a7ce64746f14f77a25057720`.
-It is not selected for new authoring. Both versions use the same bounded content,
-response, privacy and grading contracts; neither accepts the other compiler identity.
+Current authoring uses Code adapter/handler version 3, artifact version `4.5.0`,
+ABI `emception-browser-v1` and canonical lock hash
+`405e9f1fdd936ba31e11247fa1f901eaee24c4fcf641e343505df75c3d539b37`.
+PR #870 changed the package release version without changing this compiler lock.
+The new artifact version receives its own adapter identity.
 
-The existing `RuntimeDirectory` and `CdnDirectory` settings select version 2
-artifacts. Historical version 1 execution additionally requires absolute
-`Version1RuntimeDirectory` and `Version1CdnDirectory` settings, containing the
-retained original grading runtime and schema-v2 compiler release respectively.
-Keep each original checkout's scripts, dependencies, runtime/CDN bytes and release
-receipts together. The worker checks the exact frozen identity and receipt/fingerprint
-metadata before learner execution. Missing version 1 files must fail closed; they
-never fall back to version 2 or a newest release. Legacy local manifests cannot be
-relabeled to satisfy either identity.
+Historical version 2 retains artifact version `4.4.1` and that same exact lock;
+version 1 retains artifact version `4.4.0` and original lock
+`eb7e07aacb067ae32910fbebcb3762902da756b1a7ce64746f14f77a25057720`.
+Only version 3 is selected for new authoring. All three versions retain the bounded
+content, response, privacy and grading contracts and reject cross-version artifacts.
+The lock snapshots `grading/frozen-toolchains/code-v1-lock.json` and
+`grading/frozen-toolchains/code-v2-lock.json` prove the reviewed source identities,
+not binary availability.
+
+The existing `RuntimeDirectory` and `CdnDirectory` settings select version 3
+artifacts. Before deploying, retain the original version 2 runtime/CDN bytes and
+configure their absolute `Version2RuntimeDirectory` and `Version2CdnDirectory`.
+Version 1 continues to require its own `Version1RuntimeDirectory` and
+`Version1CdnDirectory`. Keep each original checkout's scripts, dependencies,
+runtime/CDN bytes and release receipts together. Missing historical directories
+fail closed and never fall back to a newer compiler. The worker validates the exact
+identity and receipt/fingerprint before learner execution. Manifest fields must not
+be relabeled. This source change does not deploy, copy or certify retained artifacts.
 
 The earlier draft recorded hash
 `bb4e8ca4a8cc4640ec8f7f1d2f7dc14829992e44ff0309527a44b8a83d0b14ed`;

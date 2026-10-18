@@ -33,6 +33,9 @@ trap cleanup EXIT
 gate_stage='dependencies'
 bash "$script_dir/install-and-audit-pnpm.sh"
 
+gate_stage='code-toolchain-contracts'
+node --test "$repository_root/apps/web/scripts/coding-cycle-toolchain-support.test.mjs"
+
 gate_stage='policy-tests'
 bash "$script_dir/tests/verify-economy.sh"
 node --test "$script_dir/tests/validate-pnpm-audit.test.mjs" "$script_dir/tests/learning-process-security.test.mjs" "$script_dir/tests/dependency-advisory-upgrades.test.mjs"
