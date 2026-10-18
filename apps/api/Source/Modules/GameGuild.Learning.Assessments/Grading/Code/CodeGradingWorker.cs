@@ -18,8 +18,6 @@ public sealed class CodeGradingWorkerOptions
     public string? CdnDirectory { get; set; }
     public string? Version1RuntimeDirectory { get; set; }
     public string? Version1CdnDirectory { get; set; }
-    public string? Version2RuntimeDirectory { get; set; }
-    public string? Version2CdnDirectory { get; set; }
     public string? BrowserDirectory { get; set; }
     public string? BrowserChannel { get; set; }
     public int DeadlineSeconds { get; set; } = 300;
@@ -175,7 +173,7 @@ public sealed class CodeGradingWorker(IOptions<CodeGradingWorkerOptions> configu
     }
 
     internal static ProcessStartInfo CreateStartInfo(CodeGradingWorkerOptions options) =>
-        CreateStartInfo(options, CodeToolchainIdentity.Version3);
+        CreateStartInfo(options, CodeToolchainIdentity.Version2);
 
     internal static ProcessStartInfo CreateStartInfo(CodeGradingWorkerOptions options, CodeToolchainIdentity toolchain)
     {
@@ -236,14 +234,9 @@ public sealed class CodeGradingWorker(IOptions<CodeGradingWorkerOptions> configu
     private static (string? Runtime, string? Cdn) SelectArtifactDirectories(
         CodeGradingWorkerOptions options, CodeToolchainIdentity toolchain)
     {
-        if (toolchain == CodeToolchainIdentity.Version3)
-        {
-            return (options.RuntimeDirectory, options.CdnDirectory);
-        }
-
         if (toolchain == CodeToolchainIdentity.Version2)
         {
-            return (options.Version2RuntimeDirectory, options.Version2CdnDirectory);
+            return (options.RuntimeDirectory, options.CdnDirectory);
         }
 
         if (toolchain == CodeToolchainIdentity.Version1)
