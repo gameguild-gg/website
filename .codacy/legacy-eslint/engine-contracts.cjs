@@ -393,7 +393,9 @@ test('semantic-tag preference handles non-string roles and retains genuine acces
   assert.deepEqual(run('const view = <button role="button" />;'), []);
   const messages = run('const view = <div role="button" />;');
   assert.equal(messages.length, 1);
-  assert.match(messages[0].message, /Use <button>/);
+  assert.equal(messages[0].message,
+    'Use <input type="button">, <input type="image">, <input type="reset">, <input type="submit">, or <button> '
+      + 'instead of the "button" role to ensure accessibility across all devices.');
   const invalid = lint('jsx-a11y/aria-role', 'eslint-plugin-jsx-a11y', 'aria-role',
     'const view = <div role="invented-role" />;', false, true);
   assert.equal(invalid.length, 1, 'The separate invalid-role diagnostic remains enabled and effective');
