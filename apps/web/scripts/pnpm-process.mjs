@@ -4,7 +4,7 @@
  * directly, keeping every caller argument a literal argument.
  */
 
-import { existsSync } from "node:fs";
+import { access } from "node:fs/promises";
 import path from "node:path";
 
 const windowsPaths = path.win32;
@@ -15,12 +15,21 @@ const relativeEntries = [
   "pnpm.cjs",
 ];
 
+async function fileExists(candidate) {
+  try {
+    await access(candidate);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function resolveOptions(options = {}) {
   return Object.fromEntries(Object.entries({
     platform: process.platform,
     nodePath: process.execPath,
     env: process.env,
-    fileExists: existsSync,
+    fileExists,
   }).map(([key, fallback]) => {
     const value = options[key];
     return [key, value === undefined ? fallback : value];
@@ -38,23 +47,32 @@ function searchDirectories(env, nodePath) {
   ].filter((directory) => typeof directory === "string" && directory.length > 0));
 }
 
+async function findExistingEntry(candidates, fileExists) {
+  for (const candidate of candidates) {
+    if (await fileExists(candidate)) return candidate;
+  }
+  return undefined;
+}
+
 /**
  * @param {NodeJS.ProcessEnv} env - Environment used for executable discovery.
  * @param {string} nodePath - Node executable used to locate adjacent shims.
- * @param {(candidate: string) => boolean} fileExists - File existence probe.
- * @returns {string | undefined} The first supported executable or script.
+ * @param {(candidate: string) => boolean | Promise<boolean>} fileExists - File existence probe.
+ * @returns {Promise<string | undefined>} The first supported executable or script.
  */
-function findWindowsExecutable(env, nodePath, fileExists) {
-  const managedEntry = [env.npm_execpath]
-    .filter((entry) => typeof entry === "string" && windowsPaths.isAbsolute(entry) &&
-      /^pnpm\.(?:cjs|mjs|js)$/i.test(windowsPaths.basename(entry)))
-    .find((entry) => fileExists(entry));
+async function findWindowsExecutable(env, nodePath, fileExists) {
+  const managedEntry = await findExistingEntry(
+    [env.npm_execpath].filter((entry) => typeof entry === "string" && windowsPaths.isAbsolute(entry) &&
+      /^pnpm\.(?:cjs|mjs|js)$/i.test(windowsPaths.basename(entry))),
+    fileExists,
+  );
   if (managedEntry) return managedEntry;
 
   for (const directory of searchDirectories(env, nodePath)) {
-    const executable = relativeEntries
-      .map((relative) => windowsPaths.join(directory, relative))
-      .find((candidate) => fileExists(candidate));
+    const executable = await findExistingEntry(
+      relativeEntries.map((relative) => windowsPaths.join(directory, relative)),
+      fileExists,
+    );
     if (executable) return executable;
   }
   return undefined;
@@ -65,14 +83,14 @@ function findWindowsExecutable(env, nodePath, fileExists) {
  * shell on the current platform.
  *
  * @param {string[]} args - Literal pnpm arguments forwarded by the caller.
- * @param {{platform?: NodeJS.Platform, nodePath?: string, env?: NodeJS.ProcessEnv, fileExists?: (candidate: string) => boolean}} [options] - Injectable environment for testing.
- * @returns {{command: string, args: string[]}} The spawn target for pnpm.
+ * @param {{platform?: NodeJS.Platform, nodePath?: string, env?: NodeJS.ProcessEnv, fileExists?: (candidate: string) => boolean | Promise<boolean>}} [options] - Injectable environment for testing.
+ * @returns {Promise<{command: string, args: string[]}>} The spawn target for pnpm.
  */
-export function resolvePnpmProcess(args, options) {
+export async function resolvePnpmProcess(args, options) {
   const { platform, nodePath, env, fileExists } = resolveOptions(options);
   if (platform !== "win32") return { command: "pnpm", args };
 
-  const executable = findWindowsExecutable(env, nodePath, fileExists);
+  const executable = await findWindowsExecutable(env, nodePath, fileExists);
   if (!executable) {
     throw new Error(
       "Cannot find a pnpm executable or JavaScript entry point. Run this script through pnpm or install pnpm on PATH.",
