@@ -84,7 +84,11 @@ public sealed class InstructorReviewStageHandler : IReviewStageHandler
                 item.ItemId == CodeAssessmentContracts.ItemId &&
                 item.ReviewMethod == ReviewMethod.AutomatedReview &&
                 item.HandlerKey == CodeAssessmentContracts.HandlerKey &&
-                item.HandlerVersion == CodeAssessmentContracts.Version)?.Feedback
+                CodeAssessmentContracts.IsSupportedVersion(item.HandlerVersion) &&
+                request.Snapshot.Manifest.Items.Any(frozen =>
+                    frozen.ItemId == item.ItemId &&
+                    frozen.AdapterKey == CodeAssessmentContracts.AdapterKey &&
+                    frozen.AdapterVersion == item.HandlerVersion))?.Feedback
             : null;
         string? ResolveFeedback(string? supplied) =>
             previousCodeFeedback is not null && string.IsNullOrWhiteSpace(supplied)

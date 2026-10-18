@@ -4,6 +4,7 @@ using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Assessments.Grading.Code;
+using GameGuild.Learning.Assessments.Grading.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -49,7 +50,7 @@ public sealed class CodeGradingAdapterContractTests
         var adapter = Adapter();
         var projection = adapter.ProjectAuthoring(Definition()).Items.Single().PrivateProjection;
         JsonSerializer.Deserialize<CodeToolchainIdentity>(projection.GetProperty("toolchain"), GradingJson.Options)
-            .Should().Be(CodeToolchainIdentity.Version2);
+            .Should().Be(CodeToolchainIdentity.Version3);
         adapter.GenerateDelivery(projection).TryGetProperty("toolchain", out _).Should().BeFalse();
     }
 
@@ -180,7 +181,7 @@ public sealed class CodeGradingAdapterContractTests
     }
 
     [Fact]
-    public void Module_RetainsVersion1AndSelectsVersion2ForAuthoring()
+    public void Module_RetainsHistoricalVersionsAndSelectsVersion3ForAuthoring()
     {
         var services = new ServiceCollection();
         services.AddAssessmentsModule();
@@ -188,49 +189,69 @@ public sealed class CodeGradingAdapterContractTests
         var adapters = provider.GetRequiredService<IAssessmentTypeAdapterResolver>();
         var handlers = provider.GetRequiredService<IReviewStageHandlerResolver>();
         var current = adapters.ResolveForAuthoring(ProgramContentType.Code);
-        current.Version.Should().Be("2");
+        current.Version.Should().Be("3");
         var legacy = adapters.Resolve(current.ContentType, current.Key, "1", ReviewExecutionContext.OfficialSubmission);
         legacy.Version.Should().Be("1");
         legacy.IsCurrentForAuthoring.Should().BeFalse();
         current.IsCurrentForAuthoring.Should().BeTrue();
         legacy.ReviewHandlers[ReviewMethod.AutomatedReview].Version.Should().Be("1");
-        current.ReviewHandlers[ReviewMethod.AutomatedReview].Version.Should().Be("2");
+        current.ReviewHandlers[ReviewMethod.AutomatedReview].Version.Should().Be("3");
         handlers.Resolve(ReviewMethod.AutomatedReview, CodeAssessmentContracts.HandlerKey, "1",
             ReviewExecutionContext.OfficialSubmission).Version.Should().Be("1");
         handlers.Resolve(ReviewMethod.AutomatedReview, CodeAssessmentContracts.HandlerKey, "2",
             ReviewExecutionContext.OfficialSubmission).Version.Should().Be("2");
-        Action unknown = () => adapters.Resolve(current.ContentType, current.Key, "3", ReviewExecutionContext.OfficialSubmission);
+        var retained = adapters.Resolve(current.ContentType, current.Key, "2", ReviewExecutionContext.OfficialSubmission);
+        retained.Version.Should().Be("2");
+        retained.IsCurrentForAuthoring.Should().BeFalse();
+        retained.ReviewHandlers[ReviewMethod.AutomatedReview].Version.Should().Be("2");
+        handlers.Resolve(ReviewMethod.AutomatedReview, CodeAssessmentContracts.HandlerKey, "3",
+            ReviewExecutionContext.OfficialSubmission).Version.Should().Be("3");
+        Action unknown = () => adapters.Resolve(current.ContentType, current.Key, "4", ReviewExecutionContext.OfficialSubmission);
         unknown.Should().Throw<InvalidOperationException>();
-    }
-
-    [Fact]
-    public async Task Version1_PreservesItsProjectionAndExecutorIdentity()
-    {
-        var executor = new RecordingExecutor([true, false], CodeToolchainIdentity.Version1);
-        var adapter = CodeAssessmentTypeAdapter.ForVersion1(executor);
-        var projection = adapter.ProjectAuthoring(Definition()).Items.Single().PrivateProjection;
-        JsonSerializer.Deserialize<CodeToolchainIdentity>(projection.GetProperty("toolchain"), GradingJson.Options)
-            .Should().Be(CodeToolchainIdentity.Version1);
-        var result = await adapter.EvaluateDeterministicAsync(new DeterministicReviewRequest([projection],
-            new AssessmentExecutionDeliveryV1(1, Guid.NewGuid(), new string('a', 64), [],
-                new Dictionary<string, AssessmentExecutionDeliveryItemV1>()),
-            Decode(new Dictionary<string, object> { ["main.cpp"] = File("source") }),
-            CodeAssessmentContracts.HandlerKey, "1"), CancellationToken.None);
-        result.Score.Should().Be(ScoreValue.FromUnits(2500));
-        result.Items.Single().HandlerVersion.Should().Be("1");
-        result.EvidenceRefs.Should().ContainSingle().Which.Should().StartWith("code-wasm:1:");
-        JsonSerializer.Serialize(result).Should().NotContain("secret-result");
     }
 
     [Theory]
     [InlineData("1")]
     [InlineData("2")]
-    public async Task Review_RejectsOtherVersionsBeforeInvokingTheExecutor(string version)
+    public async Task RetainedVersion_PreservesItsProjectionAndExecutorIdentity(string version)
+    {
+        var identity = CodeToolchainIdentity.ForAdapterVersion(version);
+        var executor = new RecordingExecutor([true, false], identity);
+        var adapter = version == "1" ? CodeAssessmentTypeAdapter.ForVersion1(executor) : CodeAssessmentTypeAdapter.ForVersion2(executor);
+        var projection = adapter.ProjectAuthoring(Definition()).Items.Single().PrivateProjection;
+        JsonSerializer.Deserialize<CodeToolchainIdentity>(projection.GetProperty("toolchain"), GradingJson.Options)
+            .Should().Be(identity);
+        var result = await adapter.EvaluateDeterministicAsync(new DeterministicReviewRequest([projection],
+            new AssessmentExecutionDeliveryV1(1, Guid.NewGuid(), new string('a', 64), [],
+                new Dictionary<string, AssessmentExecutionDeliveryItemV1>()),
+            Decode(new Dictionary<string, object> { ["main.cpp"] = File("source") }),
+            CodeAssessmentContracts.HandlerKey, version), CancellationToken.None);
+        result.Score.Should().Be(ScoreValue.FromUnits(2500));
+        result.Items.Single().HandlerVersion.Should().Be(version);
+        result.EvidenceRefs.Should().ContainSingle().Which.Should().StartWith($"code-wasm:{version}:");
+        JsonSerializer.Serialize(result).Should().NotContain("secret-result");
+    }
+
+    [Theory]
+    [InlineData("1", "2")]
+    [InlineData("1", "3")]
+    [InlineData("2", "1")]
+    [InlineData("2", "3")]
+    [InlineData("3", "1")]
+    [InlineData("3", "2")]
+    public async Task Review_RejectsOtherVersionsBeforeInvokingTheExecutor(string version, string otherVersion)
     {
         var identity = CodeToolchainIdentity.ForAdapterVersion(version);
         var executor = new RecordingExecutor([true, true], identity);
-        var adapter = version == "1" ? CodeAssessmentTypeAdapter.ForVersion1(executor) : new CodeAssessmentTypeAdapter(executor);
-        var other = version == "1" ? new CodeAssessmentTypeAdapter(executor) : CodeAssessmentTypeAdapter.ForVersion1(executor);
+        CodeAssessmentTypeAdapter Resolve(string value) => value switch
+        {
+            "1" => CodeAssessmentTypeAdapter.ForVersion1(executor),
+            "2" => CodeAssessmentTypeAdapter.ForVersion2(executor),
+            "3" => new CodeAssessmentTypeAdapter(executor),
+            _ => throw new InvalidOperationException("Unsupported test adapter version."),
+        };
+        var adapter = Resolve(version);
+        var other = Resolve(otherVersion);
         var projection = other.ProjectAuthoring(Definition()).Items.Single().PrivateProjection;
         Func<Task> review = async () => await adapter.EvaluateDeterministicAsync(new DeterministicReviewRequest([projection],
             new AssessmentExecutionDeliveryV1(1, Guid.NewGuid(), new string('a', 64), [],
@@ -238,6 +259,64 @@ public sealed class CodeGradingAdapterContractTests
             Decode(new Dictionary<string, object>()), CodeAssessmentContracts.HandlerKey, version), CancellationToken.None);
         await review.Should().ThrowAsync<InvalidOperationException>().WithMessage("*frozen version*");
         executor.CapturedDefinition.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("1", "1", true)]
+    [InlineData("2", "2", true)]
+    [InlineData("3", "3", true)]
+    [InlineData("1", "2", false)]
+    [InlineData("2", "3", false)]
+    [InlineData("3", "2", false)]
+    [InlineData("3", "999", false)]
+    public async Task InstructorReview_PreservesOnlyFeedbackMatchingTheFrozenAdapter(
+        string frozenVersion, string previousVersion, bool preserve)
+    {
+        var executor = new UnconfiguredCodeAssessmentExecutor();
+        var adapter = frozenVersion switch
+        {
+            "1" => CodeAssessmentTypeAdapter.ForVersion1(executor),
+            "2" => CodeAssessmentTypeAdapter.ForVersion2(executor),
+            "3" => new CodeAssessmentTypeAdapter(executor),
+            _ => throw new InvalidOperationException("Unsupported test adapter version."),
+        };
+        var projection = adapter.ProjectAuthoring(Definition());
+        var score = ScoreValue.FromUnits(2500);
+        var maxScore = ScoreValue.FromUnits(10000);
+        var policy = new AssessmentExecutionPolicyV1(1, null, null, null, null,
+            new(null, null, null, false, null), new(ContentCompletionMode.OnFinalize),
+            new(ResultReleaseMode.Manual), new("all-at-once"),
+            new(1, ReviewMethods.AutomatedReview | ReviewMethods.InstructorReview, Instructor: new(false)));
+        var snapshot = new AssessmentExecutionSnapshotV1(1,
+            new(1, adapter.ContentType, projection.Content,
+                new(2, new Dictionary<string, GradingItemAuthoringV2> { [CodeAssessmentContracts.ItemId] = new() }), policy),
+            new(1, [new(CodeAssessmentContracts.ItemId, "code", adapter.Key, frozenVersion)], [], []),
+            new Dictionary<string, JsonElement> { [CodeAssessmentContracts.ItemId] = projection.Items.Single().PrivateProjection });
+        var previous = new GradeResultV1(1, "final", score, maxScore,
+            [new(CodeAssessmentContracts.ItemId, GradeItemState.Graded, score, maxScore, ["trusted-result"],
+                ReviewMethod.AutomatedReview, CodeAssessmentContracts.HandlerKey, previousVersion, "Trusted Code feedback")],
+            ["trusted-result"], "Trusted Code feedback");
+        var executionId = Guid.NewGuid();
+        var roundId = Guid.NewGuid();
+        var actorId = Guid.NewGuid();
+        var request = new ReviewStageRequest(executionId, roundId, Guid.NewGuid(),
+            ReviewExecutionContext.OfficialSubmission, new string('a', 64), snapshot,
+            new(1, Guid.NewGuid(), new string('a', 64), [], new Dictionary<string, AssessmentExecutionDeliveryItemV1>()),
+            Envelope(new { files = new Dictionary<string, object>() }), previous,
+            "instructor-review", "1", null, null, null);
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            schemaVersion = 1, executionId, roundId, actorId,
+            items = new[] { new InstructorItemResolutionV1(CodeAssessmentContracts.ItemId, score) },
+            previousResult = previous,
+        }, GradingJson.Options);
+        var transition = await new InstructorReviewStageHandler().AcceptEvidenceAsync(request,
+            new("review-evidence", "instructor-review-evidence", "1", payload, actorId), CancellationToken.None);
+        transition.Kind.Should().Be(ReviewStageTransitionKindV1.Completed);
+        var result = transition.Result!;
+        result.Feedback.Should().Be(preserve ? "Trusted Code feedback" : null);
+        result.Items.Single().Feedback.Should().Be(preserve ? "Trusted Code feedback" : null);
+        result.Score.Should().Be(score);
     }
 
     private static CodeAssessmentTypeAdapter Adapter() => new(new UnconfiguredCodeAssessmentExecutor());
@@ -276,7 +355,7 @@ public sealed class CodeGradingAdapterContractTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             CapturedDefinition = definition;
-            toolchain.Should().Be(expectedToolchain ?? CodeToolchainIdentity.Version2);
+            toolchain.Should().Be(expectedToolchain ?? CodeToolchainIdentity.Version3);
             Files = files.Clone();
             return Task.FromResult(new CodeExecutionReceipt(passed, new string('a', 64)));
         }

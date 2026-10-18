@@ -154,13 +154,15 @@ public sealed class CodeGradingWorkerConfigurationTests
         CodeGradingWorker.ReadFailureDiagnostic(diagnostic).Should().Be(("unavailable", "unknown"));
     }
 
-    [Fact]
-    public void Launcher_RequiresExplicitRetainedVersion1Directories()
+    [Theory]
+    [InlineData("1")]
+    [InlineData("2")]
+    public void Launcher_RequiresExplicitRetainedVersionDirectories(string version)
     {
         using var installation = new WorkerInstallation();
-        Action legacy = () => CodeGradingWorker.CreateStartInfo(installation.Configuration, CodeToolchainIdentity.Version1);
+        Action legacy = () => CodeGradingWorker.CreateStartInfo(installation.Configuration, CodeToolchainIdentity.ForAdapterVersion(version));
         legacy.Should().Throw<InvalidOperationException>();
-        CodeGradingWorker.CreateStartInfo(installation.Configuration, CodeToolchainIdentity.Version2)
+        CodeGradingWorker.CreateStartInfo(installation.Configuration, CodeToolchainIdentity.Version3)
             .ArgumentList.Should().Equal("--max-old-space-size=512", installation.Configuration.ScriptPath,
                 installation.Configuration.RuntimeDirectory, installation.Configuration.CdnDirectory);
     }
@@ -173,7 +175,13 @@ public sealed class CodeGradingWorkerConfigurationTests
         options.Version1RuntimeDirectory = Directory.CreateDirectory(Path.Combine(installation.Root, "version1-runtime")).FullName;
         options.Version1CdnDirectory = Directory.CreateDirectory(Path.Combine(installation.Root, "version1-cdn")).FullName;
         var legacy = CodeGradingWorker.CreateStartInfo(options, CodeToolchainIdentity.Version1);
-        var current = CodeGradingWorker.CreateStartInfo(options, CodeToolchainIdentity.Version2);
+        options.Version2RuntimeDirectory = Directory.CreateDirectory(Path.Combine(installation.Root, "version2-runtime")).FullName;
+        options.Version2CdnDirectory = Directory.CreateDirectory(Path.Combine(installation.Root, "version2-cdn")).FullName;
+        var retained = CodeGradingWorker.CreateStartInfo(options, CodeToolchainIdentity.Version2);
+        var current = CodeGradingWorker.CreateStartInfo(options, CodeToolchainIdentity.Version3);
+        retained.ArgumentList.Should().Equal("--max-old-space-size=512", options.ScriptPath,
+            options.Version2RuntimeDirectory, options.Version2CdnDirectory);
+        retained.UseShellExecute.Should().BeFalse();
         legacy.ArgumentList.Should().Equal("--max-old-space-size=512", options.ScriptPath,
             options.Version1RuntimeDirectory, options.Version1CdnDirectory);
         current.ArgumentList.Should().Equal("--max-old-space-size=512", options.ScriptPath,
