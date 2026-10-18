@@ -9,7 +9,8 @@ const { test } = require('node:test');
 const {
   decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
 } = require('./project-configuration.cjs');
-const { publicDiagnostics, engineRule, analysisStatus } = require('./analyze-repository.cjs');
+const { publicDiagnostics, engineRule, engineFailure, partitionSources,
+  analysisStatus, qualifiedAnalysisStatus } = require('./analyze-repository.cjs');
 
 // These contracts run only inside the pinned hosted engine. No repository
 // dependency installation, cloud configuration change or issue upload is made.
@@ -19,14 +20,15 @@ const repaired = process.env.GAMEGUILD_ENGINE_EXPECT_REPAIRED === 'true';
 assert(['true', 'false'].includes(process.env.GAMEGUILD_ENGINE_EXPECT_REPAIRED));
 const snapshot = JSON.parse(readFileSync(path.join(__dirname, 'effective-patterns.json'), 'utf8'));
 
-function lint(ruleId, packageName, ruleName, source, typescript = false) {
+function lint(ruleId, packageName, ruleName, source, typescript = false, jsx = false) {
   const linter = new Linter();
   linter.defineRule(ruleId, engineRequire(packageName).rules[ruleName]);
   if (typescript) linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
   return linter.verify(source, {
     env: { browser: true, node: true, commonjs: true, es2022: true },
     ...(typescript ? { parser: 'engine-typescript' } : {}),
-    parserOptions: { ecmaVersion: 2022, sourceType: typescript ? 'script' : 'module' },
+    parserOptions: { ecmaVersion: 2022, sourceType: typescript ? 'script' : 'module',
+      ...(jsx ? { ecmaFeatures: { jsx: true } } : {}) },
     rules: { [ruleId]: 'error' },
   }, { filename: typescript ? 'contract.ts' : 'contract.mjs' });
 }
@@ -296,4 +298,78 @@ test('complete analysis requires every file and preserves all failure states', (
   assert.equal(analysisStatus(clean, 1).completeAnalysisCertified, false);
   assert.deepEqual(analysisStatus({ ...clean, diagnosticCount: 1 }, 0),
     { completeAnalysisCertified: true, analysisGatePassed: false });
+});
+
+test('class-property preference accepts a declared constructor and retains real assignment detection', () => {
+  const rule = '@shopify/prefer-class-properties';
+  const run = () => lint(rule, '@shopify/eslint-plugin', 'prefer-class-properties',
+    'declare class Contract { constructor(); }', true);
+  if (repaired) assert.deepEqual(run(), []);
+  else assert.throws(run, /Cannot read properties of (?:null|undefined) \(reading 'body'\)/);
+  const results = lint(rule, '@shopify/eslint-plugin', 'prefer-class-properties',
+    'class Contract { constructor() { this.value = 1; } }');
+  assert.equal(results.length, 1);
+  assert.match(results[0].message, /Unexpected assignment of literal instance member/);
+});
+
+test('raw-text detection handles a template without expressions and retains the Text boundary', () => {
+  const run = (source) => lint('react-native/no-raw-text', 'eslint-plugin-react-native',
+    'no-raw-text', source, false, true);
+  assertReportedOrOriginalCrash(() => run('const view = <View>{`plain`}</View>;'),
+    /cannot be used outside of a <Text> tag/,
+    /Cannot read properties of undefined \(reading 'name'\)/);
+  assert.deepEqual(run('const view = <Text>{`plain`}</Text>;'), []);
+  const results = run('const view = <View>{`${label}`}</View>;');
+  assert.equal(results.length, 1);
+  assert.match(results[0].message, /TemplateLiteral: label/);
+});
+
+test('type-import style retains its diagnostic without an invalid namespace autofix', () => {
+  const run = (source) => lint('flowtype/type-import-style', 'eslint-plugin-flowtype',
+    'type-import-style', source, true);
+  const source = 'import type * as Contract from "contract";';
+  if (repaired) {
+    const results = run(source);
+    assert.equal(results.length, 1);
+    assert.match(results[0].message, /Unexpected "import type"/);
+    assert.equal(results[0].fix, undefined);
+  } else assert.throws(() => run(source), /Cannot read properties of undefined \(reading 'name'\)/);
+  assert.deepEqual(run('import { type Value } from "contract";'), []);
+  const named = run('import type { Value } from "contract";');
+  assert.equal(named.length, 1);
+  assert.match(named[0].fix.text, /import \{type Value\}/);
+});
+
+test('engine failure metadata retains known causes without raw exception messages or source frames', () => {
+  const categories = new Map([['flowtype/type-import-style', 'CodeStyle']]);
+  const result = engineFailure({ name: 'TypeError', ruleId: 'flowtype/type-import-style',
+    message: "Cannot read properties of undefined (reading 'name')\nprivate-fixture-value",
+    stack: 'private-fixture-value\n at fix (/node_modules/eslint-plugin-flowtype/dist/rules/typeImportStyle.js:12:3)\n at /src/private-fixture-value.ts:3:2',
+  }, categories);
+  assert.equal(result.reason, 'missing-node-name');
+  assert.equal(result.ruleId, 'flowtype/type-import-style');
+  assert.deepEqual(result.dependencyFrames, [
+    { file: 'eslint-plugin-flowtype/dist/rules/typeImportStyle.js', line: 12, column: 3 },
+  ]);
+  assert(!JSON.stringify(result).includes('private-fixture-value'));
+  assert.equal(engineFailure({ message: 'private-fixture-value' }, categories).reason, 'unclassified-engine-error');
+});
+
+test('all partitions retain every source exactly once and cannot certify a full scan individually', () => {
+  const files = Array.from({ length: 19 }, (value, index) => `source-${index}.ts`);
+  const partitions = Array.from({ length: 4 }, (value, index) => partitionSources(files, index, 4));
+  assert.equal(partitions.flat().length, files.length);
+  assert.equal(new Set(partitions.flat()).size, files.length);
+  assert.deepEqual([...partitions.flat()].sort(), [...files].sort());
+  for (const args of [[-1, 4], [4, 4], [0, 0], [0, 20], [0.5, 4]]) {
+    assert.throws(() => partitionSources(files, ...args));
+  }
+  const clean = { selected: 2, attempted: 2, processed: 2, allFilesProcessed: true,
+    engineErrors: 0, configurationErrors: 0, fatalParsing: 0, diagnosticCount: 0,
+    partition: { count: 4 } };
+  assert.equal(qualifiedAnalysisStatus(clean, 0).partitionAnalysisComplete, true);
+  assert.equal(qualifiedAnalysisStatus(clean, 0).completeAnalysisCertified, false);
+  assert.equal(qualifiedAnalysisStatus({ ...clean, partition: { count: 1 } }, 0).completeAnalysisCertified, true);
+  assert.equal(qualifiedAnalysisStatus({ ...clean, partition: { count: 1 }, diagnosticSample: true }, 0)
+    .completeAnalysisCertified, false);
 });

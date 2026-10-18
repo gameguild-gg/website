@@ -1,6 +1,6 @@
 # Legacy ESLint engine repairs
 
-This is a hosted validation candidate for the three observed crashes in
+This is a hosted validation candidate for observed crashes in
 `codacy/codacy-eslint:9.18.12`. The immutable Linux amd64 digest is pinned in the
 Dockerfile and workflow. It does not change the active Codacy configuration,
 replace the ESLint 9 root configuration, disable rules, exclude files, upload
@@ -19,8 +19,14 @@ versions and file hashes must therefore match independently in hosted CI.
   expects message IDs. The visitor and message text remain unchanged.
 - Security Node 1.1.4: a `try/finally` statement has no catch handler. Guard that
   nullable handler and retain the existing missing-handler diagnostic.
+- Shopify class properties: a TypeScript declared constructor has no body.
+  Accept that declaration while retaining diagnostics on real assignments.
+- React Native raw text: a template literal can contain no expressions. Use
+  its literal text for the diagnostic and retain the allowed Text boundary.
+- Flow type imports: a namespace specifier cannot be converted into an inline
+  named type import. Retain the diagnostic without the invalid autofix.
 
-All three package versions, complete original file hashes and unique repair
+All repaired package versions, complete original file hashes and unique repair
 anchors must match before any image file is written. The original and repaired
 images run the same positive and negative contracts. Original crash assertions
 remain visible, rather than being replaced by a later green result.
@@ -75,6 +81,23 @@ started/processed/crashed file is recorded and all remaining files are attempted
 after a rule exception. Parser errors, missing rules, exceptions, diagnostics or
 unreviewed tool output keep the pass failing. The 30-minute job budget is not a
 latency guarantee; an incomplete pass cannot be accepted as a complete scan.
+The analysis step has a shorter 20-minute limit, leaving time within the job
+budget for the unconditional checkpoint artifact upload after a failure.
+
+Four independent partitions now cover the complete selected-source list by
+index modulo four. No rule or source is removed. Matrix fail-fast is disabled
+so an error in one partition does not cancel the others. A partition can only
+certify its own traversal; independent collection must verify all four have
+the same source/configuration identity, cover the original list exactly once,
+and satisfy the complete-analysis conditions before accepting a full scan.
+
+A separate diagnostic matrix entry repeats eight actual files from the first
+incomplete pass, requiring their immutable input hashes. It retains only known
+exception reason codes and dependency frames, with no raw messages or source
+frames. This sample cannot certify repository coverage and its counts overlap
+the full partitions. Remaining failures in Import, Lodash FP, Perfectionist and
+JSX accessibility still require diagnosis; the three additional repairs have
+not been accepted until their hosted original/repaired contracts pass.
 
 The hosted pass requires the tracked working tree to match its checkout after
 dependency installation and again after analysis. It records the SHA256 and

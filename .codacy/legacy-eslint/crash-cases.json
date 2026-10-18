@@ -1,0 +1,50 @@
+[
+  {
+    "ruleId": "import/namespace",
+    "file": "apps/web/eslint.config.mjs",
+    "sha256": "6927fa01e9eed55dd333e5962a7ea5dc09276d966d1093be0b341e30835d5596",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "lodash-fp/no-chain",
+    "file": "apps/web/scripts/testing-lab-browser-quality.mjs",
+    "sha256": "57803329831bbe98913ae25a8c8f3417ada7eebd28769735289bad78f1af93fd",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "import/no-cycle",
+    "file": "apps/web/src/app/[locale]/(auth)/email-code/page.test.tsx",
+    "sha256": "5c0fa43b028286518f5f964193ea5c403151bbb4afa8f5979e6951e85321f3bf",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "react-native/no-raw-text",
+    "file": "apps/web/src/components/block-content-editor/extras/button/button-editor.tsx",
+    "sha256": "678c62a7fd991f6ab687748e6a639e742866a00283c380f8d5778db640d78f4a",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "flowtype/type-import-style",
+    "file": "apps/web/src/components/block-content-editor/extras/markdown/markdown-editor.tsx",
+    "sha256": "88b7d11d8a0c28972c797e264f1c0f6b6bdba3e803781601d861f739e8d4e340",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "perfectionist/sort-jsx-props",
+    "file": "apps/web/src/components/block-content-editor/extras/source-code/components/source-code-editor-view.tsx",
+    "sha256": "4f024999d3cabb17b6ae38a6f14b025f468f5b4ccb158603c6d7581013f9506f",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "jsx-a11y/prefer-tag-over-role",
+    "file": "apps/web/src/components/testing-lab/testing-lab-dialogs.test.tsx",
+    "sha256": "bcba34c056cbf1a172995df9ea5762eb8bc7d97d33f2ecaa1e9e5d3e1c38c4d2",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "@shopify/prefer-class-properties",
+    "file": "packages/features/web3/src/types/torus-embed.d.ts",
+    "sha256": "49346f9ac81857c9ccd5b2578f86cc88106f746f70accbf016bb51501e6e57db",
+    "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  }
+]

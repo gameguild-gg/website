@@ -5,7 +5,7 @@ const { createHash } = require('node:crypto');
 const { readFileSync, realpathSync, writeFileSync } = require('node:fs');
 const path = require('node:path');
 
-// Repair only the three observed failures in the pinned Codacy image. Package
+// Repair only observed failures in the pinned Codacy image. Package
 // versions and complete source hashes are checked before any file is written.
 // The image retains each upstream package's license and the rest of its source.
 const repairs = [
@@ -41,6 +41,38 @@ const repairs = [
     replacements: [
       ["bodyArg.handler.type === 'CatchClause' &&",
         "bodyArg.handler?.type === 'CatchClause' &&"],
+    ],
+  },
+  {
+    package: '@shopify/eslint-plugin',
+    version: '45.0.0',
+    file: 'lib/rules/prefer-class-properties.js',
+    sha256: 'a9ab19cc5ade3451d6795edede0c7ef07b560bcc93aa0e60ea98d117ace25d13',
+    repairedSha256: '818de3925f96bd9fa56a839e3304ab3efc1b1bef03530b74815799f054263077',
+    replacements: [
+      ['return functionNode.body.body', 'return (functionNode?.body?.body ?? [])'],
+    ],
+  },
+  {
+    package: 'eslint-plugin-react-native',
+    version: '4.1.0',
+    file: 'lib/rules/no-raw-text.js',
+    sha256: '60221ed8f4cb6776def089fa988f89122e645d04046b3159a5a573984bb3ab25',
+    repairedSha256: 'bcdf65e489312f0d6ec128bd3252a84834279d4712462c669ece30870b786991',
+    replacements: [
+      ['`TemplateLiteral: ${node.expressions[0].name}`',
+        '`TemplateLiteral: ${node.expressions[0]?.name ?? node.quasis[0].value.raw}`'],
+    ],
+  },
+  {
+    package: 'eslint-plugin-flowtype',
+    version: '8.0.3',
+    file: 'dist/rules/typeImportStyle.js',
+    sha256: 'f52ddfaf238d9f9c6bad8484b34c5c52daf97c0cd5e382e5013fb647560de32f',
+    repairedSha256: '8fdb7b6237f0a94b8d57cd10db5612bec587360dc2acd17a69fb58c0b89e6cf1',
+    replacements: [
+      ['        fix(fixer) {',
+        "        fix(fixer) {\n          if (node.specifiers.some(specifier => specifier.type === 'ImportNamespaceSpecifier')) return null;"],
     ],
   },
 ];

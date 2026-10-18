@@ -82,10 +82,22 @@ jobs:
           if-no-files-found: error
 
   analyze-repository:
-    name: Complete selected-source ESLint pass
+    name: Selected-source ESLint (${{ matrix.label }})
     needs: contracts
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { label: partition-0, partition: 0, count: 4 }
+          - { label: partition-1, partition: 1, count: 4 }
+          - { label: partition-2, partition: 2, count: 4 }
+          - { label: partition-3, partition: 3, count: 4 }
+          - label: diagnostic
+            partition: 0
+            count: 1
+            cases: /src/.codacy/legacy-eslint/crash-cases.json
     env:
       ENGINE_IMAGE: codacy/codacy-eslint@sha256:01b7b1444a44d33aba5db47aa0f244c889ab24de35a5960536f8ff2b6ca206f1
     steps:
@@ -108,8 +120,12 @@ jobs:
           docker pull "$ENGINE_IMAGE"
           docker build --network=none --progress=plain -t gameguild-codacy-engine-analysis .codacy/legacy-eslint
       - name: Analyze every selected tracked source
+        timeout-minutes: 20
         env:
           CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+          GAMEGUILD_CODACY_PARTITION_INDEX: ${{ matrix.partition }}
+          GAMEGUILD_CODACY_PARTITION_COUNT: ${{ matrix.count }}
+          GAMEGUILD_CODACY_DIAGNOSTIC_CASES: ${{ matrix.cases || '' }}
         run: |
           docker_status=0
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
@@ -117,6 +133,9 @@ jobs:
             -e NODE_OPTIONS=--max-old-space-size=6144 \
             -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
             -e GAMEGUILD_CODACY_TRACKED_FILES=/evidence/tracked-files.nul \
+            -e GAMEGUILD_CODACY_PARTITION_INDEX \
+            -e GAMEGUILD_CODACY_PARTITION_COUNT \
+            -e GAMEGUILD_CODACY_DIAGNOSTIC_CASES \
             -v "$PWD:/src:ro" -v "$PWD/engine-analysis:/evidence" \
             gameguild-codacy-engine-analysis \
             node /src/.codacy/legacy-eslint/analyze-repository.cjs /evidence \
@@ -137,7 +156,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: codacy-legacy-analysis-${{ github.event.pull_request.head.sha }}
+          name: codacy-legacy-analysis-${{ github.event.pull_request.head.sha }}-${{ matrix.label }}
           path: |
             engine-analysis/*.json
             engine-analysis/*.jsonl
