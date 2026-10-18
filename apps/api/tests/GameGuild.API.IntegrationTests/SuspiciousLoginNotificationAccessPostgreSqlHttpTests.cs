@@ -21,7 +21,7 @@ namespace GameGuild.API.IntegrationTests;
 [CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class SecurityAlertAccessPostgreSqlCollection : ICollectionFixture<ApiPostgreSqlFixture>
 {
-    public const string Name = "Security alert access PostgreSQL";
+    internal const string Name = "Security alert access PostgreSQL";
 }
 
 // These scenarios dispatch manually. A separate collection owns one database,
