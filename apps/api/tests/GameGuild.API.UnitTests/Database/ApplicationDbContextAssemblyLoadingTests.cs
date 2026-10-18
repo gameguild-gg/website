@@ -5,14 +5,11 @@ using Moq;
 
 namespace GameGuild.API.UnitTests.Database;
 
-[CollectionDefinition(Name, DisableParallelization = true)]
-public sealed class AssemblyLoadingProbeCollection
-{
-    internal const string Name = "Assembly loading probes";
-}
+[CollectionDefinition(nameof(AssemblyLoadingProbeCollection), DisableParallelization = true)]
+public sealed class AssemblyLoadingProbeCollection;
 
 // Invalid assembly probes temporarily change the shared application output.
-[Collection(AssemblyLoadingProbeCollection.Name)]
+[Collection(nameof(AssemblyLoadingProbeCollection))]
 public sealed class ApplicationDbContextAssemblyLoadingTests
 {
     [Fact]
@@ -23,8 +20,8 @@ public sealed class ApplicationDbContextAssemblyLoadingTests
         var definition = typeof(AssemblyLoadingProbeCollection).GetCustomAttributesData()
             .Single(attribute => attribute.AttributeType == typeof(CollectionDefinitionAttribute));
 
-        collection.ConstructorArguments.Should().ContainSingle().Which.Value.Should().Be(AssemblyLoadingProbeCollection.Name);
-        definition.ConstructorArguments.Should().ContainSingle().Which.Value.Should().Be(AssemblyLoadingProbeCollection.Name);
+        collection.ConstructorArguments.Should().ContainSingle().Which.Value.Should().Be(nameof(AssemblyLoadingProbeCollection));
+        definition.ConstructorArguments.Should().ContainSingle().Which.Value.Should().Be(nameof(AssemblyLoadingProbeCollection));
         definition.NamedArguments.Should()
             .ContainSingle(argument => argument.MemberName == nameof(CollectionDefinitionAttribute.DisableParallelization))
             .Which.TypedValue.Value.Should().Be(true);
