@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-// Exact official manifest indexes compared across Docker Hub and ECR on 2026-10-09.
+// Official indexes compared with ECR on 2026-10-09; mirror cache verified 2026-10-17.
 const image17 = 'mirror.gcr.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24';
 const image16 = 'mirror.gcr.io/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea';
 const read = (path) => readFileSync(new URL('../../../' + path, import.meta.url), 'utf8').replaceAll('\r\n', '\n');
@@ -27,6 +27,11 @@ for (const path of ['scripts/ci/run-affected-dotnet-tests.sh', 'scripts/ci/verif
     assert.ok(source.includes('postgres_image="' + '$' + '{GAMEGUILD_TEST_POSTGRES_17_IMAGE:-mirror.gcr.io/library/postgres:17-alpine}"'));
     assert.ok(source.includes('"$' + 'postgres_image" -c max_locks_per_transaction=512'));
     assert.ok(!source.includes('    postgres:17-alpine'));
+    if (path === 'scripts/ci/run-affected-dotnet-tests.sh') {
+      assert.ok(source.includes('local -a postgres_storage=()'));
+      assert.ok(source.includes('if [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_OS:-}" == Linux ]]; then\n    postgres_storage=(--tmpfs /var/lib/postgresql/data:rw)\n  fi'));
+      assert.ok(source.includes('"${postgres_storage[@]}" \\\n    "$postgres_image" -c max_locks_per_transaction=512'));
+    }
   });
 }
 
