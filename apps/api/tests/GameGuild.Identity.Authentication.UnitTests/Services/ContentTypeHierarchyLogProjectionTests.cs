@@ -72,7 +72,7 @@ public sealed class ContentTypeHierarchyLogProjectionTests
         var context = new Mock<IApplicationDbContext>();
         var permissions = rows.AsQueryable().BuildMockDbSet();
         context.Setup(value => value.Set<ContentTypePermission>()).Returns(permissions.Object);
-        return new ContentTypePermissionHierarchyProvider(context.Object, logger);
+        return new ContentTypePermissionHierarchyProvider(context.Object, logger.Logger);
     }
 
     private sealed record LogEntry(
@@ -80,25 +80,32 @@ public sealed class ContentTypeHierarchyLogProjectionTests
         string Message,
         IReadOnlyDictionary<string, object?> Properties);
 
-    private sealed class CaptureLogger : ILogger<ContentTypePermissionHierarchyProvider>
+    private sealed class CaptureLogger
     {
-        public List<LogEntry> Entries { get; } = [];
+        private readonly Mock<ILogger<ContentTypePermissionHierarchyProvider>> _logger = new();
 
-        IDisposable? ILogger.BeginScope<TState>(TState state) => null;
-
-        bool ILogger.IsEnabled(LogLevel logLevel) => true;
-
-        void ILogger.Log<TState>(
-            LogLevel logLevel,
-            EventId eventId,
-            TState state,
-            Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public CaptureLogger()
         {
-            var properties = state is IEnumerable<KeyValuePair<string, object?>> values
-                ? values.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal)
-                : new Dictionary<string, object?>();
-            Entries.Add(new LogEntry(logLevel, formatter(state, exception), properties));
+            _logger.Setup(logger => logger.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         }
+
+        public ILogger<ContentTypePermissionHierarchyProvider> Logger => _logger.Object;
+
+        public IReadOnlyList<LogEntry> Entries => _logger.Invocations
+            .Where(call => call.Method.Name == nameof(ILogger.Log))
+            .Select(call =>
+            {
+                var state = call.Arguments[2];
+                var formatter = (Delegate)call.Arguments[4];
+                var properties = state is IEnumerable<KeyValuePair<string, object?>> values
+                    ? values.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal)
+                    : new Dictionary<string, object?>();
+
+                return new LogEntry(
+                    (LogLevel)call.Arguments[0],
+                    (string)formatter.DynamicInvoke(state, call.Arguments[3])!,
+                    properties);
+            })
+            .ToArray();
     }
 }
