@@ -17,6 +17,7 @@ vi.mock('next-intl', () => ({
       navLabel: 'Settings sections',
       'nav.profile': 'Profile',
       'nav.account': 'Account',
+      'nav.security': 'Security',
       'nav.appearance': 'Appearance',
       'nav.localization': 'Language & region',
       'nav.privacy': 'Privacy',
@@ -41,6 +42,15 @@ describe('SettingsNav', () => {
       'href',
       '/workspace/settings/profile',
     );
+    expect(screen.getByRole('link', { name: 'Security' })).toHaveAttribute(
+      'href',
+      '/workspace/settings/security',
+    );
+  });
+
+  it('links to the security section', () => {
+    render(<SettingsNav />);
+
     expect(screen.getByRole('link', { name: 'Security' })).toHaveAttribute(
       'href',
       '/workspace/settings/security',

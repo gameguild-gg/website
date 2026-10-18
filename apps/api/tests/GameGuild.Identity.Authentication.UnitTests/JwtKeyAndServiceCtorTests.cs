@@ -170,7 +170,8 @@ public class JwtKeyAndServiceCtorTests
             NullLogger<MfaAttemptTrackingService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptRepository>(),
-            Mock.Of<IHttpContextAccessor>()
+            Mock.Of<IHttpContextAccessor>(),
+            Mock.Of<ITokenRevocationService>()
         );
         svc.Should().NotBeNull();
     }
@@ -182,7 +183,8 @@ public class JwtKeyAndServiceCtorTests
             NullLogger<MfaAttemptTrackingService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptRepository>(),
-            Mock.Of<IHttpContextAccessor>()
+            Mock.Of<IHttpContextAccessor>(),
+            Mock.Of<ITokenRevocationService>()
         );
         var config = new UserMfaConfiguration
         {
@@ -203,7 +205,8 @@ public class JwtKeyAndServiceCtorTests
             NullLogger<MfaAttemptTrackingService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptRepository>(),
-            Mock.Of<IHttpContextAccessor>()
+            Mock.Of<IHttpContextAccessor>(),
+            Mock.Of<ITokenRevocationService>()
         );
         var config = new UserMfaConfiguration
         {
@@ -224,7 +227,8 @@ public class JwtKeyAndServiceCtorTests
             NullLogger<MfaAttemptTrackingService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptRepository>(),
-            Mock.Of<IHttpContextAccessor>()
+            Mock.Of<IHttpContextAccessor>(),
+            Mock.Of<ITokenRevocationService>()
         );
         var config = new UserMfaConfiguration
         {

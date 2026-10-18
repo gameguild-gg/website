@@ -45,7 +45,7 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { createMfaSignInContinuation } from "./sign-in-mfa-support.mjs";
+import { createMfaSignInContinuation, E2E_ADMIN_TOTP_SECRET } from "./sign-in-mfa-support.mjs";
 import { verifyCodingCycleToolchain } from "./coding-cycle-toolchain-support.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync, createWriteStream, rmSync } from "node:fs";
@@ -366,6 +366,7 @@ async function bootStack() {
     `Redis__Enabled=false`,
     `SeedData__ImportSnapshotCourses=false`,
     `Seed__AdminPassword=${ADMIN_PASSWORD}`,
+    `Seed:AdminTotpSecret=${E2E_ADMIN_TOTP_SECRET}`, // RFC 6238 public test vector (see sign-in-mfa-support.mjs)
     `Jwt__SecretKey=coding-cycle-e2e-jwt-secret-key-at-least-32-characters`,
     `Authentication__JwtSecretKey=coding-cycle-e2e-jwt-secret-key-at-least-32-characters`,
     `EmailDelivery__Enabled=false`,

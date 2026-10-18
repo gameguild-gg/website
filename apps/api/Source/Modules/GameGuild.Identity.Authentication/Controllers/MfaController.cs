@@ -72,6 +72,7 @@ public sealed class MfaController(
         {
             SecretKey = result.SecretKey,
             QrCodeUri = result.QrCodeUrl,
+            ExpiresAt = result.ExpiresAt,
             BackupCodes = []
         });
     }
@@ -450,12 +451,12 @@ public sealed class MfaController(
     /// <summary>
     ///     Disable MFA for the current user
     /// </summary>
-    /// <param name="body">Disable request with password confirmation</param>
+    /// <param name="body">Disable request with the account password to re-verify</param>
     /// <param name="ct">Cancellation token</param>
     /// <returns>Success confirmation</returns>
     [HttpPost("v{version:apiVersion}/auth/mfa:disable")]
     [EndpointSummary("Disable MFA")]
-    [EndpointDescription("Disables multi-factor authentication for the current user after password verification.")]
+    [EndpointDescription("Disables multi-factor authentication for the current user after password re-verification (issue #244).")]
     [ProducesResponseType<MfaSuccessResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

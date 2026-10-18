@@ -2,9 +2,13 @@ using System.Security.Cryptography;
 using System.Text;
 using GameGuild.API.Database;
 using GameGuild.API.IntegrationTests.Infrastructure;
+using GameGuild.Email;
 using GameGuild.Identity.Authentication;
+using GameGuild.Identity.Authorization;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Microsoft.AspNetCore.Http;
@@ -258,5 +262,164 @@ public sealed class MfaRecoveryPostgreSqlTests(ApiPostgreSqlFixture fixture)
 
     private static MfaAttemptTrackingService CreateTracking(IUserMfaConfigurationRepository repository) =>
         new(NullLogger<MfaAttemptTrackingService>.Instance, repository, new Mock<IMfaAttemptRepository>().Object,
-            new HttpContextAccessor());
+            new HttpContextAccessor(), new InMemoryTokenRevocationService(NullLogger<InMemoryTokenRevocationService>.Instance));
+
+    [Fact]
+    public async Task HttpFullRecoveryPathDisablesMfaAndRevokesTokens()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        var email = $"lost-device-{marker}@example.test";
+        var (userId, tenantId) = await SeedRecoveryActorAsync(email);
+        var spy = new SpyEmailSender();
+        using var factory = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(spy);
+        }));
+        using var client = factory.CreateClient();
+
+        using var requested = await client.PostAsJsonAsync("/v1/auth/mfa/recovery:request", new { email });
+        Assert.True(requested.StatusCode == HttpStatusCode.OK, await requested.Content.ReadAsStringAsync());
+        var requestToken = ExtractToken(Assert.Single(spy.Sent), "token=");
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var row = await context.Set<MfaRecoveryRequest>().SingleAsync(value => value.UserId == userId.ToString());
+            row.RequestedAt = DateTimeOffset.UtcNow.AddDays(-8);
+            row.CooldownEndsAt = DateTimeOffset.UtcNow.AddDays(-1);
+            await context.SaveChangesAsync();
+        }
+
+        using var continued = await client.PostAsJsonAsync("/v1/auth/mfa/recovery:continue", new { requestToken });
+        Assert.True(continued.StatusCode == HttpStatusCode.OK, await continued.Content.ReadAsStringAsync());
+        using var continuedBody = JsonDocument.Parse(await continued.Content.ReadAsStringAsync());
+        Assert.True(continuedBody.RootElement.GetProperty("success").GetBoolean());
+        var confirmationToken = ExtractToken(spy.Sent[1], "confirm=");
+
+        using var confirmed = await client.PostAsJsonAsync("/v1/auth/mfa/recovery:confirm", new { confirmationToken });
+        Assert.True(confirmed.StatusCode == HttpStatusCode.OK, await confirmed.Content.ReadAsStringAsync());
+        using var confirmedBody = JsonDocument.Parse(await confirmed.Content.ReadAsStringAsync());
+        Assert.True(confirmedBody.RootElement.GetProperty("success").GetBoolean());
+
+        using var verifyScope = factory.Services.CreateScope();
+        var check = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var config = await check.Set<UserMfaConfiguration>().SingleAsync(value => value.UserId == userId);
+        Assert.False(config.IsEnabled);
+        Assert.Null(config.TotpSecretKey);
+        Assert.True(string.IsNullOrEmpty(config.BackupCodes));
+        var recovery = await check.Set<MfaRecoveryRequest>().SingleAsync(value => value.UserId == userId.ToString());
+        Assert.Equal(MfaRecoveryRequestStatus.Completed, recovery.Status);
+        Assert.NotNull(recovery.ConsumedAt);
+        var revocation = factory.Services.GetRequiredService<ITokenRevocationService>();
+        Assert.True(await revocation.IsUserTokenRevokedAsync(userId, DateTime.UtcNow.AddMinutes(-5)));
+    }
+
+    [Fact]
+    public async Task HttpAdminResetByOwnTenantAdminDisablesMfaCancelsRecoveryAndAudits()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        Guid adminId, targetId, tenantId;
+        using (var scope = fixture.Factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var admin = User.Create($"admin-{marker}@example.test", $"Admin {marker}");
+            var target = User.Create($"target-{marker}@example.test", $"Target {marker}");
+            var tenant = new Tenant { Id = Guid.NewGuid(), Name = $"Reset {marker}", Slug = $"reset-{marker}", IsActive = true,
+                AdminEmail = $"admin-{marker}@example.test" };
+            target.SetTenantId(tenant.Id);
+            context.Set<User>().AddRange(admin, target);
+            context.Set<Tenant>().Add(tenant);
+            context.Set<TenantMember>().Add(new TenantMember { Id = Guid.NewGuid(), UserId = admin.Id, TenantId = tenant.Id, IsActive = true, Role = "TenantAdmin" });
+            context.Set<TenantMember>().Add(new TenantMember { Id = Guid.NewGuid(), UserId = target.Id, TenantId = tenant.Id, IsActive = true, Role = "Member" });
+            context.Set<UserMfaConfiguration>().Add(new UserMfaConfiguration
+            {
+                UserId = target.Id, IsEnabled = true, IsSetupComplete = true,
+                BackupCodes = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes("RESET2345678")))
+            });
+            context.Set<MfaRecoveryRequest>().Add(new MfaRecoveryRequest
+            {
+                Id = Guid.NewGuid(), UserId = target.Id.ToString(), TenantId = tenant.Id.ToString(),
+                RequestedAt = DateTimeOffset.UtcNow.AddDays(-2), CooldownEndsAt = DateTimeOffset.UtcNow.AddDays(5),
+                Status = MfaRecoveryRequestStatus.Pending, RequestTokenHash = new string('b', 64)
+            });
+            await context.SaveChangesAsync();
+            adminId = admin.Id;
+            targetId = target.Id;
+            tenantId = tenant.Id;
+        }
+
+        using var client = fixture.CreateAuthenticatedClient(adminId, tenantId);
+        using var response = await client.PostAsync($"/v1/admin/users/{targetId}/mfa:reset", null);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, $"Expected OK, got {response.StatusCode}: {body}");
+        using var parsed = JsonDocument.Parse(body);
+        Assert.True(parsed.RootElement.GetProperty("success").GetBoolean());
+        Assert.True(parsed.RootElement.GetProperty("mfaWasEnabled").GetBoolean());
+        Assert.True(parsed.RootElement.GetProperty("liveRecoveryCancelled").GetBoolean());
+
+        using var auditScope = fixture.Factory.Services.CreateScope();
+        var auditContext = auditScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var config = await auditContext.Set<UserMfaConfiguration>().SingleAsync(value => value.UserId == targetId);
+        Assert.False(config.IsEnabled);
+        Assert.True(string.IsNullOrEmpty(config.BackupCodes));
+        var recovery = await auditContext.Set<MfaRecoveryRequest>().SingleAsync(value => value.UserId == targetId.ToString());
+        Assert.Equal(MfaRecoveryRequestStatus.Cancelled, recovery.Status);
+        var version = await auditContext.Set<TenantSecurityVersion>().SingleAsync(value => value.TenantId == tenantId);
+        Assert.True(version.SecurityVersion >= 2);
+        var audit = await auditContext.Set<PermissionAuditLog>().SingleAsync(value =>
+            value.UserId == targetId && value.PermissionType == "Mfa");
+        Assert.Equal(adminId, audit.PerformedBy);
+    }
+
+    [Fact]
+    public async Task AnonymousClientCannotResetUserMfa()
+    {
+        using var client = fixture.Factory.CreateClient();
+        using var response = await client.PostAsync($"/v1/admin/users/{Guid.NewGuid()}/mfa:reset", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private async Task<(Guid UserId, Guid TenantId)> SeedRecoveryActorAsync(string email)
+    {
+        using var scope = fixture.Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var user = User.Create(email, $"Recovery actor {Guid.NewGuid():N}");
+        var tenant = new Tenant { Id = Guid.NewGuid(), Name = $"Recovery {Guid.NewGuid():N}", Slug = $"rec-{Guid.NewGuid():N}", IsActive = true,
+            AdminEmail = email };
+        user.SetTenantId(tenant.Id);
+        context.Set<User>().Add(user);
+        context.Set<Tenant>().Add(tenant);
+        context.Set<TenantMember>().Add(new TenantMember { Id = Guid.NewGuid(), UserId = user.Id, TenantId = tenant.Id, IsActive = true, Role = "Member" });
+        context.Set<UserMfaConfiguration>().Add(new UserMfaConfiguration
+        {
+            UserId = user.Id, IsEnabled = true, IsSetupComplete = true,
+            TotpSecretKey = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes("totp-secret"))),
+            BackupCodes = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes("RESET2345678")))
+        });
+        await context.SaveChangesAsync();
+        return (user.Id, tenant.Id);
+    }
+
+    private static string ExtractToken(EmailMessage message, string marker)
+    {
+        var start = message.PlainTextContent.IndexOf(marker, StringComparison.Ordinal);
+        Assert.True(start >= 0, $"No '{marker}' link in: {message.PlainTextContent}");
+        var token = message.PlainTextContent[(start + marker.Length)..];
+        var end = token.IndexOfAny([' ', '\n', '\r']);
+        return end < 0 ? token : token[..end];
+    }
+
+    private sealed class SpyEmailSender : IEmailSender
+    {
+        private readonly List<EmailMessage> _sent = [];
+
+        public IReadOnlyList<EmailMessage> Sent => _sent;
+
+        public Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
+        {
+            _sent.Add(message);
+            return Task.FromResult<string?>("spy-sender");
+        }
+    }
 }

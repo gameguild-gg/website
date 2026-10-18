@@ -427,7 +427,8 @@ public sealed class AuthenticationCoverageCompletionTests
             NullLogger<MfaAttemptTrackingService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptRepository>(),
-            accessor);
+            accessor,
+            Mock.Of<ITokenRevocationService>());
 
         service.IsLockedOut(new UserMfaConfiguration
         {

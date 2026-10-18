@@ -11,5 +11,6 @@ public class MfaSetupResult
     public string? QrCodeUri { get => QrCodeUrl; set => QrCodeUrl = value; }
     public string? Secret { get; set; }
     public string? SecretKey { get => Secret; set => Secret = value; }
+    public DateTimeOffset ExpiresAt { get; set; }
     public string[]? BackupCodes { get; set; }
 }

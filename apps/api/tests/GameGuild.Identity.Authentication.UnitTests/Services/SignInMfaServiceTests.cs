@@ -174,6 +174,37 @@ public sealed class SignInMfaServiceTests
         Assert.DoesNotContain(result.RefreshToken, serialized, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task SuccessfulCompletionCancelsTheUsersLiveRecoveryRequest()
+    {
+        var fixture = new FlowFixture { LiveRecovery = new MfaRecoveryRequest { Id = Guid.NewGuid(), UserId = "recovery-user", Status = MfaRecoveryRequestStatus.AwaitingConfirmation } };
+        var result = await fixture.CompleteAsync(method: MfaMethod.Totp);
+        Assert.Same(fixture.Issued, result);
+        Assert.Equal(MfaRecoveryRequestStatus.Cancelled, fixture.LiveRecovery.Status);
+        Assert.Equal("recovery-user", fixture.CancelledRecoveryUserId);
+    }
+
+    [Fact]
+    public async Task SuccessfulTotpCompletionCancelsPendingLiveRecoveryRequest()
+    {
+        // Pending (pre-cooldown) is the other live state alongside AwaitingConfirmation covered above.
+        var fixture = new FlowFixture { LiveRecovery = new MfaRecoveryRequest { Id = Guid.NewGuid(), UserId = "recovery-user", Status = MfaRecoveryRequestStatus.Pending } };
+        var result = await fixture.CompleteAsync(method: MfaMethod.Totp);
+        Assert.Same(fixture.Issued, result);
+        Assert.Equal(MfaRecoveryRequestStatus.Cancelled, fixture.LiveRecovery.Status);
+        Assert.Equal("recovery-user", fixture.CancelledRecoveryUserId);
+    }
+
+    [Fact]
+    public async Task FailedVerificationLeavesRecoveryRequestsUntouched()
+    {
+        var fixture = new FlowFixture { VerificationSuccess = false, LiveRecovery = new MfaRecoveryRequest { UserId = "recovery-user", Status = MfaRecoveryRequestStatus.Pending } };
+        var result = await fixture.CompleteAsync();
+        Assert.False(result.Success);
+        Assert.Equal(MfaRecoveryRequestStatus.Pending, fixture.LiveRecovery.Status);
+        Assert.Null(fixture.CancelledRecoveryUserId);
+    }
+
     [Theory]
     [InlineData("missing")]
     [InlineData("different-subject")]
@@ -372,6 +403,9 @@ public sealed class SignInMfaServiceTests
         public Mock<IAuthenticatedSessionIssuer> Issuer { get; } = new(MockBehavior.Strict);
         public Mock<IAuthenticationAuditEventSink> Audit { get; } = new(MockBehavior.Strict);
         public Mock<ISessionMfaEvidenceStore> SessionEvidence { get; } = new(MockBehavior.Strict);
+        public Mock<IMfaRecoveryRequestStore> RecoveryRequests { get; } = new(MockBehavior.Strict);
+        public MfaRecoveryRequest? LiveRecovery { get; set; }
+        public string? CancelledRecoveryUserId { get; private set; }
         public List<string> Trace { get; } = [];
         public List<SignInMfaChallenge> Stored { get; } = [];
         public List<AuthenticationAuditEvent> Audits { get; } = [];
@@ -452,6 +486,17 @@ public sealed class SignInMfaServiceTests
                 Audits.Add(auditEvent);
                 return Task.CompletedTask;
             });
+            RecoveryRequests.Setup(port => port.FindLiveByUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((string userId, CancellationToken cancellationToken) =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return LiveRecovery;
+            });
+            RecoveryRequests.Setup(port => port.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns((CancellationToken cancellationToken) =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                CancelledRecoveryUserId = LiveRecovery?.UserId;
+                return Task.CompletedTask;
+            });
         }
 
         public static string Digest() => Convert.ToHexString(SHA256.HashData(RandomNumberGenerator.GetBytes(32))).ToLowerInvariant();
@@ -461,7 +506,7 @@ public sealed class SignInMfaServiceTests
             Service().CompleteCodeAsync(bearer ?? Bearer, code ?? Code, method, Device, cancellationToken);
         public Task<SignInMfaProof?> ReadSessionAsync(DateTimeOffset authenticatedAt) =>
             Service().ReadSessionProofAsync(VerifiedSubjectId, VerifiedVersion, TenantId, Issued.SessionId, authenticatedAt, CancellationToken.None);
-        private SignInMfaService Service() => new(Subjects.Object, Policy.Object, Store.Object, Mfa.Object, Issuer.Object, Audit.Object, SessionEvidence.Object, Mock.Of<ISignInMfaEnrollmentPort>(MockBehavior.Strict));
+        private SignInMfaService Service() => new(Subjects.Object, Policy.Object, Store.Object, Mfa.Object, Issuer.Object, Audit.Object, SessionEvidence.Object, Mock.Of<ISignInMfaEnrollmentPort>(MockBehavior.Strict), RecoveryRequests.Object);
         public void ApplySubjectFault(string mode)
         {
             switch (mode)

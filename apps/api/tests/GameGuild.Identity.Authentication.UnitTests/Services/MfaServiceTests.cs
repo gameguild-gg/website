@@ -76,10 +76,11 @@ public class MfaServiceTests
         var userId = Guid.NewGuid();
         var expectedQrUri = "otpauth://totp/GameGuild:user@example.com?secret=ABC123";
         var expectedSecret = "ABC123";
+        var expectedExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10);
 
         _totpMfaServiceMock
             .Setup(x => x.SetupTotpAsync(userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((expectedQrUri, expectedSecret));
+            .ReturnsAsync((expectedQrUri, expectedSecret, expectedExpiresAt));
 
         _backupCodeMfaServiceMock
             .Setup(x => x.GenerateBackupCode())
@@ -96,6 +97,7 @@ public class MfaServiceTests
         result.Success.Should().BeTrue();
         result.SecretKey.Should().Be(expectedSecret);
         result.QrCodeUri.Should().Be(expectedQrUri);
+        result.ExpiresAt.Should().Be(expectedExpiresAt);
         result.BackupCodes.Should().HaveCount(10);
         result.Message.Should().Be("MFA setup initiated successfully");
 
@@ -116,7 +118,7 @@ public class MfaServiceTests
         var userId = Guid.NewGuid();
         _totpMfaServiceMock
             .Setup(x => x.SetupTotpAsync(userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(("otpauth://totp/GameGuild:user@example.com?secret=ABC123", "ABC123"));
+            .ReturnsAsync(("otpauth://totp/GameGuild:user@example.com?secret=ABC123", "ABC123", DateTimeOffset.UtcNow.AddMinutes(10)));
         _backupCodeMfaServiceMock.Setup(x => x.GenerateBackupCode()).Returns("ABCD1234");
         _backupCodeMfaServiceMock
             .Setup(x => x.StoreBackupCodesForSetupAsync(userId, It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))

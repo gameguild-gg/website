@@ -156,30 +156,6 @@
         "description": "Permita que recomendações de conteúdo usem suas preferências."
       }
     },
-    "accessibility": {
-      "title": "Acessibilidade",
-      "description": "Ajuste a interface para leitura e movimento mais confortáveis.",
-      "saveFailed": "Não foi possível salvar suas preferências de acessibilidade.",
-      "displayLabel": "Exibição",
-      "highContrast": {
-        "label": "Alto contraste",
-        "description": "Aumente o contraste visual em toda a interface."
-      },
-      "largeText": {
-        "label": "Texto maior",
-        "description": "Aumente o tamanho-base dos textos em todo o GameGuild."
-      },
-      "reducedMotion": {
-        "label": "Reduzir movimento",
-        "description": "Minimize animações e transições não essenciais."
-      },
-      "fontSize": {
-        "label": "Tamanho-base do texto",
-        "description": "Escolha um tamanho entre {min}px e {max}px."
-      }
-    },
-    "notificationsTitle": "Configurações de notificações",
-    "notificationsDescription": "Escolha como você recebe notificações e e-mails.",
     "security": {
       "title": "Segurança e sessões",
       "description": "Revise todas as sessões ativas, nomeie os dispositivos que você reconhece e encerre qualquer atividade suspeita.",
@@ -284,7 +260,7 @@
         },
         "disable": {
           "title": "Desativar MFA",
-          "description": "Informe a senha da conta para desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
+           "description": "Informe a senha da conta para re-verificar e desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
           "passwordLabel": "Senha da conta",
           "cancel": "Cancelar",
           "confirm": "Desativar MFA",
@@ -312,8 +288,59 @@
           "value": "A cada {days} dias",
           "description": "Idade máxima recomendada das chaves de API antes da rotação."
         }
+      },
+      "statusEnabled": "A autenticação de dois fatores está ativada.",
+      "statusDisabled": "A autenticação de dois fatores está desativada.",
+      "setUp": "Configurar autenticação de dois fatores",
+      "qrAlt": "Escaneie este código QR com seu app autenticador.",
+      "manualSecret": "Ou insira este código manualmente no seu app autenticador.",
+      "expiresAt": "Este código expira em {expiresAt}.",
+      "codeLabel": "Código de verificação",
+      "verify": "Verificar e ativar",
+      "backupCodesTitle": "Códigos de backup",
+      "backupCodesOnce": "Cada código de backup pode ser usado apenas uma vez. Guarde-os em um local seguro.",
+      "regenerate": "Gerar novos códigos",
+      "disableTitle": "Desativar autenticação de dois fatores",
+      "disableConfirmCode": "Insira um código de verificação do seu app autenticador, ou um código de backup, para confirmar.",
+      "disable": "Desativar",
+      "recoveryHint": "Use um código de backup para entrar se perder o acesso ao seu app autenticador.",
+      "codesSaved": "Salvei meus códigos",
+      "backupCodesRemaining": "{count, plural, =1 {1 código de backup restante} other {# códigos de backup restantes}}",
+      "backupCodesNone": "Nenhum código de backup restante.",
+      "regenerateConfirm": "Gerar um novo conjunto de códigos de backup? Seus códigos atuais deixarão de funcionar.",
+      "nudge": {
+        "title": "Proteja sua conta — ative a autenticação de dois fatores",
+        "action": "Configurar 2FA",
+        "dismiss": "Dispensar lembrete de dois fatores"
+      },
+      "errors": {
+        "saveFailed": "Não foi possível salvar suas preferências de segurança."
       }
-    }
+    },
+    "accessibility": {
+      "title": "Acessibilidade",
+      "description": "Ajuste a interface para leitura e movimento mais confortáveis.",
+      "saveFailed": "Não foi possível salvar suas preferências de acessibilidade.",
+      "displayLabel": "Exibição",
+      "highContrast": {
+        "label": "Alto contraste",
+        "description": "Aumente o contraste visual em toda a interface."
+      },
+      "largeText": {
+        "label": "Texto maior",
+        "description": "Aumente o tamanho-base dos textos em todo o GameGuild."
+      },
+      "reducedMotion": {
+        "label": "Reduzir movimento",
+        "description": "Minimize animações e transições não essenciais."
+      },
+      "fontSize": {
+        "label": "Tamanho-base do texto",
+        "description": "Escolha um tamanho entre {min}px e {max}px."
+      }
+    },
+    "notificationsTitle": "Configurações de notificações",
+    "notificationsDescription": "Escolha como você recebe notificações e e-mails."
   },
   "connectedAccounts": {
     "title": "Contas conectadas",

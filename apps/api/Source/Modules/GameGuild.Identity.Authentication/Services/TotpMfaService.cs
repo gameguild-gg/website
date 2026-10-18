@@ -24,9 +24,9 @@ public sealed class TotpMfaService(
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     /// <summary>
-    ///     Sets up TOTP-based MFA for a user. Returns QR code URI and secret key.
+    ///     Sets up TOTP-based MFA for a user. Returns QR code URI, secret key, and setup expiry.
     /// </summary>
-    public async Task<(string QrCodeUri, string SecretKey)> SetupTotpAsync(Guid userId, string userEmail, CancellationToken cancellationToken = default)
+    public async Task<(string QrCodeUri, string SecretKey, DateTimeOffset ExpiresAt)> SetupTotpAsync(Guid userId, string userEmail, CancellationToken cancellationToken = default)
     {
         if (!_mfaOptions.Enabled)
         {
@@ -71,7 +71,7 @@ public sealed class TotpMfaService(
 
             logger.LogInformation("TOTP setup successful for user: {UserId}", userId);
 
-            return (qrCodeUri, secretKey);
+            return (qrCodeUri, secretKey, new DateTimeOffset(mfaConfig.SetupExpiresAt.Value, TimeSpan.Zero));
         }
         catch (Exception ex)
         {

@@ -493,13 +493,9 @@ export function createHandlers(config: ResolvedAuthConfig) {
       return buildRedirect(redirectUrl, responseCookies);
     }
 
-    // Recovery codes belong only to this successful enrollment response. finalizeAuth
-    // constructs the JWT/session explicitly and must never receive these as claims.
-    return buildResponse(
-      result.mfaEnrollmentBackupCodes?.length ? { ...session, mfaEnrollmentBackupCodes: result.mfaEnrollmentBackupCodes } : session,
-      200,
-      responseCookies,
-    );
+    // finalizeAuth constructs the JWT/session explicitly; one-time enrollment
+    // artifacts are never persisted or forwarded as claims.
+    return buildResponse(session, 200, responseCookies);
   }
 
   async function handleSignUp(body: Record<string, unknown>, responseCookies: ResponseCookies): Promise<Response> {

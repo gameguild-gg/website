@@ -7,7 +7,5 @@ public interface ISignInMfaChallengeStore
     /// <summary>Call only after actual MFA verification; consume and session issuance share the command transaction.</summary>
     Task<bool> TryConsumeAsync(string tokenHash, SignInMfaChallengeBinding binding, MfaMethod method,
         DateTimeOffset now, CancellationToken cancellationToken);
-    Task<bool> TryBindEnrollmentAsync(string tokenHash, SignInMfaChallengeBinding binding, Guid configurationId,
-        string secretFingerprint, DateTimeOffset now, CancellationToken cancellationToken);
     Task<int> RevokeSubjectAsync(Guid subjectId, DateTimeOffset now, CancellationToken cancellationToken);
 }

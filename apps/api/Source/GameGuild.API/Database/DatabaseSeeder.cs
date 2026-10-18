@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Tenants;
+using GameGuild.Identity.Authentication;
 
 namespace GameGuild.API.Database;
 
@@ -43,7 +44,9 @@ public static class DatabaseSeeder
         await PlatformIdentitySeeder.SeedAsync(
                 dbContext,
                 logger,
-                CreatePlatformIdentitySeedOptions(configuration))
+                CreatePlatformIdentitySeedOptions(configuration),
+                serviceProvider.GetService<IEncryptionService>(),
+                serviceProvider.GetService<IUserMfaConfigurationRepository>())
             .ConfigureAwait(false);
 
         // Seed legacy ASP.NET Identity admin user if UserManager is available.
@@ -67,6 +70,7 @@ public static class DatabaseSeeder
         configuration?["Seed:DefaultTenantSlug"] ?? "gameguild-platform",
         configuration?["Seed:DefaultTenantDescription"] ?? "Default platform tenant for GameGuild administration.",
         configuration?["Seed:AdminTenantRole"] ?? "SystemAdmin",
+        AdminTotpSecret: configuration?["Seed:AdminTotpSecret"],
         ForcePasswordReset: !string.IsNullOrWhiteSpace(configuration?["Seed:AdminPassword"]));
 
     private static async Task SeedRolesAsync(RoleManager<Role> roleManager, ILogger? logger)

@@ -24,6 +24,7 @@ public sealed class AuthenticationAuditForwardingTests
             Mock.Of<IUserMfaConfigurationRepository>(),
             repository.Object,
             new HttpContextAccessor { HttpContext = httpContext },
+            Mock.Of<ITokenRevocationService>(),
             auditEventSink: auditEventSink.Object);
         var userId = Guid.NewGuid();
 
@@ -57,6 +58,7 @@ public sealed class AuthenticationAuditForwardingTests
             Mock.Of<IUserMfaConfigurationRepository>(),
             repository.Object,
             new HttpContextAccessor(),
+            Mock.Of<ITokenRevocationService>(),
             auditEventSink: auditEventSink.Object);
         var userId = Guid.NewGuid();
 
@@ -91,6 +93,7 @@ public sealed class AuthenticationAuditForwardingTests
             configurationRepository.Object,
             attemptRepository.Object,
             new HttpContextAccessor(),
+            Mock.Of<ITokenRevocationService>(),
             auditEventSink: auditEventSink.Object);
         var userId = Guid.NewGuid();
 

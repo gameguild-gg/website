@@ -15,6 +15,7 @@ public sealed class SignInMfaService(
     IAuthenticationAuditEventSink audit,
     ISessionMfaEvidenceStore sessionEvidence,
     ISignInMfaEnrollmentPort enrollment,
+    IMfaRecoveryRequestStore recoveryRequests,
     TimeProvider? timeProvider = null) : ISignInMfaService
 {
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
@@ -70,39 +71,6 @@ public sealed class SignInMfaService(
             requiresRiskStepUp, current.User, decision.TenantId));
     }
 
-    public async Task<MfaSignInEnrollmentResponse> StartEnrollmentAsync(string bearer, DeviceInfo deviceInfo, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ArgumentNullException.ThrowIfNull(deviceInfo);
-        if (!SignInMfaChallengeToken.TryHash(bearer, out var hash)) { return new(); }
-        var challenge = await challenges.FindActiveAsync(hash, _time.GetUtcNow(), cancellationToken).ConfigureAwait(false);
-        if (challenge is null || challenge.Purpose != SignInMfaPurpose.EnrollFactor) { return new(); }
-        await enrollment.AcquireSubjectLockAsync(challenge.SubjectId, cancellationToken).ConfigureAwait(false);
-        challenge = await challenges.FindActiveAsync(hash, _time.GetUtcNow(), cancellationToken).ConfigureAwait(false);
-        if (challenge is null || challenge.Purpose != SignInMfaPurpose.EnrollFactor) { return new(); }
-        var current = await ReadBoundSubjectAsync(challenge, cancellationToken, enrolled: false).ConfigureAwait(false);
-        if (current is null || IsLocked(current)) { return new(); }
-        var setup = await enrollment.StartOrResumeAsync(challenge, current.User.Email, _time.GetUtcNow(), cancellationToken).ConfigureAwait(false);
-        if (setup is null) { return new(); }
-        if (!challenge.EnrollmentConfigurationId.HasValue)
-        {
-            var now = _time.GetUtcNow();
-            var binding = new SignInMfaChallengeBinding(current.User.Id, challenge.TenantId, current.User.TokenVersion,
-                challenge.PolicyFingerprint, SignInMfaPurpose.EnrollFactor);
-            if (!await challenges.TryBindEnrollmentAsync(hash, binding, setup.ConfigurationId, setup.SecretFingerprint, now,
-                cancellationToken).ConfigureAwait(false)) { return new(); }
-            challenge.EnrollmentConfigurationId = setup.ConfigurationId;
-            challenge.EnrollmentSecretFingerprint = setup.SecretFingerprint;
-            challenge.EnrollmentInitializedAt = now;
-        }
-        current = await ReadBoundSubjectAsync(challenge, cancellationToken, enrolled: false).ConfigureAwait(false);
-        if (current is null || IsLocked(current) || !await enrollment.MatchesAsync(challenge, false, _time.GetUtcNow(), cancellationToken).ConfigureAwait(false)) { return new(); }
-        await RecordAsync("Authentication.MfaSignInEnrollmentStarted", challenge, false, MfaMethod.Totp.ToString(), deviceInfo,
-            null, cancellationToken).ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
-        return new() { Success = true, SecretKey = setup.SecretKey, QrCodeUri = setup.QrCodeUri, ExpiresAt = setup.ExpiresAt };
-    }
-
     public async Task<SignInResponse> CompleteCodeAsync(string bearer, string code, MfaMethod method,
         DeviceInfo deviceInfo, CancellationToken cancellationToken)
     {
@@ -148,6 +116,14 @@ public sealed class SignInMfaService(
             return Denied();
         }
         var proof = SignInMfaProof.FromVerifiedChallenge(challenge, method, _time.GetUtcNow());
+        // A successful second factor proves the user still controls their MFA; any live
+        // lost-device recovery request is obsolete and is cancelled before issuance.
+        var liveRecovery = await recoveryRequests.FindLiveByUserAsync(current.User.Id.ToString(), cancellationToken).ConfigureAwait(false);
+        if (liveRecovery is not null)
+        {
+            liveRecovery.Status = MfaRecoveryRequestStatus.Cancelled;
+            await recoveryRequests.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
         var result = await IssueAsync(current.User, challenge.TenantId, deviceInfo, cancellationToken, proof).ConfigureAwait(false);
         if (completingEnrollment)
         {

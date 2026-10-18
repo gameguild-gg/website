@@ -95,3 +95,46 @@ curl -sS -X POST -H "$AUTH" -H "Content-Type: application/json" \
   >/dev/null 2>&1 || true
 
 echo "[garage-init] bucket=${BUCKET} key=${KEY_NAME} key_id=${KEY_ID} provisioned"
+
+# --- Openinary bucket + key (local asset-CDN integration, compose.yaml) ---
+# Second bucket so the Openinary monolith owns its object layout; the gameguild
+# API only talks to Openinary's HTTP API, never to this bucket directly.
+OPEN_BUCKET="${OPENINARY_STORAGE_BUCKET:-openinary}"
+OPEN_KEY_ID="${OPENINARY_STORAGE_ACCESS_KEY_ID:-GK444444444444444444444444}"
+OPEN_KEY_SECRET="${OPENINARY_STORAGE_SECRET_ACCESS_KEY:-3333333333333333333333333333333333333333333333333333333333333333}"
+OPEN_KEY_NAME="openinary"
+
+echo "[garage-init] creating bucket '${OPEN_BUCKET}'"
+RESP=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" \
+  "${API_BASE}/CreateBucket" \
+  -d "{\"globalAlias\":\"${OPEN_BUCKET}\"}" 2>/dev/null || true)
+OPEN_BUCKET_ID=$(printf '%s' "$RESP" \
+  | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([0-9a-f]*\)".*/\1/p' \
+  | head -n1)
+
+if [ -z "$OPEN_BUCKET_ID" ]; then
+  echo "[garage-init] bucket may already exist; looking up by globalAlias"
+  OPEN_BUCKET_ID=$(curl -fsS -H "$AUTH" \
+    "${API_BASE}/GetBucketInfo?globalAlias=${OPEN_BUCKET}" 2>/dev/null \
+    | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([0-9a-f]*\)".*/\1/p' \
+    | head -n1)
+fi
+
+if [ -z "$OPEN_BUCKET_ID" ]; then
+  echo "[garage-init] could not resolve bucket id for ${OPEN_BUCKET}" >&2
+  exit 1
+fi
+
+echo "[garage-init] importing key '${OPEN_KEY_NAME}' (id=${OPEN_KEY_ID})"
+curl -sS -X POST -H "$AUTH" -H "Content-Type: application/json" \
+  "${API_BASE}/ImportKey" \
+  -d "{\"accessKeyId\":\"${OPEN_KEY_ID}\",\"secretAccessKey\":\"${OPEN_KEY_SECRET}\",\"name\":\"${OPEN_KEY_NAME}\"}" \
+  >/dev/null 2>&1 || true
+
+echo "[garage-init] granting ${OPEN_KEY_NAME} RWO on ${OPEN_BUCKET} (id=${OPEN_BUCKET_ID})"
+curl -sS -X POST -H "$AUTH" -H "Content-Type: application/json" \
+  "${API_BASE}/AllowBucketKey" \
+  -d "{\"accessKeyId\":\"${OPEN_KEY_ID}\",\"bucketId\":\"${OPEN_BUCKET_ID}\",\"permissions\":{\"read\":true,\"write\":true,\"owner\":true}}" \
+  >/dev/null 2>&1 || true
+
+echo "[garage-init] bucket=${OPEN_BUCKET} key=${OPEN_KEY_NAME} key_id=${OPEN_KEY_ID} provisioned"

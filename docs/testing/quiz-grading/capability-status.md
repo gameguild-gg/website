@@ -1,7 +1,9 @@
 # Quiz grading capability status
 
-Reviewed baseline: 2026-10-17  
-Code baseline: `3cace6a45656` plus the validation-program worktree  
+Reviewed baseline: 2026-10-17
+
+Code baseline: `3cace6a45656` plus the validation-program worktree
+
 Catalog size: 44 cases (9 review, 18 question type, 10 lifecycle/access, 7
 failure/recovery)
 

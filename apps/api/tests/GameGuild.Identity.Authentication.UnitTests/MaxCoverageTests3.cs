@@ -1194,6 +1194,7 @@ public sealed class MfaAttemptTrackingCoverageTests
     private readonly Mock<IUserMfaConfigurationRepository> _mfaConfigRepo = new();
     private readonly Mock<IMfaAttemptRepository> _mfaAttemptRepo = new();
     private readonly Mock<IHttpContextAccessor> _httpAccessor = new();
+    private readonly Mock<ITokenRevocationService> _tokenRevocation = new();
     private readonly MfaAttemptTrackingService _sut;
     private readonly Guid _userId = Guid.NewGuid();
 
@@ -1202,7 +1203,8 @@ public sealed class MfaAttemptTrackingCoverageTests
         _httpAccessor.Setup(h => h.HttpContext).Returns(new DefaultHttpContext());
         _sut = new MfaAttemptTrackingService(
             Mock.Of<ILogger<MfaAttemptTrackingService>>(),
-            _mfaConfigRepo.Object, _mfaAttemptRepo.Object, _httpAccessor.Object);
+            _mfaConfigRepo.Object, _mfaAttemptRepo.Object, _httpAccessor.Object,
+            _tokenRevocation.Object);
     }
 
     [Fact]
@@ -1263,6 +1265,67 @@ public sealed class MfaAttemptTrackingCoverageTests
             .ReturnsAsync(config);
 
         (await _sut.DisableMfaAsync(_userId)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DisableMfa_RevokesAllTokens_EvenWhenSessionTerminationDisabled()
+    {
+        var config = new UserMfaConfiguration
+        {
+            Id = Guid.NewGuid(), UserId = _userId, IsEnabled = true,
+            PreferredMethod = MfaMethod.Totp
+        };
+        _mfaConfigRepo.Setup(r => r.GetByUserIdAsync(_userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(config);
+        _mfaConfigRepo.Setup(r => r.UpdateAsync(It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(config);
+        var sessions = new Mock<ISessionManagementService>();
+        var service = new MfaAttemptTrackingService(
+            Mock.Of<ILogger<MfaAttemptTrackingService>>(),
+            _mfaConfigRepo.Object, _mfaAttemptRepo.Object, _httpAccessor.Object,
+            _tokenRevocation.Object,
+            sessionOptions: new SessionOptions { TerminateSessionsOnMfaDisable = false },
+            sessionManagementService: sessions.Object);
+
+        (await service.DisableMfaAsync(_userId)).Should().BeTrue();
+
+        _tokenRevocation.Verify(r => r.RevokeAllUserTokensAsync(
+            _userId, It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        sessions.Verify(s => s.TerminateAllUserSessionsAsync(
+            It.IsAny<Guid>(), It.IsAny<SessionTerminationReason>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DisableMfa_RevokesAllTokens_AndTerminatesSessions_WhenOptionEnabled()
+    {
+        var config = new UserMfaConfiguration
+        {
+            Id = Guid.NewGuid(), UserId = _userId, IsEnabled = true,
+            PreferredMethod = MfaMethod.Totp
+        };
+        _mfaConfigRepo.Setup(r => r.GetByUserIdAsync(_userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(config);
+        _mfaConfigRepo.Setup(r => r.UpdateAsync(It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(config);
+        var sessions = new Mock<ISessionManagementService>();
+        sessions.Setup(s => s.TerminateAllUserSessionsAsync(
+            It.IsAny<Guid>(), It.IsAny<SessionTerminationReason>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+        var service = new MfaAttemptTrackingService(
+            Mock.Of<ILogger<MfaAttemptTrackingService>>(),
+            _mfaConfigRepo.Object, _mfaAttemptRepo.Object, _httpAccessor.Object,
+            _tokenRevocation.Object,
+            sessionOptions: new SessionOptions { TerminateSessionsOnMfaDisable = true },
+            sessionManagementService: sessions.Object);
+
+        (await service.DisableMfaAsync(_userId)).Should().BeTrue();
+
+        _tokenRevocation.Verify(r => r.RevokeAllUserTokensAsync(
+            _userId, It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        sessions.Verify(s => s.TerminateAllUserSessionsAsync(
+            _userId, SessionTerminationReason.MfaDisabled, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

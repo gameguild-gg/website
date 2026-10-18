@@ -16,6 +16,30 @@ export class AuthMultiFactorModule {
   constructor(private readonly client: ApiClient) {}
 
   /**
+   * Reset a user's multi-factor authentication: clears MFA secrets, revokes all
+   * issued tokens, terminates sessions, and cancels any live lost-device recovery request.
+   *
+   * Disables a user's multi-factor authentication through the audited shared disable path and cancels any live recovery request. Requires system administration or tenant administration of the user's tenant.
+   */
+  async postAdminUsersMfaReset(userId: string): Promise<Result<Types.IdentityAuthenticationAdminResetUserMfaOutput, ApiError>> {
+    const url = `/v1/admin/users/${userId}/mfa:reset`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationAdminResetUserMfaOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Get current user's MFA configuration
    *
    * Retrieves the current user's multi-factor authentication configuration and enabled methods.
@@ -41,7 +65,7 @@ export class AuthMultiFactorModule {
   /**
    * Disable MFA for the current user
    *
-   * Disables multi-factor authentication for the current user after password verification.
+   * Disables multi-factor authentication for the current user after password re-verification (issue #244).
    */
   async postAuthMfaDisable(body: Types.IdentityAuthenticationDisableMfaInput): Promise<Result<Types.IdentityAuthenticationMfaSuccessOutput, ApiError>> {
     const url = '/v1/auth/mfa:disable';
@@ -213,6 +237,93 @@ export class AuthMultiFactorModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationMfaSuccessOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Complete a recovery using the confirmation token from the second email; disables MFA.
+   *
+   * Consumes the single-use confirmation token and disables multi-factor authentication for the recovered account. Denials are generic and never reveal token state.
+   */
+  async postAuthMfaRecoveryConfirm(
+    body: Types.IdentityAuthenticationMfaRecoveryConfirmInput,
+  ): Promise<Result<Types.IdentityAuthenticationMfaRecoveryConfirmOutput, ApiError>> {
+    const url = '/v1/auth/mfa/recovery:confirm';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationMfaRecoveryConfirmInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaRecoveryConfirmOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Continue a recovery after the cooling-off window using the request token from the first email.
+   *
+   * Exchanges the recovery request token (after the cooling-off window) for a confirmation email. Denials are generic and never reveal token state.
+   */
+  async postAuthMfaRecoveryContinue(
+    body: Types.IdentityAuthenticationMfaRecoveryContinueInput,
+  ): Promise<Result<Types.IdentityAuthenticationMfaRecoveryContinueOutput, ApiError>> {
+    const url = '/v1/auth/mfa/recovery:continue';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationMfaRecoveryContinueInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaRecoveryContinueOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Start a lost-MFA-device recovery for an email address.
+   *
+   * Opens a lost-MFA-device recovery request for an email address and sends a recovery email with a cooling-off period. Always returns a generic success response to prevent user enumeration.
+   */
+  async postAuthMfaRecoveryRequest(
+    body: Types.IdentityAuthenticationMfaRecoveryRequestInput,
+  ): Promise<Result<Types.IdentityAuthenticationMfaRecoveryRequestOutput, ApiError>> {
+    const url = '/v1/auth/mfa/recovery:request';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationMfaRecoveryRequestInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaRecoveryRequestOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

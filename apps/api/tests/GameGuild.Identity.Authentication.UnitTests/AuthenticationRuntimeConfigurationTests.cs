@@ -72,6 +72,7 @@ public sealed class AuthenticationRuntimeConfigurationTests
             configurationRepository.Object,
             attemptRepository.Object,
             new HttpContextAccessor(),
+            Mock.Of<ITokenRevocationService>(),
             options);
         var userId = Guid.NewGuid();
         var configuration = new UserMfaConfiguration { UserId = userId, FailedAttempts = 1 };
@@ -102,6 +103,7 @@ public sealed class AuthenticationRuntimeConfigurationTests
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptRepository>(),
             new HttpContextAccessor { HttpContext = context },
+            Mock.Of<ITokenRevocationService>(),
             new MfaOptions { Enabled = false });
 
         (await service.IsMfaRequiredByPolicyAsync(Guid.NewGuid())).Should().BeFalse();

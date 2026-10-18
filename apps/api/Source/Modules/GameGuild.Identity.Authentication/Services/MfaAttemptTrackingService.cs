@@ -14,6 +14,7 @@ public sealed class MfaAttemptTrackingService(
     IUserMfaConfigurationRepository mfaConfigRepository,
     IMfaAttemptRepository mfaAttemptRepository,
     IHttpContextAccessor httpContextAccessor,
+    ITokenRevocationService tokenRevocationService,
     MfaOptions? mfaOptions = null,
     SessionOptions? sessionOptions = null,
     ISessionManagementService? sessionManagementService = null,
@@ -162,6 +163,13 @@ public sealed class MfaAttemptTrackingService(
 
             await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
 
+            // Unconditional: dropping the second factor must invalidate every issued token,
+            // regardless of the session-termination option below.
+            await tokenRevocationService.RevokeAllUserTokensAsync(
+                userId,
+                "MFA disabled",
+                cancellationToken).ConfigureAwait(false);
+
             if (_sessionOptions.TerminateSessionsOnMfaDisable && sessionManagementService is not null)
             {
                 await sessionManagementService.TerminateAllUserSessionsAsync(
@@ -178,7 +186,7 @@ public sealed class MfaAttemptTrackingService(
         {
             logger.LogError(ex, "Error disabling MFA for user: {UserId}", userId);
 
-            return false;
+            throw;
         }
     }
 

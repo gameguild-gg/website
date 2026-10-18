@@ -127,7 +127,7 @@ public sealed class BackupCodeRecoverySecurityTests
 
     private static MfaAttemptTrackingService CreateTracking(IUserMfaConfigurationRepository repository) =>
         new(NullLogger<MfaAttemptTrackingService>.Instance, repository, new Mock<IMfaAttemptRepository>().Object,
-            new HttpContextAccessor());
+            new HttpContextAccessor(), Mock.Of<ITokenRevocationService>());
 
     private static BackupCodeMfaService CreateService(UserMfaConfiguration configuration)
     {
