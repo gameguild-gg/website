@@ -920,6 +920,9 @@ internal sealed class DacPermissionOperationFilter : IOperationFilter
                     });
                     break;
                 }
+                default:
+                    // Routing and other non-permission attributes add no DAC requirement.
+                    break;
             }
         }
     }

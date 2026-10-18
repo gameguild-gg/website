@@ -86,6 +86,11 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - name: Verify repository policy
         run: bash scripts/ci/verify-repository-policy.sh
+      - name: Verify grading and JavaScript runtime contracts
+        run: |
+          node tools/emception/grading/build.mjs
+          node --test apps/web/scripts/sync-javascript-runtime.test.mjs
+          node --test scripts/ci/tests/dev-runtime-registration.test.mjs scripts/ci/tests/lint-budget.test.mjs
       - name: Upload policy evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

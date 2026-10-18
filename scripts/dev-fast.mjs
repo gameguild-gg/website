@@ -9,13 +9,16 @@ import { resolveDevelopmentDataProtectionEnvironment } from "./dev-data-protecti
 import { registerDevProcess } from "./dev-runtime.mjs";
 import { resolvePnpmProcess } from "../apps/web/scripts/pnpm-process.mjs";
 
-registerDevProcess("dev-fast");
+await registerDevProcess("dev-fast");
 
 const API_PORT = 8080;
 const API_HEALTH_URL = `http://localhost:${API_PORT}/health`;
 const DEFAULT_API_STARTUP_TIMEOUT_MS = 10 * 60 * 1000;
 const CHILD_SHUTDOWN_GRACE_MS = 4_000;
 const runtimeEnv = process.env;
+// Resolve once before starting children; spawning remains synchronous so every
+// caller can attach lifecycle listeners immediately to the returned child.
+const pnpmProcess = await resolvePnpmProcess([], { env: runtimeEnv });
 
 function loadEnv(file) {
   const env = {};
@@ -35,7 +38,7 @@ function loadEnv(file) {
 function run(cmd, args, options = {}) {
   const invocation =
     cmd === "pnpm"
-      ? resolvePnpmProcess(args, { env: runtimeEnv })
+      ? { command: pnpmProcess.command, args: [...pnpmProcess.args, ...args] }
       : { command: cmd, args };
   return spawn(invocation.command, invocation.args, {
     // The orchestrator owns Ctrl+C. Detached children must not read from the

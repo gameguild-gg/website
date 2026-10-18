@@ -6,11 +6,13 @@
 
 import { createRequire } from "node:module";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { gzipSync } from "node:zlib";
+import { gzip } from "node:zlib";
+import { promisify } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const compress = promisify(gzip);
 
 /**
  * Copy the exact installed QuickJS runtime, verify its WASM magic bytes, and
@@ -29,7 +31,7 @@ export async function syncJavaScriptRuntime(destination = path.join(webRoot, "pu
   }
   await mkdir(destination, { recursive: true });
   const output = path.join(destination, "quickjs-asyncify.wasm.gz");
-  await writeFile(output, gzipSync(bytes));
+  await writeFile(output, await compress(bytes));
   return { source, output, uncompressedBytes: bytes.length };
 }
 
