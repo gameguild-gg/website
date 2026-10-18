@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - develop
+      - "feature/**"
   workflow_dispatch:
     inputs:
       publish_packages:
