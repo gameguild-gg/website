@@ -1,3 +1,5 @@
+/** @file Register and discover repository-scoped development processes and remove their registrations. */
+
 import { createHash } from "node:crypto";
 import { readFileSync, unlinkSync } from "node:fs";
 import { mkdir, readFile, readdir, realpath, rename, unlink, writeFile } from "node:fs/promises";

@@ -1,10 +1,12 @@
+/** @file Enforce checked-in suppression-count budgets for the listed packages. */
+
 /**
  * Suppression-count ratchet: fails if any package's total suppressed-violation
  * count grew vs the checked-in budget (lint-budgets.json).
  *
  * Usage:
  *   node scripts/lint-budget.mjs            # check mode (exit 1 on growth)
- *   node scripts/lint-budget.mjs --update   # rewrite lint-budgets.json with current counts
+ *   node scripts/lint-budget.mjs --update   # rewrite lint-budgets.json with current counts.
  */
 import { readFile, writeFile, access } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';

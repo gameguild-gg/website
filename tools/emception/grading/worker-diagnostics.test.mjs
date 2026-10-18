@@ -1,3 +1,5 @@
+/** @file Verify stable worker failure labels and exclusion of raw diagnostic details. */
+
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFile } from 'node:child_process';

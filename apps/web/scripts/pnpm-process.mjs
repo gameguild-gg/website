@@ -81,10 +81,12 @@ async function findWindowsExecutable(env, nodePath, fileExists) {
 /**
  * Resolve the command and argument vector that spawn a pnpm process without a
  * shell on the current platform.
- *
  * @param {string[]} args - Literal pnpm arguments forwarded by the caller.
  * @param {{platform?: NodeJS.Platform, nodePath?: string, env?: NodeJS.ProcessEnv, fileExists?: (candidate: string) => boolean | Promise<boolean>}} [options] - Injectable environment for testing.
  * @returns {Promise<{command: string, args: string[]}>} The spawn target for pnpm.
+ * @throws {Error} When no supported Windows pnpm entry is found; injected probe failures propagate.
+ * @example
+ * const target = await resolvePnpmProcess(['--version']);
  */
 export async function resolvePnpmProcess(args, options) {
   const { platform, nodePath, env, fileExists } = resolveOptions(options);
