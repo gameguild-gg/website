@@ -2,8 +2,9 @@
 
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
-const { readFileSync } = require('node:fs');
+const { mkdtempSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
 const { createRequire } = require('node:module');
+const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 const {
@@ -372,4 +373,102 @@ test('all partitions retain every source exactly once and cannot certify a full 
   assert.equal(qualifiedAnalysisStatus({ ...clean, partition: { count: 1 } }, 0).completeAnalysisCertified, true);
   assert.equal(qualifiedAnalysisStatus({ ...clean, partition: { count: 1 }, diagnosticSample: true }, 0)
     .completeAnalysisCertified, false);
+});
+
+test('Lodash import lookup ignores inherited object names and retains real chain detection', () => {
+  const run = (source) => lint('lodash-fp/no-chain', 'eslint-plugin-lodash-fp', 'no-chain', source);
+  if (repaired) assert.deepEqual(run('toString();'), []);
+  else assert.throws(() => run('toString();'), /info\.name\.replace is not a function/);
+  assert.deepEqual(run('function custom() {}\ncustom();'), []);
+  const messages = run('import _ from "lodash";\n_.chain([]);');
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].message, /Unallowed use of chain operations/);
+});
+
+test('semantic-tag preference handles non-string roles and retains genuine accessibility diagnostics', () => {
+  const run = (source) => lint('jsx-a11y/prefer-tag-over-role', 'eslint-plugin-jsx-a11y',
+    'prefer-tag-over-role', source, false, true);
+  if (repaired) assert.deepEqual(run('const view = <div role={1} />;'), []);
+  else assert.throws(() => run('const view = <div role={1} />;'), /propValue\.lastIndexOf is not a function/);
+  assert.deepEqual(run('const view = <button role="button" />;'), []);
+  const messages = run('const view = <div role="button" />;');
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].message, /Use <button>/);
+  const invalid = lint('jsx-a11y/aria-role', 'eslint-plugin-jsx-a11y', 'aria-role',
+    'const view = <div role="invented-role" />;', false, true);
+  assert.equal(invalid.length, 1, 'The separate invalid-role diagnostic remains enabled and effective');
+});
+
+test('JSX prop sorting retains diagnostics without overlapping fixes and preserves safe fixes', async () => {
+  const ruleId = 'perfectionist/sort-jsx-props';
+  const profile = repositoryProfile(await projection());
+  const linter = new Linter();
+  linter.defineRule(ruleId, engineRequire('eslint-plugin-perfectionist').rules['sort-jsx-props']);
+  linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
+  const check = (source, filename = 'contract.tsx') => linter.verify(source, {
+    parser: 'engine-typescript', parserOptions: { ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: { jsx: true } },
+    settings: profile.baseConfig.settings, rules: { [ruleId]: profile.baseConfig.rules[ruleId] },
+  }, { filename });
+  const cases = JSON.parse(readFileSync(path.join(__dirname, 'crash-cases.json'), 'utf8'));
+  const recorded = cases.find((row) => row.ruleId === ruleId);
+  const bytes = readFileSync(path.join('/src', recorded.file));
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), recorded.sha256);
+  if (!repaired) assert.throws(() => check(bytes.toString('utf8'), recorded.file), /Fix objects must not be overlapped in a report/);
+  else {
+    const messages = check(bytes.toString('utf8'), recorded.file);
+    assert(messages.some((message) => message.ruleId === ruleId && message.fix === undefined),
+      'An unsafe overlapping autofix must not remove its ordering diagnostic');
+    assert(messages.every((message) => message.fatal !== true));
+  }
+  assert.deepEqual(check('const view = <View a={1} z={0} />;'), []);
+  const safe = check('const view = <View z={0} a={1} />;');
+  assert.equal(safe.length, 1);
+  assert(safe[0].fix, 'A normal non-overlapping ordering fix remains available');
+});
+
+test('engine module origins are pinned while real cycles and TypeScript alias namespaces remain detectable', async (context) => {
+  const projected = await projection();
+  const profile = repositoryProfile(projected);
+  const modules = projected.engineModules;
+  assert.equal(profile.resolvePluginsRelativeTo, '/');
+  assert.equal(profile.baseConfig.parser, modules['@typescript-eslint/parser'].entry);
+  assert.equal(modules['@typescript-eslint/parser'].version, '7.18.0');
+  assert.equal(modules['eslint-import-resolver-typescript'].version, '3.6.1');
+  assert.equal(modules['eslint-import-resolver-node'].version, '0.3.9');
+  assert.deepEqual(Object.keys(profile.baseConfig.settings['import/resolver']).sort(),
+    [modules['eslint-import-resolver-node'].entry, modules['eslint-import-resolver-typescript'].entry].sort());
+  const { ESLint } = engineRequire('eslint');
+  const engine = new ESLint(profile);
+  const vue = await engine.calculateConfigForFile('/src/contracts/example.vue');
+  assert.equal(vue.parser, modules['vue-eslint-parser'].entry);
+  assert.equal(vue.parserOptions.parser, modules['@typescript-eslint/parser'].entry);
+  const directory = mkdtempSync(path.join(tmpdir(), 'codacy-import-contract-'));
+  context.after(() => rmSync(directory, { recursive: true, force: true }));
+  const a = 'import { valueB } from "./b.mjs"; export const valueA = valueB;';
+  const b = 'import { valueA } from "./a.mjs"; export const valueB = valueA;';
+  writeFileSync(path.join(directory, 'a.mjs'), a);
+  writeFileSync(path.join(directory, 'b.mjs'), b);
+  writeFileSync(path.join(directory, 'exports.ts'), 'export const present = 1;');
+  writeFileSync(path.join(directory, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: { baseUrl: '.', paths: { '@fixture/*': ['./*'] } },
+  }));
+  const settings = { ...profile.baseConfig.settings,
+    'import/resolver': Object.fromEntries(Object.entries(profile.baseConfig.settings['import/resolver'])
+      .map(([entry, options]) => [entry, entry === modules['eslint-import-resolver-typescript'].entry
+        ? { ...options, project: path.join(directory, 'tsconfig.json') } : options])),
+  };
+  const linter = new Linter();
+  for (const rule of ['namespace', 'no-cycle']) {
+    linter.defineRule(`import/${rule}`, engineRequire('eslint-plugin-import').rules[rule]);
+  }
+  const parserPath = modules['@typescript-eslint/parser'].entry;
+  linter.defineParser(parserPath, engineRequire(parserPath));
+  const check = (source, filename, ruleId) => linter.verify(source, {
+    parser: parserPath, parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+    settings, rules: { [ruleId]: 'error' },
+  }, { filename: path.join(directory, filename) });
+  assert(check(a, 'a.mjs', 'import/no-cycle').some((message) => message.ruleId === 'import/no-cycle'));
+  const missing = check('import * as api from "@fixture/exports"; api.missing();', 'entry.ts', 'import/namespace');
+  assert(missing.some((message) => message.ruleId === 'import/namespace' && /not found/u.test(message.message)));
+  assert.deepEqual(check('import * as api from "@fixture/exports"; api.present;', 'entry.ts', 'import/namespace'), []);
 });

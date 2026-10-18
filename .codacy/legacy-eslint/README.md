@@ -25,6 +25,13 @@ versions and file hashes must therefore match independently in hosted CI.
   its literal text for the diagnostic and retain the allowed Text boundary.
 - Flow type imports: a namespace specifier cannot be converted into an inline
   named type import. Retain the diagnostic without the invalid autofix.
+- Lodash FP: use a dictionary without inherited object properties for imports.
+  Calls such as `toString()` are not Lodash imports; genuine chains remain
+  detectable.
+- JSX accessibility: semantic-tag suggestions require a statically known string
+  role. Retain string-role suggestions and separate invalid-role diagnostics.
+- Perfectionist JSX sorting: retain the ordering diagnostic when generated fix
+  ranges overlap. Normal non-overlapping fixes remain available.
 
 All repaired package versions, complete original file hashes and unique repair
 anchors must match before any image file is written. The original and repaired
@@ -95,9 +102,21 @@ A separate diagnostic matrix entry repeats eight actual files from the first
 incomplete pass, requiring their immutable input hashes. It retains only known
 exception reason codes and dependency frames, with no raw messages or source
 frames. This sample cannot certify repository coverage and its counts overlap
-the full partitions. Remaining failures in Import, Lodash FP, Perfectionist and
-JSX accessibility still require diagnosis; the three additional repairs have
-not been accepted until their hosted original/repaired contracts pass.
+the full partitions. The e30d4a35 diagnostic still failed in Import, Lodash FP,
+Perfectionist and JSX accessibility. The following candidate changes require
+their own hosted acceptance; a passing earlier contract suite does not certify
+these changes.
+
+The selected-source pass must resolve its plugins, parsers and import resolvers
+from the pinned engine. Installing workspace dependencies on the hosted runner
+must not silently substitute them for the engine's modules. Source-qualified
+e30d4a35 failures entered the workspace's native `unrs-resolver`, which is absent
+from the pinned image dependency lock. The candidate uses an explicit plugin
+resolution root and hash/version-checked TypeScript/Vue parser and Node/TypeScript
+resolver entrypoints. Existing resolver options, extension mappings, context
+overrides and all rules remain present. Hosted controls require a real import
+cycle and a missing export through a TypeScript alias to remain detectable,
+with a valid alias access accepted.
 
 The hosted pass requires the tracked working tree to match its checkout after
 dependency installation and again after analysis. It records the SHA256 and

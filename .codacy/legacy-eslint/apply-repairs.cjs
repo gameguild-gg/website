@@ -75,6 +75,39 @@ const repairs = [
         "        fix(fixer) {\n          if (node.specifiers.some(specifier => specifier.type === 'ImportNamespaceSpecifier')) return null;"],
     ],
   },
+  {
+    package: 'eslint-plugin-lodash-fp',
+    version: '2.2.0-a1',
+    file: 'rules/core/enhance.js',
+    sha256: '96e3be11a9afe9adc24ad12452d9207e414084286b6d68cc215062b02825ba5e',
+    repairedSha256: '70c44a9554ec4d9f4334ed9d5dd75d04724877f8db453da1314067a27200afc5',
+    replacements: [
+      ['const imports = {};', 'const imports = Object.create(null);'],
+    ],
+  },
+  {
+    package: 'eslint-plugin-jsx-a11y',
+    version: '6.10.2',
+    file: 'lib/rules/prefer-tag-over-role.js',
+    sha256: '5e0a48198a6b43d3b315de4cbaa13e85f10cea3d3c893bd0609adb1757eba1e2',
+    repairedSha256: '2301c5e5892f8d583d9ca56e9f878c591ee25a516ab454815d1cc0b90ea343bf',
+    replacements: [
+      ['  if (!propValue) {', "  if (typeof propValue !== 'string' || !propValue) {"],
+    ],
+  },
+  {
+    package: 'eslint-plugin-perfectionist',
+    version: '3.2.0',
+    file: 'dist/rules/sort-jsx-props.js',
+    sha256: '76884ff384c8b3b7076908bfb25146b19556af3a0ba9a118e299fb352d5b5a30',
+    repairedSha256: '40ba96b36246b78097792cec6c60fc457bc814f613e160c33175c33cfccbed88',
+    replacements: [
+      ['                    return makeFixes.makeFixes(',
+        '                    const fixes = makeFixes.makeFixes('],
+      ['                      sourceCode,\n                    )',
+        '                      sourceCode,\n                    )\n                    const ordered = [...fixes].sort((a, b) => a.range[0] - b.range[0])\n                    if (ordered.some((fix, index) => index > 0 && ordered[index - 1].range[1] > fix.range[0])) return null\n                    return fixes'],
+    ],
+  },
 ];
 
 function digest(value) {

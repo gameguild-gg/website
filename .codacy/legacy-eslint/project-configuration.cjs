@@ -54,6 +54,24 @@ function expectedRuleOptions(parameters) {
   return result;
 }
 
+function pinnedEngineModules(engineRequire) {
+  const modules = [
+    ['@typescript-eslint/parser', '7.18.0', 'dist/index.js', 'c4c3abe0795891ca0deccad6ebc62c95505a3ea5e19eb42ee265d9a1a7e2237b'],
+    ['vue-eslint-parser', '9.4.3', 'index.js', 'aaee28693940476c8c399d13a9e8291d4fba6b5b82e4aba2c3980614c5b4a5e8'],
+    ['eslint-import-resolver-node', '0.3.9', 'index.js', 'cfd0e50d626259ad3c081fa02379493bb48eef0230363d12c6029b15db5869be'],
+    ['eslint-import-resolver-typescript', '3.6.1', 'lib/index.cjs', '92c7061073fac02ddfc55b469a243d180496b107c9ebc9c3e431834df9a43fe4'],
+  ];
+  return Object.fromEntries(modules.map(([name, version, entry, sha256]) => {
+    const filename = engineRequire.resolve(name);
+    assert.equal(filename, `/node_modules/${name}/${entry}`, `${name}: unexpected engine module origin`);
+    const manifest = JSON.parse(readFileSync(`/node_modules/${name}/package.json`, 'utf8'));
+    assert.equal(manifest.version, version, `${name}: engine version drift`);
+    assert.equal(createHash('sha256').update(readFileSync(filename)).digest('hex'), sha256,
+      `${name}: engine entrypoint drift`);
+    return [name, { version, entry: filename, sha256 }];
+  }));
+}
+
 async function createProjection(snapshot, catalog, engineRequire) {
   const { withDefaultParameters } = engineRequire('codacy-seed/dist/src/withDefaultParameters.js');
   const { createEslintConfig } = engineRequire('/dist/src/configCreator.js');
@@ -78,11 +96,13 @@ async function createProjection(snapshot, catalog, engineRequire) {
     assert.deepEqual(rules.get(ruleId), expectedRuleOptions(pattern.parameters),
       `${pattern.patternId}: projected options differ from the effective input and catalog defaults`);
   }
+  const engineModules = pinnedEngineModules(engineRequire);
 
   return {
     input,
     options,
     files,
+    engineModules,
     receipt: {
       eslintVersion: engineRequire('eslint/package.json').version,
       catalogJsonSha256: createHash('sha256').update(JSON.stringify(catalog)).digest('hex'),
@@ -97,6 +117,7 @@ async function createProjection(snapshot, catalog, engineRequire) {
       rawParameters: snapshot.patterns.reduce((count, row) => count + row.parameters.length, 0),
       rawPatternIdentitySha256: snapshot.patternIdentitySha256,
       allRuleIdsAndOptionsMatched: true,
+      engineModules,
       inheritedIgnorePatterns: options.baseConfig.ignorePatterns,
       activeScannerChanged: false,
       scope: 'Complete received-pattern projection using the pinned catalog and wrapper. Inherited exclusions and overrides are recorded, not certified as adequate file coverage. Cloud input bytes, contexts and destination closure remain unverified.',
@@ -127,21 +148,46 @@ function createRepositoryProfile(projection, nodeTargets) {
   assert(root, 'The root Node engine declaration is required');
   const settings = projection.options.baseConfig.settings;
   const scopedTargets = nodeTargets.filter((target) => target.packageJson !== 'package.json');
+  const modules = projection.engineModules;
+  const parser = (name) => {
+    assert(modules[name], `Unpinned parser: ${name}`);
+    return modules[name].entry;
+  };
+  const importResolvers = Object.fromEntries(Object.entries(settings['import/resolver']).map(([name, options]) => {
+    const module = modules[`eslint-import-resolver-${name}`];
+    assert(module, `Unpinned import resolver: ${name}`);
+    return [module.entry, options];
+  }));
+  const parserOverrides = projection.options.baseConfig.overrides
+    .filter((override) => override.parser || override.parserOptions?.parser)
+    .map((override) => ({
+      files: override.files,
+      ...(override.excludedFiles ? { excludedFiles: override.excludedFiles } : {}),
+      ...(override.parser ? { parser: parser(override.parser) } : {}),
+      ...(override.parserOptions?.parser ? { parserOptions: { parser: parser(override.parserOptions.parser) } } : {}),
+    }));
   return {
     ...projection.options,
+    resolvePluginsRelativeTo: '/',
     // Force inclusion through a supported config-file property. Do not depend
     // on the programmatic ignore:false option, which .eslintrc cannot declare.
     baseConfig: {
       ...projection.options.baseConfig,
       ignorePatterns: ['!**/*'],
       noInlineConfig: true,
-      settings: { ...settings, node: { ...settings.node, version: root.version } },
+      parser: parser(projection.options.baseConfig.parser),
+      settings: { ...settings,
+        'import/resolver': importResolvers,
+        'import/parsers': Object.fromEntries(Object.entries(settings['import/parsers'])
+          .map(([name, extensions]) => [parser(name), extensions])),
+        node: { ...settings.node, version: root.version } },
       overrides: [
         ...projection.options.baseConfig.overrides,
         ...scopedTargets.map((target) => ({
           files: [`${target.directory}/**/*`],
           settings: { node: { ...settings.node, version: target.version } },
         })),
+        ...parserOverrides,
       ],
     },
   };
