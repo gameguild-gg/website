@@ -5,8 +5,28 @@ using Moq;
 
 namespace GameGuild.API.UnitTests.Database;
 
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class AssemblyLoadingProbeCollection
+{
+    internal const string Name = "Assembly loading probes";
+}
+
+// Invalid assembly probes temporarily change the shared application output.
+[Collection(AssemblyLoadingProbeCollection.Name)]
 public sealed class ApplicationDbContextAssemblyLoadingTests
 {
+    [Fact]
+    public void AssemblyLoadingProbes_RunInAnExclusiveCollection()
+    {
+        var collection = typeof(ApplicationDbContextAssemblyLoadingTests).GetCustomAttribute<CollectionAttribute>();
+        var definition = typeof(AssemblyLoadingProbeCollection).GetCustomAttribute<CollectionDefinitionAttribute>();
+
+        collection.Should().NotBeNull();
+        collection!.Name.Should().Be(AssemblyLoadingProbeCollection.Name);
+        definition.Should().NotBeNull();
+        definition!.DisableParallelization.Should().BeTrue();
+    }
+
     [Fact]
     public void LoadTypes_WhenAssemblyPartiallyLoads_ReturnsAvailableTypes()
     {
