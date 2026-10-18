@@ -236,6 +236,19 @@ test("question type and acceptance scenarios reuse catalog definitions", () => {
     matrix.quizzes.map((quiz) => quiz.validationCaseId),
     QUESTION_TYPE_CASES.map((candidate) => candidate.id),
   );
+  assert.equal(
+    new Set(matrix.quizzes.map((quiz) => quiz.title)).size,
+    matrix.quizzes.length,
+    "every validation quiz must have an unambiguous learner and gradebook title",
+  );
+  assert.equal(
+    matrix.quizzes.find((quiz) => quiz.key === "rating-keyed").title,
+    "RATING / KEYED",
+  );
+  assert.equal(
+    matrix.quizzes.find((quiz) => quiz.key === "rating-unkeyed").title,
+    "RATING / UNKEYED",
+  );
   for (const quiz of matrix.quizzes) {
     assert.deepEqual(quiz.document.order, [["q1", "quiz"]]);
     assert.equal(quiz.document.blocks.q1.type, quiz.questionType);
@@ -256,6 +269,15 @@ test("question type and acceptance scenarios reuse catalog definitions", () => {
       matrix.quizzes.find((quiz) => quiz.key === "numeric"),
     ),
     "test-run-ready",
+  );
+  assert.equal(
+    targetCheckpointForQuiz(
+      matrix,
+      "released",
+      matrix.quizzes.find((quiz) => quiz.key === "hotspot"),
+    ),
+    "test-run-ready",
+    "hotspot cannot enter learner delivery without a resolvable asset fixture",
   );
   assert.doesNotThrow(() =>
     assertApplicableCheckpoint(

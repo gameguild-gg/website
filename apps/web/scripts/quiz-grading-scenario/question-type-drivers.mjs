@@ -93,8 +93,15 @@ async function answerFillBlank(page, { answer, entry }) {
       continue;
     }
     if (blank.input.type === "WORDBANK") {
-      const word = page.getByText(value, { exact: true }).last();
-      await word.dragTo(page.locator('[title="Drag a word here"]').first());
+      const source = page
+        .locator('[data-testid^="word-bank-word-"]')
+        .filter({ hasText: new RegExp(`^${escapeRegExp(value)}$`) })
+        .first();
+      const target = page.getByTestId(`word-bank-blank-${blank.id}`);
+      await dragHtml5(page, source, target);
+      await target.getByText(value, { exact: true }).waitFor({
+        state: "visible",
+      });
       continue;
     }
     const placeholder = blank.input.type === "TEXT" ? "..." : undefined;
@@ -102,6 +109,22 @@ async function answerFillBlank(page, { answer, entry }) {
       ? page.getByPlaceholder(placeholder).first()
       : page.locator('input:not([type="hidden"])').last();
     await input.fill(value);
+  }
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function dragHtml5(page, source, target) {
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+  try {
+    await source.dispatchEvent("dragstart", { dataTransfer });
+    await target.dispatchEvent("dragenter", { dataTransfer });
+    await target.dispatchEvent("dragover", { dataTransfer });
+    await target.dispatchEvent("drop", { dataTransfer });
+  } finally {
+    await dataTransfer.dispose();
   }
 }
 
@@ -137,13 +160,36 @@ async function answerOrdering(page, { answer, entry }) {
       throw new Error(
         `Unknown ordering item "${answer.itemIds[targetIndex]}".`,
       );
-    const row = page.getByText(text, { exact: true }).locator("..");
-    for (let guard = 0; guard < entry.items.length; guard += 1) {
-      const currentIndex = await row
-        .locator("xpath=preceding-sibling::*")
-        .count();
-      if (currentIndex <= targetIndex) break;
-      await row.getByRole("button").first().click();
+    const itemId = answer.itemIds[targetIndex];
+    const row = page.getByTestId(`ordering-item-${itemId}`);
+    let positioned = false;
+    for (let guard = 0; guard < entry.items.length * 2; guard += 1) {
+      const visibleIds = await page
+        .locator('[data-testid^="ordering-item-"]')
+        .evaluateAll((nodes) =>
+          nodes.map((node) =>
+            node.getAttribute("data-testid")?.replace("ordering-item-", ""),
+          ),
+        );
+      const currentIndex = visibleIds.indexOf(itemId);
+      if (currentIndex === targetIndex) {
+        positioned = true;
+        break;
+      }
+      if (currentIndex < 0) {
+        throw new Error(`Ordering item "${itemId}" is not rendered.`);
+      }
+      await row
+        .getByRole("button", {
+          name: `Move ${text} ${currentIndex > targetIndex ? "up" : "down"}`,
+          exact: true,
+        })
+        .click();
+    }
+    if (!positioned) {
+      throw new Error(
+        `Ordering item "${itemId}" did not reach index ${targetIndex}.`,
+      );
     }
   }
 }
@@ -156,12 +202,13 @@ async function answerCategorization(page, { answer, entry }) {
     for (const categoryId of answer.categoryIdsByItem[item.id] ?? []) {
       const categoryName = categoryById.get(categoryId);
       if (!categoryName) throw new Error(`Unknown category "${categoryId}".`);
-      const source = page.getByText(item.text, { exact: true }).last();
-      const target = page
-        .getByText(categoryName, { exact: true })
-        .locator("xpath=ancestor::div[contains(@class, 'overflow-hidden')][1]")
-        .locator("div.border-dashed");
-      await source.dragTo(target);
+      const source = page.getByTestId(`categorization-item-${item.id}`);
+      const target = page.getByTestId(`categorization-drop-${categoryId}`);
+      await dragHtml5(page, source, target);
+      await source.waitFor({ state: "hidden" });
+      await target.getByText(item.text, { exact: true }).waitFor({
+        state: "visible",
+      });
     }
   }
 }

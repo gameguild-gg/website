@@ -8,6 +8,7 @@
 import type { RendererAnswerState } from "../../player/renderer-answer-adapter"
 
 import { useState } from "react"
+import type { DragEvent } from "react"
 import type { CategorizationEntry } from "@game-guild/quiz"
 import type { CategorizationLearnerEntry } from "@game-guild/quiz"
 
@@ -33,31 +34,34 @@ export function CategorizationRenderer({
     (item) => !answerState.categorizations[item.id] || answerState.categorizations[item.id]!.length === 0
   )
 
-  const handleDragStart = (itemId: string) => {
+  const handleDragStart = (event: DragEvent<HTMLDivElement>, itemId: string) => {
     if (disabled || showFeedback) return
+    event.dataTransfer.setData("text/plain", itemId)
+    event.dataTransfer.effectAllowed = "move"
     setDraggedItemId(itemId)
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.currentTarget.classList.add("bg-blue-100", "border-blue-500")
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
     e.currentTarget.classList.remove("bg-blue-100", "border-blue-500")
   }
 
-  const handleDrop = (e: React.DragEvent, categoryId: string) => {
+  const handleDrop = (e: DragEvent<HTMLDivElement>, categoryId: string) => {
     e.preventDefault()
     e.currentTarget.classList.remove("bg-blue-100", "border-blue-500")
 
-    if (!draggedItemId || disabled || showFeedback) return
+    const itemId = e.dataTransfer.getData("text/plain") || draggedItemId
+    if (!itemId || disabled || showFeedback) return
 
     const newCategorizations = { ...answerState.categorizations }
-    const currentCategories = newCategorizations[draggedItemId] || []
+    const currentCategories = newCategorizations[itemId] || []
 
     if (!currentCategories.includes(categoryId)) {
-      newCategorizations[draggedItemId] = [...currentCategories, categoryId]
+      newCategorizations[itemId] = [...currentCategories, categoryId]
     }
 
     onAnswerChange({ categorizations: newCategorizations })
@@ -93,8 +97,10 @@ export function CategorizationRenderer({
             {unassignedItems.map((item) => (
               <div
                 key={item.id}
+                data-testid={`categorization-item-${item.id}`}
                 draggable={!disabled && !showFeedback}
-                onDragStart={() => handleDragStart(item.id)}
+                onDragStart={(event) => handleDragStart(event, item.id)}
+                onDragEnd={() => setDraggedItemId(null)}
                 className={`
                   px-4 py-2 rounded border text-sm font-medium transition-all
                   ${draggedItemId === item.id ? "bg-blue-200 border-blue-400 opacity-50" : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700"}
@@ -132,6 +138,7 @@ export function CategorizationRenderer({
 
               {/* Drop Zone */}
               <div
+                data-testid={`categorization-drop-${category.id}`}
                 className="min-h-24 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 transition-colors"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}

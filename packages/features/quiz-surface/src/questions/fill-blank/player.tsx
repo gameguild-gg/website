@@ -9,6 +9,7 @@
 import type { RendererAnswerState } from "../../player/renderer-answer-adapter"
 
 import { useMemo, useState, useCallback } from "react"
+import type { DragEvent } from "react"
 import {
   Select,
   SelectContent,
@@ -28,16 +29,30 @@ interface FillBlankRendererProps {
   showFeedback?: boolean
 }
 
-// Utility to shuffle array
-function shuffleArray<T>(array: T[]): T[] {
+function shuffleArray<T>(array: T[], seed: string): T[] {
   const shuffled = [...array]
+  const random = createSeededRandom(seed)
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
+    const j = Math.floor(random() * (i + 1))
     const temp = shuffled[i]
     shuffled[i] = shuffled[j]!
     shuffled[j] = temp!
   }
   return shuffled
+}
+
+function createSeededRandom(seed: string): () => number {
+  let state = 2166136261
+  for (let index = 0; index < seed.length; index++) {
+    state = Math.imul(state ^ seed.charCodeAt(index), 16777619)
+  }
+  return () => {
+    state += 0x6d2b79f5
+    let value = state
+    value = Math.imul(value ^ (value >>> 15), value | 1)
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61)
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
+  }
 }
 
 export function FillBlankRenderer({
@@ -67,26 +82,25 @@ export function FillBlankRenderer({
         })
       }
     })
-    return shuffleArray(words)
+    return shuffleArray(words, `word-bank:${blanksKey}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blanksKey])
 
-  // Track which unique indices have been used (stored as "blankId:uniqueIndex")
+  // Resolve duplicate words without leaking renderer identity into the learner answer.
   const usedWordIndices = useMemo(() => {
     const used = new Set<number>()
-    // Parse from textAnswers which stores "word|uniqueIndex"
     entry.blanks.forEach((blank) => {
       if (blank.input.type === FillBlankInputType.WordBank) {
         const answer = answerState.textAnswers[blank.id]
-        if (answer && answer.includes("|")) {
-          const idx = parseInt(answer.split("|")[1] || "", 10)
-          if (!isNaN(idx)) used.add(idx)
-        }
+        if (!answer) return
+        const match = wordBankWords
+          .filter(({ uniqueIndex, word }) => !used.has(uniqueIndex) && word === answer)
+          .sort((left, right) => left.uniqueIndex - right.uniqueIndex)[0]
+        if (match) used.add(match.uniqueIndex)
       }
     })
     return used
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blanksKey, answerState.textAnswers])
+  }, [entry.blanks, answerState.textAnswers, wordBankWords])
 
   // Available words (not yet used)
   const availableWords = wordBankWords.filter(({ uniqueIndex }) => !usedWordIndices.has(uniqueIndex))
@@ -101,8 +115,10 @@ export function FillBlankRenderer({
     })
   }, [disabled, showFeedback, answerState.textAnswers, onAnswerChange])
 
-  const handleDragStart = useCallback((uniqueIndex: number) => {
+  const handleDragStart = useCallback((event: DragEvent<HTMLSpanElement>, uniqueIndex: number) => {
     if (disabled || showFeedback) return
+    event.dataTransfer.setData("text/plain", String(uniqueIndex))
+    event.dataTransfer.effectAllowed = "move"
     setDraggedWordIndex(uniqueIndex)
   }, [disabled, showFeedback])
 
@@ -110,13 +126,14 @@ export function FillBlankRenderer({
     setDraggedWordIndex(null)
   }, [])
 
-  const handleDrop = useCallback((blankId: string) => {
-    if (draggedWordIndex !== null && !disabled && !showFeedback) {
+  const handleDrop = useCallback((event: DragEvent<HTMLSpanElement>, blankId: string) => {
+    const transferredIndex = Number.parseInt(event.dataTransfer.getData("text/plain"), 10)
+    const uniqueIndex = Number.isNaN(transferredIndex) ? draggedWordIndex : transferredIndex
+    if (uniqueIndex !== null && !disabled && !showFeedback) {
       // Find the word by unique index
-      const wordItem = wordBankWords.find(w => w.uniqueIndex === draggedWordIndex)
+      const wordItem = wordBankWords.find(w => w.uniqueIndex === uniqueIndex)
       if (wordItem) {
-        // Store as "word|uniqueIndex" to track which specific instance was used
-        handleInputChange(blankId, `${wordItem.word}|${wordItem.uniqueIndex}`)
+        handleInputChange(blankId, wordItem.word)
       }
       setDraggedWordIndex(null)
     }
@@ -132,7 +149,10 @@ export function FillBlankRenderer({
     const map: Record<string, string[]> = {}
     entry.blanks.forEach((blank) => {
       if (blank.input.type === FillBlankInputType.Dropdown) {
-        map[blank.id] = shuffleArray(blank.input.options.filter(o => o.trim()))
+        map[blank.id] = shuffleArray(
+          blank.input.options.filter(o => o.trim()),
+          `dropdown:${blank.id}:${blanksKey}`,
+        )
       }
     })
     return map
@@ -198,6 +218,7 @@ export function FillBlankRenderer({
       case FillBlankInputType.WordBank:
         return (
           <span
+            data-testid={`word-bank-blank-${blank.id}`}
             className={`inline-flex items-center justify-center min-w-[8rem] h-10 mx-2 px-3 py-2 border-2 border-dashed rounded-lg transition-all ${
               currentValue
                 ? "border-purple-500 bg-purple-50 dark:bg-purple-950/50"
@@ -213,14 +234,14 @@ export function FillBlankRenderer({
             onDrop={(e) => {
               e.preventDefault()
               e.currentTarget.classList.remove("border-purple-500", "bg-purple-100", "dark:bg-purple-900/50")
-              handleDrop(blank.id)
+              handleDrop(e, blank.id)
             }}
             onClick={() => currentValue && handleRemoveFromBlank(blank.id)}
             title={currentValue ? "Click to remove" : "Drag a word here"}
           >
             {currentValue ? (
               <span className="text-purple-700 dark:text-purple-300 font-medium">
-                {currentValue.includes("|") ? currentValue.split("|")[0] : currentValue}
+                {currentValue}
               </span>
             ) : (
               <span className="text-gray-400 dark:text-gray-500 text-sm">Drop here</span>
@@ -255,8 +276,9 @@ export function FillBlankRenderer({
               {availableWords.map(({ word, uniqueIndex }) => (
                 <span
                   key={uniqueIndex}
+                  data-testid={`word-bank-word-${uniqueIndex}`}
                   draggable={!disabled && !showFeedback}
-                  onDragStart={() => handleDragStart(uniqueIndex)}
+                  onDragStart={(event) => handleDragStart(event, uniqueIndex)}
                   onDragEnd={handleDragEnd}
                   className={`px-4 py-2 bg-white dark:bg-gray-800 border-2 border-purple-300 dark:border-purple-600 rounded-lg text-gray-700 dark:text-gray-300 shadow-sm transition-all ${
                     !disabled && !showFeedback

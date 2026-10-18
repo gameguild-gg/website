@@ -222,7 +222,7 @@ function makeQuestionTypeQuizDefinition(validationCase) {
   const instructorReview = fixture.officialCapability === "instructor-review";
   return makeQuizDefinition({
     key: fixture.key,
-    title: `${fixture.quizEntryType}${fixture.fillBlankInputType ? ` / ${fixture.fillBlankInputType}` : ""}`,
+    title: questionTypeQuizTitle(fixture),
     reviewMethods: instructorReview
       ? ["InstructorReview"]
       : ["AutomatedReview"],
@@ -251,6 +251,19 @@ function makeQuestionTypeQuizDefinition(validationCase) {
       instructorScore: fixture.expected.instructorScore ?? fixture.entry.points,
     },
   });
+}
+
+function questionTypeQuizTitle(fixture) {
+  if (fixture.fillBlankInputType) {
+    return `${fixture.quizEntryType} / ${fixture.fillBlankInputType}`;
+  }
+  const canonicalKey = fixture.quizEntryType.toLowerCase().replaceAll("_", "-");
+  if (fixture.key === canonicalKey) return fixture.quizEntryType;
+  const variantPrefix = `${canonicalKey}-`;
+  const variant = fixture.key.startsWith(variantPrefix)
+    ? fixture.key.slice(variantPrefix.length)
+    : fixture.key;
+  return `${fixture.quizEntryType} / ${variant.toUpperCase().replaceAll("-", "_")}`;
 }
 
 function makeScenario(

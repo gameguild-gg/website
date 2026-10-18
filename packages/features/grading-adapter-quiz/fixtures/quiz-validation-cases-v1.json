@@ -930,7 +930,7 @@
       "fillBlankInputType": null,
       "baseType": true,
       "officialCapability": "automated-review",
-      "maxSupportedCheckpoint": "released",
+      "maxSupportedCheckpoint": "test-run-ready",
       "browser": {
         "status": "external-blocker",
         "driver": "hotspot",

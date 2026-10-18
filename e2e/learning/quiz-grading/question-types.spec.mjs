@@ -15,7 +15,9 @@ import {
   createScenarioPersona,
   expectQuestionVisible,
   persistScenarioManifest,
+  questionLocator,
   signInScenarioPersona,
+  startActivity,
   synchronizeScenarioSubmission,
 } from "./browser-support.mjs";
 
@@ -135,7 +137,7 @@ async function submitQuestionCase(page, manifest, quiz, validationCase) {
   await page.goto(manifest.urls.quizzes[quiz.key].learnerActivity, {
     waitUntil: "domcontentloaded",
   });
-  await page.getByRole("button", { name: "Start Activity" }).click();
+  await startActivity(page, questionLocator(page, validationCase));
   await expectQuestionVisible(page, validationCase);
   await answerQuestionTypeCase(page, validationCase, "correct");
   await page.getByRole("button", { name: "Submit answer" }).click();
