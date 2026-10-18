@@ -133,7 +133,7 @@ async function discoverDevProcesses() {
         registration: registration.file,
       });
     } else {
-      removeDevProcessRegistration(registration.file);
+      await removeDevProcessRegistration(registration.file);
     }
   }
 
@@ -241,7 +241,7 @@ async function stopOrchestrators() {
 
   for (const entry of processes) {
     if (entry.registration) {
-      removeDevProcessRegistration(entry.registration);
+      await removeDevProcessRegistration(entry.registration);
     }
   }
 }

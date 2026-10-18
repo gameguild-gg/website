@@ -71,3 +71,43 @@ test('normal process exit removes the published registration', async (t) => {
   assert.deepEqual(await readdir(registration.directory), []);
   await assert.rejects(readFile(registration.file), { code: 'ENOENT' });
 });
+
+test('explicit registration removal awaits deletion and tolerates missing files', async (t) => {
+  const setup = await fixture(t);
+  const result = await executeFile(process.execPath, ['--input-type=module', '-e', `
+    import assert from 'node:assert/strict';
+    import { readFile } from 'node:fs/promises';
+    import { registerDevProcess, listRegisteredDevProcesses, removeDevProcessRegistration } from ${JSON.stringify(setup.moduleUrl)};
+    await registerDevProcess('synthetic-removal');
+    const records = await listRegisteredDevProcesses();
+    assert.equal(records.length, 1);
+    await removeDevProcessRegistration(records[0].file);
+    await assert.rejects(readFile(records[0].file), { code: 'ENOENT' });
+    await removeDevProcessRegistration(records[0].file);
+    assert.deepEqual(await listRegisteredDevProcesses(), []);
+    console.log('explicit-removal-contract-ok');
+  `], { env: setup.env, timeout: 10_000 });
+  assert.equal(result.stderr, '');
+  assert.equal(result.stdout.trim(), 'explicit-removal-contract-ok');
+});
+
+test('explicit registration removal propagates failures other than a missing file', async (t) => {
+  const setup = await fixture(t);
+  const result = await executeFile(process.execPath, ['--input-type=module', '-e', `
+    import assert from 'node:assert/strict';
+    import { stat } from 'node:fs/promises';
+    import { registerDevProcess, removeDevProcessRegistration, runtimeDirectory } from ${JSON.stringify(setup.moduleUrl)};
+    await registerDevProcess('synthetic-removal-error');
+    await assert.rejects(removeDevProcessRegistration(runtimeDirectory), error => ['EISDIR', 'EPERM', 'EACCES'].includes(error.code));
+    assert.equal((await stat(runtimeDirectory)).isDirectory(), true);
+    console.log('explicit-removal-error-contract-ok');
+  `], { env: setup.env, timeout: 10_000 });
+  assert.equal(result.stderr, '');
+  assert.equal(result.stdout.trim(), 'explicit-removal-error-contract-ok');
+});
+
+test('development stop awaits every explicit registration removal', async () => {
+  const source = await readFile(new URL('../../dev-stop.mjs', import.meta.url), 'utf8');
+  assert.equal([...source.matchAll(/removeDevProcessRegistration\(/g)].length, 2);
+  assert.equal([...source.matchAll(/await removeDevProcessRegistration\(/g)].length, 2);
+});

@@ -116,9 +116,9 @@ export async function listRegisteredDevProcesses() {
   return records;
 }
 
-export function removeDevProcessRegistration(file) {
+export async function removeDevProcessRegistration(file) {
   try {
-    unlinkSync(file);
+    await unlink(file);
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
