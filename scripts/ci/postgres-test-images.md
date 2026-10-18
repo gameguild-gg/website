@@ -21,7 +21,13 @@ On 2026-10-17, direct HTTPS manifest reads from `mirror.gcr.io/v2/library/postgr
 - `GAMEGUILD_TEST_POSTGRES_16_IMAGE`: the Testing Lab browser runner.
 - Migration and OpenAPI job services use the same pinned PostgreSQL 17 URI literally, because services are created before steps run.
 
-Both workflows set the image variables explicitly. Manual API and Economy invocations retain the ECR PostgreSQL 17 tag introduced in develop by commit 61e0e868b. Testing Lab uses the ECR PostgreSQL 16 tag introduced in develop by commit 01d08da6a as its manual fallback. The Code browser runner retains its previous Docker Hub tag for manual runs. Hosted workflows override these defaults with the pinned digests. Container ownership, passwords, readiness probes, storage, migration and cleanup rules are unchanged. Production Compose files and unrelated Testcontainers images are outside this configuration.
+Both workflows set the image variables explicitly. Manual API and Economy invocations retain the ECR PostgreSQL 17 tag introduced in develop by commit 61e0e868b. Testing Lab uses the ECR PostgreSQL 16 tag introduced in develop by commit 01d08da6a as its manual fallback. The Code browser runner retains its previous Docker Hub tag for manual runs. Hosted workflows override these defaults with the pinned digests. Container ownership, passwords, readiness probes, migration and cleanup rules are unchanged. Production Compose files and unrelated Testcontainers images are outside this configuration.
+
+## Disposable storage on hosted Linux
+
+The affected API runner uses `--tmpfs /var/lib/postgresql/data:rw` only when both `GITHUB_ACTIONS=true` and `RUNNER_OS=Linux`. This matches the existing Economy regression runners' disposable PostgreSQL storage. Manual invocations retain their previous Docker storage and memory behavior.
+
+This changes storage for the temporary test server only. The image digest, PostgreSQL settings, authenticated readiness probe, migrations, templates, selected projects, test filters and assertions remain the same. The offline source contract checks the hosted-only guard and argument placement; passing it does not establish a runtime improvement. Hosted results and timings must be compared before claiming that the change improves CI latency.
 
 ## Updating a pin
 

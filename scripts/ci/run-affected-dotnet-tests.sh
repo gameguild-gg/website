@@ -45,6 +45,12 @@ trap 'exit 143' TERM
 prepare_economy_template() {
   local container_name="gameguild-affected-api-$$-$RANDOM"
   local mapping postgres_port template_connection candidate_id attempt password ready=false
+  local -a postgres_storage=()
+  # Match the regression runners' disposable storage on hosted Linux only.
+  # Manual runs keep their existing Docker storage and memory behavior.
+  if [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_OS:-}" == Linux ]]; then
+    postgres_storage=(--tmpfs /var/lib/postgresql/data:rw)
+  fi
   password="$(new_disposable_postgres_password)"
   register_disposable_postgres_password "$password"
   pull_ci_image "$postgres_image"
@@ -54,6 +60,7 @@ prepare_economy_template() {
     --env POSTGRES_USER=postgres --env "POSTGRES_PASSWORD=$password" \
     --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
     --publish 127.0.0.1::5432 \
+    "${postgres_storage[@]}" \
     "$postgres_image" -c max_locks_per_transaction=512)"
   [[ "$candidate_id" =~ ^[a-f0-9]{12,64}$ ]] || {
     printf 'Docker did not return a valid owned container ID\n' >&2

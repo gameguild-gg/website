@@ -27,6 +27,11 @@ for (const path of ['scripts/ci/run-affected-dotnet-tests.sh', 'scripts/ci/verif
     assert.ok(source.includes('postgres_image="' + '$' + '{GAMEGUILD_TEST_POSTGRES_17_IMAGE:-public.ecr.aws/docker/library/postgres:17-alpine}"'));
     assert.ok(source.includes('"$' + 'postgres_image" -c max_locks_per_transaction=512'));
     assert.ok(!source.includes('    postgres:17-alpine'));
+    if (path === 'scripts/ci/run-affected-dotnet-tests.sh') {
+      assert.ok(source.includes('local -a postgres_storage=()'));
+      assert.ok(source.includes('if [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_OS:-}" == Linux ]]; then\n    postgres_storage=(--tmpfs /var/lib/postgresql/data:rw)\n  fi'));
+      assert.ok(source.includes('"${postgres_storage[@]}" \\\n    "$postgres_image" -c max_locks_per_transaction=512'));
+    }
   });
 }
 
