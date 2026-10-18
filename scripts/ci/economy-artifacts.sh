@@ -3,9 +3,9 @@ set -Eeuo pipefail
 
 # Transfer only outputs from a successful job in this workflow run. A bundle
 # from another source tree, a damaged archive or an unsafe entry fails closed.
-operation="${1:?pack or unpack}" kind="${2:?api or client}"
+operation="${1:?pack or unpack}" kind="${2:?api, client or web-tests}"
 source="${3:?source directory}" destination="${4:?destination directory}"
-case "$operation:$kind" in pack:api|pack:client|unpack:api|unpack:client) ;; *) exit 2 ;; esac
+case "$operation:$kind" in pack:api|pack:client|pack:web-tests|unpack:api|unpack:client|unpack:web-tests) ;; *) exit 2 ;; esac
 tree="$(git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse 'HEAD^{tree}')"
 commit="$(git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse HEAD)"
 python3 - "$operation" "$kind" "$source" "$destination" "$tree" "$commit" <<'PY'

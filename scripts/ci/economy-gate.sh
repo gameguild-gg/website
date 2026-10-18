@@ -286,6 +286,26 @@ print(json.dumps({"total": total, "failed": failed, "pending": pending}, separat
 PY
 }
 
+assert_web_test_evidence() {
+  local root="$1"
+  assert_vitest_evidence "$root/vitest/web.json" >/dev/null || return 1
+  assert_vitest_evidence "$root/vitest/economy-coverage.json" >/dev/null || return 1
+  "$PYTHON_BIN" - "$root/coverage/web/coverage-summary.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    total = json.load(handle)["total"]
+for name in ("lines", "branches", "functions", "statements"):
+    metric = total[name]
+    if metric["pct"] != 100 or metric["total"] < 0 or metric["covered"] != metric["total"]:
+        raise SystemExit(f"Web {name} coverage must be complete: {sys.argv[1]}")
+if total["lines"]["total"] == 0:
+    raise SystemExit(f"Web coverage contains zero instrumented lines: {sys.argv[1]}")
+print("Verified Web suites and 100 percent coverage")
+PY
+}
+
 assert_playwright_evidence() {
   local path="$1"
   "$PYTHON_BIN" - "$path" <<'PY'

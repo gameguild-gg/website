@@ -420,6 +420,17 @@ build_client() {
   run "${pnpm_command[@]}" --filter @game-guild/client build
 }
 
+verify_web_tests() {
+  gate_stage='frontend-tests'
+  local web_evidence="$artifact_root/vitest/web.json"
+  local economy_web_evidence="$artifact_root/vitest/economy-coverage.json"
+  run env -u API_URL "${pnpm_command[@]}" --filter @game-guild/web exec vitest run --maxWorkers=4 --reporter=json "--outputFile=$web_evidence"
+  ECONOMY_WEB_COVERAGE_DIR="$artifact_root/coverage/web" run env -u API_URL \
+    "${pnpm_command[@]}" --filter @game-guild/web run test:economy:coverage \
+    --reporter=json "--outputFile=$economy_web_evidence"
+  assert_web_test_evidence "$artifact_root"
+}
+
 publish_api() {
   # Some host references are not solution members. Preserve the warning-clean
   # build during publish; no compiled output from another revision is reused.
@@ -438,8 +449,17 @@ finish_gate() {
 # with coverage and regression; the browser job consumes these exact outputs.
 if [[ "$gate_profile" == client-bundle ]]; then
   build_client
+  # These suites explicitly unset API_URL and do not need the published host.
+  # Keep their runner resources separate from the later Next build.
+  verify_web_tests
+  web_test_bundle="$artifact_root/web-test-bundle"
+  mkdir -p "$web_test_bundle/vitest" "$web_test_bundle/coverage/web"
+  cp "$artifact_root/vitest/web.json" "$artifact_root/vitest/economy-coverage.json" "$web_test_bundle/vitest/"
+  cp -R "$artifact_root/coverage/web/." "$web_test_bundle/coverage/web/"
   run bash "$script_dir/economy-artifacts.sh" pack client \
     "$repository_root/packages/infrastructure/client/dist" "$repository_root/artifacts/economy-bundles/client"
+  run bash "$script_dir/economy-artifacts.sh" pack web-tests \
+    "$web_test_bundle" "$repository_root/artifacts/economy-bundles/client/web-tests"
   finish_gate
   exit
 elif [[ "$gate_profile" == api-bundle ]]; then
@@ -456,8 +476,15 @@ elif [[ "$gate_profile" == browser ]]; then
   [[ -n "${ECONOMY_INPUT_ROOT:-}" ]] || economy_gate_error 'Browser verification requires same-run Economy bundles'
   run bash "$script_dir/economy-artifacts.sh" unpack api "$ECONOMY_INPUT_ROOT/api" "$artifact_root/publish/api"
   run bash "$script_dir/economy-artifacts.sh" unpack client "$ECONOMY_INPUT_ROOT/client" "$repository_root/packages/infrastructure/client/dist"
+  verified_web_tests="$artifact_root/verified-web-tests"
+  run bash "$script_dir/economy-artifacts.sh" unpack web-tests "$ECONOMY_INPUT_ROOT/client/web-tests" "$verified_web_tests"
+  assert_web_test_evidence "$verified_web_tests"
+  cp "$verified_web_tests/vitest/web.json" "$verified_web_tests/vitest/economy-coverage.json" "$artifact_root/vitest/"
+  mkdir -p "$artifact_root/coverage/web"
+  cp -R "$verified_web_tests/coverage/web/." "$artifact_root/coverage/web/"
   cp "$ECONOMY_INPUT_ROOT/api/identity.json" "$artifact_root/api-bundle-identity.json"
   cp "$ECONOMY_INPUT_ROOT/client/identity.json" "$artifact_root/client-bundle-identity.json"
+  cp "$ECONOMY_INPUT_ROOT/client/web-tests/identity.json" "$artifact_root/web-test-bundle-identity.json"
 fi
 
 prepare_whole_solution_projects() {
@@ -882,17 +909,10 @@ if [[ "$gate_profile" == full || "$gate_profile" == release || "$gate_profile" =
   if [[ "$gate_profile" != browser ]]; then
     run dotnet build-server shutdown
     build_client
+    verify_web_tests
   fi
   gate_stage='frontend'
 
-  web_evidence="$artifact_root/vitest/web.json"
-  run env -u API_URL "${pnpm_command[@]}" --filter @game-guild/web exec vitest run --maxWorkers=4 --reporter=json "--outputFile=$web_evidence"
-  assert_vitest_evidence "$web_evidence" >/dev/null
-  economy_web_evidence="$artifact_root/vitest/economy-coverage.json"
-  ECONOMY_WEB_COVERAGE_DIR="$artifact_root/coverage/web" run env -u API_URL \
-    "${pnpm_command[@]}" --filter @game-guild/web run test:economy:coverage \
-    --reporter=json "--outputFile=$economy_web_evidence"
-  assert_vitest_evidence "$economy_web_evidence" >/dev/null
   run "${pnpm_command[@]}" --filter @game-guild/web run build:emception-dependencies
   run "${pnpm_command[@]}" --filter @game-guild/web run sync:emception
   GAMEGUILD_DISABLE_WEBPACK_CACHE=1 run "${pnpm_command[@]}" --filter @game-guild/web exec next build --webpack
