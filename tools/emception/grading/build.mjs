@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { generateBrowserManifestUrl } from '../scripts/generate-browser-manifest-url.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const require = createRequire(import.meta.url);
@@ -17,6 +18,7 @@ function runNode(args, failureMessage) {
   });
 }
 
+await generateBrowserManifestUrl(root);
 await runNode([require.resolve('typescript/bin/tsc'), '-p', 'grading/tsconfig.json'],
   'Trusted Code browser runtime types failed.');
 await runNode(['--test', 'grading/toolchain-binding.test.mjs', 'grading/worker-diagnostics.test.mjs', 'grading/browser-launch-options.test.mjs'],
