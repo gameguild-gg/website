@@ -9,7 +9,7 @@ integração.
 
 Data: 2026-08-21.
 
-Atualizado: 2026-10-13.
+Atualizado: 2026-10-17.
 
 ## Objetivo
 
@@ -22,6 +22,13 @@ O plano auxiliar
 define a preparação reproduzível de cenários para teste humano e Playwright.
 Seu MVP está implementado e reduz o custo de validar os novos estados de
 review, sem alterar o runtime ou o modelo relacional.
+
+O plano de continuidade
+[`10-validation-program-and-capability-audit.md`](./10-validation-program-and-capability-audit.md)
+organiza a validação sistemática das jornadas, dos 14 tipos de questão, das
+personas e dos estados operacionais. Ele amplia o runner por matrizes
+ortogonais, produz evidências e separa bugs, lacunas, decisões de produto e
+falhas do próprio harness antes de novas implementações.
 
 O documento anterior
 [`quiz-assessment-end-to-end-grading-flow.md`](../quiz-assessment-end-to-end-grading-flow.md)

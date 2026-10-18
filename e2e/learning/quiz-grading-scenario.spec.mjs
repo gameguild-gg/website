@@ -17,14 +17,16 @@ import {
   hasSelfReview,
   selectQuizDefinitions,
 } from "../../apps/web/scripts/quiz-grading-scenario/definitions.mjs";
+import { getValidationCase } from "../../apps/web/scripts/quiz-grading-scenario/capability-catalog.mjs";
 import {
-  evidenceDirectory,
   readManifest,
   recomputeManifestCheckpoint,
   storageStatePath,
   writeManifest,
 } from "../../apps/web/scripts/quiz-grading-scenario/manifest.mjs";
+import { validationEvidenceDirectory } from "../../apps/web/scripts/quiz-grading-scenario/report.mjs";
 import { buildScenarioUrls } from "../../apps/web/scripts/quiz-grading-scenario/urls.mjs";
+import { startActivity } from "./quiz-grading/browser-support.mjs";
 
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 test.skip(!process.env.E2E_RUN, "Set E2E_RUN=1 to execute the local scenario.");
@@ -41,7 +43,9 @@ if (!scenarioKey) {
   });
 } else {
   const definition = getScenarioDefinition(scenarioKey);
-  const quizzes = selectQuizDefinitions(definition, requestedQuizKeys);
+  const quizzes = selectQuizDefinitions(definition, requestedQuizKeys).filter(
+    (quiz) => !quiz.validationCaseId,
+  );
 
   for (const quiz of quizzes) {
     test(`${quiz.key}: ${quiz.reviewMethods.join(" -> ")} across its personas`, async ({
@@ -69,10 +73,6 @@ if (!scenarioKey) {
         );
       }
 
-      await mkdir(evidenceDirectory(scenarioKey), {
-        recursive: true,
-        mode: 0o700,
-      });
       const instructor = await createPersonaPage(
         browser,
         manifest,
@@ -240,10 +240,7 @@ async function verifyAuthoringAndTestRun(page, manifest, quiz) {
   await expect(
     page.getByRole("heading", { name: new RegExp(quiz.title, "i") }).first(),
   ).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Test assessment" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Assessment test run" }),
-  ).toBeVisible({ timeout: 60_000 });
+  await openTestRunDialog(page);
   await page.getByRole("button", { name: "Start test run" }).click();
 
   if (hasPeerReview(quiz)) {
@@ -291,6 +288,24 @@ async function verifyAuthoringAndTestRun(page, manifest, quiz) {
   await screenshot(page, manifest, quiz.key, "01-test-run.png");
   const after = await readGradingQueue(api, resources.assessmentId);
   expect(after.total ?? 0).toBe(before.total ?? 0);
+}
+
+async function openTestRunDialog(page) {
+  const trigger = page.getByRole("button", { name: "Test assessment" });
+  const heading = page.getByRole("heading", { name: "Assessment test run" });
+  let lastError;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await trigger.click();
+    try {
+      await heading.waitFor({ state: "visible", timeout: 10_000 });
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
 }
 
 async function selectSyntheticSubject(tabs, index) {
@@ -360,8 +375,9 @@ async function submitAsLearner(page, manifest, quiz, personaKey) {
   await page.goto(manifest.urls.quizzes[quiz.key].learnerActivity, {
     waitUntil: "domcontentloaded",
   });
-  await page.getByRole("button", { name: "Start Activity" }).click();
-  await page.getByRole("button", { name: "True", exact: true }).click();
+  const firstAnswer = page.getByRole("button", { name: "True", exact: true });
+  await startActivity(page, firstAnswer);
+  await firstAnswer.click();
   await page.getByRole("button", { name: "Submit answer" }).click();
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await page.getByRole("button", { name: "Four", exact: true }).click();
@@ -593,7 +609,8 @@ async function persist(manifest) {
 }
 
 async function screenshot(page, manifest, quizKey, name) {
-  const directory = `${evidenceDirectory(manifest.definitionKey)}/${quizKey}`;
+  const caseId = getValidationCase(quizKey).id;
+  const directory = `${validationEvidenceDirectory(manifest.runId, caseId)}/screenshots`;
   await mkdir(directory, { recursive: true, mode: 0o700 });
   await page.screenshot({ path: `${directory}/${name}`, fullPage: true });
 }

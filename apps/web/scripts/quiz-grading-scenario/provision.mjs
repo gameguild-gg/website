@@ -15,6 +15,7 @@ import {
   hasSelfReview,
   requestHash,
   selectQuizDefinitions,
+  targetCheckpointForQuiz,
 } from "./definitions.mjs";
 import {
   createManifest,
@@ -35,6 +36,7 @@ export async function prepareScenario({
 }) {
   const definition = getScenarioDefinition(scenarioKey);
   const requestedQuizzes = selectQuizDefinitions(definition, quizKeys);
+  let quizzes = requestedQuizzes;
   assertApplicableCheckpoint(definition, checkpoint, requestedQuizzes);
   let manifest = await readManifest(scenarioKey, { optional: true });
   if (!manifest) {
@@ -48,9 +50,26 @@ export async function prepareScenario({
   } else {
     assertEnvironmentMatches(manifest, apiBaseUrl, webBaseUrl);
     assertSelectionMatches(manifest, quizKeys);
+    if (!quizKeys?.length) quizzes = selectedManifestQuizzes(manifest);
   }
-  const quizzes = selectedManifestQuizzes(manifest);
   assertApplicableCheckpoint(definition, checkpoint, quizzes);
+  const targets = new Map(
+    quizzes.map((quiz) => [
+      quiz.key,
+      targetCheckpointForQuiz(definition, checkpoint, quiz),
+    ]),
+  );
+  const reaches = (quiz, candidate) =>
+    checkpointIndex(targets.get(quiz.key)) >= checkpointIndex(candidate);
+
+  for (const quiz of quizzes) {
+    const target = targets.get(quiz.key);
+    if (target !== checkpoint) {
+      onProgress(
+        `Capping "${quiz.title}" at ${target}; ${checkpoint} exceeds its declared ${quiz.officialCapability ?? "current"} capability.`,
+      );
+    }
+  }
 
   onProgress("Checking the local API and web application.");
   await assertStackAvailable(
@@ -79,7 +98,7 @@ export async function prepareScenario({
     quizzes.every(
       (quiz) =>
         checkpointIndex(manifest.resources.quizzes[quiz.key].checkpoint) >=
-        checkpointIndex(checkpoint),
+        checkpointIndex(targets.get(quiz.key)),
     )
   ) {
     onProgress(
@@ -95,10 +114,13 @@ export async function prepareScenario({
     setQuizCheckpoint(manifest, quiz.key, "authoring-ready");
   }
   await persist(manifest);
-  if (checkpoint === "authoring-ready") return manifest;
+  const candidateQuizzes = quizzes.filter((quiz) =>
+    reaches(quiz, "test-run-ready"),
+  );
+  if (candidateQuizzes.length === 0) return manifest;
 
   onProgress("Preparing immutable assessment candidates.");
-  for (const quiz of quizzes) {
+  for (const quiz of candidateQuizzes) {
     await ensureCandidate(
       manifest,
       manifest.resources.quizzes[quiz.key],
@@ -107,18 +129,24 @@ export async function prepareScenario({
     setQuizCheckpoint(manifest, quiz.key, "test-run-ready");
   }
   await persist(manifest);
-  if (checkpoint === "test-run-ready") return manifest;
+  const learnerReadyQuizzes = quizzes.filter((quiz) =>
+    reaches(quiz, "learner-ready"),
+  );
+  if (learnerReadyQuizzes.length === 0) return manifest;
 
   onProgress("Publishing the revisions and enrolling learner personas.");
-  await ensureLearnerReady(manifest, quizzes, sessions);
-  for (const quiz of quizzes) {
+  await ensureLearnerReady(manifest, learnerReadyQuizzes, sessions);
+  for (const quiz of learnerReadyQuizzes) {
     setQuizCheckpoint(manifest, quiz.key, "learner-ready");
   }
   await persist(manifest);
-  if (checkpoint === "learner-ready") return manifest;
+  const submittedQuizzes = quizzes.filter((quiz) =>
+    reaches(quiz, "review-ready"),
+  );
+  if (submittedQuizzes.length === 0) return manifest;
 
   onProgress("Submitting learner attempts and completing primary reviews.");
-  for (const quiz of quizzes) {
+  for (const quiz of submittedQuizzes) {
     await ensureSubmitted(manifest, quiz, sessions);
     setQuizCheckpoint(
       manifest,
@@ -127,18 +155,21 @@ export async function prepareScenario({
     );
   }
   await persist(manifest);
-  if (checkpoint === "review-ready") return manifest;
+  const instructorReviewQuizzes = submittedQuizzes.filter(
+    (quiz) => hasInstructorReview(quiz) && reaches(quiz, "release-ready"),
+  );
 
-  for (const quiz of quizzes.filter(hasInstructorReview)) {
+  for (const quiz of instructorReviewQuizzes) {
     onProgress(`Applying instructor review for "${quiz.title}".`);
     await ensureInstructorReview(manifest, quiz, sessions.instructor);
     setQuizCheckpoint(manifest, quiz.key, "release-ready");
   }
   await persist(manifest);
-  if (checkpoint === "release-ready") return manifest;
+  const releasedQuizzes = quizzes.filter((quiz) => reaches(quiz, "released"));
+  if (releasedQuizzes.length === 0) return manifest;
 
   onProgress("Releasing every finalized result to the learners.");
-  for (const quiz of quizzes) {
+  for (const quiz of releasedQuizzes) {
     await ensureReleased(manifest, quiz, sessions.instructor);
     setQuizCheckpoint(manifest, quiz.key, "released");
   }
@@ -832,6 +863,7 @@ async function ensurePersonaSubmission(
     normalizeStatus(submission.execution.selfReview.status) !== "completed"
   ) {
     const evidence = buildItemReviewEvidence(
+      quiz,
       quiz.expected.selfReviewScore,
       "Self review completed by the scenario learner.",
     );
@@ -912,6 +944,7 @@ async function ensureInstructorReview(manifest, quiz, instructor) {
     if (submission.execution?.requiresInstructorReview) {
       const resolution = {
         ...buildItemReviewEvidence(
+          quiz,
           quiz.expected.instructorScore,
           "Reviewed by the scenario instructor.",
         ),
@@ -983,15 +1016,22 @@ async function ensureReleased(manifest, quiz, instructor) {
   await persist(manifest);
 }
 
-function buildItemReviewEvidence(totalScore, feedback) {
-  const q1Score = Math.min(100, totalScore);
-  const q2Score = Math.max(0, totalScore - q1Score);
+function buildItemReviewEvidence(quiz, totalScore, feedback) {
+  let remaining = totalScore;
+  const items = quiz.document.order.map(([itemId]) => {
+    const maxScore = quiz.document.blocks[itemId]?.points ?? 100;
+    const score = Math.max(0, Math.min(maxScore, remaining));
+    remaining -= score;
+    return { itemId, score, feedback };
+  });
+  if (remaining !== 0) {
+    throw new Error(
+      `Review score ${totalScore} cannot be distributed across quiz "${quiz.key}".`,
+    );
+  }
   return {
     schemaVersion: 1,
-    items: [
-      { itemId: "q1", score: q1Score, feedback },
-      { itemId: "q2", score: q2Score, feedback },
-    ],
+    items,
     feedback,
   };
 }
@@ -1064,11 +1104,13 @@ function assertEnvironmentMatches(manifest, apiBaseUrl, webBaseUrl) {
 
 function assertSelectionMatches(manifest, requestedKeys) {
   if (!requestedKeys?.length) return;
-  const requested = [...new Set(requestedKeys)].sort();
-  const existing = [...manifest.quizKeys].sort();
-  if (requested.join("\0") !== existing.join("\0")) {
+  const existing = new Set(manifest.quizKeys);
+  const unknown = [...new Set(requestedKeys)].filter(
+    (quizKey) => !existing.has(quizKey),
+  );
+  if (unknown.length > 0) {
     throw new Error(
-      `Existing manifest contains quizzes [${existing.join(", ")}], not [${requested.join(", ")}]. Reset it before changing the scenario selection.`,
+      `Existing manifest does not contain quizzes [${unknown.join(", ")}]. Reset it before adding resources to the scenario selection.`,
     );
   }
 }
