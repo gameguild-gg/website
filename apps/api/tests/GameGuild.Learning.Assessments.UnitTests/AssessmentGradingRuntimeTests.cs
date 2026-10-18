@@ -1859,7 +1859,7 @@ public sealed class AssessmentGradingRuntimeTests
             CodeToolchainIdentity toolchain, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            toolchain.Should().Be(CodeToolchainIdentity.Version3);
+            toolchain.Should().Be(CodeToolchainIdentity.Version2);
             definition.Tests.Private.Should().ContainSingle().Which.Should().BeOfType<StandardTest>()
                 .Which.Stdout.Should().Be("private-code-secret");
             files.GetProperty("main.cpp").GetProperty("content").GetString().Should().Contain("submitted-code");
