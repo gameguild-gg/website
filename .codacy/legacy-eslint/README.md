@@ -76,6 +76,12 @@ after a rule exception. Parser errors, missing rules, exceptions, diagnostics or
 unreviewed tool output keep the pass failing. The 30-minute job budget is not a
 latency guarantee; an incomplete pass cannot be accepted as a complete scan.
 
+The hosted pass requires the tracked working tree to match its checkout after
+dependency installation and again after analysis. It records the SHA256 and
+byte length of each actual input buffer before linting it. Independent evidence
+collection must compare those buffers with immutable Git blobs, together with
+the checkout tree and candidate head; a matching HEAD alone is insufficient.
+
 Public analysis artifacts contain rule IDs, categories and code-quality
 locations without messages, snippets or fixes. Security results have aggregate
 rule counts only. Raw tool output is disposable and is not uploaded. Detailed

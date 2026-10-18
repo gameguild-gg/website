@@ -96,6 +96,8 @@ jobs:
           CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           mkdir -p engine-analysis
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false -c core.fsmonitor=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > engine-analysis/source-before.txt
           git ls-files -z > engine-analysis/tracked-files.nul
           printf '%s\n' "$CANDIDATE_HEAD" > engine-analysis/head.txt
           git rev-parse HEAD > engine-analysis/checkout.txt
@@ -119,11 +121,17 @@ jobs:
             gameguild-codacy-engine-analysis \
             node /src/.codacy/legacy-eslint/analyze-repository.cjs /evidence \
             > engine-analysis/disposable-tool-output.log 2>&1 || docker_status=$?
+          source_status=0
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false -c core.fsmonitor=false diff --quiet HEAD -- || source_status=$?
+          if [ "$source_status" -eq 0 ]; then
+            printf '%s\n' tracked-files-match-checkout > engine-analysis/source-after.txt
+          fi
           evidence_status=0
           GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
             node .codacy/legacy-eslint/analyze-repository.cjs --finalize "$PWD/engine-analysis" \
             || evidence_status=$?
           if [ "$docker_status" -ne 0 ]; then exit "$docker_status"; fi
+          if [ "$source_status" -ne 0 ]; then exit "$source_status"; fi
           exit "$evidence_status"
       - name: Upload source coverage and redacted diagnostic metadata
         if: always()

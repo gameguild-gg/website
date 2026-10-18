@@ -62,9 +62,14 @@ function finalizeEvidence(output) {
   const filename = path.join(output, 'analysis-summary.json');
   const report = JSON.parse(readFileSync(filename, 'utf8'));
   assert.equal(report.head, process.env.GAMEGUILD_CODACY_SOURCE_HEAD, 'Evidence source differs');
+  for (const phase of ['before', 'after']) {
+    assert.equal(readFileSync(path.join(output, `source-${phase}.txt`), 'utf8').trim(),
+      'tracked-files-match-checkout', 'Tracked source must match the checkout before and after analysis');
+  }
   const bytes = statSync(path.join(output, 'disposable-tool-output.log')).size;
   Object.assign(report, analysisStatus(report, bytes), {
     unreviewedToolOutputBytes: bytes, toolOutputReviewPending: false,
+    workingTreeVerifiedBeforeAndAfter: true,
   });
   writeFileSync(filename, `${JSON.stringify(report, null, 2)}\n`);
   process.stdout.write(`${JSON.stringify({ head: report.head, selected: report.selected,
@@ -82,8 +87,10 @@ async function analyze(output) {
   mkdirSync(output, { recursive: true });
   const progress = path.join(output, 'file-progress.jsonl');
   const diagnostics = path.join(output, 'diagnostics.jsonl');
+  const sourceHashes = path.join(output, 'source-hashes.jsonl');
   writeFileSync(progress, '');
   writeFileSync(diagnostics, '');
+  writeFileSync(sourceHashes, '');
   const report = {
     head,
     selected: 0,
@@ -131,8 +138,10 @@ async function analyze(output) {
       const fileStarted = Date.now();
       record({ file: filename, state: 'started' });
       try {
-        const source = readFileSync(path.join('/src', filename), 'utf8');
-        const results = await eslint.lintText(source, { filePath: path.join('/src', filename) });
+        const source = readFileSync(path.join('/src', filename));
+        appendFileSync(sourceHashes, `${JSON.stringify({ file: filename, bytes: source.length,
+          sha256: createHash('sha256').update(source).digest('hex') })}\n`);
+        const results = await eslint.lintText(source.toString('utf8'), { filePath: path.join('/src', filename) });
         assert.equal(results.length, 1, 'Every selected file must have a lint result');
         const result = results[0];
         const redacted = publicDiagnostics(result.messages, filename, categories);
