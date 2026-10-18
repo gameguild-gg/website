@@ -28,7 +28,7 @@ WEB_PORT="${TESTING_LAB_E2E_WEB_PORT:-$(pick_default_port 44000)}"
 POSTGRES_USER="gameguild_e2e"
 POSTGRES_PASSWORD="gameguild_e2e_password"
 POSTGRES_DATABASE="gameguild_e2e"
-POSTGRES_IMAGE="${GAMEGUILD_TEST_POSTGRES_16_IMAGE:-public.ecr.aws/docker/library/postgres:16-alpine}"
+POSTGRES_IMAGE="${GAMEGUILD_TEST_POSTGRES_16_IMAGE:-mirror.gcr.io/library/postgres:16-alpine}"
 ADMIN_PASSWORD="${E2E_SYSTEM_ADMIN_PASSWORD:-Admin123!}"
 # shellcheck source=../../../../scripts/ci/pull-ci-image.sh
 source "${REPO_ROOT}/scripts/ci/pull-ci-image.sh"

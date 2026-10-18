@@ -64,7 +64,7 @@ function mockedPull(failures, image, cached = false, stalled = false) {
   };
 }
 
-const image = 'public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24';
+const image = 'mirror.gcr.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24';
 
 test('first pull success performs exactly one request and no backoff', () => {
   assert.deepEqual(mockedPull(0, image), {
