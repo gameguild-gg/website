@@ -397,10 +397,10 @@ public sealed class RefundProcessingService(
             catch (Exception exception)
             {
                 logger.LogWarning(
-                    exception,
-                    "Approver notification for refund {RefundId} to {Email} failed; the refund stays queued.",
+                    "Approver notification for refund {RefundId} to {Email} failed; the refund stays queued. Error type: {ErrorType}",
                     refund.Id,
-                    LogRedaction.Sanitize(email));
+                    LogRedaction.MaskEmail(email),
+                    exception.GetType().FullName);
             }
         }
     }
