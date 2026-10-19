@@ -50,7 +50,7 @@ public sealed class PermissionReadContractPostgreSqlTests
 
         var actors = new ActorContextAccessor();
         using var administrator = actors.BeginActorContextScope(
-            ActorContextBuilder.ForUser(user).WithTenantId(tenant).WithRoles("SystemAdmin").Build());
+            ActorContextBuilder.ForUser(user).WithTenantId(tenant).WithRole("SystemAdmin").Build());
         IPermissionServiceV2 service = new Facade(context, actorContextAccessor: actors);
         var page = await service.QueryTenantPermissionsAsync(new TenantPermissionListQuery
             { AllUsers = true, Page = 2, PageSize = 2 });

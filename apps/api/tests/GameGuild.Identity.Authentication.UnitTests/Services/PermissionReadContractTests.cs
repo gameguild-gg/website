@@ -244,7 +244,8 @@ public sealed class PermissionReadContractTests
         isolated.AddSingleton(Actor(Guid.NewGuid(), Guid.NewGuid()));
         foreach (var descriptor in registrations.Where(descriptor =>
                      descriptor.ServiceType == typeof(Facade) || descriptor.ServiceType == typeof(LegacyContract) ||
-                     descriptor.ServiceType == typeof(IPermissionServiceV2) || descriptor.ServiceType == typeof(IPermissionReadService)))
+                     descriptor.ServiceType == typeof(IPermissionServiceV2) || descriptor.ServiceType == typeof(IPermissionReadService) ||
+                     descriptor.ServiceType == typeof(IPermissionUpdateService)))
         {
             isolated.Add(descriptor);
         }
@@ -253,6 +254,7 @@ public sealed class PermissionReadContractTests
         var legacy = scope.ServiceProvider.GetRequiredService<LegacyContract>();
         Assert.Same(legacy, scope.ServiceProvider.GetRequiredService<IPermissionServiceV2>());
         Assert.Same(legacy, scope.ServiceProvider.GetRequiredService<IPermissionReadService>());
+        Assert.Same(legacy, scope.ServiceProvider.GetRequiredService<IPermissionUpdateService>());
         Assert.Same(legacy, scope.ServiceProvider.GetRequiredService<Facade>());
         using var other = provider.CreateScope();
         Assert.NotSame(legacy, other.ServiceProvider.GetRequiredService<IPermissionServiceV2>());

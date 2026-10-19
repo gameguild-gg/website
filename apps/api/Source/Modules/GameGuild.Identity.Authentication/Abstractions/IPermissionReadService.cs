@@ -51,6 +51,6 @@ public interface IPermissionReadService
 /// Additive version of the three-layer permission contract. Existing providers and callers of
 /// <see cref="IPermissionService"/> keep their original source and return-type contract.
 /// </summary>
-public interface IPermissionServiceV2 : IPermissionService, IPermissionReadService
+public interface IPermissionServiceV2 : IPermissionService, IPermissionReadService, IPermissionUpdateService
 {
 }

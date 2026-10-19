@@ -2025,6 +2025,33 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### Additive permission read and update contracts (issue #340)
+
+The existing three-layer compatibility facade has additive `IPermissionServiceV2`,
+`IPermissionReadService` and `IPermissionUpdateService` aliases. The actual host
+calls `AddPermissionServiceContracts`; each alias resolves the same scoped
+concrete service. Existing interface members and constructor arguments are retained.
+The Authorization module's focused services and permission evaluation engine stay
+the sources of authorization decisions; returning a stored grant is not an access
+decision.
+
+New updates require an authenticated tenant administrator or `permissions:manage`,
+SystemAdmin for another tenant, or an explicit global scope with SystemAdmin /
+`system:manage-global-defaults`. Subject, grantor and binding are immutable. A
+positive expected entity version prevents stale replacement. Grant, tenant/global
+security version and required permission audit persist in one relational transaction
+or a caller savepoint. Missing collaborators fail closed. Persistence errors and
+cancellation propagate; cancelled requests do not cancel rollback cleanup.
+
+The host audit buffer binds the verified actor and target tenant (including an
+explicit null global target). On savepoint rollback it restores earlier evidence,
+tracked state and outer operation capture state. Unpersisted caller work is rejected;
+the caller owns its outer transaction and final audit flush. Mutations have no replay
+key, so the new standalone wrapper performs no automatic retry after ambiguous
+commit failure. Full original CRUD/bulk coverage and legacy mutation hardening remain
+pending; source definitions have not yet been accepted by matching hosted CI. See
+`docs/issue-audit/issue340-permission-contract-2026-10-19.md` for retained criteria.
+
 ### In-process verification, reset and magic-link token consumption
 
 EmailVerificationService generates opaque 32-character lowercase hexadecimal

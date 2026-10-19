@@ -34,6 +34,25 @@ public class PermissionService(
     IHybridPermissionCache? hybridPermissionCache = null) : IPermissionServiceV2
 {
     private readonly IPermissionReadService _contractReader = new PermissionContractReader(context, actorContextAccessor);
+    private readonly IPermissionUpdateService _contractUpdater = new PermissionContractUpdater(
+        context, securityVersionStore, auditService, actorContextAccessor);
+
+    /// <inheritdoc />
+    public Task<Result<TenantPermission>> UpdateTenantPermissionAsync(
+        PermissionGrantUpdate<string> request, CancellationToken cancellationToken = default) =>
+        _contractUpdater.UpdateTenantPermissionAsync(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> UpdateContentTypePermissionAsync(
+        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken = default) =>
+        _contractUpdater.UpdateContentTypePermissionAsync(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<TPermission>> UpdateResourcePermissionAsync<TPermission, TResource>(
+        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken = default)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase =>
+        _contractUpdater.UpdateResourcePermissionAsync<TPermission, TResource>(request, cancellationToken);
 
     /// <inheritdoc />
     public Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(
@@ -1562,7 +1581,7 @@ public class PermissionService(
     ///     Arbitrary metadata, notes, descriptions and entity navigation properties are
     ///     deliberately excluded; only grant identity and access-control state are recorded.
     /// </summary>
-    private static string CapturePermissionSnapshot(PermissionBase grant, string? resourceType = null, Guid? resourceId = null)
+    internal static string CapturePermissionSnapshot(PermissionBase grant, string? resourceType = null, Guid? resourceId = null)
     {
         var tenantGrant = grant as TenantPermission;
         var contentGrant = grant as ContentTypePermission;
