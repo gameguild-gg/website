@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createApiError, createNetworkError } from '../../src/runtime/errors/transform.js';
+import { isRateLimitError, isValidationError } from '../../src/runtime/errors/guards.js';
 
 describe('createApiError — status code branches', () => {
   it('should map 401 with "expired" type to TOKEN_EXPIRED', async () => {
@@ -98,7 +99,8 @@ describe('createApiError — status code branches', () => {
     );
     const error = await createApiError(response);
     expect(error.code).toBe('RATE_LIMITED');
-    expect((error as any).retryAfter).toBe(30);
+    if (!isRateLimitError(error)) throw new Error('Expected a rate limit error');
+    expect(error.retryAfter).toBe(30);
   });
 
   it('should map 400 with errors to VALIDATION_ERROR with fieldErrors', async () => {
@@ -111,7 +113,8 @@ describe('createApiError — status code branches', () => {
     );
     const error = await createApiError(response);
     expect(error.code).toBe('VALIDATION_ERROR');
-    expect((error as any).fieldErrors).toEqual({
+    if (!isValidationError(error)) throw new Error('Expected a validation error');
+    expect(error.fieldErrors).toEqual({
       email: ['Invalid email'],
       password: ['Too short'],
     });

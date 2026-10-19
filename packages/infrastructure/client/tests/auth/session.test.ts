@@ -2,7 +2,7 @@
  * Session Management Tests
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createJWTPayload, toSession, shouldRefreshToken, refreshAccessToken } from '../../src/runtime/auth/session.js';
 import { TokenRefreshError } from '../../src/runtime/auth/errors.js';
 import type { ProviderResult, ResolvedAuthConfig, JWTPayload } from '../../src/runtime/auth/types.js';
@@ -41,9 +41,32 @@ const mockConfig: ResolvedAuthConfig = {
   tenantHeader: 'X-Tenant-Id',
 };
 
+interface RefreshResponseFixture {
+  ok: boolean;
+  status?: number;
+  json?: () => Promise<{
+    accessToken: string;
+    refreshToken?: string;
+    expiresIn?: number;
+    accessTokenExpiresAt?: string;
+    tenantId?: string;
+  }>;
+}
+type RefreshFetchFixture = (...args: Parameters<typeof fetch>) => Promise<RefreshResponseFixture>;
+
+function stubRefreshResponse(response: RefreshResponseFixture) {
+  const mockFetch = vi.fn<RefreshFetchFixture>().mockResolvedValue(response);
+  vi.stubGlobal('fetch', mockFetch);
+  return mockFetch;
+}
+
 describe('Session Management', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('createJWTPayload', () => {
@@ -177,8 +200,10 @@ describe('Session Management', () => {
       expect(session.availableTenants).toHaveLength(1);
       expect(session.expires).toBeDefined();
       // Should NOT contain tokens
-      expect((session as any).accessToken).toBeUndefined();
-      expect((session as any).refreshToken).toBeUndefined();
+      expect(Reflect.get(session, 'accessToken')).toBeUndefined();
+      expect(Reflect.get(session, 'refreshToken')).toBeUndefined();
+      expect(Object.hasOwn(session, 'accessToken')).toBe(false);
+      expect(Object.hasOwn(session, 'refreshToken')).toBe(false);
     });
 
     it('should use default expiry when exp is missing', () => {
@@ -256,7 +281,7 @@ describe('Session Management', () => {
     });
 
     it('should call the refresh endpoint', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
+      const mockFetch = stubRefreshResponse({
         ok: true,
         json: async () => ({
           accessToken: 'new-access-token',
@@ -264,7 +289,6 @@ describe('Session Management', () => {
           expiresIn: 3600,
         }),
       });
-      globalThis.fetch = mockFetch;
 
       const token: JWTPayload = {
         user: { id: 'user-1' },
@@ -287,7 +311,7 @@ describe('Session Management', () => {
     });
 
     it('should throw on non-ok response', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      stubRefreshResponse({
         ok: false,
         status: 401,
       });
@@ -303,7 +327,7 @@ describe('Session Management', () => {
     });
 
     it('should throw on fetch error', async () => {
-      globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+      vi.stubGlobal('fetch', vi.fn<RefreshFetchFixture>().mockRejectedValue(new Error('Network error')));
 
       const token: JWTPayload = {
         user: { id: 'user-1' },
@@ -317,7 +341,7 @@ describe('Session Management', () => {
 
     it('should use accessTokenExpiresAt if provided', async () => {
       const expiresAt = new Date(Date.now() + 7200000).toISOString();
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      stubRefreshResponse({
         ok: true,
         json: async () => ({
           accessToken: 'new-token',
@@ -339,7 +363,7 @@ describe('Session Management', () => {
 
     it('should default to 1 hour when no expiry info returned', async () => {
       const now = Date.now();
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      stubRefreshResponse({
         ok: true,
         json: async () => ({
           accessToken: 'new-token',
@@ -359,7 +383,7 @@ describe('Session Management', () => {
     });
 
     it('should preserve original refreshToken if none returned', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      stubRefreshResponse({
         ok: true,
         json: async () => ({ accessToken: 'new-token' }),
       });
@@ -385,7 +409,7 @@ describe('Session Management', () => {
       ).toString('base64url');
       const refreshedAccessToken = `header.${encodedClaims}.signature`;
 
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      stubRefreshResponse({
         ok: true,
         json: async () => ({
           accessToken: refreshedAccessToken,

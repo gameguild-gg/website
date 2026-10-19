@@ -2,17 +2,28 @@
  * Client tests - Auth validation
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createClient } from '../../src/client.js';
-import type { ClientConfig } from '../../src/client.js';
-import { ok } from '../../src/runtime/result/helpers.js';
 
-// Mock fetch
-global.fetch = vi.fn();
+type AuthFetchResponse = Pick<Response, 'ok' | 'status'> & {
+  headers?: Headers;
+  json: () => Promise<{ success: boolean }>;
+};
+type AuthFetchFixture = (...args: Parameters<typeof fetch>) => Promise<AuthFetchResponse>;
+const mockFetch = vi.fn<AuthFetchFixture>();
 
 describe('Client - Auth Validation', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    vi.stubGlobal('fetch', mockFetch);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('should return error when auth required but no token', async () => {
-    (global.fetch as any).mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => ({ success: true }),
@@ -32,6 +43,7 @@ describe('Client - Auth Validation', () => {
     });
 
     expect(result.ok).toBe(false);
+    expect(mockFetch).not.toHaveBeenCalled();
     if (!result.ok) {
       expect(result.error.code).toBe('TOKEN_MISSING');
       expect(result.error.message).toContain('Authentication required');
@@ -39,7 +51,7 @@ describe('Client - Auth Validation', () => {
   });
 
   it('should allow authenticated requests with token provider', async () => {
-    (global.fetch as any).mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -62,13 +74,14 @@ describe('Client - Auth Validation', () => {
     expect(global.fetch).toHaveBeenCalled();
     
     // Check Authorization header was added
-    const fetchCall = (global.fetch as any).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = mockFetch.mock.calls[0]?.[1]?.headers;
+    expect(headers).toBeInstanceOf(Headers);
+    if (!(headers instanceof Headers)) throw new Error('Expected native request Headers');
     expect(headers.get('Authorization')).toBe('Bearer valid-token');
   });
 
   it('should allow non-auth requests without token provider', async () => {
-    (global.fetch as any).mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       headers: new Headers({ 'Content-Type': 'application/json' }),
