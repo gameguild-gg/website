@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { resolveConfig } from '../../src/integrations/next/config.js';
-import type { GameGuildAuthConfig } from '../../src/runtime/auth/types.js';
+import type { AuthCallbacks, GameGuildAuthConfig, JWTPayload, Session, SessionUser } from '../../src/runtime/auth/types.js';
 import { MissingSecretError, ConfigError } from '../../src/runtime/auth/errors.js';
 
 describe('resolveConfig', () => {
@@ -126,7 +126,7 @@ describe('resolveConfig', () => {
   });
 
   it('should merge custom callbacks', () => {
-    const customJwt = vi.fn(async ({ token }) => token);
+    const customJwt = vi.fn<NonNullable<AuthCallbacks['jwt']>>(async ({ token }) => token);
 
     const result = resolveConfig(
       makeMinimalConfig({
@@ -188,30 +188,35 @@ describe('resolveConfig', () => {
   });
 
   describe('default callbacks behavior', () => {
+    // Deliberately partial inputs characterize identity/boolean callbacks here;
+    // they are not valid persisted sessions or encrypted JWT payloads.
     it('jwt callback should pass through token', async () => {
       const result = resolveConfig(makeMinimalConfig());
-      const token = { user: { id: '1' } } as any;
-      const output = await result.callbacks.jwt({ token });
+      const token: Partial<JWTPayload> = { user: { id: '1' } };
+      const output = await result.callbacks.jwt({ token: token as JWTPayload });
       expect(output).toBe(token);
     });
 
     it('session callback should pass through session', async () => {
       const result = resolveConfig(makeMinimalConfig());
-      const session = { user: { id: '1' } } as any;
-      const output = await result.callbacks.session({ session, token: {} as any });
+      const session: Partial<Session> = { user: { id: '1' } };
+      const ignoredToken: Partial<JWTPayload> = {};
+      const output = await result.callbacks.session({ session: session as Session, token: ignoredToken as JWTPayload });
       expect(output).toBe(session);
     });
 
     it('signIn callback should return true', async () => {
       const result = resolveConfig(makeMinimalConfig());
-      const output = await result.callbacks.signIn({ user: {} as any, provider: 'credentials' });
+      const ignoredUser: Partial<SessionUser> = {};
+      const output = await result.callbacks.signIn({ user: ignoredUser as SessionUser, provider: 'credentials' });
       expect(output).toBe(true);
     });
 
     it('authorized callback should return true when auth exists', async () => {
       const result = resolveConfig(makeMinimalConfig());
+      const auth: Partial<Session> = { user: { id: '1' } };
       const output = await result.callbacks.authorized({
-        auth: { user: { id: '1' } } as any,
+        auth: auth as Session,
         request: new Request('http://localhost/'),
       });
       expect(output).toBe(true);

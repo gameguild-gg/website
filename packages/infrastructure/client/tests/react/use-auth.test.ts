@@ -6,16 +6,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock React hooks
 vi.mock('react', () => ({
-  useState: vi.fn((initial: any) => {
+  useState: vi.fn((initial: unknown) => {
     let state = initial;
-    const setState = vi.fn((newState: any) => {
-      state = typeof newState === 'function' ? newState(state) : newState;
+    const setState = vi.fn((newState: unknown) => {
+      if (typeof newState === 'function') {
+        const update = newState as (current: unknown) => unknown;
+        state = update(state);
+      } else {
+        state = newState;
+      }
     });
     return [state, setState];
   }),
-  useCallback: vi.fn((fn: any) => fn),
+  useCallback: vi.fn((fn: unknown) => fn),
   useEffect: vi.fn((effect: () => void) => effect()),
-  useRef: vi.fn((initial: any) => ({ current: initial })),
+  useRef: vi.fn((initial: unknown) => ({ current: initial })),
   useContext: vi.fn(() => null),
 }));
 
@@ -31,11 +36,12 @@ describe('useAuth', () => {
 
   beforeEach(() => {
     mockFetch = vi.fn<typeof globalThis.fetch>();
-    globalThis.fetch = mockFetch;
+    vi.stubGlobal('fetch', mockFetch);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('should return auth functions and state', () => {
@@ -198,9 +204,8 @@ describe('useAuth', () => {
 
   it('signIn should redirect to OAuth URL when response has url', async () => {
     // Mock window.location
-    const originalLocation = globalThis.window;
     const locationMock = { href: '' };
-    (globalThis as any).window = { location: locationMock };
+    vi.stubGlobal('window', { location: locationMock });
 
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200 }))
@@ -211,12 +216,11 @@ describe('useAuth', () => {
 
     expect(locationMock.href).toBe('https://github.com/login/oauth?client_id=abc');
 
-    (globalThis as any).window = originalLocation;
   });
 
   it('signIn should redirect to redirectTo on success', async () => {
     const locationMock = { href: '' };
-    (globalThis as any).window = { location: locationMock };
+    vi.stubGlobal('window', { location: locationMock });
 
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200 }))
@@ -232,12 +236,11 @@ describe('useAuth', () => {
 
     expect(locationMock.href).toBe('/dashboard');
 
-    delete (globalThis as any).window;
   });
 
   it('signUp should redirect to redirectTo on success', async () => {
     const locationMock = { href: '' };
-    (globalThis as any).window = { location: locationMock };
+    vi.stubGlobal('window', { location: locationMock });
 
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200 }))
@@ -254,12 +257,11 @@ describe('useAuth', () => {
 
     expect(locationMock.href).toBe('/welcome');
 
-    delete (globalThis as any).window;
   });
 
   it('signOut should redirect to / by default', async () => {
     const locationMock = { href: '' };
-    (globalThis as any).window = { location: locationMock };
+    vi.stubGlobal('window', { location: locationMock });
 
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200 }))
@@ -270,12 +272,11 @@ describe('useAuth', () => {
 
     expect(locationMock.href).toBe('/');
 
-    delete (globalThis as any).window;
   });
 
   it('signOut should redirect to custom URL', async () => {
     const locationMock = { href: '' };
-    (globalThis as any).window = { location: locationMock };
+    vi.stubGlobal('window', { location: locationMock });
 
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200 }))
@@ -286,7 +287,6 @@ describe('useAuth', () => {
 
     expect(locationMock.href).toBe('/login');
 
-    delete (globalThis as any).window;
   });
 
   it('signUp should handle failed response body parse', async () => {
