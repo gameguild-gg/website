@@ -269,10 +269,10 @@ public sealed class PermissionLifecycleContractTests
             {
                 var parameters = cancellable.GetParameters();
                 Assert.False(parameters[^1].IsOptional);
-                var convenience = Assert.Single(methods.Where(method => method.Name == cancellable.Name
+                var convenience = Assert.Single(methods, method => method.Name == cancellable.Name
                     && method.GetGenericArguments().Length == cancellable.GetGenericArguments().Length
                     && method.GetParameters().Select(parameter => parameter.ParameterType)
-                        .SequenceEqual(parameters.Take(parameters.Length - 1).Select(parameter => parameter.ParameterType))));
+                        .SequenceEqual(parameters.Take(parameters.Length - 1).Select(parameter => parameter.ParameterType)));
                 Assert.Equal(cancellable.ReturnType.ToString(), convenience.ReturnType.ToString());
                 count++;
             }
