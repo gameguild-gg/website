@@ -2,7 +2,8 @@ import type { PropsWithChildren } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import type { Block } from "../../lib/storage/editor/block-structure"
+import type { Block, BlockCellType } from "../../lib/storage/editor/block-structure"
+import type { CodeStudioData, CodeStudioMode } from "../../extras/code-studio/types"
 import { BlockEditorModal } from "./block-editor-modal"
 
 // Exercise the real modal's state and payload callbacks through small UI adapters.
@@ -27,10 +28,22 @@ vi.mock("@game-guild/ui/components/select", () => {
   }
 })
 
-vi.mock("@/components/block-content-editor/lazy-client-components", () => ({
-  CodeStudioEditor: () => null, HTMLEditor: () => null, MarkdownEditor: () => null,
-  ModeSelectionDialog: () => null, QuizSettingsDialog: () => null, RichTextEditor: () => null,
-}))
+vi.mock("@/components/block-content-editor/lazy-client-components", () => {
+  const Standalone = ({ initialData, onSave }: { initialData: unknown; onSave: (data: unknown) => void }) => (
+    <button onClick={() => onSave(initialData)}>Save standalone</button>
+  )
+  return {
+    CodeStudioEditor: ({ data, onSave }: { data: CodeStudioData; onSave: (data: CodeStudioData) => void }) => (
+      <button onClick={() => onSave(data)}>Save code studio</button>
+    ),
+    ModeSelectionDialog: ({ onSelect }: { onSelect: (mode: CodeStudioMode) => void }) => <>
+      <button onClick={() => onSelect("execution")}>Choose execution</button>
+      <button onClick={() => onSelect("test")}>Choose test</button>
+    </>,
+    HTMLEditor: Standalone, MarkdownEditor: Standalone, RichTextEditor: Standalone,
+    QuizSettingsDialog: () => null,
+  }
+})
 
 afterEach(() => {
   cleanup()
@@ -40,8 +53,11 @@ afterEach(() => {
 function setup(block: Block) {
   const onSave = vi.fn<(data: unknown) => void>()
   const onOpenChange = vi.fn<(open: boolean) => void>()
-  render(<BlockEditorModal open block={block} blockType={block.type} onSave={onSave} onOpenChange={onOpenChange} />)
-  return { onSave, onOpenChange, user: userEvent.setup() }
+  const { rerender } = render(<BlockEditorModal open block={block} blockType={block.type} onSave={onSave} onOpenChange={onOpenChange} />)
+  const selectBlock = (nextBlock: Block | null, blockType: BlockCellType | null = nextBlock?.type ?? null) => {
+    rerender(<BlockEditorModal open block={nextBlock} blockType={blockType} onSave={onSave} onOpenChange={onOpenChange} />)
+  }
+  return { onSave, onOpenChange, selectBlock, user: userEvent.setup() }
 }
 
 const sourceData = {
@@ -132,5 +148,73 @@ describe("BlockEditorModal canonical form payloads", () => {
     const { user, onSave } = setup({ id: "2", type: "source", data })
     await user.click(screen.getByRole("button", { name: "Save", exact: true }))
     expect(onSave).toHaveBeenCalledExactlyOnceWith(data)
+  })
+
+  it("does not carry unsaved header changes into a different block ID", async () => {
+    const { user, onSave, selectBlock } = setup({ id: "1", type: "header", data: { text: "First", level: 1, style: "default" } })
+    await user.type(screen.getByPlaceholderText("Section title"), " unsaved")
+    const data = { text: "Second", level: 2 as const, style: "accent" as const }
+    selectBlock({ id: "2", type: "header", data })
+    expect(screen.getByPlaceholderText("Section title")).toHaveValue("Second")
+    await user.click(screen.getByRole("button", { name: "Save", exact: true }))
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(data)
+  })
+
+  it("does not carry a draft into a different block type with the same ID", async () => {
+    const { user, onSave, selectBlock } = setup({ id: "1", type: "header", data: { text: "First", level: 1, style: "default" } })
+    await user.type(screen.getByPlaceholderText("Section title"), " unsaved")
+    selectBlock({ id: "1", type: "source", data: sourceData })
+    expect(screen.getByPlaceholderText("Author")).toHaveValue("Author")
+    await user.click(screen.getByRole("button", { name: "Save", exact: true }))
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(sourceData)
+  })
+
+  it("updates project fields while retaining editor state and reference metadata", async () => {
+    const data = { projectId: "old-id", projectName: "Old name", editorState: { retained: true },
+      isLocalCopy: true, isReference: true, originalProjectId: "origin", extra: "retained" }
+    const { user, onSave } = setup({ id: "p", type: "project", data })
+    await user.clear(screen.getByPlaceholderText("Enter project ID to embed"))
+    await user.type(screen.getByPlaceholderText("Enter project ID to embed"), "new-id")
+    await user.clear(screen.getByPlaceholderText("Display name"))
+    await user.type(screen.getByPlaceholderText("Display name"), "New name")
+    await user.click(screen.getByRole("button", { name: "Save", exact: true }))
+    expect(onSave).toHaveBeenCalledExactlyOnceWith({ ...data, projectId: "new-id", projectName: "New name" })
+  })
+
+  it("updates presentation title without losing opaque slide or extension data", async () => {
+    const data = { title: "Old title", slides: [{ content: { retained: true } }], extension: { version: 2 } }
+    const { user, onSave } = setup({ id: "p", type: "presentation", data })
+    await user.clear(screen.getByRole("textbox"))
+    await user.type(screen.getByRole("textbox"), "New title")
+    await user.click(screen.getByRole("button", { name: "Save", exact: true }))
+    expect(onSave).toHaveBeenCalledExactlyOnceWith({ ...data, title: "New title" })
+  })
+
+  it.each([{ data: null }, { data: undefined }, { data: [] }, { data: "invalid" }, { data: 7 }, { data: false }])(
+    "does not edit a non-object presentation payload $data", ({ data }) => {
+      const { onSave } = setup({ id: "p", type: "presentation", data })
+      expect(screen.queryByRole("dialog")).toBeNull()
+      expect(onSave).not.toHaveBeenCalled()
+    },
+  )
+
+  it("does not dispatch a block through a mismatched requested type", () => {
+    const { onSave, selectBlock } = setup({ id: "1", type: "header", data: { text: "Title", level: 1, style: "default" } })
+    selectBlock({ id: "2", type: "source", data: sourceData }, "header")
+    expect(screen.queryByRole("dialog")).toBeNull()
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it.each(["execution", "test"] as const)("initializes a new Code Studio block in %s mode", async (mode) => {
+    const data = { id: "studio-id", files: [], folders: [], openTabs: [], mode: "execution" as const,
+      language: "javascript" as const, title: "Retained title", extra: { retained: true } }
+    const { user, onSave } = setup({ id: "c", type: "code-studio", data })
+    await user.click(screen.getByRole("button", { name: `Choose ${mode}` }))
+    await user.click(screen.getByRole("button", { name: "Save code studio" }))
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      id: "studio-id", mode, title: "Retained title", extra: { retained: true },
+      folders: [], openTabs: ["1"], activeFileId: "1",
+      files: [expect.objectContaining({ id: "1", name: "main.js", path: "main.js", language: "javascript", isFile: "f", isVisible: true })],
+    }))
   })
 })

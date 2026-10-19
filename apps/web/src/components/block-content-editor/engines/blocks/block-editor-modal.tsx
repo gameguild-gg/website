@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, type ReactNode } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@game-guild/ui/components/dialog"
 import { Button } from "@game-guild/ui/components/button"
 import { Input } from "@game-guild/ui/components/input"
@@ -25,6 +25,7 @@ import type { BaseMediaData } from "@/components/block-content-editor/nodes/base
 import type { HeaderData } from "@/components/block-content-editor/nodes/header-node"
 import type { SourceData } from "@/components/block-content-editor/nodes/source-node"
 import { HEADER_LEVELS, isHeaderStyle, isSourceStyle, parseHeaderLevel, type SourceTextField } from "./block-form-values"
+import { getCurrentEditingBlock, isPresentationFormData } from "./block-editor-state"
 
 // ============================================================================
 // Simple form editors for Pattern B types (no standalone editor exists)
@@ -241,84 +242,86 @@ interface BlockEditorModalProps {
   onOpenChange: (open: boolean) => void
   block: Block | null
   blockType: BlockCellType | null
-  onSave: (data: any) => void
+  onSave: (data: unknown) => void
 }
 
 export function BlockEditorModal({ open, onOpenChange, block, blockType, onSave }: BlockEditorModalProps) {
-  const [editData, setEditData] = useState<any>(null)
+  const [editedBlock, setEditedBlock] = useState<Block | null>(null)
   const [showModeSelection, setShowModeSelection] = useState(false)
 
-  // Initialize editData when block changes
-  const currentData = editData ?? block?.data ?? null
+  const currentBlock = getCurrentEditingBlock(block, editedBlock)
+  const hasCurrentEdits = currentBlock !== null && currentBlock === editedBlock
 
-  const handleSave = useCallback((data: any) => {
+  const handleSave = useCallback((data: unknown) => {
     onSave(data)
-    setEditData(null)
+    setEditedBlock(null)
     setShowModeSelection(false)
     onOpenChange(false)
   }, [onSave, onOpenChange])
 
   const handleCancel = useCallback(() => {
-    setEditData(null)
+    setEditedBlock(null)
     setShowModeSelection(false)
     onOpenChange(false)
   }, [onOpenChange])
 
   const handleModeSelect = useCallback((mode: CodeStudioMode) => {
-    const defaultLanguage = (currentData?.language || "javascript") as keyof typeof LANGUAGE_CONFIGS
+    if (currentBlock?.type !== "code-studio") return
+    const currentData = currentBlock.data
+    const defaultLanguage = currentData.language || "javascript"
     const languageConfig = LANGUAGE_CONFIGS[defaultLanguage]
     const fileId = "1"
-    setEditData({
-      ...currentData,
-      mode,
-      files: [
-        {
-          id: fileId,
-          name: `main${languageConfig.defaultExtension}`,
-          content: languageConfig.defaultTemplate,
-          language: defaultLanguage,
-          isFile: 'f' as const,
-          isVisible: true,
-          path: `main${languageConfig.defaultExtension}`,
-        },
-      ],
-      folders: [],
-      openTabs: [fileId],
-      activeFileId: fileId,
+    setEditedBlock({
+      ...currentBlock,
+      data: {
+        ...currentData,
+        mode,
+        files: [
+          {
+            id: fileId,
+            name: `main${languageConfig.defaultExtension}`,
+            content: languageConfig.defaultTemplate,
+            language: defaultLanguage,
+            isFile: 'f' as const,
+            isVisible: true,
+            path: `main${languageConfig.defaultExtension}`,
+          },
+        ],
+        folders: [],
+        openTabs: [fileId],
+        activeFileId: fileId,
+      },
     })
     setShowModeSelection(false)
-  }, [currentData])
+  }, [currentBlock])
 
-  const handleDataChange = useCallback((newData: any) => {
-    setEditData(newData)
-  }, [])
+  if (!blockType || !currentBlock || !currentBlock.data || currentBlock.type !== blockType) return null
 
-  if (!blockType || !currentData) return null
-
-  const config = BLOCK_REGISTRY[blockType as BlockCellType]
+  const config = BLOCK_REGISTRY[currentBlock.type]
   if (!config) return null
 
   // ─── Pattern A: Standalone editors that manage their own UI ───
 
   // Quiz — has its own dialog
-  if (blockType === "quiz") {
+  if (currentBlock.type === "quiz") {
     return (
       <QuizSettingsDialog
         open={open}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) handleCancel()
         }}
-        value={currentData}
+        value={currentBlock.data}
         onCommit={handleSave}
       />
     )
   }
 
   // Code Studio — mode selection for new blocks, then full-screen editor
-  if (blockType === "code-studio") {
+  if (currentBlock.type === "code-studio") {
     if (!open) return null
+    const currentData = currentBlock.data
     const isNewCodeStudio = !currentData.files || currentData.files.length === 0
-    if (isNewCodeStudio && !showModeSelection && !editData) {
+    if (isNewCodeStudio && !showModeSelection && !hasCurrentEdits) {
       // Auto-show mode selection for new Code Studio blocks
       return <ModeSelectionDialog onSelect={handleModeSelect} onCancel={handleCancel} />
     }
@@ -326,35 +329,44 @@ export function BlockEditorModal({ open, onOpenChange, block, blockType, onSave 
   }
 
   // Markdown — renders its own full-screen overlay
-  if (blockType === "markdown") {
+  if (currentBlock.type === "markdown") {
     if (!open) return null
-    return <MarkdownEditor initialData={currentData} onSave={handleSave} onCancel={handleCancel} />
+    return <MarkdownEditor initialData={currentBlock.data} onSave={handleSave} onCancel={handleCancel} />
   }
 
   // HTML — renders its own full-screen overlay
-  if (blockType === "html") {
+  if (currentBlock.type === "html") {
     if (!open) return null
-    return <HTMLEditor initialData={currentData} onSave={handleSave} onCancel={handleCancel} />
+    return <HTMLEditor initialData={currentBlock.data} onSave={handleSave} onCancel={handleCancel} />
   }
 
   // Rich Text — renders its own full-screen overlay
-  if (blockType === "rich-text") {
+  if (currentBlock.type === "rich-text") {
     if (!open) return null
-    return <RichTextEditor initialData={currentData} onSave={handleSave} onCancel={handleCancel} />
+    return <RichTextEditor initialData={currentBlock.data} onSave={handleSave} onCancel={handleCancel} />
   }
 
   // ─── Pattern B: Simple form editors ───
 
-  const formMap: Record<string, React.ComponentType<{ data: any; onChange: (d: any) => void }>> = {
+  const formMap = {
     "youtube": YouTubeForm,
     "spotify": SpotifyForm,
     "header": HeaderForm,
     "source": SourceForm,
   }
-  const FormComponent = formMap[blockType]
+  let formEditor: ReactNode = null
+  if (currentBlock.type === "header") {
+    const FormComponent = formMap.header
+    formEditor = <FormComponent data={currentBlock.data} onChange={(data) => setEditedBlock({ ...currentBlock, data })} />
+  } else if (currentBlock.type === "source") {
+    const FormComponent = formMap.source
+    formEditor = <FormComponent data={currentBlock.data} onChange={(data) => setEditedBlock({ ...currentBlock, data })} />
+  }
 
   // Presentation and Project get a simple form too
-  if (blockType === "presentation") {
+  if (currentBlock.type === "presentation") {
+    const currentData = currentBlock.data
+    if (!isPresentationFormData(currentData)) return null
     return (
       <Dialog open={open} onOpenChange={(v) => { if (!v) handleCancel() }}>
         <DialogContent className="max-w-2xl">
@@ -363,8 +375,8 @@ export function BlockEditorModal({ open, onOpenChange, block, blockType, onSave 
             <div>
               <Label>Title</Label>
               <Input
-                value={(editData ?? currentData).title || ""}
-                onChange={(e) => handleDataChange({ ...currentData, ...editData, title: e.target.value })}
+                value={typeof currentData.title === "string" ? currentData.title : ""}
+                onChange={(e) => setEditedBlock({ ...currentBlock, data: { ...currentData, title: e.target.value } })}
                 autoFocus
               />
             </div>
@@ -372,14 +384,15 @@ export function BlockEditorModal({ open, onOpenChange, block, blockType, onSave 
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-            <Button onClick={() => handleSave(editData ?? currentData)}>Save</Button>
+            <Button onClick={() => handleSave(currentData)}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     )
   }
 
-  if (blockType === "project") {
+  if (currentBlock.type === "project") {
+    const currentData = currentBlock.data
     return (
       <Dialog open={open} onOpenChange={(v) => { if (!v) handleCancel() }}>
         <DialogContent className="max-w-2xl">
@@ -389,8 +402,8 @@ export function BlockEditorModal({ open, onOpenChange, block, blockType, onSave 
               <Label>Project ID</Label>
               <Input
                 placeholder="Enter project ID to embed"
-                value={(editData ?? currentData).projectId || ""}
-                onChange={(e) => handleDataChange({ ...currentData, ...editData, projectId: e.target.value })}
+                value={currentData.projectId || ""}
+                onChange={(e) => setEditedBlock({ ...currentBlock, data: { ...currentData, projectId: e.target.value } })}
                 autoFocus
               />
             </div>
@@ -398,14 +411,14 @@ export function BlockEditorModal({ open, onOpenChange, block, blockType, onSave 
               <Label>Project Name</Label>
               <Input
                 placeholder="Display name"
-                value={(editData ?? currentData).projectName || ""}
-                onChange={(e) => handleDataChange({ ...currentData, ...editData, projectName: e.target.value })}
+                value={currentData.projectName || ""}
+                onChange={(e) => setEditedBlock({ ...currentBlock, data: { ...currentData, projectName: e.target.value } })}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-            <Button onClick={() => handleSave(editData ?? currentData)}>Save</Button>
+            <Button onClick={() => handleSave(currentData)}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -413,15 +426,15 @@ export function BlockEditorModal({ open, onOpenChange, block, blockType, onSave 
   }
 
   // Generic form-based editor for Pattern B types
-  if (FormComponent) {
-    const formData = editData ?? currentData
+  if (formEditor) {
+    const formData = currentBlock.data
     return (
       <Dialog open={open} onOpenChange={(v) => { if (!v) handleCancel() }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>{config.label} Editor</DialogTitle>
           </DialogHeader>
-          <FormComponent data={formData} onChange={handleDataChange} />
+          {formEditor}
           <DialogFooter>
             <Button variant="outline" onClick={handleCancel}>Cancel</Button>
             <Button onClick={() => handleSave(formData)}>Save</Button>

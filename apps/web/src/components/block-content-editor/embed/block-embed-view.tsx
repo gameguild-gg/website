@@ -57,11 +57,11 @@ export function BlockEmbedView({
   }, [editable, autoOpenIfNew, block.data])
 
   const handleSave = useCallback(
-    (newData: EmbeddableBlockData) => {
+    (newData: unknown) => {
       // Strip transient `isNew` flag on first save, matching the block array
       // engine convention.
       const cleaned =
-        newData && typeof newData === "object" && "isNew" in (newData as object)
+        newData && typeof newData === "object" && "isNew" in newData
           ? { ...(newData as unknown as Record<string, unknown>), isNew: undefined }
           : newData
       onChange?.(cleaned as EmbeddableBlockData)
