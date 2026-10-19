@@ -5,6 +5,14 @@ import { writeBrowserEvidence } from './browser-smoke-evidence.mjs';
 
 const baseUrl = (process.env.PUBLIC_E2E_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3011').replace(/\/$/, '');
 const evidencePath = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME;
+const startedAt = new Date().toISOString();
+const startedAtMs = performance.now();
+const evidenceCase = {
+  file: 'apps/web/scripts/economy-browser-e2e.mjs',
+  title: 'renders public Economy routes and protects authenticated Economy routes',
+  projectName: 'chromium',
+  startedAt,
+};
 
 const publicRoutes = [
   ['Marketplace', '/marketplace', /Learn, build, and hire from trusted creators/i],
@@ -71,7 +79,7 @@ async function main() {
       await assertProtected(page, route);
     }
 
-    await writeBrowserEvidence(evidencePath, { passed: true, errors: [] });
+    await writeBrowserEvidence(evidencePath, { ...evidenceCase, durationMs: performance.now() - startedAtMs, passed: true, errors: [] });
     console.log(`Economy browser surface passed against ${baseUrl}`);
   } finally {
     await browser.close();
@@ -80,7 +88,7 @@ async function main() {
 
 main().catch(async (error) => {
   const message = error instanceof Error ? error.message : String(error);
-  await writeBrowserEvidence(evidencePath, { passed: false, errors: [message] });
+  await writeBrowserEvidence(evidencePath, { ...evidenceCase, durationMs: performance.now() - startedAtMs, passed: false, errors: [message] });
   console.error(message);
   process.exitCode = 1;
 });

@@ -889,6 +889,87 @@ test_json_evidence_rejects_pending_and_skipped() {
   assert_throws 'skipped' assert_playwright_evidence "$playwright"
 }
 
+write_playwright_case_fixture() {
+  "$PYTHON_BIN" - "$1" "$2" <<'PY'
+from copy import deepcopy
+import json
+import pathlib
+import sys
+
+path, mode = sys.argv[1:]
+execution = dict(status="passed", retry=0, errors=[], duration=1250, startTime="2026-10-19T12:00:00.000Z")
+case = dict(projectName="chromium", expectedStatus="passed", status="expected", results=[execution])
+spec = dict(id="browser-script:journey", file="apps/web/scripts/economy-browser-e2e.mjs", title="Economy browser journey", ok=True, tests=[case])
+report = dict(stats=dict(expected=1, unexpected=0, skipped=0), errors=[], suites=[dict(specs=[spec], suites=[])])
+if mode == "summary-only":
+    report["suites"] = []
+elif mode == "missing-results":
+    case["results"] = []
+elif mode == "missing-identity":
+    spec["title"] = ""
+elif mode in ("failed", "skipped"):
+    execution["status"] = mode
+elif mode == "retried":
+    case["results"].append(dict(execution, retry=1))
+elif mode == "duplicate":
+    report["suites"][0]["specs"].append(deepcopy(spec))
+elif mode == "wrong-total":
+    report["stats"]["expected"] = 2
+elif mode == "report-error":
+    report["errors"] = [dict(message="browser worker failed")]
+elif mode == "case-error":
+    execution["errors"] = [dict(message="page crashed")]
+elif mode == "missing-timing":
+    del execution["startTime"]
+elif mode == "invalid-duration":
+    execution["duration"] = -1
+elif mode != "passed":
+    raise ValueError(mode)
+pathlib.Path(path).write_text(json.dumps(report), encoding="utf-8")
+PY
+}
+
+test_playwright_evidence_accepts_named_execution() {
+  local evidence="$fixture_root/playwright-complete.json"
+  write_playwright_case_fixture "$evidence" passed || return 1
+  assert_playwright_evidence "$evidence" >/dev/null
+}
+
+test_playwright_evidence_rejects_summary_only() {
+  local evidence="$fixture_root/playwright-summary-only.json"
+  write_playwright_case_fixture "$evidence" summary-only || return 1
+  assert_throws 'requires detailed case results' assert_playwright_evidence "$evidence"
+}
+
+test_playwright_evidence_requires_complete_execution() {
+  local evidence="$fixture_root/playwright-incomplete.json" pair mode pattern
+  for pair in \
+    'missing-results|has no execution results' \
+    'missing-identity|requires a named case identity' \
+    'missing-timing|invalid execution timing' \
+    'invalid-duration|invalid execution timing'; do
+    IFS='|' read -r mode pattern <<< "$pair"
+    write_playwright_case_fixture "$evidence" "$mode" || return 1
+    assert_throws "$pattern" assert_playwright_evidence "$evidence" || return 1
+  done
+}
+
+test_playwright_evidence_reconciles_outcomes_and_totals() {
+  local evidence="$fixture_root/playwright-contradictory.json" pair mode pattern
+  for pair in \
+    'failed|case did not pass' \
+    'skipped|case did not pass' \
+    'retried|contains retry attempts' \
+    'duplicate|contains duplicate case identities' \
+    'wrong-total|case count does not match' \
+    'report-error|report contains errors' \
+    'case-error|case contains errors'; do
+    IFS='|' read -r mode pattern <<< "$pair"
+    write_playwright_case_fixture "$evidence" "$mode" || return 1
+    assert_throws "$pattern" assert_playwright_evidence "$evidence" || return 1
+  done
+}
+
 test_canonical_json_preserves_arrays() {
   local first="$fixture_root/first.json" second="$fixture_root/second.json"
   local first_out="$fixture_root/first.out.json" second_out="$fixture_root/second.out.json"
@@ -1126,6 +1207,10 @@ run_test 'Cobertura enforces line, branch, and method coverage' test_cobertura_r
 run_test 'Cobertura requires 100 percent branch coverage' test_cobertura_requires_full_branch_coverage
 run_test 'Cobertura supports path-scoped capability coverage' test_cobertura_supports_path_scoped_capabilities
 run_test 'Vitest and Playwright reject pending or skipped tests' test_json_evidence_rejects_pending_and_skipped
+run_test 'Playwright evidence accepts a named executed case' test_playwright_evidence_accepts_named_execution
+run_test 'Playwright evidence rejects stats without cases' test_playwright_evidence_rejects_summary_only
+run_test 'Playwright evidence requires case identity results and timing' test_playwright_evidence_requires_complete_execution
+run_test 'Playwright evidence reconciles actual outcomes retries and totals' test_playwright_evidence_reconciles_outcomes_and_totals
 run_test 'canonical JSON is deterministic and preserves arrays' test_canonical_json_preserves_arrays
 
 printf 'Shell gate tests: %s passed, %s failed\n' "$passed" "$failed"

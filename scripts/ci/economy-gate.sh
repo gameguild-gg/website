@@ -310,7 +310,9 @@ assert_playwright_evidence() {
   local path="$1"
   "$PYTHON_BIN" - "$path" <<'PY'
 import json
+import math
 import sys
+from datetime import datetime
 
 path = sys.argv[1]
 with open(path, encoding="utf-8") as handle:
@@ -326,6 +328,51 @@ if failed:
     raise SystemExit(f"Playwright suite contains {failed} failed tests: {path}")
 if skipped:
     raise SystemExit(f"Playwright suite contains {skipped} skipped tests: {path}")
+if result.get("errors"):
+    raise SystemExit(f"Playwright report contains errors: {path}")
+if int(stats.get("flaky", 0)):
+    raise SystemExit(f"Playwright suite contains flaky tests: {path}")
+
+cases = []
+identities = set()
+
+def collect_cases(suites):
+    for suite in suites:
+        for spec in suite.get("specs", []):
+            for case in spec.get("tests", []):
+                if not all(isinstance(value, str) and value.strip() for value in
+                           (spec.get("id"), spec.get("file"), spec.get("title"), case.get("projectName"))):
+                    raise SystemExit(f"Playwright evidence requires a named case identity: {path}")
+                identity = (spec["id"], case["projectName"], case.get("repeatEachIndex", 0))
+                if identity in identities:
+                    raise SystemExit(f"Playwright evidence contains duplicate case identities: {path}")
+                identities.add(identity)
+                runs = case.get("results", [])
+                if not runs:
+                    raise SystemExit(f"Playwright case has no execution results: {path}")
+                if len(runs) != 1 or runs[0].get("retry", 0) != 0:
+                    raise SystemExit(f"Playwright case contains retry attempts: {path}")
+                if (spec.get("ok") is not True or case.get("expectedStatus") != "passed"
+                        or case.get("status") != "expected" or runs[0].get("status") != "passed"):
+                    raise SystemExit(f"Playwright case did not pass: {path}")
+                if runs[0].get("errors") or runs[0].get("error"):
+                    raise SystemExit(f"Playwright case contains errors: {path}")
+                duration = runs[0].get("duration")
+                try:
+                    started = datetime.fromisoformat(runs[0]["startTime"].replace("Z", "+00:00"))
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    raise SystemExit(f"Playwright case has invalid execution timing: {path}")
+                if (isinstance(duration, bool) or not isinstance(duration, (int, float))
+                        or not math.isfinite(duration) or duration < 0 or started.tzinfo is None):
+                    raise SystemExit(f"Playwright case has invalid execution timing: {path}")
+                cases.append(case)
+        collect_cases(suite.get("suites", []))
+
+collect_cases(result.get("suites", []))
+if not cases:
+    raise SystemExit(f"Playwright evidence requires detailed case results: {path}")
+if len(cases) != total or len(cases) != expected:
+    raise SystemExit(f"Playwright case count does not match reported totals: {path}")
 print(json.dumps({"total": total, "failed": failed, "skipped": skipped}, separators=(",", ":")))
 PY
 }

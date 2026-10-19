@@ -6,6 +6,14 @@ import { writeBrowserEvidence } from './browser-smoke-evidence.mjs';
 const baseUrl = (process.env.PUBLIC_E2E_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3011').replace(/\/$/, '');
 const runAuthFlow = ['1', 'true', 'yes'].includes((process.env.PUBLIC_E2E_AUTH_FLOW ?? '').toLowerCase());
 const evidencePath = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME;
+const startedAt = new Date().toISOString();
+const startedAtMs = performance.now();
+const evidenceCase = {
+  file: 'apps/web/scripts/public-browser-smoke.mjs',
+  title: 'renders public routes and completes the configured public browser smoke journey',
+  projectName: 'chromium',
+  startedAt,
+};
 
 const publicRoutes = [
   ['Home', '/'],
@@ -213,7 +221,7 @@ async function main() {
       }
     }
 
-    await writeBrowserEvidence(evidencePath, { passed: true, errors: [] });
+    await writeBrowserEvidence(evidencePath, { ...evidenceCase, durationMs: performance.now() - startedAtMs, passed: true, errors: [] });
     console.log(`Public browser smoke passed against ${baseUrl}`);
   } catch (error) {
     const headings = await page.getByRole('heading').allTextContents().catch(() => []);
@@ -229,7 +237,7 @@ async function main() {
 
 main().catch(async (error) => {
   const message = error instanceof Error ? error.message : String(error);
-  await writeBrowserEvidence(evidencePath, { passed: false, errors: [message] });
+  await writeBrowserEvidence(evidencePath, { ...evidenceCase, durationMs: performance.now() - startedAtMs, passed: false, errors: [message] });
   console.error(message);
   process.exitCode = 1;
 });

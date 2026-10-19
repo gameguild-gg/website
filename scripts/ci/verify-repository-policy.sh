@@ -35,6 +35,7 @@ bash "$script_dir/install-and-audit-pnpm.sh"
 
 gate_stage='code-toolchain-contracts'
 node --test "$repository_root/apps/web/scripts/coding-cycle-toolchain-support.test.mjs"
+node --test "$repository_root/apps/web/scripts/browser-smoke-evidence.test.mjs"
 
 gate_stage='policy-tests'
 bash "$script_dir/tests/verify-economy.sh"

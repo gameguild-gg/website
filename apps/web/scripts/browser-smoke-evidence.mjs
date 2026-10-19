@@ -4,14 +4,52 @@ import { dirname } from 'node:path';
 export async function writeBrowserEvidence(outputPath, result) {
   if (!outputPath) return;
 
+  for (const key of ['file', 'title', 'projectName', 'startedAt']) {
+    if (typeof result[key] !== 'string' || result[key].trim().length === 0) {
+      throw new TypeError(`Browser evidence requires ${key}`);
+    }
+  }
+  if (!Number.isFinite(Date.parse(result.startedAt))) {
+    throw new TypeError('Browser evidence requires a valid startedAt');
+  }
+  if (!Number.isFinite(result.durationMs) || result.durationMs < 0) {
+    throw new TypeError('Browser evidence requires a nonnegative durationMs');
+  }
+  if (typeof result.passed !== 'boolean' || !Array.isArray(result.errors)) {
+    throw new TypeError('Browser evidence requires a boolean outcome and an errors array');
+  }
+  const passed = result.passed && result.errors.length === 0;
   const evidence = {
+    metadata: { producer: 'browser-smoke-script', schemaVersion: 2 },
     stats: {
-      expected: result.passed ? 1 : 0,
-      unexpected: result.passed ? 0 : 1,
+      expected: passed ? 1 : 0,
+      unexpected: passed ? 0 : 1,
       skipped: 0,
     },
     errors: result.errors,
-    suites: [],
+    suites: [{
+      title: result.file,
+      file: result.file,
+      suites: [],
+      specs: [{
+        id: `${result.file}:${result.title}`,
+        title: result.title,
+        file: result.file,
+        ok: passed,
+        tests: [{
+          projectName: result.projectName,
+          expectedStatus: 'passed',
+          status: passed ? 'expected' : 'unexpected',
+          results: [{
+            status: passed ? 'passed' : 'failed',
+            startTime: result.startedAt,
+            duration: result.durationMs,
+            retry: 0,
+            errors: result.errors.map((message) => ({ message: String(message) })),
+          }],
+        }],
+      }],
+    }],
   };
 
   await mkdir(dirname(outputPath), { recursive: true });
