@@ -262,6 +262,45 @@ public sealed class EvmCertificateJournal(IDbContextFactory<EvmCertificateJourna
         }, cancellationToken);
     }
 
+    /// <summary>Release a fenced lease for a normal proof check, without recording a transport failure.</summary>
+    public Task<EvmCertificateJournalSnapshot> ScheduleCheckAsync(EvmCertificateJournalLease lease,
+        TimeSpan delay, CancellationToken cancellationToken)
+    {
+        Delay(delay);
+        return RetryAsync(async db =>
+        {
+            var op = await OwnedAsync(db, lease, cancellationToken).ConfigureAwait(false);
+            op.LastFailure = null;
+            op.NextAttemptAt = clock.GetUtcNow() + delay;
+            Changed(db, op, "check-scheduled");
+            RequireLease(op, lease);
+            Release(op);
+            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            return Snapshot(op);
+        }, cancellationToken);
+    }
+
+    /// <summary>Quarantine an operation, including failures that occurred before a transaction hash exists.</summary>
+    public Task<EvmCertificateJournalSnapshot> MarkNeedsAttentionAsync(EvmCertificateJournalLease lease,
+        EvmCertificateJournalFailure failure, CancellationToken cancellationToken)
+    {
+        if (!Enum.IsDefined(failure))
+        {
+            throw new ArgumentOutOfRangeException(nameof(failure));
+        }
+        return RetryAsync(async db =>
+        {
+            var op = await OwnedAsync(db, lease, cancellationToken).ConfigureAwait(false);
+            op.LastFailure = failure;
+            op.Status = EvmCertificatePublicationStatus.NeedsAttention;
+            Changed(db, op, "attention");
+            RequireLease(op, lease);
+            Release(op);
+            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            return Snapshot(op);
+        }, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<EvmCertificateJournalAttempt>> ListAttemptsAsync(Guid operationId, CancellationToken cancellationToken)
     {
         await using var db = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
