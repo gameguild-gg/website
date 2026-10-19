@@ -1,27 +1,35 @@
-#!/usr/bin/env node
+/** @file Enforce checked-in suppression-count budgets for the listed packages. */
+
 /**
  * Suppression-count ratchet: fails if any package's total suppressed-violation
  * count grew vs the checked-in budget (lint-budgets.json).
  *
  * Usage:
  *   node scripts/lint-budget.mjs            # check mode (exit 1 on growth)
- *   node scripts/lint-budget.mjs --update   # rewrite lint-budgets.json with current counts
+ *   node scripts/lint-budget.mjs --update   # rewrite lint-budgets.json with current counts.
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFile, writeFile, access } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const budgetFile = resolve(root, 'lint-budgets.json');
 
-const PACKAGES = ['apps/web', 'packages/ui', 'packages/infrastructure/client'];
+const PACKAGES = [
+  'apps/web',
+  'packages/ui',
+  'packages/infrastructure/client',
+];
 
-function countPackage(pkgDir) {
+async function countPackage(pkgDir) {
   const file = resolve(root, pkgDir, 'eslint-suppressions.json');
-  if (!existsSync(file)) {
-    throw new Error(`missing suppression file: ${pkgDir}/eslint-suppressions.json`);
-  }
-  const suppressions = JSON.parse(readFileSync(file, 'utf8'));
+  const content = await readFile(file, 'utf8').catch((error) => {
+    if (error.code === 'ENOENT') {
+      throw new Error(`missing suppression file: ${pkgDir}/eslint-suppressions.json`, { cause: error });
+    }
+    throw error;
+  });
+  const suppressions = JSON.parse(content);
   // shape: { file: { rule: { count: N } } }
   let total = 0;
   for (const rules of Object.values(suppressions)) {
@@ -32,10 +40,12 @@ function countPackage(pkgDir) {
   return total;
 }
 
-const current = Object.fromEntries(PACKAGES.map((pkg) => [pkg, countPackage(pkg)]));
+const current = Object.fromEntries(
+  await Promise.all(PACKAGES.map(async (pkg) => [pkg, await countPackage(pkg)])),
+);
 
 if (process.argv.includes('--update')) {
-  writeFileSync(budgetFile, `${JSON.stringify(current, null, 2)}\n`);
+  await writeFile(budgetFile, `${JSON.stringify(current, null, 2)}\n`);
   console.log('lint-budgets.json updated:');
   for (const [pkg, count] of Object.entries(current)) {
     console.log(`  ${pkg}: ${count}`);
@@ -43,12 +53,16 @@ if (process.argv.includes('--update')) {
   process.exit(0);
 }
 
-if (!existsSync(budgetFile)) {
+const budgetExists = await access(budgetFile).then(() => true, (error) => {
+  if (error.code === 'ENOENT') return false;
+  throw error;
+});
+if (!budgetExists) {
   console.error('lint-budgets.json not found. Run: node scripts/lint-budget.mjs --update');
   process.exit(1);
 }
 
-const budget = JSON.parse(readFileSync(budgetFile, 'utf8'));
+const budget = JSON.parse(await readFile(budgetFile, 'utf8'));
 
 const rows = [];
 let failed = false;

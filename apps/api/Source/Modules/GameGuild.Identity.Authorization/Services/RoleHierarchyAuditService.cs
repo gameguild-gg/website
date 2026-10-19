@@ -185,6 +185,9 @@ public sealed class RoleHierarchyAuditService(
                     case "PolicyDefinitionEntity":
                         await AuditPolicyChangeAsync(change, cancellationToken).ConfigureAwait(false);
                         break;
+                    default:
+                        // Other entity families are handled by the generic governance audit path.
+                        break;
                 }
             }
             catch (OperationCanceledException)

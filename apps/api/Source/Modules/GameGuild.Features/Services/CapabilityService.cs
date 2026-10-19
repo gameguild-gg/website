@@ -317,7 +317,7 @@ public class CapabilityService : ICapabilityService
         string? reason,
         CancellationToken cancellationToken = default)
     {
-        userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
+        var actingUserId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
         var existing = await _context.Set<TenantCapability>()
             .FirstOrDefaultAsync(tc => tc.TenantId == tenantId && tc.CapabilityKey == capability, cancellationToken).ConfigureAwait(false);
 
@@ -338,7 +338,7 @@ public class CapabilityService : ICapabilityService
             NewValue = false, // Will fall back to plan
             OldSource = existing.Source,
             NewSource = "removed",
-            ChangedByUserId = userId,
+            ChangedByUserId = actingUserId,
             ChangeReason = reason ?? "Override removed",
             ChangeType = CapabilityChangeType.Modified,
             ChangedAt = DateTimeOffset.UtcNow

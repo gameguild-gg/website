@@ -179,6 +179,10 @@ public sealed class AuditQueryCommandHandler(
             case AuditQueryCondition condition:
                 fields.Add(AuditQueryFieldRegistry.Get(condition.Field).Names.First());
                 break;
+
+            default:
+                // Only groups and conditions contribute field names.
+                break;
         }
     }
 }

@@ -107,7 +107,7 @@ public sealed class PeerReviewStageHandler : IReviewStageHandler
         var aggregateUnits = policy.Aggregation switch
         {
             "mean" => DivideRounded(scoreUnits.Sum(value => (long)value), scoreUnits.Length),
-            "median" when scoreUnits.Length % 2 == 1 => scoreUnits[scoreUnits.Length / 2],
+            "median" when scoreUnits.Length % 2 != 0 => scoreUnits[scoreUnits.Length / 2],
             "median" => DivideRounded(
                 (long)scoreUnits[(scoreUnits.Length / 2) - 1] + scoreUnits[scoreUnits.Length / 2],
                 2),

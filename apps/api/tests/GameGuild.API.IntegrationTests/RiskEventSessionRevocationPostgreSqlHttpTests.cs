@@ -101,7 +101,6 @@ public sealed class RiskEventSessionRevocationPostgreSqlHttpTests(ApiPostgreSqlF
         using var factory = CreateFactory(clock);
         var account = await SeedAccountAsync(factory);
 
-        Guid eventId;
         await using (var recordScope = factory.Services.CreateAsyncScope())
         {
             var producer = recordScope.ServiceProvider.GetRequiredService<IDurableEventProducer>();
@@ -113,7 +112,6 @@ public sealed class RiskEventSessionRevocationPostgreSqlHttpTests(ApiPostgreSqlF
                 AggregateType = "User",
                 AggregateId = account.UserId.ToString()
             };
-            eventId = @event.EventId;
             await producer.RecordAsync(@event);
         }
 

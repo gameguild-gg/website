@@ -1,3 +1,5 @@
+using System;
+
 namespace GameGuild.CQRS;
 
 /// <summary>

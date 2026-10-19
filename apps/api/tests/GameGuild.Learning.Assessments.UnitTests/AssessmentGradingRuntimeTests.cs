@@ -1244,6 +1244,94 @@ public sealed class AssessmentGradingRuntimeTests
     }
 
     [Fact]
+    public async Task ReleasedResult_PassbackIgnoresAnObsoleteEventAfterANewerRoundWasReleased()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.InstructorReview,
+            TrueFalseQuiz(),
+            ResultReleaseMode.Manual,
+            GradebookWeightUnits: 5000));
+        var started = await harness.StartIndividualAsync("passback-order-start");
+        await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "passback-order-submit"));
+        var first = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            Resolution(("q1", 100)),
+            "passback-order-first-review");
+        var firstRoundId = first.Execution.ActiveRoundId!.Value;
+        await harness.Release.ReleaseByActorAsync(
+            started.SubmissionId,
+            firstRoundId,
+            first.Version,
+            harness.InstructorId,
+            "passback-order-first-release",
+            null);
+        await harness.Runtime.RegradeOfficialAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            new RegradeExecutionCommand("passback-order-regrade", "Correct the score"));
+        var second = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            Resolution(("q1", 175)),
+            "passback-order-second-review");
+        var secondRoundId = second.Execution.ActiveRoundId!.Value;
+        await harness.Release.ReleaseByActorAsync(
+            started.SubmissionId,
+            secondRoundId,
+            second.Version,
+            harness.InstructorId,
+            "passback-order-second-release",
+            null);
+
+        var messages = await harness.Context.Set<AcademicOutboxMessage>()
+            .Where(value => value.EventType == "grade-result-released")
+            .ToArrayAsync();
+        var firstMessage = messages.Single(value => ReadReleasedRoundId(value) == firstRoundId);
+        var secondMessage = messages.Single(value => ReadReleasedRoundId(value) == secondRoundId);
+        var passback = new Mock<ILtiScorePassback>(MockBehavior.Strict);
+        passback.Setup(service => service.PostScoreIfMappedAsync(
+                harness.AssessmentId,
+                harness.Learner1Id,
+                ScoreValue.FromUnits(175),
+                ScoreValue.FromUnits(200),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(LtiScorePassbackOutcome.Delivered);
+        using var services = new ServiceCollection()
+            .AddSingleton(passback.Object)
+            .BuildServiceProvider();
+        var consumer = new GradeReleasePassbackConsumer(harness.Context, services);
+
+        await consumer.ConsumeAsync(ToEvent(secondMessage), default);
+        await consumer.ConsumeAsync(ToEvent(firstMessage), default);
+
+        passback.Verify(service => service.PostScoreIfMappedAsync(
+            harness.AssessmentId,
+            harness.Learner1Id,
+            ScoreValue.FromUnits(175),
+            ScoreValue.FromUnits(200),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        static Guid ReadReleasedRoundId(AcademicOutboxMessage message)
+        {
+            using var document = JsonDocument.Parse(message.PayloadCanonicalJson);
+            return document.RootElement.GetProperty("gradeRoundId").GetGuid();
+        }
+
+        static AcademicOutboxEvent ToEvent(AcademicOutboxMessage message) => new(
+            message.Id,
+            message.TenantId,
+            message.EventType,
+            message.EventSchemaVersion,
+            message.PayloadCanonicalJson,
+            message.PayloadHash,
+            message.OccurredAt);
+    }
+
+    [Fact]
     public async Task OfficialScheduledRelease_IsVersionedCancellableAndReleasedExactlyOnceWhenDue()
     {
         await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
@@ -1331,6 +1419,35 @@ public sealed class AssessmentGradingRuntimeTests
             .CountAsync(value => value.GradeRoundId == roundId)).Should().Be(1);
         (await harness.Context.Set<AcademicOutboxMessage>()
             .CountAsync(value => value.EventType == "grade-result-released")).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task OfficialScheduledRelease_ServiceAcceptsAnOverdueDurableRequest()
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.AutomatedReview,
+            TrueFalseQuiz(),
+            ResultReleaseMode.Manual));
+        var started = await harness.StartIndividualAsync("overdue-schedule-start");
+        var submitted = await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "overdue-schedule-submit"));
+        var roundId = submitted.Execution.ActiveRoundId!.Value;
+
+        var schedule = await harness.ReleaseSchedules.ScheduleByServiceAsync(
+            submitted.SubmissionId,
+            roundId,
+            submitted.Version,
+            harness.Clock.GetUtcNow().AddMinutes(-1).UtcDateTime,
+            "grading.scheduled-release-request.v1",
+            "overdue-schedule-event",
+            "The durable event arrived after its requested release time");
+
+        schedule.Status.Should().Be(GradeResultReleaseScheduleStatus.Scheduled);
+        (await harness.ReleaseSchedules.ReleaseDueBatchAsync()).Should().Be(1);
+        (await harness.Context.Set<GradeResultRelease>()
+            .CountAsync(value => value.GradeRoundId == roundId)).Should().Be(1);
     }
 
     [Fact]
@@ -1486,6 +1603,58 @@ public sealed class AssessmentGradingRuntimeTests
         visible.Execution.LearnerVisibleResult!.Score.Should().Be(ScoreValue.Zero);
         visible.ContentCompleted.Should().BeFalse();
         (await harness.Context.Set<AssessmentContentCompletionProjection>().CountAsync()).Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(100, 175, false)]
+    [InlineData(175, 100, true)]
+    public async Task OfficialHistoricalServiceRelease_UsesTheReleasedRoundToDetermineCompletion(
+        int historicalScoreUnits,
+        int activeScoreUnits,
+        bool expectedCompletion)
+    {
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.InstructorReview,
+            TrueFalseQuiz(),
+            ResultReleaseMode.Manual,
+            ContentCompletionMode.OnReleaseAndPass,
+            PassingScoreUnits: 150));
+        var started = await harness.StartIndividualAsync("historical-completion-start");
+        await harness.Runtime.SubmitOfficialAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(TrueFalseAnswer(true), "historical-completion-submit"));
+        var historical = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            Resolution(("q1", historicalScoreUnits)),
+            "historical-completion-first-review");
+        var historicalRoundId = historical.Execution.ActiveRoundId!.Value;
+        await harness.Runtime.RegradeOfficialAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            new RegradeExecutionCommand("historical-completion-regrade", "Create a newer result"));
+        await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId,
+            harness.InstructorId,
+            Resolution(("q1", activeScoreUnits)),
+            "historical-completion-second-review");
+
+        await harness.Release.ReleaseByServiceAsync(
+            started.SubmissionId,
+            historicalRoundId,
+            historical.Version,
+            "grading.historical-release-test.v1",
+            $"historical-completion-release-{historicalScoreUnits}",
+            null);
+
+        var visible = await harness.Runtime.GetSubmissionAsync(
+            started.SubmissionId,
+            harness.Learner1Id,
+            false);
+        visible.ContentCompleted.Should().Be(expectedCompletion);
+        (await harness.Context.Set<AssessmentContentCompletionProjection>().CountAsync())
+            .Should().Be(expectedCompletion ? 1 : 0);
     }
 
     [Fact]

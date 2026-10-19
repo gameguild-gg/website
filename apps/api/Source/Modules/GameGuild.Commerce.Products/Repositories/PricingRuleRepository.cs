@@ -87,7 +87,7 @@ public class PricingRuleRepository(IApplicationDbContext context)
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var term = searchTerm.Trim().ToLower();
+            var term = searchTerm.Trim().ToLowerInvariant();
             query = query.Where(r =>
                 r.Name.ToLower().Contains(term) ||
                 (r.Description != null && r.Description.ToLower().Contains(term)));
