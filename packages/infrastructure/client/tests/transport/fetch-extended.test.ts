@@ -4,6 +4,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createFetchTransport, createHeaderInterceptor } from '../../src/runtime/transport/fetch.js';
+import type { RequestConfig } from '../../src/runtime/transport/types.js';
+
+type MetricsRequestConfig = RequestConfig & { _metricsKey: string };
 
 describe('createFetchTransport — extended', () => {
   let originalFetch: typeof globalThis.fetch;
@@ -141,7 +144,7 @@ describe('createFetchTransport — extended', () => {
 
   it('should build URL with query parameters', async () => {
     let capturedUrl = '';
-    globalThis.fetch = vi.fn(async (url: any) => {
+    globalThis.fetch = vi.fn(async (url: Parameters<typeof fetch>[0]) => {
       capturedUrl = url.toString();
       return new Response(JSON.stringify({ data: 'ok' }), {
         status: 200,
@@ -166,7 +169,7 @@ describe('createFetchTransport — extended', () => {
 
   it('should serialize array query parameters as repeated keys', async () => {
     let capturedUrl = '';
-    globalThis.fetch = vi.fn(async (url: any) => {
+    globalThis.fetch = vi.fn(async (url: Parameters<typeof fetch>[0]) => {
       capturedUrl = url.toString();
       return new Response(JSON.stringify({ data: 'ok' }), {
         status: 200,
@@ -186,7 +189,7 @@ describe('createFetchTransport — extended', () => {
 
   it('should omit undefined array query values without dropping defined values', async () => {
     let capturedUrl = '';
-    globalThis.fetch = vi.fn(async (url: any) => {
+    globalThis.fetch = vi.fn(async (url: Parameters<typeof fetch>[0]) => {
       capturedUrl = url.toString();
       return new Response(JSON.stringify({ data: 'ok' }), {
         status: 200,
@@ -207,7 +210,8 @@ describe('createFetchTransport — extended', () => {
 
   it('should send request body as JSON for POST', async () => {
     let capturedBody = '';
-    globalThis.fetch = vi.fn(async (_url: any, opts: any) => {
+    globalThis.fetch = vi.fn(async (_url: Parameters<typeof fetch>[0], opts: RequestInit = {}) => {
+      if (typeof opts.body !== 'string') throw new Error('Expected the JSON request body as a string');
       capturedBody = opts.body;
       return new Response(JSON.stringify({ id: '1' }), {
         status: 201,
@@ -271,8 +275,8 @@ describe('createFetchTransport — extended', () => {
   });
 
   it('should merge custom headers', async () => {
-    let capturedHeaders: any = {};
-    globalThis.fetch = vi.fn(async (_url: any, opts: any) => {
+    let capturedHeaders: Record<string, string> = {};
+    globalThis.fetch = vi.fn(async (_url: Parameters<typeof fetch>[0], opts: RequestInit = {}) => {
       capturedHeaders = Object.fromEntries(new Headers(opts.headers).entries());
       return new Response(JSON.stringify({}), {
         status: 200,
@@ -338,7 +342,7 @@ describe('createHeaderInterceptor', () => {
     const result = await interceptor.onRequest!(config);
 
     expect(result.headers).toBeDefined();
-    expect((result.headers as any)['Authorization']).toBe('Bearer my-token');
+    expect(result.headers?.['Authorization']).toBe('Bearer my-token');
   });
 });
 
@@ -364,16 +368,17 @@ describe('createFetchTransport — metrics key propagation', () => {
 
     const transport = createFetchTransport({ baseUrl: 'http://localhost:8080' });
 
-    const result = await transport.request({
+    const config: MetricsRequestConfig = {
       path: '/api/data',
       method: 'POST',
       body: { invalid: true },
       _metricsKey: 'POST:/api/data:123',
-    } as any);
+    };
+    const result = await transport.request(config);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect((result.error as any)._metricsKey).toBe('POST:/api/data:123');
+      expect(result.error).toHaveProperty('_metricsKey', 'POST:/api/data:123');
     }
   });
 
@@ -387,15 +392,16 @@ describe('createFetchTransport — metrics key propagation', () => {
 
     const transport = createFetchTransport({ baseUrl: 'http://localhost:8080' });
 
-    const result = await transport.request({
+    const config: MetricsRequestConfig = {
       path: '/api/data',
       method: 'GET',
       _metricsKey: 'GET:/api/data:456',
-    } as any);
+    };
+    const result = await transport.request(config);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect((result.data as any)._metricsKey).toBe('GET:/api/data:456');
+      expect(result.data).toHaveProperty('_metricsKey', 'GET:/api/data:456');
     }
   });
 
@@ -409,23 +415,24 @@ describe('createFetchTransport — metrics key propagation', () => {
 
     const transport = createFetchTransport({ baseUrl: 'http://localhost:8080' });
 
-    const result = await transport.request({
+    const config: MetricsRequestConfig = {
       path: '/api/data',
       method: 'GET',
       _metricsKey: 'GET:/api/data:789',
-    } as any);
+    };
+    const result = await transport.request(config);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('PARSE_ERROR');
-      expect((result.error as any)._metricsKey).toBe('GET:/api/data:789');
+      expect(result.error).toHaveProperty('_metricsKey', 'GET:/api/data:789');
     }
   });
 
   it('should not include body for GET requests', async () => {
-    let capturedOpts: any;
-    globalThis.fetch = vi.fn(async (_url: any, opts: any) => {
-      capturedOpts = opts;
+    const capture: { options?: RequestInit } = {};
+    globalThis.fetch = vi.fn(async (_url: Parameters<typeof fetch>[0], opts: RequestInit = {}) => {
+      capture.options = opts;
       return new Response(JSON.stringify({}), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -440,13 +447,14 @@ describe('createFetchTransport — metrics key propagation', () => {
       body: { shouldBeIgnored: true },
     });
 
-    expect(capturedOpts.body).toBeUndefined();
+    expect(capture.options).toBeDefined();
+    expect(capture.options?.body).toBeUndefined();
   });
 
   it('should not include body for HEAD requests', async () => {
-    let capturedOpts: any;
-    globalThis.fetch = vi.fn(async (_url: any, opts: any) => {
-      capturedOpts = opts;
+    const capture: { options?: RequestInit } = {};
+    globalThis.fetch = vi.fn(async (_url: Parameters<typeof fetch>[0], opts: RequestInit = {}) => {
+      capture.options = opts;
       return new Response(null, { status: 200 });
     });
 
@@ -458,7 +466,8 @@ describe('createFetchTransport — metrics key propagation', () => {
       body: { shouldBeIgnored: true },
     });
 
-    expect(capturedOpts.body).toBeUndefined();
+    expect(capture.options).toBeDefined();
+    expect(capture.options?.body).toBeUndefined();
   });
 
   it('should handle Content-Length 0 as no content', async () => {
