@@ -86,6 +86,7 @@ export function createMutationHook<TData, TVariables>(mutationFn: (variables: TV
     const { optimistic, ...mutationOptions } = options || {};
 
     return useMutation<TData, ApiError, TVariables, OptimisticMutationContext | undefined>({
+      ...mutationOptions,
       mutationFn: async (variables) => unwrapResult(await mutationFn(variables)),
 
       onMutate: async (variables: TVariables, mutationContext) => {
@@ -143,8 +144,6 @@ export function createMutationHook<TData, TVariables>(mutationFn: (variables: TV
 
         await options?.onSuccess?.(data, variables, onMutateResult, mutationContext);
       },
-
-      ...mutationOptions,
     });
   };
 }
