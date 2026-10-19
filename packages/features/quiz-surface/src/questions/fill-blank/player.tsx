@@ -174,7 +174,7 @@ export function FillBlankRenderer({
           </span>
         )
 
-      case FillBlankInputType.Dropdown:
+      case FillBlankInputType.Dropdown: {
         const options = shuffledDropdownOptions[blank.id] || []
         return (
           <Select
@@ -195,6 +195,7 @@ export function FillBlankRenderer({
           </Select>
         )
 
+      }
       case FillBlankInputType.WordBank:
         return (
           <span
