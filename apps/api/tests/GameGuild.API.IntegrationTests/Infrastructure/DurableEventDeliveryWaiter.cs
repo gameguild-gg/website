@@ -15,7 +15,10 @@ internal static class DurableEventDeliveryWaiter
         IServiceProvider services, Guid eventId, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(services);
-        if (eventId == Guid.Empty) throw new ArgumentException("An event identifier is required.", nameof(eventId));
+        if (eventId == Guid.Empty)
+        {
+            throw new ArgumentException("An event identifier is required.", nameof(eventId));
+        }
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
         try
@@ -36,7 +39,10 @@ internal static class DurableEventDeliveryWaiter
                     // Exception payloads can contain private event data and are not echoed.
                     throw new InvalidOperationException("The expected durable event has a failed consumer or dead letter.");
                 }
-                if (message.CompletedAtUtc.HasValue) return;
+                if (message.CompletedAtUtc.HasValue)
+                {
+                    return;
+                }
                 await scope.ServiceProvider.GetRequiredService<IOutboxDispatcher>().DispatchPendingAsync(deadline.Token);
                 await Task.Delay(TimeSpan.FromMilliseconds(50), deadline.Token);
             }
