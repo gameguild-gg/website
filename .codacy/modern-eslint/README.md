@@ -33,6 +33,17 @@ dependency and bundled-engine frames and collects a bounded deeper stack;
 repository paths, messages and source values remain excluded. Every original
 write remains forwarded, and unknown output still fails the evidence gate.
 
+A separate cold-factory diagnostic mounts only its probe script, this public
+root configuration and an empty evidence directory. It generates three
+synthetic source inputs in the container, awaits the vendor's plugin loading,
+and checks valid JavaScript, undefined-reference detection and JSX handling.
+Its separate artifact may retain stdout/stderr because the container has no
+repository source, Git metadata, host environment or credentials. This control
+does not replace the full tracked-source pass or classify that pass's output
+automatically. Actual-source raw output remains excluded and unknown bytes
+still fail certification. A failed synthetic probe does not skip full source
+analysis when the root configuration controls have passed.
+
 No application dependency, cloud setting, finding state, suppression or
 credential is changed by this workflow. Product execution stays in hosted CI.
 

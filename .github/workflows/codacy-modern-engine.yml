@@ -41,12 +41,37 @@ jobs:
       - name: Pull the immutable public modern engine
         run: docker pull "$ENGINE_IMAGE"
       - name: Verify root configuration and modern parser controls
+        id: root-contracts
         run: |
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
             -v "$PWD:/src:ro" "$ENGINE_IMAGE" \
             node --test --test-reporter=tap /src/scripts/ci/tests/eslint-root-config.test.mjs \
             /src/.codacy/modern-eslint/modern-syntax.test.mjs > modern-evidence/contracts.tap 2>&1
+      - name: Reproduce cold factory output using only synthetic source
+        id: factory-control
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir factory-control-evidence
+          printf '%s\n' "$CANDIDATE_HEAD" > factory-control-evidence/head.txt
+          printf '%s\n' "$ENGINE_IMAGE" > factory-control-evidence/engine-image.txt
+          probe_status=0
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --user "$(id -u):$(id -g)" --workdir /tmp \
+            -e TS_NODE_PROJECT=/app/workspaces/codacy/tsconfig.json \
+            -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            -v "$PWD/.codacy/modern-eslint/factory-control.mjs:/probe/factory-control.mjs:ro" \
+            -v "$PWD/eslint.config.mjs:/probe/root-eslint.config.mjs:ro" \
+            -v "$PWD/factory-control-evidence:/factory-evidence" "$ENGINE_IMAGE" \
+            node --import=/app/register.js /probe/factory-control.mjs /factory-evidence \
+            > factory-control-evidence/vendor-stdout.txt 2> factory-control-evidence/vendor-stderr.txt \
+            || probe_status=$?
+          printf '%s\n' "$probe_status" > factory-control-evidence/exit.txt
+          sha256sum factory-control-evidence/vendor-stdout.txt factory-control-evidence/vendor-stderr.txt \
+            > factory-control-evidence/output-hashes.txt
+          exit "$probe_status"
       - name: Analyze every tracked JavaScript and TypeScript source
+        if: ${{ !cancelled() && steps.root-contracts.outcome == 'success' }}
         timeout-minutes: 10
         env:
           CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -64,6 +89,13 @@ jobs:
           printf '%s\n' "$analysis_status" > modern-evidence/analysis-exit.txt
           GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
             node .codacy/modern-eslint/finalize-evidence.mjs "$PWD/modern-evidence"
+      - name: Upload synthetic-only factory diagnostic output
+        if: ${{ always() && steps.factory-control.outcome != 'skipped' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-modern-factory-${{ github.event.pull_request.head.sha }}
+          path: factory-control-evidence
+          if-no-files-found: error
       - name: Upload coverage and redacted diagnostic evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

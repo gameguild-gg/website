@@ -1,0 +1,79 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// This diagnostic container receives only this script, the public lint config
+// and an empty evidence directory. Every analyzed input below is synthetic.
+const evidence = path.resolve(process.argv[2]);
+assert.equal(evidence, '/factory-evidence');
+const configInput = '/probe/root-eslint.config.mjs';
+const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const engineRequire = createRequire('/app/package.json');
+const report = {
+  sourceHead: process.env.GAMEGUILD_CODACY_SOURCE_HEAD,
+  scope: 'Synthetic cold factory diagnostic only; no repository source, Git directory, host environment or credential is mounted.',
+  scriptSha256: digest(readFileSync(fileURLToPath(import.meta.url))),
+  configSha256: digest(readFileSync(configInput)),
+  repositoryInputs: 0,
+  cases: [],
+  complete: false,
+  certifiedDestinationClosures: 0,
+};
+assert.match(report.sourceHead, /^[a-f0-9]{40}$/u);
+mkdirSync(evidence, { recursive: true });
+const write = () => writeFileSync(path.join(evidence, 'synthetic-factory.json'), `${JSON.stringify(report, null, 2)}\n`);
+write();
+
+try {
+  const root = mkdtempSync(path.join(tmpdir(), 'codacy-synthetic-factory-'));
+  mkdirSync(path.join(root, 'packages/tooling/eslint'), { recursive: true });
+  writeFileSync(path.join(root, 'packages/tooling/eslint/package.json'),
+    '{"name":"synthetic-lint-anchor","private":true,"type":"module"}\n');
+  copyFileSync(configInput, path.join(root, 'eslint.config.mjs'));
+  const controls = [
+    { file: 'control.mjs', source: 'export const control = 1;\n', rules: [] },
+    { file: 'undefined-control.mjs', source: 'export const control = syntheticMissingName;\n', rules: ['no-undef'] },
+    { file: 'jsx-control.tsx', source: 'export const Control = () => <span />;\n', rules: [] },
+  ];
+  for (const control of controls) writeFileSync(path.join(root, control.file), control.source);
+  process.chdir(root);
+
+  const versions = { eslint: '9.39.5', typescript: '6.0.3', '@typescript-eslint/parser': '8.64.0' };
+  report.identities = Object.fromEntries(Object.entries(versions).map(([name, expected]) => {
+    const bytes = readFileSync(engineRequire.resolve(`${name}/package.json`));
+    const version = JSON.parse(bytes).version;
+    assert.equal(version, expected);
+    return [name, { version, sha256: digest(bytes) }];
+  }));
+  const factoryPath = '/app/workspaces/codacy/src/configCreator.ts';
+  report.factorySha256 = digest(readFileSync(factoryPath));
+  assert.equal(report.factorySha256, '75b27a0bf89655b6dfc9c94b3d9c1936862530b3196f9de78d57f64609f15858');
+  const { createEslintConfig } = await import(factoryPath);
+  // Await the vendor's complete plugin initialization so delayed import output
+  // remains inside this synthetic diagnostic's stdout/stderr evidence.
+  const { getAll } = await import('/app/lib/models/plugins.ts');
+  report.initializedPlugins = (await getAll()).length;
+  assert(report.initializedPlugins > 0);
+  const selected = controls.map((control) => control.file);
+  const [options, files] = await createEslintConfig(root, {
+    files: selected, tools: [{ name: 'eslint-9', patterns: [] }], options: {},
+  });
+  assert.deepEqual(files, selected);
+  assert.equal(options.overrideConfigFile, path.join(root, 'eslint.config.mjs'));
+  report.rootConfigurationSelectedByFactory = true;
+  const { ESLint } = engineRequire('eslint');
+  const eslint = new ESLint({ ...options, cwd: root, ignore: false, allowInlineConfig: false });
+  for (const control of controls) {
+    const [result] = await eslint.lintFiles([path.join(root, control.file)]);
+    assert.equal(result.fatalErrorCount, 0);
+    assert.deepEqual(result.messages.map((message) => message.ruleId), control.rules);
+    report.cases.push({ file: control.file, inputSha256: digest(control.source), rules: control.rules, passed: true });
+  }
+  report.complete = true;
+} finally {
+  write();
+}
