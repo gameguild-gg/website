@@ -40,6 +40,8 @@ function readLoaderIdentity() {
   assert.equal(JSON.parse(manifest).version, '10.9.2');
   assert.equal(packageSha256, '80961faab4990ab53d33976bf716aa32444d70c64f73a487c23c21b0ca81398e');
   const resolverSha256 = digest(readFileSync('/app/node_modules/ts-node/dist-raw/node-internal-modules-esm-resolve.js'));
+  const errorDefinitionsSha256 = digest(readFileSync('/app/node_modules/ts-node/dist-raw/node-internal-errors.js'));
+  assert.equal(errorDefinitionsSha256, '7a1ae4531b80168e3a83eda10e5c1d46ba75afc3feab8fbf2e6057591428a6c7');
   const originalSha256 = '205cce0aabf93b76c805bebaf092f57900e2a458089805ca3009239f6a649365';
   const repairedSha256 = '597100e286a0b95b3d5d742d138b37a4784056eac23491a4e8eccb89debcfd3d';
   assert([originalSha256, repairedSha256].includes(resolverSha256), 'Unreviewed loader source');
@@ -58,7 +60,8 @@ function readLoaderIdentity() {
       digest(readFileSync('/opt/gameguild-codacy/repair-loader.cjs')));
     assert.deepEqual(repairReceipt.changedFiles, ['dist-raw/node-internal-modules-esm-resolve.js']);
   }
-  return { name: 'ts-node', version: '10.9.2', packageSha256, resolverSha256, repaired, repairReceipt };
+  return { name: 'ts-node', version: '10.9.2', packageSha256, resolverSha256,
+    errorDefinitionsSha256, repaired, repairReceipt };
 }
 
 module.exports = { assertOriginalWarningOutput, assertWarningEmissionUnchanged, readLoaderIdentity };

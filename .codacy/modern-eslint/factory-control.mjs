@@ -57,11 +57,20 @@ try {
   writeFileSync(path.join(resolutionRoot, 'node_modules/probe-package/index.mjs'), 'export default 44;\n');
   const resolutions = [
     { name: 'existing-file', specifier: './present.mjs', expected: { value: 42 } },
-    { name: 'missing-file', specifier: './missing.mjs', expected: { errorCode: 'ERR_MODULE_NOT_FOUND' } },
-    { name: 'directory-import', specifier: './directory', expected: { errorCode: 'ERR_UNSUPPORTED_DIR_IMPORT' } },
+    { name: 'missing-file', specifier: './missing.mjs', expected: {
+      errorName: 'Error', errorCode: null,
+      errorMessage: "Cannot find module '<synthetic-root>/resolution/missing.mjs' imported from <synthetic-root>/resolution/missing-file.mjs",
+    } },
+    { name: 'directory-import', specifier: './directory', expected: {
+      errorName: 'Error', errorCode: null,
+      errorMessage: 'ERR_UNSUPPORTED_DIR_IMPORT <synthetic-root>/resolution/directory <synthetic-root>/resolution/directory-import.mjs',
+    } },
     { name: 'explicit-directory-index', specifier: './directory/index.mjs', expected: { value: 43 } },
     { name: 'package-main', specifier: 'probe-package', expected: { value: 44 } },
-    { name: 'missing-package', specifier: 'probe-package-missing', expected: { errorCode: 'ERR_MODULE_NOT_FOUND' } },
+    { name: 'missing-package', specifier: 'probe-package-missing', expected: {
+      errorName: 'Error', errorCode: null,
+      errorMessage: "Cannot find package 'probe-package-missing' imported from <synthetic-root>/resolution/missing-package.mjs",
+    } },
   ];
   report.resolutions = [];
   for (const control of resolutions) {
@@ -72,7 +81,10 @@ try {
     try {
       outcome = { value: (await import(pathToFileURL(filename).href)).default };
     } catch (error) {
-      outcome = { errorCode: error?.code };
+      // This pinned ts-node defines CustomError classes without a code property.
+      // Preserve the exact native name/message, normalizing only the random root.
+      outcome = { errorName: error?.name, errorCode: error?.code ?? null,
+        errorMessage: typeof error?.message === 'string' ? error.message.replaceAll(root, '<synthetic-root>') : null };
     }
     assert.deepEqual(outcome, control.expected, control.name);
     report.resolutions.push({ name: control.name, inputSha256: digest(source), outcome, passed: true });

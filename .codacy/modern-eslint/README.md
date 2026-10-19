@@ -70,6 +70,14 @@ still require zero tool-output bytes. No warning filter or finding suppression
 is installed. A successful synthetic comparison still requires the complete
 tracked-source analysis; it does not certify destination findings as resolved.
 
+The first repaired-image build accepted all package/source/readback hashes and
+all 21 root controls. Both synthetic runs stopped at the missing-file control:
+the control expected Node's error code, while this pinned loader's `CustomError`
+implementation supplies a name/message without a code property. The controls
+now bind that unchanged error-definition source by hash and require its exact
+name, absent code and message, normalizing only the random synthetic root.
+Existing/missing file and package cases remain mandatory in both images.
+
 No application dependency, cloud setting, finding state, suppression or
 credential is changed by this workflow. Product execution stays in hosted CI.
 
