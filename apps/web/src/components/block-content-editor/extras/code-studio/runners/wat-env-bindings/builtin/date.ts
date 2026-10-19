@@ -2,7 +2,7 @@
  * Date bindings (Date namespace)
  * Based on AssemblyScript std/assembly/date.ts implementation
  */
-export function createDateBindings(): Record<string, any> {
+export function createDateBindings() {
   return {
     // Static methods
     now: () => Date.now(),

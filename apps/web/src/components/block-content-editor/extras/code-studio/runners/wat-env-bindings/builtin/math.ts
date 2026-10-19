@@ -2,7 +2,7 @@
  * Math bindings (Math namespace)
  * Complete set of JavaScript Math functions
  */
-export function createMathBindings(): Record<string, any> {
+export function createMathBindings() {
   return {
     // Constants
     E: Math.E,

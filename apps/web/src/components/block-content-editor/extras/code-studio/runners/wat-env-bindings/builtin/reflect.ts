@@ -1,7 +1,7 @@
 /**
  * Reflect bindings (Reflect namespace)
  */
-export function createReflectBindings(): Record<string, any> {
+export function createReflectBindings() {
   return {
     get: (target: any, propertyKey: string) => Reflect.get(target, propertyKey),
     has: (target: any, propertyKey: string) => Reflect.has(target, propertyKey),

@@ -3,7 +3,7 @@
  * Based on AssemblyScript std/assembly/number.ts implementation
  */
 
-export function createNumberBindings(): Record<string, any> {
+export function createNumberBindings() {
   return {
     // Global number functions
     NaN: NaN,

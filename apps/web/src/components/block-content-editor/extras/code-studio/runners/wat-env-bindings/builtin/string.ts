@@ -1,7 +1,7 @@
 /**
  * String bindings (String namespace)
  */
-export function createStringBindings(): Record<string, any> {
+export function createStringBindings() {
   return {
     fromCharCode: (charCode: number) => String.fromCharCode(charCode),
     fromCodePoint: (codePoint: number) => String.fromCodePoint(codePoint),

@@ -5,7 +5,7 @@
 export function createGoBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void
-): Record<string, any> {
+) {
   return {
     // Go's WebAssembly runtime expects specific imports
     'runtime.wasmExit': (code: number) => {

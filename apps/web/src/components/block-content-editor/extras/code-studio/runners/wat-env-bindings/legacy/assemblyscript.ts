@@ -4,7 +4,7 @@
 export function createAssemblyScriptBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void
-): Record<string, any> {
+) {
   return {
     // AssemblyScript runtime hooks
     abort: (message: any, fileName: any, line: number, column: number) => {

@@ -6,7 +6,7 @@ export function createEnvBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void,
   memory: WebAssembly.Memory
-): Record<string, any> {
+) {
   // Text decoder/encoder for string operations
   const textDecoder = new TextDecoder('utf-8')
   const textEncoder = new TextEncoder()

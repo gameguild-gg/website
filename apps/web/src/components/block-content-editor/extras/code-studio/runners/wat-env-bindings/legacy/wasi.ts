@@ -6,7 +6,7 @@ export function createWASIBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void,
   memory: WebAssembly.Memory
-): Record<string, any> {
+) {
   const textDecoder = new TextDecoder('utf-8')
 
   // File descriptor tracking

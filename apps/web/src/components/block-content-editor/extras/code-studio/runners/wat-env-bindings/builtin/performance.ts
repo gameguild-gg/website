@@ -1,7 +1,7 @@
 /**
  * Performance bindings (performance namespace)
  */
-export function createPerformanceBindings(): Record<string, any> {
+export function createPerformanceBindings() {
   return {
     now: () => performance.now(),
   }

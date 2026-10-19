@@ -47,7 +47,7 @@ export { createDOMBindings } from './builtin/dom'
 export function createComponentModelBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void
-): Record<string, any> {
+) {
   // Stream management
   let nextStreamId = 0
   const streams = new Map<number, { type: 'input' | 'output'; onWrite?: (data: Uint8Array) => void }>()
@@ -111,7 +111,7 @@ export function createWatEnvironment(
   stderr: (text: string) => void,
   memory?: WebAssembly.Memory,
   options?: { useComponentModel?: boolean }
-): Record<string, any> {
+) {
   // Use Component Model (WASI Preview 2) if requested
   if (options?.useComponentModel) {
     return createComponentModelBindings(stdout, stderr)

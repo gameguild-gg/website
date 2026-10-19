@@ -1,7 +1,7 @@
 /**
  * Crypto bindings (crypto namespace)
  */
-export function createCryptoBindings(): Record<string, any> {
+export function createCryptoBindings() {
   return {
     getRandomValues: (arrayPtr: number, length: number, memory: WebAssembly.Memory) => {
       const array = new Uint8Array(memory.buffer, arrayPtr, length)

@@ -4,7 +4,7 @@
 export function createJSBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void
-): Record<string, any> {
+) {
   return {
     // Memory operations
     mem: {

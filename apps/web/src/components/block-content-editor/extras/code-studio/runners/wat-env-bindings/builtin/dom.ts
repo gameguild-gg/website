@@ -5,7 +5,7 @@
 export function createDOMBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void
-): Record<string, any> {
+) {
   return {
     globalThis: {},
 

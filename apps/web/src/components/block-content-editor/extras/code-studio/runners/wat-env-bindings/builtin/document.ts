@@ -4,7 +4,7 @@
 export function createDocumentBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void
-): Record<string, any> {
+) {
   return {
     createElement: (tagName: string) => {
       stdout(`[DOM] createElement: ${tagName}`)
