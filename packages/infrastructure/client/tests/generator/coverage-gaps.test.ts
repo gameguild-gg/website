@@ -10,6 +10,7 @@ import {
   toSchemaTypeName,
 } from '../../scripts/normalize.js';
 import type { OpenApiSpec } from '../../scripts/fetch-spec.js';
+import type { OpenAPIV3 } from 'openapi-types';
 
 function baseSpec(overrides: Partial<OpenApiSpec> = {}): OpenApiSpec {
   return {
@@ -21,13 +22,29 @@ function baseSpec(overrides: Partial<OpenApiSpec> = {}): OpenApiSpec {
   } as OpenApiSpec;
 }
 
+function specWithoutPaths(): OpenApiSpec {
+  return { openapi: '3.0.1', info: { title: 'No Paths', version: '1.0.0' } };
+}
+
 describe('generator coverage edge cases', () => {
   it('normalizes duplicate operation ids, root paths, schema aliases, and conflicts', () => {
+    const nestedSchema = {
+      type: 'object',
+      properties: {
+        child: { $ref: '#/components/schemas/ExistingDto' },
+        values: {},
+        external: { $ref: '#/components/parameters/ExistingDto' },
+        raw: {},
+      },
+    } satisfies OpenAPIV3.SchemaObject;
+    // The recursive normalizer must also tolerate malformed array and null properties.
+    Reflect.set(nestedSchema.properties, 'values', [{ $ref: '#/components/schemas/ExistingDto' }]);
+    Reflect.set(nestedSchema.properties, 'raw', null);
     const normalized = normalizeSpec(
       baseSpec({
         tags: [{ name: 'real-estate/listings' }],
         paths: {
-          '/empty': undefined as any,
+          '/empty': undefined,
           '/': {
             get: { tags: ['Root'], responses: {} },
             post: { responses: {} },
@@ -41,35 +58,33 @@ describe('generator coverage edge cases', () => {
           schemas: {
             ExistingDto: { type: 'object', properties: { id: { type: 'string' } } },
             Existing: { type: 'object', properties: { name: { type: 'string' } } },
-            'Outer+InnerRequest': {
-              type: 'object',
-              properties: {
-                child: { $ref: '#/components/schemas/ExistingDto' },
-                values: [{ $ref: '#/components/schemas/ExistingDto' }] as any,
-                external: { $ref: '#/components/parameters/ExistingDto' },
-                raw: null as any,
-              },
-            },
+            'Outer+InnerRequest': nestedSchema,
           },
         },
       }),
     );
 
-    expect((normalized.paths['/'] as any).get.operationId).toBe('getRoot');
-    expect((normalized.paths['/'] as any).post.operationId).toBe('post');
-    expect((normalized.paths['/api/v1/listings/{listingId}:publish'] as any).get.operationId).toBe(
+    expect(normalized.paths?.['/']?.get?.operationId).toBe('getRoot');
+    expect(normalized.paths?.['/']?.post?.operationId).toBe('post');
+    expect(normalized.paths?.['/api/v1/listings/{listingId}:publish']?.get?.operationId).toBe(
       'listingsGetForGetListingsByListingIdPublish',
     );
-    expect((normalized.paths['/api/v1/listings/{listingId}:publish'] as any).post.operationId).toBe(
+    expect(normalized.paths?.['/api/v1/listings/{listingId}:publish']?.post?.operationId).toBe(
       'listingsGetForPostListingsByListingIdPublish',
     );
-    expect((normalized.paths['/api/v1/listings/{listingId}:publish'] as any).get.tags).toEqual(['RealEstateListings']);
-    expect((normalized.components as any).schemas).toHaveProperty('OuterInnerInput');
-    expect((normalized.components as any).schemas.Existing.properties).toHaveProperty('name');
-    expect((normalized.components as any).schemas.ExistingDto.properties).toHaveProperty('id');
-    expect((normalized.components as any).schemas.OuterInnerInput.properties.child.$ref).toBe(
+    expect(normalized.paths?.['/api/v1/listings/{listingId}:publish']?.get?.tags).toEqual(['RealEstateListings']);
+    expect(normalized.components?.schemas).toHaveProperty('OuterInnerInput');
+    expect(normalized.components?.schemas).toHaveProperty('Existing.properties.name');
+    expect(normalized.components?.schemas).toHaveProperty('ExistingDto.properties.id');
+    expect(normalized.components?.schemas).toHaveProperty(
+      'OuterInnerInput.properties.child.$ref',
       '#/components/schemas/ExistingDto',
     );
+    expect(normalized.components?.schemas).toHaveProperty(
+      'OuterInnerInput.properties.values',
+      [{ $ref: '#/components/schemas/ExistingDto' }],
+    );
+    expect(normalized.components?.schemas).toHaveProperty('OuterInnerInput.properties.raw', null);
     expect(normalizeSchemaName('PagedResult`1[[Acme_Identity_Users_UserDto, Acme.Identity.Users')).toBe(
       'PagedResultOfIdentityUsersUserDto',
     );
@@ -77,7 +92,7 @@ describe('generator coverage edge cases', () => {
     expect(resolveKnownSchemaTypeName('App.UserDto', new Set(['User']))).toBe('User');
     expect(resolveKnownSchemaTypeName('UserDto', new Set(['UserDto']))).toBe('UserDto');
     expect(resolveKnownSchemaTypeName('MissingDto', new Set(['Other']))).toBeUndefined();
-    expect(normalizeSpec({ openapi: '3.0.1', info: { title: 'No Paths', version: '1.0.0' } } as any).paths).toBeUndefined();
+    expect(normalizeSpec(specWithoutPaths()).paths).toBeUndefined();
   });
 
   it('generates endpoint definitions for auth, form data, refs, defaults, and descriptions', () => {
@@ -85,10 +100,10 @@ describe('generator coverage edge cases', () => {
       baseSpec({
         security: [{ bearer: [] }],
         paths: {
-          '/missing': undefined as any,
+          '/missing': undefined,
           '/files/{fileId}': {
             parameters: [
-              { $ref: '#/components/parameters/Ignored' } as any,
+              { $ref: '#/components/parameters/Ignored' },
               { name: 'fileId', in: 'path', required: true, schema: { type: 'string' }, description: 'File id' },
             ],
             post: {
@@ -111,7 +126,7 @@ describe('generator coverage edge cases', () => {
                   description: 'Created',
                   content: { 'application/json': { schema: { $ref: '#/components/schemas/FileDto' } } },
                 },
-                '400': { $ref: '#/components/responses/BadRequest' } as any,
+                '400': { $ref: '#/components/responses/BadRequest' },
               },
             },
           },
@@ -119,7 +134,7 @@ describe('generator coverage edge cases', () => {
             put: {
               operationId: 'replaceFile',
               description: 'Replace file',
-              requestBody: { $ref: '#/components/requestBodies/FileUpload' } as any,
+              requestBody: { $ref: '#/components/requestBodies/FileUpload' },
               responses: { '204': { description: 'No content' } },
               security: [],
             },
@@ -158,7 +173,7 @@ describe('generator coverage edge cases', () => {
           '/files/no-responses': {
             get: {
               operationId: 'getNoResponses',
-            } as any,
+            },
           },
         },
       }),
@@ -179,36 +194,36 @@ describe('generator coverage edge cases', () => {
   });
 
   it('generates type and Zod branches for enums, dictionaries, objects, arrays, and intersections', () => {
-    const output = generateTypes(
-      baseSpec({
-        info: undefined as any,
-        components: {
-          schemas: {
-            MixedEnum: { type: 'string', enum: ['legacy', 1, true, null] as any, description: 'Mixed literal values' },
-            DescribedUnion: {
-              description: 'A described union',
-              anyOf: [{ type: 'string' }, { type: 'integer' }],
+    const spec = baseSpec({
+      components: {
+        schemas: {
+          MixedEnum: { type: 'string', enum: ['legacy', 1, true, null], description: 'Mixed literal values' },
+          DescribedUnion: {
+            description: 'A described union',
+            anyOf: [{ type: 'string' }, { type: 'integer' }],
+          },
+          EmptyIntersection: { allOf: [], description: 'No parts' },
+          SingleIntersection: { allOf: [{ type: 'object', properties: { id: { type: 'string' } } }] },
+          AnyDictionary: { type: 'object', additionalProperties: true },
+          EmptyDictionary: { type: 'object', additionalProperties: {} },
+          NumberDictionary: { type: 'object', additionalProperties: { type: 'number' } },
+          EmptyObject: { type: 'object' },
+          ArrayAlias: { type: 'array', items: { type: 'string' }, description: 'List of strings' },
+          ProblemField: {
+            type: 'object',
+            required: ['required-value'],
+            properties: {
+              'required-value': { type: 'boolean' },
+              optionalValue: { type: 'integer' },
             },
-            EmptyIntersection: { allOf: [], description: 'No parts' },
-            SingleIntersection: { allOf: [{ type: 'object', properties: { id: { type: 'string' } } }] },
-            AnyDictionary: { type: 'object', additionalProperties: true },
-            EmptyDictionary: { type: 'object', additionalProperties: {} },
-            NumberDictionary: { type: 'object', additionalProperties: { type: 'number' } },
-            EmptyObject: { type: 'object' },
-            ArrayAlias: { type: 'array', items: { type: 'string' }, description: 'List of strings' },
-            ProblemField: {
-              type: 'object',
-              required: ['required-value'],
-              properties: {
-                'required-value': { type: 'boolean' },
-                optionalValue: { type: 'integer' },
-              },
-              additionalProperties: { type: 'string' },
-            },
+            additionalProperties: { type: 'string' },
           },
         },
-      }),
-    );
+      },
+    });
+    // Preserve the missing-info fallback scenario without changing valid spec types.
+    Reflect.set(spec, 'info', undefined);
+    const output = generateTypes(spec);
 
     expect(output).toContain('Generated from: Unknown API');
     expect(output).toContain('API Version: unknown');
@@ -234,7 +249,7 @@ describe('generator coverage edge cases', () => {
       baseSpec({
         security: [{ bearer: [] }],
         paths: {
-          '/missing': undefined as any,
+          '/missing': undefined,
           '/health': {
             get: {
               operationId: 'getHealth',
@@ -248,7 +263,7 @@ describe('generator coverage edge cases', () => {
               tags: ['RealEstate/Listings'],
               description: 'Publish listing',
               parameters: [
-                { $ref: '#/components/parameters/Ignored' } as any,
+                { $ref: '#/components/parameters/Ignored' },
                 { name: 'listingId', in: 'path', required: true, schema: { type: 'string' } },
                 { name: 'notify', in: 'query', required: false, schema: { type: 'boolean' } },
                 { name: 'channel', in: 'query', required: true, schema: { type: 'string' } },
@@ -300,7 +315,7 @@ describe('generator coverage edge cases', () => {
                 },
               },
               responses: {
-                '200': { $ref: '#/components/responses/Ok' } as any,
+                '200': { $ref: '#/components/responses/Ok' },
               },
             },
           },
@@ -315,7 +330,7 @@ describe('generator coverage edge cases', () => {
           '/listings/no-responses': {
             get: {
               tags: ['RealEstate/Listings'],
-            } as any,
+            },
           },
         },
       }),
@@ -334,8 +349,8 @@ describe('generator coverage edge cases', () => {
     expect(modules['real-estate-listings']).toContain('body: body');
     expect(modules['real-estate-listings']).toContain('async deleteListingsArchive()');
     expect(modules['real-estate-listings']).toContain('async getListingsNoSuccess()');
-    expect(generateModules({ openapi: '3.0.1', info: { title: 'No Paths', version: '1.0.0' } } as any)).toEqual({});
-    expect(generateEndpoints({ openapi: '3.0.1', info: { title: 'No Paths', version: '1.0.0' } } as any)).toContain(
+    expect(generateModules(specWithoutPaths())).toEqual({});
+    expect(generateEndpoints(specWithoutPaths())).toContain(
       'export const endpoints = {',
     );
   });
