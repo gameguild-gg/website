@@ -160,7 +160,7 @@ describe("web runtime hardening", () => {
     expect(rootPackage.scripts["dev:fast"]).toBe("node scripts/dev-fast.mjs");
     expect(regularDev).not.toContain("dev:fast");
     expect(regularDev).not.toContain("build:fast");
-    expect(fastDev).toContain('registerDevProcess("dev-fast")');
-    expect(fastDev).toContain('"build:fast"');
+    expect(fastDev).toMatch(/registerDevProcess\(\s*(['"])dev-fast\1\s*\)/);
+    expect(fastDev).toMatch(/(['"])build:fast\1/);
   });
 });

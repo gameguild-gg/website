@@ -302,10 +302,12 @@ public sealed class RevenueAuditingController(
         {
             skip = 0;
         }
+
         if (take < 1)
         {
             take = 20;
         }
+
         if (take > 100)
         {
             take = 100;

@@ -161,6 +161,8 @@ public sealed partial class ScheduledAuditExportService(
 
         var contentType = history.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
             ? "text/csv; charset=utf-8"
+            : history.FileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
+            ? "application/xml; charset=utf-8"
             : "application/json; charset=utf-8";
         var content = await storage.OpenReadAsync(tenantId, history.ExportPath, cancellationToken).ConfigureAwait(false);
         return new ScheduledAuditExportDownload(content, history.FileName, contentType);
@@ -327,8 +329,19 @@ public sealed partial class ScheduledAuditExportService(
             Take = 0
         };
         var recordCount = await auditService.GetAuditLogCountAsync(query).ConfigureAwait(false);
-        var extension = export.ExportFormat == ExportFormat.Csv ? "csv" : "json";
-        var contentType = export.ExportFormat == ExportFormat.Csv ? "text/csv; charset=utf-8" : "application/json; charset=utf-8";
+        var extension = export.ExportFormat switch
+        {
+            ExportFormat.Csv => "csv",
+            ExportFormat.Json => "json",
+            ExportFormat.Xml => "xml",
+            _ => throw new InvalidOperationException("The scheduled audit export format is unsupported.")
+        };
+        var contentType = export.ExportFormat switch
+        {
+            ExportFormat.Csv => "text/csv; charset=utf-8",
+            ExportFormat.Xml => "application/xml; charset=utf-8",
+            _ => "application/json; charset=utf-8"
+        };
         var safeJobName = InvalidFileNameCharacters().Replace(export.JobName, "-").Trim('-', '.');
         if (safeJobName.Length == 0) { safeJobName = "audit-export"; }
         var fileName = $"{safeJobName}-{nowUtc:yyyyMMdd'T'HHmmss'Z'}.{extension}";
@@ -362,7 +375,14 @@ public sealed partial class ScheduledAuditExportService(
                         "1.0",
                         new AuditJsonExportPagination(1, Math.Max(recordCount, 1), recordCount, recordCount == 0 ? 0 : 1),
                         MapJsonRecordsAsync(records, cancellationToken));
-                    await JsonSerializer.SerializeAsync(file, document, JsonOptions, cancellationToken).ConfigureAwait(false);
+                    if (export.ExportFormat == ExportFormat.Xml)
+                    {
+                        await AuditXmlExporter.WriteDocumentAsync(file, document, cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await JsonSerializer.SerializeAsync(file, document, JsonOptions, cancellationToken).ConfigureAwait(false);
+                    }
                 }
 
                 await file.FlushAsync(cancellationToken).ConfigureAwait(false);

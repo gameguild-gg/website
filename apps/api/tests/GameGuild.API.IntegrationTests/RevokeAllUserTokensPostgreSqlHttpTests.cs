@@ -231,6 +231,68 @@ public sealed class RevokeAllUserTokensPostgreSqlHttpTests(ApiPostgreSqlFixture 
         await AssertNoOperationAsync(factory, owner);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ActiveSessionListingUsesAuthenticatedOwnerAndOmitsExpiredAndInactiveRows(bool sameTenant)
+    {
+        using var factory = CreateFactory();
+        var owner = await SeedAsync(factory);
+        var other = await SeedAsync(factory, existingTenant: sameTenant ? owner.TenantId : null);
+        var inactiveId = Guid.NewGuid();
+        await using (var seed = factory.Services.CreateAsyncScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var expired = await db.Set<UserSession>().SingleAsync(value => value.Id == owner.Sessions[1].Id);
+            expired.ExpiresAt = DateTime.UtcNow.AddMinutes(-10);
+            Assert.True(expired.IsActive);
+
+            var now = DateTime.UtcNow;
+            var raw = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var hash = seed.ServiceProvider.GetRequiredService<IRefreshTokenHasher>().HashToken(raw);
+            db.Set<RefreshToken>().Add(new RefreshToken
+            {
+                Id = Guid.NewGuid(), UserId = owner.User.Id, Token = hash, SessionId = inactiveId,
+                CreatedAt = now, UpdatedAt = now, ExpiresAt = now.AddDays(1), CreatedByIp = "127.0.0.1"
+            });
+            db.Set<UserSession>().Add(new UserSession
+            {
+                Id = inactiveId, UserId = owner.User.Id, RefreshToken = hash, CreatedAt = now,
+                UpdatedAt = now, LastUsedAt = now, ExpiresAt = now.AddDays(1), IpAddress = "127.0.0.1",
+                IsActive = false, TerminatedAt = now, TerminationReason = nameof(SessionTerminationReason.UserLogout)
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            await AccessAsync(factory, owner, owner.Sessions[0].Id));
+        // User selection is derived from the authenticated principal, not a supplied query parameter.
+        using var response = await client.GetAsync($"{SessionsEndpoint}?userId={other.User.Id:D}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var listed = Assert.Single((await response.Content.ReadFromJsonAsync<List<SessionResponse>>())!);
+        Assert.Equal(owner.Sessions[0].Id, listed.Id);
+        Assert.True(listed.IsCurrent);
+        Assert.True(listed.ExpiresAt > DateTime.UtcNow);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            await AccessAsync(factory, other, other.Sessions[0].Id));
+        using var otherResponse = await client.GetAsync(SessionsEndpoint);
+        Assert.Equal(HttpStatusCode.OK, otherResponse.StatusCode);
+        var otherRows = (await otherResponse.Content.ReadFromJsonAsync<List<SessionResponse>>())!;
+        Assert.Equal(other.Sessions.Select(value => value.Id).OrderBy(id => id), otherRows.Select(value => value.Id).OrderBy(id => id));
+        Assert.Equal(other.Sessions[0].Id, Assert.Single(otherRows, value => value.IsCurrent).Id);
+
+        await using var inspect = factory.Services.CreateAsyncScope();
+        var stored = inspect.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        // Expiry filtering must work without a cleanup job first toggling the stored IsActive flag.
+        Assert.True((await stored.Set<UserSession>().AsNoTracking().SingleAsync(value => value.Id == owner.Sessions[1].Id)).IsActive);
+        Assert.False((await stored.Set<UserSession>().AsNoTracking().SingleAsync(value => value.Id == inactiveId)).IsActive);
+        using var anonymous = factory.CreateClient();
+        using var denied = await anonymous.GetAsync(SessionsEndpoint);
+        Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
+    }
+
     [Fact]
     public async Task TerminateOthersRetainsCurrentSessionAndUserVersion()
     {

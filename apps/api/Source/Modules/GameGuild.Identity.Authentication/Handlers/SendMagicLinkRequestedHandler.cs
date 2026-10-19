@@ -30,7 +30,9 @@ public sealed class SendMagicLinkRequestedHandler(
             {
                 token = notification.Token,
                 email = notification.Email,
-                userName = notification.UserName
+                userName = notification.UserName,
+                redirectTo = notification.RedirectTo,
+                locale = notification.Locale
             });
 
             var result = await notificationService.SendAsync(

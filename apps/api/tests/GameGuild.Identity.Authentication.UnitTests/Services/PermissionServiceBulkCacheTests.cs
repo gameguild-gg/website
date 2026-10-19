@@ -30,10 +30,10 @@ public sealed class PermissionServiceBulkCacheTests
         var versionStore = new InMemoryTenantSecurityVersionStore();
         var cachedValues = new ConcurrentDictionary<string, CachedPermissionDecision>(StringComparer.Ordinal);
         var cache = CreatePermissionCache(cachedValues);
-        var service = new PermissionService(
+        var service = PermissionMutationTestServices.Create(
             context,
-            securityVersionStore: versionStore,
-            hybridPermissionCache: cache.Object);
+            versionStore: versionStore,
+            cache: cache.Object);
         var firstResult = await service.BulkCheckPermissionsAsync([userId], tenantId, [PermissionType.Read]);
         var cachedResult = await service.BulkCheckPermissionsAsync([userId], tenantId, [PermissionType.Read]);
         firstResult[userId][PermissionType.Read].Should().BeTrue();
@@ -84,10 +84,10 @@ public sealed class PermissionServiceBulkCacheTests
 
         var versionStore = new InMemoryTenantSecurityVersionStore();
         var cache = CreatePermissionCache(new ConcurrentDictionary<string, CachedPermissionDecision>(StringComparer.Ordinal));
-        var service = new PermissionService(
+        var service = PermissionMutationTestServices.Create(
             context,
-            securityVersionStore: versionStore,
-            hybridPermissionCache: cache.Object);
+            versionStore: versionStore,
+            cache: cache.Object);
         var requests = new[]
         {
             new BulkPermissionCheckRequest(Guid.NewGuid(), Guid.NewGuid(), PermissionType.Read),

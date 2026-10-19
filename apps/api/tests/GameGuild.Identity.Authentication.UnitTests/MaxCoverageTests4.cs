@@ -561,9 +561,11 @@ public sealed class EmailVerificationBranchTests
         _publisher.Setup(p => p.Publish(It.IsAny<EmailVerificationRequestedNotification>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _sut = new EmailVerificationService(
-            Mock.Of<ILogger<EmailVerificationService>>(), _cache, _publisher.Object, _userRepo.Object);
+            Mock.Of<ILogger<EmailVerificationService>>(), _cache, _publisher.Object, _userRepo.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
         _sutWithoutRepo = new EmailVerificationService(
-            Mock.Of<ILogger<EmailVerificationService>>(), _cache, _publisher.Object);
+            Mock.Of<ILogger<EmailVerificationService>>(), _cache, _publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
     }
 
     [Fact]

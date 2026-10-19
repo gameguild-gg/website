@@ -135,13 +135,21 @@ public sealed class IdentityEmailRenderersTests
         var renderer = new MagicLinkRenderer(CreateFooterService(), CreateConfiguration(), MetadataProtector);
         var notification = CreateNotification(
             NotificationType.MagicLink,
-            Metadata(new { token = "magic-1", email = "user@example.com", userName = "Alice" }));
+            Metadata(new
+            {
+                token = "magic-1",
+                email = "user@example.com",
+                userName = "Alice",
+                redirectTo = "/workspace?tab=files",
+                locale = "pt-BR"
+            }));
 
         var message = await renderer.RenderAsync(notification);
 
         message.Should().NotBeNull();
         message!.Subject.Should().Be("Your GameGuild sign-in link");
-        message.PlainTextContent.Should().Contain("https://app.example.com/magic-link?token=magic-1");
+        message.PlainTextContent.Should().Contain(
+            "https://app.example.com/pt-BR/magic-link?token=magic-1&redirectTo=%2Fworkspace%3Ftab%3Dfiles");
         message.HtmlContent.Should().Contain("Sign in to GameGuild");
     }
 
