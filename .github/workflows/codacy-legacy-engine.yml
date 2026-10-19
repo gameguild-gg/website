@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: codacy-legacy-engine-${{ github.event.pull_request.number }}
+  group: codacy-legacy-engine-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -23,6 +23,8 @@ jobs:
       ENGINE_IMAGE: codacy/codacy-eslint@sha256:01b7b1444a44d33aba5db47aa0f244c889ab24de35a5960536f8ff2b6ca206f1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Preserve the complete tracked-file manifest
         run: |
           mkdir -p engine-evidence
@@ -106,6 +108,8 @@ jobs:
       ENGINE_IMAGE: codacy/codacy-eslint@sha256:01b7b1444a44d33aba5db47aa0f244c889ab24de35a5960536f8ff2b6ca206f1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: ./.github/actions/setup-node-workspace
       - name: Preserve complete selected-source inputs
         env:

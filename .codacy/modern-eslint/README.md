@@ -35,3 +35,9 @@ write remains forwarded, and unknown output still fails the evidence gate.
 
 No application dependency, cloud setting, finding state, suppression or
 credential is changed by this workflow. Product execution stays in hosted CI.
+
+Both engine workflows use a concurrency group containing the pull request and
+source head, with cancellation disabled. A new repair can start its controls
+while a prior source's full pass continues. Separate revisions cannot replace
+each other's pending analysis. Each analysis checkout explicitly selects that
+source head; integration with its destination remains a separate PR check.

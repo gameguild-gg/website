@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: codacy-modern-engine-${{ github.event.pull_request.number }}
+  group: codacy-modern-engine-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -24,6 +24,8 @@ jobs:
       ENGINE_IMAGE: codacy/codacy-eslint9@sha256:cd4008cb541fb7f3ef6e5c11198cffd6845ef7168bf8eab1889670576c846c06
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Preserve immutable analysis inputs
         env:
           CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
