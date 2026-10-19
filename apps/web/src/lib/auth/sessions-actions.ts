@@ -62,6 +62,24 @@ function resultFrom(success: boolean, error?: { status?: number }): SessionActio
 }
 
 /**
+ * Defensive read for page loaders (issue #864): the generated client's
+ * safeParse THROWS on zod contract mismatch, and a throw inside a server
+ * component render crashes the page with React #441. Any failure — thrown
+ * validation/network error or a non-ok result — must degrade to `fallback`
+ * so the security page renders with empty data instead of erroring.
+ */
+async function safeLoad<T>(call: () => Promise<{ ok: boolean; data?: T }>, fallback: T | null): Promise<T | null> {
+  try {
+    const result = await call();
+    return result.ok ? (result.data ?? fallback) : fallback;
+  } catch {
+    // Contract drift between the deployed API and the generated client (issue #864):
+    // render the page with degraded data rather than crashing the RSC render.
+    return fallback;
+  }
+}
+
+/**
  * Loads the session list, the current-session security analysis, and the trusted
  * device list in one pass for the settings/security page.
  */
@@ -70,16 +88,16 @@ export async function loadSessionsData(): Promise<SessionsPageData> {
   const sessionsModule = new GeneratedApi.AuthSessionsModule(client);
   const trustedDevicesModule = new GeneratedApi.AuthTrustedDevicesModule(client);
 
-  const [sessionsResult, analysisResult, trustedResult] = await Promise.all([
-    sessionsModule.getAuthSessions(),
-    sessionsModule.getAuthSessionsAnalyzeSecurity(),
-    trustedDevicesModule.getAuthTrustedDevices(),
+  const [sessions, analysis, trustedDevices] = await Promise.all([
+    safeLoad(() => sessionsModule.getAuthSessions(), []),
+    safeLoad(() => sessionsModule.getAuthSessionsAnalyzeSecurity(), null),
+    safeLoad(() => trustedDevicesModule.getAuthTrustedDevices(), []),
   ]);
 
   return {
-    sessions: sessionsResult.ok ? (sessionsResult.data ?? []) : [],
-    analysis: analysisResult.ok ? (analysisResult.data ?? null) : null,
-    trustedDevices: trustedResult.ok ? (trustedResult.data ?? []) : [],
+    sessions: sessions ?? [],
+    analysis,
+    trustedDevices: trustedDevices ?? [],
   };
 }
 
