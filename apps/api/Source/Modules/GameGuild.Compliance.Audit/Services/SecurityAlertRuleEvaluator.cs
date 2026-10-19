@@ -17,9 +17,9 @@ public static class SecurityAlertRules
 
     public const string TenantIsolationBreach = "security.tenant-isolation-breach";
 
-    public const string PermissionChangeBurst = "security.permission-change-burst";
+    public static string PermissionChangeBurst { get; } = "security.permission-change-burst";
 
-    public const string BulkPermissionChange = "security.bulk-permission-change";
+    public static string BulkPermissionChange { get; } = "security.bulk-permission-change";
 }
 
 /// <summary>
