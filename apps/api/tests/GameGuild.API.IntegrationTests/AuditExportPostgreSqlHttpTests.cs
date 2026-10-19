@@ -423,12 +423,28 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [Fact]
     public async Task Scheduled_XML_export_streams_real_PostgreSQL_rows_and_retains_hash_history_and_tenant_scoped_download()
     {
+        // Collection-lived hosts have their own scheduled-export worker. Use a separate
+        // migrated database so none can claim this test's deliberately due operation.
+        var isolated = new ApiPostgreSqlFixture();
+        try
+        {
+            await isolated.InitializeAsync();
+            await VerifyScheduledXmlExportAsync(isolated);
+        }
+        finally
+        {
+            await isolated.DisposeAsync();
+        }
+    }
+
+    private static async Task VerifyScheduledXmlExportAsync(ApiPostgreSqlFixture isolated)
+    {
         var tenant = Guid.NewGuid();
         var actor = Guid.NewGuid();
         var action = "xml.scheduled." + Guid.NewGuid().ToString("N");
         var instant = DateTime.UtcNow;
         var storage = new CapturingXmlStorage();
-        using var factory = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
+        using var factory = isolated.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             foreach (var worker in services.Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
                          && descriptor.ImplementationType == typeof(ScheduledAuditExportBackgroundService)).ToArray())

@@ -34,6 +34,12 @@ the writer does not turn a partial sequence into a complete XML document.
 Scheduled artifacts retain the existing checksum, history, expiry and tenant
 storage/download boundaries, with the XML extension and content type.
 
+The scheduled PostgreSQL/HTTP test owns a separate migrated database and removes
+only its host's scheduler worker. Collection-lived hosts therefore cannot claim
+its deliberately due export before the explicit processing step. The production
+repository, processing service, history and HTTP download stay real; storage
+delivery is the substituted boundary.
+
 XML 1.0 cannot represent every UTF-16 code unit accepted by a .NET string. A field
 containing such data uses `encoding="base64-utf16le"`, and its text is Base64 of
 the original UTF-16 little-endian code units. Consumers must decode that marker
