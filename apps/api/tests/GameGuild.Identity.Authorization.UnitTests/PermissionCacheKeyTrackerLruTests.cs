@@ -83,17 +83,48 @@ public sealed class PermissionCacheKeyTrackerLruTests
     }
 
     [Fact]
-    public void GetTrackedKey_ReportsAbsenceAfterTheL1EntryExpires()
+    public void GetTrackedKey_ReportsL1AbsenceForTrackedMetadata()
     {
         using var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var tracker = new PermissionCacheKeyTracker(memoryCache, Mock.Of<ICacheMetricsService>(), maxTrackedEntries: 10);
 
-        Track(tracker, memoryCache, "perm:gone:resource-1:permission", "permission");
-        memoryCache.Remove("perm:gone:resource-1:permission");
+        // Model missing L1 data independently of the asynchronous eviction callback.
+        tracker.Track("perm:gone:resource-1:permission", "permission");
 
         var info = tracker.GetTrackedKey("perm:gone:resource-1:permission");
         info.Should().NotBeNull();
-        info!.PresentInL1.Should().BeFalse("the key is still tracked although L1 no longer holds the entry");
+        info!.PresentInL1.Should().BeFalse("metadata can be observed while L1 no longer holds the entry");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EvictionCallback_RemovesOnlyItsOriginalRegistration(bool registrationReplaced)
+    {
+        using var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var tracker = new PermissionCacheKeyTracker(memoryCache, Mock.Of<ICacheMetricsService>(), maxTrackedEntries: 10);
+        const string key = "perm:evicted:resource-1:permission";
+        var options = new MemoryCacheEntryOptions();
+        tracker.Track(key, "permission", options);
+        var callback = options.PostEvictionCallbacks.Should().ContainSingle().Which;
+        if (registrationReplaced)
+        {
+            tracker.Track(key, "permission");
+        }
+
+        callback.EvictionCallback!(key, true, EvictionReason.Removed, callback.State);
+
+        var info = tracker.GetTrackedKey(key);
+        if (registrationReplaced)
+        {
+            info.Should().NotBeNull("a stale callback must preserve a newer registration");
+            info!.Key.Should().Be(key);
+            info.PresentInL1.Should().BeFalse();
+        }
+        else
+        {
+            info.Should().BeNull("the callback must clean up its own registration");
+        }
     }
 
     [Fact]

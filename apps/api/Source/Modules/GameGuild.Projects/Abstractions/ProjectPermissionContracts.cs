@@ -56,7 +56,7 @@ public class ShareResourceRequest {
 
 /// <summary>Compatibility contract backed by the central project authorization service.</summary>
 public interface IPermissionResolver {
-    Task<IEnumerable<EffectivePermission>> GetEffectivePermissionsAsync<T>(Guid userId, Guid? tenantId, Guid resourceId, string resourceType);
+    Task<IEnumerable<EffectivePermission>> GetEffectivePermissionsAsync(Guid userId, Guid? tenantId, Guid resourceId, string resourceType);
     Task<bool> CanGrantPermissionsAsync(Guid userId, Guid? tenantId, PermissionType[] permissions, Guid? resourceId = null);
 }
 

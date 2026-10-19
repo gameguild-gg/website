@@ -1,5 +1,7 @@
 using FluentAssertions;
 using GameGuild.CQRS.Models;
+using GameGuild.Identity.Authorization.UnitTests.TestSupport;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -45,7 +47,9 @@ public class EffectivePermissionResolverExternalAuthorizationTests
             .ReturnsAsync((IReadOnlyList<ResourceUserPermission>)[]);
     }
 
-    private EffectivePermissionResolverService CreateSut(Guid? systemAccountId = null) =>
+    private EffectivePermissionResolverService CreateSut(
+        Guid? systemAccountId = null,
+        ILogger<EffectivePermissionResolverService>? logger = null) =>
         new(
             _repository.Object,
             _rbacResolver.Object,
@@ -55,7 +59,7 @@ public class EffectivePermissionResolverExternalAuthorizationTests
             {
                 SystemAccountId = systemAccountId ?? SystemAccountId
             }),
-            NullLogger<EffectivePermissionResolverService>.Instance,
+            logger ?? NullLogger<EffectivePermissionResolverService>.Instance,
             externalDecisionProvider: _externalProvider.Object);
 
     private void SetupDirectGrant(string[] permissions, string[] denyPermissions) =>
@@ -73,6 +77,32 @@ public class EffectivePermissionResolverExternalAuthorizationTests
         _externalProvider
             .Setup(p => p.EvaluateAsync(It.IsAny<ExternalAuthorizationQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ExternalAuthorizationQuery query, CancellationToken _) => decide(query));
+
+    [Theory]
+    [InlineData("policy-7", "policy-7")]
+    [InlineData("deny\r\nforged", "deny␀␀forged")]
+    [InlineData("deny\0\t\u0085\u2028\u2029forged", "deny␀␀␀␀␀forged")]
+    public async Task ExternalDeny_ProjectsReasonOnlyInLogs_AndRetainsVeto(string reason, string renderedReason)
+    {
+        SetupDirectGrant(["reports:read", "other:read"], []);
+        var decision = ExternalAuthorizationDecision.Deny(reason);
+        SetupExternal(query => query.Permission == "reports:read" ? decision : ExternalAuthorizationDecision.NotApplicable);
+        var logger = new SpyLogger<EffectivePermissionResolverService>();
+
+        var result = await CreateSut(logger: logger).ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().NotContain("reports:read");
+        result.Permissions.Should().Contain("other:read");
+        decision.Reasons.Should().Equal(reason);
+        var entry = logger.Entries.Should().ContainSingle(e =>
+            e.Message.StartsWith("External authorization decision provider denied permission", StringComparison.Ordinal)).Which;
+        entry.Level.Should().Be(LogLevel.Debug);
+        entry.Message.Should().EndWith(": " + renderedReason);
+        foreach (var log in logger.Entries)
+        {
+            log.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
+        }
+    }
 
     // ── External deny overrides local allow ─────────────────────────────────
 
@@ -192,6 +222,55 @@ public class EffectivePermissionResolverExternalAuthorizationTests
 
         result.Permissions.Should().NotContain("reports:read", "the throwing query fails closed");
         result.Permissions.Should().Contain("stable:read", "an unrelated permission is not collateral damage of the throwing query");
+    }
+
+    [Theory]
+    [InlineData("reports:read", "reports:read")]
+    [InlineData("reports\r\nforged:read", "reports␀␀forged:read")]
+    [InlineData("reports\0\t\u0085\u2028\u2029forged:read", "reports␀␀␀␀␀forged:read")]
+    public async Task ThrowingProvider_ProjectsPermissionOnlyInLogs_AndPreservesQueryAndDenial(
+        string permission,
+        string renderedPermission)
+    {
+        SetupDirectGrant([permission, "stable:read"], []);
+        var failure = new InvalidOperationException("provider failure");
+        _externalProvider
+            .Setup(provider => provider.EvaluateAsync(
+                It.Is<ExternalAuthorizationQuery>(query => query.Permission == permission),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+        _externalProvider
+            .Setup(provider => provider.EvaluateAsync(
+                It.Is<ExternalAuthorizationQuery>(query => query.Permission == "stable:read"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ExternalAuthorizationDecision.NotApplicable);
+        var logger = new Mock<ILogger<EffectivePermissionResolverService>>();
+        logger.Setup(value => value.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+
+        var result = await CreateSut(logger: logger.Object)
+            .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.ContextValid.Should().BeTrue();
+        result.Permissions.Should().ContainSingle().Which.Should().Be("stable:read");
+        result.Sources.Should().NotContainKey(permission);
+        result.Sources["stable:read"].Should().Be(PermissionSource.DirectGrant);
+        _externalProvider.Verify(provider => provider.EvaluateAsync(
+            It.Is<ExternalAuthorizationQuery>(query =>
+                query.Permission == permission && query.UserId == _userId && query.TenantId == _tenantId),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        var error = logger.Invocations.Should().ContainSingle(call =>
+            call.Method.Name == nameof(ILogger.Log) && (LogLevel)call.Arguments[0] == LogLevel.Error).Which;
+        error.Arguments[3].Should().BeSameAs(failure);
+        var properties = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(error.Arguments[2])
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        properties["Permission"].Should().Be(renderedPermission);
+        properties["UserId"].Should().Be(_userId);
+        properties["TenantId"].Should().Be(_tenantId);
+        var formatter = Assert.IsAssignableFrom<Delegate>(error.Arguments[4]);
+        var message = Assert.IsType<string>(formatter.DynamicInvoke(error.Arguments[2], error.Arguments[3]));
+        message.Should().Be(
+            $"External authorization decision provider threw while evaluating permission {renderedPermission} for user {_userId} in tenant {_tenantId} - the permission fails closed.");
     }
 
     // ── Query shape: the provider sees the full authorization context ───────

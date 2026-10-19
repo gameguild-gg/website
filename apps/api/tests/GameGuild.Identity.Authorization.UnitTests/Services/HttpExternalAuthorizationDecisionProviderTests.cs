@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.Json;
 using FluentAssertions;
 using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Authorization.UnitTests.TestSupport;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -48,7 +50,8 @@ public class HttpExternalAuthorizationDecisionProviderTests
 
     private static HttpExternalAuthorizationDecisionProvider CreateProvider(
         RecordingHandler handler,
-        ExternalAuthorizationOptions? options = null)
+        ExternalAuthorizationOptions? options = null,
+        ILogger<HttpExternalAuthorizationDecisionProvider>? logger = null)
     {
         options ??= new ExternalAuthorizationOptions
         {
@@ -63,7 +66,7 @@ public class HttpExternalAuthorizationDecisionProviderTests
         return new HttpExternalAuthorizationDecisionProvider(
             new HttpClient(handler),
             Options.Create(options),
-            NullLogger<HttpExternalAuthorizationDecisionProvider>.Instance);
+            logger ?? NullLogger<HttpExternalAuthorizationDecisionProvider>.Instance);
     }
 
     private static ExternalAuthorizationOptions ObserveOptions() =>
@@ -89,6 +92,103 @@ public class HttpExternalAuthorizationDecisionProviderTests
 
     private static bool IsTokenRequest(HttpRequestMessage request) =>
         request.RequestUri?.AbsolutePath.EndsWith("/token", StringComparison.OrdinalIgnoreCase) == true;
+
+    [Theory]
+    [InlineData("policy-7", "policy-7")]
+    [InlineData("deny\r\nforged", "deny␀␀forged")]
+    [InlineData("deny\0\t\u0085\u2028\u2029forged", "deny␀␀␀␀␀forged")]
+    public async Task DenialReason_LogsOneLine_AndPreservesReturnedReason(string reason, string renderedReason)
+    {
+        var logger = new SpyLogger<HttpExternalAuthorizationDecisionProvider>();
+        var handler = new RecordingHandler(TokenThenDecision(_ => Json(new { decision = "deny", reasons = new[] { reason } })));
+        var provider = CreateProvider(handler, logger: logger);
+
+        var decision = await provider.EvaluateAsync(Query(_userId, _tenantId));
+
+        decision!.Outcome.Should().Be(ExternalAuthorizationOutcome.Deny);
+        decision.Reasons.Should().Equal(reason);
+        var entry = logger.Entries.Should().ContainSingle().Which;
+        entry.Level.Should().Be(LogLevel.Information);
+        entry.Message.Should().EndWith(": " + renderedReason);
+        entry.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
+    }
+
+    [Theory]
+    [InlineData(ExternalAuthorizationFailMode.Enforce)]
+    [InlineData(ExternalAuthorizationFailMode.Observe)]
+    public async Task UnknownDecision_LogsOneLine_AndPreservesFailMode(ExternalAuthorizationFailMode mode)
+    {
+        var logger = new SpyLogger<HttpExternalAuthorizationDecisionProvider>();
+        var handler = new RecordingHandler(TokenThenDecision(_ => Json(new { decision = "unknown\r\n\u2028value" })));
+        var options = ObserveOptions();
+        options.FailMode = mode;
+
+        var decision = await CreateProvider(handler, options, logger).EvaluateAsync(Query(_userId, _tenantId));
+
+        if (mode == ExternalAuthorizationFailMode.Enforce)
+        {
+            decision!.Outcome.Should().Be(ExternalAuthorizationOutcome.Deny);
+        }
+        else
+        {
+            decision.Should().BeNull();
+        }
+
+        var entry = logger.Entries.Should().ContainSingle().Which;
+        entry.Level.Should().Be(LogLevel.Warning);
+        entry.Message.Should().Contain("unknown␀␀␀value");
+        entry.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
+    }
+
+    [Theory]
+    [InlineData("deny")]
+    [InlineData("unknown")]
+    [InlineData("http-error")]
+    [InlineData("exception")]
+    public async Task QueryPermission_IsProjectedOnlyForLogging(string responseKind)
+    {
+        const string permission = "reports\r\n\u2029read";
+        var logger = new SpyLogger<HttpExternalAuthorizationDecisionProvider>();
+        var handler = new RecordingHandler(TokenThenDecision(_ => responseKind switch
+        {
+            "deny" => Json(new { decision = "deny" }),
+            "unknown" => Json(new { decision = "unexpected" }),
+            "http-error" => Json(new { }, HttpStatusCode.ServiceUnavailable),
+            "exception" => throw new HttpRequestException("connection reset"),
+            _ => throw new ArgumentOutOfRangeException(nameof(responseKind))
+        }));
+
+        var decision = await CreateProvider(handler, logger: logger).EvaluateAsync(Query(_userId, _tenantId, permission));
+
+        decision!.Outcome.Should().Be(ExternalAuthorizationOutcome.Deny);
+        using var wire = JsonDocument.Parse(handler.Requests[1].Body);
+        wire.RootElement.GetProperty("permission").GetString().Should().Be(permission);
+        var entry = logger.Entries.Should().ContainSingle().Which;
+        entry.Message.Should().Contain("reports␀␀␀read");
+        entry.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
+    }
+
+    [Fact]
+    public async Task LogProjection_DoesNotMergeDistinctDecisionCacheKeys()
+    {
+        var decisionRequests = 0;
+        var handler = new RecordingHandler(TokenThenDecision(_ => Json(new
+        {
+            decision = ++decisionRequests == 1 ? "deny" : "allow"
+        })));
+        var options = ObserveOptions();
+        options.CacheTtl = TimeSpan.FromMinutes(1);
+        var provider = CreateProvider(handler, options, new SpyLogger<HttpExternalAuthorizationDecisionProvider>());
+        var first = Query(_userId, _tenantId, "reports\r\nread");
+        var second = Query(_userId, _tenantId, "reports\0\nread");
+
+        (await provider.EvaluateAsync(first))!.Outcome.Should().Be(ExternalAuthorizationOutcome.Deny);
+        (await provider.EvaluateAsync(second))!.Outcome.Should().Be(ExternalAuthorizationOutcome.Allow);
+        (await provider.EvaluateAsync(first))!.Outcome.Should().Be(ExternalAuthorizationOutcome.Deny);
+
+        decisionRequests.Should().Be(2);
+        handler.Requests.Should().HaveCount(3, "one token and two distinct decision requests are required");
+    }
 
     // ── Disabled: zero overhead, no decision, no outbound call ──────────────
 

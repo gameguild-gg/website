@@ -43,8 +43,13 @@ public sealed class AssessmentReviewOperationsMigrationPostgreSqlTests
             AdminEmail = $"review-migration-{Guid.NewGuid():N}@example.test",
             IsActive = true,
         };
-        db.Set<Tenant>().Add(tenant);
-        await db.SaveChangesAsync();
+        // Seed the historical schema before the entity-change audit table existed.
+        // The verification context above keeps normal audit capture enabled.
+        await using (var seed = new ApplicationDbContext(options, enableEntityChangeAuditCapture: false))
+        {
+            seed.Set<Tenant>().Add(tenant);
+            await seed.SaveChangesAsync();
+        }
 
         await migrator.MigrateAsync(operationsMigration);
         Assert.True(await db.Set<Tenant>().AsNoTracking().AnyAsync(value => value.Id == tenant.Id));

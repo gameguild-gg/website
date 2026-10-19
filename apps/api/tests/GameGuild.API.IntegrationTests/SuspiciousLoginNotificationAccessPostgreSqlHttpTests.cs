@@ -18,7 +18,15 @@ using Microsoft.Extensions.Hosting;
 
 namespace GameGuild.API.IntegrationTests;
 
-[Collection(ApiPostgreSqlCollection.Name)]
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class SecurityAlertAccessPostgreSqlCollection : ICollectionFixture<ApiPostgreSqlFixture>
+{
+    internal const string Name = "Security alert access PostgreSQL";
+}
+
+// These scenarios dispatch manually. A separate collection owns one database,
+// outside the shared collection's background consumers, for all eight cases.
+[Collection(SecurityAlertAccessPostgreSqlCollection.Name)]
 public sealed class SuspiciousLoginNotificationAccessPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
 {
     [Theory]

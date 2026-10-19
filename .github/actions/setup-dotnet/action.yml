@@ -10,7 +10,19 @@ runs:
     - name: Prepare certificate for disposable CI key storage
       shell: bash
       run: bash scripts/ci/prepare-data-protection-test-certificate.sh
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+    # PR caches are private to their merge ref. Avoid saving another package
+    # archive for every PR; the nightly/default-branch cache remains reusable.
+    - name: Restore NuGet packages for pull requests
+      if: github.event_name == 'pull_request'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('apps/api/**/*.csproj', 'apps/api/**/*.props', 'apps/api/**/*.targets', 'apps/api/**/NuGet.config') }}
+        restore-keys: |
+          nuget-${{ runner.os }}-
+    - name: Cache NuGet packages outside pull requests
+      if: github.event_name != 'pull_request'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ~/.nuget/packages
         key: nuget-${{ runner.os }}-${{ hashFiles('apps/api/**/*.csproj', 'apps/api/**/*.props', 'apps/api/**/*.targets', 'apps/api/**/NuGet.config') }}

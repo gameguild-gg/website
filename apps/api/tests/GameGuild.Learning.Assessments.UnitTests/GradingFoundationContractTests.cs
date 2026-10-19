@@ -80,6 +80,20 @@ public sealed class GradingFoundationContractTests
             .Should().Be("10d6b907e50339871355376854e16e87112120f63b9ce9bca2913907cd2a124d");
     }
 
+    [Theory]
+    [InlineData("0", "0")]
+    [InlineData("-0", "0")]
+    [InlineData("0.0", "0")]
+    [InlineData("-0.0", "0")]
+    [InlineData("5e-324", "5e-324")]
+    [InlineData("-5e-324", "-5e-324")]
+    [InlineData("1e-7", "1e-7")]
+    public void CanonicalJson_NormalizesSignedZeroWithoutRoundingSmallValues(string input, string expected)
+    {
+        using var document = JsonDocument.Parse(input);
+        CanonicalJson.Serialize(document.RootElement).Should().Be(expected);
+    }
+
     [Fact]
     public void ExecutionSnapshotValidator_BindsAuthoringManifestStagesAndProjections()
     {

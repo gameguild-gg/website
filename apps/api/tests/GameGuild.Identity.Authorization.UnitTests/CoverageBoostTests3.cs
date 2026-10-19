@@ -530,6 +530,31 @@ public class HybridPermissionCacheTests
         result.Found.Should().BeFalse();
         result.Value.Should().Be(0);
     }
+
+    [Theory]
+    [InlineData(true, 42, true, 42, true)]
+    [InlineData(true, 42, true, 43, false)]
+    [InlineData(false, 0, false, 0, true)]
+    [InlineData(false, 0, true, 0, false)]
+    [InlineData(false, 9, false, 0, false)]
+    public void CacheResult_EqualityPreservesBothFoundAndValue(
+        bool leftFound, int leftValue, bool rightFound, int rightValue, bool equal)
+    {
+        var left = new CacheResult<int> { Found = leftFound, Value = leftValue };
+        var right = new CacheResult<int> { Found = rightFound, Value = rightValue };
+        IEquatable<CacheResult<int>> typed = left;
+
+        typed.Equals(right).Should().Be(equal);
+        left.Equals((object)right).Should().Be(equal);
+        (left == right).Should().Be(equal);
+        (left != right).Should().Be(!equal);
+        left.Equals(null).Should().BeFalse();
+        left.Equals(new object()).Should().BeFalse();
+        if (equal)
+        {
+            left.GetHashCode().Should().Be(right.GetHashCode());
+        }
+    }
 }
 
 #endregion

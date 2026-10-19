@@ -152,7 +152,7 @@ public sealed class AuthenticationTimingDistributionHttpTests(ApiPostgreSqlFixtu
     private static long Median(IReadOnlyList<long> values)
     {
         var ordered = values.OrderBy(value => value).ToArray();
-        return ordered.Length % 2 == 1
+        return ordered.Length % 2 != 0
             ? ordered[ordered.Length / 2]
             : (ordered[ordered.Length / 2 - 1] + ordered[ordered.Length / 2]) / 2;
     }

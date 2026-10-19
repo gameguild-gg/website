@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 
-# Official PostgreSQL indexes; see scripts/ci/postgres-test-images.md.
+# Official PostgreSQL indexes via Google's cache; see scripts/ci/postgres-test-images.md.
 env:
   GAMEGUILD_TEST_POSTGRES_17_IMAGE: "mirror.gcr.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
   GAMEGUILD_TEST_POSTGRES_16_IMAGE: "mirror.gcr.io/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea"
@@ -72,6 +72,7 @@ jobs:
       - name: Test classifier contract
         run: |
           node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs scripts/ci/tests/emception-web-artifacts.test.mjs
+          node --test scripts/ci/tests/dotnet-cache-policy.test.mjs
           python3 -m unittest discover -s scripts/ci/tests -p 'acquire_emception_release_test.py'
       - name: Test docker build-context invariants
         run: node --test scripts/ci/tests/dockerignore-pnpm-patches.test.mjs scripts/ci/tests/dockerignore-api-analyzer-config.test.mjs
@@ -85,6 +86,12 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - name: Verify repository policy
         run: bash scripts/ci/verify-repository-policy.sh
+      - name: Verify grading and JavaScript runtime contracts
+        run: |
+          node tools/emception/grading/build.mjs
+          node --test apps/web/scripts/sync-javascript-runtime.test.mjs
+          node --test scripts/ci/tests/dev-runtime-registration.test.mjs scripts/ci/tests/lint-budget.test.mjs
+          node --test scripts/ci/tests/eslint-root-config.test.mjs
       - name: Upload policy evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
