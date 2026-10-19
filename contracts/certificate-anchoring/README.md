@@ -1,7 +1,7 @@
 # Certificate anchoring EVM contract — issue #224
 
-Status: source candidate for the first delivery stage. This contract is not
-deployed and does not enable an EVM backend provider. The issue stays open.
+Status: staged contract and backend-verification candidate. No public/testnet
+contract is deployed and an EVM publication provider is not enabled. The issue stays open.
 
 ## Protocol v1
 
@@ -77,6 +77,27 @@ Initial real acceptance is proposed on Sepolia, chain ID `11155111`. It requires
 configured RPC, funded test signer, deployment with reviewed owner/signer/issuer,
 and independently verified finalized anchor and revoke transactions. Chain state,
 receipts and generated ABI/bytecode must match the reviewed complete source. Forge
-tests do not substitute for this external acceptance. No transaction was sent as
-part of this source increment. Anchoring also does not implement W3C credential
+tests do not substitute for this external acceptance. No external transaction is
+sent by this source increment. Anchoring also does not implement W3C credential
 signing. No mainnet deployment or payment is configured.
+
+## Backend verification and native interoperability candidate
+
+The [backend component](../../docs/api/evm-certificate-verification.md) adds typed
+network validation, bounded JSON-RPC and receipt/event/state verification at an
+EIP-1898 canonical block hash. Its unit cases are separate from contract execution.
+The explicit read-service registration disables redirects/cookies and default
+HTTP request logging; `none/local` provider selection remains unchanged.
+
+The hosted workflow also starts an isolated Anvil chain12345, deploys this exact
+contract with a freshly generated fixture signer, anchors two digests and revokes
+one. It puts a self-signed loopback TLS bridge in front of Anvil and runs five
+.NET interoperability cases with exact certificate pinning. The cases read real
+receipts, ABI/event data, immutable runtime code, canonical blocks and revocation
+state. Fixture keys are masked and excluded from artifacts. Missing native fixture
+configuration fails the dedicated test project; it never silently skips.
+
+This is native EVM/HTTPS interoperability in an ephemeral CI fixture, not a
+Sepolia transaction or external finality acceptance. The fixture selects an
+explicit one-confirmation policy; Sepolia still requires `finalized`. The native
+project runs through its dedicated workflow; existing repository checks are retained.

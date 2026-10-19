@@ -1,11 +1,11 @@
-using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using GameGuild.Configuration.ApplicationLayer;
 
 namespace GameGuild.Identity.Authentication;
 
 /// <summary>Bounded JSON-RPC transport with strict response correlation and safe failures.</summary>
-/// <remarks>The hosting HttpClient registration must disable redirects and redact/disable endpoint logging.</remarks>
+/// <remarks>Owns its HttpClient. Hosting registration disables redirects and default endpoint logging.</remarks>
 public sealed class EvmCertificateRpcClient : IEvmCertificateRpc, IDisposable
 {
     public const string HttpClientName = "EvmCertificateRpc";
@@ -37,8 +37,10 @@ public sealed class EvmCertificateRpcClient : IEvmCertificateRpc, IDisposable
         deadline.CancelAfter(timeout);
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
-            Content = JsonContent.Create(new { jsonrpc = "2.0", id, method = wireMethod, @params = parameters })
+            Content = new ByteArrayContent(JsonSerializer.SerializeToUtf8Bytes(
+                new { jsonrpc = "2.0", id, method = wireMethod, @params = parameters }, JsonSerializerOptions.Web))
         };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
 
         try
         {

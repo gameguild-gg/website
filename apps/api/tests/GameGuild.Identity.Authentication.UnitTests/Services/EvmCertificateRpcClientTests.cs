@@ -15,6 +15,7 @@ public sealed class EvmCertificateRpcClientTests
         using var handler = new ReplyHandler(async (request, cancellationToken) =>
         {
             endpoint = request.RequestUri;
+            Assert.True(request.Content!.Headers.ContentLength is > 0);
             using var requestDocument = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
             captured = requestDocument.RootElement.Clone();
             return JsonResponse(captured.GetProperty("id").GetInt64(), "{\"value\":\"owned & literal\"}");
