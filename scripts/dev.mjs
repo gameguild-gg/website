@@ -14,6 +14,8 @@ import { resolveDevelopmentDataProtectionEnvironment } from './dev-data-protecti
 import { resolvePnpmProcess } from '../apps/web/scripts/pnpm-process.mjs';
 
 const API_PORT = 8080;
+// Resolve before starting children so run() can return a child synchronously.
+const pnpmProcess = await resolvePnpmProcess([], { env: process.env });
 
 // Minimal KEY=VALUE .env parser. Spawning `pnpm dev:api` instead would put
 // dotenv-cli/dotnet watch inside pnpm's own process groups, where group
@@ -36,7 +38,7 @@ function loadEnv(file) {
 // negative-pid group kill below reaches its whole subtree.
 function run(cmd, args) {
   const invocation = cmd === 'pnpm'
-    ? resolvePnpmProcess(args, { env: process.env })
+    ? { command: pnpmProcess.command, args: [...pnpmProcess.args, ...args] }
     : { command: cmd, args };
   return spawn(invocation.command, invocation.args, {
     shell: false,

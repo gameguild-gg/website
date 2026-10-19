@@ -49,7 +49,7 @@ async function main() {
     try {
       for (const target of missing()) {
         console.log(`[ensure-emception-libs] building ${target.name}`);
-        const invocation = resolvePnpmProcess(target.args, { env: process.env });
+        const invocation = await resolvePnpmProcess(target.args, { env: process.env });
         const result = spawnSync(invocation.command, invocation.args, { cwd: target.cwd, stdio: 'inherit', shell: false, windowsHide: true });
         if (result.status !== 0) {
           const error = new Error(`Failed to build ${target.name}`, { cause: result.error });

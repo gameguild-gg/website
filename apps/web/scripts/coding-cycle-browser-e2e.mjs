@@ -426,7 +426,7 @@ async function bootStack() {
   // construction — next-intl's default-locale handling then 307-loops
   // unprefixed routes onto themselves (/sign-in → /sign-in). The default
   // bind (*:port) serves both localhost and 127.0.0.1 correctly.
-  const webInvocation = resolvePnpmProcess(
+  const webInvocation = await resolvePnpmProcess(
     ["exec", "next", "dev", "--webpack", "--port", String(WEB_PORT)],
     { env: process.env },
   );

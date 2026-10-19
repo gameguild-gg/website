@@ -44,11 +44,21 @@ function context(platform, status = 0) {
     resolvePnpmProcess(args, options) {
       return resolvePnpmProcess(args, {
         ...options, platform, nodePath,
-        fileExists: (candidate) => candidate === pnpmEntry,
+        fileExists: async (candidate) => candidate === pnpmEntry,
       });
     },
   };
   return { calls, child, sandbox };
+}
+
+async function initializedRun(source, sandbox) {
+  const start = source.indexOf("const pnpmProcess = ");
+  const end = source.indexOf(";", start);
+  const initialization = start === -1 ? "" : source.slice(start, end + 1);
+  return await vm.runInNewContext(`(async () => {
+    ${initialization}
+    return (${sourceFunction(source, "run")});
+  })()`, sandbox);
 }
 
 for (const platform of ["win32", "linux"]) {
@@ -56,7 +66,7 @@ for (const platform of ["win32", "linux"]) {
     test(`dev preserves ${platform} literal argument ${argument}`, async () => {
       const source = await readFile(path.join(root, "scripts/dev.mjs"), "utf8");
       const { calls, child, sandbox } = context(platform);
-      const run = vm.runInNewContext(`(${sourceFunction(source, "run")})`, sandbox);
+      const run = await initializedRun(source, sandbox);
       assert.equal(run("docker", ["compose", argument]), child);
       assert.equal(calls[0].command, "docker");
       assert.deepEqual(calls[0].args, ["compose", argument]);
@@ -69,7 +79,7 @@ for (const platform of ["win32", "linux"]) {
   test(`dev resolves ${platform} pnpm without parsing arguments`, async () => {
     const source = await readFile(path.join(root, "scripts/dev.mjs"), "utf8");
     const { calls, sandbox } = context(platform);
-    const run = vm.runInNewContext(`(${sourceFunction(source, "run")})`, sandbox);
+    const run = await initializedRun(source, sandbox);
     run("pnpm", literalArguments);
     assert.equal(calls[0].command, platform === "win32" ? nodePath : "pnpm");
     assert.deepEqual(calls[0].args, platform === "win32" ? [pnpmEntry, ...literalArguments] : literalArguments);
@@ -100,9 +110,14 @@ test("dev skips exited children and preserves POSIX group termination", async ()
 test("dev fails before spawning when Windows pnpm cannot be resolved", async () => {
   const source = await readFile(path.join(root, "scripts/dev.mjs"), "utf8");
   const { calls, sandbox } = context("win32");
-  sandbox.resolvePnpmProcess = () => { throw new Error("owned missing pnpm"); };
-  const run = vm.runInNewContext(`(${sourceFunction(source, "run")})`, sandbox);
-  assert.throws(() => run("pnpm", ["run", "dev"]), /owned missing pnpm/);
+  sandbox.resolvePnpmProcess = async () => { throw new Error("owned missing pnpm"); };
+  const start = source.indexOf("const pnpmProcess = ");
+  assert.notEqual(start, -1);
+  assert(start < source.indexOf("const compose = run("));
+  await assert.rejects(async () => {
+    const run = await initializedRun(source, sandbox);
+    run("docker", ["compose"]);
+  }, /owned missing pnpm/);
   assert.equal(calls.length, 0);
 });
 
@@ -124,7 +139,7 @@ for (const platform of ["win32", "linux"]) {
     assert.notEqual(callStart, -1);
     assert.notEqual(callEnd, -1);
     for (const [index, target] of targets.entries()) {
-      vm.runInNewContext(`${source.slice(invocationStart === -1 ? callStart : invocationStart, callEnd)}\n result`, { ...sandbox, target });
+      await vm.runInNewContext(`(async () => { ${source.slice(invocationStart === -1 ? callStart : invocationStart, callEnd)}\n return result; })()`, { ...sandbox, target });
       const call = calls[index];
       const args = ["run", index === 0 ? "build:lib" : "build"];
       assert.equal(call.command, platform === "win32" ? nodePath : "pnpm");
@@ -139,7 +154,7 @@ for (const platform of ["win32", "linux"]) {
     test(`dependency builder retains ${platform} status ${status}`, async () => {
       const source = await readFile(path.join(root, "apps/web/scripts/build-emception-dependencies.mjs"), "utf8");
       const { calls, sandbox } = context(platform, status);
-      const run = vm.runInNewContext(`(${sourceFunction(source, "run")})`, sandbox);
+      const run = await initializedRun(source, sandbox);
       const cwd = "/owned build & literal";
       if (status === 0) run(literalArguments, cwd);
       else assert.throws(() => run(literalArguments, cwd), new RegExp(`owned exit ${status ?? 1}`));
@@ -164,7 +179,7 @@ for (const platform of ["win32", "linux"]) {
     sandbox.WEB_DIR = "/owned web & literal";
     sandbox.webEnv = { OWNED_WEB: "literal & environment" };
     sandbox.envArrayToObject = (value) => value;
-    const web = vm.runInNewContext(`${source.slice(start, end)}\n web`, sandbox);
+    const web = await vm.runInNewContext(`(async () => { ${source.slice(start, end)}\n return web; })()`, sandbox);
     assert.equal(web, child);
     assert.equal(calls.length, 1);
     const args = ["exec", "next", "dev", "--webpack", "--port", "3210"];
