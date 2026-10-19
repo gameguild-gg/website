@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-// Exact official manifest indexes compared across Docker Hub and ECR on 2026-10-09.
-const image17 = 'public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24';
-const image16 = 'public.ecr.aws/docker/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea';
+// Original official indexes; Google's cache returned both exact digests on 2026-10-17.
+const image17 = 'mirror.gcr.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24';
+const image16 = 'mirror.gcr.io/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea';
 const read = (path) => readFileSync(new URL('../../../' + path, import.meta.url), 'utf8').replaceAll('\r\n', '\n');
 
 for (const workflow of ['pr-verify', 'emception']) {

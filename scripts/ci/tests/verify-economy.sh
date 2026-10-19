@@ -909,6 +909,134 @@ test_repository_test_fixtures_use_shared_postgres() {
     'apps/api/tests/**/*.cs' ':!apps/api/tests/GameGuild.TestSupport.Finance.Economy/**'
 }
 
+write_web_test_fixture() {
+  "$PYTHON_BIN" - "$1" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+(root / "vitest").mkdir(parents=True)
+(root / "coverage/web").mkdir(parents=True)
+suite = dict(numTotalTests=3, numFailedTests=0, numPendingTests=0)
+for name in ("web.json", "economy-coverage.json"):
+    (root / "vitest" / name).write_text(json.dumps(suite), encoding="utf-8")
+total = {name: dict(total=1, covered=1, pct=100) for name in ("lines", "branches", "functions", "statements")}
+(root / "coverage/web/coverage-summary.json").write_text(json.dumps(dict(total=total)), encoding="utf-8")
+PY
+}
+
+test_web_test_evidence_accepts_complete_reports() {
+  local root="$fixture_root/web-complete"
+  write_web_test_fixture "$root" || return 1
+  assert_web_test_evidence "$root"
+}
+
+test_web_test_evidence_rejects_missing_reports() {
+  local name root
+  for name in vitest/web.json vitest/economy-coverage.json coverage/web/coverage-summary.json; do
+    root="$fixture_root/web-missing-${name//\//-}"
+    write_web_test_fixture "$root" || return 1
+    rm "$root/$name" || return 1
+    assert_throws 'No such file' assert_web_test_evidence "$root" || return 1
+  done
+}
+
+test_web_test_evidence_rejects_failed_or_pending_suites() {
+  local name field root
+  for name in web.json economy-coverage.json; do
+    for field in numFailedTests numPendingTests; do
+      root="$fixture_root/web-rejected-$name-$field"
+      write_web_test_fixture "$root" || return 1
+      "$PYTHON_BIN" - "$root/vitest/$name" "$field" <<'PY' || return 1
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+value = json.loads(path.read_text(encoding="utf-8"))
+value[sys.argv[2]] = 1
+path.write_text(json.dumps(value), encoding="utf-8")
+PY
+      assert_throws 'Vitest suite contains' assert_web_test_evidence "$root" || return 1
+    done
+  done
+}
+
+test_web_test_evidence_rejects_incomplete_coverage() {
+  local metric root
+  for metric in lines branches functions statements rounded empty; do
+    root="$fixture_root/web-coverage-$metric"
+    write_web_test_fixture "$root" || return 1
+    "$PYTHON_BIN" - "$root/coverage/web/coverage-summary.json" "$metric" <<'PY' || return 1
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+value = json.loads(path.read_text(encoding="utf-8"))
+metric = sys.argv[2]
+if metric == "empty":
+    for entry in value["total"].values():
+        entry.update(total=0, covered=0, pct=100)
+else:
+    entry = value["total"]["lines" if metric == "rounded" else metric]
+    entry.update(covered=0, pct=100 if metric == "rounded" else 0)
+path.write_text(json.dumps(value), encoding="utf-8")
+PY
+    assert_throws 'Web .*coverage' assert_web_test_evidence "$root" || return 1
+  done
+}
+
+web_test_bundle() (
+  cd "$repository_root" || exit 1
+  bash "$ci_dir/economy-artifacts.sh" "$@"
+)
+
+test_web_test_bundle_validates_transfer() {
+  local root="$fixture_root/web-transfer" bundle="$fixture_root/web-bundle" restored="$fixture_root/web-restored"
+  write_web_test_fixture "$root" || return 1
+  web_test_bundle pack web-tests "$root" "$bundle" || return 1
+  web_test_bundle unpack web-tests "$bundle" "$restored" || return 1
+  assert_web_test_evidence "$restored" || return 1
+  cmp -s "$root/vitest/web.json" "$restored/vitest/web.json" || return 1
+  cp "$bundle/identity.json" "$fixture_root/web-original-identity.json" || return 1
+  assert_throws 'mismatch' web_test_bundle unpack client "$bundle" "$restored" || return 1
+  "$PYTHON_BIN" - "$bundle/identity.json" <<'PY' || return 1
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+value = json.loads(path.read_text(encoding="utf-8"))
+value["tree"] = "0" * 40
+path.write_text(json.dumps(value), encoding="utf-8")
+PY
+  assert_throws 'mismatch' web_test_bundle unpack web-tests "$bundle" "$restored" || return 1
+  cp "$fixture_root/web-original-identity.json" "$bundle/identity.json" || return 1
+  printf 'corrupt archive' >> "$bundle/outputs.tar.gz" || return 1
+  assert_throws 'mismatch' web_test_bundle unpack web-tests "$bundle" "$restored"
+}
+
+test_web_test_producer_preserves_required_routing() {
+  local gate="$ci_dir/verify-economy.sh" producer browser
+  producer="$(sed -n '/if \[\[ "$gate_profile" == client-bundle \]\]; then/,/elif \[\[ "$gate_profile" == api-bundle \]\]; then/p' "$gate")"
+  browser="$(sed -n '/elif \[\[ "$gate_profile" == browser \]\]; then/,/^fi$/p' "$gate")"
+  grep -Fq 'verify_web_tests' <<< "$producer" || return 1
+  grep -Fq 'pack web-tests' <<< "$producer" || return 1
+  grep -Fq 'unpack web-tests' <<< "$browser" || return 1
+  grep -Fq 'assert_web_test_evidence "$verified_web_tests"' <<< "$browser" || return 1
+  grep -Fq 'web-test-bundle-identity.json' <<< "$browser" || return 1
+  grep -Fq -- '--maxWorkers=4' "$gate" || return 1
+  [[ "$(grep -c -- '--filter @game-guild/web exec vitest run' "$gate")" == 1 ]]
+}
+
+run_test 'Web evidence accepts complete suites and coverage' test_web_test_evidence_accepts_complete_reports
+run_test 'Web evidence rejects missing reports' test_web_test_evidence_rejects_missing_reports
+run_test 'Web evidence rejects failed or pending suites' test_web_test_evidence_rejects_failed_or_pending_suites
+run_test 'Web evidence rejects incomplete or empty coverage' test_web_test_evidence_rejects_incomplete_coverage
+run_test 'Web evidence transfer rejects wrong kind, tree and digest' test_web_test_bundle_validates_transfer
+run_test 'Web suites execute in the producer and remain required by the browser gate' test_web_test_producer_preserves_required_routing
 run_test 'repository manifest covers all discovered Economy projects' test_repository_manifest_covers_discovered_projects
 run_test 'PostgreSQL test fixtures use the shared database lifecycle' test_repository_test_fixtures_use_shared_postgres
 run_test 'CI policy contains only shell scripts' test_shell_only_ci_policy
