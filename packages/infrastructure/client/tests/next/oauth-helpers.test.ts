@@ -15,6 +15,8 @@ function makeBaseProvider(overrides?: Partial<OAuthProviderWithMethods>): OAuthP
     id: 'test-provider',
     name: 'Test Provider',
     type: 'oauth',
+    clientId: 'fixture-client-id',
+    clientSecret: '',
     ...overrides,
   };
 }
@@ -38,7 +40,8 @@ describe('getOAuthExchangeToken', () => {
   });
 
   it('should return undefined when exchangeToken is not a function', () => {
-    const provider = makeBaseProvider({ exchangeToken: 'not-a-function' as any });
+    const provider = makeBaseProvider();
+    Reflect.set(provider, 'exchangeToken', 'not-a-function');
 
     const result = getOAuthExchangeToken(provider);
 
@@ -65,7 +68,8 @@ describe('getOAuthAuthorizeUrl', () => {
   });
 
   it('should return undefined when getAuthorizeUrl is not a function', () => {
-    const provider = makeBaseProvider({ getAuthorizeUrl: 42 as any });
+    const provider = makeBaseProvider();
+    Reflect.set(provider, 'getAuthorizeUrl', 42);
 
     const result = getOAuthAuthorizeUrl(provider);
 
@@ -92,7 +96,8 @@ describe('getOAuthHandleCallback', () => {
   });
 
   it('should return undefined when handleCallback is not a function', () => {
-    const provider = makeBaseProvider({ handleCallback: null as any });
+    const provider = makeBaseProvider();
+    Reflect.set(provider, 'handleCallback', null);
 
     const result = getOAuthHandleCallback(provider);
 

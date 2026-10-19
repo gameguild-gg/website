@@ -10,10 +10,11 @@ import {
   createClientFromCookies,
   createRouteClient,
 } from '../../src/integrations/next/index.js';
+import type { ServerClientConfig } from '../../src/server.js';
 
 // Mock the server client
 vi.mock('../../src/server.js', () => ({
-  createServerClient: vi.fn((config: any) => ({
+  createServerClient: vi.fn((config: ServerClientConfig) => ({
     getBaseUrl: () => config.baseUrl,
     request: vi.fn(),
     ...config,
@@ -41,6 +42,7 @@ describe('createNextAuthTokenProvider', () => {
     }));
 
     const provider = createNextAuthTokenProvider(getSession);
+    if (!provider.getRefreshToken) throw new Error('Expected the refresh-token callback');
     const token = await provider.getRefreshToken();
 
     expect(token).toBe('my-refresh-token');
@@ -52,6 +54,7 @@ describe('createNextAuthTokenProvider', () => {
     const provider = createNextAuthTokenProvider(getSession);
 
     expect(await provider.getAccessToken()).toBeNull();
+    if (!provider.getRefreshToken) throw new Error('Expected the refresh-token callback');
     expect(await provider.getRefreshToken()).toBeNull();
   });
 
@@ -61,6 +64,7 @@ describe('createNextAuthTokenProvider', () => {
     const provider = createNextAuthTokenProvider(getSession);
 
     expect(await provider.getAccessToken()).toBeNull();
+    if (!provider.getRefreshToken) throw new Error('Expected the refresh-token callback');
     expect(await provider.getRefreshToken()).toBeNull();
   });
 
@@ -105,7 +109,7 @@ describe('createNextClient', () => {
     });
 
     expect(client).toBeDefined();
-    expect((client as any)._mockClient).toBe(true);
+    expect(client).toHaveProperty('_mockClient', true);
   });
 
   it('should add auth when getSession is provided', () => {
@@ -117,7 +121,7 @@ describe('createNextClient', () => {
     });
 
     expect(client).toBeDefined();
-    expect((client as any).auth).toBeDefined();
+    expect(client).toHaveProperty('auth', expect.anything());
   });
 
   it('should add tenant when getTenantId is provided', () => {
@@ -129,7 +133,7 @@ describe('createNextClient', () => {
     });
 
     expect(client).toBeDefined();
-    expect((client as any).tenant).toBeDefined();
+    expect(client).toHaveProperty('tenant', expect.anything());
   });
 
   it('should pass through timeout and interceptors', () => {
@@ -138,10 +142,11 @@ describe('createNextClient', () => {
     const client = createNextClient({
       baseUrl: 'http://localhost:5000',
       timeout: 5000,
-      interceptors: [interceptor],
+      interceptors: [{ onRequest: interceptor }],
     });
 
     expect(client).toBeDefined();
+    expect(client).toMatchObject({ timeout: 5000, interceptors: [{ onRequest: interceptor }] });
   });
 });
 
@@ -161,7 +166,7 @@ describe('createClientFromCookies', () => {
     });
 
     expect(client).toBeDefined();
-    expect((client as any)._mockClient).toBe(true);
+    expect(client).toHaveProperty('_mockClient', true);
   });
 
   it('should use custom cookie names', async () => {

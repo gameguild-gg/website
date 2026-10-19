@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createHandlers } from '../../src/integrations/next/handlers.js';
 import { signStatePayload, stateCookieName } from '../../src/integrations/next/oauth-state.js';
 import type { ResolvedAuthConfig, ProviderResult } from '../../src/runtime/auth/types.js';
+import { getOAuthHandleCallback } from '../../src/integrations/next/oauth-helpers.js';
 
 async function createOAuthCallbackRequest(providerId: string, secret: string, code = 'abc123', state = 'xyz'): Promise<Request> {
   const cookie = await signStatePayload(
@@ -535,7 +536,9 @@ describe('Handlers — OAuth callback extended', () => {
     const request = await createOAuthCallbackRequest('github', config.secret);
     const response = await GET(request);
     expect(response.status).toBe(302);
-    expect(config.providers[0].handleCallback).toHaveBeenCalled();
+    const provider = config.providers[0];
+    if (provider.type === 'credentials') throw new Error('Expected the configured OAuth provider');
+    expect(getOAuthHandleCallback(provider)).toHaveBeenCalled();
     expect(response.headers.get('location')).toBe('http://localhost/');
   });
 

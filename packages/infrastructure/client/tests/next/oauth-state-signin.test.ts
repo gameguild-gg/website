@@ -11,7 +11,8 @@ import {
   verifyStateCookie,
   type OAuthStatePayload,
 } from '../../src/integrations/next/oauth-state.js';
-import type { ResolvedAuthConfig } from '../../src/runtime/auth/types.js';
+import type { JWTPayload, ProviderResult, ResolvedAuthConfig } from '../../src/runtime/auth/types.js';
+import type { OAuthProviderWithMethods } from '../../src/integrations/next/oauth-helpers.js';
 
 vi.mock('../../src/runtime/auth/jwt.js', () => ({
   decodeJWT: vi.fn(async () => null),
@@ -27,7 +28,7 @@ vi.mock('../../src/runtime/auth/csrf.js', () => ({
 }));
 
 vi.mock('../../src/runtime/auth/session.js', () => ({
-  createJWTPayload: vi.fn((result: any) => ({
+  createJWTPayload: vi.fn((result: ProviderResult) => ({
     user: result.user,
     accessToken: result.tokens.accessToken,
     refreshToken: result.tokens.refreshToken,
@@ -37,7 +38,7 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
   })),
   processSession: vi.fn(async () => ({ session: null, token: null, updated: false })),
   encodeSession: vi.fn(async () => 'new-encrypted-token'),
-  toSession: vi.fn((token: any) => ({
+  toSession: vi.fn((token: JWTPayload) => ({
     user: token.user,
     expires: new Date(Date.now() + 86400000).toISOString(),
   })),
@@ -51,12 +52,20 @@ function makeDiscordProvider() {
     id: 'discord',
     name: 'Discord',
     type: 'oauth',
+    clientId: 'fixture-client-id',
+    clientSecret: '',
     getAuthorizeUrl: vi.fn(async () => AUTH_URL),
     handleCallback: vi.fn(async () => ({
       tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
       user: { id: '1', email: 'discord@example.com', name: 'Discord User', image: null },
     })),
-  } as any;
+  } satisfies OAuthProviderWithMethods;
+}
+
+function firstOAuthProvider(config: ResolvedAuthConfig): OAuthProviderWithMethods {
+  const provider = config.providers[0];
+  if (!provider || provider.type === 'credentials') throw new Error('Expected the configured OAuth provider');
+  return provider;
 }
 
 function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig {
@@ -134,7 +143,7 @@ describe('GET /api/auth/signin/:provider (OAuth redirect flow)', () => {
     expect(response.headers.get('Location')).toBe(AUTH_URL);
 
     // redirectUri passed to the provider is origin + basePath + /callback/:provider
-    expect(config.providers[0].getAuthorizeUrl).toHaveBeenCalledWith(
+    expect(firstOAuthProvider(config).getAuthorizeUrl).toHaveBeenCalledWith(
       'http://localhost:5000',
       'http://localhost:3000/api/auth/callback/discord',
     );
@@ -204,7 +213,7 @@ describe('GET /api/auth/signin/:provider (OAuth redirect flow)', () => {
 
   it('returns 400 for a provider without getAuthorizeUrl', async () => {
     const config = makeConfig({
-      providers: [{ id: 'google', name: 'Google', type: 'oidc' } as any],
+      providers: [{ id: 'google', name: 'Google', type: 'oidc', clientId: 'fixture-client-id', clientSecret: '' } satisfies OAuthProviderWithMethods],
     });
     const { GET } = createHandlers(config);
 
@@ -260,7 +269,7 @@ describe('GET /api/auth/callback/:provider (state cookie verification)', () => {
       'http://localhost:3000/auth/error?error=state_mismatch',
     );
     expect(findStateCookie(response)).toContain('Max-Age=0');
-    expect(config.providers[0].handleCallback).not.toHaveBeenCalled();
+    expect(firstOAuthProvider(config).handleCallback).not.toHaveBeenCalled();
   });
 
   it('rejects a tampered cookie payload (HMAC failure)', async () => {
@@ -276,7 +285,7 @@ describe('GET /api/auth/callback/:provider (state cookie verification)', () => {
     expect(response.status).toBe(302);
     expect(response.headers.get('Location')).toContain('error=state_mismatch');
     expect(findStateCookie(response)).toContain('Max-Age=0');
-    expect(config.providers[0].handleCallback).not.toHaveBeenCalled();
+    expect(firstOAuthProvider(config).handleCallback).not.toHaveBeenCalled();
   });
 
   it('rejects a tampered HMAC segment', async () => {
@@ -313,7 +322,7 @@ describe('GET /api/auth/callback/:provider (state cookie verification)', () => {
     const response = await GET(callbackRequest(wrongFlow));
 
     expect(response.headers.get('Location')).toContain('error=state_mismatch');
-    expect(config.providers[0].handleCallback).not.toHaveBeenCalled();
+    expect(firstOAuthProvider(config).handleCallback).not.toHaveBeenCalled();
   });
 
   it('rejects when query state does not match cookie state', async () => {
@@ -325,7 +334,7 @@ describe('GET /api/auth/callback/:provider (state cookie verification)', () => {
     expect(response.status).toBe(302);
     expect(response.headers.get('Location')).toContain('error=state_mismatch');
     expect(findStateCookie(response)).toContain('Max-Age=0');
-    expect(config.providers[0].handleCallback).not.toHaveBeenCalled();
+    expect(firstOAuthProvider(config).handleCallback).not.toHaveBeenCalled();
   });
 
   it('accepts a valid cookie: calls handleCallback, consumes cookie, redirects locale-prefixed', async () => {
@@ -338,7 +347,7 @@ describe('GET /api/auth/callback/:provider (state cookie verification)', () => {
     expect(response.status).toBe(302);
     expect(response.headers.get('Location')).toBe('http://localhost:3000/pt-BR/dashboard');
 
-    expect(config.providers[0].handleCallback).toHaveBeenCalledWith(
+    expect(firstOAuthProvider(config).handleCallback).toHaveBeenCalledWith(
       'http://localhost:5000',
       'abc',
       'st4t3',

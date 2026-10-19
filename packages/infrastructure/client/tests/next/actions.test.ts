@@ -287,8 +287,7 @@ describe('createSignUpAction', () => {
         username: 'test',
         email: 'test@example.com',
         password: 'password',
-        redirect: false,
-      }),
+      }, { redirect: false }),
     ).rejects.toThrow('Email taken');
 
     vi.restoreAllMocks();
@@ -305,8 +304,7 @@ describe('createSignUpAction', () => {
         username: 'test',
         email: 'test@example.com',
         password: 'password',
-        redirect: false,
-      }),
+      }, { redirect: false }),
     ).rejects.toThrow();
 
     vi.restoreAllMocks();
