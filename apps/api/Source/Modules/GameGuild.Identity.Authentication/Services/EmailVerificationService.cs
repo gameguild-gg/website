@@ -132,11 +132,6 @@ public class EmailVerificationService(
             return TokenValidationResult.Failed("Token is required");
         }
 
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return TokenValidationResult.Failed("Token is required");
-        }
-
         try
         {
             var result = await (magicLinkTokenStore ?? throw new InvalidOperationException("Magic-link token storage is not configured."))

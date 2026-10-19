@@ -52,9 +52,10 @@ public sealed class SendMagicLinkRequestedHandler(
 
             logger.LogInformation("Magic-link email queued for {Email}", LogRedaction.MaskEmail(notification.Email));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            logger.LogError("Error queueing magic-link email");
+            logger.LogError("Error queueing magic-link email to {Email}: {ErrorType}",
+                LogRedaction.MaskEmail(notification.Email), ex.GetType().Name);
             throw; // Queue persistence failed; do not acknowledge a lost notification.
         }
     }

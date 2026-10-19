@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FluentAssertions;
 using GameGuild;
 using GameGuild.Identity.Authentication;
@@ -37,7 +39,7 @@ public sealed class MagicLinkTokenStoreTests
         firstResult.Email.Should().Be("magic@test.com");
         secondResult.Success.Should().BeFalse();
         var persistedToken = await context.Set<MagicLinkToken>().SingleAsync();
-        persistedToken.TokenHash.Should().NotContain(token);
+        persistedToken.TokenHash.Should().Be(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant());
     }
 
     [Fact]
