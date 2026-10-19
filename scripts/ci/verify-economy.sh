@@ -413,6 +413,8 @@ PY
 )
 
 build_client() {
+  gate_stage='client-test-types'
+  run "${pnpm_command[@]}" --filter @game-guild/client exec tsc --noEmit --project tests/tsconfig.json
   gate_stage='client'
   client_evidence="$artifact_root/vitest/client.json"
   run "${pnpm_command[@]}" --filter @game-guild/client exec vitest run --reporter=json "--outputFile=$client_evidence"

@@ -1018,6 +1018,24 @@ PY
   assert_throws 'mismatch' web_test_bundle unpack web-tests "$bundle" "$restored"
 }
 
+test_client_producer_checks_complete_test_types() {
+  local gate="$ci_dir/verify-economy.sh" producer
+  producer="$(sed -n '/^build_client() {/,/^}/p' "$gate")"
+  grep -Fq "gate_stage='client-test-types'" <<< "$producer" || return 1
+  grep -Fq 'run "${pnpm_command[@]}" --filter @game-guild/client exec tsc --noEmit --project tests/tsconfig.json' <<< "$producer" || return 1
+  "$PYTHON_BIN" - "$repository_root/packages/infrastructure/client/tests/tsconfig.json" <<'PY'
+import json
+import pathlib
+import sys
+
+config = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert config["extends"] == "../tsconfig.json"
+assert "./**/*.ts" in config["include"]
+assert "./**/*.tsx" in config["include"]
+assert set(config["exclude"]) <= {"../node_modules", "../dist"}
+PY
+}
+
 test_web_test_producer_preserves_required_routing() {
   local gate="$ci_dir/verify-economy.sh" producer browser
   producer="$(sed -n '/if \[\[ "$gate_profile" == client-bundle \]\]; then/,/elif \[\[ "$gate_profile" == api-bundle \]\]; then/p' "$gate")"
@@ -1036,6 +1054,7 @@ run_test 'Web evidence rejects missing reports' test_web_test_evidence_rejects_m
 run_test 'Web evidence rejects failed or pending suites' test_web_test_evidence_rejects_failed_or_pending_suites
 run_test 'Web evidence rejects incomplete or empty coverage' test_web_test_evidence_rejects_incomplete_coverage
 run_test 'Web evidence transfer rejects wrong kind, tree and digest' test_web_test_bundle_validates_transfer
+run_test 'Client producer typechecks the complete client test tree' test_client_producer_checks_complete_test_types
 run_test 'Web suites execute in the producer and remain required by the browser gate' test_web_test_producer_preserves_required_routing
 run_test 'repository manifest covers all discovered Economy projects' test_repository_manifest_covers_discovered_projects
 run_test 'PostgreSQL test fixtures use the shared database lifecycle' test_repository_test_fixtures_use_shared_postgres
