@@ -244,13 +244,22 @@ describe('runtime GradingPanel', () => {
 
   it('releases the active round with the current submission version', async () => {
     const user = userEvent.setup();
+    const released = finalSubmission();
     actions.get
       .mockResolvedValueOnce({ success: true, data: finalSubmission() })
       .mockResolvedValueOnce({
         success: true,
         data: {
-          ...finalSubmission(),
-          execution: { ...finalSubmission().execution, released: true },
+          ...released,
+          execution: {
+            ...released.execution,
+            released: true,
+            history: released.execution.history.map((round) => ({
+              ...round,
+              released: true,
+              releasedAt: '2026-08-01T10:15:00Z',
+            })),
+          },
         },
       });
     actions.release.mockResolvedValue({
@@ -269,6 +278,44 @@ describe('runtime GradingPanel', () => {
     expect(await screen.findByTestId('result-release-status')).toHaveTextContent(
       'Released to learner',
     );
+  });
+
+  it('offers release controls for an unreleased regrade when an older round is released', async () => {
+    const prior = finalSubmission();
+    actions.get.mockResolvedValue({
+      success: true,
+      data: {
+        ...prior,
+        execution: {
+          ...prior.execution,
+          activeRoundId: 'round-2',
+          released: true,
+          history: [
+            {
+              ...prior.execution.history[0]!,
+              released: true,
+              releasedAt: '2026-08-01T10:15:00Z',
+            },
+            {
+              ...prior.execution.history[0]!,
+              roundId: 'round-2',
+              roundNumber: 2,
+              reason: 'regrade',
+              released: false,
+              releasedAt: null,
+            },
+          ],
+        },
+      },
+    });
+
+    render(<GradingPanel item={individualItem} assessment={assessment} />);
+
+    expect(await screen.findByTestId('result-release-status')).toHaveTextContent(
+      'Ready to release',
+    );
+    expect(screen.getByTestId('release-result')).toBeInTheDocument();
+    expect(screen.getByTestId('schedule-result-release')).toBeInTheDocument();
   });
 
   it('shows one collective result for the frozen participant snapshot', async () => {
