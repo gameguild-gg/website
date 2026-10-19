@@ -80,7 +80,8 @@ public class Certificate : EntityBase
         Guid courseId,
         string recipientName,
         string courseName,
-        DateTime? expiresAt = null)
+        DateTime? expiresAt = null,
+        Guid? tenantId = null)
     {
         return new Certificate
         {
@@ -88,6 +89,7 @@ public class Certificate : EntityBase
             TemplateId = templateId,
             EnrollmentId = enrollmentId,
             UserId = userId,
+            TenantId = tenantId,
             CourseId = courseId,
             CertificateNumber = GenerateCertificateNumber(),
             RecipientName = recipientName,
