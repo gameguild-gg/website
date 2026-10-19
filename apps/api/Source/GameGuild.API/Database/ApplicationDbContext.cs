@@ -16,7 +16,7 @@ namespace GameGuild.API.Database;
 ///     Thin-shell database context that delegates module-specific configuration
 ///     to <see cref="IModelConfiguration"/> implementations discovered via assembly scanning.
 /// </summary>
-public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProtectionKeyContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProtectionKeyContext, IPermissionMutationAuditBuffer
 {
     private readonly IUseCaseOperationContextAccessor? _useCaseOperationContextAccessor;
     private readonly IAuditService? _auditService;
@@ -25,6 +25,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     private readonly PermissionAuditOptions _permissionAuditOptions = new();
     private readonly IReadOnlyList<IPermissionAuditHook> _permissionAuditHooks = [];
     private readonly List<PermissionAuditChange> _pendingPermissionAuditChanges = [];
+    private PermissionMutationAuditScope? _permissionMutationAuditScope;
 
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
@@ -182,7 +183,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         // stores, no double recording. Audit-store types are excluded inside the capture
         // to prevent audit-of-audit recursion.
         var capturedAuditRecordCount = _entityChangeAuditCaptureEnabled
-            ? EntityChangeAuditCapture.Capture(this, operationContext, _logger)
+            ? EntityChangeAuditCapture.Capture(this, operationContext, _logger,
+                _permissionMutationAuditScope?.ActorId, _permissionMutationAuditScope?.TenantId,
+                _permissionMutationAuditScope?.UseEntityTenantScope ?? false)
             : 0;
 
         foreach (var entry in ChangeTracker.Entries())
@@ -231,7 +234,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     /// Flushes the permission changes collected during the current use-case transaction through
     /// the centralized audit service. Audit failures are isolated from the permission mutation.
     /// </summary>
-    public async Task FlushPendingPermissionAuditChangesAsync(CancellationToken cancellationToken = default)
+    public Task FlushPendingPermissionAuditChangesAsync() => FlushPendingPermissionAuditChangesAsync(CancellationToken.None);
+
+    /// <inheritdoc />
+    public async Task FlushPendingPermissionAuditChangesAsync(CancellationToken cancellationToken)
     {
         if (_pendingPermissionAuditChanges.Count == 0)
         {
@@ -329,6 +335,65 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     /// </summary>
     public void DiscardPendingPermissionAuditChanges() => _pendingPermissionAuditChanges.Clear();
 
+    /// <inheritdoc />
+    public IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId) =>
+        BeginPermissionMutationAuditScope(actorId, tenantId, false);
+
+    /// <inheritdoc />
+    public IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId, bool useEntityTenantScope)
+    {
+        if (actorId == Guid.Empty || tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Mutation audit scope requires a valid actor and tenant (or an explicit null global tenant).");
+        }
+        var lease = new PermissionMutationAuditScopeLease(this, _permissionMutationAuditScope);
+        _permissionMutationAuditScope = new PermissionMutationAuditScope(actorId, tenantId, useEntityTenantScope);
+        return lease;
+    }
+
+    private sealed record PermissionMutationAuditScope(Guid ActorId, Guid? TenantId, bool UseEntityTenantScope);
+
+    private sealed class PermissionMutationAuditScopeLease : IPermissionMutationAuditScope
+    {
+        private ApplicationDbContext? _owner;
+        private readonly PermissionMutationAuditScope? _previous;
+        private readonly int _checkpoint;
+        private readonly UseCaseOperationContext? _operation;
+        private readonly UseCaseOperationContext.Checkpoint? _operationCheckpoint;
+
+        public PermissionMutationAuditScopeLease(ApplicationDbContext owner, PermissionMutationAuditScope? previous)
+        {
+            _owner = owner;
+            _previous = previous;
+            _checkpoint = owner._pendingPermissionAuditChanges.Count;
+            _operation = owner._useCaseOperationContextAccessor?.Current;
+            _operationCheckpoint = _operation?.CaptureCheckpoint();
+        }
+
+        public void RestoreAfterRollback()
+        {
+            var owner = _owner ?? throw new ObjectDisposedException(nameof(PermissionMutationAuditScopeLease));
+            if (_checkpoint > owner._pendingPermissionAuditChanges.Count)
+            {
+                throw new InvalidOperationException("Pending audit evidence was flushed while its mutation scope was active.");
+            }
+            owner._pendingPermissionAuditChanges.RemoveRange(_checkpoint, owner._pendingPermissionAuditChanges.Count - _checkpoint);
+            if (_operationCheckpoint is not null)
+            {
+                _operation!.RestoreCheckpoint(_operationCheckpoint);
+            }
+        }
+
+        public void Dispose()
+        {
+            var owner = Interlocked.Exchange(ref _owner, null);
+            if (owner is not null)
+            {
+                owner._permissionMutationAuditScope = _previous;
+            }
+        }
+    }
+
     private List<PermissionAuditChange> CapturePermissionAuditChanges()
     {
         var operation = _useCaseOperationContextAccessor?.Current;
@@ -350,11 +415,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
                 var isDeleted = entry.State == EntityState.Deleted;
                 var oldState = isAdded ? null : SerializePermissionState(entry, useOriginalValues: true);
                 var newState = isDeleted ? null : SerializePermissionState(entry, useOriginalValues: false);
-                var tenantId = ReadTenantId(entry, useOriginalValues: isDeleted)
-                    ?? (operation?.TenantId is { } operationTenantId && operationTenantId != DurableIntegrationEventTenants.Platform
-                        ? operationTenantId
-                        : null);
-                var actorId = operation?.ActorId ?? ReadActorId(entry, useOriginalValues: isDeleted) ?? Guid.Empty;
+                var tenantId = ResolvePermissionAuditTenant(entry, isDeleted, operation);
+                var actorId = _permissionMutationAuditScope?.ActorId ?? operation?.ActorId ?? ReadActorId(entry, useOriginalValues: isDeleted) ?? Guid.Empty;
                 var actionType = ResolvePermissionActionType(entry);
 
                 changes.Add(new PermissionAuditChange(
@@ -388,6 +450,16 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         var type = entry.Metadata.ClrType;
         return ContainsIgnoreCase(_permissionAuditOptions.ExcludedEntityTypes, type.Name)
             || ContainsIgnoreCase(_permissionAuditOptions.ExcludedEntityTypes, type.FullName ?? type.Name);
+    }
+
+    private Guid? ResolvePermissionAuditTenant(EntityEntry entry, bool isDeleted, UseCaseOperationContext? operation)
+    {
+        if (_permissionMutationAuditScope is { } scope)
+        {
+            return scope.UseEntityTenantScope ? ReadTenantId(entry, useOriginalValues: isDeleted) : scope.TenantId;
+        }
+        return ReadTenantId(entry, useOriginalValues: isDeleted)
+            ?? (operation?.TenantId is { } tenant && tenant != DurableIntegrationEventTenants.Platform ? tenant : null);
     }
 
     private static bool ContainsIgnoreCase(IEnumerable<string> configuredValues, string value) =>

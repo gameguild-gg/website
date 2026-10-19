@@ -3,6 +3,8 @@ using FluentAssertions;
 using GameGuild.Configuration.PresentationLayer.Authorization;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Authorization.Caching;
+using GameGuild.Identity.Authorization.Configuration;
+using GameGuild.Identity.Context.Actors;
 using GameGuild.TestSupport.Finance.Economy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -74,9 +76,15 @@ public sealed class PermissionServiceBulkCachePostgreSqlTests
             new CacheMetricsService(),
             NullLogger<HybridPermissionCache>.Instance);
         var versionStore = new DatabaseTenantSecurityVersionStore(new TenantSecurityVersionRepository(context));
+        var actors = new ActorContextAccessor();
+        using var administrator = actors.BeginActorContextScope(ActorContextBuilder.ForUser(Guid.NewGuid())
+            .WithTenantId(tenantId).WithRole("TenantAdmin").Build());
+        var audit = new PermissionAuditService(new PermissionAuditLogRepository(context), NullLogger<PermissionAuditService>.Instance);
         var permissionService = new LegacyPermissionService(
             context,
             securityVersionStore: versionStore,
+            auditService: audit,
+            actorContextAccessor: actors,
             hybridPermissionCache: hybridCache);
         var requests = userIds
             .Select(userId => new BulkPermissionCheckRequest(userId, tenantId, PermissionType.Read))
@@ -146,6 +154,7 @@ public sealed class PermissionServiceBulkCachePostgreSqlTests
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new TenantSecurityVersionConfiguration());
+            modelBuilder.ApplyConfiguration(new PermissionAuditLogConfiguration());
             modelBuilder.Entity<TenantPermission>().Ignore(permission => permission.Metadata);
             modelBuilder.Entity<ContentTypePermission>();
             modelBuilder.Entity<GenericResourcePermission>();
