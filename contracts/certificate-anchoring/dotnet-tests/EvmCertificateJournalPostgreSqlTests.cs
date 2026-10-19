@@ -37,7 +37,7 @@ public sealed class EvmCertificateJournalPostgreSqlTests(JournalPostgreSqlFixtur
         await connection.OpenAsync(Ct);
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT to_regclass('public.\"__EFMigrationsHistory\"') IS NULL";
-        Assert.Equal(true, await command.ExecuteScalarAsync(Ct));
+        Assert.True(Assert.IsType<bool>(await command.ExecuteScalarAsync(Ct)));
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class EvmCertificateJournalPostgreSqlTests(JournalPostgreSqlFixtur
     {
         var op = await Store().EnqueueAsync(Request(), Ct);
         var claims = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Store().TryAcquireAsync(op.Id, LeaseDuration, Ct)));
-        var first = Assert.Single(claims.Where(c => c is not null))!;
+        var first = Assert.Single(claims, c => c is not null)!;
         clock.Advance(LeaseDuration + TimeSpan.FromSeconds(1));
         var next = Assert.IsType<EvmCertificateJournalLease>(await Store().TryAcquireAsync(op.Id, LeaseDuration, Ct));
         Assert.NotEqual(first.Token, next.Token);
@@ -346,7 +346,7 @@ public sealed class EvmCertificateJournalPostgreSqlTests(JournalPostgreSqlFixtur
         public override ValueTask<DbDataReader> ReaderExecutedAsync(DbCommand command, CommandExecutedEventData eventData,
             DbDataReader result, CancellationToken cancellationToken = default)
         {
-            if (command.CommandText.Contains("INSERT INTO", StringComparison.Ordinal) &&
+            if (eventData.Context is EvmCertificateJournalDbContext && command.CommandText.Contains("INSERT INTO", StringComparison.Ordinal) &&
                 command.CommandText.Contains("evm_certificate_nonces", StringComparison.Ordinal))
             {
                 ObservedDatabaseWrite = true;

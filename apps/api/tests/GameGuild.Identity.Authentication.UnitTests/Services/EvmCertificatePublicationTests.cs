@@ -69,6 +69,15 @@ public sealed class EvmCertificatePublicationTests
         Assert.Equal(new BigInteger(2), validated.MaximumFeePerGasWei);
     }
 
+    [Fact]
+    public void SignedEnvelopeRejectsOversizedInputBeforeDecoding()
+    {
+        var prepared = Preparation(EthECKey.GenerateKey().GetPublicAddress());
+        var error = Assert.Throws<EvmCertificateJournalException>(() => EvmCertificateSignedEnvelope.Validate("0x02" + new string('f', 10000), prepared));
+        Assert.Equal(EvmCertificateJournalFailure.InvalidTransaction, error.Failure);
+        Assert.Null(error.InnerException);
+    }
+
     [Theory]
     [InlineData(TransactionMutation.Chain)]
     [InlineData(TransactionMutation.Nonce)]
@@ -80,6 +89,8 @@ public sealed class EvmCertificatePublicationTests
     [InlineData(TransactionMutation.Priority)]
     [InlineData(TransactionMutation.Signer)]
     [InlineData(TransactionMutation.TrailingBytes)]
+    [InlineData(TransactionMutation.HighS)]
+    [InlineData(TransactionMutation.YParity)]
     public void SignedEnvelopeRejectsAValidSignatureForAnotherIntent(TransactionMutation mutation)
     {
         var key = EthECKey.GenerateKey();
@@ -118,11 +129,20 @@ public sealed class EvmCertificatePublicationTests
             mutation == TransactionMutation.Value ? 1 : 0,
             "0xeecdf927" + digest[2..], []);
         var raw = "0x" + new Transaction1559Signer().SignTransaction(key, tx);
+        if (mutation is TransactionMutation.HighS or TransactionMutation.YParity)
+        {
+            var s = new BigInteger(tx.Signature.S, isUnsigned: true, isBigEndian: true);
+            var order = BigInteger.Parse("115792089237316195423570985008687907852837564279074904382605163141518161494337");
+            tx.SetSignature(new Signature(tx.Signature.R,
+                mutation == TransactionMutation.HighS ? (order - s).ToByteArray(isUnsigned: true, isBigEndian: true) : tx.Signature.S,
+                [(byte)(mutation == TransactionMutation.HighS ? tx.Signature.V.LastOrDefault() ^ 1 : 27)]));
+            raw = "0x" + Convert.ToHexString(tx.GetRLPEncoded());
+        }
         return mutation == TransactionMutation.TrailingBytes ? raw + "00" : raw;
     }
 
     public enum TransactionMutation
     {
-        None, Chain, Nonce, Target, Digest, Value, Gas, Fee, Priority, Signer, TrailingBytes
+        None, Chain, Nonce, Target, Digest, Value, Gas, Fee, Priority, Signer, TrailingBytes, HighS, YParity
     }
 }

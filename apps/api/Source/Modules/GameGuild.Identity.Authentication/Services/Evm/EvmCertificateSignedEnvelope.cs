@@ -8,7 +8,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>Validates a bounded, canonical EIP-1559 signature against the exact reserved intent.</summary>
 public sealed class EvmCertificateSignedEnvelope
 {
-    private EvmCertificateSignedEnvelope(string raw, string hash, BigInteger fee, BigInteger priority)
+    internal EvmCertificateSignedEnvelope(string raw, string hash, BigInteger fee, BigInteger priority)
     {
         RawTransaction = raw;
         TransactionHash = hash;
@@ -61,11 +61,7 @@ public sealed class EvmCertificateSignedEnvelope
             return new("0x" + Convert.ToHexString(bytes).ToLowerInvariant(), "0x" + hash,
                 tx.MaxFeePerGas.Value, tx.MaxPriorityFeePerGas.Value);
         }
-        catch (EvmCertificateJournalException)
-        {
-            throw;
-        }
-        catch (Exception)
+        catch (Exception ex) when (ex is not EvmCertificateJournalException)
         {
             // Cryptography/RLP exceptions can echo supplied bytes. Retain only the safe category.
             throw Rejected();
@@ -106,6 +102,7 @@ public sealed class EvmCertificateSignedEnvelope
             else if (element.List || element.Length > (count == 7 ? 36 : 32) ||
                      (count == 5 && element.Length != 20) || (count == 7 && element.Length != 36) ||
                      (count == 6 && element.Length != 0) ||
+                     (count == 9 && (element.Length > 1 || (element.Length == 1 && bytes[cursor] != 1))) ||
                      (count is not 5 and not 7 && element.Length > 0 && bytes[cursor] == 0))
             {
                 throw Rejected();
