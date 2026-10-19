@@ -79,12 +79,15 @@ export async function publishEmception(options = {}) {
 
     if (entry.name === '@gameguild/emception-toolchain') {
       let visible = false;
-      for (let attempt = 0; attempt < 24; attempt += 1) {
+      // npm registry CDN propagation for a freshly published scoped package with
+      // provenance routinely exceeds 2 minutes; poll up to ~15 minutes before
+      // failing the dependent publish.
+      for (let attempt = 0; attempt < 90; attempt += 1) {
         if (runCommand(npm, ['view', spec, 'version'], { cwd: repoRoot }).status === 0) {
           visible = true;
           break;
         }
-        await wait(5_000);
+        await wait(10_000);
       }
       if (!visible) throw new Error(`${spec} was not visible in the npm registry before publishing consumers`);
     }
