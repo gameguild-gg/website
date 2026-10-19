@@ -28,6 +28,7 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
         Assert.Same(concrete, first.ServiceProvider.GetRequiredService<IPermissionServiceV2>());
         Assert.Same(concrete, first.ServiceProvider.GetRequiredService<IPermissionReadService>());
         Assert.Same(concrete, first.ServiceProvider.GetRequiredService<IPermissionUpdateService>());
+        Assert.Same(concrete, first.ServiceProvider.GetRequiredService<IPermissionLifecycleService>());
         Assert.NotSame(concrete, second.ServiceProvider.GetRequiredService<Facade>());
     }
 

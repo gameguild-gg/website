@@ -17,8 +17,9 @@ providers and callers, so the new read capability uses an additive V2 contract.
 ## Current read increment
 
 - `IPermissionServiceV2` inherits the existing three-layer contract plus
-  `IPermissionReadService` and `IPermissionUpdateService`; the concrete service
-  implements each. Production DI aliases the old contract, V2, read/update capabilities and concrete type to one instance
+  `IPermissionReadService`, `IPermissionUpdateService` and
+  `IPermissionLifecycleService`; the concrete service implements each. Production
+  DI aliases the old contract, V2, read/update/lifecycle capabilities and concrete type to one instance
   per scope. No existing interface member or constructor argument is changed.
 - Direct tenant/content-type/typed-resource records and stored permission history
   return the canonical `Result<PagedResult<T>>`. This adds no alternative
@@ -95,6 +96,64 @@ See [EF connection resiliency and commit ambiguity](https://learn.microsoft.com/
 as well as the optional presentation registration. The host previously called
 Authentication application/data registration without the presentation entry point.
 
+## Create, delete and complete batch contracts
+
+Typed creation takes an explicit user or an explicit default-subject selection.
+Tenant allows retain custom string keys; content/resource allows retain native
+defined enum values and exact bindings. A non-deleted subject/binding already
+present returns Conflict: changing that grant uses the version-checked update
+contract rather than silently reactivating or extending it. The authenticated
+actor supplies the grantor. Delete soft-deletes the complete identified grant,
+including its allow/deny state, after checking its expected version. The existing
+engine continues evaluating inherited/default permissions after deletion.
+
+All three families expose bulk grant and bulk revoke. A request contains 1-256
+ordered items in one authorized scope. Bounds, authority, payloads and duplicate
+input bindings are checked before data access. Mutable allow collections are
+cloned once and the clone is validated before any await. SQL restricts reads to
+the requested subject and type/resource sets; complete binding keys are compared
+using a projection of their columns.
+The scope version is advanced once per accepted typed batch, and each saved grant
+has its own required audit entry and exact snapshot. Reloading saved grants lets
+snapshots reflect provider timestamp precision rather than unsaved input ticks.
+
+`Result<PermissionMutationBatchResult<T>>.IsSuccess` describes the result envelope.
+Callers must also inspect `Applied` and each indexed item result. A rejected batch
+returns `Applied=false`, keeps every original input index and concrete known
+failure, and marks otherwise eligible siblings as `BatchNotApplied`. No batch
+write survives. Empty/oversized/mixed-scope requests and missing collaborators
+are envelope failures; provider errors/cancellation propagate. With a caller
+transaction, `Applied=true` leaves final commit to that transaction's owner.
+
+Creation advances the scope version inside its transaction before checking
+bindings, serializing competing creators. Existing version-token races and a
+unique initial security-version row race return Conflict after rollback. The
+latter uses SQLSTATE 23505 only when an added security-version entity participates
+in the failed save. Other database exceptions propagate; no automatic replay or
+commit-success assumption is introduced.
+
+## Compatible mutation paths
+
+The original signatures and return types remain. Every grant, revoke, default,
+membership, share, bulk and cleanup entry checks authority and required version/
+audit collaborators. New grants use the actor as grantor. Invalid user/resource
+identifiers and undefined permission values are rejected; bulk invalid IDs are
+rejected before processing instead of silently omitted. Deleted tenant rows are
+excluded consistently with the other two grant families.
+
+On the production relational host, compatible writes use the same atomic executor,
+including nested savepoints for old batch/membership calls. A later failure rolls
+back earlier batch items, security versions and all staged audit evidence. Existing
+non-relational component providers retain their original persistence behavior;
+their unit tests qualify model/side-effect behavior, not atomic storage. Real-host
+PostgreSQL definitions independently cover rollback through the compatible API.
+
+Cross-tenant expiry cleanup requires SystemAdmin and retains each entity's own
+tenant in both centralized and per-entity evidence, including a null global
+tenant. It never stamps every affected row with the administrator's tenant.
+Required cleanup version writes use stable scope order and skip deleted grants.
+The actor-only, per-entity tenant mode is confined to that maintenance operation.
+
 ## Verification definitions
 
 `PermissionReadContractTests` defines validation, overflow, cancellation,
@@ -126,6 +185,21 @@ detection and cancellation after a real security-version write.
 Its injected failure wraps the real audit repository after a successful write;
 it does not replace grant/version/audit persistence with an in-memory fake.
 
+`PermissionLifecycleContractTests` defines all-family lifecycle authority,
+payload/subject/lifetime/version validation, batch bounds, indexed duplicate and
+validation failures, mixed scopes, one-time payload cloning, required collaborators,
+cancellation, legacy mutation guards and restricted cross-tenant cleanup.
+
+`PermissionLifecycleContractPostgreSqlTests` defines actual-host create/delete,
+persisted timestamp snapshots, each family's bulk grant/revoke, one version bump
+per typed batch, binding conflicts, indexed stale/missing failures, failure after
+the second real audit write through both typed and compatible batches, concurrent
+creation with and without an existing version row, caller savepoints/rollback,
+explicit global default creation, and cross-tenant cleanup attribution. Cleanup
+owns a separate migrated test database so it cannot expire another test's rows.
+Existing legacy snapshot/cache/model tests retain their positive assertions and
+now explicitly configure an authorized actor and audit/version collaborators.
+
 No local SDK, test, database, application or browser execution was performed under
 the current execution hold. These definitions have not yet been accepted by
 matching-source hosted CI. Source/diff review is not a passing runtime receipt.
@@ -137,27 +211,20 @@ matching-source hosted CI. Source/diff review is not a passing runtime receipt.
 | Comprehensive signatures / all three types | Preserve all existing create/check/generic/bulk methods; qualify added typed exact/list/history reads and updates. |
 | Async/error contracts | New reads carry cancellation and typed validation/access failures; qualify provider failures and native consumer compatibility. |
 | Generic resource operations | Existing generics retained; new resource-page method retains the mapped permission/resource constraints. |
-| Bulk operations | Existing tenant bulk grant and bulk/stream check seams retained. Reconcile the explicitly requested bulk revoke surface and its outcomes. |
+| Bulk operations | Typed atomic grant/revoke for all three families authored with indexed outcomes; compatible bulk and bulk/stream checks retained. Qualify native behavior and bounds. |
 | Evaluation/checking | Preserve the existing effective-permission and deny-first engines. New records must never become an authorization shortcut. |
 | Audit/history | New exact stored-history query implemented; native actor/tenant/privacy acceptance remains pending. |
 | Filtering/pagination | New database-side read paths implemented; native SQL execution and boundaries remain pending. |
 | Dependency injection | Production aliases authored; qualify actual registration and consumers. |
 | Tests/mocks/XML/validation | New definitions and XML contracts authored; compile and inspect their executed results before acceptance. |
-| Result pattern | New read/update paths expose the canonical Result type. Finish the other mutation/result contracts without breaking legacy returns. |
-| Interface versioning | Additive V2 preserves current consumers; document its final mutation surface before declaring the version complete. |
+| Result pattern | All five core operations and all-family grant/revoke batches expose canonical typed Results; qualify rejection/rollback behavior. Legacy returns remain unchanged. |
+| Interface versioning | Additive V2 and focused read/update/lifecycle capabilities authored; qualify current providers, mocks and actual host aliases. |
 
-The concrete compatibility service already has revoke methods that are absent
-from its old interface, plus default setters and mutation audit/version helpers.
-Before exposing a complete mutation contract, inspect every original CRUD and
-bulk-revoke operation, declare/adapt the correct existing implementation, and
-qualify the new update metadata behavior. Enforce actor/tenant/global-default
-authorization **before** a mutation, preserve version/audit and transactional
-failure semantics, and exercise native rejection/rollback cases. Optional
-collaborators on older construction sites are not proof of production mutation
-authorization. No mutation acceptance is inferred from this read increment.
-
-The old create/default/revoke helpers are not certified by the new guarded update
-path. Their remaining guards, typed mutation results and bulk
-revoke outcomes must still be reconciled before claiming complete CRUD coverage.
+The complete original CRUD, specialized operations and all-family bulk surfaces
+are now represented in source and regression definitions. This does not certify
+that they compile or meet functional acceptance. Matching hosted compilation,
+all affected/native results, actual consumer compatibility and the full retained
+15-criterion review are still required. Optional collaborators on a read-only
+construction site never establish production mutation authorization.
 
 Do not close the issue or mark all its checkboxes complete from this increment.

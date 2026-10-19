@@ -48,7 +48,7 @@ internal static class EntityChangeAuditCapture
     ///     Snapshot failures are logged per entry and never prevent the authorized change.
     /// </summary>
     internal static int Capture(DbContext context, UseCaseOperationContext? operation, ILogger? logger,
-        Guid? mutationActorId = null, Guid? mutationTenantId = null)
+        Guid? mutationActorId = null, Guid? mutationTenantId = null, bool useEntityTenantScope = false)
     {
         var records = new List<EntityChangeAuditRecord>();
 
@@ -73,7 +73,7 @@ internal static class EntityChangeAuditCapture
                     AfterValues = isDeleted ? null : SerializeValues(entry, useOriginalValues: false),
                     // A verified mutation actor also selects the exact authorized tenant,
                     // including null for global state; it never inherits the caller's tenant.
-                    TenantId = mutationActorId.HasValue ? mutationTenantId : ResolveTenantId(entry, operation, isDeleted),
+                    TenantId = ResolveCapturedTenant(entry, operation, isDeleted, mutationActorId, mutationTenantId, useEntityTenantScope),
                     ActorId = mutationActorId ?? ResolveActorId(entry, operation, isDeleted),
                     CorrelationId = operation?.CorrelationId.ToString(),
                     OccurredAtUtc = DateTimeOffset.UtcNow
@@ -145,6 +145,19 @@ internal static class EntityChangeAuditCapture
                 StringComparer.Ordinal);
             return JsonSerializer.Serialize(fallback);
         }
+    }
+
+    private static Guid? ResolveCapturedTenant(EntityEntry entry, UseCaseOperationContext? operation, bool isDeleted,
+        Guid? mutationActorId, Guid? mutationTenantId, bool useEntityTenantScope)
+    {
+        if (!mutationActorId.HasValue) { return ResolveTenantId(entry, operation, isDeleted); }
+        return useEntityTenantScope ? ReadMutationTenant(entry, isDeleted) : mutationTenantId;
+    }
+
+    private static Guid? ReadMutationTenant(EntityEntry entry, bool isDeleted)
+    {
+        var tenant = ReadGuidProperty(entry, "TenantId", useOriginalValues: isDeleted);
+        return tenant == Guid.Empty ? null : tenant;
     }
 
     private static Guid? ResolveTenantId(EntityEntry entry, UseCaseOperationContext? operation, bool isDeleted) =>

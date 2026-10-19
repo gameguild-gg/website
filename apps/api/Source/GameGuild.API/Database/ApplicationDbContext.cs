@@ -184,7 +184,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         // to prevent audit-of-audit recursion.
         var capturedAuditRecordCount = _entityChangeAuditCaptureEnabled
             ? EntityChangeAuditCapture.Capture(this, operationContext, _logger,
-                _permissionMutationAuditScope?.ActorId, _permissionMutationAuditScope?.TenantId)
+                _permissionMutationAuditScope?.ActorId, _permissionMutationAuditScope?.TenantId,
+                _permissionMutationAuditScope?.UseEntityTenantScope ?? false)
             : 0;
 
         foreach (var entry in ChangeTracker.Entries())
@@ -331,18 +332,18 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     public void DiscardPendingPermissionAuditChanges() => _pendingPermissionAuditChanges.Clear();
 
     /// <inheritdoc />
-    public IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId)
+    public IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId, bool useEntityTenantScope = false)
     {
         if (actorId == Guid.Empty || tenantId == Guid.Empty)
         {
             throw new ArgumentException("Mutation audit scope requires a valid actor and tenant (or an explicit null global tenant).");
         }
         var lease = new PermissionMutationAuditScopeLease(this, _permissionMutationAuditScope);
-        _permissionMutationAuditScope = new PermissionMutationAuditScope(actorId, tenantId);
+        _permissionMutationAuditScope = new PermissionMutationAuditScope(actorId, tenantId, useEntityTenantScope);
         return lease;
     }
 
-    private sealed record PermissionMutationAuditScope(Guid ActorId, Guid? TenantId);
+    private sealed record PermissionMutationAuditScope(Guid ActorId, Guid? TenantId, bool UseEntityTenantScope);
 
     private sealed class PermissionMutationAuditScopeLease : IPermissionMutationAuditScope
     {
@@ -406,12 +407,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
                 var isDeleted = entry.State == EntityState.Deleted;
                 var oldState = isAdded ? null : SerializePermissionState(entry, useOriginalValues: true);
                 var newState = isDeleted ? null : SerializePermissionState(entry, useOriginalValues: false);
-                var tenantId = _permissionMutationAuditScope is { } mutationScope
-                    ? mutationScope.TenantId
-                    : ReadTenantId(entry, useOriginalValues: isDeleted)
-                    ?? (operation?.TenantId is { } operationTenantId && operationTenantId != DurableIntegrationEventTenants.Platform
-                        ? operationTenantId
-                        : null);
+                var tenantId = ResolvePermissionAuditTenant(entry, isDeleted, operation);
                 var actorId = _permissionMutationAuditScope?.ActorId ?? operation?.ActorId ?? ReadActorId(entry, useOriginalValues: isDeleted) ?? Guid.Empty;
                 var actionType = ResolvePermissionActionType(entry);
 
@@ -446,6 +442,16 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         var type = entry.Metadata.ClrType;
         return ContainsIgnoreCase(_permissionAuditOptions.ExcludedEntityTypes, type.Name)
             || ContainsIgnoreCase(_permissionAuditOptions.ExcludedEntityTypes, type.FullName ?? type.Name);
+    }
+
+    private Guid? ResolvePermissionAuditTenant(EntityEntry entry, bool isDeleted, UseCaseOperationContext? operation)
+    {
+        if (_permissionMutationAuditScope is { } scope)
+        {
+            return scope.UseEntityTenantScope ? ReadTenantId(entry, useOriginalValues: isDeleted) : scope.TenantId;
+        }
+        return ReadTenantId(entry, useOriginalValues: isDeleted)
+            ?? (operation?.TenantId is { } tenant && tenant != DurableIntegrationEventTenants.Platform ? tenant : null);
     }
 
     private static bool ContainsIgnoreCase(IEnumerable<string> configuredValues, string value) =>

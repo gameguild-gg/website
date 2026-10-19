@@ -46,7 +46,7 @@ internal sealed class PermissionContractUpdater(
     {
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(request);
-        var scope = ResolveScope(request);
+        var scope = PermissionWriteAuthorization.Resolve(actors, request.TenantId, request.GlobalScope);
         if (scope.IsFailure)
         {
             return Result.Failure<TPermission>(scope.Error);
@@ -69,6 +69,7 @@ internal sealed class PermissionContractUpdater(
         {
             return Result.Failure<TPermission>(Error.Failure("PermissionWrite.CollaboratorsRequired", "Versioning and required audit services must be configured."));
         }
+        var evidence = new PermissionMutationEvidence(versions, audit);
         return await new PermissionMutationExecutor(context).ExecuteAsync<TPermission>(scope.Value.ActorId, scope.Value.TenantId, async token =>
         {
             var grant = await query(scope.Value.TenantId)
@@ -90,51 +91,12 @@ internal sealed class PermissionContractUpdater(
             ((DbContext)context).Entry(grant).Property(nameof(PermissionBase.UpdatedAt)).IsModified = true;
             ((DbContext)context).ChangeTracker.DetectChanges();
             await context.SaveChangesAsync(token).ConfigureAwait(false);
-            var version = await versions.IncrementVersionAsync((scope.Value.TenantId ?? Guid.Empty).ToString("D"), token).ConfigureAwait(false);
-            if (version <= 0)
-            {
-                throw new InvalidOperationException("Permission invalidation did not advance the security version.");
-            }
-            var evidence = await audit.LogPermissionChangeAsync(PermissionOperationType.Update,
-                grant.UserId, scope.Value.ActorId, scope.Value.TenantId,
-                permissionType: "GrantState", resourceId: resourceId(grant), resourceType: auditFamily,
-                oldValue: before, newValue: snapshot(grant), reason: request.Reason ?? "Update through permission service contract",
-                cancellationToken: token).ConfigureAwait(false);
-            if (evidence is null || evidence.Id == Guid.Empty)
-            {
-                throw new InvalidOperationException("Permission mutation audit was not persisted.");
-            }
+            await ((DbContext)context).Entry(grant).ReloadAsync(token).ConfigureAwait(false);
+            await evidence.AdvanceVersionAsync(scope.Value, token).ConfigureAwait(false);
+            await evidence.RecordAsync(grant, PermissionOperationType.Update, scope.Value, auditFamily, resourceId(grant),
+                before, snapshot(grant), request.Reason, token).ConfigureAwait(false);
             return Result.Success(grant);
         }, cancellationToken).ConfigureAwait(false);
-    }
-
-    private Result<WriteScope> ResolveScope<TValue>(PermissionGrantUpdate<TValue> request)
-    {
-        var actor = actors?.ActorContext;
-        if (actor is null || !actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } actorId || actorId == Guid.Empty)
-        {
-            return Result.Failure<WriteScope>(Error.Unauthorized("PermissionWrite.AuthenticationRequired", "An authenticated actor is required."));
-        }
-        if (request.TenantId == Guid.Empty || request.GlobalScope && request.TenantId.HasValue)
-        {
-            return Result.Failure<WriteScope>(Invalid("A tenant identifier cannot be empty or combined with global scope."));
-        }
-        if (request.GlobalScope)
-        {
-            return actor.IsSystemAdmin || actor.HasPermission(SystemPermission.Keys.ManageGlobalDefaults)
-                ? Result.Success(new WriteScope(null, actorId))
-                : Result.Failure<WriteScope>(Denied("Global mutations require system:manage-global-defaults."));
-        }
-        var tenant = request.TenantId ?? actor.TenantId;
-        if (!tenant.HasValue || tenant == Guid.Empty)
-        {
-            return Result.Failure<WriteScope>(Invalid("An explicit tenant context is required."));
-        }
-        if (!actor.IsSystemAdmin && (tenant != actor.TenantId || !actor.IsTenantAdmin && !actor.HasPermission("permissions:manage")))
-        {
-            return Result.Failure<WriteScope>(Denied("Permission updates require administration of the selected tenant."));
-        }
-        return Result.Success(new WriteScope(tenant, actorId));
     }
 
     private static Error? ValidateTyped(PermissionType[] values)
@@ -147,6 +109,4 @@ internal sealed class PermissionContractUpdater(
             ? Invalid("The typed permission payload exceeds its 500-character storage contract.") : null;
     }
     private static Error Invalid(string description) => Error.Validation("PermissionWrite.InvalidUpdate", description);
-    private static Error Denied(string description) => Error.Forbidden("PermissionWrite.Forbidden", description);
-    private sealed record WriteScope(Guid? TenantId, Guid ActorId);
 }

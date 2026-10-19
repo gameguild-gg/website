@@ -3,8 +3,8 @@ namespace GameGuild;
 /// <summary>Coordinates permission-audit evidence with a context-owned mutation transaction.</summary>
 public interface IPermissionMutationAuditBuffer
 {
-    /// <summary>Bind an authenticated mutation's actor and authorized target scope, restoring the caller's scope on disposal.</summary>
-    IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId);
+    /// <summary>Bind an authenticated actor and target scope; multi-tenant maintenance may preserve each entity's own tenant instead.</summary>
+    IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId, bool useEntityTenantScope = false);
 
     /// <summary>Deliver staged evidence after the owner has committed its transaction.</summary>
     Task FlushPendingPermissionAuditChangesAsync(CancellationToken cancellationToken = default);

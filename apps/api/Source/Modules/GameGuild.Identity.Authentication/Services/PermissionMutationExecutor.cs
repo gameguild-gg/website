@@ -1,4 +1,6 @@
+using System.Data.Common;
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -9,7 +11,8 @@ namespace GameGuild.Identity.Authentication;
 internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
 {
     public async Task<Result<T>> ExecuteAsync<T>(Guid actorId, Guid? tenantId,
-        Func<CancellationToken, Task<Result<T>>> operation, CancellationToken cancellationToken)
+        Func<CancellationToken, Task<Result<T>>> operation, CancellationToken cancellationToken,
+        Func<T, bool>? shouldCommit = null, bool useEntityTenantScope = false)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (context is not DbContext db || !db.Database.IsRelational())
@@ -34,7 +37,7 @@ internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
             // even when the caller disabled EF's automatic detection for earlier batch work.
             db.ChangeTracker.AutoDetectChangesEnabled = true;
             return await new PermissionMutationExecutionStrategy(db).ExecuteAsync(
-                () => ExecuteOnceAsync(db, actorId, tenantId, operation, cancellationToken)).ConfigureAwait(false);
+                () => ExecuteOnceAsync(db, actorId, tenantId, operation, cancellationToken, shouldCommit, useEntityTenantScope)).ConfigureAwait(false);
         }
         finally
         {
@@ -44,7 +47,7 @@ internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
 
     private async Task<Result<T>> ExecuteOnceAsync<T>(
         DbContext db, Guid actorId, Guid? tenantId,
-        Func<CancellationToken, Task<Result<T>>> operation, CancellationToken cancellationToken)
+        Func<CancellationToken, Task<Result<T>>> operation, CancellationToken cancellationToken, Func<T, bool>? shouldCommit, bool useEntityTenantScope)
     {
         var callerTransaction = db.Database.CurrentTransaction;
         if (callerTransaction is { SupportsSavepoints: false })
@@ -56,7 +59,7 @@ internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
             entry => new TrackedState(entry.State, entry.CurrentValues.Clone(), entry.OriginalValues.Clone()),
             ReferenceEqualityComparer.Instance);
         var buffer = context as IPermissionMutationAuditBuffer;
-        using var auditScope = buffer?.BeginPermissionMutationAuditScope(actorId, tenantId);
+        using var auditScope = buffer?.BeginPermissionMutationAuditScope(actorId, tenantId, useEntityTenantScope);
         var ownsTransaction = callerTransaction is null;
         var transaction = callerTransaction ?? await context.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
         var savepoint = "permission_" + Guid.NewGuid().ToString("N");
@@ -103,12 +106,14 @@ internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
         }
 
         Result<T> result;
+        var accepted = false;
         try
         {
             try
             {
                 result = await operation(cancellationToken).ConfigureAwait(false);
-                if (result.IsSuccess)
+                accepted = result.IsSuccess && (shouldCommit?.Invoke(result.Value) ?? true);
+                if (accepted)
                 {
                     if (ownsTransaction)
                     {
@@ -125,12 +130,18 @@ internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
                 await UndoAsync(failure).ConfigureAwait(false);
                 return Result.Failure<T>(Error.Conflict("PermissionWrite.Concurrency", "The permission changed; reload its current version."));
             }
+            catch (DbUpdateException failure) when (failure.InnerException is DbException { SqlState: "23505" }
+                && failure.Entries.Any(entry => entry.State == EntityState.Added && entry.Entity is TenantSecurityVersion))
+            {
+                await UndoAsync(failure).ConfigureAwait(false);
+                return Result.Failure<T>(Error.Conflict("PermissionWrite.Concurrency", "The security version was initialized concurrently; retry the request."));
+            }
             catch (Exception failure)
             {
                 await UndoAsync(failure).ConfigureAwait(false);
                 throw;
             }
-            if (result.IsFailure)
+            if (!accepted)
             {
                 await UndoAsync(null).ConfigureAwait(false);
             }
@@ -142,7 +153,7 @@ internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
                 await transaction.DisposeAsync().ConfigureAwait(false);
             }
         }
-        if (ownsTransaction && result.IsSuccess && buffer is not null)
+        if (ownsTransaction && accepted && buffer is not null)
         {
             // Committed audit delivery must survive cancellation of the originating request.
             await buffer.FlushPendingPermissionAuditChangesAsync(CancellationToken.None).ConfigureAwait(false);

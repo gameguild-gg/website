@@ -74,6 +74,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPermissionServiceV2>(provider => provider.GetRequiredService<PermissionService>());
         services.AddScoped<IPermissionReadService>(provider => provider.GetRequiredService<PermissionService>());
         services.AddScoped<IPermissionUpdateService>(provider => provider.GetRequiredService<PermissionService>());
+        services.AddScoped<IPermissionLifecycleService>(provider => provider.GetRequiredService<PermissionService>());
         return services;
     }
 

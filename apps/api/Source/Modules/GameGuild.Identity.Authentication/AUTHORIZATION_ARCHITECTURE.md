@@ -2028,7 +2028,8 @@ public async Task Authorization_PerformsUnderLoad()
 ### Additive permission read and update contracts (issue #340)
 
 The existing three-layer compatibility facade has additive `IPermissionServiceV2`,
-`IPermissionReadService` and `IPermissionUpdateService` aliases. The actual host
+`IPermissionReadService`, `IPermissionUpdateService` and `IPermissionLifecycleService`
+aliases. The actual host
 calls `AddPermissionServiceContracts`; each alias resolves the same scoped
 concrete service. Existing interface members and constructor arguments are retained.
 The Authorization module's focused services and permission evaluation engine stay
@@ -2050,9 +2051,14 @@ The host audit buffer and per-entity history bind the verified actor and target
 tenant (including an explicit null global target). On savepoint rollback it restores earlier evidence,
 tracked state and outer operation capture state. Unpersisted caller work is rejected;
 the caller owns its outer transaction and final audit flush. Mutations have no replay
-key, so the new standalone wrapper performs no automatic retry after ambiguous
-commit failure. Full original CRUD/bulk coverage and legacy mutation hardening remain
-pending; source definitions have not yet been accepted by matching hosted CI. See
+key, so the standalone wrapper performs no automatic retry after ambiguous commit
+failure. Typed create/delete and grant/revoke batches cover all three families;
+batches retain indexed failures, use one authorized scope/version bump and roll
+back all writes when Applied is false. Compatible production mutations use the
+same transaction boundary; model-only non-relational component tests do not
+establish atomicity. Cross-tenant cleanup requires SystemAdmin and binds the actor
+while preserving each row's own tenant, including global null scope. Source and
+regression definitions have not yet been accepted by matching hosted CI. See
 `docs/issue-audit/issue340-permission-contract-2026-10-19.md` for retained criteria.
 
 ### In-process verification, reset and magic-link token consumption
