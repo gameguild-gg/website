@@ -1,9 +1,16 @@
 "use client"
 
 import React from "react"
+import type { SerializedHeadingNode } from "@lexical/rich-text"
+
+interface PreviewHeadingNode {
+  format?: SerializedHeadingNode["format"]
+  tag?: SerializedHeadingNode["tag"] | 1 | 2 | 3 | 4 | 5 | 6
+  style?: string
+}
 
 interface PreviewHeadingProps {
-  node: any
+  node: PreviewHeadingNode
   children: React.ReactNode
   index?: number
 }
@@ -16,16 +23,16 @@ export function PreviewHeading({ node, children, index = 0 }: PreviewHeadingProp
   else if (node.format === "justify") headingClasses.push("text-justify")
 
   // Get inline styles from the node if they exist
-  const headingStyles: React.CSSProperties = {}
+  const headingStyles: React.CSSProperties & Record<string, string> = {}
   if (node.style) {
     const styleString = node.style
     const styleRules = styleString.split(";").filter((rule: string) => rule.trim())
 
-    styleRules.forEach((rule: { split: (arg0: string) => { (): any; new(): any; map: { (arg0: (s: any) => any): [any, any]; new(): any } } }) => {
+    styleRules.forEach((rule) => {
       const [property, value] = rule.split(":").map((s) => s.trim())
       if (property && value) {
-        const camelCaseProperty = property.replace(/-([a-z])/g, (match: any, letter: string) => letter.toUpperCase())
-        headingStyles[camelCaseProperty as keyof React.CSSProperties] = value
+        const camelCaseProperty = property.replace(/-([a-z])/g, (match: string, letter: string) => letter.toUpperCase())
+        headingStyles[camelCaseProperty] = value
       }
     })
   }

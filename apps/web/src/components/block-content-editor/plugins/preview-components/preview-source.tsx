@@ -1,6 +1,6 @@
 "use client"
 
-import type { SerializedSourceNode } from "../../nodes/source-node"
+import type { SerializedSourceNode, SourceItem } from "../../nodes/source-node"
 import { ExternalLink } from 'lucide-react'
 
 export function PreviewSource({ node }: { node: SerializedSourceNode }) {
@@ -12,7 +12,7 @@ export function PreviewSource({ node }: { node: SerializedSourceNode }) {
   const { sources, title, style } = node.data
 
   // Format a source according to the selected style
-  const formatSource = (source: any): string => {
+  const formatSource = (source: SourceItem): string => {
     switch (style) {
       case "apa":
         return formatAPA(source)
@@ -30,7 +30,7 @@ export function PreviewSource({ node }: { node: SerializedSourceNode }) {
   }
 
   // APA style: Author, A. A. (Year). Title of work. Publication. URL
-  const formatAPA = (source: any): string => {
+  const formatAPA = (source: SourceItem): string => {
     let citation = ""
 
     // Author
@@ -74,7 +74,7 @@ export function PreviewSource({ node }: { node: SerializedSourceNode }) {
   }
 
   // MLA style: Author. "Title." Publication, Year. URL
-  const formatMLA = (source: any): string => {
+  const formatMLA = (source: SourceItem): string => {
     let citation = ""
 
     // Author
@@ -122,7 +122,7 @@ export function PreviewSource({ node }: { node: SerializedSourceNode }) {
   }
 
   // Chicago style: Author. Year. "Title." Publication. URL
-  const formatChicago = (source: any): string => {
+  const formatChicago = (source: SourceItem): string => {
     let citation = ""
 
     // Author
@@ -170,7 +170,7 @@ export function PreviewSource({ node }: { node: SerializedSourceNode }) {
   }
 
   // Harvard style: Author (Year) Title, Publication. URL
-  const formatHarvard = (source: any): string => {
+  const formatHarvard = (source: SourceItem): string => {
     let citation = ""
 
     // Author
@@ -211,7 +211,7 @@ export function PreviewSource({ node }: { node: SerializedSourceNode }) {
   }
 
   // IEEE style: [1] A. Author, "Title," Publication, Year. URL
-  const formatIEEE = (source: any): string => {
+  const formatIEEE = (source: SourceItem): string => {
     let citation = ""
 
     // Author
@@ -263,7 +263,7 @@ export function PreviewSource({ node }: { node: SerializedSourceNode }) {
       <h3 className="text-xl font-bold mb-4">{title}</h3>
       {sources.length > 0 ? (
         <ol className="list-decimal list-inside space-y-2">
-          {sources.map((source: any, index: number) => (
+          {sources.map((source: SourceItem, index: number) => (
             <li key={source.id} className="pl-2">
               <div className="inline">{formatSource(source)}</div>
               {source.url && (
