@@ -15,11 +15,11 @@ export function createWindowBindings(
       stdout(`[Prompt] ${message}`)
       return defaultValue || ''
     },
-    setTimeout: (callback: Function, ms: number) => 0,
-    setInterval: (callback: Function, ms: number) => 0,
+    setTimeout: (callback: () => void, ms: number) => 0,
+    setInterval: (callback: () => void, ms: number) => 0,
     clearTimeout: (id: number) => {},
     clearInterval: (id: number) => {},
-    requestAnimationFrame: (callback: Function) => 0,
+    requestAnimationFrame: (callback: FrameRequestCallback) => 0,
     cancelAnimationFrame: (id: number) => {},
   }
 }

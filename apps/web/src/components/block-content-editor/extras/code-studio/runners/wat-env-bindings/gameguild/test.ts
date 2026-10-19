@@ -28,12 +28,12 @@ export function createTest(
   let testsFailed = 0
 
   return {
-    describe: (name: string, fn: Function) => {
+    describe: (name: string, fn: () => void) => {
       stdout(`\n[Suite] ${name}`)
       fn()
     },
 
-    it: (name: string, fn: Function) => {
+    it: (name: string, fn: () => void) => {
       try {
         fn()
         testsPassed++

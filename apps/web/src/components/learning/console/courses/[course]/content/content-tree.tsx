@@ -143,7 +143,7 @@ function SortableItem({
   children: (props: {
     ref: (el: HTMLElement | null) => void;
     style: React.CSSProperties;
-    listeners: Record<string, Function> | undefined;
+    listeners: ReturnType<typeof useSortable>["listeners"];
     isDragging: boolean;
   }) => React.ReactNode;
 }) {
@@ -704,7 +704,7 @@ export function ContentTree({
     displayIndex: number,
     moduleIsVirtual: boolean,
     sortableProps?: {
-      listeners: Record<string, Function> | undefined;
+      listeners: ReturnType<typeof useSortable>["listeners"];
       isDragging: boolean;
     },
   ) => {
