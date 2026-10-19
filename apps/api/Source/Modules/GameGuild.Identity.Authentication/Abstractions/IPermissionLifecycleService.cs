@@ -13,15 +13,36 @@ public interface IPermissionLifecycleService
 {
     /// <summary>Create one new tenant grant with native string permissions.</summary>
     /// <param name="request">Explicit subject/default selection, authorized target scope and allow payload.</param>
+    /// <returns>The saved grant or a typed expected failure.</returns>
+    Task<Result<TenantPermission>> CreateTenantPermissionAsync(TenantPermissionCreation request) =>
+        CreateTenantPermissionAsync(request, CancellationToken.None);
+
+    /// <summary>Create one new tenant grant with native string permissions.</summary>
+    /// <param name="request">Explicit subject/default selection, authorized target scope and allow payload.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>The saved grant or a typed expected failure.</returns>
-    Task<Result<TenantPermission>> CreateTenantPermissionAsync(TenantPermissionCreation request, CancellationToken cancellationToken = default);
+    Task<Result<TenantPermission>> CreateTenantPermissionAsync(TenantPermissionCreation request, CancellationToken cancellationToken);
+
+    /// <summary>Create one new content-type grant.</summary>
+    /// <param name="request">Explicit subject/default selection, scope, type binding and allow values.</param>
+    /// <returns>The saved grant or a typed expected failure.</returns>
+    Task<Result<ContentTypePermission>> CreateContentTypePermissionAsync(ContentTypePermissionCreation request) =>
+        CreateContentTypePermissionAsync(request, CancellationToken.None);
 
     /// <summary>Create one new content-type grant.</summary>
     /// <param name="request">Explicit subject/default selection, scope, type binding and allow values.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>The saved grant or a typed expected failure.</returns>
-    Task<Result<ContentTypePermission>> CreateContentTypePermissionAsync(ContentTypePermissionCreation request, CancellationToken cancellationToken = default);
+    Task<Result<ContentTypePermission>> CreateContentTypePermissionAsync(ContentTypePermissionCreation request, CancellationToken cancellationToken);
+
+    /// <summary>Create one new grant in an already mapped resource permission entity.</summary>
+    /// <typeparam name="TPermission">Mapped resource permission entity with a parameterless constructor.</typeparam>
+    /// <typeparam name="TResource">Its existing resource entity type.</typeparam>
+    /// <param name="request">Explicit target user, scope, resource binding and allow values.</param>
+    /// <returns>The saved grant or a typed expected failure.</returns>
+    Task<Result<TPermission>> CreateResourcePermissionAsync<TPermission, TResource>(ResourcePermissionCreation request)
+        where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase =>
+        CreateResourcePermissionAsync<TPermission, TResource>(request, CancellationToken.None);
 
     /// <summary>Create one new grant in an already mapped resource permission entity.</summary>
     /// <typeparam name="TPermission">Mapped resource permission entity with a parameterless constructor.</typeparam>
@@ -29,20 +50,41 @@ public interface IPermissionLifecycleService
     /// <param name="request">Explicit target user, scope, resource binding and allow values.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>The saved grant or a typed expected failure.</returns>
-    Task<Result<TPermission>> CreateResourcePermissionAsync<TPermission, TResource>(ResourcePermissionCreation request, CancellationToken cancellationToken = default)
+    Task<Result<TPermission>> CreateResourcePermissionAsync<TPermission, TResource>(ResourcePermissionCreation request, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase;
+
+    /// <summary>Soft-delete one complete tenant grant at its expected version.</summary>
+    /// <param name="request">Grant identity, authorized target scope and positive expected version.</param>
+    /// <returns>The saved deleted grant or a typed expected failure.</returns>
+    Task<Result<TenantPermission>> DeleteTenantPermissionAsync(PermissionGrantDeletion request) =>
+        DeleteTenantPermissionAsync(request, CancellationToken.None);
 
     /// <summary>Soft-delete one complete tenant grant at its expected version.</summary>
     /// <param name="request">Grant identity, authorized target scope and positive expected version.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>The saved deleted grant or a typed expected failure.</returns>
-    Task<Result<TenantPermission>> DeleteTenantPermissionAsync(PermissionGrantDeletion request, CancellationToken cancellationToken = default);
+    Task<Result<TenantPermission>> DeleteTenantPermissionAsync(PermissionGrantDeletion request, CancellationToken cancellationToken);
+
+    /// <summary>Soft-delete one complete content-type grant at its expected version.</summary>
+    /// <param name="request">Grant identity, authorized target scope and positive expected version.</param>
+    /// <returns>The saved deleted grant or a typed expected failure.</returns>
+    Task<Result<ContentTypePermission>> DeleteContentTypePermissionAsync(PermissionGrantDeletion request) =>
+        DeleteContentTypePermissionAsync(request, CancellationToken.None);
 
     /// <summary>Soft-delete one complete content-type grant at its expected version.</summary>
     /// <param name="request">Grant identity, authorized target scope and positive expected version.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>The saved deleted grant or a typed expected failure.</returns>
-    Task<Result<ContentTypePermission>> DeleteContentTypePermissionAsync(PermissionGrantDeletion request, CancellationToken cancellationToken = default);
+    Task<Result<ContentTypePermission>> DeleteContentTypePermissionAsync(PermissionGrantDeletion request, CancellationToken cancellationToken);
+
+    /// <summary>Soft-delete one complete mapped resource grant at its expected version.</summary>
+    /// <typeparam name="TPermission">Already mapped resource permission entity.</typeparam>
+    /// <typeparam name="TResource">Its existing resource entity type.</typeparam>
+    /// <param name="request">Grant identity, authorized target scope and positive expected version.</param>
+    /// <returns>The saved deleted grant or a typed expected failure.</returns>
+    Task<Result<TPermission>> DeleteResourcePermissionAsync<TPermission, TResource>(PermissionGrantDeletion request)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        DeleteResourcePermissionAsync<TPermission, TResource>(request, CancellationToken.None);
 
     /// <summary>Soft-delete one complete mapped resource grant at its expected version.</summary>
     /// <typeparam name="TPermission">Already mapped resource permission entity.</typeparam>
@@ -50,20 +92,41 @@ public interface IPermissionLifecycleService
     /// <param name="request">Grant identity, authorized target scope and positive expected version.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>The saved deleted grant or a typed expected failure.</returns>
-    Task<Result<TPermission>> DeleteResourcePermissionAsync<TPermission, TResource>(PermissionGrantDeletion request, CancellationToken cancellationToken = default)
+    Task<Result<TPermission>> DeleteResourcePermissionAsync<TPermission, TResource>(PermissionGrantDeletion request, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource> where TResource : EntityBase;
+
+    /// <summary>Atomically create 1-256 tenant grants with indexed outcomes and one scope-version bump.</summary>
+    /// <param name="requests">All inputs, in one authorized scope; duplicates remain indexed errors.</param>
+    /// <returns>All ordered outcomes; inspect Applied and item results.</returns>
+    Task<Result<PermissionMutationBatchResult<TenantPermission>>> BulkGrantTenantPermissionsAsync(IReadOnlyList<TenantPermissionCreation> requests) =>
+        BulkGrantTenantPermissionsAsync(requests, CancellationToken.None);
 
     /// <summary>Atomically create 1-256 tenant grants with indexed outcomes and one scope-version bump.</summary>
     /// <param name="requests">All inputs, in one authorized scope; duplicates remain indexed errors.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>All ordered outcomes; inspect Applied and item results.</returns>
-    Task<Result<PermissionMutationBatchResult<TenantPermission>>> BulkGrantTenantPermissionsAsync(IReadOnlyList<TenantPermissionCreation> requests, CancellationToken cancellationToken = default);
+    Task<Result<PermissionMutationBatchResult<TenantPermission>>> BulkGrantTenantPermissionsAsync(IReadOnlyList<TenantPermissionCreation> requests, CancellationToken cancellationToken);
+
+    /// <summary>Atomically create 1-256 content-type grants with indexed outcomes.</summary>
+    /// <param name="requests">All subject/type inputs in one authorized scope.</param>
+    /// <returns>All ordered outcomes; inspect Applied and item results.</returns>
+    Task<Result<PermissionMutationBatchResult<ContentTypePermission>>> BulkGrantContentTypePermissionsAsync(IReadOnlyList<ContentTypePermissionCreation> requests) =>
+        BulkGrantContentTypePermissionsAsync(requests, CancellationToken.None);
 
     /// <summary>Atomically create 1-256 content-type grants with indexed outcomes.</summary>
     /// <param name="requests">All subject/type inputs in one authorized scope.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>All ordered outcomes; inspect Applied and item results.</returns>
-    Task<Result<PermissionMutationBatchResult<ContentTypePermission>>> BulkGrantContentTypePermissionsAsync(IReadOnlyList<ContentTypePermissionCreation> requests, CancellationToken cancellationToken = default);
+    Task<Result<PermissionMutationBatchResult<ContentTypePermission>>> BulkGrantContentTypePermissionsAsync(IReadOnlyList<ContentTypePermissionCreation> requests, CancellationToken cancellationToken);
+
+    /// <summary>Atomically create 1-256 mapped resource grants with indexed outcomes.</summary>
+    /// <typeparam name="TPermission">Mapped resource permission entity with a parameterless constructor.</typeparam>
+    /// <typeparam name="TResource">Its existing resource entity type.</typeparam>
+    /// <param name="requests">All subject/resource inputs in one authorized scope.</param>
+    /// <returns>All ordered outcomes; inspect Applied and item results.</returns>
+    Task<Result<PermissionMutationBatchResult<TPermission>>> BulkGrantResourcePermissionsAsync<TPermission, TResource>(IReadOnlyList<ResourcePermissionCreation> requests)
+        where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase =>
+        BulkGrantResourcePermissionsAsync<TPermission, TResource>(requests, CancellationToken.None);
 
     /// <summary>Atomically create 1-256 mapped resource grants with indexed outcomes.</summary>
     /// <typeparam name="TPermission">Mapped resource permission entity with a parameterless constructor.</typeparam>
@@ -71,20 +134,41 @@ public interface IPermissionLifecycleService
     /// <param name="requests">All subject/resource inputs in one authorized scope.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>All ordered outcomes; inspect Applied and item results.</returns>
-    Task<Result<PermissionMutationBatchResult<TPermission>>> BulkGrantResourcePermissionsAsync<TPermission, TResource>(IReadOnlyList<ResourcePermissionCreation> requests, CancellationToken cancellationToken = default)
+    Task<Result<PermissionMutationBatchResult<TPermission>>> BulkGrantResourcePermissionsAsync<TPermission, TResource>(IReadOnlyList<ResourcePermissionCreation> requests, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase;
+
+    /// <summary>Atomically soft-delete 1-256 tenant grants, preserving every indexed validation/conflict result.</summary>
+    /// <param name="requests">Distinct grant identities and current versions in one authorized scope.</param>
+    /// <returns>All ordered outcomes; no batch writes survive when Applied is false.</returns>
+    Task<Result<PermissionMutationBatchResult<TenantPermission>>> BulkRevokeTenantPermissionsAsync(IReadOnlyList<PermissionGrantDeletion> requests) =>
+        BulkRevokeTenantPermissionsAsync(requests, CancellationToken.None);
 
     /// <summary>Atomically soft-delete 1-256 tenant grants, preserving every indexed validation/conflict result.</summary>
     /// <param name="requests">Distinct grant identities and current versions in one authorized scope.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>All ordered outcomes; no batch writes survive when Applied is false.</returns>
-    Task<Result<PermissionMutationBatchResult<TenantPermission>>> BulkRevokeTenantPermissionsAsync(IReadOnlyList<PermissionGrantDeletion> requests, CancellationToken cancellationToken = default);
+    Task<Result<PermissionMutationBatchResult<TenantPermission>>> BulkRevokeTenantPermissionsAsync(IReadOnlyList<PermissionGrantDeletion> requests, CancellationToken cancellationToken);
+
+    /// <summary>Atomically soft-delete 1-256 content-type grants.</summary>
+    /// <param name="requests">Distinct grant identities and current versions in one authorized scope.</param>
+    /// <returns>All ordered outcomes; no batch writes survive when Applied is false.</returns>
+    Task<Result<PermissionMutationBatchResult<ContentTypePermission>>> BulkRevokeContentTypePermissionsAsync(IReadOnlyList<PermissionGrantDeletion> requests) =>
+        BulkRevokeContentTypePermissionsAsync(requests, CancellationToken.None);
 
     /// <summary>Atomically soft-delete 1-256 content-type grants.</summary>
     /// <param name="requests">Distinct grant identities and current versions in one authorized scope.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>All ordered outcomes; no batch writes survive when Applied is false.</returns>
-    Task<Result<PermissionMutationBatchResult<ContentTypePermission>>> BulkRevokeContentTypePermissionsAsync(IReadOnlyList<PermissionGrantDeletion> requests, CancellationToken cancellationToken = default);
+    Task<Result<PermissionMutationBatchResult<ContentTypePermission>>> BulkRevokeContentTypePermissionsAsync(IReadOnlyList<PermissionGrantDeletion> requests, CancellationToken cancellationToken);
+
+    /// <summary>Atomically soft-delete 1-256 mapped resource grants.</summary>
+    /// <typeparam name="TPermission">Already mapped resource permission entity.</typeparam>
+    /// <typeparam name="TResource">Its existing resource entity type.</typeparam>
+    /// <param name="requests">Distinct grant identities and current versions in one authorized scope.</param>
+    /// <returns>All ordered outcomes; no batch writes survive when Applied is false.</returns>
+    Task<Result<PermissionMutationBatchResult<TPermission>>> BulkRevokeResourcePermissionsAsync<TPermission, TResource>(IReadOnlyList<PermissionGrantDeletion> requests)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        BulkRevokeResourcePermissionsAsync<TPermission, TResource>(requests, CancellationToken.None);
 
     /// <summary>Atomically soft-delete 1-256 mapped resource grants.</summary>
     /// <typeparam name="TPermission">Already mapped resource permission entity.</typeparam>
@@ -92,6 +176,6 @@ public interface IPermissionLifecycleService
     /// <param name="requests">Distinct grant identities and current versions in one authorized scope.</param>
     /// <param name="cancellationToken">Cancels persistence without cancelling rollback cleanup.</param>
     /// <returns>All ordered outcomes; no batch writes survive when Applied is false.</returns>
-    Task<Result<PermissionMutationBatchResult<TPermission>>> BulkRevokeResourcePermissionsAsync<TPermission, TResource>(IReadOnlyList<PermissionGrantDeletion> requests, CancellationToken cancellationToken = default)
+    Task<Result<PermissionMutationBatchResult<TPermission>>> BulkRevokeResourcePermissionsAsync<TPermission, TResource>(IReadOnlyList<PermissionGrantDeletion> requests, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource> where TResource : EntityBase;
 }

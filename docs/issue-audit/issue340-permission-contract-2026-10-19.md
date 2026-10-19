@@ -14,6 +14,12 @@ Authorization's deprecated facade and focused services remain separate existing
 consumers. Changing their method signatures or old return types would break
 providers and callers, so the new read capability uses an additive V2 contract.
 
+Each new public cancellable operation has explicit overloads with and without a
+token. Convenience overloads forward `CancellationToken.None`; the explicit-token
+signature remains available for cancellation and mocks. This replaces optional
+parameters flagged by the first hosted Codacy review. Framework overrides retain
+their required parameters and mark intentionally unused inputs explicitly.
+
 ## Current read increment
 
 - `IPermissionServiceV2` inherits the existing three-layer contract plus

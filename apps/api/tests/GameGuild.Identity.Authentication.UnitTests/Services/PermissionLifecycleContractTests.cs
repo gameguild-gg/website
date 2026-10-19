@@ -257,6 +257,29 @@ public sealed class PermissionLifecycleContractTests
         context.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public void FocusedContractsExposeExplicitCancellationAndMatchingConvenienceOverloads()
+    {
+        var contracts = new[] { typeof(IPermissionReadService), typeof(IPermissionUpdateService), typeof(IPermissionLifecycleService) };
+        var count = 0;
+        foreach (var contract in contracts)
+        {
+            var methods = contract.GetMethods();
+            foreach (var cancellable in methods.Where(method => method.GetParameters().LastOrDefault()?.ParameterType == typeof(CancellationToken)))
+            {
+                var parameters = cancellable.GetParameters();
+                Assert.False(parameters[^1].IsOptional);
+                var convenience = Assert.Single(methods.Where(method => method.Name == cancellable.Name
+                    && method.GetGenericArguments().Length == cancellable.GetGenericArguments().Length
+                    && method.GetParameters().Select(parameter => parameter.ParameterType)
+                        .SequenceEqual(parameters.Take(parameters.Length - 1).Select(parameter => parameter.ParameterType))));
+                Assert.Equal(cancellable.ReturnType.ToString(), convenience.ReturnType.ToString());
+                count++;
+            }
+        }
+        Assert.Equal(22, count);
+    }
+
     private static TenantPermissionCreation TenantCreation() => new() { UserId = Guid.NewGuid(), Permissions = ["Read"] };
     private static ContentTypePermissionCreation ContentCreation() => new() { UserId = Guid.NewGuid(), Permissions = [PermissionType.Read], ContentTypeName = "Document" };
     private static ResourcePermissionCreation ResourceCreation() => new() { UserId = Guid.NewGuid(), Permissions = [PermissionType.Read], ResourceId = Guid.NewGuid(), ResourceType = "Document" };

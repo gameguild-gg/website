@@ -31,7 +31,12 @@ public partial class PermissionService
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase =>
         ExecuteCompatibleMutationAsync(tenantId, () => BulkGrantResourcePermissionCoreAsync<TPermission, TResource>(userId, tenantId, resourceIds, permissions));
     /// <inheritdoc />
-    public Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt = null)
+    public Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions)
+        where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase =>
+        ShareResourceAsync<TPermission, TResource>(resourceId, targetUserId, tenantId, permissions, null);
+
+    /// <inheritdoc />
+    public Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase =>
         ExecuteCompatibleMutationAsync(tenantId, () => ShareResourceCoreAsync<TPermission, TResource>(resourceId, targetUserId, tenantId, permissions, expiresAt));
     /// <inheritdoc />

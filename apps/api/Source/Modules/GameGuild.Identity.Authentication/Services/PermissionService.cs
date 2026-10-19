@@ -40,56 +40,99 @@ public partial class PermissionService(
         context, securityVersionStore, auditService, actorContextAccessor);
 
     /// <inheritdoc />
-    public Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default) =>
+    public Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query) =>
+        GetTenantPermissionAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken) =>
         _contractReader.GetTenantPermissionAsync(query, cancellationToken);
 
     /// <inheritdoc />
-    public Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default) =>
+    public Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query) =>
+        GetContentTypePermissionAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken) =>
         _contractReader.GetContentTypePermissionAsync(query, cancellationToken);
 
     /// <inheritdoc />
-    public Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken = default)
+    public Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        GetResourcePermissionAsync<TPermission, TResource>(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource>
         where TResource : EntityBase =>
         _contractReader.GetResourcePermissionAsync<TPermission, TResource>(query, cancellationToken);
 
     /// <inheritdoc />
+    public Task<Result<TenantPermission>> UpdateTenantPermissionAsync(PermissionGrantUpdate<string> request) =>
+        UpdateTenantPermissionAsync(request, CancellationToken.None);
+
+    /// <inheritdoc />
     public Task<Result<TenantPermission>> UpdateTenantPermissionAsync(
-        PermissionGrantUpdate<string> request, CancellationToken cancellationToken = default) =>
+        PermissionGrantUpdate<string> request, CancellationToken cancellationToken) =>
         _contractUpdater.UpdateTenantPermissionAsync(request, cancellationToken);
 
     /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> UpdateContentTypePermissionAsync(PermissionGrantUpdate<PermissionType> request) =>
+        UpdateContentTypePermissionAsync(request, CancellationToken.None);
+
+    /// <inheritdoc />
     public Task<Result<ContentTypePermission>> UpdateContentTypePermissionAsync(
-        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken = default) =>
+        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken) =>
         _contractUpdater.UpdateContentTypePermissionAsync(request, cancellationToken);
 
     /// <inheritdoc />
+    public Task<Result<TPermission>> UpdateResourcePermissionAsync<TPermission, TResource>(PermissionGrantUpdate<PermissionType> request)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        UpdateResourcePermissionAsync<TPermission, TResource>(request, CancellationToken.None);
+
+    /// <inheritdoc />
     public Task<Result<TPermission>> UpdateResourcePermissionAsync<TPermission, TResource>(
-        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken = default)
+        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource>
         where TResource : EntityBase =>
         _contractUpdater.UpdateResourcePermissionAsync<TPermission, TResource>(request, cancellationToken);
 
     /// <inheritdoc />
+    public Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(TenantPermissionListQuery query) =>
+        QueryTenantPermissionsAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
     public Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(
-        TenantPermissionListQuery query, CancellationToken cancellationToken = default) =>
+        TenantPermissionListQuery query, CancellationToken cancellationToken) =>
         _contractReader.QueryTenantPermissionsAsync(query, cancellationToken);
 
     /// <inheritdoc />
+    public Task<Result<PagedResult<ContentTypePermission>>> QueryContentTypePermissionsAsync(ContentTypePermissionListQuery query) =>
+        QueryContentTypePermissionsAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
     public Task<Result<PagedResult<ContentTypePermission>>> QueryContentTypePermissionsAsync(
-        ContentTypePermissionListQuery query, CancellationToken cancellationToken = default) =>
+        ContentTypePermissionListQuery query, CancellationToken cancellationToken) =>
         _contractReader.QueryContentTypePermissionsAsync(query, cancellationToken);
 
     /// <inheritdoc />
+    public Task<Result<PagedResult<TPermission>>> QueryResourcePermissionsAsync<TPermission, TResource>(ResourcePermissionListQuery query)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        QueryResourcePermissionsAsync<TPermission, TResource>(query, CancellationToken.None);
+
+    /// <inheritdoc />
     public Task<Result<PagedResult<TPermission>>> QueryResourcePermissionsAsync<TPermission, TResource>(
-        ResourcePermissionListQuery query, CancellationToken cancellationToken = default)
+        ResourcePermissionListQuery query, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource>
         where TResource : EntityBase =>
         _contractReader.QueryResourcePermissionsAsync<TPermission, TResource>(query, cancellationToken);
 
     /// <inheritdoc />
+    public Task<Result<PagedResult<PermissionAuditLog>>> QueryPermissionHistoryAsync(PermissionAuditHistoryQuery query) =>
+        QueryPermissionHistoryAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
     public Task<Result<PagedResult<PermissionAuditLog>>> QueryPermissionHistoryAsync(
-        PermissionAuditHistoryQuery query, CancellationToken cancellationToken = default) =>
+        PermissionAuditHistoryQuery query, CancellationToken cancellationToken) =>
         _contractReader.QueryPermissionHistoryAsync(query, cancellationToken);
 
     private static readonly Meter BulkPermissionCheckMeter = new("GameGuild.Identity.Authentication.PermissionBulkCheck", "1.0.0");

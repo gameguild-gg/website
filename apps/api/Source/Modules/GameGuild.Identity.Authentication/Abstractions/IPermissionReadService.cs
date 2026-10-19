@@ -15,15 +15,36 @@ public interface IPermissionReadService
 {
     /// <summary>Retrieve one tenant grant, including its inactive/expired metadata.</summary>
     /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
+    /// <returns>Untracked stored details or typed validation/access/not-found failure; deleted rows remain excluded.</returns>
+    Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query) =>
+        GetTenantPermissionAsync(query, CancellationToken.None);
+
+    /// <summary>Retrieve one tenant grant, including its inactive/expired metadata.</summary>
+    /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
     /// <param name="cancellationToken">Cancels the database lookup.</param>
     /// <returns>Untracked stored details or typed validation/access/not-found failure; deleted rows remain excluded.</returns>
-    Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default);
+    Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken);
+
+    /// <summary>Retrieve one content-type grant without treating the stored grant as an access decision.</summary>
+    /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
+    /// <returns>Untracked non-deleted details, including inactive state, or a typed expected failure.</returns>
+    Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query) =>
+        GetContentTypePermissionAsync(query, CancellationToken.None);
 
     /// <summary>Retrieve one content-type grant without treating the stored grant as an access decision.</summary>
     /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
     /// <param name="cancellationToken">Cancels the database lookup.</param>
     /// <returns>Untracked non-deleted details, including inactive state, or a typed expected failure.</returns>
-    Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default);
+    Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken);
+
+    /// <summary>Retrieve one grant from an already mapped resource permission entity.</summary>
+    /// <typeparam name="TPermission">The mapped resource permission entity.</typeparam>
+    /// <typeparam name="TResource">Its existing resource entity type.</typeparam>
+    /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
+    /// <returns>Untracked non-deleted details, including inactive state, or a typed expected failure.</returns>
+    Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        GetResourcePermissionAsync<TPermission, TResource>(query, CancellationToken.None);
 
     /// <summary>Retrieve one grant from an already mapped resource permission entity.</summary>
     /// <typeparam name="TPermission">The mapped resource permission entity.</typeparam>
@@ -31,23 +52,44 @@ public interface IPermissionReadService
     /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
     /// <param name="cancellationToken">Cancels the database lookup.</param>
     /// <returns>Untracked non-deleted details, including inactive state, or a typed expected failure.</returns>
-    Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken = default)
+    Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource>
         where TResource : EntityBase;
+
+    /// <summary>List tenant grants in descending grant-time and ascending identifier order.</summary>
+    /// <param name="query">Explicit subject, tenant, lifetime and page filters.</param>
+    /// <returns>The selected records and the filtered total, or a typed validation/access error.</returns>
+    Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(TenantPermissionListQuery query) =>
+        QueryTenantPermissionsAsync(query, CancellationToken.None);
 
     /// <summary>List tenant grants in descending grant-time and ascending identifier order.</summary>
     /// <param name="query">Explicit subject, tenant, lifetime and page filters.</param>
     /// <param name="cancellationToken">Cancels every database operation.</param>
     /// <returns>The selected records and the filtered total, or a typed validation/access error.</returns>
     Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(
-        TenantPermissionListQuery query, CancellationToken cancellationToken = default);
+        TenantPermissionListQuery query, CancellationToken cancellationToken);
+
+    /// <summary>List content-type grants, optionally restricted to an exact registered name.</summary>
+    /// <param name="query">Scope, exact content-type name, lifetime and page filters.</param>
+    /// <returns>The selected records and the filtered total, or a typed validation/access error.</returns>
+    Task<Result<PagedResult<ContentTypePermission>>> QueryContentTypePermissionsAsync(ContentTypePermissionListQuery query) =>
+        QueryContentTypePermissionsAsync(query, CancellationToken.None);
 
     /// <summary>List content-type grants, optionally restricted to an exact registered name.</summary>
     /// <param name="query">Scope, exact content-type name, lifetime and page filters.</param>
     /// <param name="cancellationToken">Cancels every database operation.</param>
     /// <returns>The selected records and the filtered total, or a typed validation/access error.</returns>
     Task<Result<PagedResult<ContentTypePermission>>> QueryContentTypePermissionsAsync(
-        ContentTypePermissionListQuery query, CancellationToken cancellationToken = default);
+        ContentTypePermissionListQuery query, CancellationToken cancellationToken);
+
+    /// <summary>List grants for an explicitly mapped resource permission type.</summary>
+    /// <typeparam name="TPermission">The resource permission entity already registered in the model.</typeparam>
+    /// <typeparam name="TResource">Its resource type; no caller-supplied type name is executed.</typeparam>
+    /// <param name="query">Scope, exact resource identifier/type, lifetime and page filters.</param>
+    /// <returns>The selected records and the filtered total, or a typed validation/access error.</returns>
+    Task<Result<PagedResult<TPermission>>> QueryResourcePermissionsAsync<TPermission, TResource>(ResourcePermissionListQuery query)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        QueryResourcePermissionsAsync<TPermission, TResource>(query, CancellationToken.None);
 
     /// <summary>List grants for an explicitly mapped resource permission type.</summary>
     /// <typeparam name="TPermission">The resource permission entity already registered in the model.</typeparam>
@@ -56,9 +98,16 @@ public interface IPermissionReadService
     /// <param name="cancellationToken">Cancels every database operation.</param>
     /// <returns>The selected records and the filtered total, or a typed validation/access error.</returns>
     Task<Result<PagedResult<TPermission>>> QueryResourcePermissionsAsync<TPermission, TResource>(
-        ResourcePermissionListQuery query, CancellationToken cancellationToken = default)
+        ResourcePermissionListQuery query, CancellationToken cancellationToken)
         where TPermission : ResourcePermission<TResource>
         where TResource : EntityBase;
+
+    /// <summary>List stored audit records in descending event-time and ascending identifier order.</summary>
+    /// <param name="query">Scope, inclusive UTC bounds, stored event filters and page limits.</param>
+    /// <returns>Exact stored evidence without inventing a single permission for a bulk event.</returns>
+    /// <remarks>Another subject's history, default-subject history and all-subject history require SystemAdmin.</remarks>
+    Task<Result<PagedResult<PermissionAuditLog>>> QueryPermissionHistoryAsync(PermissionAuditHistoryQuery query) =>
+        QueryPermissionHistoryAsync(query, CancellationToken.None);
 
     /// <summary>List stored audit records in descending event-time and ascending identifier order.</summary>
     /// <param name="query">Scope, inclusive UTC bounds, stored event filters and page limits.</param>
@@ -66,7 +115,7 @@ public interface IPermissionReadService
     /// <returns>Exact stored evidence without inventing a single permission for a bulk event.</returns>
     /// <remarks>Another subject's history, default-subject history and all-subject history require SystemAdmin.</remarks>
     Task<Result<PagedResult<PermissionAuditLog>>> QueryPermissionHistoryAsync(
-        PermissionAuditHistoryQuery query, CancellationToken cancellationToken = default);
+        PermissionAuditHistoryQuery query, CancellationToken cancellationToken);
 }
 
 /// <summary>

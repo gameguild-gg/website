@@ -163,7 +163,7 @@ public sealed class PermissionReadContractPostgreSqlTests
         public List<string> Statements { get; } = [];
 
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
-            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
+            DbCommand command, CommandEventData _, InterceptionResult<DbDataReader> result,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();

@@ -234,7 +234,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     /// Flushes the permission changes collected during the current use-case transaction through
     /// the centralized audit service. Audit failures are isolated from the permission mutation.
     /// </summary>
-    public async Task FlushPendingPermissionAuditChangesAsync(CancellationToken cancellationToken = default)
+    public Task FlushPendingPermissionAuditChangesAsync() => FlushPendingPermissionAuditChangesAsync(CancellationToken.None);
+
+    /// <inheritdoc />
+    public async Task FlushPendingPermissionAuditChangesAsync(CancellationToken cancellationToken)
     {
         if (_pendingPermissionAuditChanges.Count == 0)
         {
@@ -332,7 +335,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     public void DiscardPendingPermissionAuditChanges() => _pendingPermissionAuditChanges.Clear();
 
     /// <inheritdoc />
-    public IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId, bool useEntityTenantScope = false)
+    public IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId) =>
+        BeginPermissionMutationAuditScope(actorId, tenantId, false);
+
+    /// <inheritdoc />
+    public IPermissionMutationAuditScope BeginPermissionMutationAuditScope(Guid actorId, Guid? tenantId, bool useEntityTenantScope)
     {
         if (actorId == Guid.Empty || tenantId == Guid.Empty)
         {
