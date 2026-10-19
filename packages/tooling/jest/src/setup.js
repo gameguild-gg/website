@@ -3,6 +3,8 @@
  * This file configures common test environment settings across the monorepo
  */
 
+import { afterEach, jest } from '@jest/globals';
+
 // Global test environment configuration
 global.process.env.NODE_ENV = 'test';
 
