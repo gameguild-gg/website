@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using GameGuild.API.Database;
 using GameGuild.API.Eventing;
+using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.TestSupport.Finance.Economy;
 using Npgsql;
 
@@ -96,6 +97,70 @@ public sealed class DurableEventTransportPostgreSqlTests : IAsyncLifetime
         handler.Release.TrySetResult();
         await Task.WhenAll(firstDispatch, secondDispatch).WaitAsync(TimeSpan.FromSeconds(15));
         handler.Calls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task EventCompletionWaiter_DoesNotTreatAnotherWorkersClaimAsCompletedDelivery()
+    {
+        await ResetAsync();
+        var now = new DateTimeOffset(2026, 8, 26, 12, 0, 0, TimeSpan.Zero);
+        var handler = new BlockingHandler();
+        var emptyBatch = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var provider = BuildProvider(new MutableTimeProvider(now), services =>
+        {
+            services.AddSingleton<IIntegrationEventHandler<PostgresEvent>>(handler);
+            services.AddScoped<OutboxDispatcher>();
+            services.AddScoped<IOutboxDispatcher>(scope => new ObservedDispatcher(
+                scope.GetRequiredService<OutboxDispatcher>(), emptyBatch));
+        });
+        var message = NewMessage("in-flight-delivery", now);
+        await InsertAsync(provider, message);
+        var competingDispatch = DispatchOnceAsync(provider);
+        Task? waiting = null;
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        try
+        {
+            await handler.FirstStarted.Task.WaitAsync(deadline.Token);
+            waiting = DurableEventDeliveryWaiter.WaitForCompletionAsync(provider, message.EventId, deadline.Token);
+            await emptyBatch.Task.WaitAsync(deadline.Token);
+            var prematurelyFinished = await Task.WhenAny(waiting, Task.Delay(250, deadline.Token));
+            Assert.NotSame(waiting, prematurelyFinished);
+        }
+        finally
+        {
+            handler.Release.TrySetResult();
+            await competingDispatch.WaitAsync(TimeSpan.FromSeconds(15));
+            if (waiting is not null) await waiting.WaitAsync(TimeSpan.FromSeconds(15));
+        }
+        Assert.Equal(1, handler.Calls);
+        await using var verify = provider.CreateAsyncScope();
+        var completed = await verify.ServiceProvider.GetRequiredService<ApplicationDbContext>()
+            .Set<OutboxMessage>().AsNoTracking().SingleAsync(value => value.EventId == message.EventId);
+        Assert.NotNull(completed.CompletedAtUtc);
+    }
+
+    [Fact]
+    public async Task EventCompletionWaiter_ReportsFirstConsumerFailureWithoutRetryingItAway()
+    {
+        await ResetAsync();
+        var now = new DateTimeOffset(2026, 8, 26, 12, 0, 0, TimeSpan.Zero);
+        var handler = new RetryableHandler();
+        await using var provider = BuildProvider(new MutableTimeProvider(now), services =>
+            services.AddSingleton<IIntegrationEventHandler<PostgresEvent>>(handler));
+        var message = NewMessage("failed-delivery", now);
+        await InsertAsync(provider, message);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            DurableEventDeliveryWaiter.WaitForCompletionAsync(provider, message.EventId));
+
+        Assert.Contains("failed consumer", error.Message);
+        Assert.DoesNotContain("retryable listener", error.Message);
+        Assert.Equal(1, handler.Calls);
+        await using var verify = provider.CreateAsyncScope();
+        var receipt = await verify.ServiceProvider.GetRequiredService<ApplicationDbContext>()
+            .Set<InboxReceipt>().AsNoTracking().SingleAsync(value => value.EventId == message.EventId);
+        Assert.Equal(1, receipt.AttemptCount);
+        Assert.Null(receipt.CompletedAtUtc);
     }
 
     [Fact]
@@ -249,6 +314,16 @@ public sealed class DurableEventTransportPostgreSqlTests : IAsyncLifetime
         {
             Events.Enqueue(@event.EventId);
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class ObservedDispatcher(IOutboxDispatcher inner, TaskCompletionSource emptyBatch) : IOutboxDispatcher
+    {
+        public async Task<int> DispatchPendingAsync(CancellationToken cancellationToken = default)
+        {
+            var count = await inner.DispatchPendingAsync(cancellationToken);
+            if (count == 0) emptyBatch.TrySetResult();
+            return count;
         }
     }
 
