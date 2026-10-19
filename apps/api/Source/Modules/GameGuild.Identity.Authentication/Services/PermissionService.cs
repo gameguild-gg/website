@@ -31,8 +31,32 @@ public class PermissionService(
     ITenantSecurityVersionStore? securityVersionStore = null,
     IPermissionAuditService? auditService = null,
     IActorContextAccessor? actorContextAccessor = null,
-    IHybridPermissionCache? hybridPermissionCache = null) : IPermissionService
+    IHybridPermissionCache? hybridPermissionCache = null) : IPermissionServiceV2
 {
+    private readonly IPermissionReadService _contractReader = new PermissionContractReader(context, actorContextAccessor);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(
+        TenantPermissionListQuery query, CancellationToken cancellationToken = default) =>
+        _contractReader.QueryTenantPermissionsAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<ContentTypePermission>>> QueryContentTypePermissionsAsync(
+        ContentTypePermissionListQuery query, CancellationToken cancellationToken = default) =>
+        _contractReader.QueryContentTypePermissionsAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<TPermission>>> QueryResourcePermissionsAsync<TPermission, TResource>(
+        ResourcePermissionListQuery query, CancellationToken cancellationToken = default)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase =>
+        _contractReader.QueryResourcePermissionsAsync<TPermission, TResource>(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<PermissionAuditLog>>> QueryPermissionHistoryAsync(
+        PermissionAuditHistoryQuery query, CancellationToken cancellationToken = default) =>
+        _contractReader.QueryPermissionHistoryAsync(query, cancellationToken);
+
     private static readonly Meter BulkPermissionCheckMeter = new("GameGuild.Identity.Authentication.PermissionBulkCheck", "1.0.0");
     private static readonly Counter<long> BulkPermissionCheckBatchCounter = BulkPermissionCheckMeter.CreateCounter<long>(
         "permission_bulk_check_batches",

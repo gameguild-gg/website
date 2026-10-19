@@ -70,7 +70,10 @@ public static class ServiceCollectionExtensions
     /// </summary>
     private static void RegisterAuthorizationServices(IServiceCollection services)
     {
-        services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<PermissionService>();
+        services.AddScoped<IPermissionService>(provider => provider.GetRequiredService<PermissionService>());
+        services.AddScoped<IPermissionServiceV2>(provider => provider.GetRequiredService<PermissionService>());
+        services.AddScoped<IPermissionReadService>(provider => provider.GetRequiredService<PermissionService>());
 
         // Content-type hierarchy for effective-permission resolution (issue #314):
         // implements the Authorization module's IContentTypeHierarchyProvider contract
