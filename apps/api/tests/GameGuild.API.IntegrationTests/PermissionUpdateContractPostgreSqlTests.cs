@@ -419,8 +419,8 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
             });
         }
         var results = await Task.WhenAll(UpdateAsync("Write"), UpdateAsync("Delete"));
-        var success = Assert.Single(results.Where(result => result.IsSuccess));
-        Assert.Equal(ErrorType.Conflict, Assert.Single(results.Where(result => result.IsFailure)).Error.Type);
+        var success = Assert.Single(results, result => result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, Assert.Single(results, result => result.IsFailure).Error.Type);
         await using var verify = fixture.Factory.Services.CreateAsyncScope();
         var context = verify.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var saved = await context.Set<TenantPermission>().SingleAsync(row => row.Id == grant.Id);

@@ -20,11 +20,14 @@ public sealed class PermissionReadContractPostgreSqlTests
     public async Task ActualDatabasePagesAllThreePermissionFamiliesWithScopedPredicates()
     {
         await using var database = await EconomyPostgreSqlTestDatabase.CreateAsync("permission_read_contracts");
+        // CI may clone the application's migrated template. This deliberately reduced
+        // model needs its own tables; EnsureCreated skips them when any tables exist.
+        await database.ResetAsync();
         var observer = new SelectObserver();
         var options = new DbContextOptionsBuilder<ReadContext>().UseNpgsql(database.ConnectionString)
             .AddInterceptors(observer).Options;
         await using var context = new ReadContext(options);
-        await context.Database.EnsureCreatedAsync();
+        Assert.True(await context.Database.EnsureCreatedAsync());
         var tenant = Guid.NewGuid();
         var user = Guid.NewGuid();
         var otherTenant = Guid.NewGuid();
@@ -111,9 +114,10 @@ public sealed class PermissionReadContractPostgreSqlTests
     public async Task ActualDatabaseHistoryKeepsOpaqueSnapshotsAndFiltersBeforePaging()
     {
         await using var database = await EconomyPostgreSqlTestDatabase.CreateAsync("permission_history_contracts");
+        await database.ResetAsync();
         var options = new DbContextOptionsBuilder<ReadContext>().UseNpgsql(database.ConnectionString).Options;
         await using var context = new ReadContext(options);
-        await context.Database.EnsureCreatedAsync();
+        Assert.True(await context.Database.EnsureCreatedAsync());
         var user = Guid.NewGuid();
         var tenant = Guid.NewGuid();
         var first = History(user, tenant, Start);

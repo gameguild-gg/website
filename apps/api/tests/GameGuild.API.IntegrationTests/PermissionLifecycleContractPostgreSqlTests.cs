@@ -231,8 +231,8 @@ public sealed class PermissionLifecycleContractPostgreSqlTests(ApiPostgreSqlFixt
             return await scope.ServiceProvider.GetRequiredService<IPermissionLifecycleService>().CreateTenantPermissionAsync(request);
         }
         var outcomes = await Task.WhenAll(CreateAsync(), CreateAsync());
-        Assert.Single(outcomes.Where(outcome => outcome.IsSuccess));
-        Assert.Equal(ErrorType.Conflict, Assert.Single(outcomes.Where(outcome => outcome.IsFailure)).Error.Type);
+        Assert.Single(outcomes, outcome => outcome.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, Assert.Single(outcomes, outcome => outcome.IsFailure).Error.Type);
         await using var verify = fixture.Factory.Services.CreateAsyncScope();
         var db = verify.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.Single(await db.Set<TenantPermission>().Where(row => row.TenantId == tenant && row.UserId == request.UserId && row.DeletedAt == null).ToListAsync());
