@@ -9,6 +9,39 @@ namespace GameGuild.Identity.Authentication;
 internal sealed class PermissionContractReader(IApplicationDbContext context, IActorContextAccessor? actors)
     : IPermissionReadService
 {
+    public Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default) =>
+        GetAsync(query, tenant => context.Set<TenantPermission>().AsNoTracking().Where(row => row.TenantId == tenant), cancellationToken);
+
+    public Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default) =>
+        GetAsync(query, tenant => context.Set<ContentTypePermission>().AsNoTracking().Where(row => row.TenantId == tenant), cancellationToken);
+
+    public Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken = default)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase =>
+        GetAsync(query, tenant => context.Set<TPermission>().AsNoTracking().Where(row => row.TenantId == tenant), cancellationToken);
+
+    private async Task<Result<TPermission>> GetAsync<TPermission>(PermissionGrantLookup query,
+        Func<Guid?, IQueryable<TPermission>> scopedRows, CancellationToken cancellationToken) where TPermission : PermissionBase
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(query);
+        var scope = ResolveScope(query, history: false);
+        if (scope.IsFailure)
+        {
+            return Result.Failure<TPermission>(scope.Error);
+        }
+        if (query.GrantId == Guid.Empty)
+        {
+            return Result.Failure<TPermission>(Invalid("A grant identifier cannot be empty."));
+        }
+        var rows = FilterSubjects(scopedRows(scope.Value.TenantId), query, scope.Value)
+            .Where(row => row.Id == query.GrantId && row.DeletedAt == null);
+        var grant = await rows.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        return grant is null
+            ? Result.Failure<TPermission>(Error.NotFound("PermissionRead.NotFound", "The grant was not found in the selected scope."))
+            : Result.Success(grant);
+    }
+
     public async Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(
         TenantPermissionListQuery query, CancellationToken cancellationToken = default)
     {
@@ -103,14 +136,15 @@ internal sealed class PermissionContractReader(IApplicationDbContext context, IA
         return Result.Success(new PagedResult<PermissionAuditLog>(items, count, offset, query.PageSize));
     }
 
-    private Result<ReadScope> ResolveScope(PermissionReadQuery query, bool history)
+    private Result<ReadScope> ResolveScope(PermissionReadScope query, bool history)
     {
         var actor = actors?.ActorContext;
         if (actor is null || !actor.IsAuthenticated)
         {
             return Result.Failure<ReadScope>(Error.Unauthorized("PermissionRead.AuthenticationRequired", "Authentication is required."));
         }
-        if (query.Page < 1 || query.PageSize is < 1 or > 200 || (long)(query.Page - 1) * query.PageSize > int.MaxValue)
+        if (query is PermissionReadQuery page &&
+            (page.Page < 1 || page.PageSize is < 1 or > 200 || (long)(page.Page - 1) * page.PageSize > int.MaxValue))
         {
             return Result.Failure<ReadScope>(Invalid("Page must be positive, page size must be 1-200, and the offset must fit Int32."));
         }
@@ -155,13 +189,7 @@ internal sealed class PermissionContractReader(IApplicationDbContext context, IA
         where TPermission : PermissionBase
     {
         rows = rows.Where(row => row.DeletedAt == null);
-        if (!scope.AllUsers)
-        {
-            rows = query.IncludeDefaultSubjects
-                ? rows.Where(row => row.UserId == scope.UserId || row.UserId == null)
-                : rows.Where(row => row.UserId == scope.UserId);
-        }
-        else if (!query.IncludeDefaultSubjects) { rows = rows.Where(row => row.UserId != null); }
+        rows = FilterSubjects(rows, query, scope);
         if (!query.IncludeInactive)
         {
             var now = SystemClock.UtcNow;
@@ -177,6 +205,18 @@ internal sealed class PermissionContractReader(IApplicationDbContext context, IA
     }
 
     private static Error? ValidateGrantWindow(PermissionGrantListQuery query) => ValidateWindow(query.GrantedFromUtc, query.GrantedToUtc);
+
+    private static IQueryable<TPermission> FilterSubjects<TPermission>(IQueryable<TPermission> rows,
+        PermissionReadScope query, ReadScope scope) where TPermission : PermissionBase
+    {
+        if (!scope.AllUsers)
+        {
+            return query.IncludeDefaultSubjects
+                ? rows.Where(row => row.UserId == scope.UserId || row.UserId == null)
+                : rows.Where(row => row.UserId == scope.UserId);
+        }
+        return query.IncludeDefaultSubjects ? rows : rows.Where(row => row.UserId != null);
+    }
 
     private static Error? ValidateWindow(DateTime? from, DateTime? to) =>
         from is { Kind: not DateTimeKind.Utc } || to is { Kind: not DateTimeKind.Utc } || from > to

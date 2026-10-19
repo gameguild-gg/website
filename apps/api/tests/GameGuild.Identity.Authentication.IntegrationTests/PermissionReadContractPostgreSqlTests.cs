@@ -82,6 +82,29 @@ public sealed class PermissionReadContractPostgreSqlTests
         Assert.All(pageReads, sql => Assert.Contains("WHERE", sql, StringComparison.OrdinalIgnoreCase));
         Assert.All(pageReads, sql => Assert.Contains("TenantId", sql, StringComparison.Ordinal));
         Assert.Contains(pageReads, sql => sql.Contains("OFFSET", StringComparison.OrdinalIgnoreCase));
+
+        observer.Statements.Clear();
+        using (actors.BeginActorContextScope(ActorContextBuilder.ForUser(user).WithTenantId(tenant).Build()))
+        {
+            var exactTenant = await service.GetTenantPermissionAsync(new PermissionGrantLookup { GrantId = grants[0].Id });
+            var exactContent = await service.GetContentTypePermissionAsync(new PermissionGrantLookup { GrantId = content.Id });
+            var exactResource = await service.GetResourcePermissionAsync<GenericResourcePermission, EntityBase>(new PermissionGrantLookup { GrantId = target.Id });
+            Assert.True(exactTenant.IsSuccess);
+            Assert.True(exactContent.IsSuccess);
+            Assert.True(exactResource.IsSuccess);
+            Assert.Equal(grants[0].Id, exactTenant.Value.Id);
+            Assert.Equal(content.Id, exactContent.Value.Id);
+            Assert.Equal(target.Id, exactResource.Value.Id);
+        }
+        Assert.Equal(3, observer.Statements.Count);
+        Assert.All(observer.Statements, sql =>
+        {
+            Assert.Contains("WHERE", sql, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("TenantId", sql, StringComparison.Ordinal);
+            Assert.Contains("UserId", sql, StringComparison.Ordinal);
+            Assert.DoesNotContain("count(*)", sql, StringComparison.OrdinalIgnoreCase);
+        });
+        Assert.Empty(context.ChangeTracker.Entries());
     }
 
     [Fact]

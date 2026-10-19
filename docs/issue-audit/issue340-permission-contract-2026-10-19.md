@@ -38,6 +38,18 @@ providers and callers, so the new read capability uses an additive V2 contract.
 This is a service-contract increment, not completion of issue #340. No public
 HTTP route, payload, database schema or generated client is changed.
 
+## Exact stored-grant retrieval
+
+`PermissionGrantLookup` selects an existing grant ID and the same explicit
+tenant/subject scope, without irrelevant list pagination. Three typed get methods
+perform one untracked database lookup with identity, tenant, subject and deleted
+predicates applied in SQL. Inactive/expired metadata remains visible to an
+authorized reader; it does not become an allow decision. Missing, foreign-subject,
+foreign-tenant and deleted records return NotFound within the selected scope.
+Explicit unauthorized subject/tenant selection fails before storage. An
+administrator still selects another subject, all users or default rows explicitly.
+Provider errors and cancellation are not converted into NotFound.
+
 ## Guarded existing-grant update increment
 
 `PermissionGrantUpdate<T>` replaces an existing grant's allow payload, active
@@ -94,6 +106,12 @@ PostgreSQL for all three tables and history, including SQL LIMIT/OFFSET and
 denial before another command. The actor boundary is controlled; data/storage
 operations are real.
 
+The read definitions additionally cover exact retrieval for all three native
+families, inactive/expired details, absent/deleted/other-subject isolation,
+explicit administration and global selection, pre-storage validation, provider
+failure and cancellation. Native SQL observation requires three scoped selects
+for three exact gets, without a count query or tracked result entities.
+
 `PermissionUpdateContractTests` defines actor/scope and payload rejection before
 storage, authorized scope handling, required collaborators, cancellation and null
 requests. `UseCaseOperationCheckpointTests` defines nested rollback preservation
@@ -116,7 +134,7 @@ matching-source hosted CI. Source/diff review is not a passing runtime receipt.
 
 | Original area | Existing evidence / remaining action |
 |---|---|
-| Comprehensive signatures / all three types | Preserve all existing create/check/generic/bulk methods; qualify the added typed reads. |
+| Comprehensive signatures / all three types | Preserve all existing create/check/generic/bulk methods; qualify added typed exact/list/history reads and updates. |
 | Async/error contracts | New reads carry cancellation and typed validation/access failures; qualify provider failures and native consumer compatibility. |
 | Generic resource operations | Existing generics retained; new resource-page method retains the mapped permission/resource constraints. |
 | Bulk operations | Existing tenant bulk grant and bulk/stream check seams retained. Reconcile the explicitly requested bulk revoke surface and its outcomes. |
@@ -139,7 +157,7 @@ collaborators on older construction sites are not proof of production mutation
 authorization. No mutation acceptance is inferred from this read increment.
 
 The old create/default/revoke helpers are not certified by the new guarded update
-path. Their remaining guards, typed mutation results, exact retrieval and bulk
+path. Their remaining guards, typed mutation results and bulk
 revoke outcomes must still be reconciled before claiming complete CRUD coverage.
 
 Do not close the issue or mark all its checkboxes complete from this increment.

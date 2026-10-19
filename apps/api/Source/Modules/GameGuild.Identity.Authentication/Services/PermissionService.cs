@@ -38,6 +38,20 @@ public class PermissionService(
         context, securityVersionStore, auditService, actorContextAccessor);
 
     /// <inheritdoc />
+    public Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default) =>
+        _contractReader.GetTenantPermissionAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default) =>
+        _contractReader.GetContentTypePermissionAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken = default)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase =>
+        _contractReader.GetResourcePermissionAsync<TPermission, TResource>(query, cancellationToken);
+
+    /// <inheritdoc />
     public Task<Result<TenantPermission>> UpdateTenantPermissionAsync(
         PermissionGrantUpdate<string> request, CancellationToken cancellationToken = default) =>
         _contractUpdater.UpdateTenantPermissionAsync(request, cancellationToken);

@@ -13,6 +13,28 @@ namespace GameGuild.Identity.Authentication;
 /// </remarks>
 public interface IPermissionReadService
 {
+    /// <summary>Retrieve one tenant grant, including its inactive/expired metadata.</summary>
+    /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
+    /// <param name="cancellationToken">Cancels the database lookup.</param>
+    /// <returns>Untracked stored details or typed validation/access/not-found failure; deleted rows remain excluded.</returns>
+    Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default);
+
+    /// <summary>Retrieve one content-type grant without treating the stored grant as an access decision.</summary>
+    /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
+    /// <param name="cancellationToken">Cancels the database lookup.</param>
+    /// <returns>Untracked non-deleted details, including inactive state, or a typed expected failure.</returns>
+    Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken = default);
+
+    /// <summary>Retrieve one grant from an already mapped resource permission entity.</summary>
+    /// <typeparam name="TPermission">The mapped resource permission entity.</typeparam>
+    /// <typeparam name="TResource">Its existing resource entity type.</typeparam>
+    /// <param name="query">Grant identity and explicit actor/tenant/subject scope.</param>
+    /// <param name="cancellationToken">Cancels the database lookup.</param>
+    /// <returns>Untracked non-deleted details, including inactive state, or a typed expected failure.</returns>
+    Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken = default)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase;
+
     /// <summary>List tenant grants in descending grant-time and ascending identifier order.</summary>
     /// <param name="query">Explicit subject, tenant, lifetime and page filters.</param>
     /// <param name="cancellationToken">Cancels every database operation.</param>

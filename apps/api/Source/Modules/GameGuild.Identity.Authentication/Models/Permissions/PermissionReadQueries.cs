@@ -2,8 +2,8 @@ using GameGuild.Identity.Authorization;
 
 namespace GameGuild.Identity.Authentication;
 
-/// <summary>Explicit read scope and bounded pagination shared by permission records and history.</summary>
-public abstract record PermissionReadQuery
+/// <summary>Explicit actor/tenant/subject read scope shared by grant records and history.</summary>
+public abstract record PermissionReadScope
 {
     /// <summary>Optional target tenant; defaults to the actor's tenant. Only SystemAdmin may cross tenants.</summary>
     public Guid? TenantId { get; init; }
@@ -19,12 +19,24 @@ public abstract record PermissionReadQuery
 
     /// <summary>Also include null-subject default rows. Requires administration of the selected scope.</summary>
     public bool IncludeDefaultSubjects { get; init; }
+}
 
+/// <summary>Explicit read scope with bounded pagination for record/history lists.</summary>
+public abstract record PermissionReadQuery : PermissionReadScope
+{
     /// <summary>One-based page number. Its computed offset must fit a signed 32-bit integer.</summary>
     public int Page { get; init; } = 1;
 
     /// <summary>Number of rows per page, from 1 through 200; defaults to 50.</summary>
     public int PageSize { get; init; } = 50;
+}
+
+/// <summary>Retrieve one non-deleted grant's stored details, including inactive or expired state.</summary>
+/// <remarks>Subjects still default to the actor. Administrators explicitly select another subject or AllUsers/default rows.</remarks>
+public sealed record PermissionGrantLookup : PermissionReadScope
+{
+    /// <summary>Required nonempty identity of an existing grant in the selected scope.</summary>
+    public required Guid GrantId { get; init; }
 }
 
 /// <summary>Direct grant filters. Soft-deleted rows are always excluded.</summary>

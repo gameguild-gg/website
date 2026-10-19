@@ -272,6 +272,137 @@ public sealed class PermissionReadContractTests
         Assert.Same(failure, observed);
     }
 
+    [Fact]
+    public async Task ExactGetsReturnEachOwnNativeFamilyIncludingInactiveOrExpiredMetadataUntracked()
+    {
+        await using var db = CreateDatabase();
+        var user = Guid.NewGuid();
+        var tenant = Guid.NewGuid();
+        var own = new TenantPermission { UserId = user, TenantId = tenant, IsActive = false, Permissions = ["custom:permission"] };
+        var content = new ContentTypePermission(user, tenant, "Document") { ExpiresAt = StartForLookup() };
+        var resource = new GenericResourcePermission(user, tenant, Guid.NewGuid(), "Document") { IsActive = false };
+        db.AddRange(own, content, resource);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        IPermissionReadService service = new Facade(db, actorContextAccessor: Actor(user, tenant));
+        var first = await service.GetTenantPermissionAsync(new PermissionGrantLookup { GrantId = own.Id });
+        var second = await service.GetContentTypePermissionAsync(new PermissionGrantLookup { GrantId = content.Id });
+        var third = await service.GetResourcePermissionAsync<GenericResourcePermission, EntityBase>(new PermissionGrantLookup { GrantId = resource.Id });
+        Assert.True(first.IsSuccess);
+        Assert.True(second.IsSuccess);
+        Assert.True(third.IsSuccess);
+        Assert.Equal(own.Id, first.Value.Id);
+        Assert.False(first.Value.IsActive);
+        Assert.Equal(new[] { "custom:permission" }, first.Value.Permissions);
+        Assert.Equal(content.Id, second.Value.Id);
+        Assert.Equal(StartForLookup(), second.Value.ExpiresAt);
+        Assert.Equal(resource.Id, third.Value.Id);
+        Assert.Empty(db.ChangeTracker.Entries());
+    }
+
+    [Theory]
+    [InlineData("anonymous", ErrorType.Unauthorized)]
+    [InlineData("empty-id", ErrorType.Validation)]
+    [InlineData("cross-tenant", ErrorType.Forbidden)]
+    [InlineData("global", ErrorType.Forbidden)]
+    [InlineData("all-users", ErrorType.Forbidden)]
+    [InlineData("other-subject", ErrorType.Forbidden)]
+    public async Task ExactGetsRejectInvalidScopeBeforeAnyStorageCall(string scenario, ErrorType expected)
+    {
+        var context = new Mock<IApplicationDbContext>(MockBehavior.Strict);
+        var user = Guid.NewGuid();
+        var tenant = Guid.NewGuid();
+        var roles = scenario is "all-users" or "other-subject" ? Array.Empty<string>() : new[] { "TenantAdmin" };
+        IPermissionReadService service = new Facade(context.Object,
+            actorContextAccessor: scenario == "anonymous" ? null : Actor(user, tenant, roles));
+        var query = new PermissionGrantLookup
+        {
+            GrantId = scenario == "empty-id" ? Guid.Empty : Guid.NewGuid(),
+            TenantId = scenario == "cross-tenant" ? Guid.NewGuid() : null,
+            GlobalScope = scenario == "global", AllUsers = scenario == "all-users",
+            UserId = scenario == "other-subject" ? Guid.NewGuid() : null
+        };
+        Assert.Equal(expected, (await service.GetTenantPermissionAsync(query)).Error.Type);
+        Assert.Equal(expected, (await service.GetContentTypePermissionAsync(query)).Error.Type);
+        Assert.Equal(expected, (await service.GetResourcePermissionAsync<GenericResourcePermission, EntityBase>(query)).Error.Type);
+        context.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ExactGetHidesOtherSubjectsTenantsAndDeletedRecordsUntilScopeIsExplicitlyAuthorized()
+    {
+        await using var db = CreateDatabase();
+        var user = Guid.NewGuid();
+        var tenant = Guid.NewGuid();
+        var other = new TenantPermission { UserId = Guid.NewGuid(), TenantId = tenant };
+        var foreign = new TenantPermission { UserId = user, TenantId = Guid.NewGuid() };
+        var deleted = new TenantPermission { UserId = user, TenantId = tenant, Version = 1 };
+        deleted.SoftDelete();
+        db.AddRange(other, foreign, deleted);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        IPermissionReadService own = new Facade(db, actorContextAccessor: Actor(user, tenant));
+        foreach (var id in new[] { other.Id, foreign.Id, deleted.Id, Guid.NewGuid() })
+        {
+            Assert.Equal(ErrorType.NotFound, (await own.GetTenantPermissionAsync(new PermissionGrantLookup { GrantId = id })).Error.Type);
+        }
+        IPermissionReadService admin = new Facade(db, actorContextAccessor: Actor(user, tenant, "TenantAdmin"));
+        Assert.Equal(ErrorType.NotFound, (await admin.GetTenantPermissionAsync(new PermissionGrantLookup { GrantId = other.Id })).Error.Type);
+        var allowed = await admin.GetTenantPermissionAsync(new PermissionGrantLookup { GrantId = other.Id, UserId = other.UserId });
+        Assert.True(allowed.IsSuccess);
+        Assert.Equal(other.Id, allowed.Value.Id);
+        Assert.Empty(db.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task ExactGetGlobalDefaultsAndCrossTenantSelectionRequireExplicitSystemAdminScope()
+    {
+        await using var db = CreateDatabase();
+        var user = Guid.NewGuid();
+        var tenant = Guid.NewGuid();
+        var global = new TenantPermission { TenantId = null, UserId = null };
+        var foreign = new TenantPermission { TenantId = Guid.NewGuid(), UserId = user };
+        db.AddRange(global, foreign);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        IPermissionReadService service = new Facade(db, actorContextAccessor: Actor(user, tenant, "SystemAdmin"));
+        var defaults = await service.GetTenantPermissionAsync(new PermissionGrantLookup
+            { GrantId = global.Id, GlobalScope = true, AllUsers = true, IncludeDefaultSubjects = true });
+        var cross = await service.GetTenantPermissionAsync(new PermissionGrantLookup { GrantId = foreign.Id, TenantId = foreign.TenantId });
+        Assert.True(defaults.IsSuccess);
+        Assert.Null(defaults.Value.TenantId);
+        Assert.True(cross.IsSuccess);
+        Assert.Equal(foreign.TenantId, cross.Value.TenantId);
+        Assert.Empty(db.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task ExactGetNullAndCancelledRequestsDoNotAccessStorage()
+    {
+        var context = new Mock<IApplicationDbContext>(MockBehavior.Strict);
+        IPermissionReadService service = new Facade(context.Object);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var query = new PermissionGrantLookup { GrantId = Guid.NewGuid() };
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.GetTenantPermissionAsync(query, cancellation.Token));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.GetTenantPermissionAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.GetContentTypePermissionAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.GetResourcePermissionAsync<GenericResourcePermission, EntityBase>(null!));
+        context.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ExactGetDoesNotConvertAStorageFailureIntoNotFound()
+    {
+        var context = new Mock<IApplicationDbContext>(MockBehavior.Strict);
+        context.Setup(value => value.Set<TenantPermission>()).Throws(new InvalidOperationException("storage unavailable"));
+        IPermissionReadService service = new Facade(context.Object, actorContextAccessor: Actor(Guid.NewGuid(), Guid.NewGuid()));
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetTenantPermissionAsync(new PermissionGrantLookup { GrantId = Guid.NewGuid() }));
+        Assert.Equal("storage unavailable", failure.Message);
+    }
+
+    private static DateTime StartForLookup() => new(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     private static IActorContextAccessor Actor(Guid user, Guid tenant, params string[] roles)
     {
         var accessor = new Mock<IActorContextAccessor>();

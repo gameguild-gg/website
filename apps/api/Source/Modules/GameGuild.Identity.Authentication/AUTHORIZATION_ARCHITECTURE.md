@@ -2033,7 +2033,10 @@ calls `AddPermissionServiceContracts`; each alias resolves the same scoped
 concrete service. Existing interface members and constructor arguments are retained.
 The Authorization module's focused services and permission evaluation engine stay
 the sources of authorization decisions; returning a stored grant is not an access
-decision.
+decision. Exact grant retrieval uses one scoped, untracked lookup; inactive or
+expired metadata stays visible to an authorized reader, while soft-deleted,
+foreign-tenant and foreign-subject records remain excluded. Provider failures
+propagate instead of masquerading as NotFound.
 
 New updates require an authenticated tenant administrator or `permissions:manage`,
 SystemAdmin for another tenant, or an explicit global scope with SystemAdmin /
