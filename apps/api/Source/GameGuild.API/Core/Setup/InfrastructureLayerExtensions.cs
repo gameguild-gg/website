@@ -185,6 +185,7 @@ public static class InfrastructureLayerExtensions
         // 03b. Authentication Data (repositories, JWT services, security services)
         stepStopwatch.Restart();
         services.AddAuthenticationData(configuration);
+        services.AddPermissionServiceContracts();
         logger.LogInformation("Authentication Data registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 03c. SCIM Provisioning (RFC 7643/7644 surface, feature-flagged via Scim:Enabled)

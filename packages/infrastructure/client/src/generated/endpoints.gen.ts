@@ -393,6 +393,21 @@ export const postApiAuditExportJsonEndpoint = {
 } as const;
 
 /**
+ * Streams a versioned XML audit export with pagination metadata.
+ */
+export interface PostApiAuditExportXmlInput {
+  body?: Types.ComplianceAuditAuditExportInput;
+}
+export type PostApiAuditExportXmlOutput = Blob;
+export const postApiAuditExportXmlEndpoint = {
+  operationId: 'postApiAuditExportXml' as const,
+  method: 'POST' as const,
+  path: '/api/audit/export/xml' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Pipeline status: cached rule snapshots, enabled rule counts (global and tenant), vault size,
  * and the last rule-refresh outcome.
  */
@@ -12649,6 +12664,21 @@ export const postAdminAuditLogsExportJsonEndpoint = {
 } as const;
 
 /**
+ * Streams a versioned XML audit export with pagination metadata.
+ */
+export interface PostAdminAuditLogsExportXmlInput {
+  body?: Types.ComplianceAuditAuditExportInput;
+}
+export type PostAdminAuditLogsExportXmlOutput = Blob;
+export const postAdminAuditLogsExportXmlEndpoint = {
+  operationId: 'postAdminAuditLogsExportXml' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/export/xml' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Readable capture alias (issue #169): the same bounded, durably audited
  *             selection as the POST capture, addressed by query parameters so an investigator can
  *             link and re-fetch one frozen range. The response is never cacheable.
@@ -12844,7 +12874,7 @@ export const getAdminAuditLogsSearchByActionTypeEndpoint = {
 } as const;
 
 /**
- * Exports matching action-type audit events as CSV or JSON.
+ * Exports matching action-type audit events as CSV, JSON or XML.
  */
 export interface GetAdminAuditLogsSearchByActionTypeExportInput {
   query?: {
@@ -29680,6 +29710,7 @@ export const endpoints = {
   getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
   postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
   postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  postApiAuditExportXml: postApiAuditExportXmlEndpoint,
   getApiAuditRedactionPipeline: getApiAuditRedactionPipelineEndpoint,
   getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRules: getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesEndpoint,
   postApiAuditRedactionPipelineRules: postApiAuditRedactionPipelineRulesEndpoint,
@@ -30463,6 +30494,7 @@ export const endpoints = {
   getAdminAuditLogsExportProgress: getAdminAuditLogsExportProgressEndpoint,
   postAdminAuditLogsExportCsv: postAdminAuditLogsExportCsvEndpoint,
   postAdminAuditLogsExportJson: postAdminAuditLogsExportJsonEndpoint,
+  postAdminAuditLogsExportXml: postAdminAuditLogsExportXmlEndpoint,
   getAdminAuditLogsReplaySnapshots: getAdminAuditLogsReplaySnapshotsEndpoint,
   postAdminAuditLogsReplaySnapshots: postAdminAuditLogsReplaySnapshotsEndpoint,
   postAdminAuditLogsReplaySnapshotsReconstruct: postAdminAuditLogsReplaySnapshotsReconstructEndpoint,

@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -160,4 +163,105 @@ public sealed class GovernanceAuditHookCaptureTests
         // Snapshots are history, not permission changes: no re-audit, no recursion.
         audit.Verify(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()), Times.Never);
     }
+    [Theory]
+    [InlineData(SecurityEventCaptureOutcome.PersistedToDatabase)]
+    [InlineData(SecurityEventCaptureOutcome.SpooledLocally)]
+    public async Task PermissionSnapshots_UseSecurityPipelineAndPreserveBulkCount(SecurityEventCaptureOutcome outcome)
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        var captured = new List<CreateAuditLogRequest>();
+        var security = new Mock<ISecurityEventLogger>();
+        security.Setup(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<CreateAuditLogRequest, CancellationToken>((request, token) =>
+            {
+                Assert.Equal(CancellationToken.None, token);
+                captured.Add(request);
+            })
+            .ReturnsAsync((CreateAuditLogRequest request, CancellationToken _) => new SecurityEventCaptureResult(
+                outcome,
+                SecurityEventTaxonomy.Classify(request.ActionType, request.Category, request.Success, request.RiskLevel),
+                Guid.NewGuid()));
+        using var services = new ServiceCollection().AddSingleton(security.Object).BuildServiceProvider();
+        await using var context = new ApplicationDbContext(options, null, new UseCaseOperationContextAccessor(),
+            auditService: RoutingAuditService(services));
+        var tenant = Guid.NewGuid();
+        var actor = Guid.NewGuid();
+        context.AddRange(new TenantPermission { UserId = Guid.NewGuid(), TenantId = tenant, GrantedBy = actor, Permissions = ["test:read"] },
+            new TenantPermission { UserId = Guid.NewGuid(), TenantId = tenant, GrantedBy = actor, Permissions = ["test:write"] });
+
+        await context.SaveChangesAsync();
+
+        var request = Assert.Single(captured);
+        Assert.Equal(AuditActionTypes.PermissionGranted, request.ActionType);
+        Assert.Equal(tenant, request.TenantId);
+        Assert.Equal(actor, request.UserId);
+        var metadata = JsonSerializer.SerializeToElement(request.Metadata);
+        Assert.Equal(2, metadata.GetProperty("ChangeCount").GetInt32());
+        Assert.Equal(2, metadata.GetProperty("Changes").GetArrayLength());
+        Assert.Equal(2, await context.Set<TenantPermission>().CountAsync());
+        security.Verify(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), CancellationToken.None), Times.Once);
+    }
+
+    [Fact]
+    public async Task PermissionSnapshots_GroupBulkEventsByActorAndTenant()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        var captured = new List<CreateAuditLogRequest>();
+        var security = new Mock<ISecurityEventLogger>();
+        security.Setup(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<CreateAuditLogRequest, CancellationToken>((request, _) => captured.Add(request))
+            .ReturnsAsync((CreateAuditLogRequest request, CancellationToken _) => new SecurityEventCaptureResult(
+                SecurityEventCaptureOutcome.PersistedToDatabase,
+                SecurityEventTaxonomy.Classify(request.ActionType, request.Category, request.Success, request.RiskLevel),
+                Guid.NewGuid()));
+        using var services = new ServiceCollection().AddSingleton(security.Object).BuildServiceProvider();
+        await using var context = new ApplicationDbContext(options, null, new UseCaseOperationContextAccessor(),
+            auditService: RoutingAuditService(services));
+        var tenant = Guid.NewGuid();
+        var foreignTenant = Guid.NewGuid();
+        var actor = Guid.NewGuid();
+        context.AddRange(new TenantPermission { UserId = Guid.NewGuid(), TenantId = tenant, GrantedBy = actor, Permissions = ["test:read"] },
+            new TenantPermission { UserId = Guid.NewGuid(), TenantId = foreignTenant, GrantedBy = actor, Permissions = ["test:read"] });
+
+        await context.SaveChangesAsync();
+
+        Assert.Equal(2, captured.Count);
+        Assert.Equal(new[] { tenant, foreignTenant }.OrderBy(value => value), captured.Select(request => request.TenantId!.Value).OrderBy(value => value));
+        foreach (var request in captured)
+        {
+            var metadata = JsonSerializer.SerializeToElement(request.Metadata);
+            Assert.Equal(1, metadata.GetProperty("ChangeCount").GetInt32());
+            var change = Assert.Single(metadata.GetProperty("Changes").EnumerateArray());
+            Assert.Equal(request.TenantId, change.GetProperty("TenantId").GetGuid());
+        }
+    }
+
+    private static AuditService RoutingAuditService(ServiceProvider services) =>
+        new(services.GetRequiredService<IServiceScopeFactory>(), new HttpContextAccessor(),
+            new Mock<IPiiRedactionService>().Object, NullLogger<AuditService>.Instance);
+
+    [Theory]
+    [InlineData(SecurityEventCaptureOutcome.PersistedToDatabase, true)]
+    [InlineData(SecurityEventCaptureOutcome.SpooledLocally, true)]
+    [InlineData(SecurityEventCaptureOutcome.SpoolingDisabled, false)]
+    public async Task PermissionCapture_ReportsWhetherDeliveryIsDurable(SecurityEventCaptureOutcome outcome, bool durable)
+    {
+        var security = new Mock<ISecurityEventLogger>();
+        security.Setup(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), CancellationToken.None))
+            .ReturnsAsync(new SecurityEventCaptureResult(outcome,
+                SecurityEventTaxonomy.Classify(AuditActionTypes.PermissionGranted, AuditCategory.Permission, true, AuditRiskLevel.Medium), Guid.NewGuid()));
+        using var services = new ServiceCollection().AddSingleton(security.Object).BuildServiceProvider();
+        var captured = await RoutingAuditService(services).TryLogAsync(new CreateAuditLogRequest
+        {
+            ActionType = AuditActionTypes.PermissionGranted,
+            Category = AuditCategory.Permission,
+            ResourceType = "Permission",
+            Metadata = new { ChangeCount = 1 }
+        });
+        Assert.Equal(durable, captured);
+        security.Verify(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), CancellationToken.None), Times.Once);
+    }
+
 }

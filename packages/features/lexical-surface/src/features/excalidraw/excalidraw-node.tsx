@@ -121,7 +121,7 @@ export class ExcalidrawNode extends DecoratorNode<React.JSX.Element> {
     const content = editor.getElementByKey(this.getKey());
     if (content !== null) {
       const svg = content.querySelector("svg");
-      if (svg !== null) element.innerHTML = svg.outerHTML;
+      if (svg !== null) element.appendChild(svg.cloneNode(true));
     }
     element.style.width =
       this.__width === "inherit" ? "inherit" : `${this.__width}px`;

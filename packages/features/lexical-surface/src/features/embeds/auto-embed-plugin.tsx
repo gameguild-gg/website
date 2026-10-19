@@ -37,6 +37,11 @@ import { cn } from "@game-guild/ui/lib/utils";
 import { $createYouTubeNode, YouTubeNode } from "./youtube-node";
 import { $createTweetNode, TweetNode } from "./tweet-node";
 import { $createFigmaNode, FigmaNode } from "./figma-node";
+import {
+  parseFigmaEmbedUrl,
+  parseTwitterEmbedUrl,
+  parseYoutubeEmbedUrl,
+} from "./embed-url";
 
 export const INSERT_YOUTUBE_COMMAND: LexicalCommand<string> = createCommand(
   "INSERT_YOUTUBE_COMMAND",
@@ -113,13 +118,7 @@ export const YoutubeEmbedConfig: PlaygroundEmbedConfig = {
   insertNode: (editor, result) =>
     editor.dispatchCommand(INSERT_YOUTUBE_COMMAND, result.id),
   keywords: ["youtube", "video"],
-  parseUrl: async (url: string) => {
-    const match =
-      /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/.exec(url);
-    const id = match && match[2] && match[2].length === 11 ? match[2] : null;
-    if (id != null) return { id, url };
-    return null;
-  },
+  parseUrl: parseYoutubeEmbedUrl,
   type: "youtube-video",
 };
 
@@ -129,14 +128,7 @@ export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
   insertNode: (editor, result) =>
     editor.dispatchCommand(INSERT_TWEET_COMMAND, result.id),
   keywords: ["tweet", "twitter", "x"],
-  parseUrl: (text: string) => {
-    const match =
-      /^https:\/\/(twitter|x)\.com\/(#!\/)?(\w+)\/status(es)*\/(\d+)/.exec(
-        text,
-      );
-    if (match != null && match[5]) return { id: match[5], url: match[1] ?? "" };
-    return null;
-  },
+  parseUrl: parseTwitterEmbedUrl,
   type: "tweet",
 };
 
@@ -146,14 +138,7 @@ export const FigmaEmbedConfig: PlaygroundEmbedConfig = {
   insertNode: (editor, result) =>
     editor.dispatchCommand(INSERT_FIGMA_COMMAND, result.id),
   keywords: ["figma", "mock-up"],
-  parseUrl: (text: string) => {
-    const match =
-      /https:\/\/([\w.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/.exec(
-        text,
-      );
-    if (match != null && match[3]) return { id: match[3], url: match[0] };
-    return null;
-  },
+  parseUrl: parseFigmaEmbedUrl,
   type: "figma",
 };
 

@@ -22,6 +22,8 @@ describe("requestMagicLink", () => {
       requestMagicLink(
         " player@example.com ",
         "https://api.gameguild.example/",
+        "/workspace?tab=files",
+        "pt-BR",
       ),
     ).resolves.toBe(true);
 
@@ -32,7 +34,11 @@ describe("requestMagicLink", () => {
         credentials: "omit",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "player@example.com" }),
+        body: JSON.stringify({
+          email: "player@example.com",
+          redirectTo: "/workspace?tab=files",
+          locale: "pt-BR",
+        }),
       }),
     );
   });

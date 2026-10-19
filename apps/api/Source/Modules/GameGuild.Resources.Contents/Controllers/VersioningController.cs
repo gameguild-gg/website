@@ -107,7 +107,9 @@ public class VersioningController : BaseApiController
         var result = await _versioningService.GetVersionHistoryAsync(entityId, entityType, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(ContentVersionDto.FromEntity);
         return Ok(dtos);
@@ -171,7 +173,9 @@ public class VersioningController : BaseApiController
         var result = await _versioningService.GetPendingReviewAsync(entityType, skip, take, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(ContentVersionDto.FromEntity);
         return Ok(dtos);

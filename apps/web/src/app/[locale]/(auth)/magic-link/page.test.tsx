@@ -17,16 +17,19 @@ vi.mock("@/components/magic-link-flow", () => ({
   MagicLinkFlow: ({
     token,
     redirectTo,
+    locale,
     apiUrl,
   }: {
     token: string | null;
     redirectTo: string;
+    locale: string;
     apiUrl: string;
   }) => (
     <div
       data-testid="magic-link-flow"
       data-token={token ?? ""}
       data-redirect={redirectTo}
+      data-locale={locale}
       data-api-url={apiUrl}
     />
   ),
@@ -38,6 +41,7 @@ async function renderPage(
   searchParams: Record<string, string | string[] | undefined>,
 ) {
   const page = await MagicLinkPage({
+    params: Promise.resolve({ locale: "pt-BR" }),
     searchParams: Promise.resolve(searchParams),
   } as never);
   return render(page);
@@ -59,6 +63,10 @@ describe("magic-link page", () => {
     expect(screen.getByTestId("magic-link-flow")).toHaveAttribute(
       "data-redirect",
       "/",
+    );
+    expect(screen.getByTestId("magic-link-flow")).toHaveAttribute(
+      "data-locale",
+      "pt-BR",
     );
   });
 

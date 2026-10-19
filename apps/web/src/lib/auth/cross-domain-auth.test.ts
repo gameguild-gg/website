@@ -88,6 +88,9 @@ describe("cross-domain auth", () => {
         options,
       ),
     ).toBe("/dashboard");
+    expect(resolveAllowedAuthRedirect("/\\evil.example/path", options)).toBe(
+      "/dashboard",
+    );
     expect(resolveAllowedAuthRedirect("not a url", options)).toBe("/dashboard");
   });
 });

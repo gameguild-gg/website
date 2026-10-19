@@ -84,6 +84,19 @@ public class LogRedactionTests
     }
 
     [Fact]
+    public void Sanitize_ShouldReplaceEveryC0AndC1ControlAndUnicodeLineSeparator()
+    {
+        var controls = Enumerable.Range(0, 32).Concat(Enumerable.Range(127, 33)).Concat([0x2028, 0x2029]);
+        var input = string.Concat(controls.Select(codePoint => (char)codePoint));
+
+        var sanitized = LogRedaction.Sanitize(input);
+
+        sanitized.Should().Be(new string('␀', 67));
+        input.Should().HaveLength(67);
+        LogRedaction.Sanitize(sanitized).Should().Be(sanitized);
+    }
+
+    [Fact]
     public void RedactId_Guid_ShouldReturnPrefixedHash()
     {
         var id = Guid.NewGuid();

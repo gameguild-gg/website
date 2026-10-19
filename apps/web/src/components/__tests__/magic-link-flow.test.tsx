@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { StrictMode } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import {
   createMockUseAuth,
@@ -78,6 +79,8 @@ describe("MagicLinkFlow", () => {
     const { user } = renderWithUser(
       <MagicLinkFlow
         token={null}
+        redirectTo="/workspace?tab=files"
+        locale="pt-BR"
         apiUrl="https://api.example.test"
         messages={messages}
       />,
@@ -93,6 +96,8 @@ describe("MagicLinkFlow", () => {
       expect(mocks.requestMagicLink).toHaveBeenCalledWith(
         "player@example.com",
         "https://api.example.test",
+        "/workspace?tab=files",
+        "pt-BR",
       ),
     );
     expect(await screen.findByRole("status")).toHaveTextContent(
@@ -160,16 +165,19 @@ describe("MagicLinkFlow", () => {
       signIn: vi.fn().mockRejectedValue(new Error("private backend detail")),
     });
     renderWithUser(
-      <MagicLinkFlow
-        token="expired-token"
-        apiUrl="https://api.example.test"
-        messages={messages}
-      />,
+      <StrictMode>
+        <MagicLinkFlow
+          token="expired-token"
+          apiUrl="https://api.example.test"
+          messages={messages}
+        />
+      </StrictMode>,
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       messages.consume.errorDescription,
     );
+    expect(mockAuth.signIn).toHaveBeenCalledTimes(1);
     expect(
       screen.queryByText("private backend detail"),
     ).not.toBeInTheDocument();

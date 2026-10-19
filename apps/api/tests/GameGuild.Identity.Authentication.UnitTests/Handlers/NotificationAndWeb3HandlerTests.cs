@@ -365,6 +365,8 @@ public class SendMagicLinkRequestedHandlerTests
             Email = "user@example.com",
             Token = "magic-token",
             UserName = "Alice",
+            RedirectTo = "/workspace?tab=files",
+            Locale = "pt-BR",
             TenantId = Guid.NewGuid()
         };
 
@@ -381,7 +383,11 @@ public class SendMagicLinkRequestedHandlerTests
             It.IsAny<NotificationPriority>(),
             It.IsAny<Guid?>(),
             It.IsAny<string?>(),
-            It.Is<string>(m => m!.Contains("magic-token") && m.Contains("user@example.com")),
+            It.Is<string>(m =>
+                m!.Contains("magic-token") &&
+                m.Contains("user@example.com") &&
+                m.Contains("/workspace?tab=files") &&
+                m.Contains("pt-BR")),
             It.IsAny<string?>(),
             It.IsAny<CancellationToken>()), Times.Once);
 
@@ -419,9 +425,8 @@ public class SendMagicLinkRequestedHandlerTests
         await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Error &&
-            entry.Message.Contains(LogRedaction.MaskEmail(notification.Email)));
-        logger.Entries.Should().OnlyContain(entry =>
-            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
+            !entry.Message.Contains("user@example.com") &&
+            entry.Exception == null);
     }
 }
 

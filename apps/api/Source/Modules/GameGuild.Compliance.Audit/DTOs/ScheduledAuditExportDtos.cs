@@ -44,9 +44,9 @@ public sealed class CreateScheduledAuditExportRequest : IValidatableObject
             yield return new ValidationResult("TenantId is required.", [nameof(TenantId)]);
         }
 
-        if (ExportFormat is not (ExportFormat.Csv or ExportFormat.Json))
+        if (ExportFormat is not (ExportFormat.Csv or ExportFormat.Json or ExportFormat.Xml))
         {
-            yield return new ValidationResult("Scheduled exports support CSV and JSON formats.", [nameof(ExportFormat)]);
+            yield return new ValidationResult("Scheduled exports support CSV, JSON and XML formats.", [nameof(ExportFormat)]);
         }
 
         if (ExportFormat == ExportFormat.Csv
@@ -55,7 +55,7 @@ public sealed class CreateScheduledAuditExportRequest : IValidatableObject
             yield return new ValidationResult(columnsError, [nameof(Columns)]);
         }
 
-        if (ExportFormat == ExportFormat.Json && Columns is { Length: > 0 })
+        if ((ExportFormat is ExportFormat.Json or ExportFormat.Xml) && Columns is { Length: > 0 })
         {
             yield return new ValidationResult("Column selection is only supported for CSV exports.", [nameof(Columns)]);
         }

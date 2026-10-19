@@ -49,11 +49,13 @@ export interface MagicLinkMessages {
 export function MagicLinkFlow({
   token,
   redirectTo = "/",
+  locale = "en-US",
   apiUrl,
   messages,
 }: {
   token: string | null;
   redirectTo?: string;
+  locale?: string;
   apiUrl: string;
   messages: MagicLinkMessages;
 }) {
@@ -64,14 +66,23 @@ export function MagicLinkFlow({
       messages={messages}
     />
   ) : (
-    <MagicLinkRequestForm apiUrl={apiUrl} messages={messages} />
+    <MagicLinkRequestForm
+      redirectTo={redirectTo}
+      locale={locale}
+      apiUrl={apiUrl}
+      messages={messages}
+    />
   );
 }
 
 function MagicLinkRequestForm({
+  redirectTo,
+  locale,
   apiUrl,
   messages,
 }: {
+  redirectTo: string;
+  locale: string;
   apiUrl: string;
   messages: MagicLinkMessages;
 }) {
@@ -86,7 +97,7 @@ function MagicLinkRequestForm({
     setFailed(false);
 
     try {
-      const sent = await requestMagicLink(email, apiUrl);
+      const sent = await requestMagicLink(email, apiUrl, redirectTo, locale);
       if (!sent) {
         setFailed(true);
         return;
@@ -205,17 +216,25 @@ function MagicLinkConsumer({
   messages: MagicLinkMessages;
 }) {
   const { signIn, mfaChallenge } = useAuth();
-  const attemptedToken = useRef<string | null>(null);
+  const attempt = useRef<{ token: string; promise: Promise<unknown> } | null>(
+    null,
+  );
   const [status, setStatus] = useState<"pending" | "complete" | "failed">(
     "pending",
   );
 
   useEffect(() => {
-    if (attemptedToken.current === token) return;
-    attemptedToken.current = token;
-
+    if (attempt.current?.token !== token) {
+      attempt.current = {
+        token,
+        promise: Promise.resolve().then(() =>
+          signIn("credentials", { magicLinkToken: token, redirectTo }),
+        ),
+      };
+    }
+    const currentAttempt = attempt.current;
     let active = true;
-    void signIn("credentials", { magicLinkToken: token, redirectTo })
+    void currentAttempt.promise
       .then(() => {
         if (active) setStatus("complete");
       })

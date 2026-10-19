@@ -71,17 +71,14 @@ export function EmojiPickerPlugin(): React.JSX.Element | null {
 
   const options = useMemo(() => {
     if (!queryString) return emojiOptions.slice(0, MAX_EMOJI_SUGGESTION_COUNT);
-    let regex: RegExp;
-    try {
-      regex = new RegExp(queryString, "i");
-    } catch {
-      return [];
-    }
+    const query = queryString.toLowerCase();
     return emojiOptions
       .filter(
         (option) =>
-          regex.test(option.title) ||
-          option.keywords.some((k) => regex.test(k)),
+          option.title.toLowerCase().includes(query) ||
+          option.keywords.some((keyword) =>
+            keyword.toLowerCase().includes(query),
+          ),
       )
       .slice(0, MAX_EMOJI_SUGGESTION_COUNT);
   }, [emojiOptions, queryString]);

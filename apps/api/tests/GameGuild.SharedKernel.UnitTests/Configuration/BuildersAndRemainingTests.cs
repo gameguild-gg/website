@@ -280,6 +280,8 @@ public class AdditionalSubOptionsTests
     {
         var options = ResponseCompressionOptions.CreateDefault();
         options.Should().NotBeNull();
+        options.EnableCompression.Should().BeFalse();
+        options.MimeTypes.Should().BeEquivalentTo("text/plain", "application/json", "application/xml");
     }
 
     [Fact]

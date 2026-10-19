@@ -289,7 +289,7 @@ public class PermissionServiceTests
     public async Task TenantPermissions_CanGrantQueryRevokeAndJoin()
     {
         await using var db = CreateDbContext();
-        var service = new PermissionService(db);
+        var service = PermissionMutationTestServices.Create(db);
         var tenantId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
@@ -314,7 +314,7 @@ public class PermissionServiceTests
     public async Task ContentTypePermissions_ResolveTenantAndContentLayers()
     {
         await using var db = CreateDbContext();
-        var service = new PermissionService(db);
+        var service = PermissionMutationTestServices.Create(db);
         var tenantId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
@@ -332,7 +332,7 @@ public class PermissionServiceTests
     public async Task ResourcePermissions_CanShareResolveAndRevoke()
     {
         await using var db = CreateDbContext();
-        var service = new PermissionService(db);
+        var service = PermissionMutationTestServices.Create(db);
         var tenantId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var resourceId = Guid.NewGuid();
