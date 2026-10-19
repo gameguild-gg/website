@@ -77,7 +77,8 @@ const repairs = [
   },
   {
     package: 'eslint-plugin-lodash-fp',
-    version: '2.2.0-a1',
+    // The registry normalizes this to 2.2.0-a1; the verified tar manifest is literal.
+    version: '2.2.0a1',
     file: 'rules/core/enhance.js',
     sha256: '96e3be11a9afe9adc24ad12452d9207e414084286b6d68cc215062b02825ba5e',
     repairedSha256: '70c44a9554ec4d9f4334ed9d5dd75d04724877f8db453da1314067a27200afc5',
@@ -100,12 +101,12 @@ const repairs = [
     version: '3.2.0',
     file: 'dist/rules/sort-jsx-props.js',
     sha256: '76884ff384c8b3b7076908bfb25146b19556af3a0ba9a118e299fb352d5b5a30',
-    repairedSha256: '40ba96b36246b78097792cec6c60fc457bc814f613e160c33175c33cfccbed88',
+    repairedSha256: '752e68fc6199707f9aba472713e6dbe6832b30e6966b240e98d81338d1c35eaf',
     replacements: [
       ['                    return makeFixes.makeFixes(',
         '                    const fixes = makeFixes.makeFixes('],
       ['                      sourceCode,\n                    )',
-        '                      sourceCode,\n                    )\n                    const ordered = [...fixes].sort((a, b) => a.range[0] - b.range[0])\n                    if (ordered.some((fix, index) => index > 0 && ordered[index - 1].range[1] > fix.range[0])) return null\n                    return fixes'],
+        '                      sourceCode,\n                    )\n                    const ordered = [...fixes].sort((a, b) => a.range[0] - b.range[0] || a.range[1] - b.range[1])\n                    if (ordered.some((fix, index) => index > 0 && ordered[index - 1].range[1] > fix.range[0])) return null\n                    return fixes'],
     ],
   },
 ];
