@@ -302,23 +302,24 @@ describe('createSignInAction — extended', () => {
     const adapter = createMockAdapter();
     mockCookieAdapter = adapter;
 
-    const config = makeConfig({
-      providers: [
-        {
-          id: 'google',
-          name: 'Google',
-          type: 'oauth',
-          exchangeToken: vi.fn(async () => ({
-            tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
-            user: { id: '1', email: 'g@g.com', name: 'Google User', image: null },
-          })),
-        } as any,
-      ],
-    });
+    const provider = {
+      id: 'google',
+      name: 'Google',
+      type: 'oauth',
+      clientId: 'fixture-client-id',
+      clientSecret: '',
+      exchangeToken: vi.fn(async (): Promise<ProviderResult> => ({
+        tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
+        user: { id: '1', email: 'g@g.com', name: 'Google User', image: null },
+      })),
+    } satisfies ReturnType<typeof import('../../src/runtime/auth/providers/google.js').GoogleProvider>;
+    const config = makeConfig({ providers: [provider] });
     const signIn = createSignInAction(config);
 
     await signIn('google', { idToken: 'google-id-token', redirect: false });
 
+    expect(provider.exchangeToken).toHaveBeenCalledTimes(1);
+    expect(provider.exchangeToken).toHaveBeenCalledWith('google-id-token', config.apiUrl, undefined);
     expect(adapter.set).toHaveBeenCalled();
   });
 
@@ -332,7 +333,9 @@ describe('createSignInAction — extended', () => {
           id: 'github',
           name: 'GitHub',
           type: 'oauth',
-        } as any,
+          clientId: 'fixture-client-id',
+          clientSecret: '',
+        },
       ],
     });
     const signIn = createSignInAction(config);
@@ -510,7 +513,7 @@ describe('createUpdateAction — extended', () => {
 
     const config = makeConfig();
     const update = createUpdateAction(config);
-    const result = await update({ user: { name: 'New Name' } } as any);
+    const result = await update({ user: { id: '1', name: 'New Name' } });
 
     expect(result).toBeNull();
   });
@@ -540,9 +543,13 @@ describe('createUpdateAction — extended', () => {
     mockCookieAdapter = adapter;
 
     const config = makeConfig();
+    const jwtCallback = vi.spyOn(config.callbacks, 'jwt');
     const update = createUpdateAction(config);
-    const result = await update({ user: { name: 'Updated' } } as any);
+    const data = { user: { id: '1', name: 'Updated' } } satisfies Partial<Session>;
+    const result = await update(data);
 
+    expect(jwtCallback).toHaveBeenCalledTimes(1);
+    expect(jwtCallback.mock.calls[0]?.[0].session).toBe(data);
     expect(result).toBeDefined();
     expect(result?.user).toBeDefined();
     expect(adapter.set).toHaveBeenCalled();
