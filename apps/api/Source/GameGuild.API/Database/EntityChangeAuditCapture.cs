@@ -47,7 +47,8 @@ internal static class EntityChangeAuditCapture
     ///     Returns the number of audit records staged (used to keep SaveChanges row counts stable).
     ///     Snapshot failures are logged per entry and never prevent the authorized change.
     /// </summary>
-    internal static int Capture(DbContext context, UseCaseOperationContext? operation, ILogger? logger)
+    internal static int Capture(DbContext context, UseCaseOperationContext? operation, ILogger? logger,
+        Guid? mutationActorId = null, Guid? mutationTenantId = null)
     {
         var records = new List<EntityChangeAuditRecord>();
 
@@ -70,8 +71,10 @@ internal static class EntityChangeAuditCapture
                     ChangeKind = entry.State.ToString(),
                     BeforeValues = entry.State == EntityState.Added ? null : SerializeValues(entry, useOriginalValues: true),
                     AfterValues = isDeleted ? null : SerializeValues(entry, useOriginalValues: false),
-                    TenantId = ResolveTenantId(entry, operation, isDeleted),
-                    ActorId = ResolveActorId(entry, operation, isDeleted),
+                    // A verified mutation actor also selects the exact authorized tenant,
+                    // including null for global state; it never inherits the caller's tenant.
+                    TenantId = mutationActorId.HasValue ? mutationTenantId : ResolveTenantId(entry, operation, isDeleted),
+                    ActorId = mutationActorId ?? ResolveActorId(entry, operation, isDeleted),
                     CorrelationId = operation?.CorrelationId.ToString(),
                     OccurredAtUtc = DateTimeOffset.UtcNow
                 });

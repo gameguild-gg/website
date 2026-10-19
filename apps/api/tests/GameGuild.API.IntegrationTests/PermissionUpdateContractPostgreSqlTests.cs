@@ -116,6 +116,11 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
         var centralized = await db.Set<AuditLog>().Where(row => row.UserId == actorId && row.Category == AuditCategory.Permission).ToListAsync();
         Assert.Equal(3, centralized.Count);
         Assert.All(centralized, row => Assert.Equal(tenant, row.TenantId));
+        var grantKeys = new[] { tenantGrant.Id.ToString(), content.Id.ToString(), resource.Id.ToString() };
+        var entityEvidence = await db.Set<EntityChangeAuditRecord>()
+            .Where(row => row.ActorId == actorId && grantKeys.Contains(row.KeyId)).ToListAsync();
+        Assert.Equal(3, entityEvidence.Count);
+        Assert.All(entityEvidence, row => Assert.Equal(tenant, row.TenantId));
     }
 
     [Fact]
@@ -147,6 +152,9 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
         Assert.Null(evidence.TenantId);
         var centralized = await db.Set<AuditLog>().SingleAsync(row => row.UserId == actorId && row.Category == AuditCategory.Permission);
         Assert.Null(centralized.TenantId);
+        var entityEvidence = await db.Set<EntityChangeAuditRecord>()
+            .SingleAsync(row => row.ActorId == actorId && row.KeyId == grant.Id.ToString());
+        Assert.Null(entityEvidence.TenantId);
     }
 
     [Fact]
@@ -206,6 +214,7 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
         Assert.False(await db.Set<PermissionAuditLog>().AnyAsync(row => row.PerformedBy == actorId));
         await db.FlushPendingPermissionAuditChangesAsync();
         Assert.False(await db.Set<AuditLog>().AnyAsync(row => row.UserId == actorId && row.Category == AuditCategory.Permission));
+        Assert.False(await db.Set<EntityChangeAuditRecord>().AnyAsync(row => row.ActorId == actorId));
     }
 
     [Fact]

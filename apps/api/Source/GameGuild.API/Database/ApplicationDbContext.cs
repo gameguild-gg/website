@@ -183,7 +183,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         // stores, no double recording. Audit-store types are excluded inside the capture
         // to prevent audit-of-audit recursion.
         var capturedAuditRecordCount = _entityChangeAuditCaptureEnabled
-            ? EntityChangeAuditCapture.Capture(this, operationContext, _logger)
+            ? EntityChangeAuditCapture.Capture(this, operationContext, _logger,
+                _permissionMutationAuditScope?.ActorId, _permissionMutationAuditScope?.TenantId)
             : 0;
 
         foreach (var entry in ChangeTracker.Entries())

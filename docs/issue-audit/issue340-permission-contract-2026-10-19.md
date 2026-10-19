@@ -69,7 +69,9 @@ Explicit change detection catches pending caller edits even when automatic
 detection was disabled. The transaction temporarily enables automatic detection
 for grant, version-repository and audit writes, then restores the caller's setting.
 Only the authenticated actor and explicit authorized target scope feed the host
-audit buffer; a null global target does not inherit the caller's tenant.
+audit buffer and per-entity change history; a null global target does not inherit
+the caller's tenant. The original grantor remains immutable and is not attributed
+as the actor who performed an update.
 
 No automatic replay is introduced: these mutations have no idempotency key, and
 an ambiguous commit error propagates for reconciliation. The execution wrapper

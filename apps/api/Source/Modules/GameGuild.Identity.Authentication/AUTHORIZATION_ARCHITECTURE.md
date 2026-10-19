@@ -2043,8 +2043,8 @@ security version and required permission audit persist in one relational transac
 or a caller savepoint. Missing collaborators fail closed. Persistence errors and
 cancellation propagate; cancelled requests do not cancel rollback cleanup.
 
-The host audit buffer binds the verified actor and target tenant (including an
-explicit null global target). On savepoint rollback it restores earlier evidence,
+The host audit buffer and per-entity history bind the verified actor and target
+tenant (including an explicit null global target). On savepoint rollback it restores earlier evidence,
 tracked state and outer operation capture state. Unpersisted caller work is rejected;
 the caller owns its outer transaction and final audit flush. Mutations have no replay
 key, so the new standalone wrapper performs no automatic retry after ambiguous
