@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.Identity.Authorization.UnitTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -35,6 +36,52 @@ public class DacPermissionResolverTests
             .Setup(e => e.ResolveAsync(
                 It.IsAny<EffectivePermissionContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
+    }
+
+    [Theory]
+    [InlineData(true, false, "Course", "Course")]
+    [InlineData(true, false, "Course\r\nforged", "Course␀␀forged")]
+    [InlineData(true, true, "Course\0\t\u0085\u2028\u2029forged", "Course␀␀␀␀␀forged")]
+    [InlineData(false, false, "Course\r\nforged", "Course␀␀forged")]
+    [InlineData(false, true, "Course\0\t\u0085\u2028\u2029forged", "Course␀␀␀␀␀forged")]
+    public async Task ResolveAsync_ProjectsScopeOnlyInLogs(
+        bool valid, bool resourceScoped, string scope, string renderedScope)
+    {
+        SetupEngineReturning(Effective("Read"));
+        var logger = new SpyLogger<DacPermissionResolver>();
+        var query = new DacPermissionQuery
+        {
+            UserId = valid ? _userId : Guid.Empty,
+            TenantId = _tenantId,
+            ContentType = scope,
+            ResourceType = resourceScoped ? scope : null,
+            ResourceId = resourceScoped ? scope : null
+        };
+
+        var result = await new DacPermissionResolver(_engine.Object, logger).ResolveAsync(query);
+
+        result.Query.Should().BeSameAs(query);
+        result.Query.ContentType.Should().Be(scope);
+        result.Query.ResourceType.Should().Be(resourceScoped ? scope : null);
+        result.Query.ResourceId.Should().Be(resourceScoped ? scope : null);
+        result.ContextValid.Should().Be(valid);
+        if (valid)
+        {
+            _engine.Verify(e => e.ResolveAsync(
+                It.Is<EffectivePermissionContext>(c => c.ContentType == (resourceScoped ? null : scope)
+                    && c.ResourceType == (resourceScoped ? scope : null)
+                    && c.ResourceId == (resourceScoped ? scope : null)),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+        else
+        {
+            result.Effective.Permissions.Should().BeEmpty();
+            _engine.VerifyNoOtherCalls();
+        }
+
+        var entry = logger.Entries.Should().ContainSingle().Which;
+        entry.Message.Should().Contain(renderedScope);
+        entry.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
     }
 
     // ── Fail-closed: invalid queries never reach the engine ───────────────

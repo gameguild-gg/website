@@ -51,9 +51,9 @@ public sealed class DacPermissionResolver(
                 query.UserId,
                 query.TenantId,
                 query.Layer,
-                query.ContentType ?? "<none>",
-                query.ResourceType ?? "<none>",
-                query.ResourceId ?? "<none>");
+                LogRedaction.Sanitize(query.ContentType ?? "<none>"),
+                LogRedaction.Sanitize(query.ResourceType ?? "<none>"),
+                LogRedaction.Sanitize(query.ResourceId ?? "<none>"));
             return new DacPermissionResolution
             {
                 Query = query,
@@ -88,9 +88,9 @@ public sealed class DacPermissionResolver(
             query.UserId,
             query.TenantId,
             query.Layer,
-            query.ContentType ?? "<none>",
-            query.ResourceType ?? "<none>",
-            query.ResourceId ?? "<none>",
+            LogRedaction.Sanitize(query.ContentType ?? "<none>"),
+            LogRedaction.Sanitize(query.ResourceType ?? "<none>"),
+            LogRedaction.Sanitize(query.ResourceId ?? "<none>"),
             effective.ContextValid,
             effective.Throttled,
             effective.Permissions.Count);
