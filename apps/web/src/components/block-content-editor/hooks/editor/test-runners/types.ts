@@ -1,4 +1,4 @@
-import type { CodeFile, ProgrammingLanguage } from "@/components/block-content-editor/extras/source-code/types"
+import type { CodeFile, JsonArray, ProgrammingLanguage } from "@/components/block-content-editor/extras/source-code/types"
 
 export interface TestResult {
   passed: boolean
@@ -12,8 +12,8 @@ export interface TestCase {
   type?: "custom" | "function" | "console"
   input?: string
   expectedOutput?: string
-  args?: any[]
-  expectedReturn?: any[]
+  args?: JsonArray
+  expectedReturn?: JsonArray
 }
 
 export interface TestRunnerOptions {

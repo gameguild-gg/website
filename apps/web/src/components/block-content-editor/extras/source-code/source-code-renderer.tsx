@@ -5,7 +5,7 @@ import type React from "react"
 import { useEffect } from "react"
 
 // Import types
-import type { CodeFile, LanguageType, ProgrammingLanguage, SourceCodeData } from "./types"
+import type { CodeFile, LanguageType, ProgrammingLanguage, SourceCodeData, SourceCodeTestCase, SourceCodeTestCases } from "./types"
 
 // Import components
 import { SourceCodeDialogs } from "./components/source-code-dialogs"
@@ -103,28 +103,8 @@ export interface SourceCodeRendererProps {
   setShowTests: (show: boolean) => void
   activeTab: "terminal" | "tests"
   setActiveTab: (tab: "terminal" | "tests") => void
-  testCases: Record<
-    string,
-    {
-      type: "custom" | "function" | "console"
-      input?: string
-      expectedOutput?: string
-      args?: any[]
-      expectedReturn?: any[]
-    }[]
-  >
-  setTestCases: (
-    cases: Record<
-      string,
-      {
-        type: "custom" | "function" | "console"
-        input?: string
-        expectedOutput?: string
-        args?: any[]
-        expectedReturn?: any[]
-      }[]
-    >,
-  ) => void
+  testCases: SourceCodeTestCases
+  setTestCases: (cases: SourceCodeTestCases) => void
   testResults: Record<string, { passed: boolean; actual: string; expected: string }[]>
   setTestResults: (results: Record<string, { passed: boolean; actual: string; expected: string }[]>) => void
   addTestCase: (fileId: string, type?: "custom" | "function" | "console") => void
@@ -132,13 +112,7 @@ export interface SourceCodeRendererProps {
   updateTestCase: (
     fileId: string,
     index: number,
-    testData: Partial<{
-      type: "custom" | "function" | "console"
-      input?: string
-      expectedOutput?: string
-      args?: any[]
-      expectedReturn?: any[]
-    }>,
+    testData: Partial<SourceCodeTestCase>,
   ) => void
   runTests: (fileId: string) => void
   isPreview?: boolean
@@ -346,7 +320,7 @@ export function SourceCodeRenderer({
 
   useEffect(() => {
     // Check if configuration data exists in the data object
-    const configData = data as any // Type assertion to access nested properties
+    const configData = data
 
     if (configData.hasConfiguredSettings !== undefined) {
       console.log("[v0] Found hasConfiguredSettings:", configData.hasConfiguredSettings)

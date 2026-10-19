@@ -1,7 +1,7 @@
 "use client"
 
 import type { EditMenuOption } from "@/components/block-content-editor/extras/content-edit-menu"
-import type { CodeFile, ProgrammingLanguage, SourceCodeData } from "@/components/block-content-editor/extras/source-code/types"
+import type { CodeFile, ProgrammingLanguage, SourceCodeData, SourceCodeTestCases } from "@/components/block-content-editor/extras/source-code/types"
 import type { editor } from "monaco-editor"
 import { Pencil, Play, Settings } from "lucide-react"
 import React, { useState } from "react"
@@ -24,7 +24,7 @@ interface UseSourceCodeEditorProps {
   isDarkTheme: boolean
   setIsDarkTheme: (dark: boolean) => void
   selectedLanguage: ProgrammingLanguage
-  setSelectedLanguage: (lang: ProgrammingLanguage) => void
+  setSelectedLanguage: (lang: ProgrammingLanguage | string) => void
   clearTerminalOnRun: boolean
   setClearTerminalOnRun: (clear: boolean) => void
   showBasicFileActionsInReadMode: boolean
@@ -33,16 +33,7 @@ interface UseSourceCodeEditorProps {
   setShowFilePropertiesInReadMode: (show: boolean) => void
   showSettings: boolean
   setShowSettings: (show: boolean) => void
-  testCases: Record<
-    string,
-    {
-      type: "custom" | "function" | "console"
-      input?: string
-      expectedOutput?: string
-      args?: any[]
-      expectedReturn?: any[]
-    }[]
-  >
+  testCases: SourceCodeTestCases
   setTestResults: (results: Record<string, { passed: boolean; actual: string; expected: string }[]>) => void
   handleExecute: () => void
   updateSourceCode: (newData: Partial<SourceCodeData>) => void

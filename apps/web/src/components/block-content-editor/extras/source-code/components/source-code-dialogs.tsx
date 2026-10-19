@@ -6,7 +6,7 @@ import { ImportFileDialog } from "../dialogs/import-file-dialog"
 import { LanguageSettingsDialog } from "../dialogs/language-settings-dialog"
 import { NewFileDialog } from "../dialogs/new-file-dialog"
 import { RenameFileDialog } from "../dialogs/rename-file-dialog"
-import type { CodeFile, LanguageType, ProgrammingLanguage } from "../types"
+import type { CodeFile, LanguageType, ProgrammingLanguage, SourceCodeData } from "../types"
 
 interface SourceCodeDialogsProps {
   // File dialog props
@@ -55,7 +55,7 @@ interface SourceCodeDialogsProps {
   setAllowedLanguages: (langs: Record<LanguageType, boolean> | Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => void
   selectedLanguage: ProgrammingLanguage
   setSelectedLanguage: (lang: ProgrammingLanguage | string) => void
-  updateSourceCode: (data: any) => void
+  updateSourceCode: (data: Partial<SourceCodeData>) => void
   isAutocompleteEnabled: boolean
   setIsAutocompleteEnabled: (enabled: boolean) => void
   hasConfiguredSettings: boolean

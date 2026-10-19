@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import type { ProgrammingLanguage } from "./types"
+import type { ProgrammingLanguage, SourceCodeData, SourceCodeTestCase, SourceCodeTestCases } from "./types"
 
 import { Button } from "@game-guild/ui/components/button"
 import {
@@ -73,49 +73,20 @@ interface TerminalProps {
   handleStopExecution: () => void
   clearTerminalOnRun: boolean
   setClearTerminalOnRun: (clear: boolean) => void
-  updateSourceCode: (data: any) => void
+  updateSourceCode: (data: Partial<SourceCodeData>) => void
   terminalInputRef: React.RefObject<HTMLInputElement | null>
   isCompiled?: boolean
   activeTab: "terminal" | "tests"
   setActiveTab: (tab: "terminal" | "tests") => void
   showTests: boolean
-  testCases: Record<
-    string,
-    {
-      type: "custom" | "function" | "console"
-      input?: string
-      expectedOutput?: string
-      args?: any[]
-      expectedReturn?: any[]
-      predicate?: string
-      customCode?: string
-      customCodeFirst?: string | Record<ProgrammingLanguage, string>
-      customCodeSecond?: string | Record<ProgrammingLanguage, string>
-      testSpecificFirst?: string | Record<ProgrammingLanguage, string> // New field for test-specific code before customCodeFirst
-      testSpecificSecond?: string | Record<ProgrammingLanguage, string> // New field for test-specific code before customCodeSecond
-      testInfo?: string
-    }[]
-  >
+  testCases: SourceCodeTestCases
   activeFileId: string
   addTestCase: (fileId: string, type?: "custom" | "function" | "console") => void
   removeTestCase: (fileId: string, index: number) => void
   updateTestCase: (
     fileId: string,
     index: number,
-    testData: Partial<{
-      type: "custom" | "function" | "console"
-      input?: string
-      expectedOutput?: string
-      args?: any[]
-      expectedReturn?: any[]
-      predicate?: string
-      customCode?: string
-      customCodeFirst?: string | Record<ProgrammingLanguage, string>
-      customCodeSecond?: string | Record<ProgrammingLanguage, string>
-      testSpecificFirst?: string | Record<ProgrammingLanguage, string>
-      testSpecificSecond?: string | Record<ProgrammingLanguage, string>
-      testInfo?: string
-    }>,
+    testData: Partial<SourceCodeTestCase>,
   ) => void
   testResults: Record<string, { passed: boolean; actual: string; expected: string }[]>
   runTests: (fileId: string) => void
@@ -234,10 +205,10 @@ function CustomTestUI({
   addCustomTestFiles,
   testType,
 }: {
-  testCase: any
+  testCase: SourceCodeTestCase
   index: number
   activeFileId: string
-  updateTestCase: any
+  updateTestCase: TerminalProps["updateTestCase"]
   isEditing: boolean
   isDarkTheme: boolean
   fileSelectedLanguage?: ProgrammingLanguage
@@ -587,7 +558,7 @@ export function Terminal({
 
   // Helper function to get custom code for a specific language
   const getCustomCode = (
-    testCase: any,
+    testCase: SourceCodeTestCase | null | undefined,
     codeType: "customCodeFirst" | "customCodeSecond",
     language: ProgrammingLanguage,
     index = 0,
@@ -672,7 +643,7 @@ export function Terminal({
     updatedCode[language] = code
 
     // Update the test case
-    const update: any = {}
+    const update: Partial<SourceCodeTestCase> = {}
     update[codeType] = updatedCode
 
     // For backward compatibility, also update customCode if we're updating customCodeFirst
@@ -685,7 +656,7 @@ export function Terminal({
 
   // Helper function to get test-specific code for a specific language
   const getTestSpecificCode = (
-    testCase: any,
+    testCase: SourceCodeTestCase | null | undefined,
     codeType: "testSpecificFirst" | "testSpecificSecond",
     language: ProgrammingLanguage,
   ): string => {
@@ -741,7 +712,7 @@ export function Terminal({
     updatedCode[language] = code
 
     // Update the test case
-    const update: any = {}
+    const update: Partial<SourceCodeTestCase> = {}
     update[codeType] = updatedCode
 
     updateTestCase(fileId, index, update)

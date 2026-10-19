@@ -38,15 +38,41 @@ export interface SourceCodeData {
   readonly?: boolean
   showExecution?: boolean
   isDarkTheme?: boolean
-  selectedLanguage?: ProgrammingLanguage
+  selectedLanguage?: string
   clearTerminalOnRun?: boolean
   showBasicFileActionsInReadMode?: boolean
   showFilePropertiesInReadMode?: boolean
+  showTests?: boolean
+  testCases?: SourceCodeTestCases
+  output?: string[]
+  hasConfiguredSettings?: boolean
+  allowedLanguages?: Record<string, boolean>
+  activeEnvironments?: Record<string, boolean>
+  isAutocompleteEnabled?: boolean
+  initialFileLanguage?: string
+  data?: SourceCodeData
 }
 
 // JSON-serializable value types for test cases
 export type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[]
 export type JsonArray = JsonValue[]
+
+export interface SourceCodeTestCase {
+  type: "custom" | "function" | "console"
+  input?: string
+  expectedOutput?: string
+  args?: JsonArray
+  expectedReturn?: JsonArray
+  predicate?: string
+  customCode?: string
+  customCodeFirst?: string | Record<ProgrammingLanguage, string>
+  customCodeSecond?: string | Record<ProgrammingLanguage, string>
+  testSpecificFirst?: string | Record<ProgrammingLanguage, string>
+  testSpecificSecond?: string | Record<ProgrammingLanguage, string>
+  testInfo?: string
+}
+
+export type SourceCodeTestCases = Record<string, SourceCodeTestCase[]>
 
 // Update the TerminalProps interface to include the new predicate test type
 export interface TerminalProps {
@@ -63,36 +89,8 @@ export interface TerminalProps {
   handleStopExecution: () => void
   isDarkTheme: boolean
   showTests: boolean
-  testCases: Record<
-    string,
-    {
-      type: "custom" | "function" | "console"
-      input?: string
-      expectedOutput?: string
-      args?: JsonArray
-      expectedReturn?: JsonArray
-      predicate?: string
-      customCode?: string
-      customCodeFirst?: string | Record<ProgrammingLanguage, string>
-      customCodeSecond?: string | Record<ProgrammingLanguage, string>
-    }[]
-  >
-  setTestCases: (
-    cases: Record<
-      string,
-      {
-        type: "custom" | "function" | "console"
-        input?: string
-        expectedOutput?: string
-        args?: JsonArray
-        expectedReturn?: JsonArray
-        predicate?: string
-        customCode?: string
-        customCodeFirst?: string | Record<ProgrammingLanguage, string>
-        customCodeSecond?: string | Record<ProgrammingLanguage, string>
-      }[]
-    >,
-  ) => void
+  testCases: SourceCodeTestCases
+  setTestCases: (cases: SourceCodeTestCases) => void
   testResults: Record<string, { passed: boolean; actual: string; expected: string }[]>
   activeFileId: string
   activeTab: "terminal" | "tests"

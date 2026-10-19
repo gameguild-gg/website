@@ -13,7 +13,7 @@ import type { CodeFile, ProgrammingLanguage } from "../types"
 
 interface SourceCodeEditorEditProps extends Pick<
   React.ComponentProps<typeof Terminal>,
-  "addTestCase" | "removeTestCase" | "testResults" | "runTests"
+  "addTestCase" | "removeTestCase" | "testResults" | "runTests" | "testCases" | "updateTestCase" | "updateSourceCode"
 > {
   // File management
   files: CodeFile[]
@@ -95,12 +95,9 @@ interface SourceCodeEditorEditProps extends Pick<
   handleStopExecution: () => void
   clearTerminalOnRun: boolean
   setClearTerminalOnRun: (clear: boolean) => void
-  updateSourceCode: (data: any) => void
   terminalInputRef: React.RefObject<HTMLInputElement | null>
   activeTab: "terminal" | "tests"
   setActiveTab: (tab: "terminal" | "tests") => void
-  testCases: any
-  updateTestCase: any
   addSolutionTemplate?: () => void
   addCustomTestFiles?: (testIndex: number) => void
 
