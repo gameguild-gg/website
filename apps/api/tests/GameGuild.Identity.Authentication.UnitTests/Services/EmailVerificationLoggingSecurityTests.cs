@@ -20,7 +20,8 @@ public sealed class EmailVerificationLoggingSecurityTests
     {
         var logger = new TestLogger<EmailVerificationService>();
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new EmailVerificationService(logger, cache, Publisher().Object);
+        var service = new EmailVerificationService(logger, cache, Publisher().Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
         var userId = Guid.NewGuid();
         var token = kind switch
         {
@@ -52,7 +53,8 @@ public sealed class EmailVerificationLoggingSecurityTests
     {
         var logger = new TestLogger<EmailVerificationService>();
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new EmailVerificationService(logger, cache, Publisher().Object);
+        var service = new EmailVerificationService(logger, cache, Publisher().Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
         var actual = Guid.NewGuid();
         var expected = Guid.NewGuid();
         var token = await service.GenerateVerificationTokenAsync(actual, SensitiveEmail);
@@ -88,7 +90,8 @@ public sealed class EmailVerificationLoggingSecurityTests
         publisher.Setup(value => value.Publish(It.IsAny<EmailVerificationRequestedNotification>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(original);
         var service = new EmailVerificationService(logger,
-            operation is "send" or "resend-publisher" ? cache : failingCache.Object, publisher.Object);
+            operation is "send" or "resend-publisher" ? cache : failingCache.Object, publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         switch (operation)
         {
@@ -132,7 +135,8 @@ public sealed class EmailVerificationLoggingSecurityTests
         var logger = new TestLogger<EmailVerificationService>();
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var publisher = Publisher();
-        var service = new EmailVerificationService(logger, cache, publisher.Object);
+        var service = new EmailVerificationService(logger, cache, publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
         var firstUser = Guid.NewGuid();
         var secondUser = Guid.NewGuid();
         const string secondEmail = "other-private-person@example.invalid";
@@ -157,7 +161,8 @@ public sealed class EmailVerificationLoggingSecurityTests
         var logger = new TestLogger<EmailVerificationService>();
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var publisher = Publisher();
-        var service = new EmailVerificationService(logger, cache, publisher.Object);
+        var service = new EmailVerificationService(logger, cache, publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
         var userId = Guid.NewGuid();
 
         (await service.ResendVerificationEmailAsync(userId, SensitiveEmail)).Should().BeTrue();

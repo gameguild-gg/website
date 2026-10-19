@@ -37,7 +37,8 @@ public sealed class AuthenticationCoverageCompletionTests
         var service = new EmailVerificationService(
             NullLogger<EmailVerificationService>.Instance,
             cache,
-            publisher.Object);
+            publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         var userId = Guid.NewGuid();
         var passwordResetToken = await service.GeneratePasswordResetTokenAsync(userId, "User@Example.com");

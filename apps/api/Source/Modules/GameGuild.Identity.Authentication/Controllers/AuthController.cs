@@ -174,6 +174,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
         var command = new RequestMagicLinkCommand
         {
             Email = body.Email,
+            RedirectTo = body.RedirectTo,
+            Locale = body.Locale,
             TenantId = body.TenantId,
             IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
             UserAgent = Request.Headers.UserAgent.ToString()

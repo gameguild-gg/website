@@ -16,8 +16,7 @@ public sealed class EmailTokenSingleUseSecurityTests
     [Theory]
     [InlineData("verification")]
     [InlineData("reset")]
-    [InlineData("magic")]
-    public async Task GeneratedTokens_StoreOnlyTheirDigestAsTheCacheKey(string kind)
+    public async Task GeneratedMemoryTokens_StoreOnlyTheirDigestAsTheCacheKey(string kind)
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var token = await Generate(CreateService(cache), kind, Guid.NewGuid());
@@ -25,6 +24,25 @@ public sealed class EmailTokenSingleUseSecurityTests
 
         Assert.DoesNotContain(token, key, StringComparison.Ordinal);
         Assert.Equal(TokenPrefix + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))), key);
+    }
+
+    [Fact]
+    public async Task GeneratedMagicLink_UsesDurableStoreWithoutPopulatingMemoryCache()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var store = new Mock<IMagicLinkTokenStore>();
+        var userId = Guid.NewGuid();
+        var started = DateTimeOffset.UtcNow;
+        store.Setup(value => value.AddAsync(It.IsAny<string>(), userId, Email,
+                It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var token = await CreateService(cache, store.Object).GenerateMagicLinkTokenAsync(userId, Email);
+
+        Assert.Empty(cache.Keys);
+        store.Verify(value => value.AddAsync(token, userId, Email,
+            It.Is<DateTimeOffset>(expiry => expiry >= started.AddMinutes(14) && expiry <= DateTimeOffset.UtcNow.AddMinutes(16)),
+            CancellationToken.None), Times.Once);
     }
 
     [Theory]
@@ -40,11 +58,12 @@ public sealed class EmailTokenSingleUseSecurityTests
     {
         using var cache = new SynchronizedReadCache();
         var userId = Guid.NewGuid();
-        var service = CreateService(cache);
+        var magicStore = new EmailVerificationServiceTests.InMemoryMagicLinkTokenStore();
+        var service = CreateService(cache, magicStore);
         var token = await Generate(service, kind, userId);
         cache.SynchronizeNextTokenReads();
         var consumers = Enumerable.Range(0, 4).Select(_ => Task.Factory.StartNew(
-            () => Consume(separateServices ? CreateService(cache) : service, kind, userId, token),
+            () => Consume(separateServices ? CreateService(cache, magicStore) : service, kind, userId, token),
             CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap()).ToArray();
 
         var results = await Task.WhenAll(consumers);
@@ -59,8 +78,7 @@ public sealed class EmailTokenSingleUseSecurityTests
     [Theory]
     [InlineData("verification")]
     [InlineData("reset")]
-    [InlineData("magic")]
-    public async Task ClaimedToken_IsAlreadyInvalidWhileCacheRemovalIsPending(string kind)
+    public async Task ClaimedMemoryToken_IsAlreadyInvalidWhileCacheRemovalIsPending(string kind)
     {
         using var cache = new SuspendedRemovalCache();
         var userId = Guid.NewGuid();
@@ -128,8 +146,9 @@ public sealed class EmailTokenSingleUseSecurityTests
         Assert.True(await service.VerifyEmailTokenAsync(userId, token));
     }
 
-    private static EmailVerificationService CreateService(IMemoryCache cache) =>
-        new(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>());
+    private static EmailVerificationService CreateService(IMemoryCache cache, IMagicLinkTokenStore? magicStore = null) =>
+        new(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>(),
+            magicLinkTokenStore: magicStore ?? new EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
     private static Task<string> Generate(EmailVerificationService service, string kind, Guid userId) => kind switch
     {

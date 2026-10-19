@@ -295,7 +295,7 @@ export function SignInForm({
                   {magicLinkLabel ? (
                     <FieldDescription className="text-center text-slate-300">
                       <Link
-                        href="/magic-link"
+                        href={`/magic-link?redirectTo=${encodeURIComponent(redirectTo)}`}
                         className="text-sky-200 underline-offset-4 hover:underline"
                       >
                         {magicLinkLabel}

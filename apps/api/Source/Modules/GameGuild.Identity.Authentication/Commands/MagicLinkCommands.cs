@@ -9,6 +9,10 @@ public sealed class RequestMagicLinkCommand : ICommand<MagicLinkRequestResult>
 {
     public string Email { get; init; } = string.Empty;
 
+    public string? RedirectTo { get; init; }
+
+    public string? Locale { get; init; }
+
     public Guid? TenantId { get; init; }
 
     public string? IpAddress { get; init; }
