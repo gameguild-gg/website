@@ -431,19 +431,19 @@ public class JwtTokenServiceTests
     }
 
     [Theory]
-    [InlineData("device-123", "device-123")]
-    [InlineData("Device-AbC", "Device-AbC")]
-    [InlineData("device-秘密", "device-秘密")]
-    [InlineData("device-{UserId}", "device-{UserId}")]
-    [InlineData("", "")]
-    [InlineData("device\r\nFORGED EVENT", "device␀␀FORGED EVENT")]
-    [InlineData("device\rFORGED EVENT", "device␀FORGED EVENT")]
-    [InlineData("device\nFORGED EVENT", "device␀FORGED EVENT")]
-    [InlineData("device\u0000\u001FFORGED EVENT", "device␀␀FORGED EVENT")]
-    [InlineData("device\u007F\u0085\u009FFORGED EVENT", "device␀␀␀FORGED EVENT")]
-    [InlineData("device\u2028\u2029FORGED EVENT", "device␀␀FORGED EVENT")]
-    [InlineData("device\u001B[2J\nFORGED EVENT", "device␀[2J␀FORGED EVENT")]
-    public async Task GenerateRefreshTokenAsync_ShouldSanitizeOnlyTheLoggedDeviceId(string fingerprint, string expectedLoggedId)
+    [InlineData("device-123")]
+    [InlineData("Device-AbC")]
+    [InlineData("device-秘密")]
+    [InlineData("device-{UserId}")]
+    [InlineData("")]
+    [InlineData("device\r\nFORGED EVENT")]
+    [InlineData("device\rFORGED EVENT")]
+    [InlineData("device\nFORGED EVENT")]
+    [InlineData("device\u0000\u001FFORGED EVENT")]
+    [InlineData("device\u007F\u0085\u009FFORGED EVENT")]
+    [InlineData("device\u2028\u2029FORGED EVENT")]
+    [InlineData("device\u001B[2J\nFORGED EVENT")]
+    public async Task GenerateRefreshTokenAsync_ShouldOmitDeviceInputFromAllLogsWithoutChangingPersistence(string fingerprint)
     {
         var userId = Guid.NewGuid();
         var deviceInfo = new DeviceInfo { Fingerprint = fingerprint, IpAddress = "127.0.0.1" };
@@ -455,7 +455,7 @@ public class JwtTokenServiceTests
 
         var rawToken = await _service.GenerateRefreshTokenAsync(userId, deviceInfo, CancellationToken.None);
 
-        const string template = "Generating refresh token for user: {UserId}, Device: {DeviceId}";
+        const string template = "Generating refresh token for user: {UserId}";
         var log = _loggerMock.Invocations.Single(invocation =>
             invocation.Method.Name == nameof(ILogger.Log) &&
             invocation.Arguments[2] is IEnumerable<KeyValuePair<string, object?>> properties &&
@@ -463,9 +463,24 @@ public class JwtTokenServiceTests
         var loggedProperties = (IEnumerable<KeyValuePair<string, object?>>)log.Arguments[2];
         log.Arguments[0].Should().Be(LogLevel.Information);
         log.Arguments[3].Should().BeNull();
-        loggedProperties.Single(property => property.Key == "UserId").Value.Should().Be(userId);
-        loggedProperties.Single(property => property.Key == "DeviceId").Value.Should().Be(expectedLoggedId);
-        log.Arguments[2].ToString().Should().Be($"Generating refresh token for user: {userId}, Device: {expectedLoggedId}");
+        var loggedUserId = loggedProperties.Single(property => property.Key == "UserId").Value.Should().BeOfType<string>().Subject;
+        loggedUserId.Should().MatchRegex("^uid:[0-9a-f]{8}$");
+        loggedProperties.Should().NotContain(property => property.Key == "DeviceId");
+        log.Arguments[2].ToString().Should().Be($"Generating refresh token for user: {loggedUserId}");
+        foreach (var entry in _loggerMock.Invocations.Where(invocation => invocation.Method.Name == nameof(ILogger.Log)))
+        {
+            entry.Arguments[3].Should().BeNull();
+            var fields = entry.Arguments[2].Should().BeAssignableTo<IEnumerable<KeyValuePair<string, object?>>>().Subject;
+            var outputs = fields.Select(field => field.Value?.ToString() ?? string.Empty)
+                .Append(entry.Arguments[2].ToString() ?? string.Empty);
+            foreach (var output in outputs)
+            {
+                output.Should().NotContain(userId.ToString()).And.NotContain(rawToken).And.NotContain(storedHash)
+                    .And.NotContain("FORGED EVENT");
+                output.Any(character => char.IsControl(character) || character is '\u2028' or '\u2029').Should().BeFalse();
+                if (fingerprint.Length > 0) { output.Should().NotContain(fingerprint); }
+            }
+        }
         deviceInfo.Fingerprint.Should().Be(fingerprint);
         deviceInfo.DeviceId.Should().Be(fingerprint);
         Convert.FromBase64String(rawToken).Should().NotBeEmpty();
