@@ -11,13 +11,21 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Mock fetch for testing
-global.fetch = vi.fn();
+interface SpecResponseFixture {
+  ok: boolean;
+  status: number;
+  statusText?: string;
+  json?: () => Promise<unknown>;
+}
+type SpecFetchFixture = (...args: Parameters<typeof fetch>) => Promise<SpecResponseFixture>;
+const mockFetch = vi.fn<SpecFetchFixture>();
 
 describe('Generation Pipeline Integration', () => {
   const testOutputDir = join(__dirname, 'temp-output');
 
   beforeEach(() => {
+    mockFetch.mockReset();
+    vi.stubGlobal('fetch', mockFetch);
     // Clean up before each test
     if (existsSync(testOutputDir)) {
       rmSync(testOutputDir, { recursive: true });
@@ -25,6 +33,7 @@ describe('Generation Pipeline Integration', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     // Clean up after each test
     if (existsSync(testOutputDir)) {
       rmSync(testOutputDir, { recursive: true });
@@ -43,7 +52,7 @@ describe('Generation Pipeline Integration', () => {
       },
     };
 
-    (global.fetch as any).mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => mockSpec,
@@ -72,7 +81,7 @@ describe('Generation Pipeline Integration', () => {
   }, 15000);
 
   it('should throw error for invalid URL', async () => {
-    (global.fetch as any).mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: false,
       status: 404,
       statusText: 'Not Found',
@@ -97,7 +106,7 @@ describe('Generation Pipeline Integration', () => {
       info: { title: 'Old API', version: '1.0' },
     };
 
-    (global.fetch as any).mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => invalidSpec,
@@ -181,7 +190,7 @@ describe('Generation Pipeline Integration', () => {
   });
 
   it('should handle network errors gracefully', async () => {
-    (global.fetch as any).mockRejectedValue(new Error('Network error'));
+    mockFetch.mockRejectedValue(new Error('Network error'));
 
     const { fetchOpenApiSpec } = await import('../../scripts/fetch-spec.js');
 
@@ -191,7 +200,7 @@ describe('Generation Pipeline Integration', () => {
   });
 
   it('should handle malformed JSON gracefully', async () => {
-    (global.fetch as any).mockResolvedValue({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => {

@@ -3,6 +3,7 @@
  * Covers remaining uncovered lines across several modules
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { ZodError } from 'zod';
 
 // ─── Guards (line 128) ─────────────────────────────
 import { isRetryableError } from '../../src/runtime/errors/guards.js';
@@ -53,34 +54,49 @@ describe('safeParse — gap coverage (line 111)', () => {
   });
 
   it('transforms ZodError into ValidationError', () => {
-    // Create a mock ZodError-like instance
-    const ZodErrorModule = (() => {
-      try {
-        // Try to use the real ZodError from the validation module
-        const validationModule = require('../../src/runtime/errors/validation.js');
-        return validationModule;
-      } catch {
-        return null;
-      }
-    })();
-
-    // Test with a schema that throws a ValidationError (which is what the code transforms to)
+    const validationError = new ZodError([{ code: 'custom', message: 'bad', path: ['x'] }]);
     const schema = {
       parse: () => {
-        const err = new Error('validation failed');
-        (err as any).issues = [{ code: 'custom', message: 'bad', path: ['x'] }];
-        (err as any).name = 'ZodError';
-        throw err;
+        throw validationError;
       },
     };
 
-    // This might or might not be a real ZodError, but the function should handle it
+    let transformed: unknown;
     try {
       safeParse(schema, 'bad');
     } catch (e) {
-      // Should be either a ValidationError or the original error
+      transformed = e;
       expect(e).toBeTruthy();
     }
+    expect(transformed).not.toBe(validationError);
+    expect(transformed).toMatchObject({
+      name: 'ApiError',
+      code: 'VALIDATION_ERROR',
+      status: 400,
+      message: 'Response validation failed',
+      metadata: {
+        context: 'unknown',
+        errors: [{ field: 'x', message: 'bad', code: 'custom' }],
+        timestamp: expect.any(String),
+      },
+    });
+  });
+
+  it('re-throws an Error named ZodError without native ZodError identity', () => {
+    const original = Object.assign(new Error('validation failed'), {
+      issues: [{ code: 'custom', message: 'bad', path: ['x'] }],
+      name: 'ZodError',
+    });
+    const schema = { parse: () => { throw original; } };
+    let caught: unknown;
+
+    try {
+      safeParse(schema, 'bad');
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBe(original);
   });
 });
 
