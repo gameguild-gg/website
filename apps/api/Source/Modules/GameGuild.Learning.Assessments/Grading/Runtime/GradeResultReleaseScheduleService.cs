@@ -106,7 +106,7 @@ public sealed class GradeResultReleaseScheduleService(
             reason,
             cancellationToken);
 
-    public async Task<GradeResultReleaseScheduleViewV1> CancelByActorAsync(
+    public Task<GradeResultReleaseScheduleViewV1> CancelByActorAsync(
         Guid submissionId,
         Guid expectedRoundId,
         int expectedSubmissionVersion,
@@ -114,7 +114,28 @@ public sealed class GradeResultReleaseScheduleService(
         Guid actorId,
         string idempotencyKey,
         string reason,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        GradingRuntimeDatabaseLock.ExecuteWithStrategyAsync(
+            context,
+            () => CancelByActorTransactionalAsync(
+                submissionId,
+                expectedRoundId,
+                expectedSubmissionVersion,
+                expectedScheduleVersion,
+                actorId,
+                idempotencyKey,
+                reason,
+                cancellationToken));
+
+    private async Task<GradeResultReleaseScheduleViewV1> CancelByActorTransactionalAsync(
+        Guid submissionId,
+        Guid expectedRoundId,
+        int expectedSubmissionVersion,
+        int expectedScheduleVersion,
+        Guid actorId,
+        string idempotencyKey,
+        string reason,
+        CancellationToken cancellationToken)
     {
         ValidateIds(submissionId, expectedRoundId, actorId);
         var key = RequireIdempotencyKey(idempotencyKey);
@@ -219,7 +240,32 @@ public sealed class GradeResultReleaseScheduleService(
         return released;
     }
 
-    private async Task<GradeResultReleaseScheduleViewV1> ScheduleAsync(
+    private Task<GradeResultReleaseScheduleViewV1> ScheduleAsync(
+        Guid submissionId,
+        Guid expectedRoundId,
+        int expectedSubmissionVersion,
+        int? expectedScheduleVersion,
+        DateTime scheduledFor,
+        Guid receiptActorId,
+        string? service,
+        string idempotencyKey,
+        string? reason,
+        CancellationToken cancellationToken) =>
+        GradingRuntimeDatabaseLock.ExecuteWithStrategyAsync(
+            context,
+            () => ScheduleTransactionalAsync(
+                submissionId,
+                expectedRoundId,
+                expectedSubmissionVersion,
+                expectedScheduleVersion,
+                scheduledFor,
+                receiptActorId,
+                service,
+                idempotencyKey,
+                reason,
+                cancellationToken));
+
+    private async Task<GradeResultReleaseScheduleViewV1> ScheduleTransactionalAsync(
         Guid submissionId,
         Guid expectedRoundId,
         int expectedSubmissionVersion,
@@ -234,7 +280,7 @@ public sealed class GradeResultReleaseScheduleService(
         ValidateIds(submissionId, expectedRoundId, receiptActorId);
         var key = RequireIdempotencyKey(idempotencyKey);
         var normalizedScheduledFor = scheduledFor.ToUniversalTime();
-        if (normalizedScheduledFor <= UtcNow)
+        if (service is null && normalizedScheduledFor <= UtcNow)
         {
             throw new ArgumentOutOfRangeException(nameof(scheduledFor), "Scheduled release must be in the future.");
         }
@@ -351,7 +397,12 @@ public sealed class GradeResultReleaseScheduleService(
         return ToView(schedule);
     }
 
-    private async Task<bool> ReleaseDueAsync(Guid scheduleId, CancellationToken cancellationToken)
+    private Task<bool> ReleaseDueAsync(Guid scheduleId, CancellationToken cancellationToken) =>
+        GradingRuntimeDatabaseLock.ExecuteWithStrategyAsync(
+            context,
+            () => ReleaseDueTransactionalAsync(scheduleId, cancellationToken));
+
+    private async Task<bool> ReleaseDueTransactionalAsync(Guid scheduleId, CancellationToken cancellationToken)
     {
         var lookup = await context.Set<GradeResultReleaseSchedule>()
             .AsNoTracking()

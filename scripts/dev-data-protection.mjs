@@ -39,19 +39,23 @@ function runOpenSsl(args) {
   return result;
 }
 
-function isUsableCertificatePair(certificatePath, keyPath, executeOpenSsl) {
-  if (!existsSync(certificatePath) || !existsSync(keyPath)) return false;
-
+function validateExistingCertificatePair(
+  certificatePath,
+  keyPath,
+  executeOpenSsl,
+) {
   const certificateCheck = executeOpenSsl([
     "x509",
     "-in",
     certificatePath,
     "-noout",
-    "-checkend",
-    "604800",
   ]);
   const keyCheck = executeOpenSsl(["pkey", "-in", keyPath, "-check", "-noout"]);
-  if (certificateCheck.status !== 0 || keyCheck.status !== 0) return false;
+  if (certificateCheck.status !== 0 || keyCheck.status !== 0) {
+    throw new Error(
+      "The existing local Data Protection certificate pair is invalid. It was not replaced because persisted keys may still require it for decryption.",
+    );
+  }
 
   const certificatePublicKey = executeOpenSsl([
     "x509",
@@ -67,11 +71,29 @@ function isUsableCertificatePair(certificatePath, keyPath, executeOpenSsl) {
     "-pubout",
   ]);
 
-  return (
-    certificatePublicKey.status === 0 &&
-    privateKeyPublicKey.status === 0 &&
-    certificatePublicKey.stdout.trim() === privateKeyPublicKey.stdout.trim()
-  );
+  if (
+    certificatePublicKey.status !== 0 ||
+    privateKeyPublicKey.status !== 0 ||
+    certificatePublicKey.stdout.trim() !== privateKeyPublicKey.stdout.trim()
+  ) {
+    throw new Error(
+      "The existing local Data Protection certificate and private key do not match. They were not replaced because persisted keys may still require the original certificate.",
+    );
+  }
+
+  const expirationCheck = executeOpenSsl([
+    "x509",
+    "-in",
+    certificatePath,
+    "-noout",
+    "-checkend",
+    "604800",
+  ]);
+  if (expirationCheck.status !== 0) {
+    throw new Error(
+      "The local Data Protection certificate expires within seven days. Automatic replacement is disabled because persisted keys require the existing certificate; rotate it explicitly while retaining historical decryption material.",
+    );
+  }
 }
 
 function generateCertificatePair(
@@ -144,7 +166,14 @@ export function resolveDevelopmentDataProtectionEnvironment({
 
   const certificatePath = path.join(certificateDirectory, "certificate.pem");
   const keyPath = path.join(certificateDirectory, "key.pem");
-  if (!isUsableCertificatePair(certificatePath, keyPath, executeOpenSsl)) {
+  const certificateExists = existsSync(certificatePath);
+  const keyExists = existsSync(keyPath);
+  if (certificateExists !== keyExists) {
+    throw new Error(
+      "The local Data Protection certificate pair is incomplete. Existing files were not replaced because persisted keys may still require them for decryption.",
+    );
+  }
+  if (!certificateExists) {
     generateCertificatePair(
       certificateDirectory,
       certificatePath,
@@ -154,6 +183,8 @@ export function resolveDevelopmentDataProtectionEnvironment({
     log(
       `[dev] created a persistent local Data Protection certificate in ${path.relative(repositoryRoot, certificateDirectory)}`,
     );
+  } else {
+    validateExistingCertificatePair(certificatePath, keyPath, executeOpenSsl);
   }
 
   return {

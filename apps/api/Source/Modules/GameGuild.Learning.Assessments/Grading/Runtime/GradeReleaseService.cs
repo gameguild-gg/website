@@ -1,6 +1,7 @@
 using System.Text.Json;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Persistence;
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -71,7 +72,28 @@ public sealed class GradeReleaseService(
             reason,
             cancellationToken);
 
-    private async Task<GradeResultRelease> ReleaseAsync(
+    private Task<GradeResultRelease> ReleaseAsync(
+        Guid submissionId,
+        Guid expectedRoundId,
+        int? expectedSubmissionVersion,
+        Guid receiptActorId,
+        string? service,
+        string idempotencyKey,
+        string? reason,
+        CancellationToken cancellationToken) =>
+        GradingRuntimeDatabaseLock.ExecuteWithStrategyAsync(
+            context,
+            () => ReleaseTransactionalAsync(
+                submissionId,
+                expectedRoundId,
+                expectedSubmissionVersion,
+                receiptActorId,
+                service,
+                idempotencyKey,
+                reason,
+                cancellationToken));
+
+    private async Task<GradeResultRelease> ReleaseTransactionalAsync(
         Guid submissionId,
         Guid expectedRoundId,
         int? expectedSubmissionVersion,
@@ -187,13 +209,23 @@ public sealed class GradeReleaseService(
             .SingleAsync(value => value.Id == execution.DefinitionRevisionId, cancellationToken)
             .ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
+        var passingScore = snapshot.AuthoringSource.Policy.PassingScore ?? ScoreValue.Zero;
+        var releasedRoundPassed = round.Score.HasValue && round.Score.Value.CompareTo(passingScore) >= 0;
         var assessment = await context.Set<Assessment>()
             .SingleAsync(value => value.Id == submission.AssessmentId, cancellationToken)
             .ConfigureAwait(false);
         var enrollmentIds = await finalizationSink.ResolveEnrollmentIdsAsync(submission, cancellationToken).ConfigureAwait(false);
+        if (existing is null)
+        {
+            await AcquireRecipientReleaseLocksAsync(
+                submission.AssessmentId,
+                enrollmentIds,
+                cancellationToken).ConfigureAwait(false);
+        }
+
         if (existing is null &&
             (snapshot.AuthoringSource.Policy.Completion.Mode is ContentCompletionMode.OnRelease or ContentCompletionMode.OnReleaseAndPass) &&
-            (snapshot.AuthoringSource.Policy.Completion.Mode != ContentCompletionMode.OnReleaseAndPass || submission.Passed == true))
+            (snapshot.AuthoringSource.Policy.Completion.Mode != ContentCompletionMode.OnReleaseAndPass || releasedRoundPassed))
         {
             await finalizationSink.ProjectCompletionAsync(
                 submission,
@@ -240,6 +272,31 @@ public sealed class GradeReleaseService(
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
         return release;
+    }
+
+    private async Task AcquireRecipientReleaseLocksAsync(
+        Guid assessmentId,
+        IReadOnlyCollection<Guid> enrollmentIds,
+        CancellationToken cancellationToken)
+    {
+        var distinctEnrollmentIds = enrollmentIds.Distinct().ToArray();
+        var recipientIds = (await GradeReleaseRecipientResolver.ResolveUserIdsAsync(
+                context,
+                distinctEnrollmentIds,
+                cancellationToken)
+            .ConfigureAwait(false))
+            .OrderBy(value => value)
+            .ToArray();
+
+        foreach (var recipientId in recipientIds)
+        {
+            await GradingRuntimeDatabaseLock.AcquireAsync(
+                context,
+                "grade-release-recipient",
+                assessmentId,
+                recipientId,
+                cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private Task<IDbContextTransaction?> BeginTransactionAsync(CancellationToken cancellationToken) =>
