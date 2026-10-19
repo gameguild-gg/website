@@ -456,6 +456,8 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         }));
         await using (var seed = factory.Services.CreateAsyncScope())
         {
+            // This factory has its own migrated database; the parent fixture's seeded policies do not apply.
+            await seed.ServiceProvider.GetRequiredService<PolicyDefinitionSeeder>().SeedAsync();
             var db = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             db.AddRange(
                 new AuditLog { TenantId = tenant, UserId = actor, ActionType = action, ResourceType = "Permission",
