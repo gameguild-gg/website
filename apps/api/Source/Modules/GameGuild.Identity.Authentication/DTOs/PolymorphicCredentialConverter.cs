@@ -12,18 +12,10 @@ public class PolymorphicCredentialConverter : JsonConverter<ICredentialData>
     {
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
-        if (root.ValueKind != JsonValueKind.Object)
-        {
-            throw new JsonException("Credential data must be a JSON object.");
-        }
 
         // Determine credential type from JSON structure
         if (root.TryGetProperty("type", out var typeElement))
         {
-            if (typeElement.ValueKind is not (JsonValueKind.String or JsonValueKind.Null))
-            {
-                throw new JsonException("Credential type must be a JSON string.");
-            }
             var credentialType = typeElement.GetString()?.ToLowerInvariant();
 
             return credentialType switch
