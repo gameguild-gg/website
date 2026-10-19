@@ -18,7 +18,10 @@ public sealed class EvmCertificateReadServiceRegistrationTests
         using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient(EvmCertificateRpcClient.HttpClientName);
         Assert.Equal(Timeout.InfiniteTimeSpan, client.Timeout);
         var handler = provider.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler(EvmCertificateRpcClient.HttpClientName);
-        while (handler is DelegatingHandler delegating) handler = delegating.InnerHandler!;
+        while (handler is DelegatingHandler delegating)
+        {
+            handler = delegating.InnerHandler!;
+        }
         var sockets = Assert.IsType<SocketsHttpHandler>(handler);
         Assert.False(sockets.AllowAutoRedirect);
         Assert.False(sockets.UseCookies);
@@ -73,14 +76,22 @@ public sealed class EvmCertificateReadServiceRegistrationTests
     private sealed class CapturedLogs : ILoggerProvider
     {
         public ConcurrentBag<string> Messages { get; } = [];
-        public ILogger CreateLogger(string categoryName) => new CaptureLogger(Messages);
-        public void Dispose() { }
-
-        private sealed class CaptureLogger(ConcurrentBag<string> messages) : ILogger
+        public ILogger CreateLogger(string categoryName) => new CaptureLogger(Messages, categoryName);
+        public void Dispose()
         {
-            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-            public bool IsEnabled(LogLevel logLevel) => true;
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) => messages.Add(formatter(state, exception));
+            // This provider only retains managed test messages; it owns no external resources.
+        }
+
+        private sealed class CaptureLogger(ConcurrentBag<string> messages, string categoryName) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+            {
+                messages.Add($"{categoryName} scope: {state}");
+                return null;
+            }
+            public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+                messages.Add($"{categoryName} [{logLevel}/{eventId.Id}]: {formatter(state, exception)}");
         }
     }
 }

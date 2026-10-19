@@ -21,7 +21,10 @@ internal static class EvmCertificateProtocol
     internal static string NormalizeHashArgument(string value, string argumentName)
     {
         var data = value ?? string.Empty;
-        if (!data.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) data = "0x" + data;
+        if (!data.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            data = "0x" + data;
+        }
         if (!TryData(data, 32, out var normalized) || normalized.AsSpan(2).IndexOfAnyExcept('0') < 0)
         {
             throw new ArgumentException("A nonzero 32-byte hexadecimal digest is required.", argumentName);
@@ -43,13 +46,19 @@ internal static class EvmCertificateProtocol
     internal static string PropertyData(JsonElement value, string name, int byteCount)
     {
         RequireObject(value);
-        if (!value.TryGetProperty(name, out var property)) throw Malformed();
+        if (!value.TryGetProperty(name, out var property))
+        {
+            throw Malformed();
+        }
         return Data(property, byteCount);
     }
 
     internal static ulong Quantity(JsonElement element)
     {
-        if (element.ValueKind != JsonValueKind.String) throw Malformed();
+        if (element.ValueKind != JsonValueKind.String)
+        {
+            throw Malformed();
+        }
         var value = element.GetString();
         if (value is null || value.Length < 3 || !value.StartsWith("0x", StringComparison.Ordinal) ||
             (value.Length > 3 && value[2] == '0') ||
@@ -64,7 +73,10 @@ internal static class EvmCertificateProtocol
     internal static ulong PropertyQuantity(JsonElement value, string name)
     {
         RequireObject(value);
-        if (!value.TryGetProperty(name, out var property)) throw Malformed();
+        if (!value.TryGetProperty(name, out var property))
+        {
+            throw Malformed();
+        }
         return Quantity(property);
     }
 
@@ -86,7 +98,10 @@ internal static class EvmCertificateProtocol
 
     internal static string AddressWord(string word)
     {
-        if (word.Length != 64 || word.AsSpan(0, 24).IndexOfAnyExcept('0') >= 0 || !word.All(Uri.IsHexDigit)) throw Malformed();
+        if (word.Length != 64 || word.AsSpan(0, 24).IndexOfAnyExcept('0') >= 0 || !word.All(Uri.IsHexDigit))
+        {
+            throw Malformed();
+        }
         return "0x" + word[24..].ToLowerInvariant();
     }
 
@@ -98,11 +113,17 @@ internal static class EvmCertificateProtocol
 
     internal static void RequireObject(JsonElement value)
     {
-        if (value.ValueKind != JsonValueKind.Object) throw Malformed();
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            throw Malformed();
+        }
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var property in value.EnumerateObject())
         {
-            if (!names.Add(property.Name)) throw Malformed();
+            if (!names.Add(property.Name))
+            {
+                throw Malformed();
+            }
         }
     }
 
@@ -111,7 +132,10 @@ internal static class EvmCertificateProtocol
         normalized = string.Empty;
         if (value is null || value.Length < 2 || !value.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ||
             value.Length % 2 != 0 || (byteCount.HasValue && value.Length != byteCount.Value * 2 + 2) ||
-            !value.Skip(2).All(Uri.IsHexDigit)) return false;
+            !value.Skip(2).All(Uri.IsHexDigit))
+        {
+            return false;
+        }
         normalized = value.ToLowerInvariant();
         return true;
     }

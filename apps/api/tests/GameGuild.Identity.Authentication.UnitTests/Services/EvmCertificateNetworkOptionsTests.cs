@@ -33,8 +33,6 @@ public sealed class EvmCertificateNetworkOptionsTests
     [Theory]
     [InlineData("")]
     [InlineData("not-a-uri")]
-    [InlineData("http://rpc.invalid")]
-    [InlineData("https://user:private-marker@rpc.invalid")]
     [InlineData("https://rpc.invalid/#fragment")]
     public void RpcMustUseAbsoluteHttpsWithoutUserInfoOrFragment(string endpoint)
     {
@@ -42,6 +40,28 @@ public sealed class EvmCertificateNetworkOptionsTests
         options.RpcEndpoint = endpoint;
         Assert.Contains(options.Validate(), error => error.Contains("RpcEndpoint", StringComparison.Ordinal));
         Assert.DoesNotContain(options.Validate(), error => error.Contains("private-marker", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void PlainHttpRpcEndpointIsRejected()
+    {
+        var options = ValidOptions();
+        options.RpcEndpoint = new UriBuilder(Uri.UriSchemeHttp, "rpc.invalid").Uri.AbsoluteUri;
+        Assert.Contains(options.Validate(), error => error.Contains("RpcEndpoint", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void RpcUserInformationIsRejectedWithoutEchoingTheGeneratedCredential()
+    {
+        var credential = Guid.NewGuid().ToString("N");
+        var options = ValidOptions();
+        options.RpcEndpoint = new UriBuilder(Uri.UriSchemeHttps, "rpc.invalid")
+        {
+            UserName = "fixture-user",
+            Password = credential
+        }.Uri.AbsoluteUri;
+        Assert.Contains(options.Validate(), error => error.Contains("RpcEndpoint", StringComparison.Ordinal));
+        Assert.DoesNotContain(options.Validate(), error => error.Contains(credential, StringComparison.Ordinal));
     }
 
     [Theory]

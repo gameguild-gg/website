@@ -8,7 +8,7 @@ namespace GameGuild.Identity.Authentication;
 /// <remarks>Owns its HttpClient. Hosting registration disables redirects and default endpoint logging.</remarks>
 public sealed class EvmCertificateRpcClient : IEvmCertificateRpc, IDisposable
 {
-    public const string HttpClientName = "EvmCertificateRpc";
+    public static string HttpClientName => "EvmCertificateRpc";
     private readonly HttpClient http;
     private readonly Uri endpoint;
     private readonly TimeSpan timeout;
@@ -20,14 +20,20 @@ public sealed class EvmCertificateRpcClient : IEvmCertificateRpc, IDisposable
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(options);
         var errors = options.Validate();
-        if (errors.Count > 0) throw new ArgumentException(string.Join(" ", errors), nameof(options));
+        if (errors.Count > 0)
+        {
+            throw new ArgumentException(string.Join(" ", errors), nameof(options));
+        }
         this.http = http;
         endpoint = new Uri(options.RpcEndpoint, UriKind.Absolute);
         timeout = options.RequestTimeout;
         maximumResponseBytes = options.MaximumResponseBytes;
     }
 
-    public async Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters, CancellationToken cancellationToken = default)
+    public Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters) =>
+        RequestAsync(method, parameters, CancellationToken.None);
+
+    public async Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(parameters);
         cancellationToken.ThrowIfCancellationRequested();
@@ -61,7 +67,10 @@ public sealed class EvmCertificateRpcClient : IEvmCertificateRpc, IDisposable
             while (true)
             {
                 var read = await stream.ReadAsync(chunk, deadline.Token).ConfigureAwait(false);
-                if (read == 0) break;
+                if (read == 0)
+                {
+                    break;
+                }
                 if (bytes.Length + read > maximumResponseBytes)
                 {
                     throw new EvmCertificateRpcException(EvmCertificateRpcFailure.ResponseTooLarge);
@@ -106,8 +115,14 @@ public sealed class EvmCertificateRpcClient : IEvmCertificateRpc, IDisposable
 
         var hasResult = root.TryGetProperty("result", out var result);
         var hasError = root.TryGetProperty("error", out var error);
-        if (hasError == hasResult) throw new EvmCertificateRpcException(EvmCertificateRpcFailure.InvalidResponse);
-        if (hasResult) return result.Clone();
+        if (hasError == hasResult)
+        {
+            throw new EvmCertificateRpcException(EvmCertificateRpcFailure.InvalidResponse);
+        }
+        if (hasResult)
+        {
+            return result.Clone();
+        }
 
         if (error.ValueKind != JsonValueKind.Object || HasDuplicateProperties(error) ||
             !error.TryGetProperty("code", out var code) || code.ValueKind != JsonValueKind.Number || !code.TryGetInt32(out var errorCode) ||
@@ -124,7 +139,10 @@ public sealed class EvmCertificateRpcClient : IEvmCertificateRpc, IDisposable
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var property in element.EnumerateObject())
         {
-            if (!names.Add(property.Name)) return true;
+            if (!names.Add(property.Name))
+            {
+                return true;
+            }
         }
 
         return false;

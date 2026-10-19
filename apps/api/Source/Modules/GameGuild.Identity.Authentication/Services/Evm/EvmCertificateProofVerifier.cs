@@ -21,7 +21,10 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
         ArgumentNullException.ThrowIfNull(rpc);
         ArgumentNullException.ThrowIfNull(options);
         var errors = options.Validate();
-        if (errors.Count > 0) throw new ArgumentException(string.Join(" ", errors), nameof(options));
+        if (errors.Count > 0)
+        {
+            throw new ArgumentException(string.Join(" ", errors), nameof(options));
+        }
         this.rpc = rpc;
         chainId = options.ChainId;
         contractAddress = options.ContractAddress.ToLowerInvariant();
@@ -33,15 +36,23 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
         minimumConfirmations = options.MinimumConfirmations;
     }
 
-    public async Task<EvmCertificateNetworkIdentity> ValidateNetworkAsync(CancellationToken cancellationToken = default)
+    public Task<EvmCertificateNetworkIdentity> ValidateNetworkAsync() => ValidateNetworkAsync(CancellationToken.None);
+
+    public async Task<EvmCertificateNetworkIdentity> ValidateNetworkAsync(CancellationToken cancellationToken)
     {
         var actualChain = EvmCertificateProtocol.Quantity(await rpc.RequestAsync(EvmCertificateRpcMethod.ChainId, [], cancellationToken).ConfigureAwait(false));
-        if (actualChain != (ulong)chainId) throw new EvmCertificateEvidenceException(EvmCertificateEvidenceFailure.NetworkMismatch);
+        if (actualChain != (ulong)chainId)
+        {
+            throw new EvmCertificateEvidenceException(EvmCertificateEvidenceFailure.NetworkMismatch);
+        }
 
         var block = await VerificationBlockAsync(cancellationToken).ConfigureAwait(false);
         var pinned = new { blockHash = block.Hash, requireCanonical = true };
         var code = EvmCertificateProtocol.Data(await rpc.RequestAsync(EvmCertificateRpcMethod.GetCode, [contractAddress, pinned], cancellationToken).ConfigureAwait(false));
-        if (code.Length <= 2) throw new EvmCertificateEvidenceException(EvmCertificateEvidenceFailure.RuntimeCodeMismatch);
+        if (code.Length <= 2)
+        {
+            throw new EvmCertificateEvidenceException(EvmCertificateEvidenceFailure.RuntimeCodeMismatch);
+        }
         var codeHash = Convert.ToHexString(SHA256.HashData(Convert.FromHexString(code[2..]))).ToLowerInvariant();
         if (!string.Equals(codeHash, expectedCodeHash, StringComparison.Ordinal))
         {
@@ -63,10 +74,16 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
         return new(chainId, contractAddress, issuerId, codeHash, finality, minimumConfirmations, block);
     }
 
-    public Task<EvmCertificateProofResult> VerifyAnchorAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken = default) =>
+    public Task<EvmCertificateProofResult> VerifyAnchorAsync(string certificateHash, string transactionHash) =>
+        VerifyAnchorAsync(certificateHash, transactionHash, CancellationToken.None);
+
+    public Task<EvmCertificateProofResult> VerifyAnchorAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken) =>
         VerifyAsync(EvmCertificateOperationKind.Anchor, certificateHash, transactionHash, cancellationToken);
 
-    public Task<EvmCertificateProofResult> VerifyRevocationAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken = default) =>
+    public Task<EvmCertificateProofResult> VerifyRevocationAsync(string certificateHash, string transactionHash) =>
+        VerifyRevocationAsync(certificateHash, transactionHash, CancellationToken.None);
+
+    public Task<EvmCertificateProofResult> VerifyRevocationAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken) =>
         VerifyAsync(EvmCertificateOperationKind.Revoke, certificateHash, transactionHash, cancellationToken);
 
     private async Task<EvmCertificateProofResult> VerifyAsync(EvmCertificateOperationKind operation, string certificateHash, string transactionHash, CancellationToken cancellationToken)
@@ -77,7 +94,10 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
         try
         {
             var receipt = await rpc.RequestAsync(EvmCertificateRpcMethod.GetTransactionReceipt, [hash], cancellationToken).ConfigureAwait(false);
-            if (receipt.ValueKind == JsonValueKind.Null) return new(EvmCertificateProofStatus.Pending);
+            if (receipt.ValueKind == JsonValueKind.Null)
+            {
+                return new(EvmCertificateProofStatus.Pending);
+            }
             EvmCertificateProtocol.RequireObject(receipt);
             var status = EvmCertificateProtocol.PropertyQuantity(receipt, "status");
             if (status > 1 || EvmCertificateProtocol.PropertyData(receipt, "transactionHash", 32) != hash ||
@@ -89,20 +109,32 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
             var receiptBlock = new EvmCertificateBlockReference(
                 EvmCertificateProtocol.PropertyQuantity(receipt, "blockNumber"),
                 EvmCertificateProtocol.PropertyData(receipt, "blockHash", 32));
-            if (receiptBlock.Number > network.VerificationBlock.Number) return new(EvmCertificateProofStatus.NotFinalized);
+            if (receiptBlock.Number > network.VerificationBlock.Number)
+            {
+                return new(EvmCertificateProofStatus.NotFinalized);
+            }
 
             var canonical = await rpc.RequestAsync(EvmCertificateRpcMethod.GetBlockByNumber,
                 [EvmCertificateProtocol.EncodeQuantity(receiptBlock.Number), false], cancellationToken).ConfigureAwait(false);
-            if (canonical.ValueKind == JsonValueKind.Null) return new(EvmCertificateProofStatus.Reorged);
+            if (canonical.ValueKind == JsonValueKind.Null)
+            {
+                return new(EvmCertificateProofStatus.Reorged);
+            }
             var canonicalBlock = EvmCertificateProtocol.Block(canonical);
-            if (canonicalBlock.Number != receiptBlock.Number) return new(EvmCertificateProofStatus.InvalidEvidence);
+            if (canonicalBlock.Number != receiptBlock.Number)
+            {
+                return new(EvmCertificateProofStatus.InvalidEvidence);
+            }
             if (canonicalBlock.Hash != receiptBlock.Hash)
             {
                 return new(EvmCertificateProofStatus.Reorged);
             }
 
             var transaction = await rpc.RequestAsync(EvmCertificateRpcMethod.GetTransactionByHash, [hash], cancellationToken).ConfigureAwait(false);
-            if (transaction.ValueKind == JsonValueKind.Null) return new(EvmCertificateProofStatus.Pending);
+            if (transaction.ValueKind == JsonValueKind.Null)
+            {
+                return new(EvmCertificateProofStatus.Pending);
+            }
             EvmCertificateProtocol.RequireObject(transaction);
             var signer = EvmCertificateProtocol.PropertyData(transaction, "from", 20);
             if (!MatchesTransaction(transaction, receipt, receiptBlock, operation, digest, hash, signer))
@@ -112,7 +144,10 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
 
             // A receipt can change/disappear during a reorganization. Even a
             // revert is terminal only after canonical inclusion meets policy.
-            if (status == 0) return new(EvmCertificateProofStatus.Reverted);
+            if (status == 0)
+            {
+                return new(EvmCertificateProofStatus.Reverted);
+            }
             if (!MatchesEvent(receipt, receiptBlock, operation, digest, hash, signer))
             {
                 return new(EvmCertificateProofStatus.InvalidEvidence);
@@ -168,15 +203,27 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
     private bool MatchesEvent(JsonElement receipt, EvmCertificateBlockReference block, EvmCertificateOperationKind operation,
         string digest, string transactionHash, string signer)
     {
-        if (!receipt.TryGetProperty("logs", out var logs) || logs.ValueKind != JsonValueKind.Array) throw EvmCertificateProtocol.Malformed();
+        if (!receipt.TryGetProperty("logs", out var logs) || logs.ValueKind != JsonValueKind.Array)
+        {
+            throw EvmCertificateProtocol.Malformed();
+        }
         var expectedTopic = operation == EvmCertificateOperationKind.Anchor ? EvmCertificateProtocol.AnchorEventTopic : EvmCertificateProtocol.RevokeEventTopic;
         var matches = 0;
         foreach (var log in logs.EnumerateArray())
         {
             EvmCertificateProtocol.RequireObject(log);
-            if (EvmCertificateProtocol.PropertyData(log, "address", 20) != contractAddress) continue;
-            if (!log.TryGetProperty("topics", out var topics) || topics.ValueKind != JsonValueKind.Array || topics.GetArrayLength() != 4) continue;
-            if (EvmCertificateProtocol.Data(topics[0], 32) != expectedTopic || EvmCertificateProtocol.Data(topics[1], 32) != digest) continue;
+            if (EvmCertificateProtocol.PropertyData(log, "address", 20) != contractAddress)
+            {
+                continue;
+            }
+            if (!log.TryGetProperty("topics", out var topics) || topics.ValueKind != JsonValueKind.Array || topics.GetArrayLength() != 4)
+            {
+                continue;
+            }
+            if (EvmCertificateProtocol.Data(topics[0], 32) != expectedTopic || EvmCertificateProtocol.Data(topics[1], 32) != digest)
+            {
+                continue;
+            }
             if (EvmCertificateProtocol.Data(topics[2], 32) != issuerId ||
                 EvmCertificateProtocol.AddressWord(EvmCertificateProtocol.Data(topics[3], 32)[2..]) != signer ||
                 !log.TryGetProperty("removed", out var removed) || removed.ValueKind != JsonValueKind.False ||
@@ -203,11 +250,20 @@ public sealed class EvmCertificateProofVerifier : IEvmCertificateProofVerifier
 
         var latest = EvmCertificateProtocol.Block(await rpc.RequestAsync(EvmCertificateRpcMethod.GetBlockByNumber, ["latest", false], cancellationToken).ConfigureAwait(false));
         var distance = (ulong)(minimumConfirmations - 1);
-        if (latest.Number < distance) throw new EvmCertificateEvidenceException(EvmCertificateEvidenceFailure.InsufficientChainHistory);
+        if (latest.Number < distance)
+        {
+            throw new EvmCertificateEvidenceException(EvmCertificateEvidenceFailure.InsufficientChainHistory);
+        }
         var number = latest.Number - distance;
-        if (number == latest.Number) return latest;
+        if (number == latest.Number)
+        {
+            return latest;
+        }
         var qualified = EvmCertificateProtocol.Block(await rpc.RequestAsync(EvmCertificateRpcMethod.GetBlockByNumber, [EvmCertificateProtocol.EncodeQuantity(number), false], cancellationToken).ConfigureAwait(false));
-        if (qualified.Number != number) throw EvmCertificateProtocol.Malformed();
+        if (qualified.Number != number)
+        {
+            throw EvmCertificateProtocol.Malformed();
+        }
         return qualified;
     }
 

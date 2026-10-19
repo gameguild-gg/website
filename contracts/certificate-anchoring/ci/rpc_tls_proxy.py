@@ -43,10 +43,6 @@ class RpcBridge(http.server.BaseHTTPRequestHandler):
         finally:
             upstream.close()
 
-    def log_message(self, _format, *_args):
-        # Fixture request bodies/endpoints are deliberately not logged.
-        pass
-
 
 def main():
     parser = argparse.ArgumentParser()

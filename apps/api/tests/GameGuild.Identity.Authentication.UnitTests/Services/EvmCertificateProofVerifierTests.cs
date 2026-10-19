@@ -170,7 +170,10 @@ public sealed class EvmCertificateProofVerifierTests
         private string OperationBlockHash => Operation == EvmCertificateOperationKind.Revoke ? RevokeBlockHash : AnchorBlockHash;
         private string OperationSigner => Operation == EvmCertificateOperationKind.Revoke ? Revoker : Signer;
 
-        public Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters, CancellationToken cancellationToken = default)
+        public Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters) =>
+            RequestAsync(method, parameters, CancellationToken.None);
+
+        public Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var wire = JsonSerializer.SerializeToElement(parameters);
@@ -195,8 +198,14 @@ public sealed class EvmCertificateProofVerifierTests
                 throw new EvmCertificateRpcException(EvmCertificateRpcFailure.RpcFailure, rpcErrorCode: -32602);
             }
 
-            if (tag is "finalized" or "0xc8") return new { number = "0xc8", hash = HeadHash };
-            if (tag == "latest") return new { number = "0xd3", hash = "0x" + new string('e', 64) };
+            if (tag is "finalized" or "0xc8")
+            {
+                return new { number = "0xc8", hash = HeadHash };
+            }
+            if (tag == "latest")
+            {
+                return new { number = "0xd3", hash = "0x" + new string('e', 64) };
+            }
             return new { number = Quantity(OperationBlock), hash = Mutation == ProofMutation.CanonicalMismatch ? HeadHash : OperationBlockHash };
         }
 
@@ -216,7 +225,10 @@ public sealed class EvmCertificateProofVerifierTests
         {
             var logs = Mutation is ProofMutation.MissingLog or ProofMutation.Reverted or ProofMutation.RevertedUnfinalized
                 ? Array.Empty<object>() : new[] { EventLog() };
-            if (Mutation == ProofMutation.DuplicateLog) logs = [EventLog(), EventLog()];
+            if (Mutation == ProofMutation.DuplicateLog)
+            {
+                logs = [EventLog(), EventLog()];
+            }
             return new
             {
                 transactionHash = Mutation == ProofMutation.WrongTransactionHash ? HeadHash : TransactionHash,
@@ -249,14 +261,32 @@ public sealed class EvmCertificateProofVerifierTests
 
         private string ContractCall(string data)
         {
-            if (data == "0xaa3aa460") return "0x" + Word(Mutation == ProofMutation.WrongProtocol ? 2UL : 1UL);
-            if (data == "0x4f572d75") return Mutation == ProofMutation.WrongIssuer ? HeadHash : Options.IssuerId;
-            if (data.StartsWith("0x5d2b6a4e", StringComparison.Ordinal)) return "0x" + Word(0);
-            if (data != "0x7feb51d9" + Digest[2..]) throw new InvalidOperationException("Unexpected fixture contract call");
-            if (Mutation == ProofMutation.MissingState) return "0x" + new string('0', 256);
+            if (data == "0xaa3aa460")
+            {
+                return "0x" + Word(Mutation == ProofMutation.WrongProtocol ? 2UL : 1UL);
+            }
+            if (data == "0x4f572d75")
+            {
+                return Mutation == ProofMutation.WrongIssuer ? HeadHash : Options.IssuerId;
+            }
+            if (data.StartsWith("0x5d2b6a4e", StringComparison.Ordinal))
+            {
+                return "0x" + Word(0);
+            }
+            if (data != "0x7feb51d9" + Digest[2..])
+            {
+                throw new InvalidOperationException("Unexpected fixture contract call");
+            }
+            if (Mutation == ProofMutation.MissingState)
+            {
+                return "0x" + new string('0', 256);
+            }
             var isRevoked = (Operation == EvmCertificateOperationKind.Revoke || Mutation == ProofMutation.Revoked) && Mutation != ProofMutation.UnrevokedState;
             var anchorSigner = AddressWord(Mutation == ProofMutation.WrongStateSigner ? OtherAddress : Signer);
-            if (Mutation == ProofMutation.InvalidAddressPadding) anchorSigner = "1" + anchorSigner[1..];
+            if (Mutation == ProofMutation.InvalidAddressPadding)
+            {
+                anchorSigner = "1" + anchorSigner[1..];
+            }
             return "0x" + anchorSigner + (isRevoked ? AddressWord(Revoker) : new string('0', 64)) +
                    Word(Mutation == ProofMutation.WrongStateBlock ? 99UL : 100UL) + Word(isRevoked ? 160UL : 0UL);
         }

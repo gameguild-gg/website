@@ -5,7 +5,8 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>Typed JSON-RPC boundary; callers never supply arbitrary method names.</summary>
 public interface IEvmCertificateRpc
 {
-    Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters, CancellationToken cancellationToken = default);
+    Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters);
+    Task<JsonElement> RequestAsync(EvmCertificateRpcMethod method, object?[] parameters, CancellationToken cancellationToken);
 }
 
 public enum EvmCertificateRpcMethod

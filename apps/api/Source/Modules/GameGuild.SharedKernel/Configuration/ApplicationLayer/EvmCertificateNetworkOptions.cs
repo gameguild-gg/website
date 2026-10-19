@@ -21,7 +21,10 @@ public sealed class EvmCertificateNetworkOptions
     public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
-        if (ChainId <= 0) errors.Add("ChainId must be positive.");
+        if (ChainId <= 0)
+        {
+            errors.Add("ChainId must be positive.");
+        }
         if (!Uri.TryCreate(RpcEndpoint, UriKind.Absolute, out var endpoint) ||
             endpoint.Scheme != Uri.UriSchemeHttps || !string.IsNullOrEmpty(endpoint.UserInfo) ||
             !string.IsNullOrEmpty(endpoint.Fragment))
@@ -29,16 +32,28 @@ public sealed class EvmCertificateNetworkOptions
             errors.Add("RpcEndpoint must be an absolute HTTPS URI without user information or fragments.");
         }
 
-        if (!IsNonzeroHexData(ContractAddress, 20)) errors.Add("ContractAddress must be a nonzero 20-byte EVM address.");
-        if (!IsNonzeroHexData(IssuerId, 32)) errors.Add("IssuerId must be a nonzero bytes32 public identifier.");
+        if (!IsNonzeroHexData(ContractAddress, 20))
+        {
+            errors.Add("ContractAddress must be a nonzero 20-byte EVM address.");
+        }
+        if (!IsNonzeroHexData(IssuerId, 32))
+        {
+            errors.Add("IssuerId must be a nonzero bytes32 public identifier.");
+        }
         var codeHash = ExpectedRuntimeCodeSha256 ?? string.Empty;
-        if (codeHash.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) codeHash = codeHash[2..];
+        if (codeHash.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            codeHash = codeHash[2..];
+        }
         if (codeHash.Length != 64 || !codeHash.All(Uri.IsHexDigit))
         {
             errors.Add("ExpectedRuntimeCodeSha256 must contain exactly 32 bytes of hexadecimal data.");
         }
 
-        if (!Enum.IsDefined(FinalityMode)) errors.Add("FinalityMode is unsupported.");
+        if (!Enum.IsDefined(FinalityMode))
+        {
+            errors.Add("FinalityMode is unsupported.");
+        }
         if (MinimumConfirmations < 0 ||
             (FinalityMode == EvmCertificateFinalityMode.Confirmations && MinimumConfirmations == 0))
         {

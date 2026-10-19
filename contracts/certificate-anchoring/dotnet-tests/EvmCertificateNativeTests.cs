@@ -16,7 +16,10 @@ public sealed class EvmCertificateNativeTests : IDisposable
     public EvmCertificateNativeTests()
     {
         var path = Environment.GetEnvironmentVariable("GAMEGUILD_EVM_NATIVE_FIXTURE");
-        if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("The hosted native EVM fixture is required.");
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new InvalidOperationException("The hosted native EVM fixture is required.");
+        }
         fixture = JsonSerializer.Deserialize<NativeFixture>(File.ReadAllText(path), new JsonSerializerOptions(JsonSerializerDefaults.Web))
                   ?? throw new InvalidOperationException("The native EVM fixture is invalid.");
         var endpoint = new Uri(fixture.RpcEndpoint, UriKind.Absolute);

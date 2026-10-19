@@ -12,7 +12,10 @@ public static class EvmCertificateReadServiceRegistration
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(options);
         var errors = options.Validate();
-        if (errors.Count > 0) throw new ArgumentException(string.Join(" ", errors), nameof(options));
+        if (errors.Count > 0)
+        {
+            throw new ArgumentException(string.Join(" ", errors), nameof(options));
+        }
 
         var snapshot = new EvmCertificateNetworkOptions
         {
