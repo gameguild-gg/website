@@ -86,6 +86,34 @@ test('every pull-request consumer branch can start the required Toolchain produc
   assert.ok(producerTargets.includes('feature/**'), 'Stacked feature PRs require their own exact-source producer');
 });
 
+test('Web lint records active suppressions without changing source or accepting stale baselines', () => {
+  const inputs = step(web, 'Preserve Web lint verification inputs');
+  const lint = step(web, 'Lint Web');
+  const match = step(web, 'Require checked-in Web suppressions to match active diagnostics');
+  const upload = step(web, 'Upload Web lint verification evidence');
+  assert.match(inputs, /rev-parse HEAD .*web-lint\/checkout\.txt/);
+  assert.match(inputs, /HEAD\^\{tree\}/);
+  assert.match(inputs, /cp apps\/web\/eslint-suppressions\.json .*suppressions-before\.json/);
+  assert.match(inputs, /cp apps\/web\/eslint-suppressions\.json .*suppressions-active\.json/);
+  assert.match(lint, /pnpm --filter @game-guild\/web exec eslint/);
+  assert.match(lint, /--suppressions-location .*artifacts\/test-results\/web-lint\/suppressions-active\.json/);
+  assert.match(lint, /--prune-suppressions --format json/);
+  assert.match(lint, /--output-file .*web-lint\/results\.json/);
+  assert.match(match, /always\(\) && steps\.web-lint-inputs\.outcome == 'success'/);
+  assert.match(match, /diff --quiet HEAD -- apps\/web\/eslint-suppressions\.json/);
+  assert.match(match, /before = json\.loads.*suppressions-before\.json/);
+  assert.match(match, /active = json\.loads.*suppressions-active\.json/);
+  assert.match(match, /assert before == active/);
+  assert.match(upload, /always\(\) && steps\.web-lint-inputs\.outcome == 'success'/);
+  assert.match(upload, /path: artifacts\/test-results\/web-lint/);
+  assert.match(upload, /if-no-files-found: error/);
+  for (const stage of [inputs, lint, match, upload]) {
+    assert.doesNotMatch(stage, /--suppress-all|--suppress-rule|--pass-on-unpruned-suppressions|continue-on-error|allow-failure|\|\| true/);
+  }
+  assert.ok(web.indexOf('Preserve Web lint verification inputs') < web.indexOf('Lint Web'));
+  assert.ok(web.indexOf('Require checked-in Web suppressions to match active diagnostics') < web.indexOf('Lint suppression budget ratchet'));
+});
+
 test('Web acquires a producer release independently of an optional build cache', () => {
   assert.match(acquire, /id: emception-web-release/);
   assert.ok(acquire.includes('run: SOURCE_TREE_SHA="$(git rev-parse \'HEAD^{tree}\')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800'));

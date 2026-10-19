@@ -180,10 +180,42 @@ jobs:
         run: pnpm --filter @game-guild/web run build:emception-dependencies
       - name: Generate Web route types
         run: pnpm --filter @game-guild/web exec next typegen
+      - name: Preserve Web lint verification inputs
+        id: web-lint-inputs
+        run: |
+          mkdir -p artifacts/test-results/web-lint
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse HEAD > artifacts/test-results/web-lint/checkout.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse 'HEAD^{tree}' > artifacts/test-results/web-lint/tree.txt
+          cp apps/web/eslint-suppressions.json artifacts/test-results/web-lint/suppressions-before.json
+          cp apps/web/eslint-suppressions.json artifacts/test-results/web-lint/suppressions-active.json
+          sha256sum apps/web/eslint.config.mjs apps/web/eslint-suppressions.json apps/web/tsconfig.json pnpm-lock.yaml > artifacts/test-results/web-lint/inputs.sha256
       - name: Lint Web
         env:
           NODE_OPTIONS: --max-old-space-size=12288
-        run: pnpm --filter @game-guild/web lint
+        run: >-
+          pnpm --filter @game-guild/web exec eslint
+          --suppressions-location "$GITHUB_WORKSPACE/artifacts/test-results/web-lint/suppressions-active.json"
+          --prune-suppressions --format json
+          --output-file "$GITHUB_WORKSPACE/artifacts/test-results/web-lint/results.json"
+      - name: Require checked-in Web suppressions to match active diagnostics
+        if: ${{ always() && steps.web-lint-inputs.outcome == 'success' }}
+        run: |
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD -- apps/web/eslint-suppressions.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('artifacts/test-results/web-lint')
+          before = json.loads((root / 'suppressions-before.json').read_text())
+          active = json.loads((root / 'suppressions-active.json').read_text())
+          assert before == active, 'Remove the unused suppressions recorded in this run before merging.'
+          PY
+      - name: Upload Web lint verification evidence
+        if: ${{ always() && steps.web-lint-inputs.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: web-lint-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/web-lint
+          if-no-files-found: error
       - name: Lint suppression budget ratchet
         run: node scripts/lint-budget.mjs
       - name: Typecheck Web

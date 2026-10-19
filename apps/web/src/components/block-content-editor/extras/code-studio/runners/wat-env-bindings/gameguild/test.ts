@@ -20,6 +20,17 @@ export interface GameGuildTest {
   expect: (value: unknown) => TestExpectation
 }
 
+function formatTestValue(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return String(value)
+  }
+  try {
+    return JSON.stringify(value) ?? '[object]'
+  } catch {
+    return '[unserializable object]'
+  }
+}
+
 export function createTest(
   stdout: (text: string) => void,
   stderr: (text: string) => void
@@ -48,7 +59,7 @@ export function createTest(
     expect: (actual: unknown) => ({
       'to-be': (expected: unknown) => {
         if (actual !== expected) {
-          throw new Error(`Expected ${expected}, got ${actual}`)
+          throw new Error(`Expected ${formatTestValue(expected)}, got ${formatTestValue(actual)}`)
         }
       },
       'to-equal': (expected: unknown) => {
@@ -60,12 +71,12 @@ export function createTest(
       },
       'to-be-truthy': () => {
         if (!actual) {
-          throw new Error(`Expected truthy value, got ${actual}`)
+          throw new Error(`Expected truthy value, got ${formatTestValue(actual)}`)
         }
       },
       'to-be-falsy': () => {
         if (actual) {
-          throw new Error(`Expected falsy value, got ${actual}`)
+          throw new Error(`Expected falsy value, got ${formatTestValue(actual)}`)
         }
       },
     }),

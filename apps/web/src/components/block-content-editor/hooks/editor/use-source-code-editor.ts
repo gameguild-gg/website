@@ -24,7 +24,7 @@ interface UseSourceCodeEditorProps {
   isDarkTheme: boolean
   setIsDarkTheme: (dark: boolean) => void
   selectedLanguage: ProgrammingLanguage
-  setSelectedLanguage: (lang: ProgrammingLanguage | string) => void
+  setSelectedLanguage: (lang: string) => void
   clearTerminalOnRun: boolean
   setClearTerminalOnRun: (clear: boolean) => void
   showBasicFileActionsInReadMode: boolean
