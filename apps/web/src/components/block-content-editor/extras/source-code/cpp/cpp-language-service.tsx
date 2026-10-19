@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect } from "react"
+import type { editor } from "monaco-editor"
 import { CppSyntaxHighlighter } from "./cpp-syntax-highlighter"
 import { CppTypeChecker } from "./cpp-type-checker"
 import { CppCompletionProvider } from "./cpp-completion-provider"
 
 interface CppLanguageServiceProps {
-  monaco: any
-  editor: any
+  monaco: typeof import("monaco-editor")
+  editor: editor.IStandaloneCodeEditor
   code: string
   enabled: boolean
 }

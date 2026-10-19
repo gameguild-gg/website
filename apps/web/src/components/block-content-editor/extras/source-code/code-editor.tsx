@@ -23,7 +23,7 @@ export interface CodeEditorProps {
   isEditing: boolean
   updateActiveFileContent: (content: string) => void
   handleCodeEditorResize: (e: React.MouseEvent, startY: number) => void
-  onEditorMount?: (editor: any, monaco: any) => void
+  onEditorMount?: (editor: editor.IStandaloneCodeEditor, monaco: typeof import("monaco-editor")) => void
   isAutocompleteEnabled?: boolean
 }
 
@@ -39,7 +39,7 @@ export function CodeEditor({
   onEditorMount,
   isAutocompleteEnabled,
 }: CodeEditorProps) {
-  const editorRef = useRef<any>(null)
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const monaco = useMonaco()
   const [isPythonEnabled, setIsPythonEnabled] = useState(false)
   const [isLuaEnabled, setIsLuaEnabled] = useState(false)
@@ -104,7 +104,7 @@ export function CodeEditor({
     }
   }, [activeFileLanguage, monaco])
 
-  const handleEditorWillMount = (monaco: any) => {
+  const handleEditorWillMount = (monaco: typeof import("monaco-editor")) => {
     // here is the place to define custom languages and editor themes
   }
 

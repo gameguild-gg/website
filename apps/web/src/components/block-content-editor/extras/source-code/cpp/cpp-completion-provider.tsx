@@ -1,14 +1,14 @@
 export class CppCompletionProvider {
-  private monaco: any
+  private monaco: typeof import("monaco-editor")
 
-  constructor(monaco: any) {
+  constructor(monaco: typeof import("monaco-editor")) {
     this.monaco = monaco
   }
 
   register() {
     // Register a completion item provider for C++
     return this.monaco.languages.registerCompletionItemProvider("cpp", {
-      provideCompletionItems: (model: any, position: any) => {
+      provideCompletionItems: (model, position) => {
         const word = model.getWordUntilPosition(position)
         const range = {
           startLineNumber: position.lineNumber,
