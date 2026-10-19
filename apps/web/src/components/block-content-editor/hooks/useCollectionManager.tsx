@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Edit, Trash } from "lucide-react"
 import { collectionRepository } from "@/components/block-content-editor/extras/code-studio/file-system/collection-repository"
+import type { CollectionFolder, CollectionStructure } from "@/components/block-content-editor/extras/code-studio/file-system/collection-types"
 import {
   applySorting,
   type ManagerCard,
@@ -49,26 +50,26 @@ export interface UseCollectionManagerReturn {
 }
 
 // Helper functions for collection details
-function countFilesInStructure(structure: any): number {
+function countFilesInStructure(structure: CollectionStructure | CollectionFolder): number {
   let count = 0
   if (structure.files) count += structure.files.length
   if (structure.folders) {
-    structure.folders.forEach((folder: any) => {
+    structure.folders.forEach((folder) => {
       count += countFilesInStructure(folder)
     })
   }
   return count
 }
 
-function calculateTotalSize(structure: any): number {
+function calculateTotalSize(structure: CollectionStructure | CollectionFolder): number {
   let size = 0
   if (structure.files) {
-    structure.files.forEach((file: any) => {
+    structure.files.forEach((file) => {
       size += file.size ?? 0
     })
   }
   if (structure.folders) {
-    structure.folders.forEach((folder: any) => {
+    structure.folders.forEach((folder) => {
       size += calculateTotalSize(folder)
     })
   }

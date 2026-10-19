@@ -5,6 +5,7 @@
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
+import type { Interceptor } from '@game-guild/client';
 
 async function loadClientModule() {
   return import('../../../../../packages/infrastructure/client/dist/index.js');
@@ -124,8 +125,8 @@ describe('API Client Package Integration', () => {
     it('should accept interceptors', async () => {
       const { createClient } = clientModule;
 
-      const requestInterceptor = {
-        onRequest: async (config: any) => {
+      const requestInterceptor: Interceptor = {
+        onRequest: async (config) => {
           console.log('Request:', config);
           return config;
         },

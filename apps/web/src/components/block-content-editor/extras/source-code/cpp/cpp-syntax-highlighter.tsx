@@ -1,8 +1,10 @@
-export class CppSyntaxHighlighter {
-  private monaco: any
-  private disposables: any[] = []
+import type { IDisposable } from "monaco-editor"
 
-  constructor(monaco: any) {
+export class CppSyntaxHighlighter {
+  private monaco: typeof import("monaco-editor")
+  private disposables: IDisposable[] = []
+
+  constructor(monaco: typeof import("monaco-editor")) {
     this.monaco = monaco
   }
 
