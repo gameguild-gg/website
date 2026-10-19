@@ -57,6 +57,10 @@ jobs:
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/js.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/object.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/reflect.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/types.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/assemblyscript.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/gameguild/test.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/gameguild/test-interface.test.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.test.ts \
             tools/emception/scripts/run-with-cleanup.mjs tools/emception/scripts/tests/run-with-cleanup.test.mjs \
@@ -71,6 +75,7 @@ jobs:
           pnpm --filter @game-guild/web exec vitest run
           src/components/block-content-editor/extras/code-studio/runners/wat-runner.test.ts
           src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.test.ts
+          src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/gameguild/test-interface.test.ts
           --maxWorkers=1 --reporter=json
           --outputFile="$GITHUB_WORKSPACE/runtime-contract-evidence/wat-vitest.json"
       - name: Verify tracked-source identity after checks

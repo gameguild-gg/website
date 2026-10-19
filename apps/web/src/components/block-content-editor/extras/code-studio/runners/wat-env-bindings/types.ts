@@ -22,8 +22,8 @@ export type StreamError =
 
 // Test expectation interface
 export interface TestExpectation {
-  'to-be': (expected: any) => void
-  'to-equal': (expected: any) => void
+  'to-be': (expected: unknown) => void
+  'to-equal': (expected: unknown) => void
   'to-be-truthy': () => void
   'to-be-falsy': () => void
 }

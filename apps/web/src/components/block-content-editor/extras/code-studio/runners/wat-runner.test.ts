@@ -226,6 +226,28 @@ describe('WAT runner with real WebAssembly and installed WASI', () => {
     expect(await new WatRunner().execute(source)).toMatchObject({ stdout: '42', stderr: '', exitCode: 0 })
   })
 
+  it('retains numeric AssemblyScript trace arguments through real WASM imports', async () => {
+    const source = ';; compiled AssemblyScript trace fixture'
+    binaries.set(source, moduleBytes([
+      { module: 'assembly/index', name: 'trace', parameters: 4 },
+    ], [{ name: 'main', body: call(0, 120, 2, 3, 4) }]))
+
+    expect(await new WatRunner().execute(source)).toMatchObject({
+      stdout: '[TRACE] 120 n=2 args=3, 4', stderr: '', exitCode: 0,
+    })
+  })
+
+  it('retains AssemblyScript abort failures through real WASM imports', async () => {
+    const source = ';; compiled AssemblyScript abort fixture'
+    binaries.set(source, moduleBytes([
+      { module: 'assembly/index', name: 'abort', parameters: 4 },
+    ], [{ name: 'main', body: call(0, 120, 240, 3, 4) }]))
+
+    expect(await new WatRunner().execute(source)).toMatchObject({
+      stdout: '', stderr: 'WASM execution failed: Abort: 120', exitCode: 1,
+    })
+  })
+
   it('retains compiled dependency aliases and executeWithFiles', async () => {
     const main = ';; compiled importing fixture'
     const dependency = ';; compiled dependency fixture'
