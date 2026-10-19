@@ -15,8 +15,12 @@ assert.equal(candidate.loader.repaired, true);
 assert.equal(candidate.loader.packageSha256, original.loader.packageSha256);
 assert.equal(candidate.loader.version, original.loader.version);
 for (const field of ['sourceHead', 'scriptSha256', 'configSha256', 'factorySha256',
-  'factoryOptionsSha256', 'initializedPlugins', 'identities', 'cases', 'resolutions', 'warningOutput', 'warningOutputAfterFactory']) {
+  'factoryOptionsSha256', 'initializedPlugins', 'identities', 'loaderConfiguration', 'cases', 'resolutions', 'warningOutput', 'warningOutputAfterFactory']) {
   assert.deepEqual(candidate[field], original[field], `Loader comparison changed ${field}`);
+}
+for (const file of ['vendor-tsconfig.json', 'vendor-register.js']) {
+  assert.deepEqual(read(candidateDirectory, file), read(originalDirectory, file),
+    'The native loader configuration changed between images');
 }
 for (const stream of ['stdout', 'stderr']) {
   assert.equal(read(candidateDirectory, `vendor-${stream}.txt`).length, 0,
@@ -26,6 +30,7 @@ writeFileSync(path.join(candidateDirectory, 'loader-comparison.json'), `${JSON.s
   sourceHead: candidate.sourceHead, original: original.loader, candidate: candidate.loader,
   nativeFactoryAndConfigurationIdentical: true, syntheticResultsIdentical: true,
   moduleResolutionIdentical: true,
+  loaderConfigurationIdentical: true,
   warningOutputFunctionsUnchanged: true, candidateOutputBytes: 0,
   sourceAnalysisReplacedByControls: false, certifiedDestinationClosures: 0,
 }, null, 2)}\n`);

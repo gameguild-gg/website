@@ -61,9 +61,11 @@ ESLint, TypeScript, parsers, plugins and the vendor factory are unchanged.
 
 The original loader retains a deprecation trace in its synthetic-only artifact.
 Both runs must retain identical factory options, effective rules, parser
-identities, input hashes and detections. Six real module-import controls also
-compare existing/missing files, directory rejection, explicit index imports,
-package main resolution and missing packages. A preloaded baseline requires
+identities, input hashes and detections. Seven real module-import controls also
+compare existing/missing files, directory index resolution, rejection of an
+empty directory, explicit index imports, package main resolution and missing
+packages. Both probes retain and compare the exact public vendor registration
+script and selected TypeScript project bytes. A preloaded baseline requires
 `process.emit`, `process.emitWarning` and `stderr.write` to remain unchanged by
 loader initialization. The repaired control and complete source analysis
 still require zero tool-output bytes. No warning filter or finding suppression
@@ -77,6 +79,14 @@ implementation supplies a name/message without a code property. The controls
 now bind that unchanged error-definition source by hash and require its exact
 name, absent code and message, normalizing only the random synthetic root.
 Existing/missing file and package cases remain mandatory in both images.
+
+At `508383b49`, both original and repaired probes accepted the existing-file
+and missing-file cases, then rejected the control's directory expectation:
+both loaders natively resolved the directory's `index.mjs` to value 43. The
+control now requires that exact native success and adds an empty-directory
+failure case. All six preceding scenarios remain present, with seven required
+scenarios per image. The failed result is retained; complete source analysis
+still requires both probes, configuration equality and zero repaired output.
 
 No application dependency, cloud setting, finding state, suppression or
 credential is changed by this workflow. Product execution stays in hosted CI.
