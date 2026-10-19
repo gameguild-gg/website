@@ -1,5 +1,7 @@
 import { auth } from '@/auth';
 import { GameGuildLogo } from '@/components/brand/game-guild-logo';
+import { resolveAllowedAuthRedirect } from '@/lib/auth/cross-domain-auth';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import React from 'react';
@@ -7,9 +9,17 @@ import React from 'react';
 export default async function Layout({ children, params }: LayoutProps<'/[locale]'>): Promise<React.JSX.Element> {
   const { locale } = await params;
 
-  // Hard guard: redirect authenticated users away from auth pages
+  // Hard guard: redirect authenticated users away from auth pages, honoring
+  // an allowlisted callbackUrl (issue #864) so a transient post-2FA bounce
+  // through /sign-in returns the user to their original target.
   const session = await auth();
-  if (session) redirect(`/${locale}`);
+  if (session) {
+    const headerList = await headers();
+    const callbackUrl = resolveAllowedAuthRedirect(
+      headerList.get('x-gameguild-path')?.split('?')[0],
+    );
+    redirect(`/${locale}${callbackUrl}`);
+  }
 
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-slate-950 text-white">
