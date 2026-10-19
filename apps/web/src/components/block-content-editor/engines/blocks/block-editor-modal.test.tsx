@@ -19,9 +19,10 @@ vi.mock("@game-guild/ui/components/dialog", () => {
 vi.mock("@game-guild/ui/components/select", () => {
   const Content = ({ children }: PropsWithChildren) => <>{children}</>
   return {
-    Select: ({ value, onValueChange, children }: PropsWithChildren<{ value: string; onValueChange: (value: string) => void }>) => (
+    Select: ({ value, onValueChange, children }: PropsWithChildren<{ value: string; onValueChange: (value: string | null) => void }>) => <div>
       <select value={value} onChange={(event) => onValueChange(event.target.value)}>{children}</select>
-    ),
+      <button type="button" onClick={() => onValueChange(null)}>Clear selected value</button>
+    </div>,
     SelectContent: Content,
     SelectItem: ({ value, children }: PropsWithChildren<{ value: string }>) => <option value={value}>{children}</option>,
     SelectTrigger: () => null, SelectValue: () => null,
@@ -88,6 +89,18 @@ describe("BlockEditorModal canonical form payloads", () => {
     expect(onSave).toHaveBeenCalledExactlyOnceWith({ text: "Title", level: 6, style: "accent" })
   })
 
+  it.each([{ field: "level", index: 0 }, { field: "style", index: 1 }])(
+    "retains canonical header data when the $field selector emits null", async ({ index }) => {
+      const data = { text: "Retained", level: 3 as const, style: "bordered" as const, retainedMetadata: { original: true } }
+      const { user, onSave } = setup({ id: "1", type: "header", data })
+      const clear = screen.getAllByRole("button", { name: "Clear selected value", exact: true })[index]
+      if (!clear) throw new Error("Expected the header selector's clear adapter")
+      await user.click(clear)
+      await user.click(screen.getByRole("button", { name: "Save", exact: true }))
+      expect(onSave).toHaveBeenCalledExactlyOnceWith(data)
+    },
+  )
+
   it("discards edited header data on cancel", async () => {
     const { user, onSave, onOpenChange } = setup({ id: "1", type: "header", data: { text: "Old", level: 2, style: "default" } })
     await user.type(screen.getByPlaceholderText("Section title"), " unsaved")
@@ -134,6 +147,13 @@ describe("BlockEditorModal canonical form payloads", () => {
     await user.selectOptions(screen.getByRole("combobox"), "abnt")
     await user.click(screen.getByRole("button", { name: "Save", exact: true }))
     expect(onSave).toHaveBeenCalledExactlyOnceWith({ ...sourceData, style: "abnt" })
+  })
+
+  it("retains canonical citation data when the style selector emits null", async () => {
+    const { user, onSave } = setup({ id: "2", type: "source", data: sourceData })
+    await user.click(screen.getByRole("button", { name: "Clear selected value", exact: true }))
+    await user.click(screen.getByRole("button", { name: "Save", exact: true }))
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(sourceData)
   })
 
   it("discards source edits on cancel", async () => {

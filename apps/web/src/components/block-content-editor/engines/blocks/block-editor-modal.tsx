@@ -114,7 +114,9 @@ function SpotifyForm({ data, onChange }: FormEditorProps<SpotifyFormData>) {
       </div>
       <div>
         <Label>Type</Label>
-        <Select value={data.type || "track"} onValueChange={(v) => onChange({ ...data, type: v })}>
+        <Select value={data.type || "track"} onValueChange={(v) => {
+          if (v !== null) onChange({ ...data, type: v })
+        }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="track">Track</SelectItem>
@@ -143,6 +145,7 @@ function HeaderForm({ data, onChange }: FormEditorProps<HeaderData>) {
         <div>
           <Label>Level</Label>
           <Select value={String(data.level ?? 1)} onValueChange={(v) => {
+            if (v === null) return
             const level = parseHeaderLevel(v)
             if (level !== undefined) onChange({ ...data, level })
           }}>
@@ -157,6 +160,7 @@ function HeaderForm({ data, onChange }: FormEditorProps<HeaderData>) {
         <div>
           <Label>Style</Label>
           <Select value={data.style || "default"} onValueChange={(v) => {
+            if (v === null) return
             if (isHeaderStyle(v)) onChange({ ...data, style: v })
           }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -203,6 +207,7 @@ function SourceForm({ data, onChange }: FormEditorProps<SourceData>) {
         <div>
           <Label>Citation Style</Label>
           <Select value={data.style || "apa"} onValueChange={(v) => {
+            if (v === null) return
             if (isSourceStyle(v)) onChange({ ...data, style: v })
           }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
