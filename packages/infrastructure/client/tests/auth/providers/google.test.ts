@@ -38,10 +38,12 @@ describe('GoogleProvider', () => {
       clientSecret: 'secret',
     });
 
-    expect(provider.authorization.url).toBe('https://accounts.google.com/o/oauth2/v2/auth');
-    expect(provider.authorization.params.scope).toBe('openid email profile');
-    expect(provider.token.url).toBe('https://oauth2.googleapis.com/token');
-    expect(provider.userinfo.url).toBe('https://www.googleapis.com/oauth2/v3/userinfo');
+    expect(provider.authorization).toMatchObject({
+      url: 'https://accounts.google.com/o/oauth2/v2/auth',
+      params: { scope: 'openid email profile' },
+    });
+    expect(provider.token).toMatchObject({ url: 'https://oauth2.googleapis.com/token' });
+    expect(provider.userinfo).toMatchObject({ url: 'https://www.googleapis.com/oauth2/v3/userinfo' });
   });
 
   describe('exchangeToken', () => {

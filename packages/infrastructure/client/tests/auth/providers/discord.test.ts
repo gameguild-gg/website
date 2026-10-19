@@ -39,14 +39,12 @@ describe('DiscordProvider', () => {
       clientSecret: 'secret',
     });
 
-    expect(provider.authorization.url).toBe(
-      'https://discord.com/oauth2/authorize',
-    );
-    expect(provider.authorization.params.scope).toBe('identify email');
-    expect(provider.token.url).toBe('https://discord.com/api/oauth2/token');
-    expect(provider.userinfo.url).toBe(
-      'https://discord.com/api/v10/users/@me',
-    );
+    expect(provider.authorization).toMatchObject({
+      url: 'https://discord.com/oauth2/authorize',
+      params: { scope: 'identify email' },
+    });
+    expect(provider.token).toMatchObject({ url: 'https://discord.com/api/oauth2/token' });
+    expect(provider.userinfo).toMatchObject({ url: 'https://discord.com/api/v10/users/@me' });
   });
 
   describe('getAuthorizeUrl', () => {

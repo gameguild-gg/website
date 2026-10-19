@@ -6,7 +6,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TokenRefreshManager } from '../../src/runtime/auth/refresh.js';
 import type { TokenProvider } from '../../src/runtime/auth/types.js';
 
-global.fetch = vi.fn();
+const fetchMock = vi.fn<typeof fetch>();
+global.fetch = fetchMock;
 
 describe('TokenRefreshManager', () => {
   beforeEach(() => {
@@ -16,16 +17,14 @@ describe('TokenRefreshManager', () => {
   it('should use configurable refresh endpoint', async () => {
     const customEndpoint = '/custom/token/refresh';
 
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        accessToken: 'new-access-token',
-        refreshToken: 'new-refresh-token',
-        expiresIn: 3600,
-      }),
-    });
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      accessToken: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+      expiresIn: 3600,
+    })));
 
     const provider: TokenProvider = {
+      getAccessToken: async () => 'current-access-token',
       getRefreshToken: async () => 'current-refresh-token',
       onTokenRefresh: vi.fn(),
     };
@@ -47,16 +46,14 @@ describe('TokenRefreshManager', () => {
   });
 
   it('should refresh token when needed', async () => {
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        accessToken: 'new-token',
-        refreshToken: 'new-refresh',
-        expiresIn: 3600,
-      }),
-    });
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      accessToken: 'new-token',
+      refreshToken: 'new-refresh',
+      expiresIn: 3600,
+    })));
 
     const provider: TokenProvider = {
+      getAccessToken: async () => 'current-access-token',
       getRefreshToken: async () => 'refresh-token',
       onTokenRefresh: vi.fn(),
     };
@@ -75,6 +72,7 @@ describe('TokenRefreshManager', () => {
 
   it('should not refresh if not needed', async () => {
     const provider: TokenProvider = {
+      getAccessToken: async () => 'current-access-token',
       getRefreshToken: async () => 'refresh-token',
     };
 
@@ -91,22 +89,20 @@ describe('TokenRefreshManager', () => {
 
   it('should handle refresh failures with retries', async () => {
     let attempts = 0;
-    (global.fetch as any).mockImplementation(async () => {
+    fetchMock.mockImplementation(async () => {
       attempts++;
       if (attempts < 3) {
-        return { ok: false, status: 500, statusText: 'Server Error' };
+        return new Response(null, { status: 500, statusText: 'Server Error' });
       }
-      return {
-        ok: true,
-        json: async () => ({
-          accessToken: 'new-token',
-          refreshToken: 'new-refresh',
-          expiresIn: 3600,
-        }),
-      };
+      return new Response(JSON.stringify({
+        accessToken: 'new-token',
+        refreshToken: 'new-refresh',
+        expiresIn: 3600,
+      }));
     });
 
     const provider: TokenProvider = {
+      getAccessToken: async () => 'current-access-token',
       getRefreshToken: async () => 'refresh-token',
       onTokenRefresh: vi.fn(),
     };
@@ -125,21 +121,19 @@ describe('TokenRefreshManager', () => {
   it('should prevent concurrent refresh calls (mutex)', async () => {
     let refreshCalls = 0;
 
-    (global.fetch as any).mockImplementation(async () => {
+    fetchMock.mockImplementation(async () => {
       refreshCalls++;
       // Simulate slow network
       await new Promise((resolve) => setTimeout(resolve, 100));
-      return {
-        ok: true,
-        json: async () => ({
-          accessToken: 'new-token',
-          refreshToken: 'new-refresh',
-          expiresIn: 3600,
-        }),
-      };
+      return new Response(JSON.stringify({
+        accessToken: 'new-token',
+        refreshToken: 'new-refresh',
+        expiresIn: 3600,
+      }));
     });
 
     const provider: TokenProvider = {
+      getAccessToken: async () => 'current-access-token',
       getRefreshToken: async () => 'refresh-token',
       onTokenRefresh: vi.fn(),
     };
