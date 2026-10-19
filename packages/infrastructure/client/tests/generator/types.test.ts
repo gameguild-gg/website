@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateTypes } from '../../scripts/codegen/types.js';
 import type { OpenApiSpec } from '../../scripts/fetch-spec.js';
-import simpleSpec from './fixtures/simple-spec.json';
+import simpleSpec from './fixtures/simple-spec.json' with { type: 'json' };
 
 describe('Type Generator', () => {
   it('should generate interface for object schema', () => {

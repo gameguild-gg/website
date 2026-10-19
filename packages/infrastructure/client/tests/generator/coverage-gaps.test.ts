@@ -23,10 +23,28 @@ function baseSpec(overrides: Partial<OpenApiSpec> = {}): OpenApiSpec {
 }
 
 function specWithoutPaths(): OpenApiSpec {
-  return { openapi: '3.0.1', info: { title: 'No Paths', version: '1.0.0' } };
+  const spec: OpenAPIV3.Document = {
+    openapi: '3.0.1', info: { title: 'No Paths', version: '1.0.0' }, paths: {},
+  };
+  // Keep the deliberately malformed input used to exercise missing-path handling.
+  Reflect.deleteProperty(spec, 'paths');
+  return spec;
+}
+
+function operationWithoutResponses(fields: Omit<OpenAPIV3.OperationObject, 'responses'>): OpenAPIV3.OperationObject {
+  const operation: OpenAPIV3.OperationObject = { ...fields, responses: {} };
+  // Missing responses are an intentional robustness case, not a valid OpenAPI operation.
+  Reflect.deleteProperty(operation, 'responses');
+  return operation;
 }
 
 describe('generator coverage edge cases', () => {
+  it('retains intentionally omitted fields in malformed document and operation fixtures', () => {
+    expect(specWithoutPaths()).toEqual({ openapi: '3.0.1', info: { title: 'No Paths', version: '1.0.0' } });
+    expect(operationWithoutResponses({ operationId: 'getNoResponses' })).toEqual({ operationId: 'getNoResponses' });
+    expect(operationWithoutResponses({ tags: ['RealEstate/Listings'] })).toEqual({ tags: ['RealEstate/Listings'] });
+  });
+
   it('normalizes duplicate operation ids, root paths, schema aliases, and conflicts', () => {
     const nestedSchema = {
       type: 'object',
@@ -171,9 +189,9 @@ describe('generator coverage edge cases', () => {
             },
           },
           '/files/no-responses': {
-            get: {
+            get: operationWithoutResponses({
               operationId: 'getNoResponses',
-            },
+            }),
           },
         },
       }),
@@ -328,9 +346,9 @@ describe('generator coverage edge cases', () => {
             },
           },
           '/listings/no-responses': {
-            get: {
+            get: operationWithoutResponses({
               tags: ['RealEstate/Listings'],
-            },
+            }),
           },
         },
       }),

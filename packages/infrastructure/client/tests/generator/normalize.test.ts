@@ -5,9 +5,24 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeSpec } from '../../scripts/normalize.js';
 import type { OpenApiSpec } from '../../scripts/fetch-spec.js';
-import simpleSpec from './fixtures/simple-spec.json';
+import type { OpenAPIV3 } from 'openapi-types';
+import simpleSpecJson from './fixtures/simple-spec.json' with { type: 'json' };
+
+// JSON imports widen schema string literals; keep the trusted fixture conversion at this boundary.
+const simpleSpec = simpleSpecJson as OpenApiSpec;
+
+function arraySchemaWithoutItems(): OpenAPIV3.ArraySchemaObject {
+  const schema: OpenAPIV3.ArraySchemaObject = { type: 'array', items: {} };
+  // Preserve the original incomplete schema passed to the tolerant normalizer.
+  Reflect.deleteProperty(schema, 'items');
+  return schema;
+}
 
 describe('OpenAPI Spec Normalizer', () => {
+  it('retains the deliberately incomplete array fixture without adding items', () => {
+    expect(arraySchemaWithoutItems()).toEqual({ type: 'array' });
+  });
+
   it('should normalize operation IDs when missing', () => {
     const spec: OpenApiSpec = {
       ...simpleSpec,
@@ -181,8 +196,8 @@ describe('OpenAPI Spec Normalizer', () => {
       },
       components: {
         schemas: {
-          [usersPage]: { type: 'object', properties: { items: { type: 'array' } } },
-          [ticketsPage]: { type: 'object', properties: { items: { type: 'array' } } },
+          [usersPage]: { type: 'object', properties: { items: arraySchemaWithoutItems() } },
+          [ticketsPage]: { type: 'object', properties: { items: arraySchemaWithoutItems() } },
         },
       },
     } as OpenApiSpec;

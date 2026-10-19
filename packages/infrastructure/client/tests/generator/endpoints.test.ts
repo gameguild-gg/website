@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateEndpoints } from '../../scripts/codegen/endpoints.js';
 import type { OpenApiSpec } from '../../scripts/fetch-spec.js';
-import simpleSpec from './fixtures/simple-spec.json';
+import simpleSpec from './fixtures/simple-spec.json' with { type: 'json' };
 
 describe('Endpoint Generator', () => {
   it('should generate endpoint definitions from paths', () => {
