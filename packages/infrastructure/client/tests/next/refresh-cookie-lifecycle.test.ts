@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server.js';
 import { createHandlers, parseCookieHeader } from '../../src/integrations/next/handlers.js';
 import { createProxy } from '../../src/integrations/next/proxy.js';
 import { createAuthFunction } from '../../src/integrations/next/actions.js';

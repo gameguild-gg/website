@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IdentityAuthenticationBackupCodesStatusOutputSchema, IdentityAuthenticationMfaConfigurationOutputSchema } from '../../src/generated/types.gen';
+import { IdentityAuthenticationBackupCodesStatusOutputSchema, IdentityAuthenticationMfaConfigurationOutputSchema } from '../../src/generated/types.gen.js';
 
 describe('MFA recovery status compatibility', () => {
   it('preserves numeric v1 fields and marks unknown legacy history', () => {

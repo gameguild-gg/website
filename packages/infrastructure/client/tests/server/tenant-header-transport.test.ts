@@ -24,7 +24,7 @@ describe('tenant headers through the actual fetch transport', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const call = fetchMock.mock.calls[0];
     if (!call) throw new Error('Expected a real transport fetch call');
-    expect(call[0]).toBe('https://api.example.test/fixture');
+    expect(String(call[0])).toBe('https://api.example.test/fixture');
     return new Headers(call[1]?.headers);
   }
 
