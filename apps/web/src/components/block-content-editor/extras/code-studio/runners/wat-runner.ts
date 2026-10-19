@@ -257,7 +257,7 @@ export class WatRunner implements CodeRunner {
       const readStdin = createWasiStdinReader(stdin ?? '', () => wasi.memory)
       const wasiImports = wasi.getImportObject()
       for (const namespace of Object.values(wasiImports)) {
-        const fdRead = namespace.fd_read
+        const fdRead = namespace.fd_read.bind(namespace)
         namespace.fd_read = (fd, pointer, length, result) =>
           fd === 0 ? readStdin(pointer, length, result) : fdRead(fd, pointer, length, result)
       }
