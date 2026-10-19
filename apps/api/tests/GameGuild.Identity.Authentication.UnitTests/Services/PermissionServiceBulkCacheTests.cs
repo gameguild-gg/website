@@ -84,10 +84,10 @@ public sealed class PermissionServiceBulkCacheTests
 
         var versionStore = new InMemoryTenantSecurityVersionStore();
         var cache = CreatePermissionCache(new ConcurrentDictionary<string, CachedPermissionDecision>(StringComparer.Ordinal));
-        var service = new PermissionService(
+        var service = PermissionMutationTestServices.Create(
             context,
-            securityVersionStore: versionStore,
-            hybridPermissionCache: cache.Object);
+            versionStore: versionStore,
+            cache: cache.Object);
         var requests = new[]
         {
             new BulkPermissionCheckRequest(Guid.NewGuid(), Guid.NewGuid(), PermissionType.Read),
