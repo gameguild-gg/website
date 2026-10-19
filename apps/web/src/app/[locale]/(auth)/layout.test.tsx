@@ -45,9 +45,9 @@ describe('(auth) layout authenticated redirect (issue #864)', () => {
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
-  it('redirects authenticated users to the allowlisted original target', async () => {
+  it('redirects authenticated users to the callbackUrl query the guard attached', async () => {
     mocks.auth.mockResolvedValue({ user: { id: 'u1' } });
-    gameguildPath('/workspace/settings/security');
+    gameguildPath('/sign-in?callbackUrl=/workspace/settings/security');
 
     await expect(
       Layout({
@@ -57,19 +57,31 @@ describe('(auth) layout authenticated redirect (issue #864)', () => {
     ).rejects.toThrow('redirect:/en-US/workspace/settings/security');
   });
 
-  it('strips the query string before redirecting', async () => {
+  it('honors redirectTo in the forwarded query', async () => {
     mocks.auth.mockResolvedValue({ user: { id: 'u1' } });
-    gameguildPath('/workspace?tab=overview&x=1');
+    gameguildPath('/sign-in?redirectTo=%2Flearn');
 
     await expect(
       Layout({
         children: <div />,
         params: Promise.resolve({ locale: 'en-US' }),
       } as never),
-    ).rejects.toThrow('redirect:/en-US/workspace');
+    ).rejects.toThrow('redirect:/en-US/learn');
   });
 
-  it('falls back to the locale root when no path was forwarded', async () => {
+  it('falls back to /feed when the forwarded request has no callback query', async () => {
+    mocks.auth.mockResolvedValue({ user: { id: 'u1' } });
+    gameguildPath('/sign-in');
+
+    await expect(
+      Layout({
+        children: <div />,
+        params: Promise.resolve({ locale: 'en-US' }),
+      } as never),
+    ).rejects.toThrow('redirect:/en-US/feed');
+  });
+
+  it('falls back to the locale feed when no path was forwarded', async () => {
     mocks.auth.mockResolvedValue({ user: { id: 'u1' } });
     gameguildPath(null);
 
@@ -81,9 +93,21 @@ describe('(auth) layout authenticated redirect (issue #864)', () => {
     ).rejects.toThrow('redirect:/en-US/feed');
   });
 
-  it('rejects non-relative forwarded paths and falls back safely', async () => {
+  it('rejects non-relative callback targets and falls back safely', async () => {
     mocks.auth.mockResolvedValue({ user: { id: 'u1' } });
-    gameguildPath('//evil.example/phishing');
+    gameguildPath('/sign-in?callbackUrl=//evil.example/phishing');
+
+    await expect(
+      Layout({
+        children: <div />,
+        params: Promise.resolve({ locale: 'en-US' }),
+      } as never),
+    ).rejects.toThrow('redirect:/en-US/feed');
+  });
+
+  it('never bounces authenticated users back onto an auth page (loop guard)', async () => {
+    mocks.auth.mockResolvedValue({ user: { id: 'u1' } });
+    gameguildPath('/sign-in?callbackUrl=/sign-in');
 
     await expect(
       Layout({
