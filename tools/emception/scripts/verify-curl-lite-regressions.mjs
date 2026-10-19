@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runWithCleanup } from "./run-with-cleanup.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const library = path.join(root, "toolchain/overlays/libcurl-lite");
@@ -60,7 +61,7 @@ process.stdout.write(versionOutput);
 const temporaryBase = realpathSync(tmpdir());
 const prefix = "emception-curl-regressions-";
 const directory = mkdtempSync(path.join(temporaryBase, prefix));
-try {
+runWithCleanup(() => {
 
   const baselineRevision = process.env.CURL_LITE_BASELINE_REV;
   if (baselineRevision) {
@@ -135,7 +136,7 @@ try {
     ]);
     run(process.execPath, [wasmLoader]);
   }
-} finally {
+}, () => {
   const resolvedDirectory = realpathSync(directory);
   if (
     path.dirname(resolvedDirectory) !== temporaryBase ||
@@ -146,4 +147,4 @@ try {
     );
   }
   rmSync(resolvedDirectory, { recursive: true, force: true });
-}
+});
