@@ -276,11 +276,24 @@ public sealed class EvmCertificatePublicationWorkerPostgreSqlTests(JournalPostgr
         Assert.Equal(1, ports.SignCalls);
     }
 
+    [Fact]
+    public async Task AnExplicitIdFromAnotherProfileIsNotClaimedOrQuarantined()
+    {
+        var op = await Journal.EnqueueAsync(Request() with { Network = Network("another-profile") }, Ct);
+        Assert.Null(await Worker().ProcessAsync(op.Id, Ct));
+        var retained = Assert.IsType<EvmCertificateJournalSnapshot>(await Journal.FindAsync(op.Id, Ct));
+        Assert.Equal(op.Revision, retained.Revision);
+        Assert.Equal(EvmCertificatePublicationStatus.Queued, retained.Status);
+        Assert.Null(retained.LastFailure);
+        Assert.Equal(0, ports.AddressCalls);
+        Assert.Equal(0, ports.SendCalls);
+    }
+
     private EvmCertificatePublicationWorker Worker(int maximumAttempts = 3) => new(Journal, ports, ports, ports,
         EvmCertificatePublicationPolicy.Create(Network(), "worker-signer", Budget, 20, 2,
             TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(2), TimeSpan.FromSeconds(30), maximumAttempts), clock);
 
-    private static EvmCertificatePublicationNetwork Network() => EvmCertificatePublicationNetwork.Capture("worker-profile", new EvmCertificateNetworkOptions
+    private static EvmCertificatePublicationNetwork Network(string profile = "worker-profile") => EvmCertificatePublicationNetwork.Capture(profile, new EvmCertificateNetworkOptions
     {
         ChainId = 12345, RpcEndpoint = "https://rpc.invalid/", ContractAddress = "0x" + new string('1', 40),
         IssuerId = "0x" + new string('2', 64), ExpectedRuntimeCodeSha256 = new string('3', 64),

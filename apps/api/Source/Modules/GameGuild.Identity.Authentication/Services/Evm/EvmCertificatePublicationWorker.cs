@@ -21,6 +21,8 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
     public async Task<EvmCertificateJournalSnapshot?> ProcessAsync(Guid operationId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var candidate = await journal.FindAsync(operationId, cancellationToken).ConfigureAwait(false);
+        if (candidate is null || candidate.Network.Profile != policy.Network.Profile) return null;
         var lease = await journal.TryAcquireAsync(operationId, policy.LeaseDuration, cancellationToken).ConfigureAwait(false);
         if (lease is null) return null;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
