@@ -87,6 +87,8 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
     {
         using var root = new Activity("native-evm-transport-privacy").SetIdFormat(ActivityIdFormat.W3C).Start();
         using var observed = new HttpObservations(root.TraceId, root.SpanId);
+        using var activities = observed.CreateActivityListener();
+        ActivitySource.AddActivityListener(activities);
         using (var control = new HttpClient(new SocketsHttpHandler
         {
             AllowAutoRedirect = false, UseCookies = false,
@@ -240,7 +242,6 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
     {
         private readonly ActivityTraceId trace;
         private readonly ActivitySpanId parentSpan;
-        private readonly ActivityListener activityListener;
         private readonly IDisposable allListeners;
         private readonly ConcurrentBag<IDisposable> subscriptions = [];
         internal ConcurrentBag<string> Activities { get; } = [];
@@ -250,21 +251,21 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         {
             this.trace = trace;
             this.parentSpan = parentSpan;
-            activityListener = new ActivityListener
-            {
-                ShouldListenTo = source => source.Name == "System.Net.Http",
-                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-                ActivityStopped = activity =>
-                {
-                    if (activity.TraceId == trace && activity.ParentSpanId == parentSpan)
-                    {
-                        Activities.Add(activity.OperationName);
-                    }
-                }
-            };
-            ActivitySource.AddActivityListener(activityListener);
             allListeners = DiagnosticListener.AllListeners.Subscribe(this);
         }
+
+        internal ActivityListener CreateActivityListener() => new()
+        {
+            ShouldListenTo = source => source.Name == "System.Net.Http",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = activity =>
+            {
+                if (activity.TraceId == trace && activity.ParentSpanId == parentSpan)
+                {
+                    Activities.Add(activity.OperationName);
+                }
+            }
+        };
 
         public void OnNext(DiagnosticListener value)
         {
@@ -289,7 +290,6 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         public void Dispose()
         {
             allListeners.Dispose();
-            activityListener.Dispose();
             foreach (var subscription in subscriptions)
             {
                 subscription.Dispose();
