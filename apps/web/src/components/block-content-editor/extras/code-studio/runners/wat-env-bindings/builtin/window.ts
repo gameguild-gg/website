@@ -4,7 +4,7 @@
 export function createWindowBindings(
   stdout: (text: string) => void,
   stderr: (text: string) => void
-): Record<string, any> {
+) {
   return {
     alert: (message: string) => stdout(`[Alert] ${message}`),
     confirm: (message: string) => {
