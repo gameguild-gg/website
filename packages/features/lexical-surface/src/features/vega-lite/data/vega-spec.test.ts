@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isVegaSpecRecord } from "./vega-spec";
 
+// This guard checks the JSON object boundary, independently of chart validity.
 describe("isVegaSpecRecord", () => {
   it.each([
     { name: "object", value: { mark: "bar" }, expected: true },

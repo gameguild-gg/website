@@ -14,7 +14,7 @@ function job(source, name) {
   const start = source.indexOf(marker);
   assert.ok(start >= 0, 'Missing job: ' + name);
   const remaining = source.slice(start + marker.length);
-  const next = remaining.search(/^  [a-z][a-z-]*:\n/m);
+  const next = remaining.search(/^ {2}[a-z][a-z-]*:\n/m);
   return next < 0 ? remaining : remaining.slice(0, next);
 }
 
@@ -33,7 +33,7 @@ function pullRequestBranches(source) {
   const remaining = source.slice(start + marker.length);
   const next = remaining.search(/^(?: {2}\S|\S)/m);
   const event = next < 0 ? remaining : remaining.slice(0, next);
-  const branches = event.match(/^    branches:([^\n]*)/m);
+  const branches = event.match(/^ {4}branches:([^\n]*)/m);
   assert.ok(branches, 'The pull_request trigger must declare its branch targets');
   const inline = branches[1].trim();
   if (inline) {
@@ -41,9 +41,9 @@ function pullRequestBranches(source) {
     return inline.slice(1, -1).split(',').map((value) => value.trim().replace(/^['"]|['"]$/g, '')).sort();
   }
   const tail = event.slice(branches.index + branches[0].length);
-  const end = tail.search(/^    \S/m);
+  const end = tail.search(/^ {4}\S/m);
   const list = end < 0 ? tail : tail.slice(0, end);
-  return [...list.matchAll(/^      - (.+)$/gm)]
+  return [...list.matchAll(/^ {6}- (.+)$/gm)]
     .map((match) => match[1].trim().replace(/^['"]|['"]$/g, '')).sort();
 }
 
@@ -62,7 +62,7 @@ test('Web verifies the complete Lexical surface before waiting for Toolchain del
   assert.match(inputs, /source-before\.sha256/);
   assert.match(inputs, /pnpm-lock\.yaml/);
   assert.match(types, /pnpm --filter @game-guild\/lexical-surface typecheck/);
-  assert.match(tests, /pnpm --filter @game-guild\/lexical-surface exec vitest run\n          --maxWorkers=4 --reporter=json/);
+  assert.match(tests, /pnpm --filter @game-guild\/lexical-surface exec vitest run\n {10}--maxWorkers=4 --reporter=json/);
   assert.match(tests, /always\(\) && steps\.lexical-inputs\.outcome == 'success'/);
   assert.match(identity, /cmp .*source-before\.sha256 .*source-after\.sha256/);
   assert.match(identity, /diff --quiet HEAD -- packages\/features\/lexical-surface/);
@@ -117,7 +117,7 @@ test('Web lint records active suppressions without changing source or accepting 
 test('Web acquires a producer release independently of an optional build cache', () => {
   assert.match(acquire, /id: emception-web-release/);
   assert.ok(acquire.includes('run: SOURCE_TREE_SHA="$(git rev-parse \'HEAD^{tree}\')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800'));
-  assert.doesNotMatch(acquire, /        if:|cache-hit|cache-matched-key|continue-on-error|\|\| true/);
+  assert.doesNotMatch(acquire, / {8}if:|cache-hit|cache-matched-key|continue-on-error|\|\| true/);
   assert.doesNotMatch(web, /Restore verified Toolchain builds for Web|Prepare and verify cached Toolchain release/);
   assert.ok(web.indexOf('Acquire verified Toolchain release for Web') < web.indexOf('Build Web runtime dependencies'));
 });
@@ -126,7 +126,7 @@ test('the consumer uses classified source identity and only Actions read permiss
   assert.ok(acquire.includes('SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}'));
   assert.ok(acquire.includes('CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}'));
   assert.ok(acquire.includes('GH_TOKEN: ${{ github.token }}'));
-  assert.match(web, /permissions:\n      contents: read\n      actions: read/);
+  assert.match(web, /permissions:\n {6}contents: read\n {6}actions: read/);
   assert.doesNotMatch(web, /actions: write|contents: write|--repo |npm pack emception@/);
 });
 
@@ -147,12 +147,12 @@ test('the producer publishes only after release gates and before the independent
   assert.ok(prepare.includes('SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}'));
   assert.match(upload, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.ok(upload.includes('name: ${{ steps.web-release-provenance.outputs.artifact-name }}'));
-  assert.match(upload, /release\/cdn\n            tools\/emception\/artifacts\/toolchain\/release\/provenance\.json/);
+  assert.match(upload, /release\/cdn\n {12}tools\/emception\/artifacts\/toolchain\/release\/provenance\.json/);
   assert.match(upload, /include-hidden-files: true/);
   assert.match(upload, /if-no-files-found: error/);
   assert.ok(producer.indexOf('Verify release gates and npm package contents') < producer.indexOf('Prepare verified Toolchain CDN provenance'));
   assert.ok(producer.indexOf('Upload verified Toolchain CDN for Web') < producer.indexOf('Run instructor and learner coding assessment cycle'));
-  assert.doesNotMatch(upload, /        if:|continue-on-error|overwrite: true/);
+  assert.doesNotMatch(upload, / {8}if:|continue-on-error|overwrite: true/);
 });
 
 test('producer detection covers every source or workflow change that requires delivery', () => {
@@ -171,7 +171,7 @@ test('all existing Web credential, lint, type, test and production build gates r
   for (const name of names) {
     const position = web.indexOf('      - name: ' + name + '\n');
     assert.ok(position > previous, 'Missing or out-of-order gate: ' + name);
-    assert.doesNotMatch(step(web, name), /continue-on-error:|allow-failure|        if:/);
+    assert.doesNotMatch(step(web, name), /continue-on-error:|allow-failure| {8}if:/);
     previous = position;
   }
   assert.match(web, /if: needs\.classify\.outputs\.web == 'true'/);

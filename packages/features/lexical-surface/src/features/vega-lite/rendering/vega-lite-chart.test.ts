@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isPlainVegaSpec } from "./vega-lite-chart";
-import type { VegaSpecRecord } from "../vega-spec";
+import type { VegaSpecRecord } from "../data/vega-spec";
 
 describe("isPlainVegaSpec", () => {
   it.each([

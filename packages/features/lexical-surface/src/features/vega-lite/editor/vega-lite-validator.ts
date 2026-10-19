@@ -1,5 +1,5 @@
-import type { TopLevelSpec } from "vega-lite";
-import { isVegaSpecRecord } from "../vega-spec";
+import { isVegaSpecRecord } from "../data/vega-spec";
+import { compileVegaLiteJson } from "../rendering/compile-vega-lite-json";
 
 function validationErrorMessage(error: unknown, fallback: string): string {
   if (
@@ -111,7 +111,7 @@ export class VegaLiteValidator {
         try {
           // Try to compile the specification
           // Let the compiler report unsupported shapes in this checked JSON object.
-          const compiled = vegaLiteImport.compile(parsedSpec as TopLevelSpec);
+          const compiled = compileVegaLiteJson(vegaLiteImport.compile, parsedSpec);
           if (!compiled || !compiled.spec) {
             return {
               isValid: false,

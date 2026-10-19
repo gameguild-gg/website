@@ -13,7 +13,8 @@ import { loadCsvDataIntoSpec } from "../data/vega-csv-loader";
 import { resolveVegaAttachments } from "../data/vega-asset-loader";
 import type { VegaDataAttachment } from "../vega-lite-data";
 import type { Config } from "vega-lite";
-import { isVegaSpecRecord, type VegaSpecRecord } from "../vega-spec";
+import { isVegaSpecRecord, type VegaSpecRecord } from "../data/vega-spec";
+import { compileVegaLiteJson } from "../rendering/compile-vega-lite-json";
 
 // Function to create dark version of any theme
 function createDarkTheme(baseTheme: Config): Config {
@@ -196,9 +197,7 @@ export function VegaLiteExport({
       }
 
       // Compile Vega-Lite spec to Vega spec
-      const vegaSpec = vegaLiteImport.compile(
-        parsedSpec as Parameters<typeof vegaLiteImport.compile>[0],
-      ).spec;
+      const vegaSpec = compileVegaLiteJson(vegaLiteImport.compile, parsedSpec).spec;
 
       // Create a new view for SVG generation
       const view = new vegaImport.View(vegaImport.parse(vegaSpec))
@@ -334,9 +333,7 @@ export function VegaLiteExport({
       }
 
       // Compile Vega-Lite spec to Vega spec
-      const vegaSpec = vegaLiteImport.compile(
-        parsedSpec as Parameters<typeof vegaLiteImport.compile>[0],
-      ).spec;
+      const vegaSpec = compileVegaLiteJson(vegaLiteImport.compile, parsedSpec).spec;
 
       // Create a new view for PNG generation
       const view = new vegaImport.View(vegaImport.parse(vegaSpec))

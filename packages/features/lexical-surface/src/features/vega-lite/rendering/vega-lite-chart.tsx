@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { isVegaSpecRecord, type VegaSpecRecord } from "../vega-spec";
+import { isVegaSpecRecord, type VegaSpecRecord } from "../data/vega-spec";
+import { compileVegaLiteJson } from "./compile-vega-lite-json";
 import {
   applyThemeOverrides,
   DARK_THEME_OVERRIDES,
@@ -207,9 +208,7 @@ export async function renderVegaChart(
   const vegaSpec = plainVega
     ? specWithTheme
     : await import("vega-lite").then((vegaLite) =>
-        vegaLite.compile(
-          specWithTheme as Parameters<typeof vegaLite.compile>[0],
-        ).spec,
+        compileVegaLiteJson(vegaLite.compile, specWithTheme).spec,
       );
   if (!isCurrent()) return () => undefined;
 

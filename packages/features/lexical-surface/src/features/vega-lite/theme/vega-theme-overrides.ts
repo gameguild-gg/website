@@ -9,7 +9,7 @@
  * - Versão dark (recomendado para melhorar contraste)
  */
 
-import { isVegaSpecRecord, type VegaSpecRecord } from "../vega-spec";
+import { isVegaSpecRecord, type VegaSpecRecord } from "../data/vega-spec";
 
 export interface ThemeOverride {
   background?: string;

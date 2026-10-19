@@ -1,4 +1,4 @@
-/** Unvalidated JSON object accepted at the Vega/Vega-Lite compiler boundary. */
+/** Unvalidated JSON object shared by Vega data and compiler boundaries. */
 export type VegaSpecRecord = Record<string, unknown>;
 
 export function isVegaSpecRecord(value: unknown): value is VegaSpecRecord {

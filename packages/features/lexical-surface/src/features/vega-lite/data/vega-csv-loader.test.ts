@@ -4,7 +4,7 @@ import {
   hasDataReferences,
   loadCsvDataIntoSpec,
 } from "./vega-csv-loader";
-import { isVegaSpecRecord } from "../vega-spec";
+import { isVegaSpecRecord } from "./vega-spec";
 
 afterEach(() => vi.restoreAllMocks());
 

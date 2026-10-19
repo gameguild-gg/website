@@ -1,5 +1,5 @@
 import * as d3Dsv from "d3-dsv";
-import { isVegaSpecRecord } from "../vega-spec";
+import { isVegaSpecRecord } from "./vega-spec";
 
 /**
  * Processa uma especificação Vega-Lite e substitui URLs data: por dados inline

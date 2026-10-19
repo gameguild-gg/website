@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as vegaThemes from "vega-themes";
 import { applyThemeOverrides, type ThemeOverride } from "./vega-theme-overrides";
-import { isVegaSpecRecord } from "../vega-spec";
+import { isVegaSpecRecord } from "../data/vega-spec";
 
 describe("applyThemeOverrides", () => {
   it("returns the original theme when there are no overrides", () => {

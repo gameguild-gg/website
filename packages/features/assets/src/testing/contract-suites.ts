@@ -107,7 +107,7 @@ export function describeRemoteAssetProviderContract(
       );
       const renamed = await provider.rename?.(record!.id, "new.txt", {});
       expect(renamed?.name).toBe("new.txt");
-      expect((await provider.get(record!.uri, {})).name).toBe("new.txt");
+      expect((await provider.get(record!.uri, {}))?.name).toBe("new.txt");
     });
   });
 }

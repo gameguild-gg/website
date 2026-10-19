@@ -6,7 +6,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import type { VegaSpecRecord } from "../vega-spec";
+import type { VegaSpecRecord } from "../data/vega-spec";
 
 export interface VegaLiteTemplate {
   id: string;
