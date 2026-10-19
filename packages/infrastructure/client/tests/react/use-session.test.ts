@@ -3,19 +3,25 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { EffectCallback } from 'react';
+import type { SessionContextValue } from '../../src/integrations/react/session-provider.js';
+
+// This isolated hook fixture keeps the existing synchronous, unimplemented
+// update stub; provider lifecycle and asynchronous updates are tested separately.
+type FixtureContext = Pick<SessionContextValue, 'data' | 'status'> & { update: () => undefined };
 
 // Control what useContext returns per-test
-let contextReturnValue: any;
+let contextReturnValue: FixtureContext | undefined;
 
-const defaultContextValue = {
-  data: null as any,
-  status: 'loading' as string,
-  update: vi.fn(),
+const defaultContextValue: FixtureContext = {
+  data: null,
+  status: 'loading',
+  update: vi.fn<() => undefined>(),
 };
 
 vi.mock('react', () => ({
   useContext: vi.fn(() => contextReturnValue),
-  useEffect: vi.fn((fn: () => any) => fn()),
+  useEffect: vi.fn((fn: EffectCallback) => fn()),
 }));
 
 vi.mock('../../src/integrations/react/session-provider.js', () => ({
@@ -28,7 +34,7 @@ describe('useSession', () => {
   beforeEach(() => {
     // Reset to default context
     contextReturnValue = { ...defaultContextValue };
-    contextReturnValue.update = vi.fn();
+    contextReturnValue.update = vi.fn<() => undefined>();
     vi.clearAllMocks();
   });
 
@@ -39,7 +45,7 @@ describe('useSession', () => {
         expires: '2025-01-01T00:00:00Z',
       },
       status: 'authenticated',
-      update: vi.fn(),
+      update: vi.fn<() => undefined>(),
     };
 
     const result = useSession();
@@ -49,7 +55,7 @@ describe('useSession', () => {
   });
 
   it('should return loading status initially', () => {
-    contextReturnValue = { ...defaultContextValue, status: 'loading', update: vi.fn() };
+    contextReturnValue = { ...defaultContextValue, status: 'loading', update: vi.fn<() => undefined>() };
 
     const result = useSession();
 
@@ -63,7 +69,7 @@ describe('useSession', () => {
   });
 
   it('should handle required option with unauthenticated status', () => {
-    contextReturnValue = { ...defaultContextValue, status: 'unauthenticated', update: vi.fn() };
+    contextReturnValue = { ...defaultContextValue, status: 'unauthenticated', update: vi.fn<() => undefined>() };
 
     // This should trigger the useEffect which checks required
     const result = useSession({ required: true });
@@ -72,7 +78,7 @@ describe('useSession', () => {
   });
 
   it('should call custom onUnauthenticated callback', () => {
-    contextReturnValue = { ...defaultContextValue, status: 'unauthenticated', update: vi.fn() };
+    contextReturnValue = { ...defaultContextValue, status: 'unauthenticated', update: vi.fn<() => undefined>() };
 
     const onUnauthenticated = vi.fn();
     useSession({ required: true, onUnauthenticated });
@@ -81,7 +87,7 @@ describe('useSession', () => {
   });
 
   it('should not call onUnauthenticated when status is loading', () => {
-    contextReturnValue = { ...defaultContextValue, status: 'loading', update: vi.fn() };
+    contextReturnValue = { ...defaultContextValue, status: 'loading', update: vi.fn<() => undefined>() };
 
     const onUnauthenticated = vi.fn();
     useSession({ required: true, onUnauthenticated });
@@ -90,7 +96,7 @@ describe('useSession', () => {
   });
 
   it('should not call onUnauthenticated when not required', () => {
-    contextReturnValue = { ...defaultContextValue, status: 'unauthenticated', update: vi.fn() };
+    contextReturnValue = { ...defaultContextValue, status: 'unauthenticated', update: vi.fn<() => undefined>() };
 
     const onUnauthenticated = vi.fn();
     useSession({ required: false, onUnauthenticated });
@@ -99,7 +105,7 @@ describe('useSession', () => {
   });
 
   it('should return update function', () => {
-    contextReturnValue = { ...defaultContextValue, update: vi.fn() };
+    contextReturnValue = { ...defaultContextValue, update: vi.fn<() => undefined>() };
 
     const result = useSession();
     expect(typeof result.update).toBe('function');

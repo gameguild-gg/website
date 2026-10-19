@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { resolveCookieOptions, getCookieName, SessionStore, CsrfStore, CallbackStore } from '../../src/runtime/auth/cookies.js';
+import type { CookieSerializeOptions } from '../../src/runtime/auth/cookies.js';
 
 describe('Cookie Management', () => {
   describe('resolveCookieOptions', () => {
@@ -142,7 +143,7 @@ describe('Cookie Management', () => {
       it('should write small value as single cookie', () => {
         const store = new SessionStore(defaultOptions);
         const written: Array<{ name: string; value: string }> = [];
-        const setCookie = (name: string, value: string, _opts: any) => {
+        const setCookie = (name: string, value: string, _opts: CookieSerializeOptions) => {
           written.push({ name, value });
         };
 
@@ -156,8 +157,8 @@ describe('Cookie Management', () => {
 
       it('should omit Max-Age for session storage policy (remember me off)', () => {
         const store = new SessionStore(defaultOptions);
-        const written: Array<{ name: string; opts: any }> = [];
-        const setCookie = (name: string, _value: string, opts: any) => {
+        const written: Array<{ name: string; opts: CookieSerializeOptions }> = [];
+        const setCookie = (name: string, _value: string, opts: CookieSerializeOptions) => {
           written.push({ name, opts });
         };
 
@@ -172,8 +173,8 @@ describe('Cookie Management', () => {
 
       it('should keep Max-Age for persistent storage policy (remember me on)', () => {
         const store = new SessionStore(defaultOptions);
-        const written: Array<{ name: string; opts: any }> = [];
-        const setCookie = (name: string, _value: string, opts: any) => {
+        const written: Array<{ name: string; opts: CookieSerializeOptions }> = [];
+        const setCookie = (name: string, _value: string, opts: CookieSerializeOptions) => {
           written.push({ name, opts });
         };
 
@@ -186,8 +187,8 @@ describe('Cookie Management', () => {
 
       it('should default to persistent storage when no policy is provided', () => {
         const store = new SessionStore(defaultOptions);
-        const written: Array<{ name: string; opts: any }> = [];
-        const setCookie = (name: string, _value: string, opts: any) => {
+        const written: Array<{ name: string; opts: CookieSerializeOptions }> = [];
+        const setCookie = (name: string, _value: string, opts: CookieSerializeOptions) => {
           written.push({ name, opts });
         };
 
@@ -201,7 +202,7 @@ describe('Cookie Management', () => {
       it('should chunk large values', () => {
         const store = new SessionStore(defaultOptions);
         const written: Array<{ name: string; value: string }> = [];
-        const setCookie = (name: string, value: string, _opts: any) => {
+        const setCookie = (name: string, value: string, _opts: CookieSerializeOptions) => {
           written.push({ name, value });
         };
 
@@ -228,7 +229,7 @@ describe('Cookie Management', () => {
       it('should delete main cookie and cleanup chunks', () => {
         const store = new SessionStore(defaultOptions);
         const deleted: string[] = [];
-        const setCookie = (name: string, value: string, opts: any) => {
+        const setCookie = (name: string, value: string, opts: CookieSerializeOptions) => {
           if (opts.maxAge === 0) deleted.push(name);
         };
 
@@ -274,7 +275,7 @@ describe('Cookie Management', () => {
       const store = new CsrfStore(options);
       let writtenName = '';
       let writtenValue = '';
-      const setCookie = (name: string, value: string, _opts: any) => {
+      const setCookie = (name: string, value: string, _opts: CookieSerializeOptions) => {
         writtenName = name;
         writtenValue = value;
       };
@@ -287,8 +288,8 @@ describe('Cookie Management', () => {
 
     it('should delete cookie', () => {
       const store = new CsrfStore(options);
-      let deletedOpts: any = {};
-      const setCookie = (_name: string, _value: string, opts: any) => {
+      let deletedOpts: CookieSerializeOptions = {};
+      const setCookie = (_name: string, _value: string, opts: CookieSerializeOptions) => {
         deletedOpts = opts;
       };
 
@@ -315,7 +316,7 @@ describe('Cookie Management', () => {
     it('should read and write values', () => {
       const store = new CallbackStore(options);
       const cookies: Record<string, string> = {};
-      const setCookie = (name: string, value: string, _opts: any) => {
+      const setCookie = (name: string, value: string, _opts: CookieSerializeOptions) => {
         cookies[name] = value;
       };
       const getCookie = (name: string) => cookies[name];
@@ -327,7 +328,7 @@ describe('Cookie Management', () => {
     it('should delete cookie', () => {
       const store = new CallbackStore(options);
       let maxAge: number | undefined;
-      const setCookie = (_name: string, _value: string, opts: any) => {
+      const setCookie = (_name: string, _value: string, opts: CookieSerializeOptions) => {
         maxAge = opts.maxAge;
       };
 

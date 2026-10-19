@@ -8,9 +8,12 @@ import type { JWTPayload, ResolvedAuthConfig, ProviderResult } from '../../src/r
 import { TokenRefreshError } from '../../src/runtime/auth/errors.js';
 import { decodeJWT } from '../../src/runtime/auth/jwt.js';
 
+type DecodeOptions = Parameters<typeof decodeJWT>[0];
+type EncodeOptions = Parameters<typeof import('../../src/runtime/auth/jwt.js').encodeJWT>[0];
+
 // Mock JWT module
 vi.mock('../../src/runtime/auth/jwt.js', () => ({
-  decodeJWT: vi.fn(async ({ token, secret }: any) => {
+  decodeJWT: vi.fn(async ({ token }: DecodeOptions): Promise<JWTPayload | null> => {
     if (token === 'valid-encrypted') {
       return {
         user: { id: '1', email: 'test@ex.com', name: 'Test', image: null },
@@ -43,7 +46,7 @@ vi.mock('../../src/runtime/auth/jwt.js', () => ({
     }
     return null;
   }),
-  encodeJWT: vi.fn(async ({ token, secret, maxAge }: any) => 'encoded-jwt'),
+  encodeJWT: vi.fn(async (_options: EncodeOptions) => 'encoded-jwt'),
 }));
 
 function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig {
@@ -425,8 +428,10 @@ describe('toSession', () => {
     expect(session.user.roles).toEqual(['admin']);
     expect(session.tenantId).toBe('tid');
     expect(session.availableTenants).toEqual([{ id: 't1', name: 'T1' }]);
-    expect((session as any).accessToken).toBeUndefined();
-    expect((session as any).refreshToken).toBeUndefined();
+    expect(Reflect.get(session, 'accessToken')).toBeUndefined();
+    expect(Reflect.get(session, 'refreshToken')).toBeUndefined();
+    expect(Object.hasOwn(session, 'accessToken')).toBe(false);
+    expect(Object.hasOwn(session, 'refreshToken')).toBe(false);
     expect(session.expires).toBeDefined();
   });
 
