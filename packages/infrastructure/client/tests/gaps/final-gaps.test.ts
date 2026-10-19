@@ -3,6 +3,8 @@
  * across multiple files to reach 100% statement coverage.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { decodeJWT } from '../../src/runtime/auth/jwt.js';
+import type { JWTPayload, ProviderResult, ResolvedAuthConfig, Session } from '../../src/runtime/auth/types.js';
 
 // ─── logging.ts lines 67-68 — defaultLogger 'error' case ──────────
 
@@ -37,14 +39,14 @@ describe('transformZodError — default issue code', () => {
         keys: ['extra'],
         path: ['body'],
         message: 'Unrecognized key(s) in object: extra',
-      } as any,
+      },
     ]);
 
     const result = transformZodError(error);
     expect(result.code).toBe('VALIDATION_ERROR');
     expect(result.metadata?.errors).toBeDefined();
-    const errors = result.metadata?.errors as any[];
-    expect(errors[0].message).toBe('Unrecognized key(s) in object: extra');
+    const errors = result.metadata?.errors;
+    expect(errors).toHaveProperty('0.message', 'Unrecognized key(s) in object: extra');
   });
 });
 
@@ -124,7 +126,7 @@ describe('handlers — form-urlencoded and updateSession gaps', () => {
 
     // Mock modules
     vi.doMock('../../src/runtime/auth/jwt.js', () => ({
-      decodeJWT: vi.fn(async ({ token }: any) => {
+      decodeJWT: vi.fn(async ({ token }: Parameters<typeof decodeJWT>[0]) => {
         if (token === 'valid-tok') {
           return {
             user: { id: '1', email: 'a@b.com', name: 'T', image: null },
@@ -146,7 +148,7 @@ describe('handlers — form-urlencoded and updateSession gaps', () => {
     }));
 
     vi.doMock('../../src/runtime/auth/session.js', () => ({
-      createJWTPayload: vi.fn((r: any) => ({
+      createJWTPayload: vi.fn((r: ProviderResult) => ({
         user: r.user,
         accessToken: r.tokens.accessToken,
         refreshToken: r.tokens.refreshToken,
@@ -165,12 +167,12 @@ describe('handlers — form-urlencoded and updateSession gaps', () => {
         return { session: null, token: null, updated: false };
       }),
       encodeSession: vi.fn(async () => 'encoded-sess'),
-      toSession: vi.fn((t: any) => ({ user: t.user, expires: new Date(Date.now() + 86400000).toISOString() })),
+      toSession: vi.fn((t: JWTPayload) => ({ user: t.user, expires: new Date(Date.now() + 86400000).toISOString() })),
     }));
 
     const { createHandlers } = await import('../../src/integrations/next/handlers.js');
 
-    const config: any = {
+    const config: ResolvedAuthConfig = {
       providers: [
         {
           id: 'credentials',
@@ -183,10 +185,10 @@ describe('handlers — form-urlencoded and updateSession gaps', () => {
         },
       ],
       callbacks: {
-        jwt: async ({ token }: any) => token,
-        session: async ({ session }: any) => session,
+        jwt: async ({ token }) => token,
+        session: async ({ session }) => session,
         signIn: async () => true,
-        redirect: async ({ url, baseUrl }: any) => (url.startsWith('/') ? `${baseUrl}${url}` : url),
+        redirect: async ({ url, baseUrl }) => (url.startsWith('/') ? `${baseUrl}${url}` : url),
         authorized: async () => true,
       },
       secret: 'test-secret-min-32-chars-long-ok',
@@ -228,7 +230,7 @@ describe('handlers — form-urlencoded and updateSession gaps', () => {
     vi.resetModules();
 
     vi.doMock('../../src/runtime/auth/jwt.js', () => ({
-      decodeJWT: vi.fn(async ({ token }: any) => {
+      decodeJWT: vi.fn(async ({ token }: Parameters<typeof decodeJWT>[0]) => {
         if (token === 'valid-tok') {
           return {
             user: { id: '1', email: 'a@b.com', name: 'T', image: null },
@@ -253,18 +255,18 @@ describe('handlers — form-urlencoded and updateSession gaps', () => {
       createJWTPayload: vi.fn(() => ({})),
       processSession: vi.fn(async () => ({ session: null, token: null, updated: false })),
       encodeSession: vi.fn(async () => 'updated-encoded'),
-      toSession: vi.fn((t: any) => ({ user: t.user, expires: new Date(Date.now() + 86400000).toISOString() })),
+      toSession: vi.fn((t: JWTPayload) => ({ user: t.user, expires: new Date(Date.now() + 86400000).toISOString() })),
     }));
 
     const { createHandlers } = await import('../../src/integrations/next/handlers.js');
 
-    const config: any = {
+    const config: ResolvedAuthConfig = {
       providers: [],
       callbacks: {
-        jwt: async ({ token }: any) => ({ ...token, customField: 'updated' }),
-        session: async ({ session }: any) => session,
+        jwt: async ({ token }) => ({ ...token, customField: 'updated' }),
+        session: async ({ session }) => session,
         signIn: async () => true,
-        redirect: async ({ url }: any) => url,
+        redirect: async ({ url }) => url,
         authorized: async () => true,
       },
       secret: 'test-secret-min-32-chars-long-ok',
@@ -327,7 +329,7 @@ describe('actions — createUpdateAction with working adapter', () => {
     }));
 
     vi.doMock('../../src/runtime/auth/jwt.js', () => ({
-      decodeJWT: vi.fn(async ({ token }: any) => {
+      decodeJWT: vi.fn(async ({ token }: Parameters<typeof decodeJWT>[0]) => {
         if (token === 'encrypted-session') {
           return {
             user: { id: '1', email: 'u@e.com', name: 'U', image: null },
@@ -344,7 +346,7 @@ describe('actions — createUpdateAction with working adapter', () => {
     }));
 
     vi.doMock('../../src/runtime/auth/session.js', () => ({
-      createJWTPayload: vi.fn((r: any) => ({
+      createJWTPayload: vi.fn((r: ProviderResult) => ({
         user: r.user,
         accessToken: r.tokens?.accessToken || 'at',
         refreshToken: r.tokens?.refreshToken || 'rt',
@@ -358,7 +360,7 @@ describe('actions — createUpdateAction with working adapter', () => {
         updated: false,
       })),
       encodeSession: vi.fn(async () => 'updated-encrypted'),
-      toSession: vi.fn((t: any) => ({
+      toSession: vi.fn((t: JWTPayload) => ({
         user: t.user,
         expires: new Date(Date.now() + 86400000).toISOString(),
       })),
@@ -366,13 +368,13 @@ describe('actions — createUpdateAction with working adapter', () => {
 
     const { createUpdateAction } = await import('../../src/integrations/next/actions.js');
 
-    const config: any = {
+    const config: ResolvedAuthConfig = {
       providers: [],
       callbacks: {
-        jwt: async ({ token }: any) => ({ ...token, customField: 'yes' }),
-        session: async ({ session }: any) => session,
+        jwt: async ({ token }) => ({ ...token, customField: 'yes' }),
+        session: async ({ session }) => session,
         signIn: async () => true,
-        redirect: async ({ url }: any) => url,
+        redirect: async ({ url }) => url,
         authorized: async () => true,
       },
       secret: 'test-secret-min-32-chars-long-ok',
@@ -388,7 +390,9 @@ describe('actions — createUpdateAction with working adapter', () => {
     };
 
     const update = createUpdateAction(config);
-    const session = await update({ user: { name: 'Updated' } } as any);
+    // Keep the existing partial-user fixture at the adapter boundary without adding an id.
+    const updateData: unknown = { user: { name: 'Updated' } };
+    const session = await update(updateData as Partial<Session>);
 
     expect(session).toBeDefined();
     expect(session?.user).toBeDefined();
@@ -431,7 +435,7 @@ describe('actions — createUpdateAction with working adapter', () => {
     }));
 
     vi.doMock('../../src/runtime/auth/session.js', () => ({
-      createJWTPayload: vi.fn((r: any) => ({
+      createJWTPayload: vi.fn((r: ProviderResult) => ({
         user: r.user,
         accessToken: r.tokens.accessToken,
         refreshToken: r.tokens.refreshToken,
@@ -446,7 +450,7 @@ describe('actions — createUpdateAction with working adapter', () => {
 
     const { createSignInAction } = await import('../../src/integrations/next/actions.js');
 
-    const config: any = {
+    const config: ResolvedAuthConfig = {
       providers: [
         {
           id: 'credentials',
@@ -459,10 +463,10 @@ describe('actions — createUpdateAction with working adapter', () => {
         },
       ],
       callbacks: {
-        jwt: async ({ token }: any) => token,
-        session: async ({ session }: any) => session,
+        jwt: async ({ token }) => token,
+        session: async ({ session }) => session,
         signIn: async () => true,
-        redirect: async ({ url }: any) => url,
+        redirect: async ({ url }) => url,
         authorized: async () => true,
       },
       secret: 'test-secret-min-32-chars-long-ok',
