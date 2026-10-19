@@ -32,6 +32,16 @@ write();
 
 try {
   report.loader = loaderProvenance.readLoaderIdentity();
+  assert.equal(process.env.TS_NODE_PROJECT, '/app/workspaces/codacy/tsconfig.json');
+  report.loaderConfiguration = {
+    projectPath: process.env.TS_NODE_PROJECT,
+    projectSha256: digest(readFileSync(process.env.TS_NODE_PROJECT)),
+    registerSha256: digest(readFileSync('/app/register.js')),
+  };
+  // Both files belong to the pinned public vendor image. The synthetic probe
+  // has no application source or host credentials, so retain these exact inputs.
+  copyFileSync(process.env.TS_NODE_PROJECT, path.join(evidence, 'vendor-tsconfig.json'));
+  copyFileSync('/app/register.js', path.join(evidence, 'vendor-register.js'));
   const root = mkdtempSync(path.join(tmpdir(), 'codacy-synthetic-factory-'));
   mkdirSync(path.join(root, 'packages/tooling/eslint'), { recursive: true });
   writeFileSync(path.join(root, 'packages/tooling/eslint/package.json'),
@@ -46,9 +56,10 @@ try {
   process.chdir(root);
 
   // Exercise real loader imports through both existing and missing filesystem
-  // entries. These public contracts cover every nullable-stat call site.
+  // entries using the installed loader's native resolution configuration.
   const resolutionRoot = path.join(root, 'resolution');
   mkdirSync(path.join(resolutionRoot, 'directory'), { recursive: true });
+  mkdirSync(path.join(resolutionRoot, 'empty-directory'), { recursive: true });
   mkdirSync(path.join(resolutionRoot, 'node_modules/probe-package'), { recursive: true });
   writeFileSync(path.join(resolutionRoot, 'present.mjs'), 'export default 42;\n');
   writeFileSync(path.join(resolutionRoot, 'directory/index.mjs'), 'export default 43;\n');
@@ -61,9 +72,10 @@ try {
       errorName: 'Error', errorCode: null,
       errorMessage: "Cannot find module '<synthetic-root>/resolution/missing.mjs' imported from <synthetic-root>/resolution/missing-file.mjs",
     } },
-    { name: 'directory-import', specifier: './directory', expected: {
+    { name: 'directory-import', specifier: './directory', expected: { value: 43 } },
+    { name: 'empty-directory-import', specifier: './empty-directory', expected: {
       errorName: 'Error', errorCode: null,
-      errorMessage: 'ERR_UNSUPPORTED_DIR_IMPORT <synthetic-root>/resolution/directory <synthetic-root>/resolution/directory-import.mjs',
+      errorMessage: "Cannot find module '<synthetic-root>/resolution/empty-directory' imported from <synthetic-root>/resolution/empty-directory-import.mjs",
     } },
     { name: 'explicit-directory-index', specifier: './directory/index.mjs', expected: { value: 43 } },
     { name: 'package-main', specifier: 'probe-package', expected: { value: 44 } },
