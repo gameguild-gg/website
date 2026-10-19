@@ -1,0 +1,76 @@
+name: Codacy modern source coverage
+
+on:
+  pull_request:
+    branches: [main, develop, "feature/**"]
+    paths:
+      - ".codacy/modern-eslint/**"
+      - ".github/workflows/codacy-modern-engine.yml"
+      - "eslint.config.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codacy-modern-engine-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  source-coverage:
+    name: Modern engine source and configuration evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ENGINE_IMAGE: codacy/codacy-eslint9@sha256:cd4008cb541fb7f3ef6e5c11198cffd6845ef7168bf8eab1889670576c846c06
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Preserve immutable analysis inputs
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p modern-evidence
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > modern-evidence/source-before.txt
+          git ls-files -z > modern-evidence/tracked-files.nul
+          printf '%s\n' "$CANDIDATE_HEAD" > modern-evidence/head.txt
+          git rev-parse HEAD > modern-evidence/checkout.txt
+          git rev-parse 'HEAD^{tree}' > modern-evidence/tree.txt
+          printf '%s\n' "$ENGINE_IMAGE" > modern-evidence/engine-image.txt
+      - name: Pull the immutable public modern engine
+        run: docker pull "$ENGINE_IMAGE"
+      - name: Verify root configuration and modern parser controls
+        run: |
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            -v "$PWD:/src:ro" "$ENGINE_IMAGE" \
+            node --test --test-reporter=tap /src/scripts/ci/tests/eslint-root-config.test.mjs \
+            /src/.codacy/modern-eslint/modern-syntax.test.mjs > modern-evidence/contracts.tap 2>&1
+      - name: Analyze every tracked JavaScript and TypeScript source
+        timeout-minutes: 10
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          analysis_status=0
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --user "$(id -u):$(id -g)" \
+            -e TS_NODE_PROJECT=/app/workspaces/codacy/tsconfig.json \
+            -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            -v "$PWD:/src:ro" -v "$PWD/modern-evidence:/evidence" "$ENGINE_IMAGE" \
+            node --import=/app/register.js /src/.codacy/modern-eslint/analyze-repository.mjs /evidence \
+            > modern-evidence/disposable-tool-output.log 2>&1 || analysis_status=$?
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > modern-evidence/source-after.txt
+          printf '%s\n' "$analysis_status" > modern-evidence/analysis-exit.txt
+          GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            node .codacy/modern-eslint/finalize-evidence.mjs "$PWD/modern-evidence"
+      - name: Upload coverage and redacted diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-modern-source-${{ github.event.pull_request.head.sha }}
+          path: |
+            modern-evidence/*.json
+            modern-evidence/*.jsonl
+            modern-evidence/*.txt
+            modern-evidence/*.nul
+            modern-evidence/*.tap
+          if-no-files-found: error
