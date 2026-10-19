@@ -335,14 +335,20 @@ public sealed class EvmCertificatePublicationWorkerPostgreSqlTests(JournalPostgr
         public Task<string> GetAddressAsync(string reference, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested(); Assert.Equal("worker-signer", reference); AddressCalls++;
-            if (SignerUnavailable) throw new EvmCertificateJournalException(EvmCertificateJournalFailure.SignerUnavailable);
+            if (SignerUnavailable)
+            {
+                throw new EvmCertificateJournalException(EvmCertificateJournalFailure.SignerUnavailable);
+            }
             return Task.FromResult(Address);
         }
 
         public Task<string> SignAsync(string reference, EvmCertificatePreparedTransaction intent, BigInteger maxFee, BigInteger priority, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested(); Assert.Equal("worker-signer", reference); SignCalls++;
-            if (SignerUnavailable) throw new EvmCertificateJournalException(EvmCertificateJournalFailure.SignerUnavailable);
+            if (SignerUnavailable)
+            {
+                throw new EvmCertificateJournalException(EvmCertificateJournalFailure.SignerUnavailable);
+            }
             var tx = new Transaction1559(intent.Network.ChainId, intent.Nonce, priority, maxFee, intent.Budget.GasLimit,
                 intent.Network.ContractAddress, 0, intent.Input, []);
             return Task.FromResult("0x" + new Transaction1559Signer().SignTransaction(key, tx));
@@ -357,9 +363,15 @@ public sealed class EvmCertificatePublicationWorkerPostgreSqlTests(JournalPostgr
         public async Task<string> SendRawTransactionAsync(EvmCertificatePreparedTransaction intent, string raw, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested(); Assert.Equal(Address, intent.SignerAddress); SendCalls++;
-            if (BeforeSend is not null) await BeforeSend(raw);
+            if (BeforeSend is not null)
+            {
+                await BeforeSend(raw);
+            }
             ct.ThrowIfCancellationRequested();
-            if (FailSendAfterAccept) throw new EvmCertificateRpcException(EvmCertificateRpcFailure.Timeout);
+            if (FailSendAfterAccept)
+            {
+                throw new EvmCertificateRpcException(EvmCertificateRpcFailure.Timeout);
+            }
             return "0x" + Convert.ToHexString(Nethereum.Util.Sha3Keccack.Current.CalculateHash(Convert.FromHexString(raw[2..]))).ToLowerInvariant();
         }
 

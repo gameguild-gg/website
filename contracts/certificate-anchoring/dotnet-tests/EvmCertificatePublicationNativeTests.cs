@@ -222,7 +222,10 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         {
             await worker.ProcessAsync(id, Ct);
             var operation = Assert.IsType<EvmCertificateJournalSnapshot>(await journal.FindAsync(id, Ct));
-            if (operation.Status == EvmCertificatePublicationStatus.Confirmed) return operation;
+            if (operation.Status == EvmCertificatePublicationStatus.Confirmed)
+            {
+                return operation;
+            }
             Assert.NotEqual(EvmCertificatePublicationStatus.NeedsAttention, operation.Status);
             clock.Advance(CheckDelay);
             await Task.Delay(TimeSpan.FromMilliseconds(100), Ct);

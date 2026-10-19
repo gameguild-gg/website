@@ -284,7 +284,10 @@ public sealed class EvmCertificateJournal(IDbContextFactory<EvmCertificateJourna
     public Task<EvmCertificateJournalSnapshot> MarkNeedsAttentionAsync(EvmCertificateJournalLease lease,
         EvmCertificateJournalFailure failure, CancellationToken cancellationToken)
     {
-        if (!Enum.IsDefined(failure)) throw new ArgumentOutOfRangeException(nameof(failure));
+        if (!Enum.IsDefined(failure))
+        {
+            throw new ArgumentOutOfRangeException(nameof(failure));
+        }
         return RetryAsync(async db =>
         {
             var op = await OwnedAsync(db, lease, cancellationToken).ConfigureAwait(false);

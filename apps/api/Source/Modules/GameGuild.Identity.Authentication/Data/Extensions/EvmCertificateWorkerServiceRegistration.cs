@@ -10,7 +10,9 @@ public static class EvmCertificateWorkerServiceRegistration
     {
         ArgumentNullException.ThrowIfNull(services); ArgumentNullException.ThrowIfNull(policy);
         if (services.Any(s => s.ServiceType == typeof(EvmCertificatePublicationPolicy)))
+        {
             throw new ArgumentException("Only one explicitly configured publication profile is supported per worker host.", nameof(services));
+        }
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton(policy);
         services.AddScoped<EvmCertificatePublicationWorker>();

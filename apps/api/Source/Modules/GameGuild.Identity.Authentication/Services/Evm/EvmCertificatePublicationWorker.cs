@@ -13,7 +13,10 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
         var processed = 0;
         foreach (var id in due)
         {
-            if (await ProcessAsync(id, cancellationToken).ConfigureAwait(false) is not null) processed++;
+            if (await ProcessAsync(id, cancellationToken).ConfigureAwait(false) is not null)
+            {
+                processed++;
+            }
         }
         return processed;
     }
@@ -22,9 +25,15 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
     {
         cancellationToken.ThrowIfCancellationRequested();
         var candidate = await journal.FindAsync(operationId, cancellationToken).ConfigureAwait(false);
-        if (candidate is null || candidate.Network.Profile != policy.Network.Profile) return null;
+        if (candidate is null || candidate.Network.Profile != policy.Network.Profile)
+        {
+            return null;
+        }
         var lease = await journal.TryAcquireAsync(operationId, policy.LeaseDuration, cancellationToken).ConfigureAwait(false);
-        if (lease is null) return null;
+        if (lease is null)
+        {
+            return null;
+        }
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         deadline.CancelAfter(policy.LeaseDuration - TimeSpan.FromSeconds(2));
         try
@@ -72,7 +81,10 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
     {
         var op = await journal.FindAsync(lease.OperationId, ct).ConfigureAwait(false)
             ?? throw new EvmCertificateJournalException(EvmCertificateJournalFailure.LeaseLost);
-        if (!policy.Matches(op.Network)) return await journal.MarkNeedsAttentionAsync(lease, EvmCertificateJournalFailure.InvalidEvidence, ct).ConfigureAwait(false);
+        if (!policy.Matches(op.Network))
+        {
+            return await journal.MarkNeedsAttentionAsync(lease, EvmCertificateJournalFailure.InvalidEvidence, ct).ConfigureAwait(false);
+        }
         var actual = await verifier.ValidateNetworkAsync(ct).ConfigureAwait(false);
         if (actual.ChainId != op.Network.ChainId || actual.ContractAddress != op.Network.ContractAddress || actual.IssuerId != op.Network.IssuerId ||
             actual.RuntimeCodeSha256 != op.Network.RuntimeCodeSha256 || actual.FinalityMode != op.Network.FinalityMode ||
@@ -83,9 +95,14 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
 
         var attempts = await journal.ListAttemptsAsync(op.Id, ct).ConfigureAwait(false);
         var observation = await ObserveAsync(lease, op, attempts, ct).ConfigureAwait(false);
-        if (observation is not null) return observation;
+        if (observation is not null)
+        {
+            return observation;
+        }
         if (attempts.Count == 0 && op.TransactionHash is not null)
+        {
             return await journal.MarkNeedsAttentionAsync(lease, EvmCertificateJournalFailure.InvalidEvidence, ct).ConfigureAwait(false);
+        }
         return await PublishAsync(lease, op, attempts, ct).ConfigureAwait(false);
     }
 
@@ -108,7 +125,10 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
 
         // An unacknowledged send reuses exactly the durable payload, never another nonce or fee candidate.
         var hash = await rpc.SendRawTransactionAsync(op.PreparedTransaction, attempt.RawTransaction, ct).ConfigureAwait(false);
-        if (hash != attempt.TransactionHash) return await journal.MarkNeedsAttentionAsync(lease, EvmCertificateJournalFailure.InvalidEvidence, ct).ConfigureAwait(false);
+        if (hash != attempt.TransactionHash)
+        {
+            return await journal.MarkNeedsAttentionAsync(lease, EvmCertificateJournalFailure.InvalidEvidence, ct).ConfigureAwait(false);
+        }
         await journal.RecordBroadcastAsync(lease, hash, ct).ConfigureAwait(false);
         return await journal.ScheduleCheckAsync(lease, policy.CheckDelay, ct).ConfigureAwait(false);
     }
@@ -116,11 +136,16 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
     private async Task<EvmCertificateJournalAttempt> ReplaceAsync(EvmCertificateJournalLease lease,
         EvmCertificateJournalSnapshot op, EvmCertificateJournalAttempt previous, int count, CancellationToken ct)
     {
-        if (count >= policy.MaximumAttempts) throw new EvmCertificateJournalException(EvmCertificateJournalFailure.InvalidState);
+        if (count >= policy.MaximumAttempts)
+        {
+            throw new EvmCertificateJournalException(EvmCertificateJournalFailure.InvalidState);
+        }
         var fee = Bump(previous.MaximumFeePerGasWei);
         var priority = Bump(previous.PriorityFeePerGasWei);
         if (fee > op.Budget!.MaximumFeePerGasWei || priority > fee)
+        {
             throw new EvmCertificateJournalException(EvmCertificateJournalFailure.InvalidState);
+        }
         var raw = await signer.SignAsync(op.SignerReference!, op.PreparedTransaction, fee, priority, ct).ConfigureAwait(false);
         return await journal.StoreSignedAttemptAsync(lease, raw, ct).ConfigureAwait(false);
     }
@@ -135,7 +160,9 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
             op = await journal.ReserveNonceAsync(lease, policy.SignerReference, address, pending, policy.Budget, ct).ConfigureAwait(false);
         }
         if (policy.InitialFeePerGasWei > op.Budget!.MaximumFeePerGasWei)
+        {
             throw new EvmCertificateJournalException(EvmCertificateJournalFailure.InvalidState);
+        }
         var raw = await signer.SignAsync(op.SignerReference!, op.PreparedTransaction,
             policy.InitialFeePerGasWei, policy.InitialPriorityFeePerGasWei, ct).ConfigureAwait(false);
         var attempt = await journal.StoreSignedAttemptAsync(lease, raw, ct).ConfigureAwait(false);
@@ -147,21 +174,33 @@ public sealed class EvmCertificatePublicationWorker(EvmCertificateJournal journa
     {
         (string Hash, EvmCertificateProofResult Proof)? deferred = null;
         var hashes = attempts.Reverse().Select(a => a.TransactionHash).ToList();
-        if (op.TransactionHash is not null && !hashes.Contains(op.TransactionHash)) hashes.Add(op.TransactionHash);
+        if (op.TransactionHash is not null && !hashes.Contains(op.TransactionHash))
+        {
+            hashes.Add(op.TransactionHash);
+        }
         foreach (var hash in hashes)
         {
             var proof = op.Kind == EvmCertificateOperationKind.Anchor
                 ? await verifier.VerifyAnchorAsync(op.CertificateHash, hash, ct).ConfigureAwait(false)
                 : await verifier.VerifyRevocationAsync(op.CertificateHash, hash, ct).ConfigureAwait(false);
             if (proof.Status is EvmCertificateProofStatus.Verified or EvmCertificateProofStatus.Revoked)
+            {
                 return await journal.RecordObservationAsync(lease, hash, proof, policy.CheckDelay, ct).ConfigureAwait(false);
+            }
             if (proof.Status is not EvmCertificateProofStatus.Pending &&
-                (deferred is null || proof.Status == EvmCertificateProofStatus.NotFinalized)) deferred = (hash, proof);
+                (deferred is null || proof.Status == EvmCertificateProofStatus.NotFinalized))
+            {
+                deferred = (hash, proof);
+            }
         }
         if (deferred.HasValue && (deferred.Value.Proof.Status != EvmCertificateProofStatus.Reorged || op.Status != EvmCertificatePublicationStatus.Reorged))
+        {
             return await journal.RecordObservationAsync(lease, deferred.Value.Hash, deferred.Value.Proof, policy.CheckDelay, ct).ConfigureAwait(false);
+        }
         if (hashes.Count > 0 && op.Status is EvmCertificatePublicationStatus.Confirmed or EvmCertificatePublicationStatus.Revoked)
+        {
             return await journal.RecordObservationAsync(lease, op.TransactionHash!, new(EvmCertificateProofStatus.Pending), policy.CheckDelay, ct).ConfigureAwait(false);
+        }
         return null;
     }
 
