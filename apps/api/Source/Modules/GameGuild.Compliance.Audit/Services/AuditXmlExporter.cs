@@ -10,7 +10,7 @@ public static class AuditXmlExporter
 {
     private const string SchemaInstanceNamespace = "http://www.w3.org/2001/XMLSchema-instance";
 
-    public static async Task WriteAsync(
+    public static async Task WriteDocumentAsync(
         Stream destination,
         AuditJsonExportDocument document,
         CancellationToken cancellationToken)
@@ -129,9 +129,18 @@ public static class AuditXmlExporter
         public override bool CanWrite => destination.CanWrite;
         public override long Length => throw new NotSupportedException();
         public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            ValidateBufferArguments(buffer, offset, count);
+            throw new NotSupportedException("The export destination is write-only.");
+        }
+        public override long Seek(long offset, SeekOrigin origin) =>
+            throw new NotSupportedException($"Seeking to offset {offset} with origin {origin} is not supported.");
+        public override void SetLength(long value)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            throw new NotSupportedException("The export destination cannot be resized.");
+        }
         public override void Flush() { exportToken.ThrowIfCancellationRequested(); destination.Flush(); }
         public override void Write(byte[] buffer, int offset, int count)
         {

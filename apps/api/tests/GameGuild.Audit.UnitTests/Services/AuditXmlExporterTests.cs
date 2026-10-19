@@ -17,7 +17,7 @@ public sealed class AuditXmlExporterTests
     {
         var record = Record();
         await using var stream = new MemoryStream();
-        await AuditXmlExporter.WriteAsync(stream, Document(Records([record])), CancellationToken.None);
+        await AuditXmlExporter.WriteDocumentAsync(stream, Document(Records([record])), CancellationToken.None);
 
         Assert.True(stream.CanWrite);
         var text = Encoding.UTF8.GetString(stream.ToArray());
@@ -81,7 +81,7 @@ public sealed class AuditXmlExporterTests
     {
         await using var stream = new MemoryStream();
         var document = new AuditJsonExportDocument("1.0", new AuditJsonExportPagination(1, 500, 0, 0), Records([]));
-        await AuditXmlExporter.WriteAsync(stream, document, CancellationToken.None);
+        await AuditXmlExporter.WriteDocumentAsync(stream, document, CancellationToken.None);
         var xml = XDocument.Parse(Encoding.UTF8.GetString(stream.ToArray()));
         Assert.Equal("0", xml.Root!.Element("pagination")!.Element("totalRecords")!.Value);
         Assert.Empty(xml.Root.Element("records")!.Elements());
@@ -94,7 +94,7 @@ public sealed class AuditXmlExporterTests
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         await using var stream = new MemoryStream();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => AuditXmlExporter.WriteAsync(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => AuditXmlExporter.WriteDocumentAsync(
             stream, Document(Records([Record()], () => enumerated = true)), cancelled.Token));
         Assert.False(enumerated);
         Assert.Equal(0, stream.Length);
@@ -105,7 +105,7 @@ public sealed class AuditXmlExporterTests
     {
         using var cancelled = new CancellationTokenSource();
         await using var stream = new BlockingWriteStream();
-        var export = AuditXmlExporter.WriteAsync(stream, Document(Records([Record()])), cancelled.Token);
+        var export = AuditXmlExporter.WriteDocumentAsync(stream, Document(Records([Record()])), cancelled.Token);
         await stream.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
         cancelled.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => export.WaitAsync(TimeSpan.FromSeconds(10)));
@@ -118,7 +118,7 @@ public sealed class AuditXmlExporterTests
         var failure = new InvalidOperationException("source failed");
         await using var stream = new MemoryStream();
         var observed = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            AuditXmlExporter.WriteAsync(stream, Document(FailingRecords(failure)), CancellationToken.None));
+            AuditXmlExporter.WriteDocumentAsync(stream, Document(FailingRecords(failure)), CancellationToken.None));
         Assert.Same(failure, observed);
         Assert.True(stream.CanWrite);
         Assert.Throws<XmlException>(() => XDocument.Parse(Encoding.UTF8.GetString(stream.ToArray())));
@@ -134,7 +134,7 @@ public sealed class AuditXmlExporterTests
             if (count == 256) { Assert.True(stream.Length > 0); }
             count++;
         });
-        await AuditXmlExporter.WriteAsync(stream, Document(source), CancellationToken.None);
+        await AuditXmlExporter.WriteDocumentAsync(stream, Document(source), CancellationToken.None);
         Assert.Equal(512, count);
         Assert.Equal(512, XDocument.Parse(Encoding.UTF8.GetString(stream.ToArray())).Root!
             .Element("records")!.Elements("record").Count());
@@ -173,7 +173,7 @@ public sealed class AuditXmlExporterTests
     private static async Task<XElement> ExportOneAsync(AuditJsonExportRecord record)
     {
         await using var stream = new MemoryStream();
-        await AuditXmlExporter.WriteAsync(stream, Document(Records([record])), CancellationToken.None);
+        await AuditXmlExporter.WriteDocumentAsync(stream, Document(Records([record])), CancellationToken.None);
         return Assert.Single(XDocument.Parse(Encoding.UTF8.GetString(stream.ToArray())).Root!.Element("records")!.Elements("record"));
     }
 
@@ -199,6 +199,7 @@ public sealed class AuditXmlExporterTests
         public bool ReceivedCancelableToken { get; private set; }
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
+            Assert.False(buffer.IsEmpty);
             ReceivedCancelableToken = cancellationToken.CanBeCanceled;
             Entered.TrySetResult();
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);

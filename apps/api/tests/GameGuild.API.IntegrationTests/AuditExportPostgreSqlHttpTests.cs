@@ -532,12 +532,14 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         }
         public Task<Stream> OpenReadAsync(Guid tenantId, string storageReference, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var file = Files[storageReference];
             Assert.Equal(tenantId, file.TenantId);
             return Task.FromResult<Stream>(new MemoryStream(file.Content, writable: false));
         }
         public Task DeleteAsync(Guid tenantId, string storageReference, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             Assert.Equal(tenantId, Files[storageReference].TenantId);
             Files.Remove(storageReference);
             return Task.CompletedTask;

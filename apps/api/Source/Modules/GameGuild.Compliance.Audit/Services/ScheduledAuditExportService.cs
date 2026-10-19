@@ -377,7 +377,7 @@ public sealed partial class ScheduledAuditExportService(
                         MapJsonRecordsAsync(records, cancellationToken));
                     if (export.ExportFormat == ExportFormat.Xml)
                     {
-                        await AuditXmlExporter.WriteAsync(file, document, cancellationToken).ConfigureAwait(false);
+                        await AuditXmlExporter.WriteDocumentAsync(file, document, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {

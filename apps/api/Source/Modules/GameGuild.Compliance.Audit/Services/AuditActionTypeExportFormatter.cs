@@ -56,7 +56,7 @@ public static class AuditActionTypeExportFormatter
             new AuditJsonExportPagination(1, Math.Max(snapshot.Length, 1), snapshot.Length, snapshot.Length == 0 ? 0 : 1),
             MapXmlRecordsAsync(snapshot, cancellationToken));
         await using var stream = new MemoryStream();
-        await AuditXmlExporter.WriteAsync(stream, document, cancellationToken).ConfigureAwait(false);
+        await AuditXmlExporter.WriteDocumentAsync(stream, document, cancellationToken).ConfigureAwait(false);
         return stream.ToArray();
     }
 

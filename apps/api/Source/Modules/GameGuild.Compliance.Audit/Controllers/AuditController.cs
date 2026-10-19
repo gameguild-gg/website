@@ -604,7 +604,7 @@ public class AuditController(
         {
             if (format == ExportFormat.Xml)
             {
-                await AuditXmlExporter.WriteAsync(Response.Body, document, cancellationToken).ConfigureAwait(false);
+                await AuditXmlExporter.WriteDocumentAsync(Response.Body, document, cancellationToken).ConfigureAwait(false);
             }
             else
             {
