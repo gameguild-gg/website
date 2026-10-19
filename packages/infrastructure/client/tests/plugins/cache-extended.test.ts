@@ -3,12 +3,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  MemoryCache,
-  createCacheInterceptor,
-  type CacheConfig,
-} from '../../src/plugins/cache.js';
-import type { RequestConfig } from '../../src/runtime/transport/types.js';
+import { createCacheInterceptor } from '../../src/plugins/cache.js';
+import type { ApiResponse, RequestConfig } from '../../src/runtime/transport/types.js';
+
+type CachedRequest = RequestConfig & { _cachedData?: unknown };
+type CacheResponse = ApiResponse<unknown> & { _request?: RequestConfig };
 
 describe('createCacheInterceptor', () => {
   let interceptor: ReturnType<typeof createCacheInterceptor>;
@@ -27,7 +26,7 @@ describe('createCacheInterceptor', () => {
 
       const result = await interceptor.onRequest!(request);
       expect(result).toEqual(request);
-      expect((result as any)._cachedData).toBeUndefined();
+      expect((result as CachedRequest)._cachedData).toBeUndefined();
     });
 
     it('should skip non-cacheable methods', async () => {
@@ -38,7 +37,7 @@ describe('createCacheInterceptor', () => {
       };
 
       const result = await interceptor.onRequest!(request);
-      expect((result as any)._cachedData).toBeUndefined();
+      expect((result as CachedRequest)._cachedData).toBeUndefined();
     });
   });
 
@@ -54,7 +53,7 @@ describe('createCacheInterceptor', () => {
       };
 
       const result = await interceptor.onRequest!(request);
-      expect((result as any)._cachedData).toEqual({ users: ['a'] });
+      expect((result as CachedRequest)._cachedData).toEqual({ users: ['a'] });
     });
   });
 
@@ -66,12 +65,12 @@ describe('createCacheInterceptor', () => {
         headers: {},
       };
 
-      const response = {
+      const response: CacheResponse = {
         data: { users: ['user1'] },
         status: 200,
-        headers: {},
+        headers: new Headers(),
         _request: request, // Linked request for key generation
-      } as any;
+      };
 
       const result = await interceptor.onResponse!(response);
       expect(result).toBe(response);
@@ -88,12 +87,12 @@ describe('createCacheInterceptor', () => {
         headers: {},
       };
 
-      const response = {
+      const response: CacheResponse = {
         data: { error: 'Internal' },
         status: 500,
-        headers: {},
+        headers: new Headers(),
         _request: request,
-      } as any;
+      };
 
       await interceptor.onResponse!(response);
 
@@ -102,11 +101,11 @@ describe('createCacheInterceptor', () => {
     });
 
     it('should not cache when _request is missing', async () => {
-      const response = {
+      const response: CacheResponse = {
         data: { test: true },
         status: 200,
-        headers: {},
-      } as any;
+        headers: new Headers(),
+      };
 
       await interceptor.onResponse!(response);
       expect(interceptor.cache.stats().size).toBe(0);
@@ -119,12 +118,12 @@ describe('createCacheInterceptor', () => {
         headers: {},
       };
 
-      const response = {
+      const response: CacheResponse = {
         data: { id: '1' },
         status: 201,
-        headers: {},
+        headers: new Headers(),
         _request: request,
-      } as any;
+      };
 
       await interceptor.onResponse!(response);
       expect(interceptor.cache.stats().size).toBe(0);
@@ -143,12 +142,12 @@ describe('createCacheInterceptor', () => {
 
       await custom.onRequest!(request);
 
-      const response = {
+      const response: CacheResponse = {
         data: null,
         status: 200,
-        headers: {},
+        headers: new Headers(),
         _request: request,
-      } as any;
+      };
 
       await custom.onResponse!(response);
       expect(custom.cache.stats().size).toBe(1);
@@ -176,10 +175,10 @@ describe('createCacheInterceptor', () => {
       interceptor.cache.set('GET:/users:{"page":2}', 'page2', 5000, []);
 
       const result1 = await interceptor.onRequest!(req1);
-      expect((result1 as any)._cachedData).toBe('page1');
+      expect((result1 as CachedRequest)._cachedData).toBe('page1');
 
       const result2 = await interceptor.onRequest!(req2);
-      expect((result2 as any)._cachedData).toBe('page2');
+      expect((result2 as CachedRequest)._cachedData).toBe('page2');
     });
   });
 });
@@ -194,12 +193,12 @@ describe('defaultGenerateTags — via interceptor', () => {
       headers: {},
     };
 
-    const response = {
+    const response: CacheResponse = {
       data: [],
       status: 200,
-      headers: {},
+      headers: new Headers(),
       _request: request,
-    } as any;
+    };
 
     await interceptor.onResponse!(response);
 
@@ -220,12 +219,12 @@ describe('defaultGenerateTags — via interceptor', () => {
       headers: {},
     };
 
-    const response = {
+    const response: CacheResponse = {
       data: { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' },
       status: 200,
-      headers: {},
+      headers: new Headers(),
       _request: request,
-    } as any;
+    };
 
     await interceptor.onResponse!(response);
 
@@ -243,12 +242,12 @@ describe('defaultGenerateTags — via interceptor', () => {
       headers: {},
     };
 
-    const response = {
+    const response: CacheResponse = {
       data: {},
       status: 200,
-      headers: {},
+      headers: new Headers(),
       _request: request,
-    } as any;
+    };
 
     await interceptor.onResponse!(response);
 
@@ -267,12 +266,12 @@ describe('defaultGenerateTags — via interceptor', () => {
       headers: {},
     };
 
-    const response = {
+    const response: CacheResponse = {
       data: {},
       status: 200,
-      headers: {},
+      headers: new Headers(),
       _request: request,
-    } as any;
+    };
 
     await interceptor.onResponse!(response);
     expect(customTags).toHaveBeenCalledWith(request);

@@ -2,21 +2,38 @@
  * Fetch transport tests - Request ID generation
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createFetchTransport } from '../../src/runtime/transport/fetch.js';
 import type { RequestConfig } from '../../src/runtime/transport/types.js';
 
-// Mock fetch
-global.fetch = vi.fn();
+const mockFetch = vi.fn<typeof fetch>();
+
+function fetchOptions(index = 0): RequestInit {
+  const options = mockFetch.mock.calls[index]?.[1];
+  if (!options) throw new Error('Expected captured fetch options');
+  return options;
+}
+
+function fetchHeaders(index = 0): Headers {
+  const headers = fetchOptions(index).headers;
+  if (!(headers instanceof Headers)) throw new TypeError('Expected native request Headers');
+  return headers;
+}
 
 describe('Fetch Transport - Request ID', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
+    mockFetch.mockReset();
+    vi.stubGlobal('fetch', mockFetch);
+    mockFetch.mockImplementation(async () => new Response(JSON.stringify({ data: 'test' }), {
       status: 200,
-      json: async () => ({ data: 'test' }),
-    });
+      headers: { 'Content-Type': 'application/json' },
+    }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('should generate request ID automatically', async () => {
@@ -29,7 +46,9 @@ describe('Fetch Transport - Request ID', () => {
       path: '/test',
     };
 
-    await transport.request(request);
+    const result = await transport.request(request);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.data).toEqual({ data: 'test' });
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.any(String),
@@ -38,7 +57,7 @@ describe('Fetch Transport - Request ID', () => {
       }),
     );
 
-    const headers = (global.fetch as any).mock.calls[0][1].headers as Headers;
+    const headers = fetchHeaders();
     expect(headers.get('X-Request-Id')).toBeTruthy();
     expect(headers.get('X-Request-Id')).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   });
@@ -57,7 +76,7 @@ describe('Fetch Transport - Request ID', () => {
 
     await transport.request(request);
 
-    const headers = (global.fetch as any).mock.calls[0][1].headers as Headers;
+    const headers = fetchHeaders();
     expect(headers.get('X-Request-Id')).toBe(customId);
   });
 
@@ -74,7 +93,7 @@ describe('Fetch Transport - Request ID', () => {
 
     await transport.request(request);
 
-    const headers = (global.fetch as any).mock.calls[0][1].headers as Headers;
+    const headers = fetchHeaders();
     expect(headers.get('X-Request-Id')).toBeNull();
   });
 
@@ -85,26 +104,25 @@ describe('Fetch Transport - Request ID', () => {
       requestIdGenerator: () => `custom-${++counter}`,
     });
 
-    await transport.request({ method: 'GET', path: '/test1' });
-    await transport.request({ method: 'GET', path: '/test2' });
+    const first = await transport.request({ method: 'GET', path: '/test1' });
+    const second = await transport.request({ method: 'GET', path: '/test2' });
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
 
-    const headers1 = (global.fetch as any).mock.calls[0][1].headers as Headers;
-    const headers2 = (global.fetch as any).mock.calls[1][1].headers as Headers;
+    const headers1 = fetchHeaders();
+    const headers2 = fetchHeaders(1);
 
     expect(headers1.get('X-Request-Id')).toBe('custom-1');
     expect(headers2.get('X-Request-Id')).toBe('custom-2');
   });
 
   it('should handle JSON parse errors gracefully', async () => {
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
+    const response = new Response('Invalid JSON response body', {
       status: 200,
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      json: async () => {
-        throw new Error('Invalid JSON');
-      },
-      text: async () => 'Invalid JSON response body',
+      headers: { 'Content-Type': 'application/json' },
     });
+    vi.spyOn(response, 'json').mockRejectedValue(new Error('Invalid JSON'));
+    mockFetch.mockResolvedValue(response);
 
     const transport = createFetchTransport({
       baseUrl: 'http://localhost:8080',
@@ -142,7 +160,7 @@ describe('Fetch Transport - Request ID', () => {
 
     await transport.request({ method: 'POST', path: '/upload', body });
 
-    const options = (global.fetch as any).mock.calls[0][1] as RequestInit;
+    const options = fetchOptions();
     expect(options.body).toBe(body);
     expect((options.headers as Headers).has('Content-Type')).toBe(false);
   });
