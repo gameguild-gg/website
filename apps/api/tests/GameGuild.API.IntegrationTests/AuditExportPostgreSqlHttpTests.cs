@@ -209,8 +209,10 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         Assert.False(response.Headers.Contains("X-Audit-Export-Id"));
     }
 
-    [Fact]
-    public async Task Json_pagination_and_optional_gzip_preserve_schema_and_original_text()
+    [Theory]
+    [InlineData("json", "application/json")]
+    [InlineData("xml", "application/xml")]
+    public async Task Document_pagination_and_optional_gzip_preserve_schema_and_original_text(string format, string mediaType)
     {
         var actor = Guid.NewGuid();
         var tenant = Guid.NewGuid();
@@ -230,30 +232,48 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
             await db.SaveChangesAsync();
         }
         using var client = fixture.CreateAuthenticatedClient(actor, tenant, true);
-        client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+        client.DefaultRequestHeaders.Accept.ParseAdd(mediaType);
         client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip");
-        using var compressed = await client.PostAsJsonAsync("/api/audit/export/json",
+        using var compressed = await client.PostAsJsonAsync("/api/audit/export/" + format,
             new AuditExportRequest { TenantId = tenant, ActionType = action, PageNumber = 2, PageSize = 1 });
         Assert.Equal(HttpStatusCode.OK, compressed.StatusCode);
         Assert.Contains("gzip", compressed.Content.Headers.ContentEncoding);
         Assert.Contains("Accept-Encoding", compressed.Headers.Vary);
         await using var bytes = await compressed.Content.ReadAsStreamAsync();
         await using var gzip = new GZipStream(bytes, CompressionMode.Decompress);
-        using var json = await JsonDocument.ParseAsync(gzip);
-        var pagination = json.RootElement.GetProperty("pagination");
-        Assert.Equal(2, pagination.GetProperty("pageNumber").GetInt32());
-        Assert.Equal(1, pagination.GetProperty("pageSize").GetInt32());
-        Assert.Equal(3, pagination.GetProperty("totalRecords").GetInt32());
-        Assert.Equal(3, pagination.GetProperty("totalPages").GetInt32());
-        var record = Assert.Single(json.RootElement.GetProperty("records").EnumerateArray());
-        Assert.StartsWith("=1+1 ", record.GetProperty("description").GetString());
-        Assert.Equal(2, record.GetProperty("metadata").GetProperty("nested").GetProperty("items").GetArrayLength());
+        using var reader = new StreamReader(gzip);
+        var decompressed = await reader.ReadToEndAsync();
+        if (format == "json")
+        {
+            using var json = JsonDocument.Parse(decompressed);
+            var pagination = json.RootElement.GetProperty("pagination");
+            Assert.Equal(2, pagination.GetProperty("pageNumber").GetInt32());
+            Assert.Equal(1, pagination.GetProperty("pageSize").GetInt32());
+            Assert.Equal(3, pagination.GetProperty("totalRecords").GetInt32());
+            Assert.Equal(3, pagination.GetProperty("totalPages").GetInt32());
+            var record = Assert.Single(json.RootElement.GetProperty("records").EnumerateArray());
+            Assert.StartsWith("=1+1 ", record.GetProperty("description").GetString());
+            Assert.Equal(2, record.GetProperty("metadata").GetProperty("nested").GetProperty("items").GetArrayLength());
+        }
+        else
+        {
+            var xml = XDocument.Parse(decompressed);
+            var pagination = xml.Root!.Element("pagination")!;
+            Assert.Equal("2", pagination.Element("pageNumber")!.Value);
+            Assert.Equal("1", pagination.Element("pageSize")!.Value);
+            Assert.Equal("3", pagination.Element("totalRecords")!.Value);
+            Assert.Equal("3", pagination.Element("totalPages")!.Value);
+            var record = Assert.Single(xml.Root.Element("records")!.Elements("record"));
+            Assert.StartsWith("=1+1 ", record.Element("description")!.Value);
+            using var metadata = JsonDocument.Parse(record.Element("metadata")!.Value);
+            Assert.Equal(2, metadata.RootElement.GetProperty("nested").GetProperty("items").GetArrayLength());
+        }
 
         client.DefaultRequestHeaders.AcceptEncoding.Clear();
-        using var plain = await client.PostAsJsonAsync("/api/audit/export/json",
+        using var plain = await client.PostAsJsonAsync("/api/audit/export/" + format,
             new AuditExportRequest { TenantId = tenant, ActionType = action, PageNumber = 2, PageSize = 1 });
         Assert.Empty(plain.Content.Headers.ContentEncoding);
-        Assert.Equal(json.RootElement.GetRawText(), await plain.Content.ReadAsStringAsync());
+        Assert.Equal(decompressed, await plain.Content.ReadAsStringAsync());
     }
 
     [Theory]
@@ -455,7 +475,7 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         var history = Assert.Single(await service.GetHistoryAsync(exportId, tenant, CancellationToken.None));
         Assert.Equal(ExportStatus.Completed, history.Status);
         Assert.Equal(1, history.RecordCount);
-        var stored = Assert.Single(storage.Files.Values.Where(file => file.TenantId == tenant));
+        var stored = Assert.Single(storage.Files.Values, file => file.TenantId == tenant);
         Assert.Equal("application/xml; charset=utf-8", stored.ContentType);
         Assert.EndsWith(".xml", stored.FileName);
         Assert.Equal(Convert.ToHexString(SHA256.HashData(stored.Content)).ToLowerInvariant(), stored.Hash);
