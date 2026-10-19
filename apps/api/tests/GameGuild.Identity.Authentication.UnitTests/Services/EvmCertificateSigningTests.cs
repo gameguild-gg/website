@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using GameGuild.Configuration.ApplicationLayer;
 using Nethereum.Signer;
 using Xunit;
@@ -12,7 +13,7 @@ public sealed class EvmCertificateSigningTests
     public async Task AddressResolutionClearsTheTransferredPrivateKeyBuffer()
     {
         var key = EthECKey.GenerateKey();
-        var keys = new StubKeys(_ => key.GetPrivateKeyAsBytes());
+        var keys = new StubKeys(_ => PrivateKeyCopy(key));
         var signer = new EvmCertificateSoftwareSigner(keys);
         Assert.Equal(key.GetPublicAddress().ToLowerInvariant(), await signer.GetAddressAsync("issuer-key-v1", Ct));
         Assert.All(keys.LastBuffer!, b => Assert.Equal((byte)0, b));
@@ -24,7 +25,7 @@ public sealed class EvmCertificateSigningTests
     public async Task SignsTheReservedTypeTwoIntentWithinItsOriginalFeeBudget(EvmCertificateOperationKind kind)
     {
         var key = EthECKey.GenerateKey();
-        var keys = new StubKeys(_ => key.GetPrivateKeyAsBytes());
+        var keys = new StubKeys(_ => PrivateKeyCopy(key));
         var prepared = Preparation(key.GetPublicAddress()) with { Kind = kind };
         var raw = await new EvmCertificateSoftwareSigner(keys).SignAsync("issuer-key-v1", prepared, 2, 1, Ct);
         var envelope = EvmCertificateSignedEnvelope.Validate(raw, prepared);
@@ -38,7 +39,7 @@ public sealed class EvmCertificateSigningTests
     {
         var original = EthECKey.GenerateKey();
         var replacement = EthECKey.GenerateKey();
-        var keys = new StubKeys(_ => replacement.GetPrivateKeyAsBytes());
+        var keys = new StubKeys(_ => PrivateKeyCopy(replacement));
         var error = await Assert.ThrowsAsync<EvmCertificateJournalException>(() =>
             new EvmCertificateSoftwareSigner(keys).SignAsync("issuer-key-v1", Preparation(original.GetPublicAddress()), 2, 1, Ct));
         Assert.Equal(EvmCertificateJournalFailure.SignerUnavailable, error.Failure);
@@ -55,7 +56,7 @@ public sealed class EvmCertificateSigningTests
     public async Task InvalidFeesAreRejectedBeforeResolvingAnyPrivateKey(int fee, int priority)
     {
         var key = EthECKey.GenerateKey();
-        var keys = new StubKeys(_ => key.GetPrivateKeyAsBytes());
+        var keys = new StubKeys(_ => PrivateKeyCopy(key));
         var error = await Assert.ThrowsAsync<EvmCertificateJournalException>(() =>
             new EvmCertificateSoftwareSigner(keys).SignAsync("issuer-key-v1", Preparation(key.GetPublicAddress()), fee, priority, Ct));
         Assert.Equal(EvmCertificateJournalFailure.InvalidTransaction, error.Failure);
@@ -107,7 +108,7 @@ public sealed class EvmCertificateSigningTests
         var keys = new StubKeys(_ =>
         {
             cancellation.Cancel();
-            return key.GetPrivateKeyAsBytes();
+            return PrivateKeyCopy(key);
         });
         var error = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             new EvmCertificateSoftwareSigner(keys).GetAddressAsync("issuer-key-v1", cancellation.Token));
@@ -148,7 +149,9 @@ public sealed class EvmCertificateSigningTests
         var mapping = new Dictionary<string, string> { ["issuer-key-v1"] = variable };
         var source = new EvmCertificateEnvironmentKeySource(mapping);
         mapping.Clear();
-        Environment.SetEnvironmentVariable(variable, key.GetPrivateKey());
+        var bytes = PrivateKeyCopy(key);
+        Environment.SetEnvironmentVariable(variable, Convert.ToHexString(bytes));
+        CryptographicOperations.ZeroMemory(bytes);
         try
         {
             var signer = new EvmCertificateSoftwareSigner(source);
@@ -159,6 +162,33 @@ public sealed class EvmCertificateSigningTests
         {
             Environment.SetEnvironmentVariable(variable, null);
         }
+    }
+
+    [Fact]
+    public async Task LeadingZeroScalarsUseIndependentPaddedBuffersWithoutErasingTheSdkCache()
+    {
+        var scalar = RandomNumberGenerator.GetBytes(31);
+        scalar[0] |= 1;
+        var padded = new byte[32];
+        scalar.CopyTo(padded, 1);
+        var key = new EthECKey(padded, true);
+        var keys = new StubKeys(_ => PrivateKeyCopy(key));
+        var signer = new EvmCertificateSoftwareSigner(keys);
+        var first = await signer.GetAddressAsync("issuer-key-v1", Ct);
+        Assert.Equal(first, await signer.GetAddressAsync("issuer-key-v1", Ct));
+        Assert.Equal(31, key.GetPrivateKeyAsBytes().Length);
+        Assert.Contains(key.GetPrivateKeyAsBytes(), b => b != 0);
+        Assert.All(keys.LastBuffer!, b => Assert.Equal((byte)0, b));
+        CryptographicOperations.ZeroMemory(scalar);
+        CryptographicOperations.ZeroMemory(padded);
+    }
+
+    private static byte[] PrivateKeyCopy(EthECKey key)
+    {
+        var sdkBytes = key.GetPrivateKeyAsBytes();
+        var owned = new byte[32];
+        sdkBytes.CopyTo(owned, owned.Length - sdkBytes.Length);
+        return owned;
     }
 
     private static EvmCertificatePreparedTransaction Preparation(string signer) => new(
