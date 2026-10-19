@@ -653,6 +653,47 @@ test('expanded partition counts preserve complete source traversal and the globa
   }
 });
 
+test('byte-weighted partitions separate large sources and retain every source in manifest order', () => {
+  const files = ['small-a.ts', 'large.ts', 'small-b.ts', 'medium.ts', 'empty.ts'];
+  const sizes = new Map([['small-a.ts', 10], ['large.ts', 1000], ['small-b.ts', 10],
+    ['medium.ts', 600], ['empty.ts', 0]]);
+  const originalFiles = [...files];
+  const originalSizes = [...sizes];
+  const parts = [0, 1].map((index) => partitionSources(files, index, 2, sizes));
+  assert.deepEqual(parts, [['large.ts'], ['small-a.ts', 'small-b.ts', 'medium.ts', 'empty.ts']]);
+  assert.deepEqual([...parts.flat()].sort(), [...files].sort());
+  assert.equal(new Set(parts.flat()).size, files.length);
+  assert.deepEqual(files, originalFiles);
+  assert.deepEqual([...sizes], originalSizes);
+  assert.deepEqual(partitionSources(files, 0, 1, sizes), files);
+});
+
+test('equal-sized sources retain balanced deterministic traversal with every partition count', () => {
+  const files = Array.from({ length: 3279 }, (value, index) => `source-${index}.ts`);
+  for (const bytes of [0, 100]) {
+    const sizes = new Map(files.map((file) => [file, bytes]));
+    for (const count of [4, 8, 16]) {
+      const parts = Array.from({ length: count }, (value, index) => partitionSources(files, index, count, sizes));
+      assert.equal(parts.flat().length, files.length);
+      assert.equal(new Set(parts.flat()).size, files.length);
+      for (let index = 0; index < count; index += 1) {
+        assert.deepEqual(parts[index], partitionSources(files, index, count));
+      }
+    }
+  }
+});
+
+test('byte-weighted allocation rejects missing and invalid source sizes', () => {
+  const files = ['first.ts', 'second.ts'];
+  for (const sizes of [null, {}, new Map(), new Map([['first.ts', 10]])]) {
+    assert.throws(() => partitionSources(files, 0, 2, sizes));
+  }
+  for (const value of [-1, 0.5, NaN, Infinity, '100']) {
+    assert.throws(() => partitionSources(files, 0, 2, new Map([['first.ts', 10], ['second.ts', value]])));
+  }
+  assert.throws(() => partitionSources(files, 0, 2, new Map([['first.ts', 10], ['other.ts', 10]])));
+});
+
 test('typed JavaScript rules receive a real project and retain AST-node property diagnostics', async (context) => {
   const configBytes = readFileSync('/tsconfig.json');
   assert.equal(createHash('sha256').update(configBytes).digest('hex'),

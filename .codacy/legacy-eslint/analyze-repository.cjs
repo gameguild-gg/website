@@ -72,10 +72,29 @@ function engineFailure(error, categories) {
     dependencyFrames: dependencyFrames(error?.stack) };
 }
 
-function partitionSources(files, index, count) {
+function partitionSources(files, index, count, sourceSizes) {
   assert(Number.isSafeInteger(count) && count > 0 && count <= files.length, 'Invalid partition count');
   assert(Number.isSafeInteger(index) && index >= 0 && index < count, 'Invalid partition index');
-  return files.filter((filename, position) => position % count === index);
+  if (sourceSizes === undefined) return files.filter((filename, position) => position % count === index);
+  assert(sourceSizes instanceof Map && sourceSizes.size === files.length, 'Every source requires a size');
+  const sources = files.map((filename, position) => {
+    const bytes = sourceSizes.get(filename);
+    assert(Number.isSafeInteger(bytes) && bytes >= 0, 'Invalid source size');
+    return { filename, position, bytes: Math.max(1, bytes) };
+  });
+  const partitions = Array.from({ length: count }, () => ({ bytes: 0, sources: [] }));
+  // Place the largest inputs in the lightest partition, then retain manifest
+  // order within each job. Scheduling never changes selection or rule options.
+  sources.sort((left, right) => right.bytes - left.bytes || left.position - right.position);
+  for (const source of sources) {
+    const destination = partitions.reduce((best, candidate) =>
+      candidate.bytes < best.bytes || (candidate.bytes === best.bytes && candidate.sources.length < best.sources.length)
+        ? candidate : best);
+    destination.sources.push(source);
+    destination.bytes += source.bytes;
+  }
+  return partitions[index].sources.sort((left, right) => left.position - right.position)
+    .map((source) => source.filename);
 }
 
 function analysisStatus(report, toolOutputBytes) {
@@ -162,8 +181,20 @@ async function analyze(output) {
     const selection = selectTrackedFiles(manifest);
     const index = Number(process.env.GAMEGUILD_CODACY_PARTITION_INDEX ?? 0);
     const count = Number(process.env.GAMEGUILD_CODACY_PARTITION_COUNT ?? 1);
-    let assigned = partitionSources(selection.sourceFiles, index, count);
     const casesPath = process.env.GAMEGUILD_CODACY_DIAGNOSTIC_CASES;
+    const sourceSizes = casesPath ? undefined : new Map(selection.sourceFiles.map((filename) =>
+      [filename, statSync(path.join('/src', filename)).size]));
+    let assigned = partitionSources(selection.sourceFiles, index, count, sourceSizes);
+    if (sourceSizes) {
+      const sizes = selection.sourceFiles.map((file) => ({ file, bytes: sourceSizes.get(file) }));
+      const serialized = `${sizes.map((row) => JSON.stringify(row)).join('\n')}\n`;
+      writeFileSync(path.join(output, 'source-sizes.jsonl'), serialized);
+      report.sourceScheduling = {
+        strategy: 'largest-source-bytes-first-v1',
+        sourceSizesSha256: createHash('sha256').update(serialized).digest('hex'),
+        assignedSourceBytes: assigned.reduce((total, file) => total + sourceSizes.get(file), 0),
+      };
+    }
     const cases = casesPath ? JSON.parse(readFileSync(casesPath, 'utf8')) : [];
     report.diagnosticSample = Boolean(casesPath);
     if (casesPath) {
