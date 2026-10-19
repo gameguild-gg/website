@@ -2,20 +2,27 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import React from 'react';
-import { render, act, waitFor, screen } from '@testing-library/react';
+import { render, act, waitFor } from '@testing-library/react';
+import type { AuthBroadcastMessage } from '../../src/integrations/react/broadcast.js';
+import type { Session } from '../../src/runtime/auth/types.js';
+
+type BroadcastHandler = (message: AuthBroadcastMessage) => void;
+type SessionResponseFixture = { ok: boolean; json?: () => Promise<unknown> };
+type SessionFetchFixture = (...args: Parameters<typeof globalThis.fetch>) => Promise<SessionResponseFixture>;
 
 // ─── Broadcast mock — must be set up BEFORE session-provider imports ──
 // We use vi.hoisted + vi.mock so the broadcast module is mocked before
 // session-provider.tsx imports it.
 const broadcastMock = vi.hoisted(() => {
-  let _onMessage: ((msg: any) => void) | null = null;
+  let _onMessage: BroadcastHandler | null = null;
   return {
     getOnMessage: () => _onMessage,
     resetOnMessage: () => {
       _onMessage = null;
     },
-    createAuthBroadcast: vi.fn((onMessage: (msg: any) => void) => {
+    createAuthBroadcast: vi.fn((onMessage: BroadcastHandler) => {
       _onMessage = onMessage;
       return {
         send: vi.fn(),
@@ -44,7 +51,7 @@ function Consumer({ testId = 'status' }: { testId?: string }) {
   );
 }
 
-const mockSession = {
+const mockSession: Session = {
   user: { id: 'u1', email: 'a@b.com', name: 'A' },
   expires: new Date(Date.now() + 3600_000).toISOString(),
 };
@@ -52,10 +59,10 @@ const mockSession = {
 // ─── Tests ──────────────────────────────────────────────────────
 
 describe('SessionProvider', () => {
-  let fetchSpy: ReturnType<typeof vi.fn>;
+  let fetchSpy: Mock<SessionFetchFixture>;
 
   beforeEach(() => {
-    fetchSpy = vi.fn();
+    fetchSpy = vi.fn<SessionFetchFixture>();
     vi.stubGlobal('fetch', fetchSpy);
     broadcastMock.resetOnMessage();
     broadcastMock.createAuthBroadcast.mockClear();
@@ -87,7 +94,7 @@ describe('SessionProvider', () => {
 
   it('uses initial session from SSR and sets status to authenticated', () => {
     const { getByTestId } = render(
-      <SessionProvider session={mockSession as any}>
+      <SessionProvider session={mockSession}>
         <Consumer />
       </SessionProvider>,
     );
@@ -176,17 +183,23 @@ describe('SessionProvider', () => {
       }),
     });
 
-    let updated: any;
+    // Preserve the deliberately partial update payload at this fixture boundary.
+    const updateData: { user: Partial<Session['user']> } = { user: { name: 'Updated' } };
+    const completed: { session: Session | null | undefined } = { session: undefined };
     await act(async () => {
-      updated = await ctxValue!.update({ user: { name: 'Updated' } } as any);
+      completed.session = await ctxValue!.update(updateData as Partial<Session>);
     });
 
+    const updated = completed.session;
     expect(updated).toBeTruthy();
+    if (!updated) throw new Error('Expected the session update to return a session');
     expect(updated.user.email).toBe('updated@b.com');
 
     // Verify POST was made
-    const postCall = fetchSpy.mock.calls.find((c: any[]) => c[1]?.method === 'POST');
+    const postCall = fetchSpy.mock.calls.find((call) => call[1]?.method === 'POST');
     expect(postCall).toBeTruthy();
+    expect(postCall?.[0]).toBe('/api/auth/session');
+    expect(postCall?.[1]?.body).toBe(JSON.stringify({ user: { name: 'Updated' } }));
   });
 
   it('update() returns null on failed response', async () => {
@@ -211,7 +224,7 @@ describe('SessionProvider', () => {
 
     fetchSpy.mockResolvedValueOnce({ ok: false });
 
-    let result: any;
+    let result: Session | null | undefined;
     await act(async () => {
       result = await ctxValue!.update();
     });
@@ -241,7 +254,7 @@ describe('SessionProvider', () => {
 
     fetchSpy.mockRejectedValueOnce(new Error('fail'));
 
-    let result: any;
+    let result: Session | null | undefined;
     await act(async () => {
       result = await ctxValue!.update();
     });
