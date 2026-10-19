@@ -2664,6 +2664,17 @@ and writes an audit entry on **every mutation path** (grants, revokes, defaults,
 content-type and resource grants, expired-permission cleanup). Invalidation failures
 propagate — a mutation whose cache invalidation failed is never reported as successful.
 
+### ACL decision expiry during asynchronous work
+
+Both subject-based and legacy user-based cached ACL evaluations recheck the
+source decision's earliest effective grant expiration after reading security
+versions and after an awaited distributed cache write. A decision that expired
+during either await is discarded and evaluated again. The same three-attempt
+budget bounds version instability and repeated expired answers; exhaustion fails
+closed. Cache hits also validate the effective boundary and cache TTLs remain
+clamped to it. This check governs the returned authorization decision and does
+not make a later resource operation atomic with a future grant expiry.
+
 ### Scheduled refresh-token retention
 
 The host registers an enabled `RefreshTokenCleanupWorker` with a fresh scoped
