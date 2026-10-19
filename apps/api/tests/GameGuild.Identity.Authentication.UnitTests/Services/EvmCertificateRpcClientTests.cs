@@ -229,7 +229,11 @@ public sealed class EvmCertificateRpcClientTests
             return false;
         }
 
-        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? _) => stream.WriteAsync(bytes, 0, bytes.Length);
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            using var content = new ByteArrayContent(bytes);
+            await content.CopyToAsync(stream, context);
+        }
         protected override Task<Stream> CreateContentReadStreamAsync() => Task.FromResult<Stream>(new MemoryStream(bytes, writable: false));
     }
 }
