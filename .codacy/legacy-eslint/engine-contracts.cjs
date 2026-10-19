@@ -419,17 +419,22 @@ test('immutable diagnostic fixtures retain observed bytes and keep current sourc
   const manifest = readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES);
   const selection = selectTrackedFiles(manifest);
   const trackedFiles = new Set(manifest.toString('utf8').split('\0').filter(Boolean));
+  const fixtureFiles = new Set();
   for (const recorded of cases) {
     assert(selection.sourceFiles.includes(recorded.file),
       'A historical reproducer must not exclude its current production source');
-    const inputFile = recorded.fixtureFile ?? recorded.file;
+    assert.match(recorded.fixtureFile, /^\.codacy\/legacy-eslint\/fixtures\/[^/]+\.txt$/u,
+      'Each historical reproducer must use a separate immutable fixture');
+    const inputFile = recorded.fixtureFile;
+    assert(!fixtureFiles.has(inputFile), 'Historical fixture paths must be unique');
+    fixtureFiles.add(inputFile);
+    assert(trackedFiles.has(inputFile), 'The historical bytes must also be tracked');
+    assert(!selection.sourceFiles.includes(inputFile),
+      'Historical fixture copies cannot inflate current source coverage');
+    assert.notEqual(inputFile, recorded.file);
+    assert.match(recorded.observedAtHead, /^[a-f0-9]{40}$/u);
     const bytes = readFileSync(path.join('/src', inputFile));
     assert.equal(createHash('sha256').update(bytes).digest('hex'), recorded.sha256);
-    if (recorded.fixtureFile) {
-      assert(trackedFiles.has(recorded.fixtureFile), 'The historical bytes must also be tracked');
-      assert.notEqual(inputFile, recorded.file);
-      assert.match(recorded.observedAtHead, /^[a-f0-9]{40}$/u);
-    }
   }
 });
 
