@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/security-codeql-followup-20261009
+      - feature/complete-security-pr755-20261018
   workflow_dispatch:
 
 permissions:
