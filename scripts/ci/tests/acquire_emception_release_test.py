@@ -220,7 +220,11 @@ class ArtifactContractTests(unittest.TestCase):
         self.assertFalse(release.needs_source_release(["apps/web/src/app/page.tsx", "docs/readme.md"]))
         for path in ["tools/emception/toolchain/overlays/curl.c", ".github/workflows/pr-verify.yml",
                      "scripts/ci/acquire-emception-release.py", "pnpm-lock.yaml",
-                     "apps/web/scripts/coding-cycle-browser-e2e.mjs"]:
+                     "apps/web/scripts/coding-cycle-browser-e2e.mjs", "apps/web/package.json",
+                     "apps/web/scripts/coding-cycle-editor-support.mjs",
+                     "apps/web/scripts/coding-cycle-editor-support.test.mjs",
+                     "apps/web/scripts/coding-cycle-toolchain-support.mjs",
+                     "apps/web/scripts/coding-cycle-toolchain-support.test.mjs"]:
             with self.subTest(path=path):
                 self.assertTrue(release.needs_source_release([path]))
         with self.assertRaises(ValueError):

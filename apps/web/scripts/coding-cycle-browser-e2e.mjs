@@ -48,6 +48,7 @@ import { resolvePnpmProcess } from "./pnpm-process.mjs";
 import { randomUUID } from "node:crypto";
 import { createMfaSignInContinuation, E2E_ADMIN_TOTP_SECRET } from "./sign-in-mfa-support.mjs";
 import { verifyCodingCycleToolchain } from "./coding-cycle-toolchain-support.mjs";
+import { assertRenderedEditorSource } from "./coding-cycle-editor-support.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync, createWriteStream, rmSync } from "node:fs";
 import { resolve } from "node:path";
@@ -1075,18 +1076,11 @@ async function studentJourney(fixture, browser) {
     await page.keyboard.press(process.platform === "darwin" ? "Meta+A" : "Control+A");
     await page.keyboard.press("Delete");
     await page.keyboard.insertText(STUDENT_FIX_SOURCE);
-    // Give Monaco a beat to flush the model, then HARD-assert the typed
-    // content landed in a monaco model (window.monaco is exposed for e2e).
-    await page.waitForTimeout(500);
-    const typedInModel = await page.evaluate((needle) => {
-      const monaco = window.monaco;
-      if (!monaco?.editor?.getModels) return false;
-      return monaco.editor.getModels().some((m) => m.getValue().includes(needle));
-    }, "e2e-student-fix");
-    if (!typedInModel) {
-      throw new Error("Typing failed: no Monaco model contains 'e2e-student-fix'.");
-    }
-    record("typed corrected code into Monaco (model contains fix)", true);
+    // Observe the actual active editor, not an optional window.monaco debug
+    // hook. Require the complete program, then retain execution and persisted
+    // submission checks below as independent behavior oracles.
+    await assertRenderedEditorSource(page, editor, STUDENT_FIX_SOURCE);
+    record("typed corrected code into Monaco (complete rendered program matches)", true);
     await screenshot(page, "student-typed-fix");
 
     // Run Tests #2 — public tests now pass.
