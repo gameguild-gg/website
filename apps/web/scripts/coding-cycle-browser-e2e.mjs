@@ -1064,23 +1064,27 @@ async function studentJourney(fixture, browser) {
     // TYPE real code into Monaco. Click the editor, select all, insert the fix.
     // insertText (IME-style atomic insert) — per-key typing drops characters
     // inside Monaco's C++ tokenization pipeline (observed '#icude').
-    const editor = page.locator(".monaco-editor").first();
+    const editor = page.getByTestId("ide-fullwidth-mount")
+      .getByTestId("editor-pane").locator(".monaco-editor").first();
     await editor.waitFor({ state: "visible", timeout: 15_000 });
     await editor.click();
     // Select all (Meta on mac, Control elsewhere — try both, harmless).
     await page.keyboard.press(process.platform === "darwin" ? "Meta+A" : "Control+A");
     await page.keyboard.press("Delete");
     await page.keyboard.insertText(STUDENT_FIX_SOURCE);
-    // Give Monaco a beat to flush the model, then HARD-assert the typed
-    // content landed in a monaco model (window.monaco is exposed for e2e).
+    // Inspect this editor's actual current model. A shared window.monaco
+    // registry can differ from the mounted editor's model services.
     await page.waitForTimeout(500);
-    const typedInModel = await page.evaluate((needle) => {
-      const monaco = window.monaco;
-      if (!monaco?.editor?.getModels) return false;
-      return monaco.editor.getModels().some((m) => m.getValue().includes(needle));
+    const typedInModel = await editor.evaluate((node, needle) => {
+      const readModel = Reflect.get(node, Symbol.for("gameguild.emception.editor-model-reader"));
+      if (typeof readModel !== "function") {
+        throw new Error("The active Monaco editor has no model inspection handle.");
+      }
+      const model = readModel();
+      return model?.path === "/home/user/main.cpp" && model.content.includes(needle);
     }, "e2e-student-fix");
     if (!typedInModel) {
-      throw new Error("Typing failed: no Monaco model contains 'e2e-student-fix'.");
+      throw new Error("Typing failed: the active main.cpp model does not contain 'e2e-student-fix'.");
     }
     record("typed corrected code into Monaco (model contains fix)", true);
     await screenshot(page, "student-typed-fix");

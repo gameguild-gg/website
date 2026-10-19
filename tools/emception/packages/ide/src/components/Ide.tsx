@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import DockGroupPanel from './DockGroup.js';
 import FileExplorer from './FileExplorer.js';
+import { attachEditorModelReader } from './editor-model-reader.js';
 import type { DockGroup, IdeController, IdeExtension, IdeProps, OpenTab, TerminalTab, WorkspaceConfig, WorkspaceFile } from './ide-types.js';
 import { activateIdeExtensions, validateIdeExtensions } from './ide-extensions.js';
 import {
@@ -767,6 +768,7 @@ export default function Ide({
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+    attachEditorModelReader(editor);
     // Expose for e2e tests (e.g. Playwright can read file content via window.monaco)
     (window as unknown as Record<string, unknown>).monaco = monaco;
     syncMonacoModels();
