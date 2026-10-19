@@ -62,6 +62,27 @@ export class ComplianceAuditModule {
   }
 
   /**
+   * Streams a versioned XML audit export with pagination metadata.
+   */
+  async postApiAuditExportXml(body: Types.ComplianceAuditAuditExportInput): Promise<Result<Blob, ApiError>> {
+    const url = '/api/audit/export/xml';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditExportInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      responseType: 'blob',
+      headers: { Accept: 'application/xml' },
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<Blob, ApiError>;
+  }
+
+  /**
    * Searches audit events using a nested condition tree with boolean logic.
    */
   async postApiAuditSearchFilter(body: Types.ComplianceAuditAuditConditionSearchInput): Promise<Result<Types.ComplianceAuditAuditLogOutput, ApiError>> {
@@ -208,6 +229,27 @@ export class ComplianceAuditModule {
     }
 
     return result;
+  }
+
+  /**
+   * Streams a versioned XML audit export with pagination metadata.
+   */
+  async postAdminAuditLogsExportXml(body: Types.ComplianceAuditAuditExportInput): Promise<Result<Blob, ApiError>> {
+    const url = '/v1/admin/audit-logs/export/xml';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditExportInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      responseType: 'blob',
+      headers: { Accept: 'application/xml' },
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<Blob, ApiError>;
   }
 
   /**
@@ -372,7 +414,7 @@ export class ComplianceAuditModule {
   }
 
   /**
-   * Exports matching action-type audit events as CSV or JSON.
+   * Exports matching action-type audit events as CSV, JSON or XML.
    */
   async getAdminAuditLogsSearchByActionTypeExport(query?: {
     format?: string;
