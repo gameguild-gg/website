@@ -132,6 +132,7 @@ export function createNextClient(config: NextClientConfig): ApiClient {
     baseUrl: config.baseUrl,
     timeout: config.timeout,
     interceptors: config.interceptors,
+    tenantHeader: config.tenantHeader,
   };
 
   // Add auth if session getter is provided

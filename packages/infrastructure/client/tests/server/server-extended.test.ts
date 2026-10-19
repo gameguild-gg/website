@@ -159,6 +159,9 @@ describe('createServerClient — extended', () => {
     });
 
     expect(client).toBeDefined();
+    const result = await client.request({ path: '/test', method: 'GET' });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual({ 'X-Custom-Tenant': 'tid' });
   });
 
   it('should pass timeout to transport', () => {

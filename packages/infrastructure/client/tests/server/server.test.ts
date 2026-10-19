@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createServerClient } from '../../src/server.js';
+import type { RequestConfig } from '../../src/runtime/transport/types.js';
 
 // Mock the transport module
 vi.mock('../../src/runtime/transport/fetch.js', () => ({
@@ -34,11 +35,11 @@ describe('createServerClient', () => {
   });
 
   it('should accept optional interceptors', () => {
-    const interceptor = vi.fn();
+    const interceptor = vi.fn((config: RequestConfig) => config);
 
     const client = createServerClient({
       baseUrl: 'http://localhost:5295',
-      interceptors: [interceptor],
+      interceptors: [{ onRequest: interceptor }],
     });
 
     expect(client).toBeDefined();

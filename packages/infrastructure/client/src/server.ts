@@ -26,6 +26,9 @@ export interface ServerClientConfig {
   /** Tenant provider for multi-tenancy */
   tenant?: TenantProvider;
 
+  /** Tenant header name; defaults to 'X-Tenant-Id'. */
+  tenantHeader?: string;
+
   /** Default request timeout in milliseconds */
   timeout?: number;
 
@@ -85,7 +88,7 @@ export function createServerClient(config: ServerClientConfig): ApiClient {
       createHeaderInterceptor(async (): Promise<Record<string, string>> => {
         const tenantId = await config.tenant!.getTenantId();
         if (tenantId) {
-          return { 'X-Tenant-Id': tenantId };
+          return { [config.tenantHeader ?? 'X-Tenant-Id']: tenantId };
         }
         return {};
       }),
