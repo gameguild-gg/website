@@ -36131,8 +36131,8 @@ IdentityAuthenticationRequestEmailCodeInputSchema = z.object({
 /** Zod schema for IdentityAuthenticationRequestMagicLinkInput. Request to send a passwordless magic sign-in link. */
 IdentityAuthenticationRequestMagicLinkInputSchema = z.object({
   email: z.string().email().min(1),
-  locale: z.string().max(16).nullable().optional(),
-  redirectTo: z.string().max(2048).nullable().optional(),
+  locale: z.string().min(0).max(16).nullable().optional(),
+  redirectTo: z.string().min(0).max(2048).nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
