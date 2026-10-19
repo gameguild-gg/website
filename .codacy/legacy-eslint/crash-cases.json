@@ -64,5 +64,11 @@
     "file": "packages/infrastructure/client/tests/errors/validation-transform.test.ts",
     "sha256": "f30bdca26848c3415c5ee31b37d8cc5043b99983ace1cebcf6d91044b14b9378",
     "observedAtHead": "273d719659c437d986272635d516687bddfb20b3"
+  },
+  {
+    "ruleId": "eslint-plugin/no-property-in-node",
+    "file": "tools/emception/scripts/tests/toolchain-provider-security.test.mjs",
+    "sha256": "25dbdd648031c443e8711f8c06501e6d04428bd43f9e51567532c8416d05849e",
+    "observedAtHead": "c1f6a94d5ccfb686cb7a23de8f5a002496e6640d"
   }
 ]

@@ -189,6 +189,16 @@ function createRepositoryProfile(projection, nodeTargets) {
           settings: { node: { ...settings.node, version: target.version } },
         })),
         ...parserOverrides,
+        // The image's project already allows JavaScript. Its inherited JS
+        // override omitted that project while leaving typed plugin rules on.
+        // Supply their type services instead of suppressing those rules.
+        {
+          files: ['*.js', '*.jsx', '*.mjs', '*.cjs', '*.jsm'],
+          parserOptions: { project: '/tsconfig.json',
+            extraFileExtensions: [...new Set([
+              ...(projection.options.baseConfig.parserOptions.extraFileExtensions ?? []), '.jsm',
+            ])] },
+        },
       ],
     },
   };

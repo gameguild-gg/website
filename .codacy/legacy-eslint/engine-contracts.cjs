@@ -615,3 +615,56 @@ test('expanded partition counts preserve complete source traversal and the globa
     }
   }
 });
+
+test('typed JavaScript rules receive a real project and retain AST-node property diagnostics', async (context) => {
+  const configBytes = readFileSync('/tsconfig.json');
+  assert.equal(createHash('sha256').update(configBytes).digest('hex'),
+    '33411198f0da1d2ea5b54f7323178fc13ff9d9cd476039eee87635c70682fcc4');
+  assert.equal(JSON.parse(configBytes).compilerOptions.allowJs, true);
+  const projected = await projection();
+  const { ESLint } = engineRequire('eslint');
+  const filename = '/src/tools/emception/scripts/tests/toolchain-provider-security.test.mjs';
+  const ruleId = 'eslint-plugin/no-property-in-node';
+  const previous = await new ESLint({ ...projected.options, ignore: false }).calculateConfigForFile(filename);
+  const corrected = await new ESLint(repositoryProfile(projected)).calculateConfigForFile(filename);
+  assert.equal(previous.parserOptions.project, false);
+  assert.equal(corrected.parserOptions.project, '/tsconfig.json');
+  assert.deepEqual(corrected.rules[ruleId], previous.rules[ruleId]);
+  const linter = new Linter();
+  linter.defineRule(ruleId, engineRequire('eslint-plugin-eslint-plugin').rules['no-property-in-node']);
+  linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
+  const check = (source, filePath, parserOptions) => linter.verify(source, {
+    parser: 'engine-typescript', parserOptions,
+    rules: { [ruleId]: corrected.rules[ruleId] },
+  }, { filename: filePath });
+  const actual = readFileSync(filename, 'utf8');
+  assert.throws(() => check(actual, filename, previous.parserOptions), /requires parserServices to be generated/u);
+  assert.deepEqual(check(actual, filename, corrected.parserOptions), []);
+  const parsed = engineRequire('@typescript-eslint/parser').parseForESLint(actual,
+    { ...corrected.parserOptions, filePath: filename });
+  assert(parsed.services.program, 'The JavaScript project must provide a real TypeScript program');
+  const selection = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
+  const javascript = selection.sourceFiles.filter((file) => /\.(?:js|jsx|mjs|cjs|jsm)$/u.test(file));
+  assert.deepEqual(javascript.filter((file) => !parsed.services.program.getSourceFile(`/src/${file}`)), [],
+    'Every admitted JavaScript input must also belong to the type-checking program');
+
+  const directory = mkdtempSync(path.join(tmpdir(), 'codacy-typed-js-contract-'));
+  context.after(() => rmSync(directory, { recursive: true, force: true }));
+  const ast = '/** @param {import("/node_modules/@types/estree").Node} node */\n'
+    + 'export function hasValue(node) { return "value" in node; }';
+  const ordinary = 'export function hasValue() { return "value" in { type: "custom", value: 1 }; }';
+  writeFileSync(path.join(directory, 'ast.mjs'), ast);
+  writeFileSync(path.join(directory, 'ordinary.mjs'), ordinary);
+  writeFileSync(path.join(directory, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: { allowJs: true, checkJs: false, target: 'ESNext',
+      module: 'ESNext', moduleResolution: 'Node', types: [], skipLibCheck: true },
+    include: ['*.mjs'],
+  }));
+  const options = { ecmaVersion: 2022, sourceType: 'module',
+    project: path.join(directory, 'tsconfig.json'), tsconfigRootDir: directory };
+  const messages = check(ast, path.join(directory, 'ast.mjs'), options);
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].ruleId, ruleId);
+  assert.equal(messages[0].messageId, 'in');
+  assert.deepEqual(check(ordinary, path.join(directory, 'ordinary.mjs'), options), []);
+});

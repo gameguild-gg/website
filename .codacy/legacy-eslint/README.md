@@ -116,7 +116,7 @@ the same source/configuration identity, cover the original list exactly once,
 and satisfy the complete-analysis conditions before accepting a full scan.
 
 A separate diagnostic matrix entry repeats the original eight actual files
-and three subsequent crash inputs, requiring their immutable input hashes. It
+and four subsequent crash inputs, requiring their immutable input hashes. It
 retains only known exception reason codes and dependency frames, with no raw messages or source
 frames. This sample cannot certify repository coverage and its counts overlap
 the full partitions. The e30d4a35 diagnostic still failed in Import, Lodash FP,
@@ -134,6 +134,14 @@ resolver entrypoints. Existing resolver options, extension mappings, context
 overrides and all rules remain present. Hosted controls require a real import
 cycle and a missing export through a TypeScript alias to remain detectable,
 with a valid alias access accepted.
+
+The inherited JavaScript override disables typed TypeScript rules but leaves
+other typed plugin rules enabled. The pinned image's `/tsconfig.json` already
+allows JavaScript. An additional parser override supplies that same project for
+JavaScript sources, retaining all inherited rule values. Hosted controls must
+reproduce the missing-services exception, analyze the actual observed input,
+detect a real ESTree-node property check and accept an ordinary object check.
+The image config's complete source hash is checked independently in the contract.
 
 The hosted pass requires the tracked working tree to match its checkout after
 dependency installation and again after analysis. It records the SHA256 and
