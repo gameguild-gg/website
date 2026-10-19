@@ -1,0 +1,31 @@
+name: pr-agent
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review] 
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  pr_agent:
+    if: >-
+      github.event.sender.type != 'Bot' &&
+      (github.event_name == 'pull_request' ||
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: qodo-ai/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_KEY: ${{ secrets.OMNI_API_KEY }}
+          OPENAI__API_BASE: https://omniroute.gameguild.gg/v1
+          CONFIG__MODEL: openai/omo/primary
+          CONFIG__FALLBACK_MODELS: '["openai/omo/primary"]'
+          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "900000"
+          GITHUB_ACTION_CONFIG__AUTO_REVIEW: "true"
+          GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: "true"
+          GITHUB_ACTION_CONFIG__AUTO_IMPROVE: "true"
