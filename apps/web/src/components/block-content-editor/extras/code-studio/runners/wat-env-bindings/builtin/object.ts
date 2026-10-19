@@ -3,9 +3,9 @@
  */
 export function createObjectBindings() {
   return {
-    is: (a: any, b: any) => Object.is(a, b),
-    keys: (obj: any) => Object.keys(obj),
-    values: (obj: any) => Object.values(obj),
-    entries: (obj: any) => Object.entries(obj),
+    is: (a: unknown, b: unknown) => Object.is(a, b),
+    keys: (obj: NonNullable<unknown>) => Object.keys(obj),
+    values: (obj: NonNullable<unknown>): unknown[] => Object.values(obj),
+    entries: (obj: NonNullable<unknown>): [string, unknown][] => Object.entries(obj),
   }
 }

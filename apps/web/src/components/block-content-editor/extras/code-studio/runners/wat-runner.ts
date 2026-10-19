@@ -3,17 +3,30 @@ import type { WASIFS } from '@runno/wasi'
 import { createWatEnvironment } from './wat-env-bindings'
 import { createWasiStdinReader } from './wasi-stdin'
 
-// Load wabt from local public assets (managed by update-wasm.mjs script)
-let wabtInstance: any = null
+// Only the browser asset methods consumed by this runner are required here.
+interface ParsedWatModule {
+  validate(): void
+  toBinary(options: { log?: boolean; write_debug_names?: boolean }): { buffer: Uint8Array }
+  destroy(): void
+}
 
-async function getWabtInstance(): Promise<any> {
+interface WabtCompiler {
+  parseWat(filename: string, source: string, features?: Record<string, boolean>): ParsedWatModule
+}
+
+type WabtWindow = Window & { WabtModule?: () => Promise<WabtCompiler> }
+
+// Load wabt from local public assets (managed by update-wasm.mjs script)
+let wabtInstance: WabtCompiler | null = null
+
+async function getWabtInstance(): Promise<WabtCompiler> {
   if (wabtInstance) {
     return wabtInstance
   }
 
   try {
     // Load wabt from local assets if not already loaded
-    if (typeof window !== 'undefined' && !(window as any).WabtModule) {
+    if (typeof window !== 'undefined' && !(window as WabtWindow).WabtModule) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script')
         script.src = '/langs/wabt.js'
@@ -24,7 +37,7 @@ async function getWabtInstance(): Promise<any> {
     }
 
     // Initialize wabt
-    const WabtModule = (window as any).WabtModule
+    const WabtModule = (window as WabtWindow).WabtModule
     if (!WabtModule) {
       throw new Error('WabtModule not found after script load')
     }
@@ -192,7 +205,7 @@ export class WatRunner implements CodeRunner {
       )
 
       // Ensure importObject is properly structured
-      const importObject: Record<string, any> = { ...envBindings }
+      const importObject: Record<string, unknown> = { ...envBindings }
       
       console.log('[WatRunner] Import object keys:', Object.keys(importObject))
       console.log('[WatRunner] env is object:', typeof importObject.env === 'object' && importObject.env !== null)

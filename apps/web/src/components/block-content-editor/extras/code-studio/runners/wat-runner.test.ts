@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { WatRunner } from './wat-runner'
+import { createJSBindings } from './wat-env-bindings/builtin/js'
+import { createObjectBindings } from './wat-env-bindings/builtin/object'
+import { createReflectBindings } from './wat-env-bindings/builtin/reflect'
 
 // Only the Wabt browser-asset boundary is replaced. Every fixture below is a
 // real WASM module, instantiated by WebAssembly with the installed @runno/wasi.
@@ -84,6 +87,96 @@ function commandBytes(namespace: string) {
   body.push(...assertValue(call(2, 2, 0, 1, 24), 0, 3), ...call(3, 7))
   return moduleBytes(imports, [{ name: '_start', body }])
 }
+
+describe('WAT JavaScript host bindings', () => {
+  it('preserves array mutation, element identity and empty pop results', () => {
+    const { arr } = createJSBindings()
+    const reference = { label: 'preserved reference' }
+    const values: (string | typeof reference)[] = ['first']
+
+    expect(arr.length(values)).toBe(1)
+    expect(arr.push(values, reference)).toBe(2)
+    expect(values[1]).toBe(reference)
+    expect(arr.pop(values)).toBe(reference)
+    expect(arr.pop(values)).toBe('first')
+    expect(arr.pop(values)).toBeUndefined()
+    expect(arr.length(values)).toBe(0)
+  })
+
+  it('enumerates own string keys and retains native value references', () => {
+    const symbol = Symbol('not a string key')
+    const reference = { label: 'enumerated value' }
+    const target = { visible: reference, [symbol]: 'symbol value' }
+    Object.setPrototypeOf(target, { inherited: 'prototype value' })
+    Object.defineProperty(target, 'hidden', { value: 'non-enumerable value' })
+
+    for (const binding of [createJSBindings().obj, createObjectBindings()]) {
+      expect(binding.keys(target)).toEqual(['visible'])
+      expect(binding.values(target)).toEqual([reference])
+      expect(binding.values(target)[0]).toBe(reference)
+      expect(binding.entries(target)).toEqual([['visible', reference]])
+      expect(binding.entries(target)[0]?.[1]).toBe(reference)
+    }
+  })
+
+  it('retains native primitive coercion and nullish input errors', () => {
+    for (const binding of [createJSBindings().obj, createObjectBindings()]) {
+      expect(binding.keys('ab')).toEqual(['0', '1'])
+      expect(binding.values('ab')).toEqual(['a', 'b'])
+      expect(binding.entries('ab')).toEqual([['0', 'a'], ['1', 'b']])
+      expect(binding.keys(17)).toEqual([])
+      expect(binding.values(false)).toEqual([])
+      expect(binding.entries(Symbol('primitive'))).toEqual([])
+      for (const operation of [binding.keys, binding.values, binding.entries]) {
+        expect(() => Reflect.apply(operation, undefined, [null])).toThrow(TypeError)
+        expect(() => Reflect.apply(operation, undefined, [undefined])).toThrow(TypeError)
+      }
+    }
+  })
+
+  it('preserves Object.is semantics for NaN, signed zero and references', () => {
+    const binding = createObjectBindings()
+    const reference = { value: 1 }
+
+    expect(binding.is(NaN, NaN)).toBe(true)
+    expect(binding.is(0, -0)).toBe(false)
+    expect(binding.is(reference, reference)).toBe(true)
+    expect(binding.is(reference, { value: 1 })).toBe(false)
+  })
+
+  it('preserves reflective symbols, inherited properties and failed writes', () => {
+    const binding = createReflectBindings()
+    const symbol = Symbol('reflective key')
+    const original = { label: 'original' }
+    const replacement = { label: 'replacement' }
+    const target = { [symbol]: original }
+    Object.setPrototypeOf(target, { inherited: 'prototype value' })
+    Object.defineProperty(target, 'fixed', { value: 7, writable: false })
+
+    expect(binding.has(target, 'inherited')).toBe(true)
+    expect(binding.get(target, 'inherited')).toBe('prototype value')
+    expect(binding.get(target, symbol)).toBe(original)
+    expect(binding.set(target, symbol, replacement)).toBe(true)
+    expect(target[symbol]).toBe(replacement)
+    expect(binding.set(target, 'fixed', 8)).toBe(false)
+    expect(binding.get(target, 'fixed')).toBe(7)
+    expect(binding.has(target, 'absent')).toBe(false)
+    expect(binding.get(target, 'absent')).toBeUndefined()
+    expect(() => Reflect.apply(binding.get, undefined, [17, 'value'])).toThrow(TypeError)
+  })
+
+  it('propagates getter errors from object and reflection operations', () => {
+    const failure = new Error('getter failed')
+    const target = { get value(): never { throw failure } }
+
+    for (const binding of [createJSBindings().obj, createObjectBindings()]) {
+      expect(binding.keys(target)).toEqual(['value'])
+      expect(() => binding.values(target)).toThrow(failure)
+      expect(() => binding.entries(target)).toThrow(failure)
+    }
+    expect(() => createReflectBindings().get(target, 'value')).toThrow(failure)
+  })
+})
 
 describe('WAT runner with real WebAssembly and installed WASI', () => {
   const host = window as unknown as { WabtModule?: unknown }

@@ -1,10 +1,7 @@
 /**
  * JavaScript environment bindings
  */
-export function createJSBindings(
-  stdout: (text: string) => void,
-  stderr: (text: string) => void
-) {
+export function createJSBindings() {
   return {
     // Memory operations
     mem: {
@@ -20,16 +17,16 @@ export function createJSBindings(
 
     // Array operations
     arr: {
-      length: (arr: any[]) => arr.length,
-      push: (arr: any[], item: any) => arr.push(item),
-      pop: (arr: any[]) => arr.pop(),
+      length: (arr: readonly unknown[]) => arr.length,
+      push: <T>(arr: T[], item: T) => arr.push(item),
+      pop: <T>(arr: T[]) => arr.pop(),
     },
 
     // Object operations
     obj: {
-      keys: (obj: any) => Object.keys(obj),
-      values: (obj: any) => Object.values(obj),
-      entries: (obj: any) => Object.entries(obj),
+      keys: (obj: NonNullable<unknown>) => Object.keys(obj),
+      values: (obj: NonNullable<unknown>): unknown[] => Object.values(obj),
+      entries: (obj: NonNullable<unknown>): [string, unknown][] => Object.entries(obj),
     },
   }
 }

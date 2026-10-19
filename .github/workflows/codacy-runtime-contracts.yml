@@ -53,6 +53,10 @@ jobs:
           sha256sum package.json pnpm-lock.yaml apps/web/package.json apps/web/vitest.config.mts apps/web/src/test/setup.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-runner.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-runner.test.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/index.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/js.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/object.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/reflect.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.ts \
             apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.test.ts \
             tools/emception/scripts/run-with-cleanup.mjs tools/emception/scripts/tests/run-with-cleanup.test.mjs \

@@ -3,9 +3,9 @@
  */
 export function createReflectBindings() {
   return {
-    get: (target: any, propertyKey: string) => Reflect.get(target, propertyKey),
-    has: (target: any, propertyKey: string) => Reflect.has(target, propertyKey),
-    set: (target: any, propertyKey: string, value: any) =>
+    get: (target: object, propertyKey: PropertyKey): unknown => Reflect.get(target, propertyKey),
+    has: (target: object, propertyKey: PropertyKey) => Reflect.has(target, propertyKey),
+    set: (target: object, propertyKey: PropertyKey, value: unknown) =>
       Reflect.set(target, propertyKey, value),
   }
 }
