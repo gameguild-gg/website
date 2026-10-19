@@ -10,6 +10,7 @@ import { createRetryPlugin, createRetryInterceptor } from '../../src/plugins/ret
 import type { Transport, RequestConfig } from '../../src/runtime/transport/types.js';
 import { ok, err } from '../../src/runtime/result/helpers.js';
 import type { ApiError } from '../../src/runtime/errors/types.js';
+import { legacyCodeError } from '../support/contract-fixtures.js';
 
 describe('createRetryPlugin', () => {
   beforeEach(() => {
@@ -37,12 +38,12 @@ describe('createRetryPlugin', () => {
   });
 
   it('should retry on retryable errors', async () => {
-    const retryableError: ApiError = {
+    const retryableError: ApiError = legacyCodeError({
       name: 'ApiError',
       message: 'Service unavailable',
       status: 503,
       code: 'SERVICE_UNAVAILABLE',
-    };
+    });
 
     const mockTransport: Transport = {
       request: vi.fn()
@@ -123,12 +124,12 @@ describe('createRetryPlugin', () => {
   });
 
   it('should use custom shouldRetry function', async () => {
-    const customError: ApiError = {
+    const customError: ApiError = legacyCodeError({
       name: 'ApiError',
       message: 'Custom error',
       status: 418,
       code: 'CUSTOM',
-    };
+    });
 
     const mockTransport: Transport = {
       request: vi.fn().mockResolvedValue(err(customError)),
@@ -150,12 +151,12 @@ describe('createRetryPlugin', () => {
   });
 
   it('should use linear delay when exponentialBackoff is false', async () => {
-    const retryableError: ApiError = {
+    const retryableError: ApiError = legacyCodeError({
       name: 'ApiError',
       message: 'Unavailable',
       status: 503,
       code: 'SERVICE_UNAVAILABLE',
-    };
+    });
 
     const mockTransport: Transport = {
       request: vi.fn().mockResolvedValue(err(retryableError)),
@@ -207,12 +208,12 @@ describe('createRetryInterceptor (deprecated)', () => {
   it('should mark retryable errors with retry metadata', async () => {
     const interceptor = createRetryInterceptor({ maxRetries: 3 });
 
-    const error: ApiError = {
+    const error: ApiError = legacyCodeError({
       name: 'ApiError',
       message: 'Unavailable',
       status: 503,
       code: 'SERVICE_UNAVAILABLE',
-    };
+    });
 
     const result = await interceptor.onError!(error);
 
@@ -226,13 +227,13 @@ describe('createRetryInterceptor (deprecated)', () => {
   it('should mark retries exhausted when max reached', async () => {
     const interceptor = createRetryInterceptor({ maxRetries: 2 });
 
-    const error: ApiError = {
+    const error: ApiError = legacyCodeError({
       name: 'ApiError',
       message: 'Unavailable',
       status: 503,
       code: 'SERVICE_UNAVAILABLE',
       metadata: { retryAttempt: 2 },
-    };
+    });
 
     const result = await interceptor.onError!(error);
 

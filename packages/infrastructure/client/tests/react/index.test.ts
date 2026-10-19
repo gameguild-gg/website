@@ -12,6 +12,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement, type ReactNode } from 'react';
 import { ApiClientProvider, useApiClient, useQuery, useMutation, useOptimisticUpdate, ApiClientContext } from '../../src/integrations/react/index.js';
 import type { ApiClient } from '../../src/runtime/client.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
+import type { Result } from '../../src/runtime/result/types.js';
+import type { RequestConfig } from '../../src/runtime/transport/types.js';
+import { fixtureTransport } from '../support/contract-fixtures.js';
 
 function createWrapper(client: ApiClient) {
   const queryClient = new QueryClient({
@@ -22,16 +26,21 @@ function createWrapper(client: ApiClient) {
   });
 
   return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(QueryClientProvider, { client: queryClient }, createElement(ApiClientProvider, { client }, children));
+    return createElement(QueryClientProvider, { client: queryClient }, createElement(ApiClientProvider, { client, children }));
   };
 }
 
+const transport = fixtureTransport(async () => ({
+  ok: true,
+  data: { data: { ok: true }, status: 200, headers: new Headers() },
+}));
+
 const apiClient: ApiClient = {
-  request: async () => ({ ok: true, data: { ok: true } }),
-  requestRaw: async () => ({
-    ok: true,
-    data: { data: { ok: true }, status: 200, headers: new Headers() },
-  }),
+  async request<T>(config: RequestConfig): Promise<Result<T, ApiError>> {
+    const result = await transport.request<T>(config);
+    return result.ok ? { ok: true, data: result.data.data } : result;
+  },
+  requestRaw: transport.request,
   getBaseUrl: () => 'https://api.example.test',
 };
 

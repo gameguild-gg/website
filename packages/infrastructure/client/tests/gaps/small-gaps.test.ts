@@ -34,7 +34,7 @@ describe('isRetryableError — gap coverage (line 128)', () => {
 });
 
 // ─── Validation (line 111) ──────────────────────────
-import { safeParse, ValidationError } from '../../src/runtime/errors/validation.js';
+import { safeParse } from '../../src/runtime/errors/validation.js';
 
 describe('safeParse — gap coverage (line 111)', () => {
   it('returns parsed data for valid input', () => {
@@ -86,32 +86,31 @@ describe('safeParse — gap coverage (line 111)', () => {
 
 // ─── Retry plugin (line 47) ─────────────────────────
 import { createRetryPlugin } from '../../src/plugins/retry.js';
-import type { Transport } from '../../src/runtime/transport/types.js';
+import type { RateLimitError } from '../../src/runtime/errors/types.js';
+import { fixtureTransport, legacyCodeError } from '../support/contract-fixtures.js';
 
 describe('createRetryPlugin — gap coverage (line 47)', () => {
   it('uses retryAfter delay when present', async () => {
     let attempt = 0;
-    const mockTransport: Transport = {
-      async request() {
-        attempt++;
-        if (attempt === 1) {
-          return {
-            ok: false,
-            error: {
-              name: 'ApiError' as const,
-              status: 429,
-              code: 'RATE_LIMITED' as const,
-              message: 'Too Many Requests',
-              retryAfter: 1, // 1 second
-            },
-          };
-        }
+    const mockTransport = fixtureTransport(async () => {
+      attempt++;
+      if (attempt === 1) {
         return {
-          ok: true,
-          data: { data: 'success', status: 200, headers: new Headers() },
+          ok: false,
+          error: {
+            name: 'ApiError' as const,
+            status: 429,
+            code: 'RATE_LIMITED' as const,
+            message: 'Too Many Requests',
+            retryAfter: 1, // 1 second
+          } satisfies RateLimitError,
         };
-      },
-    };
+      }
+      return {
+        ok: true,
+        data: { data: 'success', status: 200, headers: new Headers() },
+      };
+    });
 
     const plugin = createRetryPlugin({
       maxRetries: 2,
@@ -128,26 +127,24 @@ describe('createRetryPlugin — gap coverage (line 47)', () => {
 
   it('uses linear delay when exponentialBackoff is false', async () => {
     let attempt = 0;
-    const mockTransport: Transport = {
-      async request() {
-        attempt++;
-        if (attempt <= 2) {
-          return {
-            ok: false,
-            error: {
-              name: 'ApiError' as const,
-              status: 503,
-              code: 'SERVICE_UNAVAILABLE' as const,
-              message: 'Down',
-            },
-          };
-        }
+    const mockTransport = fixtureTransport(async () => {
+      attempt++;
+      if (attempt <= 2) {
         return {
-          ok: true,
-          data: { data: 'ok', status: 200, headers: new Headers() },
+          ok: false,
+          error: legacyCodeError({
+            name: 'ApiError' as const,
+            status: 503,
+            code: 'SERVICE_UNAVAILABLE' as const,
+            message: 'Down',
+          }),
         };
-      },
-    };
+      }
+      return {
+        ok: true,
+        data: { data: 'ok', status: 200, headers: new Headers() },
+      };
+    });
 
     const plugin = createRetryPlugin({
       maxRetries: 3,
@@ -197,12 +194,12 @@ describe('createLoggingInterceptor — error level gap (lines 67-68)', () => {
     expect(debugSpy).not.toHaveBeenCalled();
 
     // onError at error level calls logger('warn', ...) but warn < error, so suppressed
-    await interceptor.onError!({
+    await interceptor.onError!(legacyCodeError({
       name: 'ApiError',
       code: 'X',
       message: 'err',
       status: 500,
-    });
+    }));
     expect(warnSpy).not.toHaveBeenCalled();
 
     errorSpy.mockRestore();
@@ -227,20 +224,18 @@ describe('createAuthRetryPlugin — authRefreshFailed (line 155)', () => {
     });
 
     let callCount = 0;
-    const mockTransport: Transport = {
-      async request() {
-        callCount++;
-        return {
-          ok: false,
-          error: {
-            name: 'ApiError' as const,
-            status: 401,
-            code: 'UNAUTHORIZED' as const,
-            message: 'Unauthorized',
-          },
-        };
-      },
-    };
+    const mockTransport = fixtureTransport(async () => {
+      callCount++;
+      return {
+        ok: false,
+        error: legacyCodeError({
+          name: 'ApiError' as const,
+          status: 401,
+          code: 'UNAUTHORIZED' as const,
+          message: 'Unauthorized',
+        }),
+      };
+    });
 
     const wrapped = plugin.wrapTransport(mockTransport);
     const result = await wrapped.request({ path: '/test', method: 'GET', headers: {} });
@@ -316,7 +311,7 @@ describe('DevTools — gap coverage (line 62)', () => {
     // Log error completion
     devtools.logRequestComplete(
       { path: '/test', method: 'GET', headers: {} },
-      { ok: false, error: { name: 'ApiError', status: 500, code: 'ERROR', message: 'fail' } },
+      { ok: false, error: legacyCodeError({ name: 'ApiError', status: 500, code: 'ERROR', message: 'fail' }) },
     );
 
     logSpy.mockRestore();

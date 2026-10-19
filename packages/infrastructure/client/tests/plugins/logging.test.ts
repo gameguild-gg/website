@@ -9,6 +9,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createLoggingInterceptor } from '../../src/plugins/logging.js';
 import type { RequestConfig, ApiResponse } from '../../src/runtime/transport/types.js';
 import type { ApiError } from '../../src/runtime/errors/types.js';
+import { legacyCodeError } from '../support/contract-fixtures.js';
 
 describe('createLoggingInterceptor', () => {
   describe('onRequest', () => {
@@ -253,14 +254,14 @@ describe('createLoggingInterceptor', () => {
 
       const interceptor = createLoggingInterceptor({ logger });
 
-      const error: ApiError = {
+      const error: ApiError = legacyCodeError({
         name: 'ApiError',
         message: 'Error',
         status: 500,
         code: 'INTERNAL',
         detail: 'Something went wrong',
         traceId: 'trace-123',
-      };
+      });
 
       await interceptor.onError!(error);
 
@@ -300,12 +301,12 @@ describe('createLoggingInterceptor', () => {
         logger: () => {},
       });
 
-      const error: ApiError = {
+      const error: ApiError = legacyCodeError({
         name: 'ApiError',
         message: 'Error',
         status: 500,
         code: 'INTERNAL',
-      };
+      });
 
       const result = await interceptor.onError!(error);
 

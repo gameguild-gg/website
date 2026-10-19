@@ -7,14 +7,16 @@ import { createRetryPlugin } from '../../src/plugins/retry.js';
 import { createLoggingInterceptor } from '../../src/plugins/logging.js';
 import { createCacheInterceptor, MemoryCache } from '../../src/plugins/cache.js';
 import { createMetricsInterceptor } from '../../src/plugins/metrics.js';
-import type { Transport, RequestConfig } from '../../src/runtime/transport/types.js';
+import type { RequestConfig } from '../../src/runtime/transport/types.js';
 import { ok, err } from '../../src/runtime/result/helpers.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
+import { fixtureTransport } from '../support/contract-fixtures.js';
 
 describe('Retry Plugin', () => {
   it('should create retry plugin with wrapTransport method', () => {
     const retryPlugin = createRetryPlugin({
       maxRetries: 3,
-      retryDelay: 10,
+      baseDelay: 10,
     });
 
     expect(retryPlugin).toBeDefined();
@@ -23,18 +25,17 @@ describe('Retry Plugin', () => {
   });
 
   it('should not retry successful requests', async () => {
-    const mockTransport: Transport = {
-      request: vi.fn(async () =>
-        ok({ data: { success: true }, status: 200, headers: new Headers() })
-      ),
-    };
+    const respond = vi.fn(async () =>
+      ok({ data: { success: true }, status: 200, headers: new Headers() }),
+    );
+    const mockTransport = fixtureTransport(respond);
 
     const retryPlugin = createRetryPlugin();
     const transport = retryPlugin.wrapTransport(mockTransport);
 
     await transport.request({ method: 'GET', path: '/test' });
 
-    expect(mockTransport.request).toHaveBeenCalledTimes(1);
+    expect(respond).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -234,11 +235,11 @@ describe('Metrics Interceptor', () => {
 
     const processedRequest = await metricsInterceptor.onRequest!(request);
 
-    const error = { code: 'VALIDATION_ERROR', message: 'Invalid data', status: 400, name: 'ApiError' as const };
+    const error: ApiError & { _metricsKey?: string } = { code: 'VALIDATION_ERROR', message: 'Invalid data', status: 400, name: 'ApiError' };
     // Copy the metrics key to the error
     const metricsKey = (processedRequest as RequestConfig & { _metricsKey?: string })._metricsKey;
     if (metricsKey) {
-      (error as any)._metricsKey = metricsKey;
+      error._metricsKey = metricsKey;
     }
 
     await metricsInterceptor.onError!(error);
