@@ -1,8 +1,9 @@
 import type { CodeRunner, FileMap, RunnerOptions, RunnerResult } from './types'
+import type { LuaEngine, LuaFactory } from 'wasmoon'
 
-let luaFactory: any = null
+let luaFactory: LuaFactory | null = null
 
-async function getLuaFactory(): Promise<any> {
+async function getLuaFactory(): Promise<LuaFactory> {
   if (!luaFactory) {
     // Dynamically import wasmoon to avoid loading it during SSR/build
     const { LuaFactory } = await import('wasmoon')
@@ -11,7 +12,7 @@ async function getLuaFactory(): Promise<any> {
   return luaFactory
 }
 
-async function createFreshLuaEngine(): Promise<any> {
+async function createFreshLuaEngine(): Promise<LuaEngine> {
   const factory = await getLuaFactory()
   return await factory.createEngine()
 }
@@ -34,7 +35,7 @@ export class LuaRunner implements CodeRunner {
     let stdout = ''
     let stderr = ''
     let exitCode = 0
-    let lua: any = null
+    let lua: LuaEngine | null = null
 
     try {
       lua = await createFreshLuaEngine()
@@ -152,7 +153,7 @@ export class LuaRunner implements CodeRunner {
     let stdout = ''
     let stderr = ''
     let exitCode = 0
-    let lua: any = null
+    let lua: LuaEngine | null = null
 
     try {
       lua = await createFreshLuaEngine()
