@@ -119,7 +119,7 @@ public sealed class HttpExternalAuthorizationDecisionProvider(
         {
             logger.LogInformation(
                 "External authorization decision endpoint denied permission {Permission} for user {UserId} in tenant {TenantId}: {Reasons}",
-                LogRedaction.Sanitize(query.Permission), query.UserId, query.TenantId,
+                LogRedaction.Sanitize(query.Permission), LogRedaction.RedactId(query.UserId, "uid"), LogRedaction.RedactId(query.TenantId),
                 LogRedaction.Sanitize(string.Join("; ", decision.Reasons)));
         }
 
