@@ -22,12 +22,38 @@ import {
 import type { CodeStudioMode } from "@/components/block-content-editor/extras/code-studio/types"
 import { LANGUAGE_CONFIGS } from "@/components/block-content-editor/extras/code-studio/types"
 import type { BaseMediaData } from "@/components/block-content-editor/nodes/base/media-node-base"
+import type { HeaderData } from "@/components/block-content-editor/nodes/header-node"
+import type { SourceData } from "@/components/block-content-editor/nodes/source-node"
+import { HEADER_LEVELS, isHeaderStyle, isSourceStyle, parseHeaderLevel, type SourceTextField } from "./block-form-values"
 
 // ============================================================================
 // Simple form editors for Pattern B types (no standalone editor exists)
 // ============================================================================
 
-function YouTubeForm({ data, onChange }: { data: any; onChange: (d: any) => void }) {
+interface FormEditorProps<T> {
+  data: T
+  onChange: (data: T) => void
+}
+
+interface YouTubeFormData {
+  videoId?: string
+  title?: string
+  caption?: string
+  size?: number
+  startAt?: number
+  isNew?: boolean
+  [key: string]: unknown
+}
+
+interface SpotifyFormData {
+  spotifyId?: string
+  type?: string
+  title?: string
+  isNew?: boolean
+  [key: string]: unknown
+}
+
+function YouTubeForm({ data, onChange }: FormEditorProps<YouTubeFormData>) {
   return (
     <div className="space-y-4">
       <div>
@@ -65,7 +91,7 @@ function YouTubeForm({ data, onChange }: { data: any; onChange: (d: any) => void
   )
 }
 
-function SpotifyForm({ data, onChange }: { data: any; onChange: (d: any) => void }) {
+function SpotifyForm({ data, onChange }: FormEditorProps<SpotifyFormData>) {
   return (
     <div className="space-y-4">
       <div>
@@ -105,7 +131,7 @@ function SpotifyForm({ data, onChange }: { data: any; onChange: (d: any) => void
   )
 }
 
-function HeaderForm({ data, onChange }: { data: any; onChange: (d: any) => void }) {
+function HeaderForm({ data, onChange }: FormEditorProps<HeaderData>) {
   return (
     <div className="space-y-4">
       <div>
@@ -115,10 +141,13 @@ function HeaderForm({ data, onChange }: { data: any; onChange: (d: any) => void 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Level</Label>
-          <Select value={String(data.level ?? 1)} onValueChange={(v) => onChange({ ...data, level: Number(v) })}>
+          <Select value={String(data.level ?? 1)} onValueChange={(v) => {
+            const level = parseHeaderLevel(v)
+            if (level !== undefined) onChange({ ...data, level })
+          }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {[1, 2, 3, 4, 5, 6].map((l) => (
+              {HEADER_LEVELS.map((l) => (
                 <SelectItem key={l} value={String(l)}>H{l}</SelectItem>
               ))}
             </SelectContent>
@@ -126,7 +155,9 @@ function HeaderForm({ data, onChange }: { data: any; onChange: (d: any) => void 
         </div>
         <div>
           <Label>Style</Label>
-          <Select value={data.style || "default"} onValueChange={(v) => onChange({ ...data, style: v })}>
+          <Select value={data.style || "default"} onValueChange={(v) => {
+            if (isHeaderStyle(v)) onChange({ ...data, style: v })
+          }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="default">Default</SelectItem>
@@ -142,8 +173,8 @@ function HeaderForm({ data, onChange }: { data: any; onChange: (d: any) => void 
   )
 }
 
-function SourceForm({ data, onChange }: { data: any; onChange: (d: any) => void }) {
-  const sources: any[] = data.sources || []
+function SourceForm({ data, onChange }: FormEditorProps<SourceData>) {
+  const sources = data.sources || []
 
   const addSource = () => {
     onChange({
@@ -152,7 +183,7 @@ function SourceForm({ data, onChange }: { data: any; onChange: (d: any) => void 
     })
   }
 
-  const updateSource = (index: number, field: string, value: string) => {
+  const updateSource = (index: number, field: SourceTextField, value: string) => {
     const newSources = sources.map((s, i) => (i === index ? { ...s, [field]: value } : s))
     onChange({ ...data, sources: newSources })
   }
@@ -170,7 +201,9 @@ function SourceForm({ data, onChange }: { data: any; onChange: (d: any) => void 
         </div>
         <div>
           <Label>Citation Style</Label>
-          <Select value={data.style || "apa"} onValueChange={(v) => onChange({ ...data, style: v })}>
+          <Select value={data.style || "apa"} onValueChange={(v) => {
+            if (isSourceStyle(v)) onChange({ ...data, style: v })
+          }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {["apa", "mla", "chicago", "harvard", "ieee", "abnt"].map((s) => (
