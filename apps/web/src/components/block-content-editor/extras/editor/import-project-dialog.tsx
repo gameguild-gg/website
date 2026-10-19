@@ -15,6 +15,7 @@ import type { StorageType } from "@/components/block-content-editor/lib/storage/
 import type { ProjectPreferences } from "@/components/block-content-editor/lib/storage/editor/project-preferences"
 import { findAssetUris } from "@game-guild/assets"
 import { getDefaultBrowserAssetRepository } from "@game-guild/assets/browser"
+import { getImportErrorMessage, readEntriesAsFiles } from "./import-project-files"
 
 const assetRepository = getDefaultBrowserAssetRepository()
 
@@ -103,10 +104,10 @@ export function ImportProjectDialog({
       }
       const importedData = await ProjectImporter.importFromFile(file)
       applyImportedData(importedData, file.name)
-    } catch (error: any) {
+    } catch (error) {
       console.error("Import error:", error)
       toast.error("Import failed", {
-        description: error.message || "Failed to import project file",
+        description: getImportErrorMessage(error, "Failed to import project file"),
         duration: 4000,
         icon: "❌",
       })
@@ -116,51 +117,16 @@ export function ImportProjectDialog({
   const handleFolderUpload = async (files: File[]) => {
     try {
       const importedData = await ProjectImporter.importFromFolder(files)
-      const folderLabel = (files[0] as any)?.webkitRelativePath?.split('/')[0] || 'folder'
+      const folderLabel = files[0]?.webkitRelativePath?.split('/')[0] || 'folder'
       applyImportedData(importedData, folderLabel)
-    } catch (error: any) {
+    } catch (error) {
       console.error("Folder import error:", error)
       toast.error("Import failed", {
-        description: error.message || "Failed to import project folder",
+        description: getImportErrorMessage(error, "Failed to import project folder"),
         duration: 4000,
         icon: "❌",
       })
     }
-  }
-
-  // Recursively read files from a dropped directory entry
-  const readEntriesAsFiles = async (entry: any, pathPrefix = ""): Promise<File[]> => {
-    if (entry.isFile) {
-      return new Promise<File[]>((resolve, reject) => {
-        entry.file((file: File) => {
-          // Patch webkitRelativePath so importFromFolder can locate inner paths
-          try {
-            Object.defineProperty(file, 'webkitRelativePath', {
-              value: `${pathPrefix}${file.name}`,
-              configurable: true,
-            })
-          } catch {
-            /* non-fatal */
-          }
-          resolve([file])
-        }, reject)
-      })
-    }
-    if (entry.isDirectory) {
-      const reader = entry.createReader()
-      const allEntries: any[] = []
-      // readEntries returns batches; loop until empty
-      while (true) {
-        const batch: any[] = await new Promise((resolve, reject) => reader.readEntries(resolve, reject))
-        if (!batch.length) break
-        allEntries.push(...batch)
-      }
-      const nested = await Promise.all(
-        allEntries.map((e) => readEntriesAsFiles(e, `${pathPrefix}${entry.name}/`)),
-      )
-      return nested.flat()
-    }
-    return []
   }
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -170,10 +136,10 @@ export function ImportProjectDialog({
     const items = e.dataTransfer.items
     if (items && items.length > 0) {
       // Detect directory drops
-      const entries: any[] = []
+      const entries: FileSystemEntry[] = []
       for (let i = 0; i < items.length; i++) {
         const item = items[i]
-        const entry = item && (item as any).webkitGetAsEntry ? (item as any).webkitGetAsEntry() : null
+        const entry = item && item.webkitGetAsEntry ? item.webkitGetAsEntry() : null
         if (entry) entries.push(entry)
       }
       const dirEntry = entries.find((entry) => entry?.isDirectory)
@@ -324,7 +290,7 @@ export function ImportProjectDialog({
         duration: 3000,
         icon: "🎉",
       })
-    } catch (error: any) {
+    } catch (error) {
       console.error("Save error:", error)
       toast.error("Failed to save project", {
         description: "Could not save the imported project. Please try again.",
