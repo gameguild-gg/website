@@ -1,7 +1,7 @@
 name: pr-agent
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review, synchronize] 
+    types: [opened, reopened, ready_for_review, synchronize]
   issue_comment:
     types: [created]
 
@@ -17,6 +17,12 @@ jobs:
       (github.event_name == 'pull_request' ||
        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
+    concurrency:
+      # A push to the PR while pr-agent is collecting files makes it abort
+      # (IncompletePullRequestFilesError). Cancel the stale run instead of letting
+      # it race; the synchronize trigger starts a fresh run on the new head.
+      group: pr-agent-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: true
     steps:
       - uses: qodo-ai/pr-agent@main
         env:
