@@ -6,7 +6,7 @@ namespace GameGuild.API.Core.Integration;
 public sealed record CertificateEvmAnchorRequestedV1 : DurableIntegrationEventBase
 {
     public static string Name { get; } = "Learning.Certificates.EvmAnchorRequested.v1";
-    public override string EventName => Name;
+    public override string EventName => "Learning.Certificates.EvmAnchorRequested.v1";
     public override string SourceModule => "GameGuild.API";
     [NonPersonalEventData] public required Guid DocumentId { get; init; }
     [NonPersonalEventData] public required Guid OwnerUserId { get; init; }
@@ -26,7 +26,7 @@ public sealed record CertificateEvmAnchorRequestedV1 : DurableIntegrationEventBa
 public sealed record CertificateEvmRevocationRequestedV1 : DurableIntegrationEventBase
 {
     public static string Name { get; } = "Learning.Certificates.EvmRevocationRequested.v1";
-    public override string EventName => Name;
+    public override string EventName => "Learning.Certificates.EvmRevocationRequested.v1";
     public override string SourceModule => "GameGuild.API";
     [NonPersonalEventData] public required Guid DocumentId { get; init; }
     [NonPersonalEventData] public required Guid OwnerUserId { get; init; }
