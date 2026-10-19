@@ -160,6 +160,31 @@ public sealed class ScheduledAuditExportServiceTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public void CreateRequest_AcceptsXmlExports()
+    {
+        var request = ValidRequest();
+        request.ExportFormat = ExportFormat.Xml;
+        Assert.Empty(Validate(request));
+    }
+
+    [Fact]
+    public void CreateRequest_RejectsColumnsForXmlExports()
+    {
+        var request = ValidRequest();
+        request.ExportFormat = ExportFormat.Xml;
+        request.Columns = [nameof(AuditLog.ActionType)];
+        Assert.Contains(Validate(request), error => error.MemberNames.Contains(nameof(request.Columns)));
+    }
+
+    [Fact]
+    public void CreateRequest_ContinuesToRejectUnsupportedParquetExports()
+    {
+        var request = ValidRequest();
+        request.ExportFormat = ExportFormat.Parquet;
+        Assert.Contains(Validate(request), error => error.MemberNames.Contains(nameof(request.ExportFormat)));
+    }
+
     private static CreateScheduledAuditExportRequest ValidRequest() => new()
     {
         TenantId = Guid.NewGuid(),

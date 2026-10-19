@@ -70,9 +70,7 @@ describe('XML comment tokenization', () => {
 
     const tokens = setMonarchTokensProvider.mock.calls[0]?.[1];
     const tagContentRules = tokens?.tokenizer.tagContent ?? [];
-    const stringRule = tagContentRules.find(
-      (rule) => Array.isArray(rule) && rule[0] instanceof RegExp && rule[0].source === '"([^"\\\\]|\\\\.)*"',
-    );
+    const stringRule = tagContentRules.find((rule) => Array.isArray(rule) && rule[0] instanceof RegExp && rule[0].source === '"([^"\\\\]|\\\\.)*"');
     expect(stringRule).toBeDefined();
     const pattern = Array.isArray(stringRule ?? []) ? (stringRule as [RegExp, unknown])[0] : undefined;
     if (!(pattern instanceof RegExp)) throw new Error('tagContent string rule is missing');

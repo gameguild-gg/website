@@ -65,7 +65,12 @@ public class DelegatedAdminService(
             {
                 continue;
             }
-            if (string.IsNullOrEmpty(scope.AllowedUserIds)) continue;
+
+            if (string.IsNullOrEmpty(scope.AllowedUserIds))
+            {
+                continue;
+            }
+
             try
             {
                 var userIds = System.Text.Json.JsonSerializer.Deserialize<List<Guid>>(scope.AllowedUserIds);
@@ -100,7 +105,12 @@ public class DelegatedAdminService(
             {
                 continue;
             }
-            if (string.IsNullOrEmpty(scope.AllowedResourceTypes)) continue;
+
+            if (string.IsNullOrEmpty(scope.AllowedResourceTypes))
+            {
+                continue;
+            }
+
             try
             {
                 var types = System.Text.Json.JsonSerializer.Deserialize<List<string>>(scope.AllowedResourceTypes);

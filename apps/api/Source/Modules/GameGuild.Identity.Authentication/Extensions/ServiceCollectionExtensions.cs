@@ -65,12 +65,25 @@ public static class ServiceCollectionExtensions
         // services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
     }
 
+    /// <summary>Register the compatible and typed permission contracts as aliases of one scoped facade.</summary>
+    public static IServiceCollection AddPermissionServiceContracts(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddScoped<PermissionService>();
+        services.AddScoped<IPermissionService>(provider => provider.GetRequiredService<PermissionService>());
+        services.AddScoped<IPermissionServiceV2>(provider => provider.GetRequiredService<PermissionService>());
+        services.AddScoped<IPermissionReadService>(provider => provider.GetRequiredService<PermissionService>());
+        services.AddScoped<IPermissionUpdateService>(provider => provider.GetRequiredService<PermissionService>());
+        services.AddScoped<IPermissionLifecycleService>(provider => provider.GetRequiredService<PermissionService>());
+        return services;
+    }
+
     /// <summary>
     ///     Register authorization services
     /// </summary>
     private static void RegisterAuthorizationServices(IServiceCollection services)
     {
-        services.AddScoped<IPermissionService, PermissionService>();
+        services.AddPermissionServiceContracts();
 
         // Content-type hierarchy for effective-permission resolution (issue #314):
         // implements the Authorization module's IContentTypeHierarchyProvider contract

@@ -1,3 +1,6 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,6 +16,10 @@ public static class SecurityAlertRules
     public const string FailedAuthenticationBurst = "security.failed-authentication-burst";
 
     public const string TenantIsolationBreach = "security.tenant-isolation-breach";
+
+    public static string PermissionChangeBurst { get; } = "security.permission-change-burst";
+
+    public static string BulkPermissionChange { get; } = "security.bulk-permission-change";
 }
 
 /// <summary>
@@ -47,6 +54,15 @@ public sealed class SecurityAlertRuleEvaluator(
 
         try
         {
+            var mutationCount = securityEvent.Success && IsPermissionMutation(securityEvent.ActionType)
+                && securityEvent.ResourceType == "Permission"
+                ? PermissionMutationEvidence.GetChangeCount(securityEvent.Metadata)
+                : 0;
+            if (mutationCount > 0)
+            {
+                await SerializePermissionEvaluationAsync(context, securityEvent, cancellationToken).ConfigureAwait(false);
+            }
+
             if (classification.Kind == SecurityEventKind.TenantIsolation)
             {
                 await RaiseOrMergeAsync(context, securityEvent, classification,
@@ -67,6 +83,11 @@ public sealed class SecurityAlertRuleEvaluator(
                     cancellationToken).ConfigureAwait(false);
             }
 
+            if (mutationCount > 0)
+            {
+                await EvaluatePermissionChangesAsync(context, securityEvent, classification, mutationCount, cancellationToken).ConfigureAwait(false);
+            }
+
             if (classification.Kind == SecurityEventKind.Authentication && !securityEvent.Success)
             {
                 await EvaluateFailedAuthenticationBurstAsync(context, securityEvent, cancellationToken).ConfigureAwait(false);
@@ -80,6 +101,103 @@ public sealed class SecurityAlertRuleEvaluator(
                 "Security alert evaluation failed for action {ActionType}; the security event is still being captured",
                 securityEvent.ActionType);
         }
+    }
+
+    private static readonly string[] PermissionMutationActions =
+    [
+        AuditActionTypes.PermissionGranted,
+        AuditActionTypes.PermissionRevoked,
+        AuditActionTypes.PermissionChanged
+    ];
+
+    private static bool IsPermissionMutation(string actionType) =>
+        PermissionMutationActions.Contains(actionType, StringComparer.Ordinal);
+
+    private async Task EvaluatePermissionChangesAsync(
+        IApplicationDbContext context,
+        AuditLog securityEvent,
+        ClassifiedSecurityEvent classification,
+        int changeCount,
+        CancellationToken cancellationToken)
+    {
+        var bulkThreshold = Math.Clamp(options.BulkPermissionChangeAlertThreshold, 2, 100000);
+        if (changeCount >= bulkThreshold)
+        {
+            await RaiseOrMergeAsync(context, securityEvent, classification,
+                SecurityAlertRules.BulkPermissionChange, AuditRiskLevel.High,
+                "Bulk permission change detected",
+                $"{changeCount} permission records changed in one committed operation (threshold {bulkThreshold}).",
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        var actorId = securityEvent.UserId.GetValueOrDefault();
+        var matchingActor = actorId != Guid.Empty;
+        var matchingIp = !string.IsNullOrWhiteSpace(securityEvent.IpAddress);
+        if (!matchingActor && !matchingIp)
+        {
+            return;
+        }
+
+        var now = SystemClock.UtcNow;
+        var windowMinutes = Math.Clamp(options.PermissionChangeWindowMinutes, 1, 1440);
+        var windowStart = now.AddMinutes(-windowMinutes);
+        var burstThreshold = Math.Clamp(options.PermissionChangeAlertThreshold, 2, 1000);
+        var recentCount = 1; // The current event has not been saved yet.
+        var candidates = context.Set<AuditLog>().AsNoTracking()
+            .Where(log => log.Success && log.ResourceType == "Permission"
+                && log.TenantId == securityEvent.TenantId
+                && PermissionMutationActions.Contains(log.ActionType)
+                && log.Metadata != null
+                && log.CreatedAt >= windowStart && log.CreatedAt <= now
+                && (matchingActor && log.UserId == actorId
+                    || !matchingActor && matchingIp
+                        && (log.UserId == null || log.UserId == Guid.Empty)
+                        && log.IpAddress == securityEvent.IpAddress))
+            .Select(log => log.Metadata).AsAsyncEnumerable();
+        // Stream until the threshold is established. Never count authorization decisions or
+        // apply a row limit before verifying snapshot evidence, which could hide real changes.
+        await foreach (var metadata in candidates.WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            if (PermissionMutationEvidence.GetChangeCount(metadata) > 0)
+            {
+                recentCount++;
+                if (recentCount >= burstThreshold)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (recentCount >= burstThreshold)
+        {
+            await RaiseOrMergeAsync(context, securityEvent, classification,
+                SecurityAlertRules.PermissionChangeBurst, AuditRiskLevel.High,
+                "Permission change burst detected",
+                $"At least {recentCount} successful permission mutation events for one actor in this tenant within {windowMinutes} minutes (threshold {burstThreshold}).",
+                cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static async Task SerializePermissionEvaluationAsync(
+        IApplicationDbContext context, AuditLog securityEvent, CancellationToken cancellationToken)
+    {
+        if (context is not DbContext db
+            || db.Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL")
+        {
+            return;
+        }
+
+        if (db.Database.CurrentTransaction is null)
+        {
+            throw new InvalidOperationException("Permission alert evaluation requires the owning PostgreSQL transaction.");
+        }
+
+        var actor = securityEvent.UserId.GetValueOrDefault();
+        var subject = actor != Guid.Empty ? actor.ToString("D") : securityEvent.IpAddress ?? "unknown";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes($"permission-alert|{securityEvent.TenantId}|{subject}"));
+        var lockKey = BinaryPrimitives.ReadInt64BigEndian(hash);
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock({lockKey})", cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task EvaluateFailedAuthenticationBurstAsync(

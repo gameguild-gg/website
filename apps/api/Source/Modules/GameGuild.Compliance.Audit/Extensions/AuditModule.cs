@@ -85,6 +85,9 @@ public static class AuditModule
                 pipelineOptions.DrainInterval = bound.DrainInterval;
                 pipelineOptions.FailedAuthenticationAlertThreshold = bound.FailedAuthenticationAlertThreshold;
                 pipelineOptions.FailedAuthenticationWindowMinutes = bound.FailedAuthenticationWindowMinutes;
+                pipelineOptions.PermissionChangeAlertThreshold = bound.PermissionChangeAlertThreshold;
+                pipelineOptions.PermissionChangeWindowMinutes = bound.PermissionChangeWindowMinutes;
+                pipelineOptions.BulkPermissionChangeAlertThreshold = bound.BulkPermissionChangeAlertThreshold;
                 pipelineOptions.RetentionEnforcementInterval = bound.RetentionEnforcementInterval;
                 pipelineOptions.DefaultRetentionDays = bound.DefaultRetentionDays;
                 pipelineOptions.RetentionBatchSize = bound.RetentionBatchSize;
