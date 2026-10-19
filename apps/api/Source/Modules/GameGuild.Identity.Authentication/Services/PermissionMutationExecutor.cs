@@ -165,6 +165,10 @@ internal sealed class PermissionMutationExecutor(IApplicationDbContext context)
 
     private sealed class PermissionMutationExecutionStrategy(DbContext db) : ExecutionStrategy(db, 0, TimeSpan.Zero)
     {
-        protected override bool ShouldRetryOn(Exception _) => false;
+        protected override bool ShouldRetryOn(Exception exception)
+        {
+            ArgumentNullException.ThrowIfNull(exception);
+            return false;
+        }
     }
 }

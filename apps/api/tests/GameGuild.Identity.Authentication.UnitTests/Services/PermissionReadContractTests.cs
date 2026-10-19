@@ -50,11 +50,11 @@ public sealed class PermissionReadContractTests
         var user = Guid.NewGuid();
         var tenant = Guid.NewGuid();
         var service = new Facade(database.Object, actorContextAccessor: Actor(user, tenant));
-        var requests = new TenantPermissionListQuery[]
-        {
+        TenantPermissionListQuery[] requests =
+        [
             new() { TenantId = Guid.NewGuid() }, new() { UserId = Guid.NewGuid() },
             new() { AllUsers = true }, new() { IncludeDefaultSubjects = true }, new() { GlobalScope = true }
-        };
+        ];
         foreach (var request in requests)
         {
             var result = await service.QueryTenantPermissionsAsync(request);
