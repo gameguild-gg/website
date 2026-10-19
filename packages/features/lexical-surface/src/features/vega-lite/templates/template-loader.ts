@@ -6,6 +6,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
+import type { VegaSpecRecord } from "../vega-spec";
 
 export interface VegaLiteTemplate {
   id: string;
@@ -16,7 +17,7 @@ export interface VegaLiteTemplate {
   icon: LucideIcon;
   category: string;
   subcategory: string;
-  spec: Record<string, any>;
+  spec: VegaSpecRecord;
   previewImage?: string; // Path to preview image (e.g., "simple-bar.png")
 }
 

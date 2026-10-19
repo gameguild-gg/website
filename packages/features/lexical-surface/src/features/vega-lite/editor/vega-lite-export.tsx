@@ -145,11 +145,11 @@ export function VegaLiteExport({
             )[themeMap[theme]];
 
             if (themeConfig) {
-              let finalThemeConfig = themeConfig;
+              let finalThemeConfig: VegaSpecRecord = { ...themeConfig };
 
               // If it's a dark theme variant, apply dark modifications
               if (isDarkTheme && baseThemeName !== "dark") {
-                finalThemeConfig = createDarkTheme(themeConfig);
+                finalThemeConfig = { ...createDarkTheme(themeConfig) };
               }
 
               // Apply manual overrides from vega-theme-overrides.ts
@@ -283,11 +283,11 @@ export function VegaLiteExport({
             )[themeMap[theme]];
 
             if (themeConfig) {
-              let finalThemeConfig = themeConfig;
+              let finalThemeConfig: VegaSpecRecord = { ...themeConfig };
 
               // If it's a dark theme variant, apply dark modifications
               if (isDarkTheme && baseThemeName !== "dark") {
-                finalThemeConfig = createDarkTheme(themeConfig);
+                finalThemeConfig = { ...createDarkTheme(themeConfig) };
               }
 
               // Apply manual overrides from vega-theme-overrides.ts

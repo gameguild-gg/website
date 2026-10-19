@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { isVegaSpecRecord, type VegaSpecRecord } from "../vega-spec";
 import {
   applyThemeOverrides,
   DARK_THEME_OVERRIDES,
@@ -47,7 +48,7 @@ const VEGA_VIEW_KEYS = ["marks", "scales", "signals", "projections"] as const;
 
 // Heuristic mirroring content-rendering: $schema URL disambiguates when
 // present; Vega-Lite view keys win otherwise, Vega-Lite stays the default.
-export function isPlainVegaSpec(spec: Record<string, any>): boolean {
+export function isPlainVegaSpec(spec: VegaSpecRecord): boolean {
   const schema = typeof spec.$schema === "string" ? spec.$schema : "";
   if (schema.includes("/schema/vega-lite/")) return false;
   if (schema.includes("/schema/vega/")) return true;
@@ -61,13 +62,15 @@ function nextRenderGeneration(container: HTMLElement): number {
   return generation;
 }
 
-function createDarkTheme(baseTheme: Record<string, any>) {
+function createDarkTheme(baseTheme: VegaSpecRecord): VegaSpecRecord {
+  const section = (value: unknown): VegaSpecRecord =>
+    isVegaSpecRecord(value) ? value : {};
   return {
     ...baseTheme,
     background: "#1a1a1a",
-    view: { ...baseTheme.view, fill: "#1a1a1a", stroke: "#404040" },
+    view: { ...section(baseTheme.view), fill: "#1a1a1a", stroke: "#404040" },
     axis: {
-      ...baseTheme.axis,
+      ...section(baseTheme.axis),
       domainColor: "#666666",
       gridColor: "#333333",
       tickColor: "#666666",
@@ -75,17 +78,17 @@ function createDarkTheme(baseTheme: Record<string, any>) {
       titleColor: "#ffffff",
     },
     legend: {
-      ...baseTheme.legend,
+      ...section(baseTheme.legend),
       labelColor: "#cccccc",
       titleColor: "#ffffff",
     },
-    title: { ...baseTheme.title, color: "#ffffff" },
-    text: { ...baseTheme.text, fill: "#cccccc" },
+    title: { ...section(baseTheme.title), color: "#ffffff" },
+    text: { ...section(baseTheme.text), fill: "#cccccc" },
   };
 }
 
 interface VegaChartData {
-  parsedSpec: Record<string, any> | null;
+  parsedSpec: VegaSpecRecord | null;
   isLoading: boolean;
   error: string;
   vegaRef: React.RefObject<HTMLDivElement | null>;
@@ -102,7 +105,7 @@ export function useVegaLiteChart({
 }): VegaChartData {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [parsedSpec, setParsedSpec] = useState<Record<string, any> | null>(
+  const [parsedSpec, setParsedSpec] = useState<VegaSpecRecord | null>(
     null,
   );
   const vegaRef = useRef<HTMLDivElement>(null);
@@ -117,8 +120,8 @@ export function useVegaLiteChart({
 
     setIsLoading(true);
     try {
-      const parsed = JSON.parse(spec) as Record<string, any>;
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      const parsed: unknown = JSON.parse(spec);
+      if (!isVegaSpecRecord(parsed)) {
         throw new Error("Specification must be a JSON object");
       }
 
@@ -159,7 +162,7 @@ export function useVegaLiteChart({
 
 export async function renderVegaChart(
   container: HTMLElement,
-  parsedSpec: Record<string, any>,
+  parsedSpec: VegaSpecRecord,
   layout: "square" | "rectangular" = "rectangular",
   theme = "default",
 ): Promise<() => void> {
@@ -177,10 +180,10 @@ export async function renderVegaChart(
   if (theme !== "default" && THEME_MAP[theme]) {
     const isDarkTheme = theme.endsWith("-dark");
     const baseThemeName = isDarkTheme ? theme.replace("-dark", "") : theme;
-    const themeConfig = (vegaThemes as unknown as Record<string, any>)[
+    const themeConfig = (vegaThemes as unknown as Record<string, unknown>)[
       THEME_MAP[theme]
     ];
-    if (themeConfig) {
+    if (isVegaSpecRecord(themeConfig)) {
       let finalThemeConfig =
         isDarkTheme && baseThemeName !== "dark"
           ? createDarkTheme(themeConfig)
@@ -193,7 +196,10 @@ export async function renderVegaChart(
       }
       specWithTheme = {
         ...specWithTheme,
-        config: { ...specWithTheme.config, ...finalThemeConfig },
+        config: {
+          ...(isVegaSpecRecord(specWithTheme.config) ? specWithTheme.config : {}),
+          ...finalThemeConfig,
+        },
       };
     }
   }

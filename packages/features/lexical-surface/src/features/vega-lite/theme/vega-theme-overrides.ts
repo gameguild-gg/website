@@ -9,6 +9,8 @@
  * - Versão dark (recomendado para melhorar contraste)
  */
 
+import { isVegaSpecRecord, type VegaSpecRecord } from "../vega-spec";
+
 export interface ThemeOverride {
   background?: string;
   view?: {
@@ -47,12 +49,12 @@ export interface ThemeOverride {
   bar?: {
     cornerRadiusTopLeft?: number;
     cornerRadiusTopRight?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   point?: {
     filled?: boolean;
     size?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   range?: {
     category?: string[];
@@ -62,36 +64,36 @@ export interface ThemeOverride {
     ramp?: string[];
   };
   style?: {
-    [key: string]: any;
+    [key: string]: unknown;
   };
   group?: {
     fill?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   arc?: {
     fill?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   area?: {
     fill?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   path?: {
     stroke?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   rect?: {
     fill?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   shape?: {
     stroke?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   symbol?: {
     fill?: string;
     size?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -429,10 +431,12 @@ export const DARK_THEME_OVERRIDES: Record<string, ThemeOverride> = {
  * Faz deep merge das propriedades
  */
 export function applyThemeOverrides(
-  baseTheme: any,
+  baseTheme: VegaSpecRecord,
   overrides?: ThemeOverride,
-): any {
+): VegaSpecRecord {
   if (!overrides) return baseTheme;
+  const section = (value: unknown): VegaSpecRecord =>
+    isVegaSpecRecord(value) ? value : {};
 
   return {
     ...baseTheme,
@@ -440,49 +444,49 @@ export function applyThemeOverrides(
       background: overrides.background,
     }),
     view: {
-      ...baseTheme.view,
+      ...section(baseTheme.view),
       ...overrides.view,
     },
     axis: {
-      ...baseTheme.axis,
+      ...section(baseTheme.axis),
       ...overrides.axis,
     },
     legend: {
-      ...baseTheme.legend,
+      ...section(baseTheme.legend),
       ...overrides.legend,
     },
     title: {
-      ...baseTheme.title,
+      ...section(baseTheme.title),
       ...overrides.title,
     },
     text: {
-      ...baseTheme.text,
+      ...section(baseTheme.text),
       ...overrides.text,
     },
-    ...(overrides.mark && { mark: { ...baseTheme.mark, ...overrides.mark } }),
-    ...(overrides.line && { line: { ...baseTheme.line, ...overrides.line } }),
-    ...(overrides.bar && { bar: { ...baseTheme.bar, ...overrides.bar } }),
+    ...(overrides.mark && { mark: { ...section(baseTheme.mark), ...overrides.mark } }),
+    ...(overrides.line && { line: { ...section(baseTheme.line), ...overrides.line } }),
+    ...(overrides.bar && { bar: { ...section(baseTheme.bar), ...overrides.bar } }),
     ...(overrides.point && {
-      point: { ...baseTheme.point, ...overrides.point },
+      point: { ...section(baseTheme.point), ...overrides.point },
     }),
-    ...(overrides.area && { area: { ...baseTheme.area, ...overrides.area } }),
-    ...(overrides.arc && { arc: { ...baseTheme.arc, ...overrides.arc } }),
-    ...(overrides.path && { path: { ...baseTheme.path, ...overrides.path } }),
-    ...(overrides.rect && { rect: { ...baseTheme.rect, ...overrides.rect } }),
+    ...(overrides.area && { area: { ...section(baseTheme.area), ...overrides.area } }),
+    ...(overrides.arc && { arc: { ...section(baseTheme.arc), ...overrides.arc } }),
+    ...(overrides.path && { path: { ...section(baseTheme.path), ...overrides.path } }),
+    ...(overrides.rect && { rect: { ...section(baseTheme.rect), ...overrides.rect } }),
     ...(overrides.shape && {
-      shape: { ...baseTheme.shape, ...overrides.shape },
+      shape: { ...section(baseTheme.shape), ...overrides.shape },
     }),
     ...(overrides.symbol && {
-      symbol: { ...baseTheme.symbol, ...overrides.symbol },
+      symbol: { ...section(baseTheme.symbol), ...overrides.symbol },
     }),
     ...(overrides.group && {
-      group: { ...baseTheme.group, ...overrides.group },
+      group: { ...section(baseTheme.group), ...overrides.group },
     }),
     ...(overrides.style && {
-      style: { ...baseTheme.style, ...overrides.style },
+      style: { ...section(baseTheme.style), ...overrides.style },
     }),
     ...(overrides.range && {
-      range: { ...baseTheme.range, ...overrides.range },
+      range: { ...section(baseTheme.range), ...overrides.range },
     }),
   };
 }
