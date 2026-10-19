@@ -197,6 +197,11 @@ The repair appends individual items in the original order for all six script,
 template and comment combinations. Hosted controls require line-length and
 comment diagnostics on large inputs and ordinary short inputs in both template
 orders. No generated source, rule, input or threshold is removed.
+The comment control explicitly sets the 80-character comment limit so the
+comment collection branch executes. The controls use 300,000 comments and
+150,000 template elements to exercise the large argument arrays. The unmodified
+image must reproduce the overflow before the repaired image is required to emit
+the same 80-character-limit diagnostic and accept short input.
 
 ## Evidence
 

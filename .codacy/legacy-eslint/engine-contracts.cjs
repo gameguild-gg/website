@@ -24,7 +24,7 @@ const repaired = process.env.GAMEGUILD_ENGINE_EXPECT_REPAIRED === 'true';
 assert(['true', 'false'].includes(process.env.GAMEGUILD_ENGINE_EXPECT_REPAIRED));
 const snapshot = JSON.parse(readFileSync(path.join(__dirname, 'effective-patterns.json'), 'utf8'));
 
-function lint(ruleId, packageName, ruleName, source, typescript = false, jsx = false) {
+function lint(ruleId, packageName, ruleName, source, typescript = false, jsx = false, ruleOptions = []) {
   const linter = new Linter();
   linter.defineRule(ruleId, engineRequire(packageName).rules[ruleName]);
   if (typescript) linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
@@ -33,7 +33,7 @@ function lint(ruleId, packageName, ruleName, source, typescript = false, jsx = f
     ...(typescript ? { parser: 'engine-typescript' } : {}),
     parserOptions: { ecmaVersion: 2022, sourceType: typescript ? 'script' : 'module',
       ...(jsx ? { ecmaFeatures: { jsx: true } } : {}) },
-    rules: { [ruleId]: 'error' },
+    rules: { [ruleId]: ['error', ...ruleOptions] },
   }, { filename: typescript ? 'contract.ts' : 'contract.mjs' });
 }
 
@@ -833,13 +833,16 @@ test('Vue maximum line length retains diagnostics for sources with large script 
 });
 
 test('Vue maximum line length retains comment diagnostics without spreading a large comment array', () => {
-  const source = `${'// short\n'.repeat(150_000)}// ${'x'.repeat(90)}\nexport const value = 1;`;
+  const source = `${'// short\n'.repeat(300_000)}// ${'x'.repeat(90)}\nexport const value = 1;`;
+  // The rule collects comments only when a comment option is enabled.
+  const verify = (input) => lint('vue/max-len', 'eslint-plugin-vue', 'max-len', input,
+    false, false, [{ comments: 80 }]);
   assertReportedOrOriginalCrash(
-    () => lint('vue/max-len', 'eslint-plugin-vue', 'max-len', source),
+    () => verify(source),
     /comment length of 93\. Maximum allowed is 80\./u,
     /Maximum call stack size exceeded/u,
   );
-  assert.deepEqual(lint('vue/max-len', 'eslint-plugin-vue', 'max-len', '// short\nexport const value = 1;'), []);
+  assert.deepEqual(verify('// short\nexport const value = 1;'), []);
 });
 
 test('Vue maximum line length preserves template and script ordering for large template token arrays', () => {
@@ -850,7 +853,7 @@ test('Vue maximum line length preserves template and script ordering for large t
     parser: 'engine-vue', parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
     rules: { 'vue/max-len': 'error' },
   }, { filename: 'contract.vue' });
-  const template = `<template><div>${'<b />'.repeat(50_000)}</div></template>`;
+  const template = `<template><div>${'<b />'.repeat(150_000)}</div></template>`;
   const script = '<script>export default {};</script>';
   for (const source of [`${template}\n${script}`, `${script}\n${template}`]) {
     assertReportedOrOriginalCrash(() => verify(source), /Maximum allowed is 80\./u,
