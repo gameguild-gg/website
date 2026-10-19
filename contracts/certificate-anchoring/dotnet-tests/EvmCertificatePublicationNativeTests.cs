@@ -112,6 +112,124 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         Assert.Equal(beforeEvents, observed.RequestEvents.Count);
     }
 
+    [Fact]
+    public async Task ProductionWorkerPublishesAndFinalizesAnActualAnchor()
+    {
+        using var services = Services(); using var scope = services.CreateScope();
+        var clock = new RecoveryClock();
+        var journal = new EvmCertificateJournal(database, clock);
+        var request = Request();
+        var queued = await journal.EnqueueAsync(request, Ct);
+        var confirmed = await WaitForWorker(Worker(scope.ServiceProvider, journal, clock), journal, queued.Id, clock);
+        var proof = await scope.ServiceProvider.GetRequiredService<IEvmCertificateProofVerifier>()
+            .VerifyAnchorAsync(request.CertificateHash, confirmed.TransactionHash!, Ct);
+        Assert.Equal(EvmCertificateProofStatus.Verified, proof.Status);
+        WriteEvidence("worker-anchor", confirmed, proof);
+    }
+
+    [Fact]
+    public async Task ProductionWorkerRevokesTheSameOriginalDigestOnTheActualRegistry()
+    {
+        using var services = Services(); using var scope = services.CreateScope();
+        var clock = new RecoveryClock();
+        var journal = new EvmCertificateJournal(database, clock);
+        var request = Request();
+        var worker = Worker(scope.ServiceProvider, journal, clock);
+        var queued = await journal.EnqueueAsync(request, Ct);
+        var anchor = await WaitForWorker(worker, journal, queued.Id, clock);
+        var anchored = await scope.ServiceProvider.GetRequiredService<IEvmCertificateProofVerifier>()
+            .VerifyAnchorAsync(request.CertificateHash, anchor.TransactionHash!, Ct);
+        WriteEvidence("worker-before-revoke", anchor, anchored);
+        var revoke = await journal.EnqueueAsync(request with { Kind = EvmCertificateOperationKind.Revoke }, Ct);
+        var revoked = await WaitForWorker(worker, journal, revoke.Id, clock);
+        var verifier = scope.ServiceProvider.GetRequiredService<IEvmCertificateProofVerifier>();
+        var proof = await verifier.VerifyRevocationAsync(request.CertificateHash, revoked.TransactionHash!, Ct);
+        Assert.Equal(EvmCertificateProofStatus.Verified, proof.Status);
+        Assert.Equal(EvmCertificateProofStatus.Revoked, (await verifier.VerifyAnchorAsync(request.CertificateHash, anchor.TransactionHash!, Ct)).Status);
+        WriteEvidence("worker-revoke", revoked, proof);
+    }
+
+    [Fact]
+    public async Task ProductionWorkerRecoversAnActualSendThatNeverAcknowledgedItsJournalAttempt()
+    {
+        using var services = Services(); using var scope = services.CreateScope();
+        var clock = new RecoveryClock();
+        var journal = new EvmCertificateJournal(database, clock);
+        var request = Request();
+        var queued = await journal.EnqueueAsync(request, Ct);
+        var lease = Assert.IsType<EvmCertificateJournalLease>(await journal.TryAcquireAsync(queued.Id, LeaseTime, Ct));
+        var prepared = await Prepare(scope.ServiceProvider, journal, lease);
+        var hash = await scope.ServiceProvider.GetRequiredService<IEvmCertificatePublicationRpc>()
+            .SendRawTransactionAsync(prepared.Operation.PreparedTransaction, prepared.Attempt.RawTransaction, Ct);
+        Assert.Null(Assert.Single(await journal.ListAttemptsAsync(queued.Id, Ct)).BroadcastAt);
+        clock.Advance(LeaseTime + TimeSpan.FromSeconds(1));
+        var fresh = new EvmCertificateJournal(database, clock);
+        var confirmed = await WaitForWorker(Worker(scope.ServiceProvider, fresh, clock), fresh, queued.Id, clock);
+        Assert.Equal(hash, confirmed.TransactionHash);
+        Assert.Single(await fresh.ListAttemptsAsync(queued.Id, Ct));
+        var proof = await scope.ServiceProvider.GetRequiredService<IEvmCertificateProofVerifier>()
+            .VerifyAnchorAsync(request.CertificateHash, hash, Ct);
+        WriteEvidence("worker-recovery", confirmed, proof);
+    }
+
+    [Fact]
+    public async Task ExplicitHostedWorkerActuallyPublishesFromTheDurableQueueAndStopsCleanly()
+    {
+        using var services = Services(collection =>
+        {
+            collection.AddLogging();
+            collection.AddScoped(_ => new EvmCertificateJournal(database, TimeProvider.System));
+            collection.AddEvmCertificatePublicationWorker(WorkerPolicy());
+        });
+        var journal = new EvmCertificateJournal(database, TimeProvider.System);
+        var request = Request();
+        var queued = await journal.EnqueueAsync(request, Ct);
+        var hosted = Assert.Single(services.GetServices<Microsoft.Extensions.Hosting.IHostedService>());
+        await hosted.StartAsync(Ct);
+        try
+        {
+            EvmCertificateJournalSnapshot? confirmed = null;
+            for (var i = 0; i < 400; i++)
+            {
+                var observed = await journal.FindAsync(queued.Id, Ct);
+                if (observed?.Status == EvmCertificatePublicationStatus.Confirmed) { confirmed = observed; break; }
+                Assert.NotEqual(EvmCertificatePublicationStatus.NeedsAttention, observed?.Status);
+                await Task.Delay(TimeSpan.FromMilliseconds(100), Ct);
+            }
+            Assert.NotNull(confirmed);
+            using var scope = services.CreateScope();
+            var proof = await scope.ServiceProvider.GetRequiredService<IEvmCertificateProofVerifier>()
+                .VerifyAnchorAsync(request.CertificateHash, confirmed.TransactionHash!, Ct);
+            Assert.Equal(EvmCertificateProofStatus.Verified, proof.Status);
+            WriteEvidence("hosted-worker", confirmed, proof);
+        }
+        finally { await hosted.StopAsync(Ct); }
+    }
+
+    private EvmCertificatePublicationPolicy WorkerPolicy() => EvmCertificatePublicationPolicy.Create(
+        EvmCertificatePublicationNetwork.Capture("native-issuer", Options()), "native-issuer-v1",
+        EvmCertificateFeeBudget.Create(250000, 10000000000L, 250000L * 10000000000L),
+        10000000000L, 1000000000L, CheckDelay, LeaseTime, TimeSpan.FromSeconds(30), 3);
+
+    private EvmCertificatePublicationWorker Worker(IServiceProvider services, EvmCertificateJournal journal, TimeProvider clock) => new(
+        journal, services.GetRequiredService<IEvmCertificatePublicationRpc>(), services.GetRequiredService<IEvmCertificateTransactionSigner>(),
+        services.GetRequiredService<IEvmCertificateProofVerifier>(), WorkerPolicy(), clock);
+
+    private static async Task<EvmCertificateJournalSnapshot> WaitForWorker(EvmCertificatePublicationWorker worker,
+        EvmCertificateJournal journal, Guid id, RecoveryClock clock)
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            await worker.ProcessAsync(id, Ct);
+            var operation = Assert.IsType<EvmCertificateJournalSnapshot>(await journal.FindAsync(id, Ct));
+            if (operation.Status == EvmCertificatePublicationStatus.Confirmed) return operation;
+            Assert.NotEqual(EvmCertificatePublicationStatus.NeedsAttention, operation.Status);
+            clock.Advance(CheckDelay);
+            await Task.Delay(TimeSpan.FromMilliseconds(100), Ct);
+        }
+        throw new InvalidOperationException("The production worker did not observe the isolated registry's finalized operation.");
+    }
+
     private async Task<EvmCertificateJournalSnapshot> Publish(IServiceProvider services, EvmCertificateJournal journal, EvmCertificateJournalRequest request)
     {
         var queued = await journal.EnqueueAsync(request, Ct);
@@ -160,7 +278,7 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         throw new InvalidOperationException("The isolated EVM fixture did not yield a finalized operation proof.");
     }
 
-    private ServiceProvider Services()
+    private ServiceProvider Services(Action<IServiceCollection>? configure = null)
     {
         var services = new ServiceCollection();
         services.AddEvmCertificatePublicationTransport(Options());
@@ -175,6 +293,7 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         services.AddSingleton<IEvmCertificatePrivateKeySource>(new EvmCertificateEnvironmentKeySource(
             new Dictionary<string, string> { ["native-issuer-v1"] = "GAMEGUILD_EVM_NATIVE_SIGNER_PRIVATE_KEY" }));
         services.AddScoped<IEvmCertificateTransactionSigner, EvmCertificateSoftwareSigner>();
+        configure?.Invoke(services);
         return services.BuildServiceProvider();
     }
 
