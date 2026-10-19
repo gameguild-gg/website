@@ -7,7 +7,6 @@ import type { MermaidData } from "../mermaid-data";
 import {
   getMermaidThemePair,
   getCurrentMermaidTheme,
-  type MermaidTheme,
 } from "../theme/mermaid-theme-helper";
 import { useDarkMode } from "../../../shared/ui/use-dark-mode";
 import { renderMermaidSvg } from "./mermaid-renderer";
@@ -88,8 +87,8 @@ export function MermaidViewer({
 
   // Calculate the actual theme to use
   const themePair = getMermaidThemePair(
-    (data.theme as MermaidTheme) || "default",
-    (data.themeMode as any) || "system",
+    data.theme || "default",
+    data.themeMode || "system",
   );
   const currentTheme = getCurrentMermaidTheme(
     themePair.themeLight,

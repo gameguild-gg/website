@@ -37,7 +37,7 @@ import type {
   DividerSpacing,
   DividerColorPalette,
 } from "./divider-node";
-import { $isDividerLexicalNode } from "./divider-node";
+import { $isDividerLexicalNode, type DividerLexicalNode } from "./divider-node";
 import ColorPicker from "../../shared/ui/color-picker";
 
 interface DividerLexicalComponentProps {
@@ -119,7 +119,7 @@ export function DividerLexicalComponent({
   );
 
   const updateField = useCallback(
-    (updater: (node: any) => void) => {
+    (updater: (node: DividerLexicalNode) => void) => {
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isDividerLexicalNode(node)) updater(node);

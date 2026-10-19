@@ -7,6 +7,11 @@
  */
 import type { EditorThemeClasses } from "lexical";
 
+type AlignmentThemeClasses = Record<
+  "textLeft" | "textCenter" | "textRight" | "textJustify" | "textStart" | "textEnd",
+  string
+>;
+
 export const LEXICAL_SURFACE_THEME: EditorThemeClasses = {
   ltr: "text-left",
   rtl: "text-right",
@@ -134,7 +139,6 @@ export const LEXICAL_SURFACE_THEME: EditorThemeClasses = {
   // Lexical writes these as theme classes on the block element.
   // (These keys aren't part of the official type, but Lexical accepts
   // arbitrary string keys at runtime.)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...({
     textLeft: "text-left",
     textCenter: "text-center",
@@ -142,5 +146,5 @@ export const LEXICAL_SURFACE_THEME: EditorThemeClasses = {
     textJustify: "text-justify",
     textStart: "text-start",
     textEnd: "text-end",
-  } as any),
+  } satisfies AlignmentThemeClasses),
 };

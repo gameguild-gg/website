@@ -45,7 +45,7 @@ import {
 } from "@game-guild/ui/components/dropdown-menu";
 import { Admonition, type AdmonitionType } from "./admonition";
 import type { AdmonitionDesign } from "./admonition";
-import { $isAdmonitionLexicalNode } from "./admonition-node";
+import { $isAdmonitionLexicalNode, type AdmonitionLexicalNode } from "./admonition-node";
 import ColorPicker from "../../shared/ui/color-picker";
 
 interface AdmonitionLexicalComponentProps {
@@ -189,7 +189,7 @@ export function AdmonitionLexicalComponent({
     });
   };
 
-  const updateField = (updater: (node: any) => void) => {
+  const updateField = (updater: (node: AdmonitionLexicalNode) => void) => {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isAdmonitionLexicalNode(node)) updater(node);

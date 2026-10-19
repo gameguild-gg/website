@@ -55,7 +55,7 @@ import type {
   FontSize,
   ButtonCustomColors,
 } from "./button-node";
-import { $isButtonLexicalNode } from "./button-node";
+import { $isButtonLexicalNode, type ButtonLexicalNode } from "./button-node";
 import ColorPicker from "../../shared/ui/color-picker";
 
 interface ButtonLexicalComponentProps {
@@ -190,7 +190,7 @@ export function ButtonLexicalComponent({
   );
 
   const updateField = useCallback(
-    (updater: (node: any) => void) => {
+    (updater: (node: ButtonLexicalNode) => void) => {
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isButtonLexicalNode(node)) updater(node);

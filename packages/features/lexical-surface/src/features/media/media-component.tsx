@@ -42,7 +42,7 @@ import {
 } from "@game-guild/assets/react";
 import { DeleteConfirmDialog } from "../../shared/ui/dialogs/delete-confirm-dialog";
 import { useNodeDeleteProtection } from "../../shared/lexical/node-delete-protection";
-import { $isMediaLexicalNode } from "./media-node";
+import { $isMediaLexicalNode, type MediaLexicalNode } from "./media-node";
 import type { BaseMediaData, MediaType } from "./media-data";
 import { Slider } from "@game-guild/ui/components/slider";
 import { Button } from "@game-guild/ui/components/button";
@@ -213,7 +213,7 @@ export function MediaLexicalComponent({
 
   // Update helper
   const updateNodeData = useCallback(
-    (updater: (node: any) => void) => {
+    (updater: (node: MediaLexicalNode) => void) => {
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isMediaLexicalNode(node)) {

@@ -51,7 +51,6 @@ import {
   CommandPayloadType,
   FORMAT_TEXT_COMMAND,
   HISTORIC_TAG,
-  LexicalCommand,
   LexicalEditor,
   LexicalNode,
   REDO_COMMAND,
@@ -287,7 +286,9 @@ export default function ToolbarPlugin({
     [features],
   );
 
-  const dispatchToolbarCommand = <T extends LexicalCommand<any>>(
+  const dispatchToolbarCommand = <
+    T extends typeof FORMAT_TEXT_COMMAND | typeof UNDO_COMMAND | typeof REDO_COMMAND,
+  >(
     command: T,
     payload?: CommandPayloadType<T>,
     skipRefocus: boolean = false,
