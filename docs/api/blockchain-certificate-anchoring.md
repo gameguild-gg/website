@@ -1,8 +1,9 @@
 # Blockchain certificate anchoring (safe-default configuration)
 
-Implements the verifier-approved scope of issue #224: a **config-gated** provider abstraction for
-anchoring certificates, **disabled by default**. No personal data is ever published, and no external
-network is contacted by the shipped providers.
+Certificate evidence is **disabled by default**. The legacy `none`/`local` providers contact no external
+network. The separately enabled EVM host composes the durable certificate outbox, PostgreSQL journal,
+signer and publication worker. Full issue #224 acceptance still requires the authenticated status/proof
+surface, recovery acceptance and a verified deployment on a public testnet.
 
 ## Configuration
 
@@ -60,22 +61,101 @@ registers `DisabledBlockchainCertificateService`, which persists and publishes n
   `ApiProductComposition` **only when the provider is not `none`**. The adapter reduces the
   recipient name to a digest before anything leaves the module.
 
-## Deferred operations decisions (deliberately out of scope)
+## Explicit EVM host configuration
 
-The following require explicit product/ops decisions before any real chain is used. The
-configuration and persistence contracts above are designed so a future provider can be added
-without breaking existing anchors:
+`ApiProductComposition` calls `AddCertificateEvmHost` after the certificate module. An absent or false
+`BlockchainCertificates:Evm:Enabled` registers no EVM key source, transport, journal or worker. Invalid
+enabled settings fail before those services are registered. Settings are captured once; a reload
+cannot silently retarget existing operations. One publication profile is supported per host.
 
-1. **Target chain and test network** — which chain, which testnet, mainnet policy.
-2. **Anchoring protocol** — on-chain contract/event format for publishing the digest.
-3. **Issuer key custody** — who holds signing keys and how they are rotated (this also gates
-   `GenerateVerifiableCredentialAsync`, which currently throws `NotSupportedException`).
-4. **Transaction funding** — wallet management and gas budgeting.
-5. **Revocation publication semantics** — whether revocations must also be on-chain for external
-   verifiers, and with what finality/confirmation policy.
+Keep the legacy `Provider` at `none` when enabling EVM. Selecting `local` and EVM together is rejected.
+Legacy `Certificate.BlockchainTxHash` and local-provider hashes are not asynchronous EVM operation IDs
+or receipts. A committed certificate/outbox intent does not imply that a transaction was submitted or
+finalized.
 
-Until these are decided, `Provider: "local"` is the only enabled mode, and it is local-only by
-construction (no RPC endpoints, no keys, no external calls).
+The following is an **inactive template**, not a deployed/funded network. Supply the actual registry
+address, public bytes32 issuer identifier, SHA-256 of the deployed runtime (including immutables),
+HTTPS RPC endpoint and environment key reference before activating it. Never commit a key value or
+credential-bearing RPC endpoint. Only the final certificate digest and contract operation are sent
+on chain; owner/tenant IDs and revocation reasons remain off chain.
+
+```json
+"BlockchainCertificates": {
+  "Provider": "none",
+  "Evm": {
+    "Enabled": false,
+    "Profile": "sepolia-certificates-v1",
+    "CanonicalIssuer": "gameguild-testnet",
+    "Network": {
+      "ChainId": 11155111,
+      "RpcEndpoint": "",
+      "ContractAddress": "",
+      "IssuerId": "",
+      "ExpectedRuntimeCodeSha256": "",
+      "FinalityMode": "Finalized",
+      "MinimumConfirmations": 0,
+      "RequestTimeout": "00:00:10",
+      "MaximumResponseBytes": 1048576
+    },
+    "SignerReference": "certificates-testnet-v1",
+    "PrivateKeyEnvironmentVariable": "GAMEGUILD_CERTIFICATE_TESTNET_KEY",
+    "GasLimit": 200000,
+    "MaximumFeePerGasWei": "30000000000",
+    "MaximumTransactionFeeWei": "6000000000000000",
+    "InitialFeePerGasWei": "20000000000",
+    "InitialPriorityFeePerGasWei": "1000000000",
+    "CheckDelay": "00:00:30",
+    "LeaseDuration": "00:02:00",
+    "ReplacementDelay": "00:02:00",
+    "MaximumAttempts": 3
+  }
+}
+```
+
+The sample fee values are explicit **caps, not gas-price or funding estimates**. The worker preserves
+each operation's original caps and nonce. Replacements must fit that budget; exhausted attempts,
+unavailable keys or profile mismatches remain visible for operator review. The software key adapter
+is opt-in and reads only its allowlisted process environment variable when signing is required.
+Registration does not read the key or contact RPC. A missing key cannot be represented as successful
+publication. Sepolia requires `Finalized`; there is no confirmation-count fallback. Sepolia is the
+proposed first public network because Ethereum recommends it for application testing:
+[Ethereum networks](https://ethereum.org/developers/docs/networks/#sepolia).
+
+### Database startup and roles
+
+The EVM journal remains an independent four-table model with its own
+`gameguild.authentication.__EF_EvmCertificateJournal` history. When the existing database startup
+initializer runs, its EVM migration prerequisite uses that initializer's **migration connection**;
+the runtime factory uses the normal **runtime connection**. Existing production migration-role
+validation and post-migration grants remain in effect. No elevated connection is registered with the
+publication worker. Operators must provision the runtime/migration roles and database as documented
+by the application's startup configuration.
+
+If startup initialization is disabled, operators must apply the dedicated journal migration and grant
+its runtime permissions before starting the enabled host. A lifecycle readiness check reads the
+dedicated history and all four tables, without performing DDL. An absent, unexpected or unreadable
+schema aborts host startup before any hosted service starts, including the outbox and publisher.
+Database/provider error details are removed from EVM startup failures. Default `none`/`local`
+deployments do not register this check or apply these journal migrations.
+
+## Remaining operations and acceptance
+
+The EVM protocol, constrained signer, durable journal and worker have separate implementation
+evidence; configuration alone does not establish deployment or acceptance. Remaining gates are:
+
+1. **Public testnet deployment** — provision the proposed Sepolia profile with its actual deployed
+   registry, authorized issuer/signer and pinned runtime-code digest. No mainnet deployment is implied.
+2. **Key custody and funding** — supply a separate testnet signer environment reference, fund its
+   address and approve explicit spending caps. Secret values do not belong in issues or source files.
+3. **Authenticated status and fresh proof** — expose owner/tenant-scoped asynchronous state and
+   canonical chain proof without leaking endpoints, keys or raw transactions.
+4. **Operator recovery** — accept original-profile availability, quarantined nonce gaps and discovery
+   after journal loss without inventing a new original identity or receipt.
+5. **External evidence** — record actual anchor/revoke transactions and finalized block/state proof.
+   Private Anvil fixtures and local hashes are not public-testnet acceptance.
+
+`GenerateVerifiableCredentialAsync` remains a separate unsupported operation. The learning-certificate
+EVM pipeline does not claim to implement W3C credential issuance.
 
 ## Verification (local mode)
 
