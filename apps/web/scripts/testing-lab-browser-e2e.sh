@@ -168,9 +168,15 @@ wait_for_http() {
   local url="$1"
   local label="$2"
   local log_file="$3"
-  local attempts="${4:-120}"
+  local timeout_seconds="${4:-120}"
   local process_pid="${5:-}"
-  for ((attempt = 1; attempt <= attempts; attempt += 1)); do
+  if [[ ! "${timeout_seconds}" =~ ^[1-9][0-9]{0,8}$ ]]; then
+    echo "${label} readiness timeout must be positive whole seconds." >&2
+    return 2
+  fi
+  local deadline_seconds=$((SECONDS + timeout_seconds))
+  local remaining_seconds request_timeout_seconds
+  while ((SECONDS < deadline_seconds)); do
     if [[ -n "${process_pid}" ]] && ! kill -0 "${process_pid}" >/dev/null 2>&1; then
       echo "${label} process ${process_pid} exited before readiness." >&2
       if [[ -f "${log_file}" ]]; then
@@ -178,12 +184,22 @@ wait_for_http() {
       fi
       return 1
     fi
-    if curl --fail --silent --show-error --connect-timeout 1 --max-time 5 "${url}" >/dev/null 2>&1; then
-      return 0
+    remaining_seconds=$((deadline_seconds - SECONDS))
+    if ((remaining_seconds <= 0)); then
+      break
     fi
-    sleep 1
+    request_timeout_seconds=$((remaining_seconds < 5 ? remaining_seconds : 5))
+    if curl --fail --silent --show-error --connect-timeout 1 --max-time "${request_timeout_seconds}" "${url}" >/dev/null 2>&1; then
+      if ((SECONDS <= deadline_seconds)); then
+        return 0
+      fi
+      break
+    fi
+    if ((SECONDS < deadline_seconds)); then
+      sleep 1
+    fi
   done
-  echo "${label} did not become ready at ${url}." >&2
+  echo "${label} did not become ready at ${url} within ${timeout_seconds} seconds." >&2
   if [[ -f "${log_file}" ]]; then
     tail -n 160 "${log_file}" >&2
   fi

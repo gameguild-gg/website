@@ -92,6 +92,29 @@ jobs:
           node --test apps/web/scripts/sync-javascript-runtime.test.mjs
           node --test scripts/ci/tests/dev-runtime-registration.test.mjs scripts/ci/tests/lint-budget.test.mjs
           node --test scripts/ci/tests/eslint-root-config.test.mjs
+      - name: Preserve Testing Lab readiness contract inputs
+        id: testing-lab-readiness-inputs
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p artifacts/test-results/testing-lab-readiness
+          printf '%s\n' "$CANDIDATE_HEAD" > artifacts/test-results/testing-lab-readiness/head.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse HEAD > artifacts/test-results/testing-lab-readiness/checkout.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse 'HEAD^{tree}' > artifacts/test-results/testing-lab-readiness/tree.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false ls-files -z apps/web/scripts .github/workflows/pr-verify.yml apps/web/package.json pnpm-lock.yaml > artifacts/test-results/testing-lab-readiness/tracked-inputs.nul
+          xargs -0 sha256sum < artifacts/test-results/testing-lab-readiness/tracked-inputs.nul > artifacts/test-results/testing-lab-readiness/source-before.sha256
+      - name: Test Testing Lab runner and elapsed readiness budgets
+        run: >-
+          node --test --test-reporter=tap
+          apps/web/scripts/testing-lab-browser-runner.test.mjs
+          apps/web/scripts/testing-lab-http-readiness.test.mjs
+          > artifacts/test-results/testing-lab-readiness/contracts.tap
+      - name: Verify Testing Lab readiness inputs after contracts
+        if: ${{ always() && steps.testing-lab-readiness-inputs.outcome == 'success' }}
+        run: |
+          xargs -0 sha256sum < artifacts/test-results/testing-lab-readiness/tracked-inputs.nul > artifacts/test-results/testing-lab-readiness/source-after.sha256
+          cmp artifacts/test-results/testing-lab-readiness/source-before.sha256 artifacts/test-results/testing-lab-readiness/source-after.sha256
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD -- apps/web/scripts .github/workflows/pr-verify.yml apps/web/package.json pnpm-lock.yaml
       - name: Upload policy evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
