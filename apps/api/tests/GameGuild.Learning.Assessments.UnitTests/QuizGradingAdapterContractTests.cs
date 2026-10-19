@@ -159,6 +159,83 @@ public sealed class QuizGradingAdapterContractTests
     }
 
     [Fact]
+    public async Task ValidationMatrix_MatchesCapabilitiesScoresAndUnresolvedStatesAcrossAllQuizTypes()
+    {
+        using var fixture = JsonDocument.Parse(ReadFixture("quiz-validation-cases-v1.json"));
+        fixture.RootElement.GetProperty("schemaVersion").GetInt32().Should().Be(1);
+        var cases = fixture.RootElement.GetProperty("cases").EnumerateArray().ToArray();
+        cases.Should().HaveCount(18);
+        cases.Where(testCase => testCase.GetProperty("baseType").GetBoolean())
+            .Select(testCase => testCase.GetProperty("quizEntryType").GetString())
+            .Should().OnlyHaveUniqueItems().And.HaveCount(14);
+
+        var projector = new QuizItemProjector();
+        var deliveryGenerator = new QuizDeliveryGenerator();
+        var decoder = new QuizAnswerDecoder();
+        var algorithm = new QuizDeterministicReviewAlgorithm();
+        var adapter = new QuizAssessmentTypeAdapter(
+            new QuizAuthoringAdapter(projector),
+            deliveryGenerator,
+            decoder,
+            algorithm);
+
+        foreach (var testCase in cases)
+        {
+            var caseId = testCase.GetProperty("id").GetString();
+            var entry = testCase.GetProperty("entry");
+            var projection = projector.Project("q1", entry);
+            var automated = testCase.GetProperty("officialCapability").GetString() == "automated-review";
+            adapter.CanEvaluateDeterministically(projection).Should().Be(automated, caseId);
+
+            var delivery = deliveryGenerator.Generate(projection).GetRawText();
+            foreach (var privateField in PrivateAuthoringFields(testCase.GetProperty("quizEntryType").GetString()!))
+            {
+                delivery.Should().NotContain($"\"{privateField}\"", $"{caseId} learner delivery must be redacted");
+            }
+
+            if (testCase.GetProperty("quizEntryType").GetString() == "NUMERIC")
+            {
+                delivery.Should().Contain("\"formula\"", $"{caseId} formula is part of the numeric learner prompt");
+            }
+
+            await AssertVector(
+                testCase,
+                "correct",
+                projection,
+                decoder,
+                algorithm,
+                caseId!);
+            await AssertVector(
+                testCase,
+                "omitted",
+                projection,
+                decoder,
+                algorithm,
+                caseId!);
+            if (testCase.GetProperty("answers").GetProperty("incorrect").ValueKind != JsonValueKind.Null)
+            {
+                await AssertVector(
+                    testCase,
+                    "incorrect",
+                    projection,
+                    decoder,
+                    algorithm,
+                    caseId!);
+            }
+            if (testCase.GetProperty("answers").GetProperty("partial").ValueKind != JsonValueKind.Null)
+            {
+                await AssertVector(
+                    testCase,
+                    "partial",
+                    projection,
+                    decoder,
+                    algorithm,
+                    caseId!);
+            }
+        }
+    }
+
+    [Fact]
     public void Runtime_RegistersQuizAdapterAndAutomatedReviewForBothContexts()
     {
         var registry = new ReviewCapabilityRegistry();
@@ -259,6 +336,75 @@ public sealed class QuizGradingAdapterContractTests
         "snapshot",
         [],
         new Dictionary<string, AssessmentExecutionDeliveryItemV1>());
+
+    private static async Task AssertVector(
+        JsonElement testCase,
+        string vector,
+        JsonElement projection,
+        QuizAnswerDecoder decoder,
+        QuizDeterministicReviewAlgorithm algorithm,
+        string caseId)
+    {
+        var answers = testCase.GetProperty("answers");
+        var answer = vector == "omitted" ? (JsonElement?)null : answers.GetProperty(vector);
+        var envelope = EnvelopeForAnswers(answer);
+        var decoded = decoder.Decode(envelope, [projection]);
+        var result = await algorithm.EvaluateAsync(
+            new DeterministicReviewRequest(
+                [projection],
+                EmptyDelivery(),
+                decoded,
+                QuizAdapterContracts.AutomatedReviewHandlerKey,
+                QuizAdapterContracts.Version),
+            CancellationToken.None);
+        var expected = testCase.GetProperty("expected").GetProperty(vector);
+        result.State.Should().Be(expected.GetProperty("resultState").GetString(), $"{caseId}/{vector}");
+        result.Items.Should().ContainSingle();
+        result.Items[0].State.ToString().ToLowerInvariant()
+            .Should().Be(expected.GetProperty("itemState").GetString(), $"{caseId}/{vector}");
+        var expectedScore = expected.GetProperty("score");
+        if (expectedScore.ValueKind == JsonValueKind.Null)
+        {
+            result.Score.Should().BeNull($"{caseId}/{vector}");
+            result.Items[0].Score.Should().BeNull($"{caseId}/{vector}");
+        }
+        else
+        {
+            result.Score.Should().Be(ScoreValue.FromUnits(expectedScore.GetInt32()), $"{caseId}/{vector}");
+            result.Items[0].Score.Should().Be(ScoreValue.FromUnits(expectedScore.GetInt32()), $"{caseId}/{vector}");
+        }
+    }
+
+    private static AssessmentResponseEnvelopeV1 EnvelopeForAnswers(JsonElement? answer) =>
+        new(
+            1,
+            QuizAdapterContracts.ContentType,
+            QuizAdapterContracts.AnswerPayloadSchema,
+            JsonSerializer.SerializeToElement(new
+            {
+                answers = answer.HasValue
+                    ? new Dictionary<string, JsonElement>(StringComparer.Ordinal) { ["q1"] = answer.Value.Clone() }
+                    : new Dictionary<string, JsonElement>(StringComparer.Ordinal),
+            }, GradingJson.Options));
+
+    private static string[] PrivateAuthoringFields(string itemType) => itemType switch
+    {
+        "SINGLE_CHOICE" => ["correctOptionId"],
+        "MULTIPLE_CHOICE" => ["correctOptionIds"],
+        "TRUE_FALSE" => ["correctAnswer"],
+        "FILL_IN_THE_BLANK" => ["acceptedAnswers", "correctValue"],
+        "SHORT_ANSWER" => ["acceptedAnswers"],
+        "ESSAY" => ["correctAnswer", "correctAnswerPlain"],
+        "MATCHING" => ["right"],
+        "ORDERING" => ["correctPosition"],
+        "CATEGORIZATION" => ["correctCategoryIds"],
+        "RATING" => ["correctRating"],
+        "NUMERIC" => ["toleranceType", "tolerance"],
+        "FORMULA" => ["formula", "toleranceType", "tolerance"],
+        "HOTSPOT" => ["hotspots"],
+        "HIGHLIGHT" => ["sourceText", "highlights"],
+        _ => [],
+    };
 
     private static string ReadFixture(string name = "quiz-answer-envelope-v1.json")
     {
