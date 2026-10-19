@@ -221,13 +221,24 @@ public sealed class GradingExecutionOrchestrator(
             cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<GradingExecutionOutcome> AcceptReviewEvidenceAsync(
+    public Task<GradingExecutionOutcome> AcceptReviewEvidenceAsync(
         Guid executionId,
         ReviewMethod method,
         ReviewStageEvidenceV1 evidence,
         CancellationToken cancellationToken = default)
     {
         ValidateEvidence(evidence);
+        return GradingRuntimeDatabaseLock.ExecuteWithStrategyAsync(
+            context,
+            () => AcceptReviewEvidenceTransactionalAsync(executionId, method, evidence, cancellationToken));
+    }
+
+    private async Task<GradingExecutionOutcome> AcceptReviewEvidenceTransactionalAsync(
+        Guid executionId,
+        ReviewMethod method,
+        ReviewStageEvidenceV1 evidence,
+        CancellationToken cancellationToken)
+    {
         await using var transaction = await GradingRuntimeDatabaseLock.AcquireExecutionAsync(
             context,
             executionId,
@@ -404,9 +415,16 @@ public sealed class GradingExecutionOrchestrator(
             .ConfigureAwait(false);
     }
 
-    public async Task<GradingExecutionOutcome> ResumeAsync(
+    public Task<GradingExecutionOutcome> ResumeAsync(
         Guid executionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        GradingRuntimeDatabaseLock.ExecuteWithStrategyAsync(
+            context,
+            () => ResumeTransactionalAsync(executionId, cancellationToken));
+
+    private async Task<GradingExecutionOutcome> ResumeTransactionalAsync(
+        Guid executionId,
+        CancellationToken cancellationToken)
     {
         await using var transaction = await GradingRuntimeDatabaseLock.AcquireExecutionAsync(
             context,
