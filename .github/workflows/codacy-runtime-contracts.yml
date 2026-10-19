@@ -13,6 +13,7 @@ on:
       - "apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/**"
       - "apps/web/vitest.config.mts"
       - "apps/web/src/test/**"
+      - "packages/tooling/jest/**"
       - "tools/emception/scripts/run-with-cleanup.mjs"
       - "tools/emception/scripts/tests/run-with-cleanup.test.mjs"
       - "package.json"
@@ -79,4 +80,57 @@ jobs:
         with:
           name: codacy-runtime-contracts-${{ github.event.pull_request.head.sha }}
           path: runtime-contract-evidence
+          if-no-files-found: error
+
+  jest-helpers:
+    name: Jest helper contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Preserve exact Jest helper inputs
+        id: inputs
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p jest-helper-evidence
+          printf '%s\n' "$CANDIDATE_HEAD" > jest-helper-evidence/head.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse HEAD > jest-helper-evidence/checkout.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse 'HEAD^{tree}' > jest-helper-evidence/tree.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false ls-files -z > jest-helper-evidence/tracked-files.nul
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > jest-helper-evidence/source-before.txt
+          sha256sum package.json pnpm-lock.yaml .github/workflows/codacy-runtime-contracts.yml \
+            .github/actions/setup-node-workspace/action.yml packages/tooling/jest/package.json \
+            packages/tooling/jest/src/setup.js packages/tooling/jest/src/test-utils.js \
+            packages/tooling/jest/tests/jest.config.mjs packages/tooling/jest/tests/test-utils.test.js \
+            packages/tooling/jest/tests/setup.test.js > jest-helper-evidence/source-sha256.txt
+      - uses: ./.github/actions/setup-node-workspace
+      - name: Record installed Jest package identities
+        run: |
+          cp packages/tooling/jest/node_modules/@jest/globals/package.json jest-helper-evidence/globals-package.json
+          cp packages/tooling/jest/node_modules/jest/package.json jest-helper-evidence/jest-package.json
+          cp packages/tooling/jest/node_modules/jest-environment-jsdom/package.json jest-helper-evidence/jsdom-package.json
+      - name: Test helpers with automatic Jest globals disabled
+        working-directory: packages/tooling/jest
+        run: >-
+          node --experimental-vm-modules node_modules/jest/bin/jest.js
+          --config tests/jest.config.mjs --runInBand --json
+          --outputFile="$GITHUB_WORKSPACE/jest-helper-evidence/jest.json"
+          > "$GITHUB_WORKSPACE/jest-helper-evidence/jest.stdout"
+          2> "$GITHUB_WORKSPACE/jest-helper-evidence/jest.stderr"
+      - name: Verify tracked-source identity after Jest checks
+        if: ${{ always() && steps.inputs.outcome == 'success' }}
+        run: |
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > jest-helper-evidence/source-after.txt
+      - name: Upload Jest helper evidence
+        if: ${{ always() && steps.inputs.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-jest-helper-contracts-${{ github.event.pull_request.head.sha }}
+          path: jest-helper-evidence
           if-no-files-found: error
