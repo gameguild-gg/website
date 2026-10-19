@@ -75,7 +75,7 @@ public sealed class ContentTypePermissionHierarchyProvider(
             {
                 logger.LogWarning(
                     "Content-type hierarchy cycle detected at {ContentType} -> {Parent}; traversal stopped (fail-closed).",
-                    current, parent);
+                    LogRedaction.Sanitize(current), LogRedaction.Sanitize(parent));
                 break;
             }
 

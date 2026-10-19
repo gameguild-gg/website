@@ -75,7 +75,7 @@ test('producer detection covers every source or workflow change that requires de
   const pattern = emception.match(/if grep -Eq '([^']+)'/);
   assert.ok(pattern);
   const matches = new RegExp(pattern[1]);
-  for (const path of ['tools/emception/toolchain/toolchain.lock.json', '.github/workflows/pr-verify.yml', '.github/workflows/emception.yml', 'scripts/ci/acquire-emception-release.py', 'scripts/ci/tests/acquire_emception_release_test.py', 'scripts/ci/tests/emception-web-artifacts.test.mjs', 'pnpm-lock.yaml', 'apps/web/scripts/coding-cycle-browser-e2e.mjs']) {
+  for (const path of ['tools/emception/toolchain/toolchain.lock.json', '.github/workflows/pr-verify.yml', '.github/workflows/emception.yml', 'scripts/ci/acquire-emception-release.py', 'scripts/ci/tests/acquire_emception_release_test.py', 'scripts/ci/tests/emception-web-artifacts.test.mjs', 'pnpm-lock.yaml', 'apps/web/scripts/coding-cycle-browser-e2e.mjs', 'apps/web/package.json', 'apps/web/scripts/coding-cycle-editor-support.mjs', 'apps/web/scripts/coding-cycle-editor-support.test.mjs', 'apps/web/scripts/coding-cycle-toolchain-support.mjs', 'apps/web/scripts/coding-cycle-toolchain-support.test.mjs']) {
     assert.ok(matches.test(path), 'Producer does not run for: ' + path);
   }
   assert.equal(matches.test('docs/readme.md'), false);
