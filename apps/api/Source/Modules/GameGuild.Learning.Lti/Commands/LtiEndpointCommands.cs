@@ -114,7 +114,8 @@ public sealed class LtiEndpointCommandHandler(
         }
 
         var sessionToken = await jwtTokenService
-            .GenerateAccessTokenAsync(user.Id, user.Email, Array.Empty<string>(), user.TenantId)
+            .GenerateAccessTokenAsync(user.Id, user.Email, Array.Empty<string>(), user.TenantId,
+                user.TokenVersion, cancellationToken)
             .ConfigureAwait(false);
         return new LtiLaunchResult(LtiLaunchStatus.Success, sessionToken);
     }
@@ -209,11 +210,14 @@ public sealed class LtiEndpointCommandHandler(
 
         if (mapping is not null)
         {
-            return await context.Set<User>()
+            var mappedUser = await context.Set<User>()
                 .FirstOrDefaultAsync(
                     user => user.Id == mapping.UserId && user.DeletedAt == null,
                     cancellationToken)
                 .ConfigureAwait(false);
+            return mappedUser is not null && mappedUser.ValidateForAuthentication(mappedUser.TokenVersion).IsSuccess
+                ? mappedUser
+                : null;
         }
 
         if (string.IsNullOrEmpty(email))
@@ -227,7 +231,7 @@ public sealed class LtiEndpointCommandHandler(
                 user => user.DeletedAt == null && user.Email.ToLower() == normalized,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (user is null)
+        if (user is null || !user.ValidateForAuthentication(user.TokenVersion).IsSuccess)
         {
             return null;
         }

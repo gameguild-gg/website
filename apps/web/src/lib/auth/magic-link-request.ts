@@ -9,13 +9,15 @@ const DEFAULT_API_URL =
 export async function requestMagicLink(
   email: string,
   apiUrl = DEFAULT_API_URL,
+  redirectTo = "/",
+  locale = "en-US",
 ): Promise<boolean> {
   const response = await fetch(
     `${apiUrl.replace(/\/+$/, "")}/v1/auth/magic-link:request`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.trim() }),
+      body: JSON.stringify({ email: email.trim(), redirectTo, locale }),
       credentials: "omit",
       cache: "no-store",
     },

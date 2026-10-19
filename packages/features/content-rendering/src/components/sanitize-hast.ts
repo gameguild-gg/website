@@ -22,16 +22,7 @@ interface HastNode {
   children?: HastNode[];
 }
 
-const DANGEROUS_TAGS = new Set([
-  'script',
-  'iframe',
-  'object',
-  'embed',
-  'link',
-  'meta',
-  'base',
-  'form',
-]);
+const DANGEROUS_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'link', 'meta', 'base', 'form']);
 
 const DANGEROUS_URL_SCHEMES = ['javascript:', 'vbscript:', 'data:text/html'];
 
@@ -60,9 +51,7 @@ function sanitizeNode(node: HastNode): HastNode | undefined {
     }
 
     if (node.children) {
-      node.children = node.children
-        .map(sanitizeNode)
-        .filter((child): child is HastNode => child !== undefined);
+      node.children = node.children.map(sanitizeNode).filter((child): child is HastNode => child !== undefined);
     }
     return node;
   }

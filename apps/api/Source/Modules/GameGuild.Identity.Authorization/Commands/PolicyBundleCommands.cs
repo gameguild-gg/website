@@ -83,7 +83,7 @@ public sealed class CreatePolicyBundleCommandHandler(
         if (errors.Count > 0)
         {
             throw new PolicyBundleSignatureException(
-                $"Policy bundle '{request.Name}' rejected: {string.Join(" ", errors)}");
+            $"Policy bundle '{request.Name}' rejected: {string.Join(" ", errors)}");
         }
 
         await bundleRepository.CreateAsync(bundle, cancellationToken).ConfigureAwait(false);
@@ -171,7 +171,7 @@ public sealed class SignPolicyBundleCommandHandler(
         if (bundle.Status is PolicyBundleStatus.Deprecated or PolicyBundleStatus.Revoked)
         {
             throw new InvalidOperationException(
-                $"Policy bundle {request.BundleId} is {bundle.Status} and can no longer be signed.");
+            $"Policy bundle {request.BundleId} is {bundle.Status} and can no longer be signed.");
         }
 
         signatureService.SignBundle(bundle, actorId);
@@ -242,7 +242,7 @@ public sealed class ApprovePolicyBundleCommandHandler(
         if (!verification.IsValid)
         {
             throw new PolicyBundleSignatureException(
-                $"Policy bundle {request.BundleId} cannot be approved: signature verification failed ({verification.Reason}).");
+            $"Policy bundle {request.BundleId} cannot be approved: signature verification failed ({verification.Reason}).");
         }
 
         bundle.Status = PolicyBundleStatus.Approved;
@@ -321,7 +321,7 @@ public sealed class DeployPolicyBundleCommandHandler(
         if (bundle.Status != PolicyBundleStatus.Approved)
         {
             throw new InvalidOperationException(
-                $"Policy bundle {request.BundleId} is {bundle.Status}; only approved bundles can be deployed.");
+            $"Policy bundle {request.BundleId} is {bundle.Status}; only approved bundles can be deployed.");
         }
 
         var deployment = new PolicyBundleDeployment
@@ -429,7 +429,7 @@ public sealed class RollbackPolicyBundleDeploymentCommandHandler(
         if (deployment.Status != PolicyDeploymentStatus.Active)
         {
             throw new InvalidOperationException(
-                $"Deployment {request.DeploymentId} is {deployment.Status}; only active deployments can be rolled back.");
+            $"Deployment {request.DeploymentId} is {deployment.Status}; only active deployments can be rolled back.");
         }
 
         var bundle = await bundleRepository

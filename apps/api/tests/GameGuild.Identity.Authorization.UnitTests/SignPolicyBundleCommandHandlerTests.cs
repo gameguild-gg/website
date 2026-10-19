@@ -47,6 +47,7 @@ public class SignPolicyBundleCommandHandlerTests
         {
             roles.Add("SystemAdmin");
         }
+
         if (isTenantAdmin)
         {
             roles.Add("TenantAdmin");

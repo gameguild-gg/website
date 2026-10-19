@@ -505,6 +505,7 @@ public class DelegatedAdminScopeGuardTests
             {
                 query = query.Where(s => s.TenantId == new TenantId(tenantId.Value));
             }
+
             return Task.FromResult(query.ToList());
         }
 
