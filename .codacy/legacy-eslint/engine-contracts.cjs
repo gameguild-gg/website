@@ -414,6 +414,25 @@ test('semantic-tag preference handles non-string roles and retains genuine acces
   assert.equal(invalid.length, 1, 'The separate invalid-role diagnostic remains enabled and effective');
 });
 
+test('immutable diagnostic fixtures retain observed bytes and keep current sources selected', () => {
+  const cases = JSON.parse(readFileSync(path.join(__dirname, 'crash-cases.json'), 'utf8'));
+  const manifest = readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES);
+  const selection = selectTrackedFiles(manifest);
+  const trackedFiles = new Set(manifest.toString('utf8').split('\0').filter(Boolean));
+  for (const recorded of cases) {
+    assert(selection.sourceFiles.includes(recorded.file),
+      'A historical reproducer must not exclude its current production source');
+    const inputFile = recorded.fixtureFile ?? recorded.file;
+    const bytes = readFileSync(path.join('/src', inputFile));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), recorded.sha256);
+    if (recorded.fixtureFile) {
+      assert(trackedFiles.has(recorded.fixtureFile), 'The historical bytes must also be tracked');
+      assert.notEqual(inputFile, recorded.file);
+      assert.match(recorded.observedAtHead, /^[a-f0-9]{40}$/u);
+    }
+  }
+});
+
 test('JSX prop sorting retains diagnostics without overlapping fixes and preserves safe fixes', async () => {
   const ruleId = 'perfectionist/sort-jsx-props';
   const profile = repositoryProfile(await projection());
@@ -426,7 +445,7 @@ test('JSX prop sorting retains diagnostics without overlapping fixes and preserv
   }, { filename });
   const cases = JSON.parse(readFileSync(path.join(__dirname, 'crash-cases.json'), 'utf8'));
   const recorded = cases.find((row) => row.ruleId === ruleId);
-  const bytes = readFileSync(path.join('/src', recorded.file));
+  const bytes = readFileSync(path.join('/src', recorded.fixtureFile ?? recorded.file));
   assert.equal(createHash('sha256').update(bytes).digest('hex'), recorded.sha256);
   if (!repaired) assert.throws(() => check(bytes.toString('utf8'), recorded.file), /Fix objects must not be overlapped in a report/);
   else {

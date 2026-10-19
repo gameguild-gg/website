@@ -170,6 +170,10 @@ async function analyze(output) {
       assert.equal(count, 1, 'A diagnostic sample is separate from the complete partitioned pass');
       assert(Array.isArray(cases) && cases.length > 0, 'Diagnostic cases are required');
       assigned = cases.map((row) => row.file);
+      report.diagnosticInputs = cases.map((row) => ({
+        file: row.file, inputFile: row.fixtureFile ?? row.file,
+        sha256: row.sha256, observedAtHead: row.observedAtHead,
+      }));
       assert.equal(new Set(assigned).size, assigned.length, 'Duplicate diagnostic source');
       assert(assigned.every((file) => selection.sourceFiles.includes(file)), 'Untracked diagnostic source');
     }
@@ -208,11 +212,14 @@ async function analyze(output) {
       const fileStarted = Date.now();
       record({ file: filename, state: 'started' });
       try {
-        const source = readFileSync(path.join('/src', filename));
+        const diagnosticCase = casesPath ? cases.find((row) => row.file === filename) : undefined;
+        const inputFile = diagnosticCase?.fixtureFile ?? filename;
+        const source = readFileSync(path.join('/src', inputFile));
         const sourceHash = createHash('sha256').update(source).digest('hex');
         if (casesPath) assert.equal(sourceHash, cases.find((row) => row.file === filename).sha256,
           'The actual diagnostic source must match its immutable recorded input');
-        appendFileSync(sourceHashes, `${JSON.stringify({ file: filename, bytes: source.length,
+        appendFileSync(sourceHashes, `${JSON.stringify({ file: filename,
+          ...(casesPath ? { inputFile } : {}), bytes: source.length,
           sha256: sourceHash })}\n`);
         const results = await eslint.lintText(source.toString('utf8'), { filePath: path.join('/src', filename) });
         assert.equal(results.length, 1, 'Every selected file must have a lint result');

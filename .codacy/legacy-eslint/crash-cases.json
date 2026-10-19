@@ -32,6 +32,7 @@
   {
     "ruleId": "perfectionist/sort-jsx-props",
     "file": "apps/web/src/components/block-content-editor/extras/source-code/components/source-code-editor-view.tsx",
+    "fixtureFile": ".codacy/legacy-eslint/fixtures/source-code-editor-view.tsx.txt",
     "sha256": "4f024999d3cabb17b6ae38a6f14b025f468f5b4ccb158603c6d7581013f9506f",
     "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
   },

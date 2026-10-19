@@ -209,6 +209,14 @@ remain mandatory.
 
 ## Evidence
 
+Historical crash inputs can use a `fixtureFile` copied byte-for-byte from their
+recorded `observedAtHead`. The original `file` remains the ESLint filename and
+stays in every complete source pass. This preserves the original hash and parser
+context when normal product fixes change that file. The overlapping diagnostic
+sample records both paths and validates the fixture bytes; its results cannot
+certify current repository coverage. No rule, hash assertion, source partition,
+or current product input is removed.
+
 The `Codacy legacy engine contracts` workflow runs in hosted GitHub Actions.
 It retains original/repaired TAP output, repair hashes, engine digest, source
 head, checkout, tree and profile digest. No local container or product tests
