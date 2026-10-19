@@ -3,8 +3,23 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createFetchTransport } from '../../src/runtime/transport/fetch.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
+import type { ApiResponse, Interceptor, RequestConfig } from '../../src/runtime/transport/types.js';
 
-const mockFetch = vi.fn();
+type ResponseFixture = Pick<Response, 'ok' | 'status' | 'headers'> & Partial<Pick<Response, 'statusText' | 'json' | 'text'>>;
+type FetchInitFixture = Omit<RequestInit, 'headers'> & { headers: Headers };
+type FetchFixture = (input: Parameters<typeof fetch>[0], init: FetchInitFixture) => Promise<ResponseFixture>;
+type MetricsRequestConfig = RequestConfig & { _metricsKey: string };
+type InterceptedErrorFixture = Omit<ApiError, 'code'> & { code: ApiError['code'] | 'INTERCEPTED' | 'INTERCEPTED_NETWORK' };
+
+function withFixtureCode(error: ApiError, code: 'INTERCEPTED' | 'INTERCEPTED_NETWORK'): ApiError {
+  // Keep these existing interceptor markers at the fixture boundary, including
+  // codes outside the public ApiError union. Production types stay unchanged.
+  const mappedError: InterceptedErrorFixture = { ...error, code };
+  return mappedError as ApiError;
+}
+
+const mockFetch = vi.fn<FetchFixture>();
 
 beforeEach(() => {
   vi.stubGlobal('fetch', mockFetch);
@@ -17,9 +32,9 @@ afterEach(() => {
 
 describe('createFetchTransport — gap coverage', () => {
   it('applies error interceptor on non-ok response (lines 74-75)', async () => {
-    const errorInterceptor = vi.fn(async (error: any) => ({
+    const errorInterceptor = vi.fn(async (error: ApiError) => ({
       ok: false as const,
-      error: { ...error, code: 'INTERCEPTED' },
+      error: withFixtureCode(error, 'INTERCEPTED'),
     }));
 
     const transport = createFetchTransport({
@@ -39,17 +54,19 @@ describe('createFetchTransport — gap coverage', () => {
     const result = await transport.request({ path: '/test', method: 'GET', headers: {} });
     expect(result.ok).toBe(false);
     expect(errorInterceptor).toHaveBeenCalled();
+    if (!result.ok) expect(result.error.code).toBe('INTERCEPTED');
   });
 
   it('applies response interceptor on success (line 67)', async () => {
-    const responseInterceptor = vi.fn(async (response: any) => ({
-      ...response,
-      data: { ...response.data, intercepted: true },
-    }));
+    const responseInterceptor = vi.fn<(response: ApiResponse<unknown>) => void>();
+    const onResponse: NonNullable<Interceptor['onResponse']> = async (response) => {
+      responseInterceptor(response);
+      return { ...response, data: { ...response.data, intercepted: true } };
+    };
 
     const transport = createFetchTransport({
       baseUrl: 'http://localhost',
-      interceptors: [{ onResponse: responseInterceptor }],
+      interceptors: [{ onResponse }],
     });
 
     mockFetch.mockResolvedValue({
@@ -62,12 +79,13 @@ describe('createFetchTransport — gap coverage', () => {
     const result = await transport.request({ path: '/test', method: 'GET', headers: {} });
     expect(result.ok).toBe(true);
     expect(responseInterceptor).toHaveBeenCalled();
+    if (result.ok) expect(result.data.data).toEqual({ hello: 'world', intercepted: true });
   });
 
   it('applies error interceptor on network error (lines 86-87)', async () => {
-    const errorInterceptor = vi.fn(async (error: any) => ({
+    const errorInterceptor = vi.fn(async (error: ApiError) => ({
       ok: false as const,
-      error: { ...error, code: 'INTERCEPTED_NETWORK' },
+      error: withFixtureCode(error, 'INTERCEPTED_NETWORK'),
     }));
 
     const transport = createFetchTransport({
@@ -80,6 +98,7 @@ describe('createFetchTransport — gap coverage', () => {
     const result = await transport.request({ path: '/test', method: 'GET', headers: {} });
     expect(result.ok).toBe(false);
     expect(errorInterceptor).toHaveBeenCalled();
+    if (!result.ok) expect(result.error.code).toBe('INTERCEPTED_NETWORK');
   });
 
   it('handles JSON parse error (line 146)', async () => {
@@ -145,11 +164,12 @@ describe('createFetchTransport — gap coverage', () => {
       timeout: 5000,
     });
 
-    mockFetch.mockImplementation(async (_url: string, options: any) => {
+    mockFetch.mockImplementation(async (_url, options) => {
       // Simulate the request being aborted
-      if (options.signal) {
-        return new Promise((_resolve, reject) => {
-          options.signal.addEventListener('abort', () => {
+      const signal = options.signal;
+      if (signal) {
+        return new Promise<ResponseFixture>((_resolve, reject) => {
+          signal.addEventListener('abort', () => {
             reject(new DOMException('The operation was aborted', 'AbortError'));
           });
         });
@@ -181,7 +201,7 @@ describe('createFetchTransport — gap coverage', () => {
       path: '/test',
       method: 'GET',
       headers: {},
-      params: { a: '1', b: undefined, c: 'yes' } as any,
+      params: { a: '1', b: undefined, c: 'yes' },
     });
 
     const calledUrl = mockFetch.mock.calls[0][0];
@@ -251,14 +271,16 @@ describe('createFetchTransport — gap coverage', () => {
       text: async () => 'Bad request',
     });
 
-    const result = await transport.request({
+    const request: MetricsRequestConfig = {
       path: '/test',
       method: 'GET',
       headers: {},
       _metricsKey: 'my-metric',
-    } as any);
+    };
+    const result = await transport.request(request);
 
     expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toHaveProperty('_metricsKey', 'my-metric');
   });
 
   it('copies metricsKey to success response', async () => {
@@ -273,20 +295,22 @@ describe('createFetchTransport — gap coverage', () => {
       json: async () => ({ data: 'ok' }),
     });
 
-    const result = await transport.request({
+    const request: MetricsRequestConfig = {
       path: '/test',
       method: 'GET',
       headers: {},
       _metricsKey: 'my-metric',
-    } as any);
+    };
+    const result = await transport.request(request);
 
     expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toHaveProperty('_metricsKey', 'my-metric');
   });
 
   it('uses fallback UUID generator when crypto.randomUUID is unavailable', async () => {
     // Temporarily remove crypto.randomUUID to test fallback
     const origCrypto = globalThis.crypto;
-    const mockCrypto = { ...origCrypto } as any;
+    const mockCrypto: Partial<Crypto> = { ...origCrypto };
     delete mockCrypto.randomUUID;
     vi.stubGlobal('crypto', mockCrypto);
 

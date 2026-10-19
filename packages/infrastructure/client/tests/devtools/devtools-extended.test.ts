@@ -4,6 +4,22 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DevTools } from '../../src/runtime/devtools/devtools.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
+
+type LegacyLoggedError = Partial<Omit<ApiError, 'code'>> & { code: ApiError['code'] | 'ERR' };
+
+function legacyLoggedError(error: LegacyLoggedError): ApiError {
+  // Preserve the partial and nonstandard error records used by these logging
+  // cases. The logger prints them without reading ApiError-specific fields.
+  return error as ApiError;
+}
+
+function loggedHeaders(value: unknown): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new TypeError('Expected the logged header object');
+  }
+  return value as Record<string, unknown>;
+}
 
 describe('DevTools — extended', () => {
   beforeEach(() => {
@@ -71,7 +87,7 @@ describe('DevTools — extended', () => {
     const devtools = new DevTools({ enabled: true, logLevel: 'info' });
     devtools.logRequestComplete(
       { path: '/test', method: 'GET', requestId: 'r5' },
-      { ok: true, data: { result: 'ok' } } as any,
+      { ok: true, data: { result: 'ok' } },
       100
     );
     expect(console.info).toHaveBeenCalled();
@@ -82,7 +98,7 @@ describe('DevTools — extended', () => {
     const devtools = new DevTools({ enabled: true, logLevel: 'error' });
     devtools.logRequestComplete(
       { path: '/test', method: 'GET', requestId: 'r6' },
-      { ok: false, error: { code: 'NOT_FOUND' } } as any
+      { ok: false, error: legacyLoggedError({ code: 'NOT_FOUND' }) }
     );
     expect(console.error).toHaveBeenCalled();
   });
@@ -92,7 +108,7 @@ describe('DevTools — extended', () => {
     devtools.logRequestStart({ path: '/t', method: 'GET', requestId: 'r7' });
     devtools.logRequestComplete(
       { path: '/t', method: 'GET', requestId: 'r7' },
-      { ok: true, data: null } as any
+      { ok: true, data: null }
     );
     expect(console.info).toHaveBeenCalled();
   });
@@ -123,7 +139,7 @@ describe('DevTools — extended', () => {
 
   it('should log retry at warn level', () => {
     const devtools = new DevTools({ enabled: true, logLevel: 'warn' });
-    devtools.logRetry(1, 3, { name: 'ApiError', code: 'NETWORK_ERROR', message: 'fail' } as any);
+    devtools.logRetry(1, 3, legacyLoggedError({ name: 'ApiError', code: 'NETWORK_ERROR', message: 'fail' }));
     expect(console.warn).toHaveBeenCalled();
   });
 
@@ -137,42 +153,42 @@ describe('DevTools — extended', () => {
     it('should use 🔍 for GET', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'info' });
       devtools.logRequestStart({ path: '/', method: 'GET' });
-      const call = (console.groupCollapsed as any).mock.calls[0]?.[0] || '';
+      const call: unknown = vi.mocked(console.groupCollapsed).mock.calls[0]?.[0] || '';
       expect(call).toContain('🔍');
     });
 
     it('should use ✉️ for POST', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'info' });
       devtools.logRequestStart({ path: '/', method: 'POST' });
-      const call = (console.groupCollapsed as any).mock.calls[0]?.[0] || '';
+      const call: unknown = vi.mocked(console.groupCollapsed).mock.calls[0]?.[0] || '';
       expect(call).toContain('✉️');
     });
 
     it('should use 📝 for PUT', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'info' });
       devtools.logRequestStart({ path: '/', method: 'PUT' });
-      const call = (console.groupCollapsed as any).mock.calls[0]?.[0] || '';
+      const call: unknown = vi.mocked(console.groupCollapsed).mock.calls[0]?.[0] || '';
       expect(call).toContain('📝');
     });
 
     it('should use 🔧 for PATCH', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'info' });
       devtools.logRequestStart({ path: '/', method: 'PATCH' });
-      const call = (console.groupCollapsed as any).mock.calls[0]?.[0] || '';
+      const call: unknown = vi.mocked(console.groupCollapsed).mock.calls[0]?.[0] || '';
       expect(call).toContain('🔧');
     });
 
     it('should use 🗑️ for DELETE', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'info' });
       devtools.logRequestStart({ path: '/', method: 'DELETE' });
-      const call = (console.groupCollapsed as any).mock.calls[0]?.[0] || '';
+      const call: unknown = vi.mocked(console.groupCollapsed).mock.calls[0]?.[0] || '';
       expect(call).toContain('🗑️');
     });
 
     it('should use 🌐 for unknown methods', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'info' });
       devtools.logRequestStart({ path: '/', method: 'OPTIONS' });
-      const call = (console.groupCollapsed as any).mock.calls[0]?.[0] || '';
+      const call: unknown = vi.mocked(console.groupCollapsed).mock.calls[0]?.[0] || '';
       expect(call).toContain('🌐');
     });
   });
@@ -193,11 +209,11 @@ describe('DevTools — extended', () => {
         requestId: 'req-sanitize',
       });
 
-      const logCalls = (console.log as any).mock.calls;
-      const headerCall = logCalls.find((c: any[]) => typeof c[0] === 'string' && c[0].includes('Headers'));
+      const logCalls: unknown[][] = vi.mocked(console.log).mock.calls;
+      const headerCall = logCalls.find((c) => typeof c[0] === 'string' && c[0].includes('Headers'));
       expect(headerCall).toBeDefined();
       if (headerCall) {
-        const headers = headerCall[1];
+        const headers = loggedHeaders(headerCall[1]);
         expect(headers.Authorization).toBe('[REDACTED]');
         expect(headers.Cookie).toBe('[REDACTED]');
         expect(headers['Content-Type']).toBe('application/json');
@@ -235,7 +251,7 @@ describe('DevTools — extended', () => {
   describe('log level filtering via ConsoleLogger', () => {
     it('should suppress warn at error level', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'error' });
-      devtools.logRetry(1, 3, { name: 'ApiError', code: 'ERR', message: '' } as any);
+      devtools.logRetry(1, 3, legacyLoggedError({ name: 'ApiError', code: 'ERR', message: '' }));
       expect(console.warn).not.toHaveBeenCalled();
     });
 
@@ -249,7 +265,7 @@ describe('DevTools — extended', () => {
       const devtools = new DevTools({ enabled: true, logLevel: 'warn' });
       devtools.logRequestComplete(
         { path: '/', method: 'GET', requestId: 'w' },
-        { ok: true, data: null } as any,
+        { ok: true, data: null },
         10
       );
       expect(console.info).not.toHaveBeenCalled();
