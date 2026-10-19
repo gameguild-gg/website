@@ -276,6 +276,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
                 {
                     CommandType = group.Key.CommandType ?? operation?.CommandType,
                     CorrelationId = group.Key.CorrelationId,
+                    ChangeCount = entries.Length,
                     Changes = entries.Select(change => new
                     {
                         change.Operation,
