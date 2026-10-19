@@ -177,6 +177,7 @@ function createRepositoryProfile(projection, nodeTargets) {
       noInlineConfig: true,
       parser: parser(projection.options.baseConfig.parser),
       settings: { ...settings,
+        flowtype: { ...settings.flowtype, onlyFilesWithFlowAnnotation: true },
         'import/resolver': importResolvers,
         'import/parsers': Object.fromEntries(Object.entries(settings['import/parsers'])
           .map(([name, extensions]) => [parser(name), extensions])),

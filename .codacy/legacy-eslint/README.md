@@ -81,6 +81,14 @@ take precedence, with no rule disabled. Contracts demonstrate the prior Node16
 fallback warning for `node:test`, acceptance under Node20, the retained Node18
 restriction and detection of a builtin newer than the Node20.0 minimum.
 
+Flow rules use the plugin's documented `onlyFilesWithFlowAnnotation` setting.
+Plain JavaScript executed directly by Node must not be required to contain Flow
+type syntax. The static inventory at273d7196 found no Flow annotation tokens in
+any of the3279 supported tracked sources. All rule IDs/options and every source
+remain in the profile. Hosted controls reproduce the earlier requirement on
+unannotated JavaScript, retain missing-type diagnostics after an explicit Flow
+declaration, accept a typed declaration and retain malformed-header checks.
+
 The separate complete-source pass installs the repository's frozen workspace
 dependencies in hosted CI, then lints every selected file using the repaired
 engine. Inline config comments cannot suppress requested diagnostics. Each

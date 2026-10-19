@@ -474,3 +474,36 @@ test('engine module origins are pinned while real cycles and TypeScript alias na
   assert(missing.some((message) => message.ruleId === 'import/namespace' && /not found/u.test(message.message)));
   assert.deepEqual(check('import * as api from "@fixture/exports"; api.present;', 'entry.ts', 'import/namespace'), []);
 });
+
+test('Flow annotation context accepts plain JavaScript and retains Flow errors and malformed-header checks', async () => {
+  const profile = repositoryProfile(await projection());
+  assert.equal(profile.baseConfig.settings.flowtype.onlyFilesWithFlowAnnotation, true);
+  const linter = new Linter();
+  const rules = ['require-parameter-type', 'require-valid-file-annotation'];
+  for (const rule of rules) {
+    linter.defineRule(`flowtype/${rule}`, engineRequire('eslint-plugin-flowtype').rules[rule]);
+  }
+  linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
+  const check = (source, annotatedOnly, filename = 'language-context.ts') => linter.verify(source, {
+    parser: 'engine-typescript', parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+    settings: { ...profile.baseConfig.settings,
+      flowtype: { ...profile.baseConfig.settings.flowtype, onlyFilesWithFlowAnnotation: annotatedOnly } },
+    rules: Object.fromEntries(rules.map((rule) => [`flowtype/${rule}`, profile.baseConfig.rules[`flowtype/${rule}`]])),
+  }, { filename });
+  const plain = 'function useValue(value) { return value; }';
+  assert(check(plain, false).some((message) => message.ruleId === 'flowtype/require-parameter-type'),
+    'The prior unscoped setting must reproduce the inappropriate plain-JavaScript type requirement');
+  assert.deepEqual(check(plain, true), []);
+  const actualFilename = '/src/tools/emception/grading/browser-launch-options.mjs';
+  const actualSource = readFileSync(actualFilename, 'utf8');
+  assert(check(actualSource, false, actualFilename)
+    .some((message) => message.ruleId === 'flowtype/require-parameter-type'));
+  assert.deepEqual(check(actualSource, true, actualFilename), []);
+  assert(check(`// @flow\n${plain}`, true)
+    .some((message) => message.ruleId === 'flowtype/require-parameter-type'));
+  assert.deepEqual(check('// @flow\nfunction useValue(value: string) { return value; }', true), []);
+  assert.deepEqual(check(`// @noflow\n${plain}`, true), []);
+  assert(check('// @flo\nfunction useValue(value: string) { return value; }', true)
+    .some((message) => message.ruleId === 'flowtype/require-valid-file-annotation'),
+  'A malformed Flow declaration must remain a diagnostic');
+});
