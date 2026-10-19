@@ -11,7 +11,7 @@ export function PreviewGallery({ node }: { node: SerializedGalleryNode }) {
   }
 
   const { layout, caption, images } = node.data
-  const captionStyle = (node.data as any).captionStyle
+  const captionStyle = node.data.captionStyle
 
   // Get caption style classes
   const getCaptionStyleClasses = () => {

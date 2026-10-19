@@ -22,7 +22,7 @@ export interface GalleryData {
   captionStyle?: {
     fontSize?: "xs" | "sm" | "base" | "lg"
     fontFamily?: "sans" | "serif" | "mono"
-    fontWeight?: "normal" | "medium"
+    fontWeight?: "normal" | "medium" | "bold"
     fontStyle?: "normal" | "italic"
   }
   isNew?: boolean
