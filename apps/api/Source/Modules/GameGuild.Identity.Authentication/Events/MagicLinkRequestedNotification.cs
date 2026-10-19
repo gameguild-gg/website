@@ -13,6 +13,10 @@ public sealed class MagicLinkRequestedNotification : INotification
 
     public string? UserName { get; init; }
 
+    public string? RedirectTo { get; init; }
+
+    public string? Locale { get; init; }
+
     public Guid? TenantId { get; init; }
 
     public string? IpAddress { get; init; }

@@ -15545,6 +15545,40 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("game_jam_submissions", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.MagicLinkToken", b =>
+                {
+                    b.Property<string>("TokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("token_hash")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("TokenHash");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_magic_link_tokens_expires_at");
+
+                    b.ToTable("magic_link_tokens", "gameguild.authentication");
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.AdaptiveBehaviorBaseline", b =>
                 {
                     b.Property<Guid>("Id")

@@ -27,6 +27,47 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
     : IClassFixture<NotificationTokenStoragePostgreSqlFixture>
 {
     private static readonly NotificationMetadataProtector MetadataProtector = new(new EphemeralDataProtectionProvider());
+
+    [Fact]
+    public async Task MagicLinkTokens_AreSharedAcrossReplicas_AndOnlyOneConcurrentConsumeSucceeds()
+    {
+        await using var issuerContext = fixture.CreateContext();
+        var issuer = new DatabaseMagicLinkTokenStore(issuerContext);
+        var token = Guid.NewGuid().ToString("N");
+        var userId = Guid.NewGuid();
+        var now = SystemClock.UtcNow;
+        await issuer.AddAsync(token, userId, "Replica@Test.COM", now.AddMinutes(15));
+
+        await using var firstContext = fixture.CreateContext();
+        await using var secondContext = fixture.CreateContext();
+        var first = new DatabaseMagicLinkTokenStore(firstContext);
+        var second = new DatabaseMagicLinkTokenStore(secondContext);
+        Assert.True(await second.IsValidAsync(token, now));
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async Task<TokenValidationResult> ConsumeAsync(DatabaseMagicLinkTokenStore store)
+        {
+            await start.Task;
+            return await store.ConsumeAsync(token, now);
+        }
+
+        var firstAttempt = ConsumeAsync(first);
+        var secondAttempt = ConsumeAsync(second);
+        start.SetResult();
+        var results = await Task.WhenAll(firstAttempt, secondAttempt);
+
+        var accepted = Assert.Single(results.Where(result => result.Success));
+        Assert.Equal(userId, accepted.UserId);
+        Assert.Equal("replica@test.com", accepted.Email);
+        Assert.Single(results.Where(result => !result.Success));
+        Assert.False(await issuer.IsValidAsync(token, now));
+        Assert.False((await issuer.ConsumeAsync(token, now)).Success);
+        var stored = await issuerContext.Set<MagicLinkToken>().AsNoTracking().SingleAsync(value => value.UserId == userId);
+        Assert.Equal(64, stored.TokenHash.Length);
+        Assert.DoesNotContain(token, stored.TokenHash);
+        Assert.NotNull(stored.ConsumedAt);
+    }
+
     [Theory]
     [InlineData("verification")]
     [InlineData("reset")]
@@ -241,7 +282,8 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
     {
         var user = await CreateUser(context);
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var generator = new EmailVerificationService(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>());
+        var generator = new EmailVerificationService(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>(),
+            magicLinkTokenStore: new DatabaseMagicLinkTokenStore(context));
         var token = kind switch
         {
             "verification" => await generator.GenerateVerificationTokenAsync(user.Id, user.Email),

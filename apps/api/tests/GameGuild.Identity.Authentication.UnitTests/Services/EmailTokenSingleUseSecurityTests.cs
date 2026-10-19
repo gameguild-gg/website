@@ -129,7 +129,8 @@ public sealed class EmailTokenSingleUseSecurityTests
     }
 
     private static EmailVerificationService CreateService(IMemoryCache cache) =>
-        new(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>());
+        new(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>(),
+            magicLinkTokenStore: new EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
     private static Task<string> Generate(EmailVerificationService service, string kind, Guid userId) => kind switch
     {

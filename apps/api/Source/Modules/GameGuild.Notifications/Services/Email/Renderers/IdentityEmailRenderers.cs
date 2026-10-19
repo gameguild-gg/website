@@ -194,7 +194,7 @@ public sealed class PasswordResetRenderer(
 
 /// <summary>
 /// Renders the magic sign-in link email. TRANSACTIONAL: never unsubscribable, no footer.
-/// Metadata JSON: <c>{ "token": string, "email": string, "userName": string }</c>.
+/// Metadata JSON: <c>{ "token": string, "email": string, "userName": string, "redirectTo": string, "locale": string }</c>.
 /// </summary>
 public sealed class MagicLinkRenderer(
     IEmailFooterService footerService,
@@ -213,7 +213,16 @@ public sealed class MagicLinkRenderer(
             throw new InvalidOperationException("Notification credential metadata is invalid or unavailable.");
         }
         var appBaseUrl = ResolveBaseUrl();
-        var magicLink = $"{appBaseUrl}/magic-link?token={meta.Token}";
+        var localePrefix = meta.Locale switch
+        {
+            "pt-BR" => "/pt-BR",
+            _ => string.Empty
+        };
+        var magicLink = $"{appBaseUrl}{localePrefix}/magic-link?token={Uri.EscapeDataString(meta.Token ?? string.Empty)}";
+        if (!string.IsNullOrWhiteSpace(meta.RedirectTo))
+        {
+            magicLink += $"&redirectTo={Uri.EscapeDataString(meta.RedirectTo)}";
+        }
         var recipientName = string.IsNullOrWhiteSpace(meta.UserName) ? meta.Email : meta.UserName;
 
         var plain =
@@ -249,9 +258,9 @@ public sealed class MagicLinkRenderer(
         }
     }
 
-    private sealed record MagicLinkMetadata(string? Token, string? Email, string? UserName)
+    private sealed record MagicLinkMetadata(string? Token, string? Email, string? UserName, string? RedirectTo, string? Locale)
     {
-        public static MagicLinkMetadata Empty { get; } = new(null, null, null);
+        public static MagicLinkMetadata Empty { get; } = new(null, null, null, null, null);
     }
 }
 
