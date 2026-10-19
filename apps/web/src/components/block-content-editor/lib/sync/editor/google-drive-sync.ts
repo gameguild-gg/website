@@ -108,7 +108,7 @@ export class GoogleDriveSync {
 
       const projects = await this.googleDriveService.listProjects()
       
-      return projects.map((project: any) => ({
+      return projects.map((project) => ({
         id: project.id,
         name: project.name,
         data: project.data,
