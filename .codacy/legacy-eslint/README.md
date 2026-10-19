@@ -154,6 +154,12 @@ locations without messages, snippets or fixes. Security results have aggregate
 rule counts only. Raw tool output is disposable and is not uploaded. Detailed
 security evidence and remediation decisions remain in private managed storage.
 
+Future passes also retain output provenance: stream byte counts and hashes,
+dependency-only caller frames and known Node deprecation codes. They retain no
+output text, exception messages or repository source frames. Original writes,
+callbacks and backpressure are forwarded. This identifies the emitting package
+without suppressing output; any unreviewed bytes still block certification.
+
 Some rules report invalid options as ordinary diagnostics. Known missing-option
 errors from `jsdoc/match-name` and `jsdoc/text-escaping` remain in the diagnostic
 stream and also block analysis certification as configuration errors. A missing

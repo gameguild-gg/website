@@ -6,6 +6,7 @@ const { appendFileSync, mkdirSync, readFileSync, statSync, writeFileSync } = req
 const { createRequire } = require('node:module');
 const path = require('node:path');
 const { createProjection, createRepositoryProfile, readNodeTargets, selectTrackedFiles } = require('./project-configuration.cjs');
+const { dependencyFrames, installToolOutputProvenance } = require('./tool-output-provenance.cjs');
 
 function publicDiagnostics(messages, filename, categories) {
   const diagnostics = [];
@@ -57,19 +58,17 @@ function engineFailure(error, categories) {
   const message = typeof error?.message === 'string' ? error.message : '';
   const property = message.match(/^Cannot read properties of (?:null|undefined) \(reading '([A-Za-z]+)'\)/u)?.[1];
   const knownProperties = new Set(['name', 'type', 'body', 'value', 'imported', 'references',
-    'range', 'loc', 'start', 'end', 'attributes', 'parent', 'node']);
+    'range', 'loc', 'start', 'end', 'attributes', 'parent', 'node', 'kind']);
   let reason = 'unclassified-engine-error';
   if (knownProperties.has(property)) reason = `missing-node-${property}`;
   else if (message.startsWith('No ESLint configuration found in ')) reason = 'missing-eslint-configuration';
   else if (message.startsWith('Fix objects must not be overlapped in a report.')) reason = 'overlapping-autofix';
   else if (message.startsWith('propValue.lastIndexOf is not a function')) reason = 'non-string-role-value';
-  const frames = [];
-  for (const line of typeof error?.stack === 'string' ? error.stack.split('\n') : []) {
-    const match = line.match(/\/node_modules\/((?:@?[A-Za-z0-9_.+-]+\/)*[A-Za-z0-9_.+-]+\.js):(\d+):(\d+)\)?$/u);
-    if (match) frames.push({ file: match[1], line: Number(match[2]), column: Number(match[3]) });
-    if (frames.length === 6) break;
+  else if (message.startsWith('You have used a rule which requires parserServices to be generated.')) {
+    reason = 'missing-type-services';
   }
-  return { kind: errorKind(error), ruleId: engineRule(error, categories), reason, dependencyFrames: frames };
+  return { kind: errorKind(error), ruleId: engineRule(error, categories), reason,
+    dependencyFrames: dependencyFrames(error?.stack) };
 }
 
 function partitionSources(files, index, count) {
@@ -123,6 +122,7 @@ async function analyze(output) {
   assert.match(head || '', /^[a-f0-9]{40}$/u, 'An exact source head is required');
   assert(path.isAbsolute(output), 'An absolute evidence directory is required');
   mkdirSync(output, { recursive: true });
+  installToolOutputProvenance(output);
   const progress = path.join(output, 'file-progress.jsonl');
   const diagnostics = path.join(output, 'diagnostics.jsonl');
   const sourceHashes = path.join(output, 'source-hashes.jsonl');

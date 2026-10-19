@@ -12,6 +12,7 @@ const {
 } = require('./project-configuration.cjs');
 const { publicDiagnostics, engineRule, engineFailure, partitionSources,
   analysisStatus, qualifiedAnalysisStatus } = require('./analyze-repository.cjs');
+const { observeWrite, warningMetadata } = require('./tool-output-provenance.cjs');
 
 // These contracts run only inside the pinned hosted engine. No repository
 // dependency installation, cloud configuration change or issue upload is made.
@@ -641,7 +642,8 @@ test('typed JavaScript rules receive a real project and retain AST-node property
   assert.throws(() => check(actual, filename, previous.parserOptions), /requires parserServices to be generated/u);
   assert.deepEqual(check(actual, filename, corrected.parserOptions), []);
   const parsed = engineRequire('@typescript-eslint/parser').parseForESLint(actual,
-    { ...corrected.parserOptions, filePath: filename });
+    { ...corrected.parserOptions, filePath: filename, loc: true, range: true, raw: true,
+      tokens: true, comment: true, eslintVisitorKeys: true, eslintScopeManager: true });
   assert(parsed.services.program, 'The JavaScript project must provide a real TypeScript program');
   const selection = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
   const javascript = selection.sourceFiles.filter((file) => /\.(?:js|jsx|mjs|cjs|jsm)$/u.test(file));
@@ -667,4 +669,63 @@ test('typed JavaScript rules receive a real project and retain AST-node property
   assert.equal(messages[0].ruleId, ruleId);
   assert.equal(messages[0].messageId, 'in');
   assert.deepEqual(check(ordinary, path.join(directory, 'ordinary.mjs'), options), []);
+});
+
+test('tool-output provenance preserves writes and failures without retaining messages or source frames', () => {
+  const events = [];
+  const receiver = {};
+  const callback = () => {};
+  const message = 'private-fixture-value';
+  const stack = 'Error: private-fixture-value\n'
+    + '    at warn (/node_modules/example/lib/notice.cjs:12:3)\n'
+    + '    at invalid (/node_modules/../private-fixture-value.js:2:3)\n'
+    + '    at source (/src/private-fixture-value.mjs:4:5)';
+  let calls = 0;
+  const observed = observeWrite(function (chunk, encoding, completion) {
+    assert.equal(this, receiver);
+    assert.equal(chunk, message);
+    assert.equal(encoding, 'utf8');
+    assert.equal(completion, callback);
+    calls += 1;
+    return false;
+  }, 'stderr', (event) => events.push(event), () => stack);
+  assert.equal(observed.call(receiver, message, 'utf8', callback), false);
+  assert.equal(calls, 1);
+  assert.deepEqual(events, [{ event: 'write', stream: 'stderr', bytes: Buffer.byteLength(message),
+    sha256: createHash('sha256').update(message).digest('hex'),
+    dependencyFrames: [{ file: 'example/lib/notice.cjs', line: 12, column: 3 }] }]);
+  const original = new Error('private-fixture-value');
+  const failed = observeWrite(() => { throw original; }, 'stdout', (event) => events.push(event));
+  assert.throws(() => failed(Buffer.from(message)), (error) => error === original);
+  assert.throws(() => failed(null), (error) => error === original,
+    'An invalid chunk must reach the original write without coercion or a replacement error');
+  assert.equal(events.length, 1);
+  const warning = warningMetadata({ name: 'DeprecationWarning', code: 'DEP0040',
+    message, stack });
+  assert.deepEqual(warning, { event: 'warning', kind: 'DeprecationWarning', code: 'DEP0040',
+    dependencyFrames: [{ file: 'example/lib/notice.cjs', line: 12, column: 3 }] });
+  assert.equal(warningMetadata({ name: message, code: message, stack }).code, null);
+  assert(!JSON.stringify([events, warning]).includes(message));
+  assert.equal(analysisStatus({ selected: 1, attempted: 1, processed: 1, allFilesProcessed: true,
+    engineErrors: 0, configurationErrors: 0, fatalParsing: 0, diagnosticCount: 0 },
+  events[0].bytes).completeAnalysisCertified, false, 'Observed output must not become silently accepted');
+});
+
+test('known type-service failures and root-node crashes retain safe, specific provenance', () => {
+  const categories = new Map([['eslint-plugin/no-property-in-node', 'BestPractice'],
+    ['es-x/no-set-prototype-union', 'Compatibility']]);
+  const missing = engineFailure({ name: 'Error', ruleId: 'eslint-plugin/no-property-in-node',
+    message: 'You have used a rule which requires parserServices to be generated. private-fixture-value',
+    stack: 'Error: /node_modules/private-fixture-value.js:1:2\n'
+      + '    at invalid (/node_modules/../private-fixture-value.js:1:2)\n'
+      + '    at rule (/node_modules/eslint-plugin-eslint-plugin/lib/rules/no-property-in-node.js:92:17)\n'
+      + '    at source (/src/private-fixture-value.mjs:1:2)',
+  }, categories);
+  assert.equal(missing.reason, 'missing-type-services');
+  assert.deepEqual(missing.dependencyFrames, [{
+    file: 'eslint-plugin-eslint-plugin/lib/rules/no-property-in-node.js', line: 92, column: 17,
+  }]);
+  assert(!JSON.stringify(missing).includes('private-fixture-value'));
+  assert.equal(engineFailure({ name: 'TypeError', ruleId: 'es-x/no-set-prototype-union',
+    message: "Cannot read properties of undefined (reading 'kind')" }, categories).reason, 'missing-node-kind');
 });
