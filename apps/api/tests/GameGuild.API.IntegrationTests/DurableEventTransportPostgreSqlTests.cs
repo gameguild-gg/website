@@ -130,7 +130,10 @@ public sealed class DurableEventTransportPostgreSqlTests : IAsyncLifetime
         {
             handler.Release.TrySetResult();
             await competingDispatch.WaitAsync(TimeSpan.FromSeconds(15));
-            if (waiting is not null) await waiting.WaitAsync(TimeSpan.FromSeconds(15));
+            if (waiting is not null)
+            {
+                await waiting.WaitAsync(TimeSpan.FromSeconds(15));
+            }
         }
         Assert.Equal(1, handler.Calls);
         await using var verify = provider.CreateAsyncScope();
@@ -322,7 +325,10 @@ public sealed class DurableEventTransportPostgreSqlTests : IAsyncLifetime
         public async Task<int> DispatchPendingAsync(CancellationToken cancellationToken = default)
         {
             var count = await inner.DispatchPendingAsync(cancellationToken);
-            if (count == 0) emptyBatch.TrySetResult();
+            if (count == 0)
+            {
+                emptyBatch.TrySetResult();
+            }
             return count;
         }
     }
