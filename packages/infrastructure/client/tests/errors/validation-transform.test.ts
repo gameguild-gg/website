@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { ZodError, z } from 'zod';
 import { transformZodError, isZodError, safeParse } from '../../src/runtime/errors/validation.js';
 import type { ApiError } from '../../src/runtime/errors/types.js';
+import { readValidationDetails } from './validation-test-support.js';
 
 describe('Validation Error Transformation', () => {
   describe('transformZodError', () => {
@@ -49,7 +50,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors).toHaveLength(2);
           expect(errors[0].field).toBe('username');
@@ -68,7 +69,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].message).toContain('must be');
           expect(errors[0].message).toContain('number');
@@ -86,7 +87,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].message).toContain('valid email');
         }
@@ -101,7 +102,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].message).toContain('at least 5 characters');
         }
@@ -116,7 +117,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].message).toContain('at most 100');
         }
@@ -131,7 +132,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].message).toContain('must be one of');
           expect(errors[0].message).toContain('admin');
@@ -159,7 +160,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].field).toBe('user.profile.name');
         }
@@ -271,7 +272,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].message).toContain('at least 2 items');
         }
@@ -286,7 +287,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].message).toContain('does not match');
         }
@@ -301,7 +302,7 @@ describe('Validation Error Transformation', () => {
       } catch (error) {
         if (error instanceof ZodError) {
           const apiError = transformZodError(error, 'request');
-          const errors = apiError.metadata?.errors as any[];
+          const errors = readValidationDetails(apiError);
 
           expect(errors[0].code).toBeDefined();
         }

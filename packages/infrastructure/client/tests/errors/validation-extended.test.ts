@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z, ZodError } from 'zod';
+import { assertApiError, createMalformedZodError, readValidationDetails } from './validation-test-support.js';
 import {
   transformZodError,
   isZodError,
@@ -20,7 +21,7 @@ describe('transformZodError — branch coverage', () => {
       const result = transformZodError(e as ZodError);
       expect(result.code).toBe('VALIDATION_ERROR');
       expect(result.metadata?.errors).toBeDefined();
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].message).toContain('string');
     }
@@ -32,7 +33,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ email: 'not-an-email' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('email');
     }
   });
@@ -43,7 +44,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ website: 'not-a-url' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('URL');
     }
   });
@@ -54,7 +55,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ id: 'not-a-uuid' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('UUID');
     }
   });
@@ -65,7 +66,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ name: 'ab' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('3');
       expect(errors[0].message).toContain('character');
     }
@@ -77,7 +78,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ age: -1 });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('0');
     }
   });
@@ -88,7 +89,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ items: [] });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('1');
     }
   });
@@ -99,7 +100,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ bio: 'this is too long' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('5');
     }
   });
@@ -110,7 +111,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ score: 101 });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('100');
     }
   });
@@ -121,7 +122,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ items: ['a', 'b', 'c'] });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('2');
     }
   });
@@ -132,7 +133,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ color: 'purple' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('red');
     }
   });
@@ -143,7 +144,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse(true);
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors.length).toBeGreaterThan(0);
     }
   });
@@ -154,7 +155,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse('nope');
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toBe('Must be secret');
     }
   });
@@ -169,7 +170,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ name: '', email: 'bad', age: 'not-number' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors.length).toBeGreaterThanOrEqual(2);
     }
   });
@@ -202,7 +203,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse(42);
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].field).toBe('root');
     }
   });
@@ -213,7 +214,7 @@ describe('transformZodError — branch coverage', () => {
       schema.parse({ user: { name: 123 } });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].field).toBe('user.name');
     }
   });
@@ -260,7 +261,8 @@ describe('safeParse', () => {
 
     try {
       safeParse(schema, { name: 42 });
-    } catch (e: any) {
+    } catch (e) {
+      assertApiError(e);
       expect(e.code).toBe('VALIDATION_ERROR');
       expect(e.metadata?.errors).toBeDefined();
     }
@@ -286,7 +288,8 @@ describe('safeParse', () => {
     const schema = z.string();
     try {
       safeParse(schema, 42, 'request');
-    } catch (e: any) {
+    } catch (e) {
+      assertApiError(e);
       expect(e.message).toContain('Request');
     }
   });
@@ -299,31 +302,31 @@ describe('formatIssueMessage — edge cases', () => {
       schema.parse({ createdAt: 'not-a-date' });
     } catch (e) {
       const result = transformZodError(e as ZodError);
-      const errors = result.metadata!.errors as any[];
+      const errors = readValidationDetails(result);
       expect(errors[0].message).toContain('ISO datetime');
     }
   });
 
   it('should fallback for unknown invalid_string validation type', () => {
     // Create a ZodError manually with an unrecognized validation type  
-    const zodError = new ZodError([
+    const zodError = createMalformedZodError([
       {
         code: 'invalid_string',
-        validation: 'regex' as any,
+        validation: 'regex',
         path: ['field'],
         message: 'Invalid regex match',
       },
     ]);
     const result = transformZodError(zodError);
-    const errors = result.metadata!.errors as any[];
+    const errors = readValidationDetails(result);
     expect(errors[0].message).toBe('Invalid regex match');
   });
 
   it('should fallback for too_small with unknown type', () => {
-    const zodError = new ZodError([
+    const zodError = createMalformedZodError([
       {
         code: 'too_small',
-        type: 'set' as any,
+        type: 'set',
         minimum: 1,
         inclusive: true,
         exact: false,
@@ -332,15 +335,15 @@ describe('formatIssueMessage — edge cases', () => {
       },
     ]);
     const result = transformZodError(zodError);
-    const errors = result.metadata!.errors as any[];
+    const errors = readValidationDetails(result);
     expect(errors[0].message).toBe('Set must have at least 1 element');
   });
 
   it('should fallback for too_big with unknown type', () => {
-    const zodError = new ZodError([
+    const zodError = createMalformedZodError([
       {
         code: 'too_big',
-        type: 'set' as any,
+        type: 'set',
         maximum: 5,
         inclusive: true,
         exact: false,
@@ -349,7 +352,7 @@ describe('formatIssueMessage — edge cases', () => {
       },
     ]);
     const result = transformZodError(zodError);
-    const errors = result.metadata!.errors as any[];
+    const errors = readValidationDetails(result);
     expect(errors[0].message).toBe('Set must have at most 5 elements');
   });
 
@@ -362,7 +365,7 @@ describe('formatIssueMessage — edge cases', () => {
       },
     ]);
     const result = transformZodError(zodError);
-    const errors = result.metadata!.errors as any[];
+    const errors = readValidationDetails(result);
     expect(errors[0].message).toBe('myField is invalid');
   });
 });
