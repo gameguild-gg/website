@@ -27,7 +27,7 @@ function make403Error(): ApiError {
 }
 
 function makeSuccessResponse<T>(data: T): Result<ApiResponse<T>, ApiError> {
-  return ok({ data, status: 200, headers: {} });
+  return ok({ data, status: 200, headers: new Headers() });
 }
 
 function makeMockTransport(
@@ -50,7 +50,7 @@ describe('Auth Retry Plugin', () => {
     const transport = makeMockTransport([makeSuccessResponse({ id: 1 })]);
     const wrapped = plugin.wrapTransport(transport);
 
-    const result = await wrapped.request<{ id: number }>({ method: 'GET', url: '/test' });
+    const result = await wrapped.request<{ id: number }>({ method: 'GET', path: '/test' });
 
     expect(result.ok).toBe(true);
     expect(refreshToken).not.toHaveBeenCalled();
@@ -66,7 +66,7 @@ describe('Auth Retry Plugin', () => {
     ]);
     const wrapped = plugin.wrapTransport(transport);
 
-    const result = await wrapped.request<{ id: number }>({ method: 'GET', url: '/test' });
+    const result = await wrapped.request<{ id: number }>({ method: 'GET', path: '/test' });
 
     expect(result.ok).toBe(true);
     expect(refreshToken).toHaveBeenCalledTimes(1);
@@ -83,7 +83,7 @@ describe('Auth Retry Plugin', () => {
     const transport = makeMockTransport([err(make401Error())]);
     const wrapped = plugin.wrapTransport(transport);
 
-    const result = await wrapped.request({ method: 'GET', url: '/test' });
+    const result = await wrapped.request({ method: 'GET', path: '/test' });
 
     expect(result.ok).toBe(false);
     expect(refreshToken).toHaveBeenCalledTimes(1);
@@ -97,7 +97,7 @@ describe('Auth Retry Plugin', () => {
     const transport = makeMockTransport([err(make403Error())]);
     const wrapped = plugin.wrapTransport(transport);
 
-    const result = await wrapped.request({ method: 'GET', url: '/test' });
+    const result = await wrapped.request({ method: 'GET', path: '/test' });
 
     expect(result.ok).toBe(false);
     expect(refreshToken).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe('Auth Retry Plugin', () => {
     const transport = makeMockTransport([err(make401Error())]);
     const wrapped = plugin.wrapTransport(transport);
 
-    const result = await wrapped.request({ method: 'GET', url: '/test' });
+    const result = await wrapped.request({ method: 'GET', path: '/test' });
 
     expect(result.ok).toBe(false);
     expect(refreshToken).not.toHaveBeenCalled();
@@ -131,7 +131,7 @@ describe('Auth Retry Plugin', () => {
     ]);
     const wrapped = plugin.wrapTransport(transport);
 
-    const result = await wrapped.request({ method: 'GET', url: '/test' });
+    const result = await wrapped.request({ method: 'GET', path: '/test' });
 
     expect(result.ok).toBe(false);
     expect(refreshToken).toHaveBeenCalledTimes(2);
@@ -155,7 +155,7 @@ describe('Auth Retry Plugin', () => {
     ]);
     const wrapped = plugin.wrapTransport(transport);
 
-    const result = await wrapped.request({ method: 'GET', url: '/test' });
+    const result = await wrapped.request({ method: 'GET', path: '/test' });
 
     expect(result.ok).toBe(false);
     expect(onAuthRequired).toHaveBeenCalledTimes(1);

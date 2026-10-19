@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryCache, createCacheInterceptor } from '../../src/plugins/cache.js';
+import type { RequestConfig } from '../../src/runtime/transport/types.js';
 
 describe('MemoryCache', () => {
   beforeEach(() => {
@@ -243,7 +244,7 @@ describe('createCacheInterceptor', () => {
   it('should pass through non-GET requests on onRequest', async () => {
     const interceptor = createCacheInterceptor();
 
-    const request = { method: 'POST', path: '/api/users', body: { name: 'Test' } };
+    const request = { method: 'POST', path: '/api/users', body: { name: 'Test' } } satisfies RequestConfig;
     const result = await interceptor.onRequest!(request);
 
     expect(result).toEqual(request);
@@ -252,7 +253,7 @@ describe('createCacheInterceptor', () => {
   it('should pass through GET requests when not cached', async () => {
     const interceptor = createCacheInterceptor();
 
-    const request = { method: 'GET', path: '/api/users' };
+    const request = { method: 'GET', path: '/api/users' } satisfies RequestConfig;
     const result = await interceptor.onRequest!(request);
 
     expect(result.method).toBe('GET');
@@ -265,7 +266,7 @@ describe('createCacheInterceptor', () => {
     });
 
     // HEAD should not be ignored like POST would be
-    const request = { method: 'HEAD', path: '/api/check' };
+    const request = { method: 'HEAD', path: '/api/check' } satisfies RequestConfig;
     const result = await interceptor.onRequest!(request);
 
     expect(result).toBeDefined();

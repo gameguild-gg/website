@@ -108,6 +108,7 @@ describe('createMetricsInterceptor — full branch', () => {
     });
 
     expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('Expected the original metrics error');
     expect(result.error.code).toBe('NETWORK_ERROR');
   });
 
