@@ -15,7 +15,7 @@ const sections = [
   },
 ];
 
-export default async function Page({}: PageProps<'/[locale]/about/contributors'>): Promise<React.JSX.Element> {
+export default async function Page(): Promise<React.JSX.Element> {
   return (
     <main className="min-h-screen bg-background">
       <section className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">

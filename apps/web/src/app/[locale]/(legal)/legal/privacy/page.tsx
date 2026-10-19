@@ -5,9 +5,7 @@ import React from 'react';
  * public policy URL remains available while `/legal/privacy` is the consent
  * link exposed from sign-in and sign-up.
  */
-export default async function Page(
-  {}: PageProps<'/[locale]/legal/privacy'>,
-): Promise<React.JSX.Element> {
+export default async function Page(): Promise<React.JSX.Element> {
   return (
     <article>
       <header>

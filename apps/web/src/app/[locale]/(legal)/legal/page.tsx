@@ -39,7 +39,7 @@ const legalPages = [
   },
 ] as const;
 
-export default async function LegalIndexPage({}: PageProps<'/[locale]/legal'>): Promise<React.JSX.Element> {
+export default async function LegalIndexPage(): Promise<React.JSX.Element> {
   return (
     <article className="flex flex-col gap-8">
       <div className="space-y-3">

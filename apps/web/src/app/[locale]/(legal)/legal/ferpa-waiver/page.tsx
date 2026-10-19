@@ -8,7 +8,7 @@ const disclosureRules = [
   'Students can revoke consent for future disclosures without changing historical audit records.',
 ];
 
-export default async function Page({}: PageProps<'/[locale]/legal/ferpa-waiver'>): Promise<React.JSX.Element> {
+export default async function Page(): Promise<React.JSX.Element> {
   return (
     <article className="flex flex-col gap-8">
       <div className="space-y-3">
