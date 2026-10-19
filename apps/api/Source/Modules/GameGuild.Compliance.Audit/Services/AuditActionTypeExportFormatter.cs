@@ -47,6 +47,39 @@ public static class AuditActionTypeExportFormatter
         return Encoding.UTF8.GetBytes(csv.ToString());
     }
 
+    public static async Task<byte[]> ToXmlAsync(IEnumerable<AuditLogDto> logs, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(logs);
+        var snapshot = logs.ToArray();
+        var document = new AuditJsonExportDocument(
+            "1.0",
+            new AuditJsonExportPagination(1, Math.Max(snapshot.Length, 1), snapshot.Length, snapshot.Length == 0 ? 0 : 1),
+            MapXmlRecordsAsync(snapshot, cancellationToken));
+        await using var stream = new MemoryStream();
+        await AuditXmlExporter.WriteAsync(stream, document, cancellationToken).ConfigureAwait(false);
+        return stream.ToArray();
+    }
+
+    private static async IAsyncEnumerable<AuditJsonExportRecord> MapXmlRecordsAsync(
+        IEnumerable<AuditLogDto> logs,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask.ConfigureAwait(false);
+        foreach (var log in logs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            // Match the existing action-search DTO projection; it does not include raw metadata.
+            yield return new AuditJsonExportRecord(
+                log.Id,
+                new AuditEventContext(log.ActionType, log.Category.ToString(), log.RiskLevel.ToString()),
+                new AuditActorContext(log.UserId, log.TenantId, log.SessionId),
+                new AuditResourceContext(log.ResourceType, log.ResourceId),
+                new AuditNetworkContext(log.IpAddress, log.UserAgent),
+                new AuditOutcomeContext(log.Success, log.ErrorMessage),
+                log.Description, null, log.CorrelationId, log.CreatedAt);
+        }
+    }
+
     private static void AppendRow(StringBuilder csv, IEnumerable<string?> fields)
     {
         csv.AppendJoin(',', fields.Select(AuditCsvExporter.EscapeField));
