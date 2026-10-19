@@ -476,21 +476,6 @@
     }
   },
   "src/components/block-content-editor/engines/blocks/block-editor-modal.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 15
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 35
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 26
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -689,19 +674,7 @@
     "@typescript-eslint/no-base-to-string": {
       "count": 2
     },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 28
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 28
-    },
-    "@typescript-eslint/no-unsafe-return": {
       "count": 2
     },
     "@typescript-eslint/require-await": {
@@ -779,35 +752,19 @@
       "count": 2
     }
   },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/crypto.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/date.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/document.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/dom.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/js.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 8
+      "count": 7
     },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 3
@@ -819,32 +776,17 @@
       "count": 2
     }
   },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/math.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/number.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/object.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 6
+      "count": 5
     },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 3
     }
   },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/performance.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/reflect.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 5
+      "count": 4
     },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 1
@@ -853,18 +795,7 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/string.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/window.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-function-type": {
-      "count": 3
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 9
     }
@@ -875,49 +806,26 @@
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/gameguild/test.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-function-type": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/index.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/assemblyscript.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/env.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
+      "count": 3
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/go.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/wasi.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 128
     }
@@ -942,27 +850,21 @@
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-runner.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 9
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 5
     },
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 2
+    },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 10
+      "count": 8
     },
     "@typescript-eslint/no-unsafe-call": {
-      "count": 12
-    },
-    "@typescript-eslint/no-unsafe-function-type": {
-      "count": 4
+      "count": 8
     },
     "@typescript-eslint/no-unsafe-member-access": {
-      "count": 11
+      "count": 7
     },
     "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
     "@typescript-eslint/require-await": {
@@ -1075,9 +977,6 @@
     "@typescript-eslint/await-thenable": {
       "count": 2
     },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 10
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 3
     },
@@ -1086,21 +985,6 @@
     },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 13
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -1520,21 +1404,6 @@
     }
   },
   "src/components/block-content-editor/extras/source-code/code-editor.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 5
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 4
     },
@@ -1543,22 +1412,13 @@
     }
   },
   "src/components/block-content-editor/extras/source-code/components/source-code-dialogs.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-redundant-type-constituents": {
       "count": 2
     }
   },
   "src/components/block-content-editor/extras/source-code/components/source-code-editor-edit.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 12
-    },
     "@typescript-eslint/no-redundant-type-constituents": {
       "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 7
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -1568,68 +1428,11 @@
     }
   },
   "src/components/block-content-editor/extras/source-code/components/source-code-editor-view.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 12
-    },
     "@typescript-eslint/no-redundant-type-constituents": {
       "count": 1
     },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 6
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 9
-    }
-  },
-  "src/components/block-content-editor/extras/source-code/cpp/cpp-completion-provider.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 73
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 73
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    }
-  },
-  "src/components/block-content-editor/extras/source-code/cpp/cpp-language-service.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    }
-  },
-  "src/components/block-content-editor/extras/source-code/cpp/cpp-syntax-highlighter.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
     }
   },
   "src/components/block-content-editor/extras/source-code/dialogs/import-file-dialog.tsx": {
@@ -1712,49 +1515,19 @@
     }
   },
   "src/components/block-content-editor/extras/source-code/source-code-renderer.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    },
-    "@typescript-eslint/no-misused-promises": {
-      "count": 2
-    },
     "@typescript-eslint/no-redundant-type-constituents": {
       "count": 1
     },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 21
-    },
     "@typescript-eslint/no-unused-vars": {
-      "count": 20
+      "count": 17
     }
   },
   "src/components/block-content-editor/extras/source-code/terminal.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 11
-    },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 6
     },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 2
-    },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 16
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 3
+      "count": 2
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 22
@@ -1775,9 +1548,6 @@
     }
   },
   "src/components/block-content-editor/extras/source-code/types.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/no-redundant-type-constituents": {
       "count": 4
     }
@@ -1852,19 +1622,9 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/hooks/editor/test-runners/javascript/simple.ts": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/hooks/editor/test-runners/python/simple.ts": {
     "@typescript-eslint/require-await": {
       "count": 1
-    }
-  },
-  "src/components/block-content-editor/hooks/editor/test-runners/types.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
     }
   },
   "src/components/block-content-editor/hooks/editor/test-runners/typescript/simple.ts": {
@@ -1963,17 +1723,8 @@
     }
   },
   "src/components/block-content-editor/hooks/editor/use-source-code-editor.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 1
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 5
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 8
@@ -2039,17 +1790,8 @@
     }
   },
   "src/components/block-content-editor/hooks/useCollectionManager.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 9
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2224,15 +1966,6 @@
     }
   },
   "src/components/block-content-editor/lib/sync/editor/google-drive-sync.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 8
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 8
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -2309,33 +2042,7 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/plugins/preview-components/preview-gallery.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 10
-    }
-  },
   "src/components/block-content-editor/plugins/preview-components/preview-heading.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 9
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 12
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -2432,15 +2139,6 @@
     }
   },
   "src/components/block-content-editor/plugins/preview-components/preview-source.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 55
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -2451,9 +2149,6 @@
     }
   },
   "src/components/block-content-editor/services/editor/google-drive-service.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 9
-    },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
     },
@@ -2461,16 +2156,16 @@
       "count": 3
     },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 27
+      "count": 20
     },
     "@typescript-eslint/no-unsafe-call": {
       "count": 13
     },
     "@typescript-eslint/no-unsafe-member-access": {
-      "count": 55
+      "count": 35
     },
     "@typescript-eslint/no-unsafe-return": {
-      "count": 8
+      "count": 5
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -2985,9 +2680,6 @@
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
     },
-    "@typescript-eslint/no-unsafe-function-type": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -3213,9 +2905,6 @@
     }
   },
   "src/lib/__tests__/api-client-integration.test.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
