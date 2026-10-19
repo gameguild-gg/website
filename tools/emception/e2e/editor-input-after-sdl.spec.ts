@@ -18,7 +18,8 @@
  * config timeout (5 min) rather than an artificial 90s cap.
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import type { Page } from '@playwright/test';
 
 const status = (page: Page) => page.getByTestId('status');
 const compileBtn = (page: Page) => page.getByTestId('compile-button');

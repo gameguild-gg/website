@@ -50,7 +50,7 @@ public sealed class GetBillingWebhookSecuritySummaryHandler(
             logger.LogError(exception, "Failed to read security event pipeline delivery status for the webhook security summary.");
         }
 
-        IReadOnlyList<BillingWebhookSecurityAlertDto> openAlerts = [];
+        IReadOnlyList<BillingWebhookSecurityAlertDto> openAlerts;
         try
         {
             var alerts = await securityEventQueryService
@@ -70,6 +70,7 @@ public sealed class GetBillingWebhookSecuritySummaryHandler(
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(exception, "Failed to read open security alerts for the webhook security summary.");
+            openAlerts = [];
         }
 
         suspiciousActivityMonitor.Prune(now);

@@ -43,6 +43,8 @@ public class GatewayMetricsServiceTests
             case PaymentStatus.Failed:
                 payment.MarkAsFailed("test failure", "test_error");
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status, "A terminal success or failure status is required.");
         }
 
         if (processedAt.HasValue)

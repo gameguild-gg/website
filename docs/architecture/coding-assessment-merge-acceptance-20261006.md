@@ -71,9 +71,9 @@ of running its sandbox. Supply these API configuration values as absolute paths:
 | `CodeGradingWorker:BrowserDirectory` | Optional Playwright browser installation directory |
 | `CodeGradingWorker:DeadlineSeconds` | 1–300; default 300 |
 
-Current authoring uses Code adapter/handler version 2, artifact version `4.4.1`,
+Current authoring uses Code adapter/handler version 2, artifact version `4.5.0`,
 ABI `emception-browser-v1` and canonical patched lock hash
-`0fe7f8b3f9e24facd491c64c7474ea2a39b04e710664c2966e43eafec2ba2df7`.
+`405e9f1fdd936ba31e11247fa1f901eaee24c4fcf641e343505df75c3d539b37`.
 Version 1 remains registered for historical execution, keeps artifact version
 `4.4.0` and its immutable reviewed lock hash
 `eb7e07aacb067ae32910fbebcb3762902da756b1a7ce64746f14f77a25057720`.

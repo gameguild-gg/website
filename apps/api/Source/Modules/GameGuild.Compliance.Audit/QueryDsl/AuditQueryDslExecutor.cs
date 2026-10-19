@@ -301,6 +301,10 @@ public sealed class AuditQueryDslExecutor(
             case AuditQueryCondition { Field: AuditQueryField.Timestamp } condition when andContext && !condition.Negate:
                 ApplyTimestampBound(condition, ref lower, ref upper);
                 break;
+
+            default:
+                // Other fields and negated conditions cannot safely narrow the scan window.
+                break;
         }
     }
 
@@ -342,6 +346,10 @@ public sealed class AuditQueryDslExecutor(
                     upper = parsed;
                 }
 
+                break;
+
+            default:
+                // Comparisons without a timestamp bound are filtered out above.
                 break;
         }
     }

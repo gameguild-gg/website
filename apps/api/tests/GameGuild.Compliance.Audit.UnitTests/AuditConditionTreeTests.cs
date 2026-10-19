@@ -944,13 +944,13 @@ public class AuditConditionTreeTranslatorTests
         }
 
         var regex = new StringBuilder("^");
-        for (var index = 0; index < pattern.Length; index++)
+        var index = 0;
+        while (index < pattern.Length)
         {
-            var character = pattern[index];
-            if (character == '\\' && index + 1 < pattern.Length)
+            var character = pattern[index++];
+            if (character == '\\' && index < pattern.Length)
             {
-                regex.Append(Regex.Escape(pattern[index + 1].ToString()));
-                index++;
+                regex.Append(Regex.Escape(pattern[index++].ToString()));
             }
             else if (character == '%')
             {

@@ -37,27 +37,27 @@ public static class ScimFilterEvaluator
         IReadOnlyDictionary<string, (PropertyInfo Property, ScimFilterAttribute Attribute)> resolver)
     {
         var parameter = Expression.Parameter(typeof(TView), "view");
-        var body = BuildExpression<TView>(filter, parameter, resolver);
+        var body = BuildExpression(filter, parameter, resolver);
         return Expression.Lambda<Func<TView, bool>>(body, parameter);
     }
 
-    private static Expression BuildExpression<TView>(
+    private static Expression BuildExpression(
         ScimFilter filter,
         ParameterExpression parameter,
         IReadOnlyDictionary<string, (PropertyInfo Property, ScimFilterAttribute Attribute)> resolver) => filter switch
     {
         ScimFilter.And and => Expression.AndAlso(
-            BuildExpression<TView>(and.Left, parameter, resolver),
-            BuildExpression<TView>(and.Right, parameter, resolver)),
+            BuildExpression(and.Left, parameter, resolver),
+            BuildExpression(and.Right, parameter, resolver)),
         ScimFilter.Or or => Expression.OrElse(
-            BuildExpression<TView>(or.Left, parameter, resolver),
-            BuildExpression<TView>(or.Right, parameter, resolver)),
-        ScimFilter.Not not => Expression.Not(BuildExpression<TView>(not.Inner, parameter, resolver)),
-        ScimFilter.Compare compare => BuildComparison<TView>(compare, parameter, resolver),
+            BuildExpression(or.Left, parameter, resolver),
+            BuildExpression(or.Right, parameter, resolver)),
+        ScimFilter.Not not => Expression.Not(BuildExpression(not.Inner, parameter, resolver)),
+        ScimFilter.Compare compare => BuildComparison(compare, parameter, resolver),
         _ => throw ScimException.InvalidFilter("Unsupported filter expression.")
     };
 
-    private static Expression BuildComparison<TView>(
+    private static Expression BuildComparison(
         ScimFilter.Compare compare,
         ParameterExpression parameter,
         IReadOnlyDictionary<string, (PropertyInfo Property, ScimFilterAttribute Attribute)> resolver)

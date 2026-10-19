@@ -85,7 +85,7 @@ for (const relative of [
           runtimeEnv: environment,
           buildEnv: environment,
           webRoot: owned.directory,
-          resolvePnpmProcess,
+          pnpmProcess: await resolvePnpmProcess([], { platform: "linux" }),
         });
         const operation = run(process.execPath, [entry, argument]);
         await waitForExit(operation);
@@ -128,9 +128,10 @@ for (const relative of [
         runtimeEnv: environment,
         buildEnv: environment,
         webRoot: owned.directory,
-        resolvePnpmProcess(args, options) {
-          return resolvePnpmProcess(args, { ...options, platform: "win32" });
-        },
+        pnpmProcess: await resolvePnpmProcess([], {
+          platform: "win32",
+          env: environment,
+        }),
       });
       const args = ["owned argument & literal", "%OWNED_PROCESS_MARKER%"];
       const operation = run("pnpm", args);
@@ -165,19 +166,24 @@ test("Windows taskkill invokes its native executable without a shell", async () 
   assert.equal(calls[0].options.windowsHide, true);
 });
 
-test("Unix keeps the native pnpm command and literal arguments", () => {
+test("Unix keeps the native pnpm command and literal arguments", async () => {
   const args = ["exec", "owned argument & literal"];
-  assert.deepEqual(resolvePnpmProcess(args, { platform: "linux" }), {
+  assert.deepEqual(await resolvePnpmProcess(args, {
+    platform: "linux",
+    fileExists() {
+      assert.fail("Unix must not probe Windows executable paths");
+    },
+  }), {
     command: "pnpm",
     args,
   });
 });
 
-test("Windows uses the pnpm JavaScript entry point supplied by pnpm", () => {
+test("Windows uses the pnpm JavaScript entry point supplied by pnpm", async () => {
   const entry = "C:\\owned path & literal\\pnpm.cjs";
   const args = ["run", "owned argument"];
   assert.deepEqual(
-    resolvePnpmProcess(args, {
+    await resolvePnpmProcess(args, {
       platform: "win32",
       nodePath,
       env: { npm_execpath: entry },
@@ -193,9 +199,9 @@ for (const [kind, entry] of [
   ["Corepack pnpm", "C:\\owned path\\node_modules\\corepack\\dist\\pnpm.js"],
   ["standalone directory", "C:\\owned path\\pnpm.cjs"],
 ]) {
-  test(`Windows resolves ${kind} through PATH without a shell`, () => {
+  test(`Windows resolves ${kind} through PATH without a shell`, async () => {
     const args = ["--version"];
-    const actual = resolvePnpmProcess(args, {
+    const actual = await resolvePnpmProcess(args, {
       platform: "win32",
       nodePath,
       env: { Path: "C:\\owned path" },
@@ -213,8 +219,8 @@ for (const entry of [
   "C:\\owned\\npm-cli.js",
   "relative/pnpm.cjs",
 ]) {
-  test(`Windows never runs an unrelated or non-absolute npm_execpath: ${entry}`, () => {
-    assert.throws(
+  test(`Windows never runs an unrelated or non-absolute npm_execpath: ${entry}`, async () => {
+    await assert.rejects(
       () =>
         resolvePnpmProcess([], {
           platform: "win32",
@@ -227,8 +233,8 @@ for (const entry of [
   });
 }
 
-test("Windows fails closed when no native pnpm or JavaScript entry point exists", () => {
-  assert.throws(
+test("Windows fails closed when no native pnpm or JavaScript entry point exists", async () => {
+  await assert.rejects(
     () =>
       resolvePnpmProcess([], {
         platform: "win32",
@@ -240,11 +246,11 @@ test("Windows fails closed when no native pnpm or JavaScript entry point exists"
   );
 });
 
-test("Windows PATH precedence matches Node for differently cased environment keys", () => {
+test("Windows PATH precedence matches Node for differently cased environment keys", async () => {
   const correct = "C:\\lexical-first\\pnpm.exe";
   const incorrect = "C:\\insertion-first\\pnpm.exe";
   assert.deepEqual(
-    resolvePnpmProcess([], {
+    await resolvePnpmProcess([], {
       platform: "win32",
       nodePath,
       env: { Path: "C:\\insertion-first", PATH: "C:\\lexical-first" },
@@ -252,4 +258,100 @@ test("Windows PATH precedence matches Node for differently cased environment key
     }),
     { command: correct, args: [] },
   );
+});
+
+test("Windows waits for the managed entry probe before considering PATH", async () => {
+  const entry = "C:\\managed path\\pnpm.cjs";
+  const probe = Promise.withResolvers();
+  const checked = [];
+  const operation = resolvePnpmProcess(["--version"], {
+    platform: "win32",
+    nodePath,
+    env: { npm_execpath: entry, PATH: "C:\\later path" },
+    fileExists(candidate) {
+      checked.push(candidate);
+      return probe.promise;
+    },
+  });
+  assert.deepEqual(checked, [entry]);
+  probe.resolve(true);
+  assert.deepEqual(await operation, {
+    command: nodePath,
+    args: [entry, "--version"],
+  });
+  assert.deepEqual(checked, [entry]);
+});
+
+test("Windows awaits false probes and preserves directory and entry precedence", async () => {
+  const directory = "C:\\first path";
+  const entry = path.win32.join(directory, "node_modules/corepack/dist/pnpm.js");
+  const later = "C:\\later path\\pnpm.exe";
+  const checked = [];
+  const actual = await resolvePnpmProcess([], {
+    platform: "win32",
+    nodePath,
+    env: { PATH: `${directory};C:\\later path` },
+    async fileExists(candidate) {
+      checked.push(candidate);
+      return candidate === entry || candidate === later;
+    },
+  });
+  assert.deepEqual(actual, { command: nodePath, args: [entry] });
+  assert.deepEqual(checked, [
+    path.win32.join(directory, "pnpm.exe"),
+    path.win32.join(directory, "node_modules/pnpm/bin/pnpm.cjs"),
+    entry,
+  ]);
+});
+
+for (const [kind, env, entry] of [
+  ["PNPM_HOME", { PNPM_HOME: "C:\\owned home" }, "C:\\owned home\\pnpm.exe"],
+  ["the Node directory", {}, "C:\\Program Files\\nodejs\\pnpm.cjs"],
+]) {
+  test(`Windows falls back to ${kind} after a missing managed entry`, async () => {
+    const actual = await resolvePnpmProcess([], {
+      platform: "win32",
+      nodePath,
+      env: { ...env, npm_execpath: "C:\\missing\\pnpm.cjs" },
+      fileExists: async (candidate) => candidate === entry,
+    });
+    assert.deepEqual(actual, {
+      command: entry.endsWith(".exe") ? entry : nodePath,
+      args: entry.endsWith(".exe") ? [] : [entry],
+    });
+  });
+}
+
+test("Windows fails closed when every asynchronous existence probe returns false", async () => {
+  await assert.rejects(
+    resolvePnpmProcess([], {
+      platform: "win32",
+      nodePath,
+      env: { PATH: "C:\\missing", PNPM_HOME: "C:\\also missing" },
+      fileExists: async () => false,
+    }),
+    /Cannot find a pnpm executable/,
+  );
+});
+
+test("Windows propagates an injected probe failure without choosing a fallback", async () => {
+  const failure = new Error("owned probe failure");
+  await assert.rejects(
+    resolvePnpmProcess([], {
+      platform: "win32",
+      nodePath,
+      env: { PATH: "C:\\owned path" },
+      fileExists: () => Promise.reject(failure),
+    }),
+    (error) => error === failure,
+  );
+});
+
+test("Development startup awaits pnpm discovery before starting any child", async () => {
+  const source = await readFile(path.join(root, "scripts/dev-fast.mjs"), "utf8");
+  const initialization = "const pnpmProcess = await resolvePnpmProcess([], { env: runtimeEnv });";
+  const discovery = source.indexOf(initialization);
+  assert.notEqual(discovery, -1);
+  assert(discovery < source.indexOf('const compose = run("docker"'));
+  assert(discovery < source.indexOf('const api = spawn('));
 });
