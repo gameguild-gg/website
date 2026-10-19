@@ -6,7 +6,7 @@ export interface MermaidValidationResult {
 }
 
 export class MermaidValidator {
-  private static mermaidAPI: any = null;
+  private static mermaidAPI: typeof import("mermaid").default.mermaidAPI | null = null;
 
   static async initialize() {
     if (!this.mermaidAPI) {
@@ -36,11 +36,12 @@ export class MermaidValidator {
         // Try to parse the diagram
         await this.mermaidAPI.parse(code);
         return { isValid: true };
-      } catch (parseError: any) {
+      } catch (parseError: unknown) {
         // Extract error information
-        const errorMessage = parseError.message || "Unknown parsing error";
+        const errorMessage = this.getErrorMessage(parseError, "Unknown parsing error");
         const lineMatch = errorMessage.match(/line (\d+)/i);
-        const line = lineMatch ? Number.parseInt(lineMatch[1], 10) : undefined;
+        const lineNumber = lineMatch?.[1];
+        const line = lineNumber ? Number.parseInt(lineNumber, 10) : undefined;
 
         return {
           isValid: false,
@@ -48,12 +49,31 @@ export class MermaidValidator {
           line,
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         isValid: false,
-        error: `Validation error: ${error.message || "Unknown error"}`,
+        error: `Validation error: ${this.getErrorMessage(error, "Unknown error")}`,
       };
     }
+  }
+
+  private static getErrorMessage(error: unknown, fallback: string): string {
+    if (typeof error === "string" && error) {
+      return error;
+    }
+
+    if (
+      error !== null &&
+      (typeof error === "object" || typeof error === "function") &&
+      "message" in error
+    ) {
+      const message = error.message;
+      if (typeof message === "string" && message) {
+        return message;
+      }
+    }
+
+    return fallback;
   }
 
   private static formatErrorMessage(error: string): string {
