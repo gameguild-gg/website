@@ -10763,6 +10763,10 @@ export interface IdentityAuthenticationRequestEmailCodeInput {
 export interface IdentityAuthenticationRequestMagicLinkInput {
   /** Email address to send the magic link to. */
   email: string;
+  /** Locale of the page that requested the link. */
+  locale?: string | null;
+  /** Optional same-site destination to open after sign-in. */
+  redirectTo?: string | null;
   /** Optional tenant context. */
   tenantId?: string | null;
 }
@@ -36127,6 +36131,8 @@ IdentityAuthenticationRequestEmailCodeInputSchema = z.object({
 /** Zod schema for IdentityAuthenticationRequestMagicLinkInput. Request to send a passwordless magic sign-in link. */
 IdentityAuthenticationRequestMagicLinkInputSchema = z.object({
   email: z.string().email().min(1),
+  locale: z.string().max(16).nullable().optional(),
+  redirectTo: z.string().max(2048).nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
 });
 

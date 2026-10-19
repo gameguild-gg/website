@@ -67,7 +67,7 @@ public sealed class PermissionExpirationAlertLoggingTests
                 .And.Contain($"on channel {channel}");
             state.Single(property => property.Key == "Kind").Value.Should().Be(PermissionExpirationKind.Upcoming);
             state.Single(property => property.Key == "PermissionId").Value.Should().Be(permissionId);
-            state.Single(property => property.Key == "Channel").Value.ToString().Should().BeOneOf("in-app", "email");
+            Assert.IsType<string>(channel).Should().BeOneOf("in-app", "email");
             foreach (var property in state)
             {
                 (property.Value?.ToString() ?? string.Empty).Should().NotContain(recipientEmail)
