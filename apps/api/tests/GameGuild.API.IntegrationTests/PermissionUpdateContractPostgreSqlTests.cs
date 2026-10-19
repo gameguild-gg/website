@@ -3,6 +3,7 @@ using GameGuild.API.Database;
 using GameGuild.API.Eventing;
 using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Compliance.Audit;
+using GameGuild.CQRS.Models;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
@@ -71,9 +72,9 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
             GrantId = tenantGrant.Id, ExpectedVersion = tenantGrant.Version,
             Permissions = ["documents:write", "DOCUMENTS:WRITE", "custom:permission"], ExpiresAt = expiry, Reason = "replace allows"
         });
-        var contentResult = await service.UpdateContentTypePermissionAsync(Update(content, [PermissionType.Write]));
+        var contentResult = await service.UpdateContentTypePermissionAsync(Update(content, [PermissionType.Edit]));
         var resourceResult = await service.UpdateResourcePermissionAsync<GenericResourcePermission, EntityBase>(
-            Update(resource, [PermissionType.Write]) with { IsActive = false });
+            Update(resource, [PermissionType.Edit]) with { IsActive = false });
 
         Assert.True(tenantResult.IsSuccess);
         Assert.True(contentResult.IsSuccess);
@@ -91,7 +92,7 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
         var savedResource = await db.Set<GenericResourcePermission>().SingleAsync(row => row.Id == resource.Id);
         Assert.Equal("Document", savedContent.ContentTypeName);
         Assert.Equal(grantor, savedContent.GrantedBy);
-        Assert.Equal(new[] { PermissionType.Write }, savedContent.GetPermissionsAsEnum());
+        Assert.Equal(new[] { PermissionType.Edit }, savedContent.GetPermissionsAsEnum());
         Assert.Equal(originalVersions[1] + 1, savedContent.Version);
         Assert.Equal(resourceId, savedResource.ResourceId);
         Assert.Equal(binding, savedResource.ResourceType);

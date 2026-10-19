@@ -3,6 +3,7 @@ using GameGuild.API.Database;
 using GameGuild.API.Eventing;
 using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Compliance.Audit;
+using GameGuild.CQRS.Models;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
@@ -42,7 +43,7 @@ public sealed class PermissionLifecycleContractPostgreSqlTests(ApiPostgreSqlFixt
             { UserId = subject, ContentTypeName = "Document", Permissions = [PermissionType.Read] });
         var resourceId = Guid.NewGuid(); var binding = new string('R', 256);
         var resourceResult = await service.CreateResourcePermissionAsync<GenericResourcePermission, EntityBase>(new ResourcePermissionCreation
-            { UserId = subject, ResourceId = resourceId, ResourceType = binding, Permissions = [PermissionType.Write] });
+            { UserId = subject, ResourceId = resourceId, ResourceType = binding, Permissions = [PermissionType.Edit] });
         Assert.True(tenantResult.IsSuccess); Assert.True(contentResult.IsSuccess); Assert.True(resourceResult.IsSuccess);
         Assert.Equal(new[] { "custom:read" }, tenantResult.Value.Permissions);
         Assert.Equal(actorId, tenantResult.Value.GrantedBy);
