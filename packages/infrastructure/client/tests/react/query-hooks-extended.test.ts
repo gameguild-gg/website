@@ -3,27 +3,60 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { QueryKey } from '@tanstack/react-query';
+import type { ApiClient } from '../../src/runtime/client.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
 
-// Track mock instances for assertions
-const cancelQueriesMock = vi.fn(async () => {});
-const getQueryDataMock = vi.fn((): unknown => undefined);
-const setQueryDataMock = vi.fn();
-const invalidateQueriesMock = vi.fn(async () => {});
-const refetchQueriesMock = vi.fn(async () => {});
+interface QueryOptionsFixture {
+  queryKey: QueryKey;
+  queryFn: () => Promise<unknown>;
+}
 
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn((opts: any) => ({
+interface OptimisticSnapshotFixture {
+  previousData: Array<{ key: QueryKey; data: unknown }>;
+}
+
+// This unit seam deliberately invokes wrappers with undefined SDK context and a
+// null error snapshot. The lifecycle suite separately exercises the real SDK.
+interface MutationOptionsFixture {
+  mutationFn: (variables: unknown) => Promise<unknown>;
+  onMutate: (variables: unknown, context: undefined) => Promise<OptimisticSnapshotFixture | undefined>;
+  onError: (error: ApiError, variables: unknown, snapshot: OptimisticSnapshotFixture | null | undefined, context: undefined) => void;
+  onSuccess: (data: unknown, variables: unknown, snapshot: OptimisticSnapshotFixture | undefined, context: undefined) => Promise<void>;
+}
+
+interface NameVariables {
+  name: string;
+}
+
+interface ItemList {
+  items: string[];
+}
+
+// Track exactly the options passed across the mocked React Query boundary.
+const { useQueryMock, useMutationMock, cancelQueriesMock, getQueryDataMock, setQueryDataMock, invalidateQueriesMock, refetchQueriesMock } = vi.hoisted(() => ({
+  useQueryMock: vi.fn((opts: QueryOptionsFixture) => ({
     data: undefined,
     isLoading: true,
     error: null,
     ...opts,
   })),
-  useMutation: vi.fn((opts: any) => ({
+  useMutationMock: vi.fn((opts: MutationOptionsFixture) => ({
     mutate: vi.fn(),
     mutateAsync: vi.fn(),
     isLoading: false,
     ...opts,
   })),
+  cancelQueriesMock: vi.fn(async () => {}),
+  getQueryDataMock: vi.fn((): unknown => undefined),
+  setQueryDataMock: vi.fn(),
+  invalidateQueriesMock: vi.fn(async () => {}),
+  refetchQueriesMock: vi.fn(async () => {}),
+}));
+
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: useQueryMock,
+  useMutation: useMutationMock,
   useQueryClient: vi.fn(() => ({
     cancelQueries: cancelQueriesMock,
     getQueryData: getQueryDataMock,
@@ -35,7 +68,18 @@ vi.mock('@tanstack/react-query', () => ({
 
 import { generateQueryKey, createApiClientHooks, createQueryHook, createMutationHook } from '../../src/integrations/react/query-hooks.js';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiError } from '../../src/runtime/errors/types.js';
+
+function queryOptions() {
+  const options = useQueryMock.mock.calls[0]?.[0];
+  if (!options) throw new Error('Expected captured query options');
+  return options;
+}
+
+function mutationOptions() {
+  const options = useMutationMock.mock.calls[0]?.[0];
+  if (!options) throw new Error('Expected captured mutation options');
+  return options;
+}
 
 describe('generateQueryKey', () => {
   it('should generate a key with module and operation', () => {
@@ -61,7 +105,11 @@ describe('generateQueryKey', () => {
 
 describe('createApiClientHooks', () => {
   it('should return a hooks object with client', () => {
-    const mockClient = { request: vi.fn() } as any;
+    const mockClient: ApiClient = {
+      request: vi.fn(async () => { throw new Error('Unexpected request in client identity fixture'); }),
+      requestRaw: vi.fn(async () => { throw new Error('Unexpected raw request in client identity fixture'); }),
+      getBaseUrl: vi.fn(() => 'https://api.example.test'),
+    };
     const hooks = createApiClientHooks(mockClient);
 
     expect(hooks.client).toBe(mockClient);
@@ -87,7 +135,7 @@ describe('createQueryHook', () => {
     const queryFn = vi.fn(async (id: string) => ({ ok: true as const, data: { id } }));
 
     const useApiQuery = createQueryHook(queryKeyFactory, queryFn);
-    useApiQuery(['user-123'] as any);
+    useApiQuery(['user-123']);
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -99,9 +147,9 @@ describe('createQueryHook', () => {
   it('should unwrap successful results in queryFn', async () => {
     const queryFn = vi.fn(async () => ({ ok: true as const, data: { name: 'Test' } }));
     const useApiQuery = createQueryHook(() => ['items'], queryFn);
-    useApiQuery([] as any);
+    useApiQuery([]);
 
-    const opts = (useQuery as any).mock.calls[0][0];
+    const opts = queryOptions();
     const result = await opts.queryFn();
     expect(result).toEqual({ name: 'Test' });
   });
@@ -115,16 +163,16 @@ describe('createQueryHook', () => {
     };
     const queryFn = vi.fn(async () => ({ ok: false as const, error: apiError }));
     const useApiQuery = createQueryHook(() => ['items'], queryFn);
-    useApiQuery([] as any);
+    useApiQuery([]);
 
-    const opts = (useQuery as any).mock.calls[0][0];
+    const opts = queryOptions();
     await expect(opts.queryFn()).rejects.toEqual(apiError);
   });
 
   it('should pass through additional query options', () => {
     const queryFn = vi.fn(async () => ({ ok: true as const, data: null }));
     const useApiQuery = createQueryHook(() => ['items'], queryFn);
-    useApiQuery([] as any, { staleTime: 5000, enabled: false });
+    useApiQuery([], { staleTime: 5000, enabled: false });
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -152,7 +200,7 @@ describe('createMutationHook', () => {
   });
 
   it('should call useMutation', () => {
-    const mutationFn = vi.fn(async (vars: any) => ({ ok: true as const, data: vars }));
+    const mutationFn = vi.fn(async (vars: unknown) => ({ ok: true as const, data: vars }));
     const useApiMutation = createMutationHook(mutationFn);
     useApiMutation();
 
@@ -170,19 +218,19 @@ describe('createMutationHook', () => {
     const useApiMutation = createMutationHook(mutationFn);
     useApiMutation();
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     await expect(opts.mutationFn({})).rejects.toEqual(apiError);
   });
 
   it('should unwrap successful results in mutationFn', async () => {
-    const mutationFn = vi.fn(async (vars: any) => ({
+    const mutationFn = vi.fn(async (vars: NameVariables) => ({
       ok: true as const,
       data: { id: '1', ...vars },
     }));
     const useApiMutation = createMutationHook(mutationFn);
     useApiMutation();
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     const result = await opts.mutationFn({ name: 'Test' });
     expect(result).toEqual({ id: '1', name: 'Test' });
   });
@@ -190,11 +238,11 @@ describe('createMutationHook', () => {
   it('should handle optimistic onMutate: cancel queries, snapshot, set data', async () => {
     getQueryDataMock.mockReturnValue({ items: ['old'] });
 
-    const mutationFn = vi.fn(async (vars: any) => ({ ok: true as const, data: vars }));
-    const useApiMutation = createMutationHook(mutationFn);
+    const mutationFn = vi.fn(async (vars: NameVariables) => ({ ok: true as const, data: vars }));
+    const useApiMutation = createMutationHook<NameVariables, NameVariables, ItemList>(mutationFn);
     useApiMutation({
       optimistic: {
-        optimisticData: (vars: any, current: any) => ({
+        optimisticData: (vars, current) => ({
           items: [...(current?.items || []), vars.name],
         }),
         invalidateKeys: [['items']],
@@ -202,7 +250,7 @@ describe('createMutationHook', () => {
       },
     });
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     const ctx = await opts.onMutate({ name: 'new' }, undefined);
 
     // Should cancel queries
@@ -210,49 +258,49 @@ describe('createMutationHook', () => {
     // Should set optimistic data
     expect(setQueryDataMock).toHaveBeenCalledWith(['items'], { items: ['old', 'new'] });
     // Should return previousData for rollback
-    expect(ctx.previousData).toBeDefined();
+    expect(ctx?.previousData).toBeDefined();
   });
 
   it('should call user onMutate alongside optimistic onMutate', async () => {
     const customOnMutate = vi.fn();
-    const mutationFn = vi.fn(async (vars: any) => ({ ok: true as const, data: vars }));
+    const mutationFn = vi.fn(async (vars: NameVariables) => ({ ok: true as const, data: vars }));
     const useApiMutation = createMutationHook(mutationFn);
     useApiMutation({
       onMutate: customOnMutate,
       optimistic: {
-        optimisticData: (vars: any) => vars,
+        optimisticData: (vars) => vars,
         invalidateKeys: [['items']],
       },
     });
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     await opts.onMutate({ name: 'test' }, undefined);
     expect(customOnMutate).toHaveBeenCalled();
   });
 
   it('should call user onMutate without optimistic config', async () => {
     const customOnMutate = vi.fn();
-    const mutationFn = vi.fn(async (vars: any) => ({ ok: true as const, data: vars }));
+    const mutationFn = vi.fn(async (vars: NameVariables) => ({ ok: true as const, data: vars }));
     const useApiMutation = createMutationHook(mutationFn);
     useApiMutation({ onMutate: customOnMutate });
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     await opts.onMutate({ name: 'test' }, undefined);
     expect(customOnMutate).toHaveBeenCalledWith({ name: 'test' }, undefined);
   });
 
   it('should rollback on error when rollbackOnError is true', async () => {
     const mutationFn = vi.fn(async () => ({ ok: true as const, data: {} }));
-    const useApiMutation = createMutationHook(mutationFn);
+    const useApiMutation = createMutationHook<Record<string, never>, Record<string, never>>(mutationFn);
     useApiMutation({
       optimistic: {
-        optimisticData: (vars: any) => vars,
+        optimisticData: (vars) => vars,
         invalidateKeys: [['items']],
         rollbackOnError: true,
       },
     });
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     const error: ApiError = { name: 'ApiError', message: 'fail', status: 500, code: 'SERVER_ERROR' };
     const onMutateResult = {
       previousData: [{ key: ['items'], data: { old: true } }],
@@ -273,7 +321,7 @@ describe('createMutationHook', () => {
       },
     });
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     const error: ApiError = { name: 'ApiError', message: 'fail', status: 500, code: 'SERVER_ERROR' };
     await opts.onError(error, {}, null, undefined);
     expect(customOnError).toHaveBeenCalled();
@@ -289,7 +337,7 @@ describe('createMutationHook', () => {
       },
     });
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     await opts.onSuccess({}, {}, undefined, undefined);
 
     expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ['items'] });
@@ -307,7 +355,7 @@ describe('createMutationHook', () => {
       },
     });
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     await opts.onSuccess({ id: '1' }, { name: 'test' }, undefined, undefined);
     expect(customOnSuccess).toHaveBeenCalled();
   });
@@ -317,7 +365,7 @@ describe('createMutationHook', () => {
     const useApiMutation = createMutationHook(mutationFn);
     useApiMutation();
 
-    const opts = (useMutation as any).mock.calls[0][0];
+    const opts = mutationOptions();
     // Should not throw
     await opts.onSuccess({}, {}, undefined, undefined);
     expect(invalidateQueriesMock).not.toHaveBeenCalled();

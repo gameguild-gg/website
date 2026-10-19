@@ -41,14 +41,15 @@ interface OptimisticMutationContext {
 /**
  * Extended mutation options with optimistic updates
  */
-export interface ExtendedMutationOptions<TData, TVariables> extends Omit<
+export interface ExtendedMutationOptions<TData, TVariables, TCache = TData> extends Omit<
   UseMutationOptions<TData, ApiError, TVariables, OptimisticMutationContext | undefined>,
   'mutationFn'
 > {
   /**
-   * Optimistic update configuration
+   * Optimistic cache data can differ from the mutation response. By default it
+   * retains the response type used by existing callers.
    */
-  optimistic?: OptimisticUpdateConfig<TData, TVariables>;
+  optimistic?: OptimisticUpdateConfig<TCache, TVariables>;
 }
 
 /**
@@ -79,9 +80,10 @@ export function createQueryHook<TData, TParams extends unknown[]>(
 
 /**
  * Create mutation hook factory with optimistic updates
+ * TCache defaults to TData and describes the values stored at the optimistic keys.
  */
-export function createMutationHook<TData, TVariables>(mutationFn: (variables: TVariables) => Promise<Result<TData, ApiError>>) {
-  return function useApiMutation(options?: ExtendedMutationOptions<TData, TVariables>) {
+export function createMutationHook<TData, TVariables, TCache = TData>(mutationFn: (variables: TVariables) => Promise<Result<TData, ApiError>>) {
+  return function useApiMutation(options?: ExtendedMutationOptions<TData, TVariables, TCache>) {
     const queryClient = useQueryClient();
     const { optimistic, ...mutationOptions } = options || {};
 
@@ -108,7 +110,7 @@ export function createMutationHook<TData, TVariables>(mutationFn: (variables: TV
 
         // Optimistically update
         invalidateKeys.forEach((key: QueryKey) => {
-          const currentData = queryClient.getQueryData<TData>(key);
+          const currentData = queryClient.getQueryData<TCache>(key);
           const optimisticValue = optimistic.optimisticData!(variables, currentData);
           queryClient.setQueryData(key, optimisticValue);
         });

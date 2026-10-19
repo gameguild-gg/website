@@ -16,6 +16,11 @@ interface AddItemVariables {
   name: string;
 }
 
+interface CreatedItem {
+  id: string;
+  name: string;
+}
+
 const clients: QueryClient[] = [];
 
 function createQueryClient() {
@@ -43,6 +48,70 @@ afterEach(() => {
 });
 
 describe('mutation lifecycle with the real QueryClient', () => {
+  it('keeps the created-item response separate from the optimistic list cache', async () => {
+    const client = createQueryClient();
+    client.setQueryData<ItemList>(['items'], { items: ['old'] });
+    const events: string[] = [];
+    const useAddItem = createMutationHook<CreatedItem, AddItemVariables, ItemList>(async (input) => {
+      expect(client.getQueryData<ItemList>(['items'])).toEqual({ items: ['old', 'new'] });
+      events.push('request');
+      return ok({ id: 'server-new', name: input.name });
+    });
+    const { result } = renderHook(() => useAddItem({
+      optimistic: {
+        invalidateKeys: [['items']],
+        optimisticData: (input, current) => ({ items: [...(current?.items ?? []), input.name] }),
+      },
+      onSuccess(data, input, snapshot) {
+        const response: CreatedItem = data;
+        const cache = client.getQueryData<ItemList>(['items']);
+        expect(response).toEqual({ id: 'server-new', name: 'new' });
+        expect(input).toEqual({ name: 'new' });
+        expect(snapshot?.previousData[0]?.data).toEqual({ items: ['old'] });
+        expect(cache).toEqual({ items: ['old', 'new'] });
+        events.push('success');
+      },
+    }), { wrapper: wrapperFor(client) });
+
+    await act(async () => {
+      await expect(result.current.mutateAsync({ name: 'new' })).resolves.toEqual({ id: 'server-new', name: 'new' });
+    });
+
+    expect(events).toEqual(['request', 'success']);
+    expect(client.getQueryData<ItemList>(['items'])).toEqual({ items: ['old', 'new'] });
+  });
+
+  it('restores the list snapshot when a created-item mutation fails', async () => {
+    const client = createQueryClient();
+    const initial: ItemList = { items: ['old'] };
+    client.setQueryData(['items'], initial);
+    const previous = client.getQueryData<ItemList>(['items']);
+    const apiError: ApiError = { name: 'ApiError', code: 'SERVER_ERROR', status: 500, message: 'create failed' };
+    const useAddItem = createMutationHook<CreatedItem, AddItemVariables, ItemList>(async () => err(apiError));
+    const { result } = renderHook(() => useAddItem({
+      optimistic: {
+        invalidateKeys: [['items']],
+        optimisticData: (input, current) => ({ items: [...(current?.items ?? []), input.name] }),
+      },
+      onMutate() {
+        expect(client.getQueryData<ItemList>(['items'])).toEqual({ items: ['old', 'new'] });
+        return undefined;
+      },
+      onError(error, input, snapshot) {
+        expect(error).toBe(apiError);
+        expect(input).toEqual({ name: 'new' });
+        expect(snapshot?.previousData[0]?.data).toBe(previous);
+        expect(client.getQueryData<ItemList>(['items'])).toEqual(initial);
+      },
+    }), { wrapper: wrapperFor(client) });
+
+    await act(async () => {
+      await expect(result.current.mutateAsync({ name: 'new' })).rejects.toBe(apiError);
+    });
+
+    expect(client.getQueryData<ItemList>(['items'])).toEqual(initial);
+  });
+
   it('updates optimistically and rolls back before custom mutation and error callbacks complete', async () => {
     const client = createQueryClient();
     const initial: ItemList = { items: ['old'] };
