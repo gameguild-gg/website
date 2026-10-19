@@ -11,7 +11,10 @@ import { FileTabs } from "../file-tabs"
 import { Terminal } from "../terminal"
 import type { CodeFile, ProgrammingLanguage } from "../types"
 
-interface SourceCodeEditorEditProps {
+interface SourceCodeEditorEditProps extends Pick<
+  React.ComponentProps<typeof Terminal>,
+  "addTestCase" | "removeTestCase" | "testResults" | "runTests"
+> {
   // File management
   files: CodeFile[]
   activeFileId: string
@@ -41,7 +44,7 @@ interface SourceCodeEditorEditProps {
   // Handlers
   handleCodeEditorResize: (e: React.MouseEvent, initialY: number) => void
   handleTerminalResize: (e: React.MouseEvent, initialY: number) => void
-  handleEditorMount: (editor: any, monaco: any) => void
+  handleEditorMount: NonNullable<React.ComponentProps<typeof CodeEditor>["onEditorMount"]>
   updateActiveFileContent: (content: string) => void
   isFileReadOnly: (file: CodeFile, readonly: boolean) => boolean
 
@@ -64,9 +67,9 @@ interface SourceCodeEditorEditProps {
   getBaseName: (name: string) => string
   getExtensionForSelectedLanguage: () => string
   getAllowedProgrammingLanguages: () => ProgrammingLanguage[]
-  getLanguageLabel: (lang: any) => string
-  getFileIcon: (file: CodeFile) => any
-  getStateIcon: (file: CodeFile) => any
+  getLanguageLabel: (lang: string) => string
+  getFileIcon: (file: CodeFile) => React.ReactNode
+  getStateIcon: (file: CodeFile) => React.ReactNode
 
   // Drag and drop
   draggedFileId: string | null
@@ -97,11 +100,7 @@ interface SourceCodeEditorEditProps {
   activeTab: "terminal" | "tests"
   setActiveTab: (tab: "terminal" | "tests") => void
   testCases: any
-  addTestCase: any
-  removeTestCase: any
   updateTestCase: any
-  testResults: any
-  runTests: any
   addSolutionTemplate?: () => void
   addCustomTestFiles?: (testIndex: number) => void
 

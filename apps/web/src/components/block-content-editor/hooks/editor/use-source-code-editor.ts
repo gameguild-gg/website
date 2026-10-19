@@ -2,6 +2,7 @@
 
 import type { EditMenuOption } from "@/components/block-content-editor/extras/content-edit-menu"
 import type { CodeFile, ProgrammingLanguage, SourceCodeData } from "@/components/block-content-editor/extras/source-code/types"
+import type { editor } from "monaco-editor"
 import { Pencil, Play, Settings } from "lucide-react"
 import React, { useState } from "react"
 import { useCodeExecution } from "./use-code-execution"
@@ -192,7 +193,7 @@ export function useSourceCodeEditor({
   })
 
   // Editor mount handler
-  const handleEditorMount = (editor: any, monaco: any) => {
+  const handleEditorMount = (editor: editor.IStandaloneCodeEditor, monaco: typeof import("monaco-editor")) => {
     editor.focus()
     editor.updateOptions({
       theme: isDarkTheme ? "vs-dark" : "vs-light",

@@ -1,4 +1,5 @@
 import type React from "react"
+import type { editor } from "monaco-editor"
 export type LanguageType =
   | "javascript"
   | "typescript"
@@ -108,7 +109,7 @@ export interface CodeEditorProps {
   isEditing: boolean
   updateActiveFileContent: (content: string) => void
   handleCodeEditorResize: (e: React.MouseEvent, startY: number) => void
-  onEditorMount?: (editor: any, monaco: any) => void
+  onEditorMount?: (editor: editor.IStandaloneCodeEditor, monaco: typeof import("monaco-editor")) => void
   isAutocompleteEnabled?: boolean
 }
 
