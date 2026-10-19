@@ -4,17 +4,23 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createServerClient } from '../../src/server.js';
-import type { RequestConfig } from '../../src/runtime/transport/types.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
+import type { Result } from '../../src/runtime/result/types.js';
+import type { ApiResponse, Interceptor, RequestConfig, TransportConfig } from '../../src/runtime/transport/types.js';
+
+type HeaderProvider = Parameters<typeof import('../../src/runtime/transport/fetch.js').createHeaderInterceptor>[0];
 
 // Mock the transport module
 vi.mock('../../src/runtime/transport/fetch.js', () => ({
-  createFetchTransport: vi.fn((config: any) => ({
-    request: vi.fn(async (reqConfig: any) => {
+  createFetchTransport: vi.fn((_config: TransportConfig) => ({
+    request: vi.fn(async (_reqConfig: RequestConfig): Promise<Result<ApiResponse<{ message: string }>, ApiError>> => {
       // Simulate a successful response by default
-      return { ok: true, data: { data: { message: 'success' } }, status: 200, headers: new Headers() };
+      return { ok: true, data: { data: { message: 'success' }, status: 200, headers: new Headers() } };
     }),
   })),
-  createHeaderInterceptor: vi.fn((fn: any) => fn),
+  createHeaderInterceptor: vi.fn((fn: HeaderProvider): Interceptor => ({
+    onRequest: async (config) => ({ ...config, headers: { ...config.headers, ...await fn() } }),
+  })),
 }));
 
 describe('createServerClient', () => {
@@ -84,6 +90,14 @@ describe('createServerClient', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data).toEqual({ message: 'success' });
+    }
+
+    const raw = await client.requestRaw<{ message: string }>({ method: 'GET', path: '/test' });
+    expect(raw.ok).toBe(true);
+    if (raw.ok) {
+      expect(raw.data.data).toEqual({ message: 'success' });
+      expect(raw.data.status).toBe(200);
+      expect(raw.data.headers).toBeInstanceOf(Headers);
     }
   });
 

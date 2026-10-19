@@ -4,6 +4,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createClient } from '../../src/client.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
+import type { Result } from '../../src/runtime/result/types.js';
+import type { ApiResponse, Interceptor, RequestConfig } from '../../src/runtime/transport/types.js';
+
+type HeaderProvider = Parameters<typeof import('../../src/runtime/transport/fetch.js').createHeaderInterceptor>[0];
+type FixtureBody = { message: string; path: string };
 
 // Mock the DevTools — must be a class so it works with `new DevTools()`
 vi.mock('../../src/runtime/devtools/index.js', () => ({
@@ -28,7 +34,7 @@ vi.mock('../../src/runtime/auth/refresh.js', () => ({
 // Mock the transport
 vi.mock('../../src/runtime/transport/fetch.js', () => ({
   createFetchTransport: vi.fn(() => ({
-    request: vi.fn(async (reqConfig: any) => ({
+    request: vi.fn(async (reqConfig: RequestConfig): Promise<Result<ApiResponse<FixtureBody>, ApiError>> => ({
       ok: true,
       data: {
         data: { message: 'success', path: reqConfig.path },
@@ -37,8 +43,8 @@ vi.mock('../../src/runtime/transport/fetch.js', () => ({
       },
     })),
   })),
-  createHeaderInterceptor: vi.fn((getHeaders: any) => ({
-    onRequest: vi.fn(async (config: any) => {
+  createHeaderInterceptor: vi.fn((getHeaders: HeaderProvider): Interceptor => ({
+    onRequest: vi.fn(async (config: RequestConfig) => {
       const headers = await getHeaders();
       return { ...config, headers: { ...config.headers, ...headers } };
     }),
@@ -108,7 +114,7 @@ describe('createClient — extended', () => {
 
   it('should accept custom interceptors', () => {
     const interceptor = {
-      onRequest: vi.fn(async (config: any) => config),
+      onRequest: vi.fn(async (config: RequestConfig) => config),
     };
 
     const client = createClient({
@@ -182,15 +188,15 @@ describe('createClient — extended', () => {
   it('should handle error results from transport', async () => {
     // Re-import with failed transport
     const { createFetchTransport } = await import('../../src/runtime/transport/fetch.js');
-    (createFetchTransport as any).mockReturnValueOnce({
+    vi.mocked(createFetchTransport).mockReturnValueOnce({
       request: vi.fn(async () => ({
-        ok: false,
+        ok: false as const,
         error: {
           name: 'ApiError',
           message: 'Server error',
           status: 500,
           code: 'SERVER_ERROR',
-        },
+        } satisfies ApiError,
       })),
     });
 
@@ -201,6 +207,15 @@ describe('createClient — extended', () => {
     const result = await client.request({ path: '/fail', method: 'GET' });
     // Transport returns error result which is passed through
     expect(result).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toEqual({
+        name: 'ApiError',
+        message: 'Server error',
+        status: 500,
+        code: 'SERVER_ERROR',
+      });
+    }
   });
 
   it('should create client with autoRefresh disabled', () => {

@@ -6,24 +6,29 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createClient } from '../../src/client.js';
 
 describe('createClient — interceptor gap coverage', () => {
-  const originalFetch = globalThis.fetch;
-
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    globalThis.fetch = originalFetch;
+    vi.unstubAllGlobals();
   });
 
   function mockFetch(responseData: unknown = { ok: true }, status = 200) {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: status >= 200 && status < 300,
+    vi.stubGlobal('fetch', vi.fn<typeof globalThis.fetch>(async () => new Response(JSON.stringify(responseData), {
       status,
-      headers: new Headers({ 'content-type': 'application/json' }),
-      json: async () => responseData,
-      text: async () => JSON.stringify(responseData),
-    });
+      headers: { 'content-type': 'application/json' },
+    })));
+  }
+
+  function capturedOptions() {
+    const call = vi.mocked(globalThis.fetch).mock.calls[0];
+    if (!call) throw new Error('Expected the client to call fetch');
+    const options = call[1];
+    if (!(options?.headers instanceof Headers)) {
+      throw new Error('Expected native Headers in the fetch request');
+    }
+    return { ...options, headers: options.headers };
   }
 
   it('creates refreshManager and calls refreshIfNeeded on request (lines 75, 82)', async () => {
@@ -43,11 +48,13 @@ describe('createClient — interceptor gap coverage', () => {
 
     // Making a request triggers the auth interceptor closure
     // which calls refreshManager.refreshIfNeeded() (line 82)
-    await client.request({ path: '/api/test', method: 'GET', headers: {} });
+    const result = await client.request({ path: '/api/test', method: 'GET', headers: {} });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual({ data: 'ok' });
 
     // fetch should have been called with Authorization header
     expect(globalThis.fetch).toHaveBeenCalled();
-    const [url, opts] = (globalThis.fetch as any).mock.calls[0];
+    const opts = capturedOptions();
     expect(opts.headers.get('Authorization')).toBe('Bearer access-tok');
   });
 
@@ -57,13 +64,13 @@ describe('createClient — interceptor gap coverage', () => {
     const client = createClient({
       baseUrl: 'http://localhost:5000',
       auth: {
-        getAccessToken: async () => null as any,
+        getAccessToken: async () => null,
       },
     });
 
     await client.request({ path: '/api/test', method: 'GET', headers: {} });
 
-    const [, opts] = (globalThis.fetch as any).mock.calls[0];
+    const opts = capturedOptions();
     // No Authorization header should be set
     expect(opts.headers.has('Authorization')).toBe(false);
   });
@@ -80,7 +87,7 @@ describe('createClient — interceptor gap coverage', () => {
 
     await client.request({ path: '/api/test', method: 'GET', headers: {} });
 
-    const [, opts] = (globalThis.fetch as any).mock.calls[0];
+    const opts = capturedOptions();
     expect(opts.headers.get('X-Tenant-Id')).toBe('tenant-abc');
   });
 
@@ -90,13 +97,13 @@ describe('createClient — interceptor gap coverage', () => {
     const client = createClient({
       baseUrl: 'http://localhost:5000',
       tenant: {
-        getTenantId: async () => null as any,
+        getTenantId: async () => null,
       },
     });
 
     await client.request({ path: '/api/test', method: 'GET', headers: {} });
 
-    const [, opts] = (globalThis.fetch as any).mock.calls[0];
+    const opts = capturedOptions();
     expect(opts.headers.has('X-Tenant-Id')).toBe(false);
   });
 
@@ -105,7 +112,7 @@ describe('createClient — interceptor gap coverage', () => {
     const client = createClient({
       baseUrl: 'http://localhost:5000',
       auth: {
-        getAccessToken: async () => null as any,
+        getAccessToken: async () => null,
         onAuthenticationRequired: onAuthRequired,
       },
     });
@@ -140,7 +147,7 @@ describe('createClient — interceptor gap coverage', () => {
 
     await client.request({ path: '/api/resource', method: 'GET', headers: {} });
 
-    const [, opts] = (globalThis.fetch as any).mock.calls[0];
+    const opts = capturedOptions();
     expect(opts.headers.get('Authorization')).toBe('Bearer tok-123');
     expect(opts.headers.get('X-Tenant-Id')).toBe('tn-789');
   });
