@@ -2,11 +2,12 @@
 
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
-const { readFileSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
+const { createRequire } = require('node:module');
 const key = Symbol.for('gameguild.codacy.loader-startup');
 
 // Node runs --require before --import. Capture the original output functions
-// before either vendor TypeScript loader is initialized, without wrapping them.
+// before the vendor TypeScript loader is initialized, without wrapping them.
 if (process.execArgv.includes(`--require=${__filename}`) && !Object.hasOwn(globalThis, key)) {
   Object.defineProperty(globalThis, key, {
     value: Object.freeze({ emit: process.emit, emitWarning: process.emitWarning, stderrWrite: process.stderr.write,
@@ -30,4 +31,34 @@ function assertOriginalWarningOutput() {
   return { ...state, stderrWriteUnchanged: true };
 }
 
-module.exports = { assertOriginalWarningOutput, assertWarningEmissionUnchanged };
+function readLoaderIdentity() {
+  assert(process.execArgv.includes('--import=/app/register.js'));
+  const engineRequire = createRequire('/app/package.json');
+  const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+  const manifest = readFileSync(engineRequire.resolve('ts-node/package.json'));
+  const packageSha256 = digest(manifest);
+  assert.equal(JSON.parse(manifest).version, '10.9.2');
+  assert.equal(packageSha256, '80961faab4990ab53d33976bf716aa32444d70c64f73a487c23c21b0ca81398e');
+  const resolverSha256 = digest(readFileSync('/app/node_modules/ts-node/dist-raw/node-internal-modules-esm-resolve.js'));
+  const originalSha256 = '205cce0aabf93b76c805bebaf092f57900e2a458089805ca3009239f6a649365';
+  const repairedSha256 = '597100e286a0b95b3d5d742d138b37a4784056eac23491a4e8eccb89debcfd3d';
+  assert([originalSha256, repairedSha256].includes(resolverSha256), 'Unreviewed loader source');
+  const repaired = resolverSha256 === repairedSha256;
+  const receiptPath = '/opt/gameguild-codacy/loader-repair.json';
+  assert.equal(existsSync(receiptPath), repaired);
+  const repairReceipt = repaired ? JSON.parse(readFileSync(receiptPath)) : null;
+  if (repaired) {
+    assert.equal(repairReceipt.package, 'ts-node');
+    assert.equal(repairReceipt.version, '10.9.2');
+    assert.equal(repairReceipt.packageSha256, packageSha256);
+    assert.equal(repairReceipt.originalSha256, originalSha256);
+    assert.equal(repairReceipt.repairedSha256, resolverSha256);
+    assert.equal(repairReceipt.readbackSha256, resolverSha256);
+    assert.equal(repairReceipt.repairScriptSha256,
+      digest(readFileSync('/opt/gameguild-codacy/repair-loader.cjs')));
+    assert.deepEqual(repairReceipt.changedFiles, ['dist-raw/node-internal-modules-esm-resolve.js']);
+  }
+  return { name: 'ts-node', version: '10.9.2', packageSha256, resolverSha256, repaired, repairReceipt };
+}
+
+module.exports = { assertOriginalWarningOutput, assertWarningEmissionUnchanged, readLoaderIdentity };

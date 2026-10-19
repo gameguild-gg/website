@@ -55,10 +55,8 @@ try {
     assert.equal(actual, version, `${name}: immutable engine version drift`);
     return [name, { version: actual, filename, sha256: digest(bytes) }];
   }));
-  assert(process.execArgv.includes('--import=/app/node_modules/tsx/dist/loader.mjs'));
-  const loaderBytes = readFileSync(engineRequire.resolve('tsx/package.json'));
-  assert.equal(JSON.parse(loaderBytes).version, '4.23.1');
-  report.loader = { name: 'tsx', version: '4.23.1', packageSha256: digest(loaderBytes) };
+  report.loader = loaderProvenance.readLoaderIdentity();
+  assert.equal(report.loader.repaired, true, 'The complete pass requires the qualified loader repair');
   const factoryPath = '/app/workspaces/codacy/src/configCreator.ts';
   const factoryHash = digest(readFileSync(factoryPath));
   stage = 'native-configuration-factory';

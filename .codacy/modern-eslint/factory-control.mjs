@@ -4,7 +4,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } fro
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import loaderProvenance from './loader-provenance.cjs';
 
 // This diagnostic container receives only this script, the public lint config
@@ -31,13 +31,7 @@ const write = () => writeFileSync(path.join(evidence, 'synthetic-factory.json'),
 write();
 
 try {
-  const loader = process.execArgv.includes('--import=/app/node_modules/tsx/dist/loader.mjs') ? 'tsx' : 'ts-node';
-  assert(process.execArgv.includes(loader === 'tsx'
-    ? '--import=/app/node_modules/tsx/dist/loader.mjs' : '--import=/app/register.js'));
-  const loaderBytes = readFileSync(engineRequire.resolve(`${loader}/package.json`));
-  const loaderVersion = JSON.parse(loaderBytes).version;
-  assert.equal(loaderVersion, loader === 'tsx' ? '4.23.1' : '10.9.2');
-  report.loader = { name: loader, version: loaderVersion, packageSha256: digest(loaderBytes) };
+  report.loader = loaderProvenance.readLoaderIdentity();
   const root = mkdtempSync(path.join(tmpdir(), 'codacy-synthetic-factory-'));
   mkdirSync(path.join(root, 'packages/tooling/eslint'), { recursive: true });
   writeFileSync(path.join(root, 'packages/tooling/eslint/package.json'),
@@ -50,6 +44,39 @@ try {
   ];
   for (const control of controls) writeFileSync(path.join(root, control.file), control.source);
   process.chdir(root);
+
+  // Exercise real loader imports through both existing and missing filesystem
+  // entries. These public contracts cover every nullable-stat call site.
+  const resolutionRoot = path.join(root, 'resolution');
+  mkdirSync(path.join(resolutionRoot, 'directory'), { recursive: true });
+  mkdirSync(path.join(resolutionRoot, 'node_modules/probe-package'), { recursive: true });
+  writeFileSync(path.join(resolutionRoot, 'present.mjs'), 'export default 42;\n');
+  writeFileSync(path.join(resolutionRoot, 'directory/index.mjs'), 'export default 43;\n');
+  writeFileSync(path.join(resolutionRoot, 'node_modules/probe-package/package.json'),
+    '{"name":"probe-package","type":"module","main":"index.mjs"}\n');
+  writeFileSync(path.join(resolutionRoot, 'node_modules/probe-package/index.mjs'), 'export default 44;\n');
+  const resolutions = [
+    { name: 'existing-file', specifier: './present.mjs', expected: { value: 42 } },
+    { name: 'missing-file', specifier: './missing.mjs', expected: { errorCode: 'ERR_MODULE_NOT_FOUND' } },
+    { name: 'directory-import', specifier: './directory', expected: { errorCode: 'ERR_UNSUPPORTED_DIR_IMPORT' } },
+    { name: 'explicit-directory-index', specifier: './directory/index.mjs', expected: { value: 43 } },
+    { name: 'package-main', specifier: 'probe-package', expected: { value: 44 } },
+    { name: 'missing-package', specifier: 'probe-package-missing', expected: { errorCode: 'ERR_MODULE_NOT_FOUND' } },
+  ];
+  report.resolutions = [];
+  for (const control of resolutions) {
+    const filename = path.join(resolutionRoot, `${control.name}.mjs`);
+    const source = `export { default } from ${JSON.stringify(control.specifier)};\n`;
+    writeFileSync(filename, source);
+    let outcome;
+    try {
+      outcome = { value: (await import(pathToFileURL(filename).href)).default };
+    } catch (error) {
+      outcome = { errorCode: error?.code };
+    }
+    assert.deepEqual(outcome, control.expected, control.name);
+    report.resolutions.push({ name: control.name, inputSha256: digest(source), outcome, passed: true });
+  }
 
   const versions = { eslint: '9.39.5', typescript: '6.0.3', '@typescript-eslint/parser': '8.64.0' };
   report.identities = Object.fromEntries(Object.entries(versions).map(([name, expected]) => {
