@@ -1,3 +1,19 @@
+import type { TopLevelSpec } from "vega-lite";
+import { isVegaSpecRecord } from "../vega-spec";
+
+function validationErrorMessage(error: unknown, fallback: string): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message
+  ) {
+    return error.message;
+  }
+  return fallback;
+}
+
 export interface VegaLiteValidationResult {
   isValid: boolean;
   error?: string;
@@ -18,9 +34,9 @@ export class VegaLiteValidator {
 
     try {
       // Parse JSON
-      let parsedSpec: any;
+      let parsed: unknown;
       try {
-        parsedSpec = JSON.parse(spec);
+        parsed = JSON.parse(spec);
       } catch (parseError) {
         return {
           isValid: false,
@@ -29,12 +45,13 @@ export class VegaLiteValidator {
       }
 
       // Basic structure validation
-      if (typeof parsedSpec !== "object" || parsedSpec === null) {
+      if (!isVegaSpecRecord(parsed)) {
         return {
           isValid: false,
           error: "Specification must be a JSON object",
         };
       }
+      const parsedSpec = parsed;
 
       // Check for required fields
       const warnings: string[] = [];
@@ -93,7 +110,8 @@ export class VegaLiteValidator {
 
         try {
           // Try to compile the specification
-          const compiled = vegaLiteImport.compile(parsedSpec);
+          // Let the compiler report unsupported shapes in this checked JSON object.
+          const compiled = vegaLiteImport.compile(parsedSpec as TopLevelSpec);
           if (!compiled || !compiled.spec) {
             return {
               isValid: false,
@@ -105,10 +123,10 @@ export class VegaLiteValidator {
             isValid: true,
             warnings: warnings.length > 0 ? warnings : undefined,
           };
-        } catch (compileError: any) {
+        } catch (compileError) {
           return {
             isValid: false,
-            error: `Compilation error: ${compileError.message || "Unknown compilation error"}`,
+            error: `Compilation error: ${validationErrorMessage(compileError, "Unknown compilation error")}`,
           };
         }
       } catch (importError) {
@@ -121,10 +139,10 @@ export class VegaLiteValidator {
           warnings: warnings.length > 0 ? warnings : undefined,
         };
       }
-    } catch (error: any) {
+    } catch (error) {
       return {
         isValid: false,
-        error: `Validation error: ${error.message || "Unknown error"}`,
+        error: `Validation error: ${validationErrorMessage(error, "Unknown error")}`,
       };
     }
   }
@@ -214,21 +232,22 @@ export class VegaLiteValidator {
    */
   static getFieldSuggestions(spec: string): string[] {
     try {
-      const parsedSpec = JSON.parse(spec);
+      const parsedSpec: unknown = JSON.parse(spec);
+      if (!isVegaSpecRecord(parsedSpec)) return [];
       const fields: string[] = [];
 
       // Extract field names from data if inline
-      if (parsedSpec.data?.values && Array.isArray(parsedSpec.data.values)) {
+      if (isVegaSpecRecord(parsedSpec.data) && Array.isArray(parsedSpec.data.values)) {
         const firstRow = parsedSpec.data.values[0];
-        if (firstRow && typeof firstRow === "object") {
+        if (isVegaSpecRecord(firstRow)) {
           fields.push(...Object.keys(firstRow));
         }
       }
 
       // Extract field names from encoding
-      if (parsedSpec.encoding && typeof parsedSpec.encoding === "object") {
-        Object.values(parsedSpec.encoding).forEach((encoding: any) => {
-          if (encoding && typeof encoding === "object" && encoding.field) {
+      if (isVegaSpecRecord(parsedSpec.encoding)) {
+        Object.values(parsedSpec.encoding).forEach((encoding) => {
+          if (isVegaSpecRecord(encoding) && typeof encoding.field === "string" && encoding.field) {
             if (!fields.includes(encoding.field)) {
               fields.push(encoding.field);
             }
@@ -245,7 +264,7 @@ export class VegaLiteValidator {
   /**
    * Provides suggestions for common Vega-Lite patterns
    */
-  static getCommonPatterns(): { [key: string]: any } {
+  static getCommonPatterns() {
     return {
       "Basic Bar Chart": {
         mark: "bar",

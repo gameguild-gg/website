@@ -1,4 +1,5 @@
 import * as d3Dsv from "d3-dsv";
+import { isVegaSpecRecord } from "../vega-spec";
 
 /**
  * Processa uma especificação Vega-Lite e substitui URLs data: por dados inline
@@ -6,9 +7,9 @@ import * as d3Dsv from "d3-dsv";
 export function loadCsvDataIntoSpec(
   spec: string,
   dataFiles: Record<string, string> = {},
-): any {
+): unknown {
   try {
-    const parsedSpec = JSON.parse(spec);
+    const parsedSpec: unknown = JSON.parse(spec);
     return processDataNode(parsedSpec, dataFiles);
   } catch (error) {
     console.error("Erro ao processar dados no spec:", error);
@@ -19,32 +20,29 @@ export function loadCsvDataIntoSpec(
 /**
  * Processa recursivamente um nó do spec procurando por propriedades "data"
  */
-function processDataNode(node: any, dataFiles: Record<string, string>): any {
-  if (!node || typeof node !== "object") {
-    return node;
-  }
-
+function processDataNode(node: unknown, dataFiles: Record<string, string>): unknown {
   // Se é um array, processa cada item
   if (Array.isArray(node)) {
-    return node.map((item) => processDataNode(item, dataFiles));
+    return node.map((item: unknown) => processDataNode(item, dataFiles));
   }
+  if (!isVegaSpecRecord(node)) return node;
 
   // Cria uma cópia do objeto
-  const processed: any = {};
+  const processed: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(node)) {
     // Se encontrou uma propriedade "data" com "url"
     if (
       key === "data" &&
-      value &&
-      typeof value === "object" &&
-      "url" in value
+      isVegaSpecRecord(value) &&
+      typeof value.url === "string"
     ) {
-      const dataValue = value as { url: string; [key: string]: any };
+      const dataValue = value;
+      const dataUrl = value.url;
 
       // Verifica se é uma URL data:
-      if (dataValue.url.startsWith("data:")) {
-        const filename = dataValue.url.substring(5); // Remove "data:"
+      if (dataUrl.startsWith("data:")) {
+        const filename = dataUrl.substring(5); // Remove "data:"
 
         // Verifica se temos esse arquivo
         if (dataFiles[filename]) {
@@ -57,13 +55,14 @@ function processDataNode(node: any, dataFiles: Record<string, string>): any {
               const parsedData = d3Dsv.csvParse(content);
 
               // Substitui url por values
-              processed[key] = {
+              const inlineData: Record<string, unknown> = {
                 ...dataValue,
                 values: parsedData,
               };
 
               // Remove a propriedade url
-              delete processed[key].url;
+              delete inlineData.url;
+              processed[key] = inlineData;
 
               continue;
             } catch (error) {
@@ -78,16 +77,17 @@ function processDataNode(node: any, dataFiles: Record<string, string>): any {
           if (filename.endsWith(".json")) {
             try {
               // Parse JSON
-              const parsedData = JSON.parse(content);
+              const parsedData: unknown = JSON.parse(content);
 
               // Substitui url por values
-              processed[key] = {
+              const inlineData: Record<string, unknown> = {
                 ...dataValue,
                 values: Array.isArray(parsedData) ? parsedData : [parsedData],
               };
 
               // Remove a propriedade url
-              delete processed[key].url;
+              delete inlineData.url;
+              processed[key] = inlineData;
 
               continue;
             } catch (error) {

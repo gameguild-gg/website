@@ -117,6 +117,40 @@ jobs:
         run: pnpm --filter @game-guild/client build
       - name: Test credentials and MFA client integration
         run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts --maxWorkers=1
+      - name: Preserve Lexical surface verification inputs
+        id: lexical-inputs
+        env:
+          CLASSIFIED_HEAD: ${{ needs.classify.outputs.headSha }}
+        run: |
+          mkdir -p artifacts/test-results/lexical-surface
+          printf '%s\n' "$CLASSIFIED_HEAD" > artifacts/test-results/lexical-surface/classified-head.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse HEAD > artifacts/test-results/lexical-surface/checkout.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse 'HEAD^{tree}' > artifacts/test-results/lexical-surface/tree.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false ls-files -z packages/features/lexical-surface > artifacts/test-results/lexical-surface/tracked-files.nul
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false ls-files -z packages/features/lexical-surface | xargs -0 sha256sum > artifacts/test-results/lexical-surface/source-before.sha256
+          sha256sum package.json pnpm-lock.yaml packages/tooling/typescript/tsconfig.json packages/tooling/typescript/react.library.tsconfig.json > artifacts/test-results/lexical-surface/workspace-inputs.sha256
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD -- packages/features/lexical-surface
+      - name: Typecheck Lexical surface
+        run: pnpm --filter @game-guild/lexical-surface typecheck
+      - name: Test Lexical surface
+        if: ${{ always() && steps.lexical-inputs.outcome == 'success' }}
+        run: >-
+          pnpm --filter @game-guild/lexical-surface exec vitest run
+          --maxWorkers=4 --reporter=json
+          --outputFile="$GITHUB_WORKSPACE/artifacts/test-results/lexical-surface/vitest.json"
+      - name: Verify Lexical surface source identity after checks
+        if: ${{ always() && steps.lexical-inputs.outcome == 'success' }}
+        run: |
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false ls-files -z packages/features/lexical-surface | xargs -0 sha256sum > artifacts/test-results/lexical-surface/source-after.sha256
+          cmp artifacts/test-results/lexical-surface/source-before.sha256 artifacts/test-results/lexical-surface/source-after.sha256
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD -- packages/features/lexical-surface
+      - name: Upload Lexical surface verification evidence
+        if: ${{ always() && steps.lexical-inputs.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: lexical-surface-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/lexical-surface
+          if-no-files-found: error
       - name: Collect feed test registration
         id: feed-fixture-list
         run: |

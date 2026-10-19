@@ -51,6 +51,34 @@ const web = job(pr, 'web');
 const producer = job(emception, 'build-test-package');
 const acquire = step(web, 'Acquire verified Toolchain release for Web');
 
+test('Web verifies the complete Lexical surface before waiting for Toolchain delivery', () => {
+  const inputs = step(web, 'Preserve Lexical surface verification inputs');
+  const types = step(web, 'Typecheck Lexical surface');
+  const tests = step(web, 'Test Lexical surface');
+  const identity = step(web, 'Verify Lexical surface source identity after checks');
+  const upload = step(web, 'Upload Lexical surface verification evidence');
+  assert.match(inputs, /classified-head\.txt/);
+  assert.match(inputs, /HEAD\^\{tree\}/);
+  assert.match(inputs, /source-before\.sha256/);
+  assert.match(inputs, /pnpm-lock\.yaml/);
+  assert.match(types, /pnpm --filter @game-guild\/lexical-surface typecheck/);
+  assert.match(tests, /pnpm --filter @game-guild\/lexical-surface exec vitest run\n          --maxWorkers=4 --reporter=json/);
+  assert.match(tests, /always\(\) && steps\.lexical-inputs\.outcome == 'success'/);
+  assert.match(identity, /cmp .*source-before\.sha256 .*source-after\.sha256/);
+  assert.match(identity, /diff --quiet HEAD -- packages\/features\/lexical-surface/);
+  assert.match(upload, /if-no-files-found: error/);
+  assert.match(upload, /path: artifacts\/test-results\/lexical-surface/);
+  for (const stage of [inputs, types, tests, identity, upload]) {
+    assert.doesNotMatch(stage, /continue-on-error|allow-failure|\|\| true/);
+  }
+  const names = ['Preserve Lexical surface verification inputs', 'Typecheck Lexical surface',
+    'Test Lexical surface', 'Verify Lexical surface source identity after checks',
+    'Upload Lexical surface verification evidence', 'Acquire verified Toolchain release for Web'];
+  for (let index = 1; index < names.length; index++) {
+    assert.ok(web.indexOf(names[index - 1]) < web.indexOf(names[index]));
+  }
+});
+
 test('every pull-request consumer branch can start the required Toolchain producer', () => {
   const consumerTargets = pullRequestBranches(pr);
   const producerTargets = pullRequestBranches(emception);

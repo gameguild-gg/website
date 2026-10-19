@@ -13,6 +13,7 @@ import { loadCsvDataIntoSpec } from "../data/vega-csv-loader";
 import { resolveVegaAttachments } from "../data/vega-asset-loader";
 import type { VegaDataAttachment } from "../vega-lite-data";
 import type { Config } from "vega-lite";
+import { isVegaSpecRecord, type VegaSpecRecord } from "../vega-spec";
 
 // Function to create dark version of any theme
 function createDarkTheme(baseTheme: Config): Config {
@@ -81,11 +82,15 @@ export function VegaLiteExport({
   const theme = isDark ? themeDark : themeLight;
   const isDisabled = disabled || !spec.trim() || !isValid;
 
-  const parseSpec = async () => {
+  const parseSpec = async (): Promise<VegaSpecRecord> => {
     const dataFiles = await resolveVegaAttachments(repository, attachments);
-    return Object.keys(dataFiles).length > 0
+    const parsed: unknown = Object.keys(dataFiles).length > 0
       ? loadCsvDataIntoSpec(spec, dataFiles)
       : JSON.parse(spec);
+    if (!isVegaSpecRecord(parsed)) {
+      throw new Error("Specification must be a JSON object");
+    }
+    return parsed;
   };
 
   const handleDownloadSVG = async () => {
@@ -161,7 +166,7 @@ export function VegaLiteExport({
               parsedSpec = {
                 ...parsedSpec,
                 config: {
-                  ...parsedSpec.config,
+                  ...(isVegaSpecRecord(parsedSpec.config) ? parsedSpec.config : {}),
                   ...finalThemeConfig,
                 },
               };
@@ -191,7 +196,9 @@ export function VegaLiteExport({
       }
 
       // Compile Vega-Lite spec to Vega spec
-      const vegaSpec = vegaLiteImport.compile(parsedSpec).spec;
+      const vegaSpec = vegaLiteImport.compile(
+        parsedSpec as Parameters<typeof vegaLiteImport.compile>[0],
+      ).spec;
 
       // Create a new view for SVG generation
       const view = new vegaImport.View(vegaImport.parse(vegaSpec))
@@ -219,7 +226,7 @@ export function VegaLiteExport({
       URL.revokeObjectURL(url);
 
       console.log("SVG downloaded successfully");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error downloading SVG:", err);
     }
   };
@@ -297,7 +304,7 @@ export function VegaLiteExport({
               parsedSpec = {
                 ...parsedSpec,
                 config: {
-                  ...parsedSpec.config,
+                  ...(isVegaSpecRecord(parsedSpec.config) ? parsedSpec.config : {}),
                   ...finalThemeConfig,
                 },
               };
@@ -327,7 +334,9 @@ export function VegaLiteExport({
       }
 
       // Compile Vega-Lite spec to Vega spec
-      const vegaSpec = vegaLiteImport.compile(parsedSpec).spec;
+      const vegaSpec = vegaLiteImport.compile(
+        parsedSpec as Parameters<typeof vegaLiteImport.compile>[0],
+      ).spec;
 
       // Create a new view for PNG generation
       const view = new vegaImport.View(vegaImport.parse(vegaSpec))
@@ -356,7 +365,7 @@ export function VegaLiteExport({
           console.log("PNG downloaded successfully");
         }
       }, "image/png");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error downloading PNG:", err);
     }
   };
