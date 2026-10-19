@@ -15,6 +15,7 @@ const {
 const { publicDiagnostics, engineRule, engineFailure, partitionSources,
   analysisStatus, qualifiedAnalysisStatus } = require('./analyze-repository.cjs');
 const { dependencyFrames, captureWriteStack, observeWrite, warningMetadata } = require('./tool-output-provenance.cjs');
+const { repairs } = require('./apply-repairs.cjs');
 
 // These contracts run only inside the pinned hosted engine. No repository
 // dependency installation, cloud configuration change or issue upload is made.
@@ -887,5 +888,28 @@ test('deeper output provenance restores the caller stack limit and bounds collec
     assert.equal(stack.split('\n').filter((line) => line.startsWith('    at ')).length, 40);
   } finally {
     Error.stackTraceLimit = original;
+  }
+});
+
+test('UTF-8 repair hashes preserve every untouched engine byte', () => {
+  for (const repair of repairs) {
+    const directory = path.join('/node_modules', repair.package);
+    assert.equal(JSON.parse(readFileSync(path.join(directory, 'package.json'), 'utf8')).version, repair.version);
+    let bytes = readFileSync(path.join(directory, repair.file));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),
+      repaired ? repair.repairedSha256 : repair.sha256, repair.package);
+    if (!repaired) {
+      // Perform an independent byte replacement, preserving non-ASCII comments
+      // and every other byte outside the reviewed replacement literals.
+      for (const [before, after] of repair.replacements) {
+        const needle = Buffer.from(before, 'utf8');
+        const offset = bytes.indexOf(needle);
+        assert(offset >= 0, repair.package);
+        assert.equal(bytes.indexOf(needle, offset + needle.length), -1, repair.package);
+        bytes = Buffer.concat([bytes.subarray(0, offset), Buffer.from(after, 'utf8'),
+          bytes.subarray(offset + needle.length)]);
+      }
+      assert.equal(createHash('sha256').update(bytes).digest('hex'), repair.repairedSha256, repair.package);
+    }
   }
 });

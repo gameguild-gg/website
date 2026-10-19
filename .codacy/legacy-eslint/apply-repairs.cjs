@@ -127,7 +127,7 @@ const repairs = [
     version: '9.32.0',
     file: 'lib/rules/max-len.js',
     sha256: 'aea8ccbe5091f53bb0b97cae1c0b081ef0ce5abe712d0d46ddd24bb4adadd38d',
-    repairedSha256: 'a7587695860051aff311d0ce253a7b3ae764fab752b7914e43479ca7908b1959',
+    repairedSha256: 'cb9af982780353431ae57451b0798b73458b6c75684e572b35271e145833c578',
     replacements: [
       ['const OPTIONS_SCHEMA = {',
         'function appendItems(target, ...sources) {\n  for (const items of sources) {\n    for (const item of items) target.push(item)\n  }\n}\n\nconst OPTIONS_SCHEMA = {'],

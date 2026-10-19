@@ -202,6 +202,10 @@ comment collection branch executes. The controls use 300,000 comments and
 150,000 template elements to exercise the large argument arrays. The unmodified
 image must reproduce the overflow before the repaired image is required to emit
 the same 80-character-limit diagnostic and accept short input.
+An independent byte-replacement control checks all pinned original and repaired
+source hashes, preserving untouched UTF-8 bytes. It catches encoding changes in
+review artifacts before the image build; the original package and target hashes
+remain mandatory.
 
 ## Evidence
 
