@@ -79,13 +79,14 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         Assert.Equal(EvmCertificatePublicationStatus.Confirmed, confirmed.Status);
         Assert.Equal(actualHash, confirmed.TransactionHash);
         Assert.Equal(prepared.Operation.Nonce, confirmed.Nonce);
+        WriteEvidence("recovery", confirmed, proof);
     }
 
     [Fact]
     public async Task RegisteredTransportSuppressesHttpActivitiesAndDiagnosticRequestEventsWithAPositiveControl()
     {
         using var root = new Activity("native-evm-transport-privacy").SetIdFormat(ActivityIdFormat.W3C).Start();
-        using var observed = new HttpObservations(root.TraceId);
+        using var observed = new HttpObservations(root.TraceId, root.SpanId);
         using (var control = new HttpClient(new SocketsHttpHandler
         {
             AllowAutoRedirect = false, UseCookies = false,
@@ -120,7 +121,9 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         var verifier = services.GetRequiredService<IEvmCertificateProofVerifier>();
         var proof = await WaitForProof(verifier, request, hash);
         Assert.Equal(EvmCertificateProofStatus.Verified, proof.Status);
-        return await journal.RecordObservationAsync(lease, hash, proof, CheckDelay, Ct);
+        var confirmed = await journal.RecordObservationAsync(lease, hash, proof, CheckDelay, Ct);
+        WriteEvidence(request.Kind == EvmCertificateOperationKind.Anchor ? "anchor" : "revoke", confirmed, proof);
+        return confirmed;
     }
 
     private static async Task<(EvmCertificateJournalSnapshot Operation, EvmCertificateJournalAttempt Attempt)> Prepare(
@@ -189,6 +192,23 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         FinalityMode = EvmCertificateFinalityMode.Confirmations, MinimumConfirmations = 1
     };
 
+    private static void WriteEvidence(string scenario, EvmCertificateJournalSnapshot operation, EvmCertificateProofResult proof)
+    {
+        var fixturePath = Environment.GetEnvironmentVariable("GAMEGUILD_EVM_NATIVE_FIXTURE")
+            ?? throw new InvalidOperationException("The hosted evidence directory is required.");
+        var directory = Path.GetDirectoryName(fixturePath)
+            ?? throw new InvalidOperationException("The hosted evidence directory is invalid.");
+        // Explicit public projection: no private key, credential source, endpoint or raw environment value.
+        var evidence = new
+        {
+            scenario, operation = operation.Kind.ToString(), status = operation.Status.ToString(),
+            operation.Network.ChainId, operation.Network.ContractAddress, operation.CertificateHash,
+            operation.TransactionHash, operation.Nonce, evidence = proof.Evidence
+        };
+        File.WriteAllText(Path.Combine(directory, "publication-" + Guid.NewGuid().ToString("N") + ".json"),
+            JsonSerializer.Serialize(evidence, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+    }
+
     private static NativeFixture ReadFixture()
     {
         var path = Environment.GetEnvironmentVariable("GAMEGUILD_EVM_NATIVE_FIXTURE");
@@ -219,20 +239,28 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
     private sealed class HttpObservations : IDisposable, IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>
     {
         private readonly ActivityTraceId trace;
+        private readonly ActivitySpanId parentSpan;
         private readonly ActivityListener activityListener;
         private readonly IDisposable allListeners;
         private readonly ConcurrentBag<IDisposable> subscriptions = [];
         internal ConcurrentBag<string> Activities { get; } = [];
         internal ConcurrentBag<string> RequestEvents { get; } = [];
 
-        internal HttpObservations(ActivityTraceId trace)
+        internal HttpObservations(ActivityTraceId trace, ActivitySpanId parentSpan)
         {
             this.trace = trace;
+            this.parentSpan = parentSpan;
             activityListener = new ActivityListener
             {
                 ShouldListenTo = source => source.Name == "System.Net.Http",
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-                ActivityStopped = activity => { if (activity.TraceId == trace) { Activities.Add(activity.OperationName); } }
+                ActivityStopped = activity =>
+                {
+                    if (activity.TraceId == trace && activity.ParentSpanId == parentSpan)
+                    {
+                        Activities.Add(activity.OperationName);
+                    }
+                }
             };
             ActivitySource.AddActivityListener(activityListener);
             allListeners = DiagnosticListener.AllListeners.Subscribe(this);
@@ -247,7 +275,8 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         }
         public void OnNext(KeyValuePair<string, object?> value)
         {
-            if (Activity.Current?.TraceId == trace)
+            var current = Activity.Current;
+            if (current is not null && current.TraceId == trace && (current.SpanId == parentSpan || current.ParentSpanId == parentSpan))
             {
                 RequestEvents.Add(value.Key);
             }
@@ -259,8 +288,12 @@ public sealed class EvmCertificatePublicationNativeTests(JournalPostgreSqlFixtur
         public void OnError(Exception error) => throw new InvalidOperationException("The native diagnostic observer failed.", error);
         public void Dispose()
         {
-            allListeners.Dispose(); activityListener.Dispose();
-            foreach (var subscription in subscriptions) { subscription.Dispose(); }
+            allListeners.Dispose();
+            activityListener.Dispose();
+            foreach (var subscription in subscriptions)
+            {
+                subscription.Dispose();
+            }
         }
     }
 }

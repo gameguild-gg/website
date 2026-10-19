@@ -57,6 +57,12 @@ No private key is written to an artifact or repository file. TLS trust overrides
 are limited to the isolated loopback fixture and its expected certificate hash.
 Production trust settings are unchanged.
 
+Successful native publications retain explicit public evidence projections in
+`publication-*.json`: operation, digest, nonce, transaction hash and verified network,
+block and registry state. The projection excludes private keys, endpoints and raw
+environment values. Diagnostic observation is scoped to a unique parent span to
+avoid collecting unrelated parallel tests.
+
 Tests are authored until executed by hosted CI. No local SDK, database, container,
 EVM, server, application or test process is used for this increment.
 

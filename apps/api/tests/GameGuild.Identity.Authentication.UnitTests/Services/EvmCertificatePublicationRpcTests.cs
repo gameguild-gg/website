@@ -188,9 +188,18 @@ public sealed class EvmCertificatePublicationRpcTests
         {
             cancellationToken.ThrowIfCancellationRequested(); Validations++; return Task.FromResult(Identity);
         }
-        public Task<EvmCertificateProofResult> VerifyAnchorAsync(string certificateHash, string transactionHash) => throw new NotSupportedException();
-        public Task<EvmCertificateProofResult> VerifyAnchorAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<EvmCertificateProofResult> VerifyRevocationAsync(string certificateHash, string transactionHash) => throw new NotSupportedException();
-        public Task<EvmCertificateProofResult> VerifyRevocationAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<EvmCertificateProofResult> VerifyAnchorAsync(string certificateHash, string transactionHash) =>
+            VerifyAnchorAsync(certificateHash, transactionHash, Ct);
+        public Task<EvmCertificateProofResult> VerifyAnchorAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(certificateHash);
+            ArgumentException.ThrowIfNullOrWhiteSpace(transactionHash);
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new NotSupportedException("This fixture supports network validation only.");
+        }
+        public Task<EvmCertificateProofResult> VerifyRevocationAsync(string certificateHash, string transactionHash) =>
+            VerifyAnchorAsync(certificateHash, transactionHash, Ct);
+        public Task<EvmCertificateProofResult> VerifyRevocationAsync(string certificateHash, string transactionHash, CancellationToken cancellationToken) =>
+            VerifyAnchorAsync(certificateHash, transactionHash, cancellationToken);
     }
 }
