@@ -23,7 +23,7 @@ public sealed class OidcDiscoveryLoggingTests
 
         federation.Verify(service => service.FindProvidersForEmailDomain(expectedDomain), Times.Once);
         response.Providers.Should().ContainSingle().Which.Slug.Should().Be("configured-idp");
-        var log = Assert.Single(logger.Invocations.Where(invocation => invocation.Method.Name == nameof(ILogger.Log)));
+        var log = Assert.Single(logger.Invocations, invocation => invocation.Method.Name == nameof(ILogger.Log));
         log.Arguments[0].Should().Be(LogLevel.Information);
         log.Arguments[3].Should().BeNull();
         var state = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.Arguments[2]).ToArray();

@@ -56,10 +56,10 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
         start.SetResult();
         var results = await Task.WhenAll(firstAttempt, secondAttempt);
 
-        var accepted = Assert.Single(results.Where(result => result.Success));
+        var accepted = Assert.Single(results, result => result.Success);
         Assert.Equal(userId, accepted.UserId);
         Assert.Equal("replica@test.com", accepted.Email);
-        Assert.Single(results.Where(result => !result.Success));
+        Assert.Single(results, result => !result.Success);
         Assert.False(await issuer.IsValidAsync(token, now));
         Assert.False((await issuer.ConsumeAsync(token, now)).Success);
         var stored = await issuerContext.Set<MagicLinkToken>().AsNoTracking().SingleAsync(value => value.UserId == userId);

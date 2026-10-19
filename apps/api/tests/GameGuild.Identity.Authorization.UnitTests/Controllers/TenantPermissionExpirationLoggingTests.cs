@@ -101,7 +101,7 @@ public sealed class TenantPermissionExpirationLoggingTests
 
     private static void AssertCountLog(Mock<ILogger<TenantPermissionsController>> logger, string template, int expectedCount, TenantId expectedTenantId)
     {
-        var call = Assert.Single(logger.Invocations.Where(invocation => invocation.Method.Name == "Log"));
+        var call = Assert.Single(logger.Invocations, invocation => invocation.Method.Name == "Log");
         Assert.Equal(LogLevel.Information, call.Arguments[0]);
         Assert.Null(call.Arguments[3]);
         var state = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(call.Arguments[2]).ToArray();
