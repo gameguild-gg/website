@@ -32,7 +32,13 @@ public static class EvmCertificateReadServiceRegistration
 
         services.AddSingleton(snapshot);
         services.AddHttpClient(EvmCertificateRpcClient.HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
-            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                UseCookies = false,
+                // Disable this client's HTTP diagnostic activities/events, which expose request URIs.
+                ActivityHeadersPropagator = null
+            })
             .RemoveAllLoggers();
         services.AddScoped<IEvmCertificateRpc>(provider => new EvmCertificateRpcClient(
             provider.GetRequiredService<IHttpClientFactory>().CreateClient(EvmCertificateRpcClient.HttpClientName),

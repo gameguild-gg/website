@@ -11,6 +11,7 @@ tls_pid=''
 cleanup() {
   local status=$?
   trap - EXIT
+  unset GAMEGUILD_EVM_NATIVE_SIGNER_PRIVATE_KEY
   if [[ -n "$tls_pid" ]]; then kill "$tls_pid" 2>/dev/null || true; fi
   if [[ -n "$anvil_pid" ]]; then kill "$anvil_pid" 2>/dev/null || true; fi
   rm -f -- "$temporary/server-key.pem"
@@ -51,6 +52,7 @@ contract="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dep
 cast send --rpc-url "$rpc_url" --private-key "$private_key" --json "$contract" 'anchor(bytes32)' "$active_hash" > "$artifact_root/active-anchor-receipt.json"
 cast send --rpc-url "$rpc_url" --private-key "$private_key" --json "$contract" 'anchor(bytes32)' "$revoked_hash" > "$artifact_root/revoked-anchor-receipt.json"
 cast send --rpc-url "$rpc_url" --private-key "$private_key" --json "$contract" 'revoke(bytes32)' "$revoked_hash" > "$artifact_root/revoke-receipt.json"
+export GAMEGUILD_EVM_NATIVE_SIGNER_PRIVATE_KEY="$private_key"
 unset private_key private_hex
 cast code --rpc-url "$rpc_url" "$contract" > "$artifact_root/deployed-runtime.hex"
 
