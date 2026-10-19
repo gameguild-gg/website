@@ -328,16 +328,30 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
                 continue;
             }
 
+            var decision = new CachedAclDecision(evaluation.AccessLevel, evaluation.EarliestEffectiveExpirationUtc);
+            if (!IsDecisionServable(decision))
+            {
+                continue;
+            }
+
             await CacheAccessLevelAsync(
                 cacheKey,
                 tenantId.ToString(),
-                new CachedAclDecision(evaluation.AccessLevel, evaluation.EarliestEffectiveExpirationUtc),
+                decision,
                 cancellationToken).ConfigureAwait(false);
+
+            // Version reads and distributed writes can outlast a grant. Re-evaluate rather than
+            // returning the source's earlier allow after its effective lifetime has ended.
+            if (!IsDecisionServable(decision))
+            {
+                continue;
+            }
+
             return evaluation.AccessLevel;
         }
 
         throw new InvalidOperationException(
-            $"Could not obtain a stable ACL decision for tenant '{tenantId}' after {MaxSecurityVersionRetries} attempts because its security version kept changing.");
+            $"Could not obtain a stable ACL decision for tenant '{tenantId}' after {MaxSecurityVersionRetries} attempts because its security version or effective grant lifetime did not remain stable.");
     }
 
     private async Task<bool> IsSecurityVersionCurrentAsync(
@@ -497,17 +511,28 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
                 continue;
             }
 
+            var decision = new CachedAclDecision(evaluation.AccessLevel, evaluation.EarliestEffectiveExpirationUtc);
+            if (!IsDecisionServable(decision))
+            {
+                continue;
+            }
+
             await CacheAccessLevelAsync(
                 cacheKey,
                 tenantId.ToString(),
-                new CachedAclDecision(evaluation.AccessLevel, evaluation.EarliestEffectiveExpirationUtc),
+                decision,
                 cancellationToken).ConfigureAwait(false);
+
+            if (!IsDecisionServable(decision))
+            {
+                continue;
+            }
 
             return evaluation.AccessLevel;
         }
 
         throw new InvalidOperationException(
-            $"Could not obtain a stable ACL decision for user '{userId}' in tenant '{tenantId}' after {MaxSecurityVersionRetries} attempts because its security version kept changing.");
+            $"Could not obtain a stable ACL decision for user '{userId}' in tenant '{tenantId}' after {MaxSecurityVersionRetries} attempts because its security version or effective grant lifetime did not remain stable.");
     }
 
     private async Task<TimeBoundAccessEvaluation> EvaluateLegacyFromSourceAsync(
