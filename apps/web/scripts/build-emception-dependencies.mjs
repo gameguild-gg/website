@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { resolvePnpmProcess } from './pnpm-process.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const pnpmProcess = await resolvePnpmProcess([], { env: process.env });
 
 const clientDist = join(repoRoot, 'packages', 'infrastructure', 'client', 'dist', 'index.d.ts');
 const runtimeDists = ['core', 'xterm', 'browser', 'ide'].map((name) =>
@@ -12,7 +13,7 @@ const runtimeDists = ['core', 'xterm', 'browser', 'ide'].map((name) =>
 );
 
 function run(args, cwd) {
-  const invocation = resolvePnpmProcess(args, { env: process.env });
+  const invocation = { command: pnpmProcess.command, args: [...pnpmProcess.args, ...args] };
   const result = spawnSync(invocation.command, invocation.args, { cwd, stdio: 'inherit', shell: false, windowsHide: true });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
