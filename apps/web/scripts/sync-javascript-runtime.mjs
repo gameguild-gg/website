@@ -17,9 +17,10 @@ const compress = promisify(gzip);
 /**
  * Copy the exact installed QuickJS runtime, verify its WASM magic bytes, and
  * write a deterministic gzipped copy at the destination.
- *
  * @param {string} [destination] - Target directory for the runtime asset.
  * @returns {Promise<{source: string, output: string, uncompressedBytes: number}>} Deployed artifact paths and size.
+ * @example
+ * const artifact = await syncJavaScriptRuntime('./public/langs');
  */
 export async function syncJavaScriptRuntime(destination = path.join(webRoot, "public", "langs")) {
   const require = createRequire(path.join(webRoot, "package.json"));

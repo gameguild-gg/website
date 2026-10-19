@@ -1,3 +1,5 @@
+/** @file Generate grading manifest bindings, verify worker contracts and bundle the browser runtime. */
+
 import { build } from 'vite';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
