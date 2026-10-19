@@ -143,6 +143,23 @@ reproduce the missing-services exception, analyze the actual observed input,
 detect a real ESTree-node property check and accept an ordinary object check.
 The image config's complete source hash is checked independently in the contract.
 
+The inherited TypeScript wildcard project omits the tracked dotfolder files.
+The hosted pass now writes a separate project that extends the unchanged image
+config and names every tracked supported source explicitly, with empty include
+and exclude lists. Both its bytes and its complete file list must match the
+immutable manifest. This also preserves explicit files in build directories and
+JS/TS files with the same basename. The earlier omitted inputs stay in the
+failed-contract evidence; no coverage assertion is removed.
+
+The pinned parser refuses single-run mode whenever extra file extensions are
+registered. Its inherited global JSON/Vue registrations therefore force ordinary
+JS/TS into watch-program management. The immutable hosted analysis explicitly
+requests single-run mode and clears that registration for standard JS/TS only.
+Vue and JSM retain their required watch mode, and JSON imports remain supported
+by the TypeScript project's `resolveJsonModule`. Hosted controls and per-extension
+mode probes must verify these boundaries; runtime improvement still requires
+the actual complete-source pass. No time limit or analysis input is removed.
+
 The hosted pass requires the tracked working tree to match its checkout after
 dependency installation and again after analysis. It records the SHA256 and
 byte length of each actual input buffer before linting it. Independent evidence

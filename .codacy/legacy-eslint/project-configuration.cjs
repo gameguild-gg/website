@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
-const { readFileSync } = require('node:fs');
+const { readFileSync, writeFileSync } = require('node:fs');
 const { createRequire } = require('node:module');
 const path = require('node:path');
 
@@ -143,7 +143,8 @@ function readNodeTargets(packageManifestFiles, rootDir = '/src') {
     || left.directory.localeCompare(right.directory));
 }
 
-function createRepositoryProfile(projection, nodeTargets) {
+function createRepositoryProfile(projection, nodeTargets, typeScriptProject = '/tsconfig.json') {
+  assert(typeof typeScriptProject === 'string' && path.isAbsolute(typeScriptProject));
   const root = nodeTargets.find((target) => target.packageJson === 'package.json');
   assert(root, 'The root Node engine declaration is required');
   const settings = projection.options.baseConfig.settings;
@@ -194,14 +195,52 @@ function createRepositoryProfile(projection, nodeTargets) {
         // Supply their type services instead of suppressing those rules.
         {
           files: ['*.js', '*.jsx', '*.mjs', '*.cjs', '*.jsm'],
-          parserOptions: { project: '/tsconfig.json',
+          parserOptions: { project: typeScriptProject,
             extraFileExtensions: [...new Set([
               ...(projection.options.baseConfig.parserOptions.extraFileExtensions ?? []), '.jsm',
             ])] },
         },
+        {
+          files: ['*.ts', '*.tsx', '*.mts', '*.cts', '*.vue'],
+          parserOptions: { project: typeScriptProject },
+        },
+        // Nonstandard extensions force this pinned parser into watch mode.
+        // Ordinary JS/TS sources do not need those extension registrations.
+        // Vue and JSM retain the preceding nonstandard-extension settings.
+        {
+          files: ['*.js', '*.jsx', '*.mjs', '*.cjs', '*.ts', '*.tsx', '*.mts', '*.cts'],
+          parserOptions: { extraFileExtensions: [] },
+        },
       ],
     },
   };
+}
+
+function inferParserSingleRun(parserOptions, engineRequire) {
+  const filename = '/node_modules/@typescript-eslint/typescript-estree/dist/parseSettings/inferSingleRun.js';
+  assert.equal(createHash('sha256').update(readFileSync(filename)).digest('hex'),
+    '8b9c828fd6fb6b45a5b91b89909e5c7cb16d471c2b4f67cb5ef42d4f51eb1115',
+    'The pinned parser execution-mode implementation must match');
+  return engineRequire(filename).inferSingleRun(parserOptions);
+}
+
+function trackedTypeScriptProject(selection, sourceRoot = '/src') {
+  assert(typeof sourceRoot === 'string' && path.isAbsolute(sourceRoot));
+  assert(Array.isArray(selection.sourceFiles) && selection.sourceFiles.length > 0);
+  const checked = selectTrackedFiles(Buffer.from(`${selection.sourceFiles.join('\0')}\0`));
+  assert.deepEqual(checked.sourceFiles, selection.sourceFiles,
+    'The type project must contain exactly the selected supported inputs');
+  return { extends: '/tsconfig.json', files: selection.sourceFiles.map((file) => path.join(sourceRoot, file)),
+    include: [], exclude: [] };
+}
+
+function writeTrackedTypeScriptProject(selection, directory, sourceRoot = '/src') {
+  assert(typeof directory === 'string' && path.isAbsolute(directory));
+  const spec = trackedTypeScriptProject(selection, sourceRoot);
+  const filename = path.join(directory, 'analysis-tsconfig.json');
+  const bytes = Buffer.from(`${JSON.stringify(spec, null, 2)}\n`);
+  writeFileSync(filename, bytes);
+  return { filename, sha256: createHash('sha256').update(bytes).digest('hex'), rootFileCount: spec.files.length };
 }
 
 function selectTrackedFiles(raw) {
@@ -238,6 +277,8 @@ function selectTrackedFiles(raw) {
 
 module.exports = {
   decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
+  inferParserSingleRun,
+  trackedTypeScriptProject, writeTrackedTypeScriptProject,
 };
 
 if (require.main === module) {
@@ -248,7 +289,9 @@ if (require.main === module) {
     assert(process.env.GAMEGUILD_CODACY_TRACKED_FILES, 'A complete tracked-file manifest is required');
     projection.selection = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
     projection.nodeTargets = readNodeTargets(projection.selection.packageManifestFiles);
-    projection.repositoryOptions = createRepositoryProfile(projection, projection.nodeTargets);
+    projection.trackedTypeScriptProject = trackedTypeScriptProject(projection.selection);
+    projection.repositoryOptions = createRepositoryProfile(projection, projection.nodeTargets,
+      '/evidence/analysis-tsconfig.json');
     process.stdout.write(`${JSON.stringify(projection, null, 2)}\n`);
   }).catch((error) => {
     process.stderr.write(`${error.stack}\n`);

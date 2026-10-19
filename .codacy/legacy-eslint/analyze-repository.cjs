@@ -5,7 +5,8 @@ const { createHash } = require('node:crypto');
 const { appendFileSync, mkdirSync, readFileSync, statSync, writeFileSync } = require('node:fs');
 const { createRequire } = require('node:module');
 const path = require('node:path');
-const { createProjection, createRepositoryProfile, readNodeTargets, selectTrackedFiles } = require('./project-configuration.cjs');
+const { createProjection, createRepositoryProfile, inferParserSingleRun,
+  readNodeTargets, selectTrackedFiles, writeTrackedTypeScriptProject } = require('./project-configuration.cjs');
 const { dependencyFrames, installToolOutputProvenance } = require('./tool-output-provenance.cjs');
 
 function publicDiagnostics(messages, filename, categories) {
@@ -185,9 +186,21 @@ async function analyze(output) {
     const targets = readNodeTargets(selection.packageManifestFiles);
     report.projectionReceipt = projection.receipt;
     report.nodeTargets = targets;
-    const options = createRepositoryProfile(projection, targets);
+    report.trackedTypeScriptProject = writeTrackedTypeScriptProject(selection, output);
+    const options = createRepositoryProfile(projection, targets, report.trackedTypeScriptProject.filename);
     assert.equal(options.baseConfig.noInlineConfig, true);
     const eslint = new ESLint(options);
+    assert.equal(process.env.TSESTREE_SINGLE_RUN, 'true', 'The immutable hosted pass must request single-run mode');
+    report.inferredSingleRunByExtension = {};
+    for (const filename of assigned) {
+      const extension = path.posix.extname(filename).slice(1);
+      if (Object.hasOwn(report.inferredSingleRunByExtension, extension)) continue;
+      const config = await eslint.calculateConfigForFile(path.join('/src', filename));
+      const inferred = inferParserSingleRun(config.parserOptions, engineRequire);
+      const standard = ['js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'mts', 'cts'].includes(extension);
+      assert.equal(inferred, standard, 'Retain watch mode only where this parser requires custom extensions');
+      report.inferredSingleRunByExtension[extension] = inferred;
+    }
     const categories = new Map(snapshot.patterns.map((row) =>
       [patternIdToEslint(row.patternId.slice('ESLint8_'.length)), row.category]));
     for (const filename of assigned) {

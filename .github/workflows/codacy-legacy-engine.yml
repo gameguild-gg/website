@@ -135,6 +135,7 @@ jobs:
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
             --user "$(id -u):$(id -g)" \
             -e NODE_OPTIONS=--max-old-space-size=6144 \
+            -e TSESTREE_SINGLE_RUN=true \
             -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
             -e GAMEGUILD_CODACY_TRACKED_FILES=/evidence/tracked-files.nul \
             -e GAMEGUILD_CODACY_PARTITION_INDEX \

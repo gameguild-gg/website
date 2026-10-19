@@ -2,13 +2,15 @@
 
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
-const { mkdtempSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
+const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
 const { createRequire } = require('node:module');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
-const { test } = require('node:test');
+const { after, test } = require('node:test');
 const {
   decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
+  inferParserSingleRun,
+  trackedTypeScriptProject, writeTrackedTypeScriptProject,
 } = require('./project-configuration.cjs');
 const { publicDiagnostics, engineRule, engineFailure, partitionSources,
   analysisStatus, qualifiedAnalysisStatus } = require('./analyze-repository.cjs');
@@ -139,6 +141,11 @@ test('parameter projection preserves strings, false, zero, arrays and objects wi
 });
 
 let projectionPromise;
+let repositoryTypeProjectDirectory;
+let repositoryTypeProject;
+after(() => {
+  if (repositoryTypeProjectDirectory) rmSync(repositoryTypeProjectDirectory, { recursive: true, force: true });
+});
 function projection() {
   projectionPromise ??= createProjection(snapshot,
     JSON.parse(readFileSync('/docs/patterns.json', 'utf8')), engineRequire);
@@ -148,7 +155,11 @@ function projection() {
 function repositoryProfile(result) {
   assert(process.env.GAMEGUILD_CODACY_TRACKED_FILES, 'The hosted Git manifest is required');
   const selected = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
-  return createRepositoryProfile(result, readNodeTargets(selected.packageManifestFiles));
+  if (!repositoryTypeProject) {
+    repositoryTypeProjectDirectory = mkdtempSync(path.join(tmpdir(), 'codacy-tracked-project-'));
+    repositoryTypeProject = writeTrackedTypeScriptProject(selected, repositoryTypeProjectDirectory);
+  }
+  return createRepositoryProfile(result, readNodeTargets(selected.packageManifestFiles), repositoryTypeProject.filename);
 }
 
 test('the actual engine projects all 2631 requested rules with their exact effective options', async () => {
@@ -629,7 +640,9 @@ test('typed JavaScript rules receive a real project and retain AST-node property
   const previous = await new ESLint({ ...projected.options, ignore: false }).calculateConfigForFile(filename);
   const corrected = await new ESLint(repositoryProfile(projected)).calculateConfigForFile(filename);
   assert.equal(previous.parserOptions.project, false);
-  assert.equal(corrected.parserOptions.project, '/tsconfig.json');
+  assert.equal(corrected.parserOptions.project, repositoryTypeProject.filename);
+  assert.notEqual(corrected.parserOptions.project, '/tsconfig.json',
+    'The inherited wildcard project omitted five tracked files in the dotfolder');
   assert.deepEqual(corrected.rules[ruleId], previous.rules[ruleId]);
   const linter = new Linter();
   linter.defineRule(ruleId, engineRequire('eslint-plugin-eslint-plugin').rules['no-property-in-node']);
@@ -728,4 +741,83 @@ test('known type-service failures and root-node crashes retain safe, specific pr
   assert(!JSON.stringify(missing).includes('private-fixture-value'));
   assert.equal(engineFailure({ name: 'TypeError', ruleId: 'es-x/no-set-prototype-union',
     message: "Cannot read properties of undefined (reading 'kind')" }, categories).reason, 'missing-node-kind');
+});
+
+test('immutable standard-source parsing uses single-run mode while custom extensions and JSON types remain supported', async (context) => {
+  const { ESLint } = engineRequire('eslint');
+  const eslint = new ESLint(repositoryProfile(await projection()));
+  const standard = await eslint.calculateConfigForFile('/src/scripts/lint-budget.mjs');
+  const typed = await eslint.calculateConfigForFile('/src/packages/infrastructure/client/src/index.ts');
+  const vue = await eslint.calculateConfigForFile('/src/contracts/example.vue');
+  const jsm = await eslint.calculateConfigForFile('/src/contracts/example.jsm');
+  assert.deepEqual(standard.parserOptions.extraFileExtensions, []);
+  assert.deepEqual(typed.parserOptions.extraFileExtensions, []);
+  assert(vue.parserOptions.extraFileExtensions.includes('.vue'));
+  assert(jsm.parserOptions.extraFileExtensions.includes('.jsm'));
+  const previous = process.env.TSESTREE_SINGLE_RUN;
+  try {
+    process.env.TSESTREE_SINGLE_RUN = 'true';
+    assert.equal(inferParserSingleRun(standard.parserOptions, engineRequire), true);
+    assert.equal(inferParserSingleRun(typed.parserOptions, engineRequire), true);
+    assert.equal(inferParserSingleRun(vue.parserOptions, engineRequire), false);
+    assert.equal(inferParserSingleRun(jsm.parserOptions, engineRequire), false);
+    const directory = mkdtempSync(path.join(tmpdir(), 'codacy-single-run-contract-'));
+    context.after(() => rmSync(directory, { recursive: true, force: true }));
+    const filename = path.join(directory, 'entry.ts');
+    const source = 'import data from "./data.json"; export const value = data.count;';
+    writeFileSync(filename, source);
+    writeFileSync(path.join(directory, 'data.json'), '{"count":1}');
+    writeFileSync(path.join(directory, 'tsconfig.json'), JSON.stringify({
+      extends: '/tsconfig.json', compilerOptions: { module: 'ESNext', esModuleInterop: true },
+      files: ['entry.ts', 'data.json'], include: [], exclude: [],
+    }));
+    const parsed = engineRequire('@typescript-eslint/parser').parseForESLint(source, {
+      ...typed.parserOptions, project: path.join(directory, 'tsconfig.json'), filePath: filename,
+      loc: true, range: true, raw: true, tokens: true, comment: true,
+      eslintVisitorKeys: true, eslintScopeManager: true,
+    });
+    const program = parsed.services.program;
+    assert(program.getSourceFile(path.join(directory, 'data.json')),
+      'JSON module resolution must not depend on registering JSON as a source extension');
+    const ast = program.getSourceFile(filename);
+    const initializer = ast.statements[1].declarationList.declarations[0].initializer;
+    const checker = program.getTypeChecker();
+    assert.equal(checker.typeToString(checker.getTypeAtLocation(initializer)), 'number');
+  } finally {
+    if (previous === undefined) delete process.env.TSESTREE_SINGLE_RUN;
+    else process.env.TSESTREE_SINGLE_RUN = previous;
+  }
+});
+
+test('the explicit tracked type project includes dotfolders, build directories and same-basename JS and TS', (context) => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'codacy-explicit-project-contract-'));
+  context.after(() => rmSync(directory, { recursive: true, force: true }));
+  const files = ['same.ts', 'same.js', '.hidden/runtime.mjs', 'build/runtime.mjs'];
+  for (const [index, file] of files.entries()) {
+    const filename = path.join(directory, file);
+    mkdirSync(path.dirname(filename), { recursive: true });
+    writeFileSync(filename, `export const value = ${index};`);
+  }
+  const selection = selectTrackedFiles(Buffer.from(`${files.join('\0')}\0`));
+  const spec = trackedTypeScriptProject(selection, directory);
+  assert.deepEqual(spec.files, files.map((file) => path.join(directory, file)));
+  assert.deepEqual(spec.include, []);
+  assert.deepEqual(spec.exclude, []);
+  const project = writeTrackedTypeScriptProject(selection, directory, directory);
+  assert.equal(project.rootFileCount, files.length);
+  assert.equal(createHash('sha256').update(readFileSync(project.filename)).digest('hex'), project.sha256);
+  const previous = process.env.TSESTREE_SINGLE_RUN;
+  try {
+    process.env.TSESTREE_SINGLE_RUN = 'true';
+    const filename = path.join(directory, '.hidden/runtime.mjs');
+    const parsed = engineRequire('@typescript-eslint/parser').parseForESLint(readFileSync(filename, 'utf8'), {
+      project: project.filename, extraFileExtensions: [], filePath: filename,
+      ecmaVersion: 2022, sourceType: 'module', loc: true, range: true, raw: true,
+      tokens: true, comment: true, eslintVisitorKeys: true, eslintScopeManager: true,
+    });
+    for (const file of files) assert(parsed.services.program.getSourceFile(path.join(directory, file)), file);
+  } finally {
+    if (previous === undefined) delete process.env.TSESTREE_SINGLE_RUN;
+    else process.env.TSESTREE_SINGLE_RUN = previous;
+  }
 });
