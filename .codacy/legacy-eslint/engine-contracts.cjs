@@ -14,7 +14,7 @@ const {
 } = require('./project-configuration.cjs');
 const { publicDiagnostics, engineRule, engineFailure, partitionSources,
   analysisStatus, qualifiedAnalysisStatus } = require('./analyze-repository.cjs');
-const { observeWrite, warningMetadata } = require('./tool-output-provenance.cjs');
+const { dependencyFrames, captureWriteStack, observeWrite, warningMetadata } = require('./tool-output-provenance.cjs');
 
 // These contracts run only inside the pinned hosted engine. No repository
 // dependency installation, cloud configuration change or issue upload is made.
@@ -857,4 +857,32 @@ test('Vue maximum line length preserves template and script ordering for large t
       /Maximum call stack size exceeded/u);
   }
   assert.deepEqual(verify('<template><div><b /></div></template>\n' + script), []);
+});
+
+test('output provenance accepts source-mapped dependency and bundled-engine frames without retaining source frames', () => {
+  const stack = 'Error\n'
+    + '    at dependency (/app/node_modules/example/src/warning.ts:4:8)\n'
+    + '    at bundled (file:///app/lib/models/plugins.ts:12:6)\n'
+    + '    at bundledConfig (/app/workspaces/codacy/src/configCreator.ts:20:3)\n'
+    + '    at source (/src/apps/web/private-source.ts:1:2)\n'
+    + '    at traversal (/app/lib/../private-source.ts:1:2)\n'
+    + '    at moduleTraversal (/app/node_modules/example/../private-source.ts:1:2)';
+  assert.deepEqual(dependencyFrames(stack), [
+    { file: 'example/src/warning.ts', line: 4, column: 8 },
+    { file: 'codacy-eslint9/lib/models/plugins.ts', line: 12, column: 6 },
+    { file: 'codacy-eslint9/workspaces/codacy/src/configCreator.ts', line: 20, column: 3 },
+  ]);
+});
+
+test('deeper output provenance restores the caller stack limit and bounds collection', () => {
+  const original = Error.stackTraceLimit;
+  try {
+    Error.stackTraceLimit = 2;
+    const recurse = (depth) => depth === 0 ? captureWriteStack() : recurse(depth - 1);
+    const stack = recurse(60);
+    assert.equal(Error.stackTraceLimit, 2);
+    assert.equal(stack.split('\n').filter((line) => line.startsWith('    at ')).length, 40);
+  } finally {
+    Error.stackTraceLimit = original;
+  }
 });

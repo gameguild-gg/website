@@ -10,16 +10,31 @@ function dependencyFrames(stack) {
   const frames = [];
   for (const line of typeof stack === 'string' ? stack.split('\n') : []) {
     if (!/^\s+at /u.test(line)) continue;
-    const match = line.match(/\/node_modules\/((?:@?[A-Za-z0-9_.+-]+\/)*[A-Za-z0-9_.+-]+\.(?:c|m)?js):(\d+):(\d+)\)?$/u);
+    const match = line.match(/\/node_modules\/((?:@?[A-Za-z0-9_.+-]+\/)*[A-Za-z0-9_.+-]+\.(?:[cm]?[jt]s|[jt]sx)):(\d+):(\d+)\)?$/u);
+    const bundled = line.match(/\/app\/((?:lib|workspaces\/codacy\/src)\/(?:[A-Za-z0-9_.+-]+\/)*[A-Za-z0-9_.+-]+\.(?:[cm]?[jt]s|[jt]sx)):(\d+):(\d+)\)?$/u);
     if (match && !match[1].split('/').some((part) => part === '.' || part === '..')) {
       frames.push({ file: match[1], line: Number(match[2]), column: Number(match[3]) });
+    } else if (bundled && !bundled[1].split('/').some((part) => part === '.' || part === '..')) {
+      frames.push({ file: `codacy-eslint9/${bundled[1]}`, line: Number(bundled[2]), column: Number(bundled[3]) });
     }
     if (frames.length === 6) break;
   }
   return frames;
 }
 
-function observeWrite(write, stream, record, stack = () => new Error().stack) {
+function captureWriteStack() {
+  const limit = Error.stackTraceLimit;
+  try {
+    // Console/stream internals can consume the default ten frames. Collect a
+    // bounded deeper stack, restoring the caller's setting synchronously.
+    Error.stackTraceLimit = 40;
+    return new Error().stack;
+  } finally {
+    Error.stackTraceLimit = limit;
+  }
+}
+
+function observeWrite(write, stream, record, stack = captureWriteStack) {
   assert(['stdout', 'stderr'].includes(stream));
   return function (chunk, ...args) {
     const caller = stack();
@@ -54,4 +69,4 @@ function installToolOutputProvenance(output) {
   process.on('warning', (warning) => record(warningMetadata(warning)));
 }
 
-module.exports = { dependencyFrames, observeWrite, warningMetadata, installToolOutputProvenance };
+module.exports = { dependencyFrames, captureWriteStack, observeWrite, warningMetadata, installToolOutputProvenance };

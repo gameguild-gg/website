@@ -25,5 +25,13 @@ states separately, and independent collection must qualify source hashes,
 before/after markers, complete progress, artifact identity and tool output.
 Public artifacts omit diagnostic messages, snippets and fixes.
 
+The first hosted pass processed all 3,283 inputs without parser/configuration
+errors or engine exceptions and accepted all 17 controls. It retained 3,661
+diagnostics and 150 bytes of unidentified tool output, so complete-analysis
+certification remains blocked. Output provenance also accepts source-mapped
+dependency and bundled-engine frames and collects a bounded deeper stack;
+repository paths, messages and source values remain excluded. Every original
+write remains forwarded, and unknown output still fails the evidence gate.
+
 No application dependency, cloud setting, finding state, suppression or
 credential is changed by this workflow. Product execution stays in hosted CI.
