@@ -150,7 +150,11 @@ public class GroupSetsController : BaseApiController
     public async Task<ActionResult<GroupMembershipDto>> JoinGroup(Guid courseId, Guid groupId)
     {
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return Unauthorized();
+        if (!actorUserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         if (!await _courseAccessEvaluator
                 .HasCapabilityAsync(courseId, CourseCapability.Learn, HttpContext.RequestAborted)
                 .ConfigureAwait(false))
@@ -174,7 +178,11 @@ public class GroupSetsController : BaseApiController
     public async Task<ActionResult> LeaveGroup(Guid courseId, Guid groupId)
     {
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return Unauthorized();
+        if (!actorUserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         if (!await _courseAccessEvaluator
                 .HasCapabilityAsync(courseId, CourseCapability.Learn, HttpContext.RequestAborted)
                 .ConfigureAwait(false))

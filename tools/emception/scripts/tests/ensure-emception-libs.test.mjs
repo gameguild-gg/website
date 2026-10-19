@@ -10,6 +10,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(here, '../../../..');
 const fixtureParent = path.join(repository, 'artifacts', 'test-results', 'ensure-emception-libs-fixtures');
 const original = await readFile(path.resolve(here, '../ensure-emception-libs.mjs'), 'utf8');
+const pnpmProcess = await readFile(path.join(repository, 'apps/web/scripts/pnpm-process.mjs'), 'utf8');
 
 async function fixture({ cache = false, complete = false, failure = false, foreignLock = false } = {}) {
   await mkdir(fixtureParent, { recursive: true });
@@ -25,6 +26,9 @@ async function fixture({ cache = false, complete = false, failure = false, forei
   }
   const script = path.join(emception, 'scripts', 'ensure-emception-libs.mjs');
   await writeFile(script, source);
+  const helperDirectory = path.join(root, 'apps', 'web', 'scripts');
+  await mkdir(helperDirectory, { recursive: true });
+  await writeFile(path.join(helperDirectory, 'pnpm-process.mjs'), pnpmProcess);
   for (const name of ['core', 'xterm', 'browser', 'ide']) {
     const dist = path.join(emception, 'packages', name, 'dist');
     await mkdir(dist, { recursive: true });
@@ -109,7 +113,8 @@ test('a failed library build releases only its acquired lock', async () => {
   try {
     const result = await execute(value.script);
     assert.equal(result.timedOut, false, result.output);
-    assert.notEqual(result.code, 0, result.output);
+    assert.equal(result.code, 7, result.output);
+    assert.match(result.output, /Failed to build root lib/);
     assert.equal(existsSync(value.lock), false, 'failed build retained its lock');
   } finally { await cleanup(value.root); }
 });
@@ -120,6 +125,7 @@ test('wait timeout preserves the foreign lock and never builds without ownership
     const result = await execute(value.script);
     assert.equal(result.timedOut, false, result.output);
     assert.notEqual(result.code, 0, result.output);
+    assert.match(result.output, /Timed out waiting for library builder lock/);
     assert.equal(existsSync(path.join(value.emception, 'dist', 'index.js')), false);
     assert.equal(await readFile(path.join(value.lock, 'owner.txt'), 'utf8'), 'another-builder');
   } finally { await cleanup(value.root); }

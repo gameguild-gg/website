@@ -29,7 +29,7 @@ export function XMLSyntaxHighlighter({ monaco, editor }: XMLSyntaxHighlighterPro
             [/<!--/, { token: "comment", next: "@comment" }],
             [/<!\[CDATA\[/, { token: "comment", next: "@cdata" }], // CDATA sections (may span lines)
 
-            [/<([a-zA-Z][a-zA-Z0-9:\-.]*)(\s+[^>]*)?>/, { token: "tag", bracket: "@open", next: "@tagContent" }], // Opening tags
+            [/<([a-zA-Z][a-zA-Z0-9:\-.]*)(\s[^>]*)?>/, { token: "tag", bracket: "@open", next: "@tagContent" }], // Opening tags
             [/<\/([a-zA-Z][a-zA-Z0-9:\-.]*)>/, { token: "tag", bracket: "@close" }], // Closing tags
 
             [/&[a-zA-Z0-9]+;/, "string.escape"], // Entity references

@@ -89,6 +89,57 @@ public sealed class BasicAuthenticationHandlerTests
     }
 
     [Fact]
+    public async Task AuthenticateAsync_WrongPasswordOverHttps_DoesNotIssueIdentity()
+    {
+        var user = User.Create("person@example.com", "Example Person");
+        user.SetPasswordHash("stored-hash");
+        var userRepository = new Mock<IUserRepository>();
+        userRepository.Setup(repository => repository.GetByEmailAsync("person@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        var passwordHasher = new Mock<IPasswordHasher>();
+        passwordHasher.Setup(hasher => hasher.VerifyPassword("stored-hash", "wrong-password"))
+            .Returns(false);
+        var mfaRepository = new Mock<IUserMfaConfigurationRepository>();
+        var context = CreateContext("https", "person@example.com:wrong-password");
+        var handler = CreateHandler(userRepository.Object, passwordHasher.Object, mfaRepository.Object);
+        await InitializeAsync(handler, context);
+
+        var result = await handler.AuthenticateAsync();
+
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Failure);
+        Assert.Null(result.Principal);
+        Assert.Null(result.Ticket);
+        passwordHasher.Verify(hasher => hasher.VerifyPassword("stored-hash", "wrong-password"), Times.Once);
+        mfaRepository.Verify(repository => repository.IsMfaEnabledAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AuthenticateAsync_UnknownUserOverHttps_DoesNotIssueIdentity()
+    {
+        var userRepository = new Mock<IUserRepository>();
+        userRepository.Setup(repository => repository.GetByEmailAsync("missing@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        userRepository.Setup(repository => repository.GetByUsernameAsync("missing@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        var passwordHasher = new Mock<IPasswordHasher>();
+        var mfaRepository = new Mock<IUserMfaConfigurationRepository>();
+        var context = CreateContext("https", "missing@example.com:password");
+        var handler = CreateHandler(userRepository.Object, passwordHasher.Object, mfaRepository.Object);
+        await InitializeAsync(handler, context);
+
+        var result = await handler.AuthenticateAsync();
+
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Failure);
+        Assert.Null(result.Principal);
+        Assert.Null(result.Ticket);
+        userRepository.Verify(repository => repository.GetByUsernameAsync("missing@example.com", It.IsAny<CancellationToken>()), Times.Once);
+        passwordHasher.Verify(hasher => hasher.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        mfaRepository.Verify(repository => repository.IsMfaEnabledAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task AuthenticateAsync_BasicCredentialsOverHttp_FailsBeforeCredentialLookup()
     {
         var userRepository = new Mock<IUserRepository>();
