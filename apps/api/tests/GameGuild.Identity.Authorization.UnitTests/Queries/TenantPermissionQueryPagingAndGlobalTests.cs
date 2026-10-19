@@ -144,8 +144,8 @@ public class TenantPermissionQueryPagingAndGlobalTests
     public async Task Cache_VersionBump_MissesImmediately()
     {
         SetActor(_userId, _tenantId);
-        var sequence = _versionStore.SetupSequence(v => v.GetVersionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()));
-        sequence = sequence.ReturnsAsync(1L).ReturnsAsync(2L);
+        _versionStore.SetupSequence(v => v.GetVersionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1L).ReturnsAsync(2L);
         SetupPermissions("Read", "Write");
 
         var sut = CreateSut();

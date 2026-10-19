@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 import { extract } from 'tar';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -108,26 +109,55 @@ export async function extractPackageArchive(archivePath, destination, extractArc
 // pins versions ahead of publication; fresh environments (CI runners) fall back
 // to this tarball when the pinned version has not been published yet.
 const LATEST_PUBLISHED_EMCEPTION = '4.4.0';
+const PACK_RETRY_DELAYS_MS = [2_000, 5_000];
 
-function isNotargetError(error) {
+function npmFailureText(error) {
   const stderr = typeof error?.stderr === 'string'
     ? error.stderr
     : Buffer.isBuffer(error?.stderr) ? error.stderr.toString('utf8') : '';
   const message = error instanceof Error ? error.message : String(error);
-  return /(?:ENOTARGET|notarget|No matching version found)/i.test(`${stderr}\n${message}`);
+  return `${stderr}\n${message}`;
 }
 
-async function packEmceptionArchive(npmCommand, version, tempDir) {
-  const { stdout } = await execFileAsync(
-    npmCommand,
-    ['pack', `emception@${version}`, '--pack-destination', tempDir, '--json'],
-    {
-      maxBuffer: 10 * 1024 * 1024,
-      // Windows exposes npm as npm.cmd, which requires cmd.exe dispatch.
-      shell: process.platform === 'win32',
-    },
-  );
-  return stdout;
+function isNotargetError(error) {
+  return /(?:ENOTARGET|notarget|No matching version found)/i.test(npmFailureText(error));
+}
+
+function canRetryTarball(error, version, attempt) {
+  const text = npmFailureText(error);
+  return attempt < PACK_RETRY_DELAYS_MS.length
+    && /(?:\bE404\b|404 Not Found)/i.test(text)
+    && text.includes(`/emception-${version}.tgz`);
+}
+
+async function packEmceptionAttempt(request, attempt) {
+  const { npmCommand, version, tempDir, run, wait } = request;
+  try {
+    const { stdout } = await run(
+      npmCommand,
+      ['pack', `emception@${version}`, '--pack-destination', tempDir, '--json', '--prefer-online'],
+      {
+        maxBuffer: 10 * 1024 * 1024,
+        timeout: 45_000,
+        // Windows exposes npm as npm.cmd, which requires cmd.exe dispatch.
+        shell: process.platform === 'win32',
+      },
+    );
+    return stdout;
+  } catch (error) {
+    if (!canRetryTarball(error, version, attempt)) throw error;
+    await wait(PACK_RETRY_DELAYS_MS[attempt]);
+    return packEmceptionAttempt(request, attempt + 1);
+  }
+}
+
+export function packEmceptionArchive(npmCommand, version, tempDir, {
+  run = execFileAsync,
+  wait = delay,
+} = {}) {
+  // A newly published tarball can briefly return 404 from a registry replica.
+  // Retry only that exact version; persistent failures still reach the caller.
+  return packEmceptionAttempt({ npmCommand, version, tempDir, run, wait }, 0);
 }
 
 async function hydratePublishedRelease({ srcDir, version, log }) {

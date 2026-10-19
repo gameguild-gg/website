@@ -16,7 +16,8 @@
  *   - Type commands in the MiniShell terminal
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import type { Page } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Helpers (same as compile.spec.ts)
