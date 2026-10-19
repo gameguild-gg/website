@@ -73,6 +73,9 @@ public class Certificate : EntityBase
 
     private Certificate() { } // EF Core
 
+    public static Certificate Issue(Guid templateId, Guid enrollmentId, Guid userId, Guid courseId,
+        string recipientName, string courseName) => Issue(templateId, enrollmentId, userId, courseId, recipientName, courseName, null, null);
+
     public static Certificate Issue(
         Guid templateId,
         Guid enrollmentId,
@@ -80,8 +83,10 @@ public class Certificate : EntityBase
         Guid courseId,
         string recipientName,
         string courseName,
-        DateTime? expiresAt = null,
-        Guid? tenantId = null)
+        DateTime? expiresAt) => Issue(templateId, enrollmentId, userId, courseId, recipientName, courseName, expiresAt, null);
+
+    public static Certificate Issue(Guid templateId, Guid enrollmentId, Guid userId, Guid courseId,
+        string recipientName, string courseName, DateTime? expiresAt, Guid? tenantId)
     {
         return new Certificate
         {

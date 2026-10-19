@@ -258,6 +258,7 @@ public sealed class CertificateEvmOutboxPostgreSqlTests(CertificateEvmOutboxPost
         var actors = new Mock<IActorContextAccessor>(); actors.SetupGet(a => a.ActorContext).Returns(ActorContext.Anonymous);
         var network = CertificateEvmEvidenceProducerTests.Network(changedProfile ? "changed-profile" : "original-profile", changedProfile ? '4' : '1');
         return new CertificateService(context, NullLogger<CertificateService>.Instance, new FixtureAuditSink(failAudit), auxiliary,
+            requestContextAccessor: null,
             evidenceProducer: new CertificateEvmEvidenceProducer(network, changedProfile ? "changed-issuer" : "original-issuer", actors.Object, TimeProvider.System));
     }
 

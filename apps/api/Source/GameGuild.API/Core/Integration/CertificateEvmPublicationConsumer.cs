@@ -11,7 +11,9 @@ public sealed class CertificateEvmPublicationConsumer(ApplicationDbContext conte
     EvmCertificatePublicationNetwork configuredNetwork) : IIntegrationEventHandler<CertificateEvmAnchorRequestedV1>,
     IIntegrationEventHandler<CertificateEvmRevocationRequestedV1>
 {
-    public async Task HandleAsync(CertificateEvmAnchorRequestedV1 requested, CancellationToken cancellationToken = default)
+    public Task HandleAsync(CertificateEvmAnchorRequestedV1 requested) => HandleAsync(requested, CancellationToken.None);
+
+    public async Task HandleAsync(CertificateEvmAnchorRequestedV1 requested, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(requested);
         ValidateEnvelope(requested, requested.DocumentId, requested.OwnerUserId, requested.OriginalTenantId,
@@ -26,7 +28,9 @@ public sealed class CertificateEvmPublicationConsumer(ApplicationDbContext conte
             CertificateEvmEvidenceProducer.ProducerName, requested.CertificateHash, EvmCertificateOperationKind.Anchor), cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task HandleAsync(CertificateEvmRevocationRequestedV1 requested, CancellationToken cancellationToken = default)
+    public Task HandleAsync(CertificateEvmRevocationRequestedV1 requested) => HandleAsync(requested, CancellationToken.None);
+
+    public async Task HandleAsync(CertificateEvmRevocationRequestedV1 requested, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(requested);
         ValidateEnvelope(requested, requested.DocumentId, requested.OwnerUserId, requested.OriginalTenantId,

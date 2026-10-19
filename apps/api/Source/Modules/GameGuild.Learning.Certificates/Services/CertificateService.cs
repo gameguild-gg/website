@@ -24,8 +24,12 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
         ILogger<CertificateService> logger,
         ILearningAuditEventSink auditSink,
         ICertificateAnchoring? certificateAnchoring = null,
-        IRequestContextAccessor? requestContextAccessor = null,
-        ICertificateDurableEvidenceProducer? evidenceProducer = null)
+        IRequestContextAccessor? requestContextAccessor = null)
+        : this(context, logger, auditSink, certificateAnchoring, requestContextAccessor, null) { }
+
+    public CertificateService(IApplicationDbContext context, ILogger<CertificateService> logger, ILearningAuditEventSink auditSink,
+        ICertificateAnchoring? certificateAnchoring, IRequestContextAccessor? requestContextAccessor,
+        ICertificateDurableEvidenceProducer? evidenceProducer)
     {
         _context = context;
         _logger = logger;
@@ -86,6 +90,7 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
                 courseId,
                 recipientName,
                 courseName,
+                expiresAt: null,
                 tenantId: tenantId);
 
             _context.Set<Certificate>().Add(certificate);

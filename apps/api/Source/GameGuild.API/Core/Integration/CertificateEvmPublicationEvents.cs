@@ -5,7 +5,7 @@ namespace GameGuild.API.Core.Integration;
 /// <summary>Public publication identity captured at issuance. No endpoint, key, recipient name or revocation reason.</summary>
 public sealed record CertificateEvmAnchorRequestedV1 : DurableIntegrationEventBase
 {
-    public const string Name = "Learning.Certificates.EvmAnchorRequested.v1";
+    public static string Name { get; } = "Learning.Certificates.EvmAnchorRequested.v1";
     public override string EventName => Name;
     public override string SourceModule => "GameGuild.API";
     [NonPersonalEventData] public required Guid DocumentId { get; init; }
@@ -25,7 +25,7 @@ public sealed record CertificateEvmAnchorRequestedV1 : DurableIntegrationEventBa
 /// <summary>Revocation references the original issuance event instead of hashing current configuration.</summary>
 public sealed record CertificateEvmRevocationRequestedV1 : DurableIntegrationEventBase
 {
-    public const string Name = "Learning.Certificates.EvmRevocationRequested.v1";
+    public static string Name { get; } = "Learning.Certificates.EvmRevocationRequested.v1";
     public override string EventName => Name;
     public override string SourceModule => "GameGuild.API";
     [NonPersonalEventData] public required Guid DocumentId { get; init; }

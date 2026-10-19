@@ -9,8 +9,8 @@ namespace GameGuild.API.Core.Integration;
 /// <summary>Host-owned domain bridge: only stages events captured by the existing transactional outbox.</summary>
 public sealed class CertificateEvmEvidenceProducer : ICertificateDurableEvidenceProducer
 {
-    public const string ProducerName = "learning-certificates-v1";
-    public const string AggregateName = "LearningCertificateEvm";
+    public static string ProducerName { get; } = "learning-certificates-v1";
+    public static string AggregateName { get; } = "LearningCertificateEvm";
     private readonly EvmCertificatePublicationNetwork network;
     private readonly string canonicalIssuer;
     private readonly IActorContextAccessor actors;
