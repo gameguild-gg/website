@@ -24,10 +24,10 @@ describe('OpenAPI Spec Normalizer', () => {
     } as OpenApiSpec;
 
     const normalized = normalizeSpec(spec);
-    const operation = (normalized.paths['/api/test'] as any).get;
+    const operation = normalized.paths?.['/api/test']?.get;
 
-    expect(operation.operationId).toBeDefined();
-    expect(operation.operationId).toMatch(/^(get|test)/i);
+    expect(operation?.operationId).toBeDefined();
+    expect(operation?.operationId).toMatch(/^(get|test)/i);
   });
 
   it('should preserve existing operation IDs', () => {
@@ -46,9 +46,9 @@ describe('OpenAPI Spec Normalizer', () => {
     } as OpenApiSpec;
 
     const normalized = normalizeSpec(spec);
-    const operation = (normalized.paths['/api/users'] as any).get;
+    const operation = normalized.paths?.['/api/users']?.get;
 
-    expect(operation.operationId).toBe('getAllUsers');
+    expect(operation?.operationId).toBe('getAllUsers');
   });
 
   it('should resolve duplicate operation IDs with deterministic route semantics', () => {
@@ -70,8 +70,8 @@ describe('OpenAPI Spec Normalizer', () => {
     const reversed = normalizeSpec({ ...simpleSpec, paths: reversedPaths } as OpenApiSpec);
 
     const operationIds = {
-      get: (normalized.paths['/api/v1/listings/{listingId}:publish'] as any).get.operationId,
-      post: (normalized.paths['/api/v1/listings/{listingId}:publish'] as any).post.operationId,
+      get: normalized.paths?.['/api/v1/listings/{listingId}:publish']?.get?.operationId,
+      post: normalized.paths?.['/api/v1/listings/{listingId}:publish']?.post?.operationId,
     };
 
     expect(operationIds).toEqual({
@@ -79,8 +79,8 @@ describe('OpenAPI Spec Normalizer', () => {
       post: 'listingsGetForPostListingsByListingIdPublish',
     });
     expect({
-      get: (reversed.paths['/api/v1/listings/{listingId}:publish'] as any).get.operationId,
-      post: (reversed.paths['/api/v1/listings/{listingId}:publish'] as any).post.operationId,
+      get: reversed.paths?.['/api/v1/listings/{listingId}:publish']?.get?.operationId,
+      post: reversed.paths?.['/api/v1/listings/{listingId}:publish']?.post?.operationId,
     }).toEqual(operationIds);
   });
 
@@ -121,7 +121,7 @@ describe('OpenAPI Spec Normalizer', () => {
     } as OpenApiSpec;
 
     const normalized = normalizeSpec(spec);
-    const schemas = (normalized.components as any)?.schemas;
+    const schemas = normalized.components?.schemas;
 
     // Normalize removes namespace but retains the DTO suffix
     expect(schemas).toHaveProperty('UserDto'); // Preserve DTO identity
@@ -146,7 +146,7 @@ describe('OpenAPI Spec Normalizer', () => {
     } as OpenApiSpec;
 
     const normalized = normalizeSpec(spec);
-    const schemas = (normalized.components as any)?.schemas;
+    const schemas = normalized.components?.schemas;
 
     // Normalize preserves generics and the DTO suffix of the type parameter
     expect(schemas).toHaveProperty('ResultOfUserDto'); // Preserve the generic argument
@@ -188,16 +188,18 @@ describe('OpenAPI Spec Normalizer', () => {
     } as OpenApiSpec;
 
     const normalized = normalizeSpec(spec);
-    const schemas = (normalized.components as any).schemas;
+    const schemas = normalized.components?.schemas;
 
-    expect(Object.keys(schemas)).toEqual([
+    expect(Object.keys(schemas ?? {})).toEqual([
       'PagedResultOfCommerceSupportTicketDto',
       'PagedResultOfIdentityUsersUserDto',
     ]);
-    expect((normalized.paths['/users'] as any).get.responses['200'].content['application/json'].schema.$ref).toBe(
+    expect(normalized.paths?.['/users']?.get?.responses?.['200']).toHaveProperty(
+      'content.application/json.schema.$ref',
       '#/components/schemas/PagedResultOfIdentityUsersUserDto',
     );
-    expect((normalized.paths['/tickets'] as any).get.responses['200'].content['application/json'].schema.$ref).toBe(
+    expect(normalized.paths?.['/tickets']?.get?.responses?.['200']).toHaveProperty(
+      'content.application/json.schema.$ref',
       '#/components/schemas/PagedResultOfCommerceSupportTicketDto',
     );
   });
@@ -227,12 +229,11 @@ describe('OpenAPI Spec Normalizer', () => {
     } as OpenApiSpec;
 
     const normalized = normalizeSpec(spec);
-    const schemas = (normalized.components as any)?.schemas;
-    const userListOutput = schemas.UserListOutput; // Response -> Output
+    const schemas = normalized.components?.schemas;
 
     // Normalize removes namespace but retains the DTO suffix
     expect(schemas).toHaveProperty('UserDto'); // Preserve DTO identity
-    expect(userListOutput.properties.users.items.$ref).toBe('#/components/schemas/UserDto');
+    expect(schemas).toHaveProperty('UserListOutput.properties.users.items.$ref', '#/components/schemas/UserDto'); // Response -> Output
   });
 
   it('should preserve the original spec structure', () => {
@@ -281,11 +282,11 @@ describe('OpenAPI Spec Normalizer', () => {
     } as OpenApiSpec;
 
     const normalized = normalizeSpec(spec);
-    const operation = (normalized.paths['/api/users'] as any).get;
+    const operation = normalized.paths?.['/api/users']?.get;
 
     // Normalize converts to PascalCase but doesn't strip Controller suffix from tags
-    expect(operation.tags).toContain('UsersController');
+    expect(operation?.tags).toContain('UsersController');
     // But it does strip Controller from operation IDs
-    expect(operation.operationId).toBe('getUsers');
+    expect(operation?.operationId).toBe('getUsers');
   });
 });

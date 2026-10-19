@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { OpenAPIV3 } from 'openapi-types';
 
 import {
   ArrayTypeMapper,
@@ -23,6 +24,26 @@ import {
   ZodUnionMapper,
 } from '../../scripts/codegen/strategies/ZodSchemaMapper.js';
 
+function nullableReference($ref: string): OpenAPIV3.ReferenceObject & { nullable: true } {
+  return { $ref, nullable: true };
+}
+
+function arrayWithoutItems(nullable?: boolean): OpenAPIV3.ArraySchemaObject {
+  const schema: OpenAPIV3.ArraySchemaObject = { type: 'array', items: {} };
+  if (nullable !== undefined) schema.nullable = nullable;
+  // Deliberately remove the required field to cover malformed upstream input.
+  Reflect.deleteProperty(schema, 'items');
+  return schema;
+}
+
+function unknownTypeSchema(nullable?: boolean): OpenAPIV3.SchemaObject {
+  const schema: OpenAPIV3.SchemaObject = { type: 'string' };
+  if (nullable !== undefined) schema.nullable = nullable;
+  // Keep the unknown-type fallback scenario explicit at the fixture boundary.
+  Reflect.set(schema, 'type', 'funky');
+  return schema;
+}
+
 describe('schema type mapper strategies', () => {
   const chain = new TypeMapperChain();
 
@@ -33,7 +54,7 @@ describe('schema type mapper strategies', () => {
     expect(new ReferenceTypeMapper(new Set(['User'])).map({ $ref: '#/components/schemas/App.UserDto' })).toBe('User');
     expect(new ReferenceTypeMapper(new Set(['UserDto'])).map({ $ref: '#/components/schemas/UserDto' })).toBe('UserDto');
     expect(new ReferenceTypeMapper(new Set(['Known'])).map({ $ref: '#/components/schemas/Missing' })).toBe('unknown');
-    expect(new ReferenceTypeMapper().map({ $ref: '#/components/schemas/User.Dto', nullable: true } as any)).toBe('UserDto | null');
+    expect(new ReferenceTypeMapper().map(nullableReference('#/components/schemas/User.Dto'))).toBe('UserDto | null');
     expect(() => new ReferenceTypeMapper().map({ type: 'string' })).toThrow('Not a reference schema');
   });
 
@@ -60,10 +81,10 @@ describe('schema type mapper strategies', () => {
     const objectMapper = new ObjectTypeMapper(chain);
     const unionMapper = new UnionTypeMapper(chain);
 
-    expect(arrayMapper.canHandle({ type: 'array' })).toBe(true);
+    expect(arrayMapper.canHandle(arrayWithoutItems())).toBe(true);
     expect(arrayMapper.map({ type: 'array', items: { type: 'string' } })).toBe('string[]');
-    expect(arrayMapper.map({ type: 'array', nullable: true } as any)).toBe('unknown[] | null');
-    expect(objectMapper.canHandle({} as any)).toBe(true);
+    expect(arrayMapper.map(arrayWithoutItems(true))).toBe('unknown[] | null');
+    expect(objectMapper.canHandle({})).toBe(true);
     expect(objectMapper.map({ type: 'object', additionalProperties: true })).toBe('Record<string, unknown>');
     expect(objectMapper.map({ type: 'object', additionalProperties: { type: 'number' }, nullable: true })).toBe('Record<string, number> | null');
     expect(
@@ -79,9 +100,9 @@ describe('schema type mapper strategies', () => {
     expect(objectMapper.map({ type: 'object', nullable: true })).toBe('Record<string, unknown> | null');
     expect(unionMapper.map({ oneOf: [{ type: 'string' }, { type: 'number' }], nullable: true })).toBe('string | number | null');
     expect(unionMapper.map({ anyOf: [{ type: 'boolean' }] })).toBe('boolean');
-    expect(unionMapper.map({ nullable: true } as any)).toBe(' | null');
-    expect(chain.map({ type: 'funky', nullable: true } as any)).toBe('unknown | null');
-    expect(chain.map({ type: 'funky' } as any)).toBe('unknown');
+    expect(unionMapper.map({ nullable: true })).toBe(' | null');
+    expect(chain.map(unknownTypeSchema(true))).toBe('unknown | null');
+    expect(chain.map(unknownTypeSchema())).toBe('unknown');
     expect(() => arrayMapper.map({ $ref: '#/components/schemas/User' })).toThrow('Reference schema');
     expect(() => objectMapper.map({ $ref: '#/components/schemas/User' })).toThrow('Reference schema');
     expect(() => unionMapper.map({ $ref: '#/components/schemas/Variant' })).toThrow('Reference schema');
@@ -120,12 +141,9 @@ describe('Zod schema mapper strategies', () => {
     expect(new ZodReferenceMapper().map({ $ref: '#/components/schemas/User.Dto' })).toBe('z.lazy(() => UserDtoSchema)');
     expect(new ZodReferenceMapper(new Set(['User'])).map({ $ref: '#/components/schemas/App.UserDto' })).toBe('z.lazy(() => UserSchema)');
     expect(new ZodReferenceMapper(new Set(['Known'])).map({ $ref: '#/components/schemas/Missing' })).toBe('z.unknown()');
-    expect(new ZodReferenceMapper().map({ $ref: '#/components/schemas/User.Dto', nullable: true } as any)).toBe('z.lazy(() => UserDtoSchema).nullable()');
+    expect(new ZodReferenceMapper().map(nullableReference('#/components/schemas/User.Dto'))).toBe('z.lazy(() => UserDtoSchema).nullable()');
     expect(
-      new ZodReferenceMapper(new Set(['Known'])).map({
-        $ref: '#/components/schemas/Missing',
-        nullable: true,
-      } as any),
+      new ZodReferenceMapper(new Set(['Known'])).map(nullableReference('#/components/schemas/Missing')),
     ).toBe('z.unknown().nullable()');
     expect(() => new ZodReferenceMapper().map({ type: 'string' })).toThrow('Not a reference schema');
   });
@@ -156,10 +174,10 @@ describe('Zod schema mapper strategies', () => {
     const objectMapper = new ZodObjectMapper(chain);
     const unionMapper = new ZodUnionMapper(chain);
 
-    expect(arrayMapper.canHandle({ type: 'array' })).toBe(true);
+    expect(arrayMapper.canHandle(arrayWithoutItems())).toBe(true);
     expect(arrayMapper.map({ type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 2 })).toBe('z.array(z.string()).min(1).max(2)');
-    expect(arrayMapper.map({ type: 'array', nullable: true } as any)).toBe('z.array(z.unknown()).nullable()');
-    expect(objectMapper.canHandle({} as any)).toBe(true);
+    expect(arrayMapper.map(arrayWithoutItems(true))).toBe('z.array(z.unknown()).nullable()');
+    expect(objectMapper.canHandle({})).toBe(true);
     expect(objectMapper.map({ type: 'object', additionalProperties: true })).toBe('z.record(z.string(), z.unknown())');
     expect(objectMapper.map({ type: 'object', additionalProperties: { type: 'number' }, nullable: true })).toBe('z.record(z.string(), z.number()).nullable()');
     expect(
@@ -173,11 +191,11 @@ describe('Zod schema mapper strategies', () => {
     ).toContain("'bad-name': z.string()");
     expect(objectMapper.map({ type: 'object' })).toBe('z.record(z.string(), z.unknown())');
     expect(unionMapper.map({ oneOf: [] })).toBe('z.unknown()');
-    expect(unionMapper.map({ nullable: true } as any)).toBe('z.unknown().nullable()');
+    expect(unionMapper.map({ nullable: true })).toBe('z.unknown().nullable()');
     expect(unionMapper.map({ oneOf: [{ type: 'string' }] })).toBe('z.string()');
     expect(unionMapper.map({ anyOf: [{ type: 'string' }, { type: 'number' }], nullable: true })).toBe('z.union([z.string(), z.number()]).nullable()');
-    expect(chain.map({ type: 'funky', nullable: true } as any)).toBe('z.unknown().nullable()');
-    expect(chain.map({ type: 'funky' } as any)).toBe('z.unknown()');
+    expect(chain.map(unknownTypeSchema(true))).toBe('z.unknown().nullable()');
+    expect(chain.map(unknownTypeSchema())).toBe('z.unknown()');
     expect(() => arrayMapper.map({ $ref: '#/components/schemas/User' })).toThrow('Reference schema');
     expect(() => objectMapper.map({ $ref: '#/components/schemas/User' })).toThrow('Reference schema');
     expect(() => unionMapper.map({ $ref: '#/components/schemas/User' })).toThrow('Reference schema');
