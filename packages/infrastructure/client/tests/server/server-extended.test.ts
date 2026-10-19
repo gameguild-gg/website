@@ -4,41 +4,53 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createServerClient } from '../../src/server.js';
+import type { ApiError } from '../../src/runtime/errors/types.js';
+import type { Result } from '../../src/runtime/result/types.js';
+import type { ApiResponse, Interceptor, RequestConfig, TransportConfig } from '../../src/runtime/transport/types.js';
 
-// We need to avoid the real transport module
-vi.mock('../../src/runtime/transport/fetch.js', () => {
-  let interceptors: any[] = [];
+type LegacyFixtureError = Omit<ApiError, 'code'> & { code: ApiError['code'] | 'INTERNAL' };
+type FixtureTransportResult = Result<ApiResponse<Record<string, string>>, LegacyFixtureError> & {
+  status?: number;
+  headers?: Headers;
+};
+type HeaderProvider = Parameters<typeof import('../../src/runtime/transport/fetch.js').createHeaderInterceptor>[0];
 
-  return {
-    createFetchTransport: vi.fn((config: any) => {
-      interceptors = config.interceptors || [];
-      return {
-        request: vi.fn(async (reqConfig: any) => {
-          // Run interceptors
-          let finalConfig = reqConfig;
-          for (const interceptor of interceptors) {
-            finalConfig = await interceptor(finalConfig);
-          }
-          return {
-            ok: true,
-            data: { data: finalConfig.headers || {} },
+const { createFetchTransportMock } = vi.hoisted(() => ({
+  createFetchTransportMock: vi.fn((config: TransportConfig) => {
+    const interceptors = config.interceptors || [];
+    return {
+      request: vi.fn(async (reqConfig: RequestConfig): Promise<FixtureTransportResult> => {
+        // Run interceptors
+        let finalConfig = reqConfig;
+        for (const interceptor of interceptors) {
+          if (interceptor.onRequest) finalConfig = await interceptor.onRequest(finalConfig);
+        }
+        return {
+          ok: true,
+          data: {
+            data: finalConfig.headers || {},
             status: 200,
             headers: new Headers(),
-          };
-        }),
-      };
-    }),
-    createHeaderInterceptor: vi.fn((fn: any) => {
-      return async (config: any) => {
-        const headers = await fn();
-        return {
-          ...config,
-          headers: { ...config.headers, ...headers },
+          },
         };
+      }),
+    };
+  }),
+}));
+
+// Match the native interceptor and response shapes without executing fetch.
+vi.mock('../../src/runtime/transport/fetch.js', () => ({
+  createFetchTransport: createFetchTransportMock,
+  createHeaderInterceptor: vi.fn((fn: HeaderProvider): Interceptor => ({
+    onRequest: async (config) => {
+      const headers = await fn();
+      return {
+        ...config,
+        headers: { ...config.headers, ...headers },
       };
-    }),
-  };
-});
+    },
+  })),
+}));
 
 describe('createServerClient — extended', () => {
   beforeEach(() => {
@@ -181,10 +193,14 @@ describe('createServerClient — extended', () => {
     });
 
     // Get the latest mock transport returned by createFetchTransport
-    const mockCalls = (createFetchTransport as any).mock.results;
-    const latestTransport = mockCalls[mockCalls.length - 1].value;
+    expect(createFetchTransport).toBe(createFetchTransportMock);
+    const mockCalls = createFetchTransportMock.mock.results;
+    const latestResult = mockCalls[mockCalls.length - 1];
+    if (!latestResult || latestResult.type !== 'return') throw new Error('Expected a created transport fixture');
+    const latestTransport = latestResult.value;
 
     // Override request to return error for the next call
+    // Preserve the existing backend's nonstandard INTERNAL code in this fixture.
     latestTransport.request.mockResolvedValueOnce({
       ok: false,
       error: { name: 'ApiError', status: 500, code: 'INTERNAL', message: 'Server error' },
@@ -198,5 +214,40 @@ describe('createServerClient — extended', () => {
     if (!result.ok) {
       expect(result.error.code).toBe('INTERNAL');
     }
+  });
+
+  it('should return native response metadata from requestRaw', async () => {
+    const client = createServerClient({
+      baseUrl: 'http://localhost:8080',
+      tenant: { getTenantId: vi.fn(async () => 'raw-tenant') },
+    });
+
+    const result = await client.requestRaw<Record<string, string>>({ path: '/raw', method: 'GET' });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.status).toBe(200);
+      expect(result.data.headers).toBeInstanceOf(Headers);
+      expect(result.data.data).toEqual({ 'X-Tenant-Id': 'raw-tenant' });
+    }
+  });
+
+  it('should retain each transport fixture interceptor when another client is created', async () => {
+    const first = createServerClient({
+      baseUrl: 'http://localhost:8080',
+      tenant: { getTenantId: vi.fn(async () => 'first-tenant') },
+    });
+    const second = createServerClient({
+      baseUrl: 'http://localhost:8080',
+      tenant: { getTenantId: vi.fn(async () => 'second-tenant') },
+    });
+
+    const firstResult = await first.request<Record<string, string>>({ path: '/first', method: 'GET' });
+    const secondResult = await second.request<Record<string, string>>({ path: '/second', method: 'GET' });
+
+    expect(firstResult.ok).toBe(true);
+    expect(secondResult.ok).toBe(true);
+    if (firstResult.ok) expect(firstResult.data).toEqual({ 'X-Tenant-Id': 'first-tenant' });
+    if (secondResult.ok) expect(secondResult.data).toEqual({ 'X-Tenant-Id': 'second-tenant' });
   });
 });
