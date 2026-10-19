@@ -29,9 +29,12 @@ describe('legacy error fixture boundary', () => {
 describe('generic transport fixture boundary', () => {
   it('forwards the exact request and response objects once', async () => {
     const response = ok({ data: { value: 'fixture' }, status: 200, headers: new Headers() });
-    const respond = vi.fn(async (_config: RequestConfig) => response);
-    const transport = fixtureTransport(respond);
     const config: RequestConfig = { method: 'POST', path: '/fixture', body: { value: 'request' } };
+    const respond = vi.fn(async (actualConfig: RequestConfig) => {
+      expect(actualConfig).toBe(config);
+      return response;
+    });
+    const transport = fixtureTransport(respond);
     expect(await transport.request<{ value: string }>(config)).toBe(response);
     expect(respond).toHaveBeenCalledTimes(1);
     expect(respond).toHaveBeenCalledWith(config);
