@@ -44,7 +44,7 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
         var resourceId = Guid.NewGuid();
         var tenantGrant = new TenantPermission
         {
-            TenantId = tenant, UserId = subject, GrantedBy = grantor,
+            TenantId = tenant, UserId = subject, GrantedBy = grantor, GrantedAt = DateTime.UtcNow.Date,
             Permissions = ["documents:read"], DenyPermissions = ["documents:delete"]
         };
         var content = new ContentTypePermission(subject, tenant, "Document") { GrantedBy = grantor };
@@ -63,7 +63,7 @@ public sealed class PermissionUpdateContractPostgreSqlTests(ApiPostgreSqlFixture
         using var actor = actors.BeginActorContextScope(ActorContextBuilder.ForUser(actorId)
             .WithTenantId(tenant).WithRole("TenantAdmin").Build());
         var service = services.GetRequiredService<IPermissionUpdateService>();
-        var expiry = DateTime.UtcNow.AddHours(2);
+        var expiry = DateTime.UtcNow.Date.AddDays(2);
 
         var tenantResult = await service.UpdateTenantPermissionAsync(new PermissionGrantUpdate<string>
         {
