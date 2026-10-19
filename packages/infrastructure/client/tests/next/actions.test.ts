@@ -2,7 +2,7 @@
  * Tests for Next.js Server Actions
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   createAuthFunction,
   createSignInAction,
@@ -11,7 +11,15 @@ import {
   createUpdateAction,
   type CookieAdapter,
 } from '../../src/integrations/next/actions.js';
-import type { ResolvedAuthConfig } from '../../src/runtime/auth/types.js';
+import type { CredentialsProviderConfig, JWTPayload, ProviderResult, ResolvedAuthConfig, Session } from '../../src/runtime/auth/types.js';
+
+type DecodeJWTParams = Parameters<typeof import('../../src/runtime/auth/jwt.js').decodeJWT>[0];
+
+interface BackendAuthResponseFixture {
+  accessToken: string;
+  refreshToken?: string;
+  userId?: string;
+}
 
 // Mock next/headers — cookies() returns null to simulate missing adapter
 vi.mock('next/headers', () => ({
@@ -27,7 +35,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock auth dependencies
 vi.mock('../../src/runtime/auth/jwt.js', () => ({
-  decodeJWT: vi.fn(async ({ token }: any) => {
+  decodeJWT: vi.fn(async ({ token }: DecodeJWTParams) => {
     if (token === 'encrypted-session') {
       return {
         user: { id: '1', email: 'test@example.com', name: 'Test', image: null },
@@ -44,7 +52,7 @@ vi.mock('../../src/runtime/auth/jwt.js', () => ({
 }));
 
 vi.mock('../../src/runtime/auth/session.js', () => ({
-  createJWTPayload: vi.fn((result: any) => ({
+  createJWTPayload: vi.fn((result: ProviderResult) => ({
     user: result.user,
     accessToken: result.tokens.accessToken,
     refreshToken: result.tokens.refreshToken,
@@ -69,7 +77,7 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
     return { session: null, token: null, updated: false };
   }),
   encodeSession: vi.fn(async () => 'new-encrypted-token'),
-  toSession: vi.fn((token: any) => ({
+  toSession: vi.fn((token: JWTPayload) => ({
     user: token.user,
     expires: new Date(Date.now() + 86400000).toISOString(),
   })),
@@ -85,7 +93,7 @@ vi.mock('../../src/integrations/next/handlers.js', async (importOriginal) => ({
     }
     return map;
   }),
-  parseBackendAuthResponse: vi.fn((data: any, email?: string, name?: string) => ({
+  parseBackendAuthResponse: vi.fn((data: BackendAuthResponseFixture, email?: string, name?: string) => ({
     tokens: { accessToken: data.accessToken, refreshToken: data.refreshToken, tokenType: 'Bearer' },
     user: { id: data.userId || '', email: email || '', name: name || null, image: null },
   })),
@@ -98,11 +106,15 @@ function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig
         id: 'credentials',
         name: 'Credentials',
         type: 'credentials',
-        authorize: vi.fn(async (creds: any) => ({
-          tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
-          user: { id: '1', email: creds.email || 'a@b.com', name: 'Test', image: null },
-        })),
-      } as any,
+        authorize: vi.fn<CredentialsProviderConfig['authorize']>(async (creds) => {
+          const email = creds.email || 'a@b.com';
+          if (typeof email !== 'string') throw new TypeError('The credentials fixture requires a string email');
+          return {
+            tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
+            user: { id: '1', email, name: 'Test', image: null },
+          };
+        }),
+      },
     ],
     callbacks: {
       jwt: async ({ token }) => token,
@@ -171,24 +183,33 @@ describe('createAuthFunction', () => {
       '__me.session-token': 'encrypted-session',
     });
 
-    // Internal getSession accepts an optional CookieAdapter
-    // But the public overload `auth()` doesn't take it — so we access getSession differently
-    // Actually, calling auth(handlerFn) makes it a proxy. We test via proxy.
-    // The direct getSession test is through auth() with mocked next/headers.
-    // For testing with adapter, we use a handler wrapper.
-    const handler = vi.fn(async (req: Request & { auth: any }) => {
+    // Carry the adapter's cookie through the public proxy wrapper so the test
+    // observes the decoded session instead of only constructing a function.
+    const handler = vi.fn(async (req: Request & { auth: Session | null }) => {
       return new Response(JSON.stringify({ auth: req.auth }));
     });
 
     const wrapper = authFn(handler);
     expect(typeof wrapper).toBe('function');
+    const sessionCookie = adapter.get('__me.session-token');
+    expect(sessionCookie?.value).toBe('encrypted-session');
+    const response = await wrapper(new Request('http://localhost:3000/api/data', {
+      headers: { cookie: `__me.session-token=${sessionCookie?.value}` },
+    }));
+    expect(handler).toHaveBeenCalledOnce();
+    expect(await response.json()).toEqual({
+      auth: {
+        user: { id: '1', email: 'test@example.com', name: 'Test', image: null },
+        expires: expect.any(String),
+      },
+    });
   });
 
   it('should return a proxy wrapper when handler is provided', () => {
     const config = makeConfig();
     const authFn = createAuthFunction(config);
 
-    const handler = async (req: Request & { auth: any }) => {
+    const handler = async () => {
       return new Response('ok');
     };
 
@@ -208,7 +229,7 @@ describe('createAuthFunction', () => {
     });
     const authFn = createAuthFunction(config);
 
-    const handler = vi.fn(async (req: Request & { auth: any }) => {
+    const handler = vi.fn(async (req: Request & { auth: Session | null }) => {
       return new Response(JSON.stringify({ auth: req.auth }));
     });
 
@@ -245,7 +266,7 @@ describe('createSignInAction', () => {
           name: 'Credentials',
           type: 'credentials',
           authorize: vi.fn(async () => null),
-        } as any,
+        },
       ],
     });
     const signIn = createSignInAction(config);

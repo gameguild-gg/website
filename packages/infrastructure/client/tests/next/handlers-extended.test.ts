@@ -2,11 +2,23 @@
  * Extended Handlers Tests — signIn success, signUp full flow, OAuth, updateSession, form-urlencoded
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 import { createHandlers } from '../../src/integrations/next/handlers.js';
 import { signStatePayload, stateCookieName } from '../../src/integrations/next/oauth-state.js';
-import type { ResolvedAuthConfig, ProviderResult } from '../../src/runtime/auth/types.js';
-import { getOAuthHandleCallback } from '../../src/integrations/next/oauth-helpers.js';
+import type { CredentialsProviderConfig, JWTPayload, ResolvedAuthConfig, ProviderResult } from '../../src/runtime/auth/types.js';
+import { getOAuthHandleCallback, type OAuthProviderWithMethods } from '../../src/integrations/next/oauth-helpers.js';
+
+type DecodeJWTParams = Parameters<typeof import('../../src/runtime/auth/jwt.js').decodeJWT>[0];
+type OAuthBridgeFixture = Omit<OAuthProviderWithMethods, 'clientId' | 'clientSecret' | 'exchangeToken' | 'handleCallback'> & {
+  exchangeToken?: (...args: Parameters<NonNullable<OAuthProviderWithMethods['exchangeToken']>>) => Promise<ProviderResult | null>;
+  handleCallback?: (...args: Parameters<NonNullable<OAuthProviderWithMethods['handleCallback']>>) => Promise<ProviderResult | null>;
+};
+
+function legacyOAuthFixture(provider: OAuthBridgeFixture): OAuthProviderWithMethods {
+  // Preserve legacy method-only inputs and null failure results at this test
+  // boundary. Production credentials and successful-result types stay strict.
+  return provider as OAuthProviderWithMethods;
+}
 
 async function createOAuthCallbackRequest(providerId: string, secret: string, code = 'abc123', state = 'xyz'): Promise<Request> {
   const cookie = await signStatePayload(
@@ -19,7 +31,7 @@ async function createOAuthCallbackRequest(providerId: string, secret: string, co
 }
 
 vi.mock('../../src/runtime/auth/jwt.js', () => ({
-  decodeJWT: vi.fn(async ({ token }: any) => {
+  decodeJWT: vi.fn(async ({ token }: DecodeJWTParams) => {
     if (token === 'valid-encrypted-token') {
       return {
         user: { id: '1', email: 'test@example.com', name: 'Test', image: null },
@@ -46,7 +58,7 @@ vi.mock('../../src/runtime/auth/csrf.js', () => ({
 }));
 
 vi.mock('../../src/runtime/auth/session.js', () => ({
-  createJWTPayload: vi.fn((result: any) => ({
+  createJWTPayload: vi.fn((result: ProviderResult) => ({
     user: result.user,
     accessToken: result.tokens.accessToken,
     refreshToken: result.tokens.refreshToken,
@@ -71,7 +83,7 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
     return { session: null, token: null, updated: false };
   }),
   encodeSession: vi.fn(async () => 'new-encrypted-token'),
-  toSession: vi.fn((token: any) => ({
+  toSession: vi.fn((token: JWTPayload) => ({
     user: token.user,
     expires: new Date(Date.now() + 86400000).toISOString(),
   })),
@@ -84,11 +96,15 @@ function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig
         id: 'credentials',
         name: 'Credentials',
         type: 'credentials',
-        authorize: vi.fn(async (creds: any) => ({
-          tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
-          user: { id: '1', email: creds.email || 'a@b.com', name: 'Test', image: null },
-        })),
-      } as any,
+        authorize: vi.fn<CredentialsProviderConfig['authorize']>(async (creds) => {
+          const email = creds.email || 'a@b.com';
+          if (typeof email !== 'string') throw new TypeError('The credentials fixture requires a string email');
+          return {
+            tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
+            user: { id: '1', email, name: 'Test', image: null },
+          };
+        }),
+      },
     ],
     callbacks: {
       jwt: async ({ token }) => token,
@@ -134,7 +150,7 @@ function buildRequest(path: string, options: RequestInit & { cookies?: Record<st
 }
 
 describe('Handlers — signIn extended', () => {
-  let fetchSpy: any;
+  let fetchSpy: MockInstance<typeof fetch> | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -197,7 +213,7 @@ describe('Handlers — signIn extended', () => {
       callbacks: {
         jwt: async ({ token }) => token,
         session: async ({ session }) => session,
-        signIn: async () => 'http://redirect.example.com/path' as any,
+        signIn: async () => 'http://redirect.example.com/path',
         redirect: async ({ url, baseUrl }) => (url.startsWith('/') ? `${baseUrl}${url}` : url),
         authorized: async ({ auth }) => !!auth,
       },
@@ -245,12 +261,12 @@ describe('Handlers — signIn extended', () => {
   it('should handle OAuth provider with getAuthorizeUrl', async () => {
     const config = makeConfig({
       providers: [
-        {
+        legacyOAuthFixture({
           id: 'github',
           name: 'GitHub',
           type: 'oauth',
           getAuthorizeUrl: vi.fn(async () => 'https://github.com/login/oauth/authorize?client_id=xxx'),
-        } as any,
+        }),
       ],
     });
     const { POST } = createHandlers(config);
@@ -270,7 +286,7 @@ describe('Handlers — signIn extended', () => {
   it('should handle OAuth provider with exchangeToken', async () => {
     const config = makeConfig({
       providers: [
-        {
+        legacyOAuthFixture({
           id: 'google',
           name: 'Google',
           type: 'oauth',
@@ -278,7 +294,7 @@ describe('Handlers — signIn extended', () => {
             tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
             user: { id: '1', email: 'g@g.com', name: 'GUser', image: null },
           })),
-        } as any,
+        }),
       ],
     });
     const { POST } = createHandlers(config);
@@ -298,12 +314,12 @@ describe('Handlers — signIn extended', () => {
   it('should fail signIn with missing OAuth idToken', async () => {
     const config = makeConfig({
       providers: [
-        {
+        legacyOAuthFixture({
           id: 'google',
           name: 'Google',
           type: 'oauth',
           exchangeToken: vi.fn(async () => null),
-        } as any,
+        }),
       ],
     });
     const { POST } = createHandlers(config);
@@ -320,7 +336,7 @@ describe('Handlers — signIn extended', () => {
 });
 
 describe('Handlers — signUp extended', () => {
-  let fetchSpy: any;
+  let fetchSpy: MockInstance<typeof fetch> | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -520,7 +536,7 @@ describe('Handlers — OAuth callback extended', () => {
   it('should handle successful OAuth callback with code', async () => {
     const config = makeConfig({
       providers: [
-        {
+        legacyOAuthFixture({
           id: 'github',
           name: 'GitHub',
           type: 'oauth',
@@ -528,7 +544,7 @@ describe('Handlers — OAuth callback extended', () => {
             tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
             user: { id: '1', email: 'gh@gh.com', name: 'GH', image: null },
           })),
-        } as any,
+        }),
       ],
     });
     const { GET } = createHandlers(config);
@@ -545,12 +561,12 @@ describe('Handlers — OAuth callback extended', () => {
   it('should redirect to error page when handleCallback returns null', async () => {
     const config = makeConfig({
       providers: [
-        {
+        legacyOAuthFixture({
           id: 'github',
           name: 'GitHub',
           type: 'oauth',
           handleCallback: vi.fn(async () => null),
-        } as any,
+        }),
       ],
     });
     const { GET } = createHandlers(config);
@@ -565,12 +581,12 @@ describe('Handlers — OAuth callback extended', () => {
     const config = makeConfig({
       pages: { error: '/custom-error' },
       providers: [
-        {
+        legacyOAuthFixture({
           id: 'github',
           name: 'GitHub',
           type: 'oauth',
           handleCallback: vi.fn(),
-        } as any,
+        }),
       ],
     });
     const { GET } = createHandlers(config);
@@ -615,7 +631,7 @@ describe('Handlers — debug logging', () => {
 });
 
 describe('Handlers — signOut with session token', () => {
-  let fetchSpy: any;
+  let fetchSpy: MockInstance<typeof fetch> | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();

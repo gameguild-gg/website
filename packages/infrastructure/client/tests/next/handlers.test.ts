@@ -4,7 +4,16 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { parseCookieHeader, parseCookies, parseBackendAuthResponse, createHandlers } from '../../src/integrations/next/handlers.js';
-import type { ResolvedAuthConfig, ProviderResult } from '../../src/runtime/auth/types.js';
+import type { CredentialsProviderConfig, JWTPayload, ResolvedAuthConfig, ProviderResult } from '../../src/runtime/auth/types.js';
+import type { OAuthProviderWithMethods } from '../../src/integrations/next/oauth-helpers.js';
+
+type DecodeJWTParams = Parameters<typeof import('../../src/runtime/auth/jwt.js').decodeJWT>[0];
+type OAuthCallbackFixture = Omit<OAuthProviderWithMethods, 'clientId' | 'clientSecret'>;
+
+function legacyOAuthFixture(provider: OAuthCallbackFixture): OAuthProviderWithMethods {
+  // These early-error cases deliberately omit credentials. No exchange executes.
+  return provider as OAuthProviderWithMethods;
+}
 
 function makeUnsignedJwt(payload: Record<string, unknown>): string {
   const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -13,7 +22,7 @@ function makeUnsignedJwt(payload: Record<string, unknown>): string {
 
 // Mock the auth modules
 vi.mock('../../src/runtime/auth/jwt.js', () => ({
-  decodeJWT: vi.fn(async ({ token, secret }: any) => {
+  decodeJWT: vi.fn(async ({ token }: DecodeJWTParams) => {
     if (token === 'valid-encrypted-token') {
       return {
         user: { id: '1', email: 'test@example.com', name: 'Test', image: null },
@@ -50,7 +59,7 @@ vi.mock('../../src/runtime/auth/csrf.js', () => ({
 }));
 
 vi.mock('../../src/runtime/auth/session.js', () => ({
-  createJWTPayload: vi.fn((result: any, config: any) => ({
+  createJWTPayload: vi.fn((result: ProviderResult) => ({
     user: result.user,
     accessToken: result.tokens.accessToken,
     refreshToken: result.tokens.refreshToken,
@@ -58,7 +67,7 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 86400,
   })),
-  processSession: vi.fn(async (token: string, config: any) => {
+  processSession: vi.fn(async (token: string) => {
     if (token === 'valid-encrypted-token') {
       return {
         session: {
@@ -75,7 +84,7 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
     return { session: null, token: null, updated: false };
   }),
   encodeSession: vi.fn(async () => 'new-encrypted-token'),
-  toSession: vi.fn((token: any) => ({
+  toSession: vi.fn((token: JWTPayload) => ({
     user: token.user,
     expires: new Date(Date.now() + 86400000).toISOString(),
   })),
@@ -165,11 +174,17 @@ function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig
         id: 'credentials',
         name: 'Credentials',
         type: 'credentials',
-        authorize: vi.fn(async (creds: any) => ({
-          tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
-          user: { id: '1', email: creds.email, name: 'Test', image: null },
-        })),
-      } as any,
+        authorize: vi.fn<CredentialsProviderConfig['authorize']>(async (creds) => {
+          const email = creds.email;
+          if (email !== undefined && email !== null && typeof email !== 'string') {
+            throw new TypeError('The credentials fixture requires a string, null or absent email');
+          }
+          return {
+            tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
+            user: { id: '1', email, name: 'Test', image: null },
+          };
+        }),
+      },
     ],
     callbacks: {
       jwt: async ({ token }) => token,
@@ -385,12 +400,12 @@ describe('createHandlers', () => {
     it('should redirect for callback with error param', async () => {
       const config = makeConfig({
         providers: [
-          {
+          legacyOAuthFixture({
             id: 'google',
             name: 'Google',
             type: 'oauth',
             handleCallback: vi.fn(),
-          } as any,
+          }),
         ],
       });
       const { GET } = createHandlers(config);
@@ -406,12 +421,12 @@ describe('createHandlers', () => {
     it('should redirect for callback without code', async () => {
       const config = makeConfig({
         providers: [
-          {
+          legacyOAuthFixture({
             id: 'google',
             name: 'Google',
             type: 'oauth',
             handleCallback: vi.fn(),
-          } as any,
+          }),
         ],
       });
       const { GET } = createHandlers(config);
