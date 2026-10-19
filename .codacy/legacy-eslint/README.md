@@ -160,6 +160,13 @@ by the TypeScript project's `resolveJsonModule`. Hosted controls and per-extensi
 mode probes must verify these boundaries; runtime improvement still requires
 the actual complete-source pass. No time limit or analysis input is removed.
 
+The standard-source registration is cleared in the new base profile itself.
+ESLint8 merges parser-option arrays across overrides, so appending an empty
+array cannot clear a nonempty earlier registration. Vue's inherited override
+and a separate JSM override retain their own custom extensions. The failing
+37-case candidate is retained as evidence of that merge behavior; its mode
+and JSON-import assertions remain unchanged.
+
 The hosted pass requires the tracked working tree to match its checkout after
 dependency installation and again after analysis. It records the SHA256 and
 byte length of each actual input buffer before linting it. Independent evidence

@@ -177,6 +177,7 @@ function createRepositoryProfile(projection, nodeTargets, typeScriptProject = '/
       ignorePatterns: ['!**/*'],
       noInlineConfig: true,
       parser: parser(projection.options.baseConfig.parser),
+      parserOptions: { ...projection.options.baseConfig.parserOptions, extraFileExtensions: [] },
       settings: { ...settings,
         flowtype: { ...settings.flowtype, onlyFilesWithFlowAnnotation: true },
         'import/resolver': importResolvers,
@@ -194,11 +195,12 @@ function createRepositoryProfile(projection, nodeTargets, typeScriptProject = '/
         // override omitted that project while leaving typed plugin rules on.
         // Supply their type services instead of suppressing those rules.
         {
-          files: ['*.js', '*.jsx', '*.mjs', '*.cjs', '*.jsm'],
-          parserOptions: { project: typeScriptProject,
-            extraFileExtensions: [...new Set([
-              ...(projection.options.baseConfig.parserOptions.extraFileExtensions ?? []), '.jsm',
-            ])] },
+          files: ['*.js', '*.jsx', '*.mjs', '*.cjs'],
+          parserOptions: { project: typeScriptProject },
+        },
+        {
+          files: ['*.jsm'],
+          parserOptions: { project: typeScriptProject, extraFileExtensions: ['.jsm'] },
         },
         {
           files: ['*.ts', '*.tsx', '*.mts', '*.cts', '*.vue'],
