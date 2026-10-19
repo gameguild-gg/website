@@ -48,9 +48,22 @@ const repairs = [
     version: '45.0.0',
     file: 'lib/rules/prefer-class-properties.js',
     sha256: 'a9ab19cc5ade3451d6795edede0c7ef07b560bcc93aa0e60ea98d117ace25d13',
-    repairedSha256: '818de3925f96bd9fa56a839e3304ab3efc1b1bef03530b74815799f054263077',
+    repairedSha256: '250c0617369c25d6ace77164f7b8d8913de07368d75846b8c550b69c0987bd7f',
     replacements: [
       ['return functionNode.body.body', 'return (functionNode?.body?.body ?? [])'],
+      ['    function isSimpleLiteral(node) {\n      return (',
+        '    function isSimpleLiteral(node) {\n      return node !== undefined && (\n        node === null ||'],
+    ],
+  },
+  {
+    package: 'eslint-plugin-es-x',
+    version: '7.8.0',
+    file: 'lib/util/define-prototype-method-handler/object-type-checker-for-ts.js',
+    sha256: '92afb21c6ea936cbb996d1b370e94a32f6e6eecabf00f448073fb0b034f9bf14',
+    repairedSha256: 'd1509a6531948990aff20b47ba1945bfd51ed984adaa8837b46ed4da6bc0652f',
+    replacements: [
+      ['            for (const declaration of declarations) {\n                const type =',
+        '            for (const declaration of declarations) {\n                if (!declaration.parent || !declaration.parent.parent) {\n                    continue\n                }\n                const type ='],
     ],
   },
   {

@@ -46,5 +46,23 @@
     "file": "packages/features/web3/src/types/torus-embed.d.ts",
     "sha256": "49346f9ac81857c9ccd5b2578f86cc88106f746f70accbf016bb51501e6e57db",
     "observedAtHead": "6a719e931205469619ad723d83238b714496d6bc"
+  },
+  {
+    "ruleId": "@shopify/prefer-class-properties",
+    "file": "packages/infrastructure/client/src/runtime/auth/refresh.ts",
+    "sha256": "615d77d3615a80e1278856ccb3484ece1ea47b6768d17fb8ada17645c0ddae6b",
+    "observedAtHead": "273d719659c437d986272635d516687bddfb20b3"
+  },
+  {
+    "ruleId": "es-x/no-set-prototype-union",
+    "file": "packages/infrastructure/client/tests/errors/validation-extended.test.ts",
+    "sha256": "2c132ef4833d95ee0bf262fdce945c3c9a79519a509934c3400e23add385ef6f",
+    "observedAtHead": "273d719659c437d986272635d516687bddfb20b3"
+  },
+  {
+    "ruleId": "es-x/no-set-prototype-union",
+    "file": "packages/infrastructure/client/tests/errors/validation-transform.test.ts",
+    "sha256": "f30bdca26848c3415c5ee31b37d8cc5043b99983ace1cebcf6d91044b14b9378",
+    "observedAtHead": "273d719659c437d986272635d516687bddfb20b3"
   }
 ]

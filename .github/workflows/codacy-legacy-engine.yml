@@ -90,10 +90,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { label: partition-0, partition: 0, count: 4 }
-          - { label: partition-1, partition: 1, count: 4 }
-          - { label: partition-2, partition: 2, count: 4 }
-          - { label: partition-3, partition: 3, count: 4 }
+          - { label: partition-0, partition: 0, count: 8 }
+          - { label: partition-1, partition: 1, count: 8 }
+          - { label: partition-2, partition: 2, count: 8 }
+          - { label: partition-3, partition: 3, count: 8 }
+          - { label: partition-4, partition: 4, count: 8 }
+          - { label: partition-5, partition: 5, count: 8 }
+          - { label: partition-6, partition: 6, count: 8 }
+          - { label: partition-7, partition: 7, count: 8 }
           - label: diagnostic
             partition: 0
             count: 1

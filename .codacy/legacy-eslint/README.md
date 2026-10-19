@@ -21,6 +21,12 @@ versions and file hashes must therefore match independently in hosted CI.
   nullable handler and retain the existing missing-handler diagnostic.
 - Shopify class properties: a TypeScript declared constructor has no body.
   Accept that declaration while retaining diagnostics on real assignments.
+  Dynamic object spreads are not literal properties, and a hole in a literal
+  array is not an AST node. Handle both without losing literal diagnostics.
+- ES-X typed methods: a top-level exported function's declaration container is
+  the parentless source-file root. Do not ask TypeScript for the type of that
+  invalid location. The object-expression fallback and real Set method checks
+  remain in place.
 - React Native raw text: a template literal can contain no expressions. Use
   its literal text for the diagnostic and retain the allowed Text boundary.
 - Flow type imports: a namespace specifier cannot be converted into an inline
@@ -99,16 +105,19 @@ latency guarantee; an incomplete pass cannot be accepted as a complete scan.
 The analysis step has a shorter 20-minute limit, leaving time within the job
 budget for the unconditional checkpoint artifact upload after a failure.
 
-Four independent partitions now cover the complete selected-source list by
-index modulo four. No rule or source is removed. Matrix fail-fast is disabled
-so an error in one partition does not cancel the others. A partition can only
-certify its own traversal; independent collection must verify all four have
+Eight independent partitions now cover the complete selected-source list by
+index modulo eight. The earlier four-partition scan exceeded the analysis limit
+in two partitions, including one generated file that took nearly eleven minutes.
+No rule or source is removed and neither time limit is increased. Matrix
+fail-fast is disabled so an error in one partition does not cancel the others. A partition can only
+certify its own traversal; independent collection must derive the partition
+count from the immutable workflow and verify all partitions have
 the same source/configuration identity, cover the original list exactly once,
 and satisfy the complete-analysis conditions before accepting a full scan.
 
-A separate diagnostic matrix entry repeats eight actual files from the first
-incomplete pass, requiring their immutable input hashes. It retains only known
-exception reason codes and dependency frames, with no raw messages or source
+A separate diagnostic matrix entry repeats the original eight actual files
+and three subsequent crash inputs, requiring their immutable input hashes. It
+retains only known exception reason codes and dependency frames, with no raw messages or source
 frames. This sample cannot certify repository coverage and its counts overlap
 the full partitions. The e30d4a35 diagnostic still failed in Import, Lodash FP,
 Perfectionist and JSX accessibility. The following candidate changes require
@@ -136,6 +145,12 @@ Public analysis artifacts contain rule IDs, categories and code-quality
 locations without messages, snippets or fixes. Security results have aggregate
 rule counts only. Raw tool output is disposable and is not uploaded. Detailed
 security evidence and remediation decisions remain in private managed storage.
+
+Some rules report invalid options as ordinary diagnostics. Known missing-option
+errors from `jsdoc/match-name` and `jsdoc/text-escaping` remain in the diagnostic
+stream and also block analysis certification as configuration errors. A missing
+source `@param` remains a documentation diagnostic. Correcting these options is
+separate work; counting the invalid-option messages does not repair them.
 
 ## Evidence
 

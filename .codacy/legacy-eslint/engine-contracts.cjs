@@ -507,3 +507,111 @@ test('Flow annotation context accepts plain JavaScript and retains Flow errors a
     .some((message) => message.ruleId === 'flowtype/require-valid-file-annotation'),
   'A malformed Flow declaration must remain a diagnostic');
 });
+
+test('JSDoc option failures remain visible and block certification while source documentation errors stay distinct', async () => {
+  const profile = repositoryProfile(await projection());
+  const ruleIds = ['jsdoc/match-name', 'jsdoc/text-escaping', 'jsdoc/require-param'];
+  const categories = new Map(ruleIds.map((ruleId) => [ruleId, 'Documentation']));
+  const linter = new Linter();
+  for (const ruleId of ruleIds) {
+    linter.defineRule(ruleId, engineRequire('eslint-plugin-jsdoc').rules[ruleId.slice('jsdoc/'.length)]);
+  }
+  linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
+  const source = '/** Example. */\nfunction documented(value) { return value; }';
+  const check = (rules) => linter.verify(source, {
+    parser: 'engine-typescript', parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+    settings: profile.baseConfig.settings,
+    rules: Object.fromEntries(rules.map((ruleId) => [ruleId, profile.baseConfig.rules[ruleId]])),
+  }, { filename: 'documentation-context.ts' });
+  const options = check(ruleIds.slice(0, 2));
+  assert(options.some((message) => message.ruleId === 'jsdoc/match-name'));
+  assert(options.some((message) => message.ruleId === 'jsdoc/text-escaping'));
+  const invalid = publicDiagnostics(options, 'documentation-context.ts', categories);
+  assert.equal(invalid.configurationErrors, options.length);
+  assert.equal(invalid.diagnostics.length, options.length, 'Retain every invalid-option diagnostic');
+  const missing = check(['jsdoc/require-param']);
+  assert(missing.some((message) => /Missing JSDoc @param/u.test(message.message)));
+  assert.equal(publicDiagnostics(missing, 'documentation-context.ts', categories).configurationErrors, 0);
+  assert.equal(analysisStatus({ selected: 1, attempted: 1, processed: 1, allFilesProcessed: true,
+    engineErrors: 0, configurationErrors: invalid.configurationErrors, fatalParsing: 0,
+    diagnosticCount: options.length }, 0).completeAnalysisCertified, false);
+});
+
+test('class-property detection handles dynamic spreads and array holes without losing literal diagnostics', () => {
+  const run = (source) => lint('@shopify/prefer-class-properties', '@shopify/eslint-plugin',
+    'prefer-class-properties', source);
+  const spread = 'class Contract { constructor(options) { this.options = { ...options }; } }';
+  if (repaired) assert.deepEqual(run(spread), []);
+  else assert.throws(() => run(spread), /Cannot read properties of undefined \(reading 'type'\)/);
+  assertReportedOrOriginalCrash(
+    () => run('class Contract { constructor() { this.items = [, 1]; } }'),
+    /Unexpected assignment of literal instance member/,
+    /Cannot read properties of null \(reading 'type'\)/,
+  );
+  assert.deepEqual(run('class Contract { constructor(options) { this.options = options; } }'), []);
+  const literal = run('class Contract { constructor() { this.options = { value: null }; } }');
+  assert.equal(literal.length, 1);
+  assert.match(literal[0].message, /Unexpected assignment of literal instance member/);
+});
+
+test('typed ES-X detection handles module roots and retains real Set union diagnostics', (context) => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'codacy-es-x-contract-'));
+  context.after(() => rmSync(directory, { recursive: true, force: true }));
+  const sources = {
+    'custom-source.ts': 'export function union(value: string) { return value; }',
+    'custom-only.ts': 'import * as custom from "./custom-source"; custom.union("value");',
+    'set-only.ts': 'const values = new Set<number>(); values.union(new Set<number>()); export {};',
+    'mixed.ts': 'import * as custom from "./custom-source"; custom.union("value");'
+      + ' const values = new Set<number>(); values.union(new Set<number>());',
+  };
+  for (const [filename, source] of Object.entries(sources)) {
+    writeFileSync(path.join(directory, filename), source);
+  }
+  writeFileSync(path.join(directory, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: { target: 'ESNext', module: 'ESNext', lib: ['ESNext'],
+      strict: true, types: [], skipLibCheck: true },
+    include: ['*.ts'],
+  }));
+  const ruleId = 'es-x/no-set-prototype-union';
+  const linter = new Linter();
+  linter.defineRule(ruleId, engineRequire('eslint-plugin-es-x').rules['no-set-prototype-union']);
+  linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
+  const check = (filename) => linter.verify(sources[filename], {
+    parser: 'engine-typescript',
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module',
+      project: path.join(directory, 'tsconfig.json'), tsconfigRootDir: directory },
+    rules: { [ruleId]: ['error', { aggressive: false }] },
+  }, { filename: path.join(directory, filename) });
+  if (repaired) assert.deepEqual(check('custom-only.ts'), []);
+  else assert.throws(() => check('custom-only.ts'), /Cannot read properties of undefined \(reading 'kind'\)/);
+  const realSet = check('set-only.ts');
+  assert.equal(realSet.length, 1);
+  assert.equal(realSet[0].ruleId, ruleId);
+  assert.equal(realSet[0].messageId, 'forbidden');
+  assert.match(realSet[0].message, /Set\.prototype\.union/u);
+  if (repaired) {
+    const mixed = check('mixed.ts');
+    assert.equal(mixed.length, 1);
+    assert.equal(mixed[0].ruleId, ruleId);
+    assert.equal(mixed[0].messageId, 'forbidden');
+  } else assert.throws(() => check('mixed.ts'), /Cannot read properties of undefined \(reading 'kind'\)/);
+});
+
+test('expanded partition counts preserve complete source traversal and the global certification boundary', () => {
+  const files = Array.from({ length: 3279 }, (value, index) => `source-${index}.ts`);
+  for (const count of [4, 8, 16]) {
+    const partitions = Array.from({ length: count }, (value, index) => partitionSources(files, index, count));
+    assert.equal(partitions.flat().length, files.length);
+    assert.equal(new Set(partitions.flat()).size, files.length);
+    assert.deepEqual([...partitions.flat()].sort(), [...files].sort());
+    assert(Math.max(...partitions.map((part) => part.length))
+      - Math.min(...partitions.map((part) => part.length)) <= 1);
+    for (const part of partitions) {
+      const report = { selected: part.length, attempted: part.length, processed: part.length,
+        allFilesProcessed: true, engineErrors: 0, configurationErrors: 0,
+        fatalParsing: 0, diagnosticCount: 0, partition: { count } };
+      assert.equal(qualifiedAnalysisStatus(report, 0).partitionAnalysisComplete, true);
+      assert.equal(qualifiedAnalysisStatus(report, 0).completeAnalysisCertified, false);
+    }
+  }
+});

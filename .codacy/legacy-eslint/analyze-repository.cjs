@@ -17,7 +17,11 @@ function publicDiagnostics(messages, filename, categories) {
     const category = ruleId === null ? 'ParserOrConfiguration' : categories.get(ruleId);
     const missingRule = typeof message.message === 'string'
       && message.message.startsWith('Definition for rule ');
-    if (!known || missingRule) configurationErrors += 1;
+    const invalidRuleOptions = (ruleId === 'jsdoc/text-escaping'
+      && message.message === 'You must include either `escapeHTML` or `escapeMarkdown`')
+      || (ruleId === 'jsdoc/match-name'
+        && message.message === 'Rule `no-restricted-syntax` is missing a `match` option.');
+    if (!known || missingRule || invalidRuleOptions) configurationErrors += 1;
     if (category === 'Security' || /^(?:security(?:-node)?|no-unsanitized|xss)\//u.test(ruleId || '')) {
       securityCounts[ruleId] = (securityCounts[ruleId] || 0) + 1;
       continue;
