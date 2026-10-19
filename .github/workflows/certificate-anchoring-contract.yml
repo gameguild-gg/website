@@ -1,0 +1,56 @@
+name: Certificate anchoring contract
+
+on:
+  pull_request:
+    paths:
+      - "contracts/certificate-anchoring/**"
+      - ".github/workflows/certificate-anchoring-contract.yml"
+  push:
+    branches: [develop, main]
+    paths:
+      - "contracts/certificate-anchoring/**"
+      - ".github/workflows/certificate-anchoring-contract.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: certificate-anchoring-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: EVM certificate contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: contracts/certificate-anchoring
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install pinned Foundry
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+        with:
+          version: v1.8.5
+          cache: "false"
+      - name: Record exact hosted source and tools
+        run: |
+          mkdir -p artifacts
+          git rev-parse HEAD > artifacts/checkout-commit.txt
+          git rev-parse 'HEAD^{tree}' > artifacts/checkout-tree.txt
+          forge --version > artifacts/foundry-version.txt
+      - name: Compile contract and export ABI and bytecode
+        run: forge build --sizes
+      - name: Execute EVM tests
+        run: forge test --junit > artifacts/contract-tests.xml
+      - name: Retain source-scoped contract evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: certificate-anchoring-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            contracts/certificate-anchoring/artifacts/
+            contracts/certificate-anchoring/out/CertificateAnchorRegistry.sol/CertificateAnchorRegistry.json
