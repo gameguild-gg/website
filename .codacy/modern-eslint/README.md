@@ -41,8 +41,19 @@ Its separate artifact may retain stdout/stderr because the container has no
 repository source, Git metadata, host environment or credentials. This control
 does not replace the full tracked-source pass or classify that pass's output
 automatically. Actual-source raw output remains excluded and unknown bytes
-still fail certification. A failed synthetic probe does not skip full source
-analysis when the root configuration controls have passed.
+still fail certification. Full source analysis follows successful comparison
+of the native factory and effective configuration under both loaders.
+
+The isolated control identified the 150 bytes as Node's `DEP0180` warning for
+the `fs.Stats` constructor. A comparison candidate uses `tsx` 4.23.1 already
+present in the same immutable image, with the vendor TypeScript configuration.
+The original loader retains a deprecation trace in its synthetic-only artifact.
+Both runs must retain identical factory options, effective rules, parser
+identities, input hashes and detections. A preloaded baseline also requires
+`process.emit`, `process.emitWarning` and `stderr.write` to remain unchanged by
+loader initialization. The replacement control and complete source analysis
+still require zero tool-output bytes. No warning filter or finding suppression
+is installed, and the vendor image is not modified.
 
 No application dependency, cloud setting, finding state, suppression or
 credential is changed by this workflow. Product execution stays in hosted CI.

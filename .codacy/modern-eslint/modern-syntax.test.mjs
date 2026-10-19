@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import test from 'node:test';
+import loaderProvenance from './loader-provenance.cjs';
 
 const require = createRequire('/app/package.json');
 const { ESLint } = require('eslint');
@@ -24,4 +25,8 @@ test('modern engine retains undefined-reference detection while parsing modern e
   });
   assert.equal(result.fatalErrorCount, 0);
   assert.deepEqual(result.messages.map((message) => message.ruleId), ['no-undef']);
+});
+
+test('loader warning transparency requires a baseline captured before initialization', () => {
+  assert.throws(() => loaderProvenance.assertOriginalWarningOutput(), /must be preloaded before the vendor loader/u);
 });

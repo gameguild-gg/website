@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import loaderProvenance from './loader-provenance.cjs';
 
 // This diagnostic container receives only this script, the public lint config
 // and an empty evidence directory. Every analyzed input below is synthetic.
@@ -19,6 +20,7 @@ const report = {
   scriptSha256: digest(readFileSync(fileURLToPath(import.meta.url))),
   configSha256: digest(readFileSync(configInput)),
   repositoryInputs: 0,
+  warningOutput: loaderProvenance.assertOriginalWarningOutput(),
   cases: [],
   complete: false,
   certifiedDestinationClosures: 0,
@@ -29,6 +31,13 @@ const write = () => writeFileSync(path.join(evidence, 'synthetic-factory.json'),
 write();
 
 try {
+  const loader = process.execArgv.includes('--import=/app/node_modules/tsx/dist/loader.mjs') ? 'tsx' : 'ts-node';
+  assert(process.execArgv.includes(loader === 'tsx'
+    ? '--import=/app/node_modules/tsx/dist/loader.mjs' : '--import=/app/register.js'));
+  const loaderBytes = readFileSync(engineRequire.resolve(`${loader}/package.json`));
+  const loaderVersion = JSON.parse(loaderBytes).version;
+  assert.equal(loaderVersion, loader === 'tsx' ? '4.23.1' : '10.9.2');
+  report.loader = { name: loader, version: loaderVersion, packageSha256: digest(loaderBytes) };
   const root = mkdtempSync(path.join(tmpdir(), 'codacy-synthetic-factory-'));
   mkdirSync(path.join(root, 'packages/tooling/eslint'), { recursive: true });
   writeFileSync(path.join(root, 'packages/tooling/eslint/package.json'),
@@ -65,14 +74,20 @@ try {
   assert.deepEqual(files, selected);
   assert.equal(options.overrideConfigFile, path.join(root, 'eslint.config.mjs'));
   report.rootConfigurationSelectedByFactory = true;
+  report.factoryOptionsSha256 = digest(JSON.stringify({ ...options, overrideConfigFile: '<synthetic-root>/eslint.config.mjs' }));
   const { ESLint } = engineRequire('eslint');
   const eslint = new ESLint({ ...options, cwd: root, ignore: false, allowInlineConfig: false });
   for (const control of controls) {
+    const config = await eslint.calculateConfigForFile(path.join(root, control.file));
+    const rules = Object.fromEntries(Object.entries(config.rules).sort(([a], [b]) => a.localeCompare(b)));
     const [result] = await eslint.lintFiles([path.join(root, control.file)]);
     assert.equal(result.fatalErrorCount, 0);
     assert.deepEqual(result.messages.map((message) => message.ruleId), control.rules);
-    report.cases.push({ file: control.file, inputSha256: digest(control.source), rules: control.rules, passed: true });
+    report.cases.push({ file: control.file, inputSha256: digest(control.source), rules: control.rules,
+      effectiveRulesSha256: digest(JSON.stringify(rules)), parser: config.languageOptions.parser.meta,
+      sourceType: config.languageOptions.sourceType, passed: true });
   }
+  report.warningOutputAfterFactory = loaderProvenance.assertOriginalWarningOutput();
   report.complete = true;
 } finally {
   write();

@@ -62,16 +62,50 @@ jobs:
             -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
             -v "$PWD/.codacy/modern-eslint/factory-control.mjs:/probe/factory-control.mjs:ro" \
             -v "$PWD/eslint.config.mjs:/probe/root-eslint.config.mjs:ro" \
+            -v "$PWD/.codacy/modern-eslint/loader-provenance.cjs:/probe/loader-provenance.cjs:ro" \
             -v "$PWD/factory-control-evidence:/factory-evidence" "$ENGINE_IMAGE" \
-            node --import=/app/register.js /probe/factory-control.mjs /factory-evidence \
+            node --trace-deprecation --require=/probe/loader-provenance.cjs \
+            --import=/app/register.js /probe/factory-control.mjs /factory-evidence \
             > factory-control-evidence/vendor-stdout.txt 2> factory-control-evidence/vendor-stderr.txt \
             || probe_status=$?
           printf '%s\n' "$probe_status" > factory-control-evidence/exit.txt
           sha256sum factory-control-evidence/vendor-stdout.txt factory-control-evidence/vendor-stderr.txt \
             > factory-control-evidence/output-hashes.txt
           exit "$probe_status"
-      - name: Analyze every tracked JavaScript and TypeScript source
+      - name: Verify the bundled tsx loader with the same synthetic source
+        id: tsx-factory-control
         if: ${{ !cancelled() && steps.root-contracts.outcome == 'success' }}
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir factory-tsx-control-evidence
+          printf '%s\n' "$CANDIDATE_HEAD" > factory-tsx-control-evidence/head.txt
+          printf '%s\n' "$ENGINE_IMAGE" > factory-tsx-control-evidence/engine-image.txt
+          probe_status=0
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --user "$(id -u):$(id -g)" --workdir /tmp \
+            -e TSX_TSCONFIG_PATH=/app/workspaces/codacy/tsconfig.json \
+            -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            -v "$PWD/.codacy/modern-eslint/factory-control.mjs:/probe/factory-control.mjs:ro" \
+            -v "$PWD/eslint.config.mjs:/probe/root-eslint.config.mjs:ro" \
+            -v "$PWD/.codacy/modern-eslint/loader-provenance.cjs:/probe/loader-provenance.cjs:ro" \
+            -v "$PWD/factory-tsx-control-evidence:/factory-evidence" "$ENGINE_IMAGE" \
+            node --require=/probe/loader-provenance.cjs \
+            --import=/app/node_modules/tsx/dist/loader.mjs /probe/factory-control.mjs /factory-evidence \
+            > factory-tsx-control-evidence/vendor-stdout.txt 2> factory-tsx-control-evidence/vendor-stderr.txt \
+            || probe_status=$?
+          printf '%s\n' "$probe_status" > factory-tsx-control-evidence/exit.txt
+          sha256sum factory-tsx-control-evidence/vendor-stdout.txt factory-tsx-control-evidence/vendor-stderr.txt \
+            > factory-tsx-control-evidence/output-hashes.txt
+          exit "$probe_status"
+      - name: Compare native factory inputs, effective rules and detections
+        id: compare-factories
+        if: ${{ !cancelled() && steps.factory-control.outcome == 'success' && steps.tsx-factory-control.outcome == 'success' }}
+        run: |
+          node .codacy/modern-eslint/compare-factory-controls.mjs \
+            "$PWD/factory-control-evidence" "$PWD/factory-tsx-control-evidence"
+      - name: Analyze every tracked JavaScript and TypeScript source
+        if: ${{ !cancelled() && steps.compare-factories.outcome == 'success' }}
         timeout-minutes: 10
         env:
           CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
@@ -79,10 +113,11 @@ jobs:
           analysis_status=0
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
             --user "$(id -u):$(id -g)" \
-            -e TS_NODE_PROJECT=/app/workspaces/codacy/tsconfig.json \
+            -e TSX_TSCONFIG_PATH=/app/workspaces/codacy/tsconfig.json \
             -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
             -v "$PWD:/src:ro" -v "$PWD/modern-evidence:/evidence" "$ENGINE_IMAGE" \
-            node --import=/app/register.js /src/.codacy/modern-eslint/analyze-repository.mjs /evidence \
+            node --require=/src/.codacy/modern-eslint/loader-provenance.cjs \
+            --import=/app/node_modules/tsx/dist/loader.mjs /src/.codacy/modern-eslint/analyze-repository.mjs /evidence \
             > modern-evidence/disposable-tool-output.log 2>&1 || analysis_status=$?
           git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD --
           printf '%s\n' tracked-files-match-checkout > modern-evidence/source-after.txt
@@ -95,6 +130,13 @@ jobs:
         with:
           name: codacy-modern-factory-${{ github.event.pull_request.head.sha }}
           path: factory-control-evidence
+          if-no-files-found: error
+      - name: Upload the synthetic-only tsx comparison evidence
+        if: ${{ always() && steps.tsx-factory-control.outcome != 'skipped' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-modern-tsx-factory-${{ github.event.pull_request.head.sha }}
+          path: factory-tsx-control-evidence
           if-no-files-found: error
       - name: Upload coverage and redacted diagnostic evidence
         if: always()

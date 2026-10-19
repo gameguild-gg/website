@@ -4,6 +4,7 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import provenance from '../legacy-eslint/tool-output-provenance.cjs';
+import loaderProvenance from './loader-provenance.cjs';
 
 const engineRequire = createRequire('/app/package.json');
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -21,10 +22,13 @@ const report = {
   completeSourceAnalysis: false, cleanAnalysis: false, certifiedDestinationClosures: 0,
 };
 write('summary.json', report);
-provenance.installToolOutputProvenance(output);
-let stage = 'manifest';
+let stage = 'loader-warning-transparency';
 
 try {
+  report.warningOutput = loaderProvenance.assertOriginalWarningOutput();
+  provenance.installToolOutputProvenance(output);
+  const observedStderrWrite = process.stderr.write;
+  stage = 'manifest';
   const manifest = readFileSync(path.join(output, 'tracked-files.nul'));
   const tracked = manifest.toString('utf8').split('\0').filter(Boolean);
   assert.equal(tracked.length, new Set(tracked).size, 'Duplicate tracked source');
@@ -51,6 +55,10 @@ try {
     assert.equal(actual, version, `${name}: immutable engine version drift`);
     return [name, { version: actual, filename, sha256: digest(bytes) }];
   }));
+  assert(process.execArgv.includes('--import=/app/node_modules/tsx/dist/loader.mjs'));
+  const loaderBytes = readFileSync(engineRequire.resolve('tsx/package.json'));
+  assert.equal(JSON.parse(loaderBytes).version, '4.23.1');
+  report.loader = { name: 'tsx', version: '4.23.1', packageSha256: digest(loaderBytes) };
   const factoryPath = '/app/workspaces/codacy/src/configCreator.ts';
   const factoryHash = digest(readFileSync(factoryPath));
   stage = 'native-configuration-factory';
@@ -150,6 +158,8 @@ try {
     }
     write('summary.json', report);
   }
+  report.warningOutputAfterAnalysis = loaderProvenance.assertWarningEmissionUnchanged();
+  assert.equal(process.stderr.write, observedStderrWrite, 'The observed stderr writer changed during analysis');
   report.allFilesProcessed = report.processed === selected.length && report.attempted === selected.length;
   report.completeSourceAnalysis = report.allFilesProcessed && report.engineErrors === 0
     && report.fatalParsing === 0 && report.configurationErrors === 0;
