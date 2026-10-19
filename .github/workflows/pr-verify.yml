@@ -117,6 +117,20 @@ jobs:
         run: pnpm --filter @game-guild/client build
       - name: Test credentials and MFA client integration
         run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts --maxWorkers=1
+      - name: Collect feed test registration
+        id: feed-fixture-list
+        run: |
+          mkdir -p artifacts/test-results/feed-fixture-registration
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse HEAD > artifacts/test-results/feed-fixture-registration/checkout.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse 'HEAD^{tree}' > artifacts/test-results/feed-fixture-registration/tree.txt
+          pnpm exec playwright test e2e/feed.spec.ts --list --reporter=json > artifacts/test-results/feed-fixture-registration/report.json
+      - name: Upload feed fixture registration evidence
+        if: ${{ always() && steps.feed-fixture-list.outcome != 'skipped' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: feed-fixture-registration-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/feed-fixture-registration
+          if-no-files-found: error
       - name: Acquire verified Toolchain release for Web
         id: emception-web-release
         env:

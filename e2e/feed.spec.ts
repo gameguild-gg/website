@@ -1,4 +1,4 @@
-import { test, expect, request, type APIRequestContext } from "playwright/test";
+import { test, expect, type APIRequest, type APIRequestContext } from "playwright/test";
 
 // Feed regression e2e — soft-nav no-remount + infinite scroll.
 // Skip unless E2E_RUN=1; needs the signed-in dev web app (see signIn helper).
@@ -26,14 +26,14 @@ async function signIn(api: APIRequestContext): Promise<string> {
 }
 
 test.use({
-  storageState: async ({ }, use) => {
-    const state = await storageStateFixture();
+  storageState: async ({ playwright }, use) => {
+    const state = await storageStateFixture(playwright.request);
     await use(state);
   },
 });
 
-async function storageStateFixture(): Promise<{ cookies: { name: string; value: string; domain: string; path: string; expires: number; httpOnly: boolean; secure: boolean; sameSite: "Strict" | "Lax" | "None" }[]; origins: [] }> {
-  const api = await request.newContext();
+async function storageStateFixture(requestFactory: APIRequest): Promise<{ cookies: { name: string; value: string; domain: string; path: string; expires: number; httpOnly: boolean; secure: boolean; sameSite: "Strict" | "Lax" | "None" }[]; origins: [] }> {
+  const api = await requestFactory.newContext();
   try {
     const cookie = await signIn(api);
     const [name, value] = cookie.split("=");
