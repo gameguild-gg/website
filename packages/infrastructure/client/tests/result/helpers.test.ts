@@ -180,7 +180,7 @@ describe('Result Helpers', () => {
 
       const result: Result<User, UserError> = ok({ id: '123', name: 'Alice' });
 
-      const greeting = match(result, {
+      const greeting = match<User, UserError, string>(result, {
         ok: (user) => `Hello, ${user.name}!`,
         err: (error) => `Error ${error.code}: ${error.message}`,
       });
@@ -230,7 +230,7 @@ describe('Result Helpers', () => {
 
     it('should pass through error unchanged', () => {
       const result: Result<number, string> = err('error');
-      const mapped = map(result, (x) => x * 2);
+      const mapped = map<number, number, string>(result, (x) => x * 2);
       expect(isErr(mapped)).toBe(true);
       if (!mapped.ok) expect(mapped.error).toBe('error');
     });
@@ -281,7 +281,7 @@ describe('Result Helpers', () => {
 
     it('should pass through original error', () => {
       const result: Result<number, string> = err('initial error');
-      const chained = flatMap(result, (x) => ok(x * 2));
+      const chained = flatMap<number, number, string>(result, (x) => ok(x * 2));
       expect(isErr(chained)).toBe(true);
       if (!chained.ok) expect(chained.error).toBe('initial error');
     });

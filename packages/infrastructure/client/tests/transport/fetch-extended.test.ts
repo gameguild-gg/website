@@ -115,8 +115,8 @@ describe('createFetchTransport — extended', () => {
   });
 
   it('should handle timeout with AbortController', async () => {
-    globalThis.fetch = vi.fn(async (_url: any, opts: any) => {
-      return new Promise((_, reject) => {
+    globalThis.fetch = vi.fn(async (_url: Parameters<typeof fetch>[0], opts?: RequestInit) => {
+      return new Promise<Response>((_, reject) => {
         const abortSignal = opts?.signal;
         if (abortSignal) {
           abortSignal.addEventListener('abort', () => {

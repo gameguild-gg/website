@@ -35,7 +35,7 @@ describe('createClient — interceptor gap coverage', () => {
       auth: {
         getAccessToken: async () => 'access-tok',
         getRefreshToken: async () => 'refresh-tok',
-        onTokenRefreshed: async () => {
+        onTokenRefresh: async () => {
           refreshCalled = true;
         },
       },

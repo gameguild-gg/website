@@ -27,10 +27,10 @@ vi.mock('../../src/integrations/react/session-provider.js', () => ({
 import { useAuth } from '../../src/integrations/react/use-auth.js';
 
 describe('useAuth', () => {
-  let mockFetch: ReturnType<typeof vi.fn>;
+  let mockFetch = vi.fn<typeof globalThis.fetch>();
 
   beforeEach(() => {
-    mockFetch = vi.fn();
+    mockFetch = vi.fn<typeof globalThis.fetch>();
     globalThis.fetch = mockFetch;
   });
 

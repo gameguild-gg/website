@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Track mock instances for assertions
 const cancelQueriesMock = vi.fn(async () => {});
-const getQueryDataMock = vi.fn(() => undefined);
+const getQueryDataMock = vi.fn((): unknown => undefined);
 const setQueryDataMock = vi.fn();
 const invalidateQueriesMock = vi.fn(async () => {});
 const refetchQueriesMock = vi.fn(async () => {});

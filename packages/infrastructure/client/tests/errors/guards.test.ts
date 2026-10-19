@@ -28,7 +28,7 @@ import type { ApiError, AuthorizationError, RateLimitError } from '../../src/run
 describe('Error Guards', () => {
   describe('isApiError', () => {
     it('should identify ApiError objects', () => {
-      const error: ApiError = {
+      const error = {
         name: 'ApiError',
         code: 'API_ERROR',
         message: 'Test',
