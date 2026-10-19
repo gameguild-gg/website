@@ -70,5 +70,11 @@
     "file": "tools/emception/scripts/tests/toolchain-provider-security.test.mjs",
     "sha256": "25dbdd648031c443e8711f8c06501e6d04428bd43f9e51567532c8416d05849e",
     "observedAtHead": "c1f6a94d5ccfb686cb7a23de8f5a002496e6640d"
+  },
+  {
+    "ruleId": "vue/max-len",
+    "file": "packages/infrastructure/client/src/generated/types.gen.ts",
+    "sha256": "19f2e28e9cf613a00bdd07291256f31d1d2c4a768a78e3c1004269ba88d3bf16",
+    "observedAtHead": "281bac1908129fc6843c1eda8434d2ccd164fa25"
   }
 ]

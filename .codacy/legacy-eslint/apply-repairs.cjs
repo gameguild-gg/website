@@ -122,6 +122,27 @@ const repairs = [
         '                      sourceCode,\n                    )\n                    const ordered = [...fixes].sort((a, b) => a.range[0] - b.range[0] || a.range[1] - b.range[1])\n                    if (ordered.some((fix, index) => index > 0 && ordered[index - 1].range[1] > fix.range[0])) return null\n                    return fixes'],
     ],
   },
+  {
+    package: 'eslint-plugin-vue',
+    version: '9.32.0',
+    file: 'lib/rules/max-len.js',
+    sha256: 'aea8ccbe5091f53bb0b97cae1c0b081ef0ce5abe712d0d46ddd24bb4adadd38d',
+    repairedSha256: 'a7587695860051aff311d0ce253a7b3ae764fab752b7914e43479ca7908b1959',
+    replacements: [
+      ['const OPTIONS_SCHEMA = {',
+        'function appendItems(target, ...sources) {\n  for (const items of sources) {\n    for (const item of items) target.push(item)\n  }\n}\n\nconst OPTIONS_SCHEMA = {'],
+      ['tokens.push(...templateTokens, ...scriptTokens)',
+        'appendItems(tokens, templateTokens, scriptTokens)'],
+      ['tokens.push(...scriptTokens, ...templateTokens)',
+        'appendItems(tokens, scriptTokens, templateTokens)'],
+      ['tokens.push(...scriptTokens)', 'appendItems(tokens, scriptTokens)'],
+      ['comments.push(...templateBody.comments, ...scriptComments)',
+        'appendItems(comments, templateBody.comments, scriptComments)'],
+      ['comments.push(...scriptComments, ...templateBody.comments)',
+        'appendItems(comments, scriptComments, templateBody.comments)'],
+      ['comments.push(...scriptComments)', 'appendItems(comments, scriptComments)'],
+    ],
+  },
 ];
 
 function digest(value) {

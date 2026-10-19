@@ -190,6 +190,14 @@ stream and also block analysis certification as configuration errors. A missing
 source `@param` remains a documentation diagnostic. Correcting these options is
 separate work; counting the invalid-option messages does not repair them.
 
+The completed 3,280-source pass exposed an additional `vue/max-len` failure on
+the large generated TypeScript declarations. That rule passes complete token
+and comment arrays as function arguments, exceeding V8's argument limit.
+The repair appends individual items in the original order for all six script,
+template and comment combinations. Hosted controls require line-length and
+comment diagnostics on large inputs and ordinary short inputs in both template
+orders. No generated source, rule, input or threshold is removed.
+
 ## Evidence
 
 The `Codacy legacy engine contracts` workflow runs in hosted GitHub Actions.

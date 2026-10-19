@@ -821,3 +821,40 @@ test('the explicit tracked type project includes dotfolders, build directories a
     else process.env.TSESTREE_SINGLE_RUN = previous;
   }
 });
+
+test('Vue maximum line length retains diagnostics for sources with large script token arrays', () => {
+  const source = `export const values = [${'0,'.repeat(150_000)}0];`;
+  assertReportedOrOriginalCrash(
+    () => lint('vue/max-len', 'eslint-plugin-vue', 'max-len', source),
+    /Maximum allowed is 80\./u,
+    /Maximum call stack size exceeded/u,
+  );
+  assert.deepEqual(lint('vue/max-len', 'eslint-plugin-vue', 'max-len', 'export const values = [0];'), []);
+});
+
+test('Vue maximum line length retains comment diagnostics without spreading a large comment array', () => {
+  const source = `${'// short\n'.repeat(150_000)}// ${'x'.repeat(90)}\nexport const value = 1;`;
+  assertReportedOrOriginalCrash(
+    () => lint('vue/max-len', 'eslint-plugin-vue', 'max-len', source),
+    /comment length of 93\. Maximum allowed is 80\./u,
+    /Maximum call stack size exceeded/u,
+  );
+  assert.deepEqual(lint('vue/max-len', 'eslint-plugin-vue', 'max-len', '// short\nexport const value = 1;'), []);
+});
+
+test('Vue maximum line length preserves template and script ordering for large template token arrays', () => {
+  const linter = new Linter();
+  linter.defineParser('engine-vue', engineRequire('vue-eslint-parser'));
+  linter.defineRule('vue/max-len', engineRequire('eslint-plugin-vue').rules['max-len']);
+  const verify = (source) => linter.verify(source, {
+    parser: 'engine-vue', parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+    rules: { 'vue/max-len': 'error' },
+  }, { filename: 'contract.vue' });
+  const template = `<template><div>${'<b />'.repeat(50_000)}</div></template>`;
+  const script = '<script>export default {};</script>';
+  for (const source of [`${template}\n${script}`, `${script}\n${template}`]) {
+    assertReportedOrOriginalCrash(() => verify(source), /Maximum allowed is 80\./u,
+      /Maximum call stack size exceeded/u);
+  }
+  assert.deepEqual(verify('<template><div><b /></div></template>\n' + script), []);
+});
