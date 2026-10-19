@@ -15,7 +15,7 @@ public class LocalizationQueryExtensionsTests
         public ICollection<ResourceLocalization> Localizations { get; set; }
             = new List<ResourceLocalization>();
 
-        public void AddLocalization(
+        public ResourceLocalization AddLocalization(
             string fieldName,
             string content,
             Language language,
@@ -30,6 +30,7 @@ public class LocalizationQueryExtensionsTests
                 Status = status
             };
             Localizations.Add(localization);
+            return localization;
         }
     }
 
@@ -70,12 +71,13 @@ public class LocalizationQueryExtensionsTests
         // Arrange
         var entity = new TestLocalizableEntity();
         var english = CreateLanguage("en-US");
-        entity.AddLocalization("Title", "Hello World", english);
+        var localization = entity.AddLocalization("Title", "Hello World", english);
 
         // Act
         var result = LocalizationQueryExtensions.GetLocalizedField(entity, "Title", english.Id, "Fallback");
 
         // Assert
+        entity.Localizations.Should().ContainSingle().Which.Should().BeSameAs(localization);
         result.Should().Be("Hello World");
     }
 
