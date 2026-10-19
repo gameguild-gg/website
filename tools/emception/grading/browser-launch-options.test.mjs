@@ -1,3 +1,5 @@
+/** @file Verify supported browser channels and the trusted worker sandbox policy. */
+
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createCodeBrowserLaunchOptions } from './browser-launch-options.mjs';

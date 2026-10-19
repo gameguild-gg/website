@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 // Guard logic lives in the script itself (node runs it directly, so it must be
 // plain ESM); vitest can import .mjs via a relative path regardless of its
 // `src/**` include pattern (include only governs test discovery).
@@ -9,6 +9,7 @@ import {
   ensureCanonicalRelease,
   extractPackageArchive,
   manifestsMatch,
+  packEmceptionArchive,
   SOURCE_CANONICAL,
   syncEmceptionCdn,
 } from '../../../scripts/sync-emception-cdn.mjs';
@@ -72,6 +73,67 @@ describe('extractPackageArchive', () => {
     await extractPackageArchive(archivePath, destination, async (options) => { calls.push(options); });
 
     expect(calls).toEqual([{ cwd: destination, file: archivePath, strict: true }]);
+  });
+});
+
+describe('packEmceptionArchive', () => {
+  const version = '4.5.0';
+  const tarball404 = Object.assign(new Error('npm pack failed'), {
+    stderr: 'npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/emception/-/emception-4.5.0.tgz',
+  });
+
+  it('keeps the exact package version and bounds each npm call', async () => {
+    const run = vi.fn().mockResolvedValue({ stdout: 'packed' });
+    const wait = vi.fn();
+
+    await expect(packEmceptionArchive('npm', version, '/tmp/release', { run, wait })).resolves.toBe('packed');
+
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledWith('npm', [
+      'pack', 'emception@4.5.0', '--pack-destination', '/tmp/release', '--json', '--prefer-online',
+    ], { maxBuffer: 10 * 1024 * 1024, timeout: 45_000, shell: process.platform === 'win32' });
+    expect(wait).not.toHaveBeenCalled();
+  });
+
+  it('retries a tarball propagation failure without changing the version', async () => {
+    const run = vi.fn()
+      .mockRejectedValueOnce(tarball404)
+      .mockRejectedValueOnce(tarball404)
+      .mockResolvedValue({ stdout: 'packed' });
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(packEmceptionArchive('npm', version, '/tmp/release', { run, wait })).resolves.toBe('packed');
+
+    expect(run).toHaveBeenCalledTimes(3);
+    expect(run.mock.calls.map((call) => call[1][1])).toEqual(Array(3).fill('emception@4.5.0'));
+    expect(wait.mock.calls).toEqual([[2_000], [5_000]]);
+  });
+
+  it('propagates a persistent 404 after three attempts with no final sleep', async () => {
+    const run = vi.fn().mockRejectedValue(tarball404);
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(packEmceptionArchive('npm', version, '/tmp/release', { run, wait })).rejects.toBe(tarball404);
+
+    expect(run).toHaveBeenCalledTimes(3);
+    expect(wait.mock.calls).toEqual([[2_000], [5_000]]);
+  });
+
+  it.each([
+    'npm error code E403 https://registry.npmjs.org/emception/-/emception-4.5.0.tgz',
+    'npm error code E404 https://registry.npmjs.org/another/-/another-4.5.0.tgz',
+    'npm error code E404 https://registry.npmjs.org/emception/-/emception-4.4.0.tgz',
+    'npm error code ETARGET No matching version found for emception@4.5.0',
+    'npm error code EINTEGRITY',
+  ])('preserves unrelated or non-retryable npm failures: %s', async (stderr) => {
+    const error = Object.assign(new Error('npm pack failed'), { stderr });
+    const run = vi.fn().mockRejectedValue(error);
+    const wait = vi.fn();
+
+    await expect(packEmceptionArchive('npm', version, '/tmp/release', { run, wait })).rejects.toBe(error);
+
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(wait).not.toHaveBeenCalled();
   });
 });
 

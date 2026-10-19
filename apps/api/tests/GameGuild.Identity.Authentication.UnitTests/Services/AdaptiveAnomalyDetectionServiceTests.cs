@@ -208,6 +208,57 @@ public sealed class AdaptiveAnomalyDetectionServiceTests
         assessment.IsLearnedDeviation.Should().Be(expected);
     }
 
+    public static TheoryData<string, double, double, int> CircularMeanOriginsAndDirections => new()
+    {
+        { "positive-zero", 0d, 0d, 0 },
+        { "negative-zero-x", BitConverter.Int64BitsToDouble(long.MinValue), 0d, 0 },
+        { "negative-zero-y", 0d, BitConverter.Int64BitsToDouble(long.MinValue), 0 },
+        { "negative-zero-both", BitConverter.Int64BitsToDouble(long.MinValue), BitConverter.Int64BitsToDouble(long.MinValue), 0 },
+        { "small-0h", 0d, 1e-12, 0 },
+        { "small-6h", 1e-12, 0d, 6 },
+        { "small-12h", 0d, -1e-12, 12 },
+        { "small-18h", -1e-12, 0d, 18 },
+        { "subnormal-0h", 0d, double.Epsilon, 0 },
+        { "subnormal-6h", double.Epsilon, 0d, 6 },
+        { "subnormal-12h", 0d, -double.Epsilon, 12 },
+        { "subnormal-18h", -double.Epsilon, 0d, 18 },
+        { "small-3h", 1e-12, 1e-12, 3 },
+        { "small-9h", 1e-12, -1e-12, 9 },
+        { "small-15h", -1e-12, -1e-12, 15 },
+        { "small-21h", -1e-12, 1e-12, 21 }
+    };
+
+    [Theory]
+    [MemberData(nameof(CircularMeanOriginsAndDirections))]
+    public async Task CircularMean_ExactZeroOriginAndSmallDirectionsKeepTheirMeaning(
+        string scenario, double meanX, double meanY, int expectedHour)
+    {
+        var options = new AdaptiveAnomalyDetectionOptions { MinimumObservations = 2, VarianceFloor = 1 };
+        using var store = new BaselineStore();
+        await store.UpsertAsync(new AdaptiveBehaviorBaseline
+        {
+            SubjectKey = SubjectKey(),
+            TenantId = _tenantId,
+            UserId = _userId,
+            ObservationCount = options.MinimumObservations,
+            HourMeanX = meanX,
+            HourMeanY = meanY,
+            HourMeanSquaredDeviation = 0,
+            IpSurpriseMeanSquaredDeviation = 1000,
+            IpWeightsJson = "{}",
+            CadenceObservationCount = 0,
+            LastObservedAtUtc = SystemClock.UtcNow
+        }, CancellationToken.None);
+        var sut = CreateService(store, options);
+
+        var assessment = await sut.AssessAsync(
+            DeviantProbe(SystemClock.UtcNow.Date.AddHours(expectedHour), TrainIp), CancellationToken.None);
+
+        assessment.Origin.Should().Be(AdaptiveAnomalyOrigin.LearnedBaseline, $"{scenario} must reach learned scoring");
+        assessment.DeviationLabels.Should().BeEmpty($"{scenario} already points to the observed hour");
+        assessment.IsLearnedDeviation.Should().BeFalse($"{scenario} is not an hour-of-day deviation");
+    }
+
     // ── Persistence and isolation ───────────────────────────────────────
 
     [Fact]

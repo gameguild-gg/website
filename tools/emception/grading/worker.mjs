@@ -1,3 +1,5 @@
+/** @file Execute one frozen grading request against verified runtime assets in a sandboxed browser. */
+
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { readFile, realpath } from 'node:fs/promises';

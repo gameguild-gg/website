@@ -25,7 +25,8 @@
  * ("SDL3 compilation failed") rather than a timeout.
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import type { Page } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Helpers  (mirrors compile.spec.ts conventions)

@@ -1180,7 +1180,7 @@ public sealed class GradeResultReleaseSchedule : EntityBase
         DateTime scheduledFor,
         Guid actorId,
         DateTime now) =>
-        Create(tenantId, roundId, scheduledFor, actorId, null, now);
+        Create(tenantId, roundId, scheduledFor, actorId, null, now, requireFuture: true);
 
     public static GradeResultReleaseSchedule CreateByService(
         Guid tenantId,
@@ -1188,7 +1188,7 @@ public sealed class GradeResultReleaseSchedule : EntityBase
         DateTime scheduledFor,
         string service,
         DateTime now) =>
-        Create(tenantId, roundId, scheduledFor, null, RequireText(service, nameof(service)), now);
+        Create(tenantId, roundId, scheduledFor, null, RequireText(service, nameof(service)), now, requireFuture: false);
 
     public void RescheduleByActor(DateTime scheduledFor, Guid actorId, DateTime now)
     {
@@ -1197,11 +1197,11 @@ public sealed class GradeResultReleaseSchedule : EntityBase
             throw new ArgumentException("Actor ID is required.", nameof(actorId));
         }
 
-        Reschedule(scheduledFor, actorId, null, now);
+        Reschedule(scheduledFor, actorId, null, now, requireFuture: true);
     }
 
     public void RescheduleByService(DateTime scheduledFor, string service, DateTime now) =>
-        Reschedule(scheduledFor, null, RequireText(service, nameof(service)), now);
+        Reschedule(scheduledFor, null, RequireText(service, nameof(service)), now, requireFuture: false);
 
     public void Cancel(Guid actorId, string reason, DateTime cancelledAt)
     {
@@ -1250,7 +1250,8 @@ public sealed class GradeResultReleaseSchedule : EntityBase
         DateTime scheduledFor,
         Guid? actorId,
         string? service,
-        DateTime now)
+        DateTime now,
+        bool requireFuture)
     {
         if (tenantId == Guid.Empty || roundId == Guid.Empty)
         {
@@ -1266,7 +1267,7 @@ public sealed class GradeResultReleaseSchedule : EntityBase
         {
             Id = Guid.NewGuid(),
             GradeRoundId = roundId,
-            ScheduledFor = RequireFuture(scheduledFor, now),
+            ScheduledFor = NormalizeScheduledFor(scheduledFor, now, requireFuture),
             Status = GradeResultReleaseScheduleStatus.Scheduled,
             ScheduledByActorId = actorId,
             ScheduledByService = service,
@@ -1279,14 +1280,15 @@ public sealed class GradeResultReleaseSchedule : EntityBase
         DateTime scheduledFor,
         Guid? actorId,
         string? service,
-        DateTime now)
+        DateTime now,
+        bool requireFuture)
     {
         if (Status == GradeResultReleaseScheduleStatus.Released)
         {
             throw new InvalidOperationException("A released result cannot be rescheduled.");
         }
 
-        ScheduledFor = RequireFuture(scheduledFor, now);
+        ScheduledFor = NormalizeScheduledFor(scheduledFor, now, requireFuture);
         Status = GradeResultReleaseScheduleStatus.Scheduled;
         ScheduledByActorId = actorId;
         ScheduledByService = service;
@@ -1296,10 +1298,10 @@ public sealed class GradeResultReleaseSchedule : EntityBase
         Touch();
     }
 
-    private static DateTime RequireFuture(DateTime value, DateTime now)
+    private static DateTime NormalizeScheduledFor(DateTime value, DateTime now, bool requireFuture)
     {
         var normalized = value.ToUniversalTime();
-        return normalized > now.ToUniversalTime()
+        return !requireFuture || normalized > now.ToUniversalTime()
             ? normalized
             : throw new ArgumentOutOfRangeException(nameof(value), "Scheduled release must be in the future.");
     }

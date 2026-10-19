@@ -79,8 +79,8 @@ public sealed class PermissionCacheKeysQueryHandlerTests
     [Fact]
     public async Task Handle_ReturnsKeyMetadataIncludingL1Presence()
     {
-        Track("perm:user-a:resource-1:permission", "permission");
-        _memoryCache.Remove("perm:user-a:resource-1:permission");
+        // Register metadata without an L1 entry so eviction cleanup cannot race the query.
+        _tracker.Track("perm:user-a:resource-1:permission", "permission");
 
         var handler = new GetPermissionCacheKeysQueryHandler(_tracker);
 
