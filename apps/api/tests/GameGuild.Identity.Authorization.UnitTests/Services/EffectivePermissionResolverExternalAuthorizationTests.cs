@@ -251,6 +251,8 @@ public class EffectivePermissionResolverExternalAuthorizationTests
             .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
 
         result.ContextValid.Should().BeTrue();
+        result.UserId.Should().Be(_userId);
+        result.TenantId.Should().Be(_tenantId);
         result.Permissions.Should().ContainSingle().Which.Should().Be("stable:read");
         result.Sources.Should().NotContainKey(permission);
         result.Sources["stable:read"].Should().Be(PermissionSource.DirectGrant);
@@ -265,12 +267,17 @@ public class EffectivePermissionResolverExternalAuthorizationTests
         var properties = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(error.Arguments[2])
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         properties["Permission"].Should().Be(renderedPermission);
-        properties["UserId"].Should().Be(_userId);
-        properties["TenantId"].Should().Be(_tenantId);
+        var renderedUser = Assert.IsType<string>(properties["UserId"]);
+        var renderedTenant = Assert.IsType<string>(properties["TenantId"]);
+        renderedUser.Should().MatchRegex("^uid:[0-9a-f]{8}$");
+        renderedTenant.Should().MatchRegex("^tid:[0-9a-f]{8}$");
         var formatter = Assert.IsAssignableFrom<Delegate>(error.Arguments[4]);
         var message = Assert.IsType<string>(formatter.DynamicInvoke(error.Arguments[2], error.Arguments[3]));
         message.Should().Be(
-            $"External authorization decision provider threw while evaluating permission {renderedPermission} for user {_userId} in tenant {_tenantId} - the permission fails closed.");
+            $"External authorization decision provider threw while evaluating permission {renderedPermission} for user {renderedUser} in tenant {renderedTenant} - the permission fails closed.");
+        message.Should().NotContain(_userId.ToString("D")).And.NotContain(_userId.ToString("N"))
+            .And.NotContain(_tenantId.ToString("D")).And.NotContain(_tenantId.ToString("N"));
+        message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
     }
 
     // ── Query shape: the provider sees the full authorization context ───────
