@@ -35,3 +35,7 @@ database/container/server/EVM execution occurred. Generated-client reconciliatio
 captured OpenAPI contract and hosted API/HTTP/security gates are required before this increment is
 accepted. Public Sepolia deployment/funding/anchor/revoke/finality and operational recovery remain
 pending for the full issue. The issue remains open.
+
+The existing OpenAPI CI verifier now archives the generated client source beside its captured
+contract before checking drift. The drift gate still fails until matching client output is reviewed
+and committed. This provides a source-bound reconciliation path without local API/SDK execution.

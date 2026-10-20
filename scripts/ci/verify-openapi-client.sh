@@ -22,4 +22,12 @@ fi
 cd "$repository_root"
 
 pnpm --filter @game-guild/client generate -- --openapi "$openapi_artifact" --force
+
+# Retain the exact generated source alongside the captured contract even when
+# drift fails the gate. This supports source review/reconciliation without
+# rebuilding or running the API on a developer's machine.
+client_evidence="${OPENAPI_ARTIFACT_ROOT:-$repository_root/artifacts/test-results/openapi}/client-source"
+mkdir -p "$client_evidence"
+cp -R "$repository_root/packages/infrastructure/client/src/generated/." "$client_evidence/"
+
 pnpm --filter @game-guild/client generate:diff
