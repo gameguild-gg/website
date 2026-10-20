@@ -105,6 +105,9 @@ public static class AuditActionTypes
 
     public const string WebhookSourceBlocked = "WebhookSourceBlocked";
 
+    // Billing webhook delivery dead-lettering after exhausted retries (issue #408)
+    public const string WebhookDeadLettered = "WebhookDeadLettered";
+
     // External Billing Provider Management (issue #397 provider-management API)
     public const string BillingProviderEnabled = "BillingProviderEnabled";
 

@@ -8,8 +8,16 @@ namespace GameGuild.Commerce.Billing;
 ///     PayPal-specific implementation of the billing webhook service.
 ///     Handles webhook events from PayPal payment gateway (IPN and v2 webhooks).
 /// </summary>
-public class PayPalBillingWebhookService : BillingWebhookService
+public class PayPalBillingWebhookService : BillingWebhookService, IBillingWebhookReplayHandler
 {
+    /// <summary>Replay-handler provider key (issue #408 execution arm).</summary>
+    string IBillingWebhookReplayHandler.Provider => ProviderName;
+
+    Task<WebhookProcessingResult> IBillingWebhookReplayHandler.ReplayAsync(
+        BillingWebhookEvent webhookEvent,
+        CancellationToken cancellationToken) =>
+        ReplayPayPalWebhookAsync(webhookEvent, cancellationToken);
+
     private readonly IBillingWebhookRepository _webhookRepository;
     private readonly IPayPalSignatureVerificationService _signatureVerificationService;
     private readonly IWebhookSecurityEventPublisher? _securityEvents;
@@ -65,9 +73,11 @@ public class PayPalBillingWebhookService : BillingWebhookService
         // Use transmission ID as idempotency key
         var eventId = transmissionId;
 
-        // Check for duplicate event (idempotency)
+        // Check for duplicate event (idempotency): only a delivery that previously COMPLETED
+        // is acknowledged as a duplicate. A row that is still pending or previously failed is
+        // re-verified and re-processed instead of being masked by a success response (issue #408).
         var existingEvent = await _webhookRepository.GetByExternalEventIdAsync(eventId, PaymentProviders.PayPal, cancellationToken).ConfigureAwait(false);
-        if (existingEvent != null)
+        if (existingEvent?.IsProcessed == true)
         {
             _logger.LogInformation("Duplicate PayPal webhook detected: {TransmissionId}. Returning success.", transmissionId);
             await PublishSecurityEventAsync(
@@ -82,8 +92,8 @@ public class PayPalBillingWebhookService : BillingWebhookService
         // Parse payload to determine event type
         var (eventType, resourceId) = ParsePayPalPayload(payload);
 
-        // Create webhook event record
-        var webhookEvent = new BillingWebhookEvent
+        // Create webhook event record (or reuse the previously failed/pending row)
+        var webhookEvent = existingEvent ?? new BillingWebhookEvent
         {
             ExternalEventId = eventId,
             Provider = PaymentProviders.PayPal,
@@ -95,7 +105,21 @@ public class PayPalBillingWebhookService : BillingWebhookService
         try
         {
             // Store the event first (before processing) to handle concurrent retries
-            webhookEvent = await _webhookRepository.CreateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            if (existingEvent is null)
+            {
+                webhookEvent = await _webhookRepository.CreateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+
+                if (webhookEvent.IsProcessed)
+                {
+                    return WebhookProcessingResult.AlreadyProcessed(webhookEvent.ExternalEventId, webhookEvent.ProcessedAt);
+                }
+            }
+            else
+            {
+                webhookEvent.IncrementAttempts();
+                webhookEvent.IsFailed = false;
+                webhookEvent.ErrorMessage = null;
+            }
 
             // Verify webhook signature with PayPal API
             var verificationResult = await _signatureVerificationService.VerifySignatureAsync(
@@ -120,8 +144,12 @@ public class PayPalBillingWebhookService : BillingWebhookService
                 webhookEvent.MarkAsFailed($"Invalid webhook signature: {verificationResult.ErrorMessage}");
                 await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
                 await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
-                return WebhookProcessingResult.Failed(eventId, verificationResult.ErrorMessage ?? "Invalid webhook signature");
+                return WebhookProcessingResult.Failed(eventId, verificationResult.ErrorMessage ?? "Invalid webhook signature", requiresRetry: false);
             }
+
+            // The delivery is authenticated from here on: record it so replay of this row
+            // never re-routes an unverified payload (issue #408).
+            webhookEvent.MarkSignatureVerified();
 
             // Route to appropriate handler based on event type
             await RoutePayPalEventAsync(eventType, payload, cancellationToken).ConfigureAwait(false);
@@ -143,6 +171,70 @@ public class PayPalBillingWebhookService : BillingWebhookService
             await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
 
             return WebhookProcessingResult.Failed(eventId, ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     Replays a previously accepted PayPal inbox row through its event routing
+    ///     (issue #408). Replay is the execution arm of the retry pipeline: the manual
+    ///     retry command and the hosted retry worker both land here. Fail closed: only
+    ///     rows whose delivery was signature-verified are ever re-routed, because the
+    ///     transmission headers required to re-verify are not retained.
+    /// </summary>
+    /// <param name="webhookEvent">Stored inbox row to replay.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Processing result of the replay attempt.</returns>
+    public async Task<WebhookProcessingResult> ReplayPayPalWebhookAsync(
+        BillingWebhookEvent webhookEvent,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(webhookEvent);
+
+        if (!string.Equals(webhookEvent.Provider, PaymentProviders.PayPal, StringComparison.Ordinal))
+        {
+            throw new ArgumentException("The webhook event does not belong to the PayPal provider.", nameof(webhookEvent));
+        }
+
+        if (webhookEvent.IsProcessed)
+        {
+            return WebhookProcessingResult.AlreadyProcessed(webhookEvent.ExternalEventId, webhookEvent.ProcessedAt);
+        }
+
+        if (webhookEvent.IsSignatureVerified != true)
+        {
+            // Fail closed: a delivery that never passed signature verification (or a legacy
+            // row accepted before the flag existed) must never be re-routed without proof of
+            // authenticity. The provider must redeliver with valid headers instead.
+            const string reason = "Replay refused: the stored delivery was not signature-verified.";
+            _logger.LogWarning("PayPal webhook replay refused for {EventId}: not signature-verified.", webhookEvent.ExternalEventId);
+            webhookEvent.MarkAsFailed(reason);
+            await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            return WebhookProcessingResult.Failed(webhookEvent.ExternalEventId, reason, requiresRetry: false);
+        }
+
+        try
+        {
+            await RoutePayPalEventAsync(webhookEvent.EventType, webhookEvent.Payload, cancellationToken).ConfigureAwait(false);
+
+            webhookEvent.MarkAsProcessed();
+            await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: true, cancellationToken).ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "Successfully replayed PayPal webhook: {TransmissionId} ({EventType})",
+                webhookEvent.ExternalEventId,
+                webhookEvent.EventType);
+            return WebhookProcessingResult.Success(webhookEvent.ExternalEventId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to replay PayPal webhook: {TransmissionId}", webhookEvent.ExternalEventId);
+
+            webhookEvent.MarkAsFailed(ex.Message);
+            await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
+
+            return WebhookProcessingResult.Failed(webhookEvent.ExternalEventId, ex.Message);
         }
     }
 

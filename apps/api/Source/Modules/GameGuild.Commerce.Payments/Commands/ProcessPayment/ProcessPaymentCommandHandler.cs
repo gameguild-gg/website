@@ -103,7 +103,8 @@ public sealed class ProcessPaymentCommandHandler(
             externalCustomerId,
             request.PaymentMethodId,
             subscription.Amount,
-            subscription.Currency);
+            subscription.Currency,
+            subscription.BillingCycleNumber);
 
         var assessment = await fraudDetectionService.AssessPaymentAsync(fraudContext, cancellationToken)
             .ConfigureAwait(false);
