@@ -34,6 +34,7 @@ public sealed class TrustedDeviceSessionCommandTests
             case "termination-marker": session.TerminatedAt = DateTime.UtcNow; break;
             case "empty-fingerprint": session.DeviceFingerprint = string.Empty; break;
             case "whitespace-fingerprint": session.DeviceFingerprint = " "; break;
+            default: throw new ArgumentOutOfRangeException(nameof(boundary), boundary, "Unknown session trust boundary.");
         }
         var service = new Mock<ISessionManagementService>(MockBehavior.Strict);
         service.Setup(s => s.GetSessionAsync(sessionId, CancellationToken.None)).ReturnsAsync(session);
