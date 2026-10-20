@@ -78,6 +78,57 @@ test("an API contract change requires OpenAPI verification", () => {
   );
 });
 
+test("composition-root controllers outside a Controllers directory require OpenAPI", () => {
+  assert.deepEqual(
+    classifyReleaseChanges([
+      "apps/api/Source/GameGuild.API/Security/CertificateEvmEvidenceController.cs",
+    ]),
+    {
+      ...expectedEmptyClassification,
+      api: true,
+      apiRuntimeChanged: true,
+      openApi: true,
+      runtimeChanged: true,
+    },
+  );
+});
+
+test("host contract files require OpenAPI even outside a Contracts directory", () => {
+  assert.deepEqual(
+    classifyReleaseChanges([
+      "apps/api/Source/GameGuild.API/Core/Integration/CertificateEvmEvidenceContracts.cs",
+    ]),
+    {
+      ...expectedEmptyClassification,
+      api: true,
+      apiRuntimeChanged: true,
+      openApi: true,
+      runtimeChanged: true,
+    },
+  );
+});
+
+test("OpenAPI verification script changes exercise the client gate without deployment", () => {
+  for (const filePath of [
+    "scripts/ci/verify-openapi-client.sh",
+    "scripts/ci/verify-openapi-surface.sh",
+  ]) {
+    assert.deepEqual(classifyReleaseChanges([filePath]), {
+      ...expectedEmptyClassification,
+      openApi: true,
+    });
+  }
+});
+
+test("controller test files do not become HTTP contract changes", () => {
+  assert.deepEqual(
+    classifyReleaseChanges([
+      "apps/api/tests/GameGuild.API.UnitTests/Controllers/CertificateEvmEvidenceControllerTests.cs",
+    ]),
+    { ...expectedEmptyClassification, api: true },
+  );
+});
+
 test("an EF migration selects API, migration, and OpenAPI gates", () => {
   assert.deepEqual(
     classifyReleaseChanges([

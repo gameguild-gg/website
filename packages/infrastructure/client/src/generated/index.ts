@@ -29,6 +29,7 @@ export * from './modules/compliance-audit-replay.gen.js';
 export * from './modules/compliance-audit-retention-simulation.gen.js';
 export * from './modules/compliance-audit-security-events.gen.js';
 export * from './modules/learning-certificates.gen.js';
+export * from './modules/api-security-certificates.gen.js';
 export * from './modules/learning-cohorts.gen.js';
 export * from './modules/compliance-consent.gen.js';
 export * from './modules/compliance-ferpa.gen.js';
