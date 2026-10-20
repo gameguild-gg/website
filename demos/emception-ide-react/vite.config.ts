@@ -1,12 +1,13 @@
 import react from '@vitejs/plugin-react';
 import { readFile } from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 
 function emceptionRawCdnPlugin(): Plugin {
     let publicDir = '';
 
-    const handler = async (req: any, res: any, next: () => void) => {
+    const handler = async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
         const reqUrl = req.url ? String(req.url).split('?')[0] : '';
         if (!reqUrl.startsWith('/cdn/') || (!reqUrl.endsWith('.br') && !reqUrl.endsWith('.gz'))) {
             next();
