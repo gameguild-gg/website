@@ -559,10 +559,36 @@ export async function compileAndRun(client: WorkerClient | EmceptionAPI, opts: C
 
     const paths: CompilePaths = { ...DEFAULT_PATHS, ...opts.paths };
     const cwd = opts.cwd ?? dirname(paths.sourcePath);
-    const runOpts = {
-        cwd,
-        onStdout: opts.onStdout,
-        onStderr: opts.onStderr,
+    const runTool = async (tool: string, argv: string[], stdin?: string): Promise<ToolResult> => {
+        if ('workspace' in client) {
+            const stdoutDecoder = new TextDecoder();
+            const stderrDecoder = new TextDecoder();
+            try {
+                return await client.run(tool, argv, {
+                    cwd,
+                    stdin,
+                    stdout: opts.onStdout ? (chunk) => {
+                        const text = stdoutDecoder.decode(chunk, { stream: true });
+                        if (text) opts.onStdout?.(text);
+                    } : undefined,
+                    stderr: opts.onStderr ? (chunk) => {
+                        const text = stderrDecoder.decode(chunk, { stream: true });
+                        if (text) opts.onStderr?.(text);
+                    } : undefined,
+                });
+            } finally {
+                const stdoutTail = stdoutDecoder.decode();
+                const stderrTail = stderrDecoder.decode();
+                if (stdoutTail) opts.onStdout?.(stdoutTail);
+                if (stderrTail) opts.onStderr?.(stderrTail);
+            }
+        }
+        return client.run(tool, argv, {
+            cwd,
+            onStdout: opts.onStdout,
+            onStderr: opts.onStderr,
+            stdin: makeStdinFeeder(stdin),
+        });
     };
 
     opts.onPhase?.('write');
@@ -573,23 +599,19 @@ export async function compileAndRun(client: WorkerClient | EmceptionAPI, opts: C
     }
 
     opts.onPhase?.('compile');
-    const compile = await client.run(preset.compileTool, preset.compileArgv(paths), runOpts as any);
+    const compile = await runTool(preset.compileTool, preset.compileArgv(paths));
     if (compile.exitCode !== 0) {
         return { finalPhase: 'compile', exitCode: compile.exitCode, compile };
     }
 
     opts.onPhase?.('link');
-    const link = await client.run(preset.linkTool, preset.linkArgv(paths), runOpts as any);
+    const link = await runTool(preset.linkTool, preset.linkArgv(paths));
     if (link.exitCode !== 0) {
         return { finalPhase: 'link', exitCode: link.exitCode, compile, link };
     }
 
     opts.onPhase?.('run');
-    const stdinFn = makeStdinFeeder(opts.stdin);
-    const run = await client.run('wasi-run', ['wasi-run', paths.wasmPath], {
-        ...runOpts,
-        stdin: stdinFn,
-    } as any);
+    const run = await runTool('wasi-run', ['wasi-run', paths.wasmPath], opts.stdin);
     return { finalPhase: 'run', exitCode: run.exitCode, compile, link, run };
 }
 

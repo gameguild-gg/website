@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { ToolchainPreset } from 'emception';
 import { wrapWorkerClient } from '../dist/createEmception.js';
+import { compileAndRun } from '../dist/presets.js';
 
 function makeStubClient(overrides = {}) {
   return {
@@ -139,3 +140,139 @@ test('facade forwards workspace deletion to the Worker client', async () => {
 
   assert.deepEqual(deletedPaths, ['/home/user/private-test.cpp']);
 });
+
+test('preset helper forwards facade output and stdin through the public API', async () => {
+  const stdout = [];
+  const stderr = [];
+  const phases = [];
+  const runs = [];
+  const writes = [];
+  const inputBytes = [];
+  const api = wrapWorkerClient(makeStubClient({
+    writeFile: async (path, content) => { writes.push({ path, content }); },
+    run: async (cmd, argv, options) => {
+      runs.push({ cmd, argv, cwd: options.cwd });
+      options.onStdout?.(`${cmd}: output\n`);
+      options.onStderr?.(`${cmd}: diagnostic\n`);
+      if (cmd === 'wasi-run') {
+        assert.equal(typeof options.stdin, 'function');
+        for (let byte = await options.stdin(); byte !== null; byte = await options.stdin()) {
+          inputBytes.push(byte);
+        }
+      } else {
+        assert.equal(options.stdin, undefined);
+      }
+      return { exitCode: 0, stdout: `${cmd}: output\n`, stderr: `${cmd}: diagnostic\n` };
+    },
+  }));
+
+  const result = await compileAndRun(api, {
+    toolchain: ToolchainPreset.CPP,
+    source: 'int main(){return 0;}',
+    paths: { sourcePath: '/user/hello.cpp' },
+    stdin: 'olá',
+    onStdout: (text) => stdout.push(text),
+    onStderr: (text) => stderr.push(text),
+    onPhase: (phase) => phases.push(phase),
+  });
+
+  assert.equal(result.finalPhase, 'run');
+  assert.equal(result.exitCode, 0);
+  assert.deepEqual(phases, ['write', 'compile', 'link', 'run']);
+  assert.deepEqual(runs.map(({ cmd }) => cmd), ['clang', 'wasm-ld', 'wasi-run']);
+  assert.ok(runs.every(({ cwd }) => cwd === '/user'));
+  assert.deepEqual(stdout, ['clang: output\n', 'wasm-ld: output\n', 'wasi-run: output\n']);
+  assert.deepEqual(stderr, ['clang: diagnostic\n', 'wasm-ld: diagnostic\n', 'wasi-run: diagnostic\n']);
+  assert.equal(new TextDecoder().decode(Uint8Array.from(inputBytes)), 'olá\n');
+  assert.equal(writes[0].path, '/user/hello.cpp');
+  assert.equal(new TextDecoder().decode(writes[0].content), 'int main(){return 0;}');
+});
+
+test('preset helper retains direct Worker callbacks and byte stdin', async () => {
+  const stdout = [];
+  const stderr = [];
+  const inputBytes = [];
+  const runs = [];
+  const client = makeStubClient({
+    run: async (cmd, argv, options) => {
+      runs.push({ cmd, cwd: options.cwd });
+      options.onStdout?.(cmd);
+      options.onStderr?.(`${cmd}: warning`);
+      if (cmd === 'wasi-run') {
+        for (let byte = await options.stdin(); byte !== null; byte = await options.stdin()) {
+          inputBytes.push(byte);
+        }
+      }
+      return { exitCode: 0, stdout: cmd, stderr: '' };
+    },
+  });
+
+  await compileAndRun(client, {
+    toolchain: ToolchainPreset.CPP,
+    source: 'int main(){return 0;}',
+    cwd: '/custom',
+    stdin: 'ready\n',
+    onStdout: (text) => stdout.push(text),
+    onStderr: (text) => stderr.push(text),
+  });
+
+  assert.deepEqual(runs.map(({ cmd }) => cmd), ['clang', 'wasm-ld', 'wasi-run']);
+  assert.ok(runs.every(({ cwd }) => cwd === '/custom'));
+  assert.deepEqual(stdout, ['clang', 'wasm-ld', 'wasi-run']);
+  assert.deepEqual(stderr, ['clang: warning', 'wasm-ld: warning', 'wasi-run: warning']);
+  assert.equal(new TextDecoder().decode(Uint8Array.from(inputBytes)), 'ready\n');
+});
+
+test('preset helper decodes split UTF-8 public sinks without corrupting output', async () => {
+  const stdout = [];
+  const stderr = [];
+  const encoder = new TextEncoder();
+  const api = {
+    workspace: { writeFile: async () => {} },
+    run: async (cmd, argv, options) => {
+      if (cmd === 'wasi-run') {
+        const out = encoder.encode('café');
+        const err = encoder.encode('漢');
+        options.stdout(out.subarray(0, 4));
+        options.stdout(out.subarray(4));
+        options.stderr(err.subarray(0, 1));
+        options.stderr(err.subarray(1));
+        assert.equal(options.stdin, undefined);
+      }
+      return { exitCode: 0, stdout: '', stderr: '', durationMs: 1, timedOut: false };
+    },
+  };
+
+  await compileAndRun(api, {
+    toolchain: ToolchainPreset.CPP,
+    source: 'int main(){return 0;}',
+    onStdout: (text) => stdout.push(text),
+    onStderr: (text) => stderr.push(text),
+  });
+
+  assert.equal(stdout.join(''), 'café');
+  assert.equal(stderr.join(''), '漢');
+});
+
+for (const failedPhase of ['compile', 'link']) {
+  test(`preset helper stops after a facade ${failedPhase} failure`, async () => {
+    const runs = [];
+    const failingTool = failedPhase === 'compile' ? 'clang' : 'wasm-ld';
+    const api = wrapWorkerClient(makeStubClient({
+      run: async (cmd) => {
+        runs.push(cmd);
+        return { exitCode: cmd === failingTool ? 9 : 0, stdout: '', stderr: '' };
+      },
+    }));
+
+    const result = await compileAndRun(api, {
+      toolchain: ToolchainPreset.CPP,
+      source: 'int main(){return 0;}',
+    });
+
+    assert.equal(result.finalPhase, failedPhase);
+    assert.equal(result.exitCode, 9);
+    assert.equal(result.run, undefined);
+    assert.deepEqual(runs, failedPhase === 'compile' ? ['clang'] : ['clang', 'wasm-ld']);
+  });
+}
