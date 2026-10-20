@@ -42,14 +42,14 @@ internal static class BehavioralLocationIdentity
             return null;
         }
         // Country previously also carried ISO codes; the explicit code field takes priority.
-        var code = CountryCode(location.CountryCode) ?? CountryCode(location.Country);
-        var name = CountryCode(location.Country) is null ? Normalize(location.Country) : null;
+        var code = NormalizeCountryCode(location.CountryCode) ?? NormalizeCountryCode(location.Country);
+        var name = NormalizeCountryCode(location.Country) is null ? Normalize(location.Country) : null;
         return code is null && name is null ? null : new Context(code, name, city);
     }
 
     private static Context? ReadHistory(AuthenticationAttempt attempt)
     {
-        var code = CountryCode(attempt.Country);
+        var code = NormalizeCountryCode(attempt.Country);
         var name = code is null ? Normalize(attempt.Country) : null;
         var city = Normalize(attempt.City);
         if (city is not null)
@@ -66,8 +66,8 @@ internal static class BehavioralLocationIdentity
                     if (remainder.Length > 0 && remainder[0] == ',')
                     {
                         var label = Normalize(remainder[1..]);
-                        code ??= CountryCode(label);
-                        name = CountryCode(label) is null ? label : null;
+                        code ??= NormalizeCountryCode(label);
+                        name = NormalizeCountryCode(label) is null ? label : null;
                     }
                 }
             }
@@ -81,7 +81,7 @@ internal static class BehavioralLocationIdentity
             return null;
         }
         var legacy = attempt.Location?.Trim();
-        if (legacy is { Length: > 3 } && legacy[2] == '-' && CountryCode(legacy[..2]) is { } legacyCode &&
+        if (legacy is { Length: > 3 } && legacy[2] == '-' && NormalizeCountryCode(legacy[..2]) is { } legacyCode &&
             Normalize(legacy[3..]) is { } legacyCity)
         {
             // Only the first delimiter belongs to the legacy country code. Preserve city hyphens.
@@ -90,7 +90,7 @@ internal static class BehavioralLocationIdentity
         return null;
     }
 
-    private static string? CountryCode(string? value) =>
+    private static string? NormalizeCountryCode(string? value) =>
         Normalize(value) is { Length: 2 } code && code.All(char.IsAsciiLetter) ? code : null;
 
     private static string? Normalize(string? value) =>
