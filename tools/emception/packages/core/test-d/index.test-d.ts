@@ -16,6 +16,7 @@ import type {
     TestPlan,
     TestReport,
     ToolResult,
+    WorkerHandle,
     WorkspaceAPI,
     WorkspaceBuildConfig,
     WorkspaceOptions,
@@ -161,3 +162,36 @@ if (typeof filesystem.readFileSync === 'function') {
 if (typeof filesystem.clear === 'function') {
     expectType<void | Promise<void>>(filesystem.clear());
 }
+
+// Removing a listener keeps the event contract used when registering it.
+declare const worker: WorkerHandle;
+declare const browserWorker: Worker;
+expectAssignable<WorkerHandle>(browserWorker);
+
+const onMessage = (event: { data: unknown }): void => {
+    expectType<unknown>(event.data);
+};
+const onError = (event: { error?: unknown; message?: string }): void => {
+    expectType<unknown>(event.error);
+    expectType<string | undefined>(event.message);
+};
+expectType<void>(worker.addEventListener('message', onMessage));
+expectType<void>(worker.removeEventListener('message', onMessage));
+expectType<void>(worker.addEventListener('error', onError));
+expectType<void>(worker.removeEventListener('error', onError));
+expectError(worker.removeEventListener('error', onMessage));
+expectError(worker.removeEventListener('message', onError));
+expectError(worker.removeEventListener('close', onMessage));
+
+worker.removeEventListener('message', (event) => {
+    expectType<unknown>(event.data);
+});
+worker.removeEventListener('error', (event) => {
+    expectType<unknown>(event.error);
+    expectType<string | undefined>(event.message);
+});
+
+declare const eventType: 'message' | 'error';
+worker.removeEventListener(eventType, (event) => {
+    expectType<{ data: unknown } | { error?: unknown; message?: string }>(event);
+});

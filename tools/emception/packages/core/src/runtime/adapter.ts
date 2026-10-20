@@ -14,13 +14,18 @@
 
 import type { FSManifest } from '../vfs/manifest.js';
 
+interface WorkerEvents {
+  message: { data: unknown };
+  error: { error?: unknown; message?: string };
+}
+
 /** Minimal worker handle abstraction shared across runtimes. */
 export interface WorkerHandle {
   postMessage(message: unknown, transfer?: Transferable[]): void;
   terminate(): void | Promise<void>;
   addEventListener(type: 'message', listener: (ev: { data: unknown }) => void): void;
   addEventListener(type: 'error', listener: (ev: { error?: unknown; message?: string }) => void): void;
-  removeEventListener(type: 'message' | 'error', listener: (ev: any) => void): void;
+  removeEventListener<K extends keyof WorkerEvents>(type: K, listener: (ev: WorkerEvents[K]) => void): void;
 }
 
 export interface SpawnWorkerOptions {

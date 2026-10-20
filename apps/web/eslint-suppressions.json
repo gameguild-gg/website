@@ -2524,9 +2524,6 @@
   "src/lib/__tests__/api-client.integration.test.ts": {
     "@next/next/no-assign-module-variable": {
       "count": 2
-    },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/lib/__tests__/e2e/auth-advanced.e2e.test.ts": {

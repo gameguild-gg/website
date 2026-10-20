@@ -4,7 +4,7 @@
  * Server-side integration tests for @game-guild/client
  */
 
-import { createClient } from '@game-guild/client';
+import { createClient, type Interceptor } from '@game-guild/client';
 
 async function loadNextIntegrationModule() {
   return import('@game-guild/client/next');
@@ -70,8 +70,8 @@ describe('API Client Integration', () => {
     });
 
     it('should support interceptors', () => {
-      const requestInterceptor = {
-        onRequest: async (config: any) => config,
+      const requestInterceptor: Interceptor = {
+        onRequest: async (config) => config,
       };
 
       const client = createClient({
