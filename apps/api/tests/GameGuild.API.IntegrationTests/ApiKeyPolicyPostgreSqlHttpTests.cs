@@ -7,6 +7,7 @@ using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,13 +32,14 @@ public sealed class ApiKeyPolicyPostgreSqlHttpTests(ApiPostgreSqlFixture fixture
         client.DefaultRequestHeaders.Add("X-Tenant-Id", seeded.TenantId.ToString());
         using var response = await client.GetAsync(Route);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.True(response.StatusCode == HttpStatusCode.OK, $"Configured real ApiKey policy returned {(int)response.StatusCode}: {body}");
-        using var document = JsonDocument.Parse(body);
-        Assert.Contains(document.RootElement.EnumerateArray(), row => row.GetProperty("id").GetGuid() == seeded.KeyId);
-        Assert.DoesNotContain(seeded.Plaintext, body, StringComparison.Ordinal);
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var persisted = await db.Set<ApiKey>().AsNoTracking().SingleAsync(key => key.Id == seeded.KeyId);
+        Assert.True(response.StatusCode == HttpStatusCode.OK,
+            $"Configured real ApiKey policy returned {(int)response.StatusCode}; persisted credential usage={persisted.UsageCount}: {body}");
+        using var document = JsonDocument.Parse(body);
+        Assert.Contains(document.RootElement.EnumerateArray(), row => row.GetProperty("id").GetGuid() == seeded.KeyId);
+        Assert.DoesNotContain(seeded.Plaintext, body, StringComparison.Ordinal);
         Assert.Equal(seeded.OwnerId, persisted.UserId);
         Assert.True(persisted.UsageCount > 0);
     }
@@ -97,6 +99,17 @@ public sealed class ApiKeyPolicyPostgreSqlHttpTests(ApiPostgreSqlFixture fixture
 
     private static async Task<SeededKey> Seed(IServiceProvider services, string credential, string grantedScope)
     {
+        // Fail clearly when the host did not bind the intended supported configuration.
+        // Merely receiving 401 for absent/invalid keys cannot prove that ApiKey ran.
+        var schemes = services.GetRequiredService<IAuthenticationSchemeProvider>();
+        var scheme = await schemes.GetSchemeAsync(ApiKeyAuthenticationOptions.SchemeName);
+        Assert.NotNull(scheme);
+        Assert.Equal(typeof(ApiKeyAuthenticationHandler), scheme.HandlerType);
+        var policyProvider = services.GetRequiredService<IAuthorizationPolicyProvider>();
+        var defaultPolicy = await policyProvider.GetDefaultPolicyAsync();
+        Assert.Contains(ApiKeyAuthenticationOptions.SchemeName, defaultPolicy.AuthenticationSchemes);
+        Assert.Equal(JwtBearerDefaults.AuthenticationScheme, (await schemes.GetDefaultAuthenticateSchemeAsync())!.Name);
+
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var marker = Guid.NewGuid().ToString("N");
