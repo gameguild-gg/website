@@ -6,7 +6,7 @@ import type { BaseMediaData } from "@/components/block-content-editor/nodes/base
 
 interface ImageOptionsProps {
   data: BaseMediaData
-  onChange: (field: keyof BaseMediaData, value: any) => void
+  onChange: <Field extends keyof BaseMediaData>(field: Field, value: BaseMediaData[Field]) => void
 }
 
 export function ImageOptions({ data, onChange }: ImageOptionsProps) {

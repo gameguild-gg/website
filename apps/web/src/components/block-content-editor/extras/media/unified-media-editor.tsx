@@ -126,7 +126,7 @@ export function UnifiedMediaEditor({
     }
   }, [localData.src, localData.type, urlDetectionEnabled, localData])
 
-  const handleChange = (field: keyof BaseMediaData, value: any) => {
+  const handleChange = <Field extends keyof BaseMediaData>(field: Field, value: BaseMediaData[Field]) => {
     const newData = { ...localData, [field]: value }
     setLocalData(newData)
     onChange({ [field]: value })
