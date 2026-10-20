@@ -18,7 +18,7 @@ namespace GameGuild.API.IntegrationTests;
 /// <summary>Real API-key scheme, tenant/actor/authorization pipeline and PostgreSQL repository.
 /// Explicit supported policy configuration selects ApiKey; no synthetic identity authenticates these requests.</summary>
 [Collection(ApiPostgreSqlCollection.Name)]
-public sealed class ApiKeyPolicyPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
+public sealed partial class ApiKeyPolicyPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
 {
     private const string Route = "/v1/auth/api-keys";
 
@@ -41,7 +41,7 @@ public sealed class ApiKeyPolicyPostgreSqlHttpTests(ApiPostgreSqlFixture fixture
         Assert.Contains(document.RootElement.EnumerateArray(), row => row.GetProperty("id").GetGuid() == seeded.KeyId);
         Assert.DoesNotContain(seeded.Plaintext, body, StringComparison.Ordinal);
         Assert.Equal(seeded.OwnerId, persisted.UserId);
-        Assert.True(persisted.UsageCount > 0);
+        Assert.Equal(1, persisted.UsageCount);
     }
 
     [Theory]

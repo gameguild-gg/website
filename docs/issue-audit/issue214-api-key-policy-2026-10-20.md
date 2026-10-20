@@ -1,64 +1,51 @@
-# #214: configured API-key policy and trusted actor
+# API-key authentication through the actual host
 
-Regression-only candidate. Refs #214 and the lifecycle evidence review in #215.
-No defect, implementation acceptance, recertification or issue closure is credited until hosted evidence is inspected.
+## Confirmed regression
 
-The host supports opt-in ApiKey registration and named/default authorization policies with explicit schemes.
-Its authentication middleware runs before tenant membership validation and immutable actor capture;
-authorization runs afterward. These tests qualify the actual supported configuration, without substituting
-a synthetic principal or inferring a routing defect merely because Bearer remains the default.
+Issue #214 was reopened after source `c7c5d1ecf4054c4e0aa0c53d53605dbadcb696e1`
+registered the real ApiKey handler and selected it in the actual default policy.
+The Bearer authenticate default remained unchanged. A valid persisted key incremented
+its usage counter to1 but GET `/v1/auth/api-keys` returned400 with `Auth.Required`.
+The host had captured an anonymous actor before authorization authenticated the key.
 
-One actual-host PostgreSQL HTTP case requests the real API-key management route with a valid owner/tenant
-credential under a configured ApiKey policy. It requires the authenticated owner to reach the actual query
-handler and verifies persisted usage without exposing plaintext in the list response. Five controls cover
-missing, unknown, expired, revoked and unrelated-scope credentials.
+Five unavailable-credential/scope controls passed. Actual tested checkout:
+`ecb678b0905f346f611a5c51d2afdb3af82082b8`; tree:
+`a627f90910bb7d20f426807e76ccec7e6faea57d`. Artifact `12260953820`, SHA-256
+`22fbf47c0f2bcce53f9ebd8ab06887e8df4a34b775de3633f41797bc44b59429`.
+An independent audit-export timeout also occurred, so this run establishes a
+regression and does not constitute approved CI.
 
-The common fixture's synthetic default is replaced with the production Bearer default. The policy must
-select the real ApiKey handler. Actual migrations, entities, repository, middleware, actor and endpoint
-remain in use. No signing, database, SDK/build/restore/test/container/server/browser process runs locally.
-Matching-source hosted compilation, response reports and controls determine whether a real integration
-defect exists. Broader API-key rotation/audit/tenant scenarios and full #266 repository scope remain pending.
+## Repair
 
-## First hosted diagnostic and fixture correction
+The host selects explicit endpoint and static default/named/fallback authentication
+schemes before token revocation, tenant membership and immutable actor capture.
+Selection follows ASP.NET Core policy combination. It does not globally route
+requests with a key header to ApiKey or change the configured Bearer default.
 
-The first signed source `3aecfa003d330d197c9fc22bd1f4fcb290b02048` compiled. Its digest-verified
-hosted artifact `12240095754` (SHA-256
-`a53423461aaf7a27691a5aec6a9b03599ecebcb10cb978e0ece0e99f680a244a`) contains all six cases:
-one passed and five failed while seeding, with no unrelated failure. PostgreSQL rejected the repeated
-tenant name under `IX_Tenants_Name`; those five cases never reached their intended HTTP assertions.
-This is a fixture defect and does not establish a production authentication defect.
+Tenant-dependent policy lookup remains after tenant establishment. A later policy
+that authenticates a different principal is denied before authorization handlers
+run. A database-backed policy selecting another scheme must also declare that
+scheme in endpoint metadata or static configuration. Multiple successful
+credentials cannot combine owners or scopes.
 
-The correction gives each seeded tenant a unique name using the existing case marker. All six
-assertions, production authentication code, database constraints and actual host configuration remain
-unchanged. Fresh matching-source hosted evidence is required before drawing a functional conclusion.
+## Qualification
 
-## Configuration preconditions and independent accepted base
+- Eleven real-host PostgreSQL HTTP cases: the original six identity/credential/scope
+  cases plus tenant resolution from the key, foreign-tenant and inactive-membership
+  rejection, complete create/rotate/revoke/audit flow and foreign-owner isolation.
+- Twenty composition cases with explicitly synthetic credentials: default, named,
+  explicit, embedded and fallback schemes; cookies/Bearer; unavailable credentials;
+  multiple identities; deferred policies; disabled schemes; optional public identity.
+  These component cases do not replace actual credential/database acceptance.
+- Five actual registered repository cases for #266: local-user credentials, external
+  login links/consent, WebAuthn credential state, refresh persistence and API keys.
+  These establish persistence contracts, not external OAuth or WebAuthn cryptography.
 
-The second diagnostic source `cff5587d68e3e079d01c07ba8aa32b4442f8d4e5` compiled. The four unavailable
-credential controls passed, while the valid owner and unrelated-scope cases received 401. Artifact
-`12241071438`, SHA-256 `a2dc78ae0085965120002716c07f0d70bd2c7f188f2d707e76ba47221739bae1`, also
-contains one separate assessment HTTP 500 failure. No failure is waived and no production root cause
-or issue completion is inferred from those responses alone.
+The tests use early host settings because these authentication switches are consumed
+while Program registers services. Earlier diagnostic sources corrected unique tenant
+names and configuration timing; their401 responses were not production-defect evidence.
+The actual handler/policy/Bearer-default preconditions remain in every HTTP case.
 
-Current qualification now explicitly requires the real ApiKey scheme/handler registration, the ApiKey
-authentication scheme in the actual default authorization policy, and the production Bearer default
-before issuing each HTTP request. The valid-owner assertion also reports the persisted key usage count
-on failure, so a disabled/misconfigured scheme can be distinguished from a later actor/policy failure.
-Root configuration remains the host's supported `Authentication`/`Authorization` path; the test does
-not replace policy or principal services to make the assertions pass.
-
-Accepted #913/develop `915c16a4056752e900f2f03d5e4a47534f4082ef` is merged normally into this branch.
-The six-case candidate still changes only test/documentation source relative to that accepted base.
-
-## Early host configuration correction
-
-Source `a0e408a7fab0f8de7c42fa043bfef46353de7cd7` compiled, but all six cases failed the new
-scheme-registration precondition: the actual host had no ApiKey scheme. Artifact `12258914285`,
-SHA-256 `79400720d48fb32f627f34ccbe831328d99f016ada4ba2aa207e3affa928bde9`, contains no other
-failed cases. The previous unauthorized responses therefore did not prove a production actor-order defect.
-
-The fixture now uses early `IWebHostBuilder.UseSetting` values for the same supported root
-configuration. Program consumes these switches when registering services; deferred
-`ConfigureAppConfiguration` callbacks ran too late for that registration. The scheme, policy and
-Bearer-default preconditions and all six HTTP expectations remain in place. Fresh hosted evidence
-must confirm the fixture correction before any production behavior or issue completion is accepted.
+Current hosted build, tests, security checks and delivered tree must be verified
+before acceptance. No local SDK, product, database, container or browser execution
+was used. The original opt-in, user-owned credential scope remains unchanged.
