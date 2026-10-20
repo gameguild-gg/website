@@ -118,7 +118,7 @@ export function PreviewProject({ node, storageAdapter }: PreviewProjectProps) {
             <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
               <span className="capitalize">Single Project</span>
               <span>•</span>
-              <span>{formatSize(node.data.size)}</span>
+              <span>{formatSize(loadedData?.size ?? node.data.size)}</span>
               {node.data.isLocalCopy && node.data.originalProjectId && (
                 <>
                   <span>•</span>
