@@ -160,7 +160,7 @@ export interface TestCase {
   input?: string
   expectedOutput?: string
   args?: unknown[]
-  expectedReturn?: any
+  expectedReturn?: unknown
   customCode?: string
   enabled: boolean
 }

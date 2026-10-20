@@ -114,11 +114,13 @@ export function EditorField({
   const hideBlocks = hasRestrictedBlockTypes || (isQuizMode && !fieldConfig.allowedBlockTypes?.length)
 
   // Document Mode interception: fully unlocked LexicalSurface without block chrome
-  const isDocumentMode = fieldConfig.projectType === "document" && project.blocks.length === 1 && project.blocks[0]?.type === "rich-text"
+  const documentBlock = fieldConfig.projectType === "document" && project.blocks.length === 1
+    ? project.blocks[0]
+    : undefined
 
-  if (isDocumentMode) {
-    const block = project.blocks[0]!
-    const data = block.data as any
+  if (documentBlock?.type === "rich-text") {
+    const block = documentBlock
+    const data = block.data
 
     // mountKey ensures LexicalComposer re-mounts when a different project
     // is loaded (otherwise the old empty state stays).

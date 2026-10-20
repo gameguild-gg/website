@@ -10,11 +10,13 @@ export function ViewerField() {
   const { viewer, ui, fieldConfig } = useViewer()
 
   if (viewer.currentProject) {
-    const isDocumentMode = fieldConfig.projectType === "document" && viewer.blocks.length === 1 && viewer.blocks[0]?.type === "rich-text"
+    const documentBlock = fieldConfig.projectType === "document" && viewer.blocks.length === 1
+      ? viewer.blocks[0]
+      : undefined
 
-    if (isDocumentMode) {
-      const block = viewer.blocks[0]!
-      const data = block.data as any
+    if (documentBlock?.type === "rich-text") {
+      const block = documentBlock
+      const data = block.data
       const viewerMountKey = `${viewer.currentProject.id ?? "view"}-${block.id}`
 
       return (
