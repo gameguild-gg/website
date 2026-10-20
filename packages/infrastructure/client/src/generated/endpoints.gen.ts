@@ -938,6 +938,36 @@ export const getApiCertificatesEndpoint = {
 } as const;
 
 /**
+ * Read asynchronous publication state. Cached state does not prove current chain validity.
+ */
+export interface GetApiCertificatesEvmInput {
+  id: string;
+}
+export type GetApiCertificatesEvmOutput = Types.APICoreIntegrationCertificateEvmEvidenceOutput;
+export const getApiCertificatesEvmEndpoint = {
+  operationId: 'getApiCertificatesEvm' as const,
+  method: 'GET' as const,
+  path: '/api/certificates/{id}/evm' as const,
+  tags: ['ApiSecurityCertificates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Independently verify the original recorded transaction against its configured canonical chain.
+ */
+export interface GetApiCertificatesEvmProofInput {
+  id: string;
+}
+export type GetApiCertificatesEvmProofOutput = Types.APICoreIntegrationCertificateEvmEvidenceOutput;
+export const getApiCertificatesEvmProofEndpoint = {
+  operationId: 'getApiCertificatesEvmProof' as const,
+  method: 'GET' as const,
+  path: '/api/certificates/{id}/evm/proof' as const,
+  tags: ['ApiSecurityCertificates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Revoke a certificate
  */
 export interface PostApiCertificatesRevokeInput {
@@ -29746,6 +29776,8 @@ export const endpoints = {
   putApiAuditSecurityEventsRetentionPolicy: putApiAuditSecurityEventsRetentionPolicyEndpoint,
   getApiAuditSecurityEventsTaxonomy: getApiAuditSecurityEventsTaxonomyEndpoint,
   getApiCertificates: getApiCertificatesEndpoint,
+  getApiCertificatesEvm: getApiCertificatesEvmEndpoint,
+  getApiCertificatesEvmProof: getApiCertificatesEvmProofEndpoint,
   postApiCertificatesRevoke: postApiCertificatesRevokeEndpoint,
   getApiCertificatesCourse: getApiCertificatesCourseEndpoint,
   getApiCertificatesExpiring: getApiCertificatesExpiringEndpoint,

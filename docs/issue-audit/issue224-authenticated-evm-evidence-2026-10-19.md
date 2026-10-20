@@ -43,3 +43,11 @@ The release classifier recognizes controller/contract filename suffixes outside 
 directories and changes to the OpenAPI verification scripts. Four additional authored classifier
 regressions cover those paths and preserve test-only/CI-only deployment behavior. Existing full
 Economy qualification for changes to the classifier remains in force.
+
+The client endpoint descriptors, certificate module, exports and public response schemas were
+reconciled with the hosted OpenAPI generation from source
+`a36e7f01423b3257278c4102ff8881dd69a666f8` (artifact `12233194987`, SHA-256
+`3649790abe9cfba29f0fa1f482dd2b98eafe2d9c57416d05a278601d13fddd59`). Only those four
+generated TypeScript files changed; existing hidden generator metadata was preserved because the
+artifact upload excludes hidden files. This source reconciliation requires a passing client drift
+gate and the other selected checks on the updated PR source before acceptance.
