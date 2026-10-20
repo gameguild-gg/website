@@ -1982,14 +1982,8 @@
     }
   },
   "src/components/courses/common/ui/course-card.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
     "@typescript-eslint/no-redundant-type-constituents": {
       "count": 3
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
     }
   },
   "src/components/courses/common/ui/course-list-wrapper.tsx": {
@@ -2072,30 +2066,15 @@
     }
   },
   "src/components/courses/course-list-wrapper.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 7
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
   "src/components/courses/course-location-selector.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
     },
     "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
       "count": 1
     },
     "@typescript-eslint/require-await": {

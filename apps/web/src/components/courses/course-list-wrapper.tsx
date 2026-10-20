@@ -13,7 +13,7 @@ export default function CourseListWrapper({ courses }: { courses: CatalogCourse[
 
   // Transform legacy courses to new Course format
   const transformedCourses: Course[] = useMemo(() =>
-    validCourses.map((legacyCourse: any) => ({
+    validCourses.map((legacyCourse: CatalogCourse) => ({
       id: String(legacyCourse.id),
       title: String(legacyCourse.title ?? 'Untitled course'),
       slug: String(legacyCourse.slug ?? legacyCourse.id),

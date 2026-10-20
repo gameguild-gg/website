@@ -75,9 +75,9 @@ function normalizeDifficultyLevel(course: Course): number {
 export function CourseCard({ course, onEdit, onView, onEnroll }: CourseCardProps) {
   const normalizedStatus = normalizeStatusValue(course.status);
   const normalizedLevel = normalizeDifficultyLevel(course);
-  const normalizedArea = (course.area as any) ?? (course.category as any);
+  const normalizedArea = course.area ?? course.category;
   const lessonsCount = (course.content ?? course.programContents)?.length || 0;
-  const analyticsEnrollments = course.analytics?.enrollments ?? (course.currentEnrollments as any) ?? 0;
+  const analyticsEnrollments = course.analytics?.enrollments ?? course.currentEnrollments ?? 0;
   const analyticsRating = course.analytics?.averageRating ?? (typeof course.averageRating === 'number' ? course.averageRating : undefined);
   const title = course.title || 'Untitled course';
 

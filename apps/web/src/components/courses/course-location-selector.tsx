@@ -26,8 +26,8 @@ export function CourseLocationSelector({ onLocationSelected }: CourseLocationSel
         setError(null);
         const testingLocations = await getTestingLocations(0, 50);
 
-        // Filter to active locations only and cast to full type with status property
-        const activeLocations = testingLocations.filter((location: any) => location.status === 1) as TestingLocationFull[]; // Active status
+        // Filter to active locations only.
+        const activeLocations = testingLocations.filter((location) => location.status === 1); // Active status
 
         setLocations(activeLocations);
       } catch (err) {
