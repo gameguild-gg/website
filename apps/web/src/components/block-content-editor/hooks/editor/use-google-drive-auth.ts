@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { GoogleDriveSecurity } from "@/components/block-content-editor/utils/editor/google-drive-security"
 import { GoogleDriveService } from "@/components/block-content-editor/services/editor/google-drive-service"
+import type { GoogleDriveApi, GoogleDriveFolder, GoogleIdentityServices } from "@/components/block-content-editor/lib/api/editor/google-drive-sdk"
 
 interface GoogleDriveAuthState {
   isAuthenticated: boolean
@@ -14,17 +15,11 @@ interface GoogleDriveAuthState {
   error: string | null
 }
 
-interface GoogleDriveFolder {
-  id: string
-  name: string
-  createdTime: string
-}
-
 // Extend window type for new Google Identity Services
 declare global {
   interface Window {
-    google: any
-    gapi: any
+    google: GoogleIdentityServices
+    gapi: GoogleDriveApi
   }
 }
 
@@ -185,35 +180,38 @@ export function useGoogleDriveAuth() {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
       
       // Use new Google Identity Services
-      return new Promise((resolve) => {
+      return await new Promise<boolean>((resolve) => {
+        const handleAuthenticationError = (errorCode: string) => {
+          let errorMessage = 'Falha na autenticação'
+          if (errorCode === 'popup_closed_by_user' || errorCode === 'popup_closed') {
+            errorMessage = 'Autenticação cancelada pelo usuário'
+          } else if (errorCode === 'access_denied') {
+            errorMessage = 'Acesso negado pelo usuário'
+          }
+
+          setAuthState(prev => ({
+            ...prev,
+            error: errorMessage,
+            isLoading: false
+          }))
+
+          toast.error(errorMessage)
+          resolve(false)
+        }
+
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          callback: async (response: any) => {
-            if (response.error) {
+          callback: async (response) => {
+            if (response.error !== undefined) {
               console.error('Google authentication failed:', response)
-              
-              let errorMessage = 'Falha na autenticação'
-              if (response.error === 'popup_closed_by_user') {
-                errorMessage = 'Autenticação cancelada pelo usuário'
-              } else if (response.error === 'access_denied') {
-                errorMessage = 'Acesso negado pelo usuário'
-              }
-              
-              setAuthState(prev => ({ 
-                ...prev, 
-                error: errorMessage,
-                isLoading: false 
-              }))
-              
-              toast.error(errorMessage)
-              resolve(false)
+              handleAuthenticationError(response.error)
               return
             }
 
             // Success - we have an access token
             const accessToken = response.access_token
-            const expiresIn = response.expires_in ? parseInt(response.expires_in) * 1000 : 3600000 // Default 1 hour
+            const expiresIn = response.expires_in ? parseInt(String(response.expires_in)) * 1000 : 3600000 // Default 1 hour
             const expiryTime = Date.now() + expiresIn
 
             // Store token with expiry
@@ -233,12 +231,16 @@ export function useGoogleDriveAuth() {
             toast.success('Autenticado com Google Drive')
             resolve(true)
           },
+          error_callback: (error) => {
+            console.error('Google authentication failed:', error)
+            handleAuthenticationError(error.type)
+          },
         })
 
         // Request access token
         tokenClient.requestAccessToken({ prompt: 'consent' })
       })
-    } catch (error: any) {
+    } catch (error) {
       console.error('Google authentication failed:', error)
       
       setAuthState(prev => ({ 
@@ -254,7 +256,8 @@ export function useGoogleDriveAuth() {
 
   // Create or find Block Content Editor folder
   const createOrFindFolder = useCallback(async (folderName: string): Promise<string | null> => {
-    if (!authState.accessToken) return null
+    const accessToken = authState.accessToken
+    if (!accessToken) return null
 
     // Sanitize folder name
     const sanitizedName = GoogleDriveSecurity.sanitizeFileName(folderName.replace('.block-content-editor.json', ''))
@@ -263,7 +266,7 @@ export function useGoogleDriveAuth() {
     try {
       return await GoogleDriveSecurity.throttleApiCall(async () => {
         // Set the access token for GAPI client before making API calls
-        window.gapi.client.setToken({ access_token: authState.accessToken })
+        window.gapi.client.setToken({ access_token: accessToken })
         
         // First, check if folder already exists
         const searchResponse = await window.gapi.client.drive.files.list({
@@ -458,13 +461,5 @@ export function useGoogleDriveAuth() {
     getAvailableFolders,
     refreshAuthState,
     hasValidSetup: authState.isAuthenticated && authState.selectedFolder,
-  }
-}
-
-// Extend window type for Google API
-declare global {
-  interface Window {
-    gapi: any
-    google: any
   }
 }

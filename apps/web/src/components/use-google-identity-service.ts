@@ -47,12 +47,10 @@ export interface GisId {
 }
 
 /**
- * Typed accessor for the GIS surface. Avoids redeclaring Window.google
- * globally (an existing module already declares it as `any`).
+ * Typed accessor for the identity surface shared with the editor's Drive SDK.
  */
 function getGisId(): GisId | undefined {
-  return (window as unknown as { google?: { accounts?: { id?: GisId } } })
-    .google?.accounts?.id
+  return window.google?.accounts?.id
 }
 
 /* ------------------------------------------------------------------ */

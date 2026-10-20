@@ -349,7 +349,7 @@ export class GoogleDriveService {
         return existingFileId
       } else {
         // Create new file
-        const response = await window.gapi.client.request({
+        const response = await window.gapi.client.request<{ id: string }>({
           path: 'https://www.googleapis.com/upload/drive/v3/files',
           method: 'POST',
           params: {
