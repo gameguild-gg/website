@@ -2508,14 +2508,6 @@
       "count": 1
     }
   },
-  "src/data/courses/databases/13-timeseries-search/index.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 5
-    }
-  },
   "src/i18n/request.ts": {
     "@typescript-eslint/no-unsafe-assignment": {
       "count": 1

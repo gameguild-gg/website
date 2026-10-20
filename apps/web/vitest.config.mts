@@ -26,7 +26,8 @@ export default defineConfig({
     },
     server: {
       deps: {
-        inline: ['next-intl', 'use-intl'],
+        // Keep Lexical's editor and node classes in the same module runner.
+        inline: ['next-intl', 'use-intl', 'lexical', /[/\\]@lexical[/\\]/],
       },
     },
   },
