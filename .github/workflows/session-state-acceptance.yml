@@ -1,0 +1,104 @@
+name: Session state functional acceptance
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/session-state-acceptance.yml"
+      - ".github/actions/setup-node-workspace/**"
+      - ".github/actions/setup-dotnet/**"
+      - ".github/actions/setup-playwright/**"
+      - "apps/api/Source/**"
+      - "apps/api/Directory.*"
+      - "apps/api/tests/GameGuild.SessionStateAcceptance/**"
+      - "apps/api/tests/GameGuild.API.IntegrationTests/Infrastructure/**"
+      - "apps/api/tests/GameGuild.TestSupport.Finance.Economy/**"
+      - "apps/web/**"
+      - "packages/infrastructure/client/**"
+      - "packages/ui/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "scripts/ci/**"
+  push:
+    branches: [develop, main]
+    paths:
+      - ".github/workflows/session-state-acceptance.yml"
+      - ".github/actions/setup-node-workspace/**"
+      - ".github/actions/setup-dotnet/**"
+      - ".github/actions/setup-playwright/**"
+      - "apps/api/Source/**"
+      - "apps/api/Directory.*"
+      - "apps/api/tests/GameGuild.SessionStateAcceptance/**"
+      - "apps/api/tests/GameGuild.API.IntegrationTests/Infrastructure/**"
+      - "apps/api/tests/GameGuild.TestSupport.Finance.Economy/**"
+      - "apps/web/**"
+      - "packages/infrastructure/client/**"
+      - "packages/ui/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "scripts/ci/**"
+
+permissions:
+  contents: read
+
+jobs:
+  session-state:
+    name: Session state browser API PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Bind evidence to the actual hosted checkout
+        shell: bash
+        run: |
+          mkdir -p artifacts/session-state
+          git -c core.commitGraph=false rev-parse HEAD > artifacts/session-state/checkout-commit.txt
+          git -c core.commitGraph=false rev-parse 'HEAD^{tree}' > artifacts/session-state/checkout-tree.txt
+          git -c core.commitGraph=false show --no-patch --format=%P HEAD > artifacts/session-state/checkout-parents.txt
+      - uses: ./.github/actions/setup-node-workspace
+      - uses: ./.github/actions/setup-dotnet
+      - uses: ./.github/actions/setup-playwright
+      - name: Build the real client library used by the application and encrypted cookie writer
+        run: pnpm --filter @game-guild/client build
+      - name: Build the isolated acceptance host
+        run: >-
+          dotnet build apps/api/tests/GameGuild.SessionStateAcceptance/GameGuild.SessionStateAcceptance.csproj
+          --configuration Release --disable-build-servers
+          -m:2 -p:UseSharedCompilation=false
+      - name: Release compiler memory before browser and API execution
+        run: dotnet build-server shutdown
+      - name: Exercise the real account page, cookie, BFF, API and persisted session
+        shell: bash
+        run: |
+          dotnet apps/api/tests/GameGuild.SessionStateAcceptance/bin/Release/net10.0/GameGuild.SessionStateAcceptance.dll \
+            "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/artifacts/session-state"
+      - name: Require browser and independent persistence acceptance
+        shell: bash
+        run: |
+          node --max-old-space-size=128 --input-type=module - <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import assert from 'node:assert/strict';
+          const browser = JSON.parse(readFileSync('artifacts/session-state/browser.json', 'utf8'));
+          const persistence = JSON.parse(readFileSync('artifacts/session-state/persistence.json', 'utf8'));
+          assert.equal(browser.passed, true);
+          assert.equal(browser.cases.length, 7);
+          assert.ok(browser.cases.every(test => test.outcome === 'Passed'));
+          assert.equal(browser.mockedAuthenticationOrTransport, false);
+          assert.equal(persistence.passed, true);
+          assert.equal(persistence.sessionId, browser.sessionId);
+          assert.equal(persistence.ownSessionTerminated, true);
+          assert.equal(persistence.unrelatedSessionsUnchanged, 2);
+          NODE
+      - name: Retain source-bound acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: session-state-acceptance-${{ github.sha }}
+          if-no-files-found: error
+          path: artifacts/session-state/

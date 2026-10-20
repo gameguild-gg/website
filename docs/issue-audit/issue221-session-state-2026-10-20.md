@@ -13,7 +13,7 @@ artifact. Eight Web cases passed in PR 842 run 38503283985, Web job 115759235294
 their six source/test files remain unchanged. These cases mock the respective
 service or transport boundaries, so they do not establish native HTTP acceptance.
 
-## Native candidate
+## Native acceptance delivered
 
 `AuthSessionStatePostgreSqlHttpTests` adds ten cases against the existing migrated
 PostgreSQL fixture and real JWT authentication:
@@ -37,13 +37,50 @@ Invalid or revoked session-bound credentials are rejected by middleware before
 the query. The handler's unit-level invalid-session projections are therefore not
 advertised as HTTP responses for those credentials.
 
+PR 915 delivered the ten cases in commit
+`66773ef1eeea6ecf692ab053a559e8985c07f2d2`, after all matching-source CI passed.
+The actual tested checkout was `86aa74ec9122902f7c6e6effd5c3cac42e88b2da`;
+its tree and the delivered tree are
+`4e23e600e192f367eb92e32c1ce20e56202b0ded`.
+PR Verify run 39427264763, API job 118643096622, contains 10,303 passed API
+cases, including all ten above and nine handler cases, plus 16 OpenAPI cases.
+
+## Composed Web acceptance candidate
+
+The dedicated `Session state functional acceptance` workflow starts the actual
+API on Kestrel with a migrated disposable PostgreSQL database, then runs the
+actual Next.js development application and Chromium. A separate console project
+reuses the existing API fixture; ordinary API test jobs do not gain a Node or
+browser dependency.
+
+The synthetic account has two active sessions and a persisted tenant membership.
+Another account owns a third session. The registered JWT service signs the
+access token, and the built client library encrypts the browser session cookie.
+Only this bootstrap is synthetic: the Next request cookie reader, authentication
+code, state route, hook, UI, API middleware, query and repositories are real.
+Credentials travel through a child-process input pipe, never command arguments
+or evidence files.
+
+| Hosted scenario | Required observable result |
+| --- | --- |
+| Anonymous browser | Same-origin route returns 401 |
+| Tampered encrypted cookie | Same-origin route returns 401 |
+| Actual account page | Persisted owner/session/timestamps/count/MFA state matches the response and card |
+| Refresh button | Successful current-state response with `cache-control: no-store` |
+| Foreign identity parameters | Projection remains bound to the authenticated owner |
+| Actual API session termination | Authenticated DELETE succeeds |
+| Refresh after termination | BFF forwards 401; card removes stale fields and renders an error |
+| Independent fresh database scope | Current session terminated; two unrelated sessions unchanged |
+
+The workflow retains exact checkout/tree/parents, seven browser scenario
+outcomes, a separate persistence verdict, screenshots and redacted Next logs.
+Missing or failed evidence fails the job. No authentication or transport mocks,
+manual CI reruns, local product execution, or production-build qualification
+are implied.
+
 ## Acceptance status
 
-This candidate changes tests and documentation only. No production defect has
-been confirmed, and the historical issue state is retained. The new cases need
-matching-source hosted CI evidence before credit. No local SDK, build, tests,
-database, container, browser or server execution was performed.
-
-Full recertification additionally requires the Web proxy/API integration evidence.
-Neither these ten definitions nor the previous mocked Web cases alone complete
-that review. No new issue closure or complete recertification is claimed here.
+The native API increment is delivered. Composed Web acceptance is a candidate
+until its matching-source hosted results and all CI have been reviewed. The
+historical issue state is retained; this candidate does not count as a new
+implementation, official closure or complete recertification.
