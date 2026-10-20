@@ -43,6 +43,18 @@ public class AuthService(
     public Task<SignInResponse> GitHubCallbackSignInAsync(GitHubCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
         oauthAuthService.GitHubCallbackSignInAsync(request, cancellationToken);
 
+    public Task<SignInResponse> SteamCallbackSignInAsync(SteamCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        oauthAuthService.SteamCallbackSignInAsync(request, cancellationToken);
+
+    public Task<SignInResponse> EpicCallbackSignInAsync(EpicCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        oauthAuthService.EpicCallbackSignInAsync(request, cancellationToken);
+
+    public Task<SignInResponse> FacebookCallbackSignInAsync(FacebookCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        oauthAuthService.FacebookCallbackSignInAsync(request, cancellationToken);
+
+    public Task<SignInResponse> MicrosoftCallbackSignInAsync(MicrosoftCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        oauthAuthService.MicrosoftCallbackSignInAsync(request, cancellationToken);
+
     public Task<SignInResponse> OidcSignInAsync(OidcSignInRequest request, CancellationToken cancellationToken = default) =>
         oauthAuthService.OidcSignInAsync(request, cancellationToken);
 
