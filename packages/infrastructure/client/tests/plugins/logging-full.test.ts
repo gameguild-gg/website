@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createLoggingInterceptor } from '../../src/plugins/logging.js';
-import type { ApiResponse } from '../../src/runtime/transport/types.js';
+import type { ApiResponse, RequestConfig } from '../../src/runtime/transport/types.js';
 
 describe('createLoggingInterceptor — full branch', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -172,7 +172,7 @@ describe('createLoggingInterceptor — full branch', () => {
       method: 'GET',
       headers: {},
       _requestId: 'req-123',
-    } as any);
+    } satisfies RequestConfig & { _requestId: string });
 
     expect(calls[0]).not.toContain('req-123');
   });

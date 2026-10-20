@@ -43,20 +43,18 @@ describe('createAuthBroadcast', () => {
     expect(onMessage).not.toHaveBeenCalled();
   });
 
-  // NOTE: Happy-path tests (send, close, message handling) require a real browser
-  // environment where `typeof window !== 'undefined'`. In Vitest's Node environment,
-  // vi.stubGlobal('window', ...) does not make `typeof window` return 'object' in ESM.
-  // The error-handling and SSR tests below cover all code paths accessible from Node.
+  // These error-path fixtures expose only the channel methods used by the helper.
+  // They do not establish real browser cross-tab behavior.
 
   it('should handle postMessage errors gracefully', async () => {
     vi.stubGlobal('window', { location: {} });
 
-    const mockChannel = {
+    const mockChannel: Pick<BroadcastChannel, 'postMessage' | 'close' | 'onmessage'> = {
       postMessage: vi.fn(() => {
         throw new Error('Channel closed');
       }),
       close: vi.fn(),
-      onmessage: null as any,
+      onmessage: null,
     };
 
     vi.stubGlobal(
@@ -69,17 +67,18 @@ describe('createAuthBroadcast', () => {
 
     const broadcast = createAuthBroadcast(vi.fn());
     expect(() => broadcast.send({ type: 'session-update', timestamp: Date.now() })).not.toThrow();
+    expect(mockChannel.postMessage).toHaveBeenCalledOnce();
   });
 
   it('should handle close errors gracefully', async () => {
     vi.stubGlobal('window', { location: {} });
 
-    const mockChannel = {
+    const mockChannel: Pick<BroadcastChannel, 'postMessage' | 'close' | 'onmessage'> = {
       postMessage: vi.fn(),
       close: vi.fn(() => {
         throw new Error('Already closed');
       }),
-      onmessage: null as any,
+      onmessage: null,
     };
 
     vi.stubGlobal(
@@ -92,6 +91,7 @@ describe('createAuthBroadcast', () => {
 
     const broadcast = createAuthBroadcast(vi.fn());
     expect(() => broadcast.close()).not.toThrow();
+    expect(mockChannel.close).toHaveBeenCalledOnce();
   });
 
   it('should handle BroadcastChannel constructor error', async () => {

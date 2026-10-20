@@ -92,7 +92,7 @@ describe('OpenAPI spec fetcher', () => {
       info: { title: 'Metadata API', version: '1.0.0' },
       tags: [{ name: 'Billing' }],
       paths: {
-        '/empty': undefined as any,
+        '/empty': undefined,
         '/users': {
           get: { operationId: 'getUsers', tags: ['Users'], responses: {} },
           post: { tags: ['Users', 'Admin'], responses: {} },

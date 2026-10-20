@@ -12,7 +12,7 @@ vi.mock('../../src/runtime/auth/jwt.js', () => ({
 }));
 
 vi.mock('../../src/runtime/auth/session.js', () => ({
-  processSession: vi.fn(async (token: string, config: any) => {
+  processSession: vi.fn(async (token: string, _config: ResolvedAuthConfig) => {
     if (token === 'valid-token') {
       return {
         session: {

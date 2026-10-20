@@ -5,22 +5,32 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-describe('createClientFromCookies — gap coverage (lines 180-185)', () => {
-  const originalFetch = globalThis.fetch;
+type FetchFixture = (...args: Parameters<typeof fetch>) => Promise<{
+  ok: boolean;
+  status: number;
+  headers: Headers;
+  json: () => Promise<unknown>;
+  text: () => Promise<string>;
+}>;
 
+function createFetchFixture() {
+  return vi.fn<FetchFixture>().mockResolvedValue({
+    ok: true,
+    status: 200,
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => ({ data: 'ok' }),
+    text: async () => '{"data":"ok"}',
+  });
+}
+
+describe('createClientFromCookies — gap coverage (lines 180-185)', () => {
   beforeEach(() => {
     vi.resetModules();
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      headers: new Headers({ 'content-type': 'application/json' }),
-      json: async () => ({ data: 'ok' }),
-      text: async () => '{"data":"ok"}',
-    });
+    vi.stubGlobal('fetch', createFetchFixture());
   });
 
   afterEach(() => {
-    globalThis.fetch = originalFetch;
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -85,21 +95,16 @@ describe('createClientFromCookies — gap coverage (lines 180-185)', () => {
 });
 
 describe('createRouteClient — gap coverage (header extraction closures)', () => {
-  const originalFetch = globalThis.fetch;
+  let fetchFixture: ReturnType<typeof createFetchFixture>;
 
   beforeEach(() => {
     vi.resetModules();
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      headers: new Headers({ 'content-type': 'application/json' }),
-      json: async () => ({ data: 'ok' }),
-      text: async () => '{"data":"ok"}',
-    });
+    fetchFixture = createFetchFixture();
+    vi.stubGlobal('fetch', fetchFixture);
   });
 
   afterEach(() => {
-    globalThis.fetch = originalFetch;
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -120,8 +125,10 @@ describe('createRouteClient — gap coverage (header extraction closures)', () =
     await client.request({ path: '/api/data', method: 'GET', headers: {} });
 
     expect(globalThis.fetch).toHaveBeenCalled();
-    const [, opts] = (globalThis.fetch as any).mock.calls[0];
-    expect(opts.headers.get('Authorization')).toBe('Bearer route-token-123');
-    expect(opts.headers.get('X-Tenant-Id')).toBe('route-tenant-456');
+    const requestHeaders = fetchFixture.mock.calls[0]?.[1]?.headers;
+    expect(requestHeaders).toBeInstanceOf(Headers);
+    if (!(requestHeaders instanceof Headers)) throw new Error('Expected native fetch Headers');
+    expect(requestHeaders.get('Authorization')).toBe('Bearer route-token-123');
+    expect(requestHeaders.get('X-Tenant-Id')).toBe('route-tenant-456');
   });
 });

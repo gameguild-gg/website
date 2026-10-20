@@ -7,10 +7,12 @@ import { createRetryPlugin } from '../../src/plugins/retry.js';
 import { createLoggingInterceptor } from '../../src/plugins/logging.js';
 import { createCacheInterceptor, MemoryCache } from '../../src/plugins/cache.js';
 import { createMetricsInterceptor } from '../../src/plugins/metrics.js';
-import type { RequestConfig } from '../../src/runtime/transport/types.js';
+import type { ApiResponse, RequestConfig } from '../../src/runtime/transport/types.js';
 import { ok, err } from '../../src/runtime/result/helpers.js';
 import type { ApiError } from '../../src/runtime/errors/types.js';
 import { fixtureTransport } from '../support/contract-fixtures.js';
+
+type MetricsResponse = ApiResponse<unknown> & { _metricsKey?: string };
 
 describe('Retry Plugin', () => {
   it('should create retry plugin with wrapTransport method', () => {
@@ -170,7 +172,7 @@ describe('Metrics Interceptor', () => {
     
     vi.advanceTimersByTime(150);
 
-    const response = {
+    const response: MetricsResponse = {
       data: {},
       status: 200,
       headers: new Headers(),
@@ -179,7 +181,7 @@ describe('Metrics Interceptor', () => {
     // Copy the metrics key from the request to the response (simulating what fetch transport does)
     const metricsKey = (processedRequest as RequestConfig & { _metricsKey?: string })._metricsKey;
     if (metricsKey) {
-      (response as any)._metricsKey = metricsKey;
+      response._metricsKey = metricsKey;
     }
 
     await metricsInterceptor.onResponse!(response);
@@ -206,11 +208,11 @@ describe('Metrics Interceptor', () => {
       
       vi.advanceTimersByTime(100 + i * 10);
 
-      const response = { data: {}, status: 200, headers: new Headers() };
+      const response: MetricsResponse = { data: {}, status: 200, headers: new Headers() };
       // Copy the metrics key
       const metricsKey = (processedRequest as RequestConfig & { _metricsKey?: string })._metricsKey;
       if (metricsKey) {
-        (response as any)._metricsKey = metricsKey;
+        response._metricsKey = metricsKey;
       }
 
       await metricsInterceptor.onResponse!(response);

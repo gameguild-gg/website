@@ -16,9 +16,14 @@ describe('stable shared schema identity', () => {
     } as OpenApiSpec);
     const alone = spec(false);
     const alongside = spec(true);
+    const aloneSchema = alone.components?.schemas?.IdentityUsersUserDto;
+    const alongsideSchema = alongside.components?.schemas?.IdentityUsersUserDto;
     expect(alone.paths).toEqual(alongside.paths);
-    expect((alone.components as any).schemas.IdentityUsersUserDto).toEqual((alongside.components as any).schemas.IdentityUsersUserDto);
-    expect((alone.components as any).schemas.IdentityUsersUserDto.properties).not.toHaveProperty('passwordHash');
+    expect(aloneSchema).toEqual(alongsideSchema);
+    if (typeof aloneSchema !== 'object' || aloneSchema === null || !('properties' in aloneSchema)) {
+      throw new Error('Expected normalized DTO schema properties');
+    }
+    expect(aloneSchema.properties).not.toHaveProperty('passwordHash');
   });
 
   it('resolves an exact DTO reference before a similarly named entity', () => {

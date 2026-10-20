@@ -14,7 +14,7 @@ const make401 = (): ApiError => ({
   status: 401,
 });
 
-const makeOk = (): ApiResponse<any> => ({
+const makeOk = (): ApiResponse<{ ok: true }> => ({
   data: { ok: true },
   status: 200,
   headers: new Headers(),

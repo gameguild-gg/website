@@ -140,7 +140,7 @@ describe('createLoggingInterceptor', () => {
         method: 'GET',
         path: '/test',
         _requestId: 'req-12345678-abcd',
-      } as any);
+      } satisfies RequestConfig & { _requestId: string });
 
       expect(logs[0]!.message).toContain('req-1234');
     });
