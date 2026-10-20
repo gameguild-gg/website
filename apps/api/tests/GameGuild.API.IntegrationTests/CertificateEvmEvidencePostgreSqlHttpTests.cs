@@ -121,6 +121,18 @@ public sealed class CertificateEvmEvidencePostgreSqlHttpTests(CertificateEvmEvid
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode); Assert.Equal(0, h.Lookup.Calls); h.Proofs.VerifyNoOtherCalls();
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AnUnjoinedTenantQueryIsDeniedBeforeReadingEvidence(bool fresh)
+    {
+        var user = User(); using var h = Create(user, true); var document = await Seed(h.Factory, user, user, fixture.TenantId, false, false);
+        using var client = await SignIn(h.Factory);
+        using var response = await client.GetAsync(Route(document.Id, fresh) + "?tenantId=" + Guid.NewGuid(), Ct);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(0, h.Lookup.Calls); h.Proofs.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task ASoftDeletedCertificateIsNotReturnedOverHttp()
     {
@@ -146,7 +158,7 @@ public sealed class CertificateEvmEvidencePostgreSqlHttpTests(CertificateEvmEvid
         var original = await Prepare(document); h.AnchorProof(original);
         using var client = await SignIn(h.Factory);
         var arbitrary = "0x" + new string('9', 64);
-        using var response = await client.GetAsync(Route(document.Id, true) + "?transactionHash=" + arbitrary + "&tenantId=" + Guid.NewGuid(), Ct);
+        using var response = await client.GetAsync(Route(document.Id, true) + "?transactionHash=" + arbitrary, Ct);
         var result = await Read(response);
         Assert.Equal(CertificateEvmValidity.Valid, result.Validity); Assert.Equal(original.TransactionHash, result.ChainProof!.Evidence!.TransactionHash);
         var after = await fixture.Journal.FindAsync(original.Id, Ct); Assert.Equal(original.Revision, after!.Revision);

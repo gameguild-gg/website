@@ -5,8 +5,10 @@ Refs #224. Full issue acceptance remains pending.
 The host adds authenticated `GET /api/certificates/{id}/evm` and
 `GET /api/certificates/{id}/evm/proof` routes. Before any journal/RPC lookup, the controller loads the
 persisted document with an exact authenticated owner/tenant predicate. An explicit trusted
-SystemAdmin may cross that boundary; soft-deleted rows remain hidden. Tenant and owner query
-parameters do not select scope. Responses declare no-store caching.
+SystemAdmin may cross that boundary; soft-deleted rows remain hidden. The controller uses the trusted
+tenant context. An unjoined tenant selected through a query is rejected by tenant middleware before
+the evidence lookup; owner and transaction query fields cannot replace the stored document identity.
+Responses declare no-store caching.
 
 Local certificate status, durable publication state and fresh chain proof are separate fields.
 Cached confirmations never prove current validity. A proof request reads the original recorded
@@ -23,7 +25,7 @@ disabled configuration without registering publication persistence, RPC, keys or
 
 ## Authored validation and outstanding acceptance
 
-There are 57 authored cases: 30 reader-policy cases, 12 controller-guard cases and 15 HTTP cases on
+There are 59 authored cases: 30 reader-policy cases, 12 controller-guard cases and 17 HTTP cases on
 the real API host with actual PostgreSQL application/journal models and real signed bearer/session
 validation. Reader-policy cases control the lookup/proof boundaries; controller cases use InMemory.
 HTTP cases simulate magic-link verification and chain-proof responses. Their stored transaction is
@@ -51,3 +53,10 @@ reconciled with the hosted OpenAPI generation from source
 generated TypeScript files changed; existing hidden generator metadata was preserved because the
 artifact upload excludes hidden files. This source reconciliation requires a passing client drift
 gate and the other selected checks on the updated PR source before acceptance.
+
+Hosted regression on source `6591a26b504df002b23972cd754bc1d1b01ac74a` exposed an incorrect HTTP
+test expectation: combining a transaction query override with an unjoined tenant expected 200,
+while tenant middleware correctly returned 403. The original-transaction test now isolates its
+transaction query. Two additional HTTP cases explicitly require 403 and zero evidence/proof calls
+for an unjoined tenant query on each route. Tenant authorization behavior is preserved. Matching
+updated-source CI remains required; the failed run is not acceptance evidence.
