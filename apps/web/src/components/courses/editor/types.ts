@@ -9,7 +9,7 @@ import { ReactNode } from 'react';
 
 // Stub type for CourseContent which doesn't exist in @/lib/courses
 export interface CourseContent {
-  chapters?: any[];
+  chapters?: CourseChapter[];
   syllabus?: string;
   prerequisites?: string[];
   objectives?: string[];

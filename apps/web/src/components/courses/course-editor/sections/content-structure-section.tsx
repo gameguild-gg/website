@@ -183,7 +183,7 @@ export function ContentStructureSection() {
           type: 'UPDATE_MODULE',
           moduleId,
           updates: {
-            visibility: state.content.modules.find((m: any) => m.id === moduleId)?.visibility === 'public' ? 'private' : 'public',
+            visibility: state.content.modules.find((m) => m.id === moduleId)?.visibility === 'public' ? 'private' : 'public',
           },
         });
         break;
@@ -320,7 +320,7 @@ export function ContentStructureSection() {
   const renderModule = (module: CourseModule) => {
     const isExpanded = module.isExpanded ?? false;
     const lessonCount = module.lessons?.length ?? 0;
-    const totalDuration = module.lessons?.reduce((sum: number, lesson: any) => sum + lesson.duration, 0) ?? 0;
+    const totalDuration = module.lessons?.reduce((sum: number, lesson) => sum + lesson.duration, 0) ?? 0;
 
     return (
       <div key={module.id} className="border border-border rounded-lg overflow-hidden">
@@ -409,7 +409,7 @@ export function ContentStructureSection() {
         {isExpanded && (
           <div className="p-4 pt-0 space-y-2 bg-muted/20">
             {module.lessons && module.lessons.length > 0 ? (
-              module.lessons.map((lesson: any) => renderLesson(lesson))
+              module.lessons.map((lesson) => renderLesson(lesson))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />

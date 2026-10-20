@@ -100,19 +100,19 @@ export function getProgramContentBySlug(programSlug: string, contentPath: string
   });
   console.log(
     '🔍 Available content:',
-    program.programContents?.map((item: any) => ({ id: item.id, title: item.title, parent: item.parent, parentId: item.parentId }))
+    program.programContents?.map((item) => ({ id: item.id, title: item.title, parent: item.parent, parentId: item.parentId }))
   );
 
   let content: ProgramContent | null =
     program.programContents?.find(
-      (item: any) => (item.parent === null || item.parent === undefined) && (item as any).slug === contentPath[0]
+      (item) => (item.parent === null || item.parent === undefined) && item.slug === contentPath[0]
     ) || null;
 
   console.log('🔍 First level search result:', content ? { id: content.id, title: content.title } : 'Not found');
 
   if (contentPath.length > 1) {
     for (const slug of contentPath.slice(1)) {
-      content = content?.children?.find((item: any) => (item as any).slug === slug) || null;
+      content = content?.children?.find((item) => item.slug === slug) || null;
       if (!content) {
         return null;
       }

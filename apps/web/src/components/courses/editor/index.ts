@@ -14,7 +14,7 @@ import type { Course as CourseType } from '@/lib/courses';
 import { autoSaveCourse, createCourse, getCourseBySlug, publishCourse, saveCourse } from './actions';
 import { CourseEditorProvider, useCourseEditor } from './context/course-editor-provider';
 import { courseEditorReducer, createEmptyCourse, createInitialCourseEditorState, validateCourse } from './context/course-editor-reducer';
-import type { CourseChapter as CourseChapterType, CourseEditorAction, CourseEditorConfig, CourseEditorContextValue, CourseEditorState, CourseValidationError as CourseValidationErrorType } from './types';
+import type { CourseChapter as CourseChapterType, CourseEditorAction, CourseEditorConfig, CourseEditorContextValue, CourseEditorState, CourseLesson as CourseLessonType, CourseValidationError as CourseValidationErrorType } from './types';
 
 // Types
 export type {
@@ -126,8 +126,8 @@ export const CourseEditorUtils = {
 
     const totalLessons = chapters.reduce((total, chapter) => total + chapter.lessons.length, 0);
     const completedLessons = chapters.reduce((total, chapter) => {
-      // Cast lesson to any to check isCompleted property which may not exist on type
-      return total + chapter.lessons.filter((lesson: any) => lesson.isCompleted).length;
+      // Learner completion is optional on editor lessons.
+      return total + chapter.lessons.filter((lesson: CourseLessonType & { isCompleted?: boolean }) => lesson.isCompleted).length;
     }, 0);
 
     return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
@@ -191,7 +191,7 @@ const CourseEditor = {
     Config: CourseEditorConfig;
     ValidationError: CourseValidationErrorType;
     Chapter: CourseChapterType;
-    Lesson: any; // CourseLesson not imported
+    Lesson: CourseLessonType;
     Course: CourseType;
   },
 };
