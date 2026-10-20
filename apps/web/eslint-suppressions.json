@@ -488,17 +488,6 @@
       "count": 8
     }
   },
-  "src/components/block-content-editor/engines/editor-field.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/engines/editor-provider.tsx": {
     "@typescript-eslint/no-floating-promises": {
       "count": 1
@@ -523,26 +512,6 @@
   },
   "src/components/block-content-editor/engines/static-viewer.tsx": {
     "@typescript-eslint/no-floating-promises": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 3
-    }
-  },
-  "src/components/block-content-editor/engines/viewer-field.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
       "count": 1
     }
   },
@@ -718,14 +687,8 @@
     "@next/next/no-assign-module-variable": {
       "count": 1
     },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 2
-    },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 10
+      "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 3
@@ -1009,15 +972,7 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/extras/manager-page/filters/filter-mime-types.tsx": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/extras/manager-page/filters/filters.tsx": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 3
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -1127,9 +1082,6 @@
     }
   },
   "src/components/block-content-editor/extras/media/unified-media-editor.tsx": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -1532,14 +1484,6 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/hooks/editor/test-runners/utils.ts": {
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 2
-    }
-  },
   "src/components/block-content-editor/hooks/editor/use-code-execution.ts": {
     "@typescript-eslint/no-floating-promises": {
       "count": 1
@@ -1570,23 +1514,11 @@
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
     },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 5
-    },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 12
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 26
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 4
+      "count": 1
     },
     "@typescript-eslint/require-await": {
-      "count": 3
+      "count": 2
     },
     "react-hooks/exhaustive-deps": {
       "count": 2
@@ -1699,9 +1631,6 @@
     }
   },
   "src/components/block-content-editor/hooks/useProjectHistory.ts": {
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -1735,7 +1664,7 @@
   },
   "src/components/block-content-editor/lib/api/editor/api-client.ts": {
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 14
+      "count": 10
     },
     "@typescript-eslint/no-unsafe-member-access": {
       "count": 5
@@ -1870,7 +1799,7 @@
   },
   "src/components/block-content-editor/lib/sync/editor/sync-queue.ts": {
     "@typescript-eslint/no-unsafe-argument": {
-      "count": 5
+      "count": 2
     },
     "@typescript-eslint/no-unsafe-member-access": {
       "count": 7
@@ -1880,9 +1809,6 @@
     },
     "@typescript-eslint/require-await": {
       "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
     }
   },
   "src/components/block-content-editor/nodes/custom-list-node.tsx": {
@@ -2031,23 +1957,14 @@
     }
   },
   "src/components/block-content-editor/services/editor/google-drive-service.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 3
-    },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 20
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 13
+      "count": 1
     },
     "@typescript-eslint/no-unsafe-member-access": {
-      "count": 35
+      "count": 1
     },
     "@typescript-eslint/no-unsafe-return": {
-      "count": 5
+      "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -2073,14 +1990,6 @@
     },
     "@typescript-eslint/no-unsafe-member-access": {
       "count": 11
-    }
-  },
-  "src/components/block-content-editor/utils/editor/google-drive-test.ts": {
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 4
     }
   },
   "src/components/blogs/blog-comments.tsx": {

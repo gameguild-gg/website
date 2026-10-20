@@ -202,7 +202,7 @@ export function useGoogleDriveAuth() {
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          callback: async (response) => {
+          callback: (response) => {
             if (response.error !== undefined) {
               console.error('Google authentication failed:', response)
               handleAuthenticationError(response.error)
@@ -278,16 +278,16 @@ export function useGoogleDriveAuth() {
           const folder = searchResponse.result.files[0]
           
           // Save folder info
-          updateLocalStorage('block-content-editor_google_drive_folder', folder.id!)
-          updateLocalStorage('block-content-editor_google_drive_folder_name', folder.name!)
+          updateLocalStorage('block-content-editor_google_drive_folder', folder.id)
+          updateLocalStorage('block-content-editor_google_drive_folder_name', folder.name)
           
           setAuthState(prev => ({
             ...prev,
-            selectedFolder: folder.id!,
-            folderName: folder.name!,
+            selectedFolder: folder.id,
+            folderName: folder.name,
           }))
           
-          return folder.id!
+          return folder.id
         }
 
         // Create new folder if not found
