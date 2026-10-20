@@ -139,7 +139,7 @@ public static class AuthorizationPolicies
 
     /// <summary>
     ///     Policy name admitting guests holding one specific enumerated guest permission
-    ///     (e.g. <see cref="Models.GuestPermission.Keys.BrowseCatalog"/>).
+    ///     (e.g. <see cref="GuestPermission.Keys.BrowseCatalog"/>).
     ///     Permissions outside <c>GuestPermission.Allowlist</c> have no registered policy and
     ///     are denied to guests by construction.
     /// </summary>
@@ -150,7 +150,7 @@ public static class AuthorizationPolicies
             throw new ArgumentException("A guest permission key is required.", nameof(guestPermissionKey));
         }
 
-        if (!Models.GuestPermission.Allowlist.Contains(guestPermissionKey))
+        if (!GuestPermission.Allowlist.Contains(guestPermissionKey))
         {
             throw new ArgumentOutOfRangeException(
                 nameof(guestPermissionKey),
