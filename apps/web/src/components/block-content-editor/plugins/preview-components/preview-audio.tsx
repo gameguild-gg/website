@@ -11,7 +11,7 @@ export function PreviewAudio({ node }: { node: SerializedAudioNode }) {
     return null
   }
 
-  const { src, title, artist, caption, size = 100 } = node.data as any
+  const { src, title, artist, caption, size = 100 } = node.data
 
   // Verificar se é um áudio incorporado
   const getAudioEmbedInfo = (url: string): { type: string; id: string } | null => {

@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
+import type { SerializedParagraphNode } from "lexical"
 
 interface PreviewParagraphProps {
-  node: any
+  node: SerializedParagraphNode
   children: React.ReactNode
 }
 
@@ -16,7 +17,7 @@ export function PreviewParagraph({ node, children }: PreviewParagraphProps) {
 
   // Check if paragraph contains block-level nodes (gallery, code-studio, etc.)
   // These cannot be nested inside <p> tags
-  const hasBlockLevelChildren = node.children?.some((child: any) => 
+  const hasBlockLevelChildren = node.children?.some((child) =>
     child.type === "gallery" || 
     child.type === "code-studio" ||
     child.type === "list" ||

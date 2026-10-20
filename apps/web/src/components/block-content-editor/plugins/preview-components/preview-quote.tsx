@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
+import type { SerializedQuoteNode } from "@lexical/rich-text"
 
 interface PreviewQuoteProps {
-  node: any
+  node: SerializedQuoteNode
   children: React.ReactNode
 }
 

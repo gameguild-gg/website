@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
+import type { SerializedListItemNode } from "@lexical/list"
 
 interface PreviewListItemProps {
-  node: any
+  node: SerializedListItemNode
   children: React.ReactNode
 }
 

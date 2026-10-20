@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
+import type { SerializedLinkNode } from "@lexical/link"
 
 interface PreviewLinkProps {
-  node: any
+  node: SerializedLinkNode
   children: React.ReactNode
 }
 

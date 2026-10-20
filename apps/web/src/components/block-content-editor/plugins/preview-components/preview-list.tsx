@@ -2,9 +2,14 @@
 
 import type React from "react"
 import { useEffect } from "react"
+import type { SerializedCustomListNode } from "../../nodes/custom-list-node"
 
 interface PreviewListProps {
-  node: any
+  node: SerializedCustomListNode & {
+    __markerColor?: string
+    "data-list-style-type"?: string
+    style?: string
+  }
   children: React.ReactNode
 }
 

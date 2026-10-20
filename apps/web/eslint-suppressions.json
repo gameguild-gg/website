@@ -1817,18 +1817,6 @@
     }
   },
   "src/components/block-content-editor/plugins/preview-components/preview-audio.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     }
@@ -1848,54 +1836,9 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/plugins/preview-components/preview-link.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    }
-  },
-  "src/components/block-content-editor/plugins/preview-components/preview-list-item.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 4
-    }
-  },
   "src/components/block-content-editor/plugins/preview-components/preview-list.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 14
-    },
     "react-hooks/purity": {
       "count": 2
-    }
-  },
-  "src/components/block-content-editor/plugins/preview-components/preview-paragraph.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 9
     }
   },
   "src/components/block-content-editor/plugins/preview-components/preview-project.tsx": {
@@ -1927,9 +1870,6 @@
     }
   },
   "src/components/block-content-editor/plugins/preview-components/preview-quote.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
