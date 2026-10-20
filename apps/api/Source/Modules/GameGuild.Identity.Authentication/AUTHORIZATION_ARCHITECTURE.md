@@ -2025,6 +2025,25 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### Policy-selected authentication and the immutable actor
+
+The host authenticates explicit endpoint schemes and static default, named and fallback
+policy schemes before token revocation, tenant membership validation and actor capture.
+This preserves the configured Bearer default and does not enable API keys globally.
+Multiple successful credentials cannot combine owners or scopes.
+
+Tenant-dependent policies are resolved only after tenant context exists. Before evaluating
+authorization requirements, the host rejects a later policy that changes the established
+principal. A database-backed policy requiring a different scheme must also declare that
+scheme at the endpoint or in static configuration so its credential can establish the
+tenant and actor first. Authorization never dispatches an endpoint using an earlier actor
+and a different newly authenticated principal.
+
+Anonymous endpoints retain the optional-token revocation path. The original actor cleanup
+remains responsible for ending the request context. Actual API-key HTTP/PostgreSQL tests
+cover owner identity, tenant claims and membership, scoping, lifecycle and audit; component
+tests separately cover static and deferred policy composition with synthetic credentials.
+
 ### Additive permission read and update contracts (issue #340)
 
 The existing three-layer compatibility facade has additive `IPermissionServiceV2`,

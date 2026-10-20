@@ -364,6 +364,7 @@ public static class SecurityServiceCollectionExtensions
         });
 
         services.AddScoped<IAuthorizationMiddlewareResultHandler, AuditingAuthorizationMiddlewareResultHandler>();
+        services.AddTransient<IPolicyEvaluator, ActorBoundPolicyEvaluator>();
 
         if (services.LastOrDefault(descriptor => descriptor.ServiceType == typeof(IAuthorizationPermissionService))?.ImplementationType ==
             typeof(AuthorizationPermissionServiceAdapter))
