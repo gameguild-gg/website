@@ -7,6 +7,8 @@
 import type {
     EmceptionAPI,
     FileEntry,
+    FSStats,
+    IFileSystem,
     NativeBuildConfig,
     RunOptions,
     TestCase,
@@ -141,3 +143,21 @@ expectType<() => Promise<Blob>>(wsApi.exportZip);
 declare const em: EmceptionAPI;
 expectAssignable<WorkspaceAPI>(em.workspace);
 expectType<() => void>(em.dispose);
+
+// Optional filesystem capabilities remain available through the shared contract.
+declare const filesystem: IFileSystem;
+expectType<(() => void | Promise<void>) | undefined>(filesystem.clear);
+expectType<((path: string) => Uint8Array | null) | undefined>(filesystem.readFileSync);
+expectType<((path: string, data: Uint8Array) => void) | undefined>(filesystem.writeFileSync);
+expectType<((path: string) => boolean) | undefined>(filesystem.existsSync);
+expectType<((path: string) => FSStats | null) | undefined>(filesystem.statSync);
+expectType<((path: string) => string[]) | undefined>(filesystem.readdirSync);
+expectType<((path: string) => boolean) | undefined>(filesystem.deleteFileSync);
+expectType<((path: string) => void) | undefined>(filesystem.mkdirSync);
+
+if (typeof filesystem.readFileSync === 'function') {
+    expectType<Uint8Array | null>(filesystem.readFileSync('/entry'));
+}
+if (typeof filesystem.clear === 'function') {
+    expectType<void | Promise<void>>(filesystem.clear());
+}

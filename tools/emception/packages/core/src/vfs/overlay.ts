@@ -22,8 +22,8 @@ export class OverlayFS implements IFileSystem {
   async clearMount(path: string): Promise<void> {
     const normalized = this.normalizePath(path);
     const fs = this.mounts.get(normalized);
-    if (fs && typeof (fs as any).clear === 'function') {
-      await (fs as any).clear();
+    if (fs && typeof fs.clear === 'function') {
+      await fs.clear();
     }
   }
 
@@ -111,21 +111,22 @@ export class OverlayFS implements IFileSystem {
 
   /** Sync helper: check if FS supports a sync method */
 
-  private hasSyncMethod(fs: IFileSystem, method: string): boolean {
-    return typeof (fs as any)[method] === 'function';
+  private hasSyncMethod<K extends keyof IFileSystem>(
+    fs: IFileSystem,
+    method: K,
+  ): fs is IFileSystem & Required<Pick<IFileSystem, K>> {
+    return typeof fs[method] === 'function';
   }
 
   readFileSync(path: string): Uint8Array | null {
     // Check write layer first
     if (this.hasSyncMethod(this.writeLayer, 'readFileSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = (this.writeLayer as any).readFileSync(path);
+      const data = this.writeLayer.readFileSync(path);
       if (data) return data;
     }
     const { fs, relativePath } = this.getFs(path);
     if (this.hasSyncMethod(fs, 'readFileSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (fs as any).readFileSync(relativePath);
+      return fs.readFileSync(relativePath);
     }
     return null;
   }
@@ -133,25 +134,21 @@ export class OverlayFS implements IFileSystem {
   writeFileSync(path: string, data: Uint8Array): void {
     const { fs, relativePath } = this.getFs(path);
     if (this.hasSyncMethod(fs, 'writeFileSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (fs as any).writeFileSync(relativePath, data);
+      fs.writeFileSync(relativePath, data);
     } else if (this.hasSyncMethod(this.writeLayer, 'writeFileSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.writeLayer as any).writeFileSync(path, data);
+      this.writeLayer.writeFileSync(path, data);
     }
   }
 
   statSync(path: string): FSStats | null {
     // Check write layer first
     if (this.hasSyncMethod(this.writeLayer, 'statSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const s = (this.writeLayer as any).statSync(path);
+      const s = this.writeLayer.statSync(path);
       if (s) return s;
     }
     const { fs, relativePath } = this.getFs(path);
     if (this.hasSyncMethod(fs, 'statSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (fs as any).statSync(relativePath);
+      return fs.statSync(relativePath);
     }
     return null;
   }
@@ -163,14 +160,12 @@ export class OverlayFS implements IFileSystem {
     // Get entries from the routed FS
     const { fs, relativePath } = this.getFs(path);
     if (this.hasSyncMethod(fs, 'readdirSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const e of (fs as any).readdirSync(relativePath)) entries.add(e);
+      for (const e of fs.readdirSync(relativePath)) entries.add(e);
     }
 
     // Merge write layer entries
     if (this.hasSyncMethod(this.writeLayer, 'readdirSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const e of (this.writeLayer as any).readdirSync(normalized)) entries.add(e);
+      for (const e of this.writeLayer.readdirSync(normalized)) entries.add(e);
     }
 
     // Add mount point children
@@ -187,13 +182,11 @@ export class OverlayFS implements IFileSystem {
 
   existsSync(path: string): boolean {
     if (this.hasSyncMethod(this.writeLayer, 'existsSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((this.writeLayer as any).existsSync(path)) return true;
+      if (this.writeLayer.existsSync(path)) return true;
     }
     const { fs, relativePath } = this.getFs(path);
     if (this.hasSyncMethod(fs, 'existsSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (fs as any).existsSync(relativePath);
+      return fs.existsSync(relativePath);
     }
     return false;
   }
@@ -201,19 +194,16 @@ export class OverlayFS implements IFileSystem {
   mkdirSync(path: string): void {
     const { fs, relativePath } = this.getFs(path);
     if (this.hasSyncMethod(fs, 'mkdirSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (fs as any).mkdirSync(relativePath);
+      fs.mkdirSync(relativePath);
     } else if (this.hasSyncMethod(this.writeLayer, 'mkdirSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.writeLayer as any).mkdirSync(path);
+      this.writeLayer.mkdirSync(path);
     }
   }
 
   deleteFileSync(path: string): boolean {
     const { fs, relativePath } = this.getFs(path);
     if (this.hasSyncMethod(fs, 'deleteFileSync')) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (fs as any).deleteFileSync(relativePath);
+      return fs.deleteFileSync(relativePath);
     }
     return false;
   }

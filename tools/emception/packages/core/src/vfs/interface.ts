@@ -19,4 +19,14 @@ export interface IFileSystem {
   readdir(path: string): Promise<string[]>;
   deleteFile(path: string): Promise<boolean>;
   mkdir(path: string): Promise<boolean>;
+
+  /** Optional capabilities. Backends without them retain the overlay fallbacks. */
+  clear?(): void | Promise<void>;
+  readFileSync?(path: string): Uint8Array | null;
+  writeFileSync?(path: string, data: Uint8Array): void;
+  existsSync?(path: string): boolean;
+  statSync?(path: string): FSStats | null;
+  readdirSync?(path: string): string[];
+  deleteFileSync?(path: string): boolean;
+  mkdirSync?(path: string): void;
 }
