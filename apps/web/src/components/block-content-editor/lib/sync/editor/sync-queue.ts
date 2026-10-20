@@ -1,18 +1,25 @@
 import { syncConfig } from "./sync-config"
 import { ApiClient } from "../../api/editor/api-client"
 import type { SyncQueueStats as QueueStats } from "./sync-types"
+import type { ProjectData } from "../../storage/editor/project-data"
 
-interface SyncQueueItem {
+interface SyncQueueState {
   id: string
-  type: "create" | "update" | "delete" | "tags_update"
   projectId?: string
-  data?: any
   timestamp: number
   retries: number
   status: "pending" | "processing" | "completed" | "failed"
   error?: string
   lastAttempt?: number
 }
+
+type SyncQueueOperation =
+  | { type: "create" | "update"; data?: ProjectData }
+  | { type: "delete"; data?: unknown }
+  | { type: "tags_update"; data?: Parameters<ApiClient["syncTags"]>[0] }
+
+type SyncQueueItem = SyncQueueState & SyncQueueOperation
+type NewSyncQueueItem = Omit<SyncQueueState, "id" | "timestamp" | "retries" | "status"> & SyncQueueOperation
 
 export class SyncQueue {
   private db: IDBDatabase | null = null
@@ -74,7 +81,7 @@ export class SyncQueue {
     })
   }
 
-  async enqueue(item: Omit<SyncQueueItem, "id" | "timestamp" | "retries" | "status">): Promise<void> {
+  async enqueue(item: NewSyncQueueItem): Promise<void> {
     if (!syncConfig.isEnabled()) {
       if (syncConfig.getConfig().debugMode) {
         console.log("Sync disabled, skipping queue item:", item)
@@ -299,6 +306,7 @@ export class SyncQueue {
         await this.markAsProcessing(item.id)
 
         let response
+        const operationType = item.type
         switch (item.type) {
           case "create":
             if (!item.data) throw new Error("Missing data for create operation")
@@ -318,7 +326,7 @@ export class SyncQueue {
             response = await this.apiClient.syncTags(item.data)
             break
           default:
-            throw new Error(`Unknown sync item type: ${item.type}`)
+            throw new Error(`Unknown sync item type: ${operationType}`)
         }
 
         if (response.success) {

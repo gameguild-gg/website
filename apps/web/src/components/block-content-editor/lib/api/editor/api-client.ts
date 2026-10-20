@@ -5,7 +5,7 @@ import type { ProjectData, ProjectMetadataRecord } from "../../storage/editor/pr
 interface SyncResponse {
   success: boolean
   message?: string
-  data?: any
+  data?: unknown
 }
 
 interface TagData {

@@ -95,7 +95,7 @@ export function useProjectHistory(project: UseProjectStorageReturn): UseProjectH
     }
 
     const snapshots = await project.db.listSnapshots(project.projectId)
-    const snapshot = snapshots.find((s: any) => s.tag === tag)
+    const snapshot = snapshots.find((s) => s.tag === tag)
     if (snapshot) await loadCommit(snapshot.sha)
   }, [project, isViewingHistory, loadCommit])
 
