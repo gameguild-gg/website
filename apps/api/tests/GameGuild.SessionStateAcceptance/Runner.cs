@@ -26,7 +26,9 @@ internal static class Runner
     public static async Task<int> Main(string[] args)
     {
         if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true" || args.Length != 2)
+        {
             throw new InvalidOperationException("Run this acceptance harness only in its hosted workflow, with repository and evidence paths.");
+        }
         var repository = Path.GetFullPath(args[0]);
         var evidence = Path.GetFullPath(args[1]);
         Directory.CreateDirectory(evidence);
@@ -71,7 +73,10 @@ internal static class Runner
             child.StartInfo.ArgumentList.Add("--max-old-space-size=128");
             child.StartInfo.ArgumentList.Add("scripts/session-state-native-browser-e2e.mjs");
             child.StartInfo.ArgumentList.Add(evidence);
-            if (!child.Start()) throw new InvalidOperationException("Browser acceptance runner failed to start.");
+            if (!child.Start())
+            {
+                throw new InvalidOperationException("Browser acceptance runner failed to start.");
+            }
             try
             {
                 // Synthetic credentials stay in an input pipe; never command arguments or evidence.
