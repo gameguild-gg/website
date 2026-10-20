@@ -6,7 +6,8 @@ const { appendFileSync, mkdirSync, readFileSync, statSync, writeFileSync } = req
 const { createRequire } = require('node:module');
 const path = require('node:path');
 const { createProjection, createRepositoryProfile, inferParserSingleRun,
-  readNodeTargets, selectTrackedFiles, writeTrackedTypeScriptProject } = require('./project-configuration.cjs');
+  readNodeTargets, selectTrackedFiles, writeTrackedTypeScriptProject,
+  createSourceOverrideProgram } = require('./project-configuration.cjs');
 const { dependencyFrames, installToolOutputProvenance } = require('./tool-output-provenance.cjs');
 
 function publicDiagnostics(messages, filename, categories) {
@@ -223,6 +224,21 @@ async function analyze(output) {
     report.nodeTargets = targets;
     report.trackedTypeScriptProject = writeTrackedTypeScriptProject(selection, output);
     const options = createRepositoryProfile(projection, targets, report.trackedTypeScriptProject.filename);
+    if (casesPath) {
+      const sources = new Map(cases.map((entry) => {
+        const bytes = readFileSync(path.join('/src', entry.fixtureFile ?? entry.file));
+        assert.equal(createHash('sha256').update(bytes).digest('hex'), entry.sha256,
+          'The diagnostic compiler input must retain its recorded source hash');
+        return [path.join('/src', entry.file), bytes];
+      }));
+      const diagnostic = createSourceOverrideProgram(engineRequire,
+        report.trackedTypeScriptProject.filename, sources);
+      options.baseConfig.parserOptions.programs = [diagnostic.program];
+      report.diagnosticCompilerInputs = diagnostic.inputs.map((input) => ({
+        ...input, file: path.relative('/src', input.file),
+      }));
+      report.diagnosticCompilerRootFileCount = diagnostic.rootFileCount;
+    }
     assert.equal(options.baseConfig.noInlineConfig, true);
     const eslint = new ESLint(options);
     assert.equal(process.env.TSESTREE_SINGLE_RUN, 'true', 'The immutable hosted pass must request single-run mode');
@@ -233,7 +249,10 @@ async function analyze(output) {
       const config = await eslint.calculateConfigForFile(path.join('/src', filename));
       const inferred = inferParserSingleRun(config.parserOptions, engineRequire);
       const standard = ['js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'mts', 'cts'].includes(extension);
-      assert.equal(inferred, standard, 'Retain watch mode only where this parser requires custom extensions');
+      const providedProgram = config.parserOptions.programs != null;
+      assert.equal(providedProgram, Boolean(casesPath), 'Only historical diagnostics provide a compiler program');
+      assert.equal(inferred, providedProgram ? false : standard,
+        'Use the provided diagnostic program; retain native inference for complete source partitions');
       report.inferredSingleRunByExtension[extension] = inferred;
     }
     const categories = new Map(snapshot.patterns.map((row) =>

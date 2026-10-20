@@ -226,6 +226,16 @@ overlapping diagnostic sample records both paths and validates the fixture bytes
 its results cannot certify current repository coverage. No rule, hash assertion,
 source partition, or current product input is removed.
 
+For this historical diagnostic sample, the pinned TypeScript parser receives a
+compiler program whose thirteen file contents come from those same recorded
+fixture bytes. Remaining project inputs and compiler options stay in place.
+The analyzer records both lint-input and compiler-source hashes and requires
+them to match. Current-file contents are never combined with historical lint
+text. No checked-out file is overwritten, and the complete current-source
+partitions retain their existing parser path. Two hosted contracts retain typed
+dependency resolution and reproduce the old location failure before requiring
+the unused-import diagnostic and its existing fixer on matching source bytes.
+
 The `Codacy legacy engine contracts` workflow runs in hosted GitHub Actions.
 It retains original/repaired TAP output, repair hashes, engine digest, source
 head, checkout, tree and profile digest. No local container or product tests

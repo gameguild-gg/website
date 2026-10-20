@@ -11,6 +11,7 @@ const {
   decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
   inferParserSingleRun,
   trackedTypeScriptProject, writeTrackedTypeScriptProject,
+  createSourceOverrideProgram,
 } = require('./project-configuration.cjs');
 const { publicDiagnostics, engineRule, engineFailure, partitionSources,
   analysisStatus, qualifiedAnalysisStatus } = require('./analyze-repository.cjs');
@@ -1027,6 +1028,78 @@ test('deeper output provenance restores the caller stack limit and bounds collec
     assert.equal(stack.split('\n').filter((line) => line.startsWith('    at ')).length, 40);
   } finally {
     Error.stackTraceLimit = original;
+  }
+});
+
+test('historical lint text and compiler AST retain matching bytes and typed dependencies', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'diagnostic-program-'));
+  try {
+    const filename = path.join(directory, 'source.ts');
+    const dependency = path.join(directory, 'dependency.ts');
+    const project = path.join(directory, 'tsconfig.json');
+    const current = 'export const current = 1;\n';
+    const historical = 'import { value } from "./dependency";\nexport const historical = value;\n';
+    writeFileSync(filename, current);
+    writeFileSync(dependency, 'export const value: number = 42;\n');
+    writeFileSync(project, JSON.stringify({ files: [filename, dependency], compilerOptions: { strict: true } }));
+    const result = createSourceOverrideProgram(engineRequire, project,
+      new Map([[filename, Buffer.from(historical)]]));
+    assert.equal(result.program.getSourceFile(filename).getFullText(), historical);
+    assert.equal(readFileSync(filename, 'utf8'), current);
+    assert.equal(result.program.getSourceFile(dependency).getFullText(), readFileSync(dependency, 'utf8'));
+    assert.equal(result.rootFileCount, 2);
+    assert.deepEqual(result.inputs, [{ file: filename, bytes: Buffer.byteLength(historical),
+      sha256: createHash('sha256').update(historical).digest('hex'),
+      compilerSourceSha256: createHash('sha256').update(historical).digest('hex') }]);
+    const options = result.program.getCompilerOptions();
+    assert(options.strict && options.noEmit && options.noUnusedLocals && options.noUnusedParameters);
+    assert.equal(result.program.getSemanticDiagnostics().length, 0);
+    assert.throws(() => createSourceOverrideProgram(engineRequire, project,
+      new Map([[path.join(directory, 'untracked.ts'), Buffer.from(historical)]])), { code: 'ERR_ASSERTION' });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('historical import reports preserve diagnostics instead of using current-file locations', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'diagnostic-import-'));
+  const previousSingleRun = process.env.TSESTREE_SINGLE_RUN;
+  try {
+    process.env.TSESTREE_SINGLE_RUN = 'true';
+    const originalPath = path.join(directory, 'original.ts');
+    const historicalPath = path.join(directory, 'historical.ts');
+    const project = path.join(directory, 'tsconfig.json');
+    const source = 'import { unused } from "./dependency";\nexport const value = 1;\n';
+    const current = ' '.repeat(100) + source;
+    for (const filename of [originalPath, historicalPath]) writeFileSync(filename, current);
+    writeFileSync(project, JSON.stringify({ files: [originalPath, historicalPath] }));
+    const verify = (filename, programs) => {
+      const linter = new Linter();
+      linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
+      linter.defineRule('unused-imports/no-unused-imports',
+        engineRequire('eslint-plugin-unused-imports').rules['no-unused-imports']);
+      return linter.verify(source, {
+        parser: 'engine-typescript',
+        parserOptions: { ecmaVersion: 2022, sourceType: 'module', project,
+          disallowAutomaticSingleRunInference: false, ...(programs ? { programs } : {}) },
+        rules: { 'unused-imports/no-unused-imports': 'error' },
+      }, { filename });
+    };
+    assert.equal(process.env.TSESTREE_SINGLE_RUN, 'true');
+    assert.throws(() => verify(originalPath), /Column number out of range/u);
+    const diagnostic = createSourceOverrideProgram(engineRequire, project,
+      new Map([[historicalPath, Buffer.from(source)]]));
+    const messages = verify(historicalPath, [diagnostic.program]);
+    assert.equal(messages.length, 1, JSON.stringify(messages));
+    assert.equal(messages[0].ruleId, 'unused-imports/no-unused-imports');
+    assert.equal(messages[0].fatal, undefined);
+    assert.match(messages[0].message, /unused.*never used/u);
+    assert.deepEqual(messages[0].fix.range, [0, source.indexOf('export')]);
+    assert.equal(readFileSync(historicalPath, 'utf8'), current);
+  } finally {
+    if (previousSingleRun === undefined) delete process.env.TSESTREE_SINGLE_RUN;
+    else process.env.TSESTREE_SINGLE_RUN = previousSingleRun;
+    rmSync(directory, { recursive: true, force: true });
   }
 });
 

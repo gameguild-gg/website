@@ -245,6 +245,46 @@ function writeTrackedTypeScriptProject(selection, directory, sourceRoot = '/src'
   return { filename, sha256: createHash('sha256').update(bytes).digest('hex'), rootFileCount: spec.files.length };
 }
 
+function createSourceOverrideProgram(engineRequire, projectFilename, sourceOverrides) {
+  assert(path.isAbsolute(projectFilename) && sourceOverrides instanceof Map && sourceOverrides.size > 0);
+  const ts = engineRequire('typescript');
+  // Match the pinned parser's createProgramFromConfigFile options and host.
+  const parsed = ts.getParsedCommandLineOfConfigFile(projectFilename,
+    { noEmit: true, noUnusedLocals: true, noUnusedParameters: true }, {
+      ...ts.sys,
+      onUnRecoverableConfigFileDiagnostic: () => assert.fail('Unable to read the tracked TypeScript project'),
+    });
+  assert(parsed && parsed.errors.length === 0, 'The tracked TypeScript project must parse');
+  const roots = new Set(parsed.fileNames.map((filename) => path.resolve(filename)));
+  const texts = new Map();
+  for (const [filename, bytes] of sourceOverrides) {
+    assert(path.isAbsolute(filename) && roots.has(path.resolve(filename)) && Buffer.isBuffer(bytes));
+    const text = bytes.toString('utf8');
+    assert(Buffer.from(text, 'utf8').equals(bytes), 'Diagnostic source must roundtrip as UTF-8');
+    assert(!texts.has(path.resolve(filename)), 'Duplicate diagnostic compiler input');
+    texts.set(path.resolve(filename), text);
+  }
+  const host = ts.createCompilerHost(parsed.options, true);
+  const readFile = host.readFile.bind(host);
+  const getSourceFile = host.getSourceFile.bind(host);
+  host.readFile = (filename) => texts.get(path.resolve(filename)) ?? readFile(filename);
+  host.getSourceFile = (filename, languageVersion, onError, shouldCreateNewSourceFile) => {
+    const text = texts.get(path.resolve(filename));
+    return text === undefined
+      ? getSourceFile(filename, languageVersion, onError, shouldCreateNewSourceFile)
+      : ts.createSourceFile(filename, text, languageVersion, true);
+  };
+  const program = ts.createProgram(parsed.fileNames, parsed.options, host);
+  const inputs = [...texts].map(([file, text]) => {
+    const source = program.getSourceFile(file);
+    assert(source && source.getFullText() === text, 'Compiler AST and lint text must use identical bytes');
+    const bytes = Buffer.from(text, 'utf8');
+    return { file, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex'),
+      compilerSourceSha256: createHash('sha256').update(source.getFullText()).digest('hex') };
+  });
+  return { program, inputs, rootFileCount: parsed.fileNames.length };
+}
+
 function selectTrackedFiles(raw) {
   assert(Buffer.isBuffer(raw), 'Expected the raw NUL-delimited Git manifest');
   const text = raw.toString('utf8');
@@ -280,7 +320,7 @@ function selectTrackedFiles(raw) {
 module.exports = {
   decodeParameter, projectInput, createProjection, createRepositoryProfile, selectTrackedFiles, readNodeTargets,
   inferParserSingleRun,
-  trackedTypeScriptProject, writeTrackedTypeScriptProject,
+  trackedTypeScriptProject, writeTrackedTypeScriptProject, createSourceOverrideProgram,
 };
 
 if (require.main === module) {
