@@ -771,6 +771,45 @@ export interface APIControllersStartMyKycInput {
   idempotencyKey?: string | null;
 }
 
+/** Local validity, durable publication state and fresh chain observation are independent facts. */
+export interface APICoreIntegrationCertificateEvmEvidenceOutput {
+  anchor?: APICoreIntegrationCertificateEvmOperationView;
+  applicationStatus?: LearningCertificatesCertificateStatus;
+  certificateId?: string;
+  chainProof?: IdentityAuthenticationEvmCertificateProofResult;
+  configured?: boolean;
+  freshProofRequested?: boolean;
+  locallyValid?: boolean;
+  readStatus?: APICoreIntegrationCertificateEvmEvidenceReadStatus;
+  revocation?: APICoreIntegrationCertificateEvmOperationView;
+  validity?: APICoreIntegrationCertificateEvmValidity;
+}
+
+/** OpenAPI schema for API Core Integration Certificate Evm Evidence Read Status. */
+export type APICoreIntegrationCertificateEvmEvidenceReadStatus =
+  'Disabled' | 'NoJournalEntry' | 'Cached' | 'NoRecordedTransaction' | 'ProfileUnavailable' | 'Observed' | 'AmbiguousIdentity' | 'Unavailable';
+
+/** Public operation projection. Excludes owner/tenant IDs, signer references, budgets, nonces, raw envelopes and leases. */
+export interface APICoreIntegrationCertificateEvmOperationView {
+  certificateHash?: string | null;
+  chainId?: number;
+  contractAddress?: string | null;
+  createdAt?: string;
+  finalityMode?: ConfigurationApplicationLayerEvmCertificateFinalityMode;
+  issuerId?: string | null;
+  kind?: IdentityAuthenticationEvmCertificateOperationKind;
+  lastFailure?: IdentityAuthenticationEvmCertificateJournalFailure;
+  minimumConfirmations?: number;
+  operationId?: string;
+  profile?: string | null;
+  runtimeCodeSha256?: string | null;
+  status?: IdentityAuthenticationEvmCertificatePublicationStatus;
+  transactionHash?: string | null;
+}
+
+/** OpenAPI schema for API Core Integration Certificate Evm Validity. */
+export type APICoreIntegrationCertificateEvmValidity = 'Unknown' | 'Valid' | 'Invalid';
+
 /** Data model for API Eventing Dead Letter Event. */
 export interface APIEventingDeadLetterEvent {
   attemptCount?: number;
@@ -7701,6 +7740,9 @@ export interface ComplianceKYCSumSubWebhookIngestionResult {
   status?: ComplianceKYCKycEvidenceIngestionStatus;
 }
 
+/** OpenAPI schema for Configuration Application Layer Evm Certificate Finality Mode. */
+export type ConfigurationApplicationLayerEvmCertificateFinalityMode = 'Finalized' | 'Confirmations';
+
 /** Data model for Content Pages Content Resource Dto. */
 export interface ContentPagesContentResourceDto {
   id?: string;
@@ -10308,6 +10350,62 @@ export interface IdentityAuthenticationEmailVerificationResult {
   userId?: string | null;
   /** When the verification was completed */
   verifiedAt?: string | null;
+}
+
+/** Data model for Identity Authentication Evm Certificate Block Reference. */
+export interface IdentityAuthenticationEvmCertificateBlockReference {
+  hash?: string | null;
+  number?: number;
+}
+
+/** Data model for Identity Authentication Evm Certificate Evidence. */
+export interface IdentityAuthenticationEvmCertificateEvidence {
+  certificateHash?: string | null;
+  network?: IdentityAuthenticationEvmCertificateNetworkIdentity;
+  operation?: IdentityAuthenticationEvmCertificateOperationKind;
+  signer?: string | null;
+  state?: IdentityAuthenticationEvmCertificateRegistryState;
+  transactionBlock?: IdentityAuthenticationEvmCertificateBlockReference;
+  transactionHash?: string | null;
+}
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Journal Failure. */
+export type IdentityAuthenticationEvmCertificateJournalFailure =
+  'Conflict' | 'LeaseLost' | 'InvalidTransaction' | 'InvalidState' | 'InvalidEvidence' | 'RpcUnavailable' | 'SignerUnavailable' | 'NonceExhausted';
+
+/** Data model for Identity Authentication Evm Certificate Network Identity. */
+export interface IdentityAuthenticationEvmCertificateNetworkIdentity {
+  chainId?: number;
+  contractAddress?: string | null;
+  finalityMode?: ConfigurationApplicationLayerEvmCertificateFinalityMode;
+  issuerId?: string | null;
+  minimumConfirmations?: number;
+  runtimeCodeSha256?: string | null;
+  verificationBlock?: IdentityAuthenticationEvmCertificateBlockReference;
+}
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Operation Kind. */
+export type IdentityAuthenticationEvmCertificateOperationKind = 'Anchor' | 'Revoke';
+
+/** Data model for Identity Authentication Evm Certificate Proof Result. */
+export interface IdentityAuthenticationEvmCertificateProofResult {
+  evidence?: IdentityAuthenticationEvmCertificateEvidence;
+  status?: IdentityAuthenticationEvmCertificateProofStatus;
+}
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Proof Status. */
+export type IdentityAuthenticationEvmCertificateProofStatus = 'InvalidEvidence' | 'Pending' | 'Reverted' | 'NotFinalized' | 'Reorged' | 'Revoked' | 'Verified';
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Publication Status. */
+export type IdentityAuthenticationEvmCertificatePublicationStatus =
+  'Queued' | 'NonceReserved' | 'Prepared' | 'Submitted' | 'Confirmed' | 'Revoked' | 'Reorged' | 'Rejected' | 'NeedsAttention';
+
+/** Data model for Identity Authentication Evm Certificate Registry State. */
+export interface IdentityAuthenticationEvmCertificateRegistryState {
+  anchoredAtBlock?: number;
+  anchorSigner?: string | null;
+  revokedAtBlock?: number;
+  revokeSigner?: string | null;
 }
 
 /** Authorization-time consent preview: the exact scopes a link flow will request from
@@ -24097,6 +24195,10 @@ export let APIControllersRuntimeDetailsSchema: z.ZodType<APIControllersRuntimeDe
 export let APIControllersSettleMyMarketplaceOrderInputSchema: z.ZodType<APIControllersSettleMyMarketplaceOrderInput>;
 export let APIControllersStartMyAdRewardSessionInputSchema: z.ZodType<APIControllersStartMyAdRewardSessionInput>;
 export let APIControllersStartMyKycInputSchema: z.ZodType<APIControllersStartMyKycInput>;
+export let APICoreIntegrationCertificateEvmEvidenceOutputSchema: z.ZodType<APICoreIntegrationCertificateEvmEvidenceOutput>;
+export let APICoreIntegrationCertificateEvmEvidenceReadStatusSchema: z.ZodType<APICoreIntegrationCertificateEvmEvidenceReadStatus>;
+export let APICoreIntegrationCertificateEvmOperationViewSchema: z.ZodType<APICoreIntegrationCertificateEvmOperationView>;
+export let APICoreIntegrationCertificateEvmValiditySchema: z.ZodType<APICoreIntegrationCertificateEvmValidity>;
 export let APIEventingDeadLetterEventSchema: z.ZodType<APIEventingDeadLetterEvent>;
 export let APIEventingEventTransportStatusSchema: z.ZodType<APIEventingEventTransportStatus>;
 export let APIProjectsAddProjectTeamInputSchema: z.ZodType<APIProjectsAddProjectTeamInput>;
@@ -24683,6 +24785,7 @@ export let ComplianceKYCKycAmlOnboardingSchema: z.ZodType<ComplianceKYCKycAmlOnb
 export let ComplianceKYCKycAmlStateSchema: z.ZodType<ComplianceKYCKycAmlState>;
 export let ComplianceKYCKycEvidenceIngestionStatusSchema: z.ZodType<ComplianceKYCKycEvidenceIngestionStatus>;
 export let ComplianceKYCSumSubWebhookIngestionResultSchema: z.ZodType<ComplianceKYCSumSubWebhookIngestionResult>;
+export let ConfigurationApplicationLayerEvmCertificateFinalityModeSchema: z.ZodType<ConfigurationApplicationLayerEvmCertificateFinalityMode>;
 export let ContentPagesContentResourceDtoSchema: z.ZodType<ContentPagesContentResourceDto>;
 export let ContentPagesContentResourceStatusSchema: z.ZodType<ContentPagesContentResourceStatus>;
 export let ContentPagesContentResourceTypeSchema: z.ZodType<ContentPagesContentResourceType>;
@@ -24937,6 +25040,15 @@ export let IdentityAuthenticationDiscordSignInOutputSchema: z.ZodType<IdentityAu
 export let IdentityAuthenticationEmailCodeRequestResultSchema: z.ZodType<IdentityAuthenticationEmailCodeRequestResult>;
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
+export let IdentityAuthenticationEvmCertificateBlockReferenceSchema: z.ZodType<IdentityAuthenticationEvmCertificateBlockReference>;
+export let IdentityAuthenticationEvmCertificateEvidenceSchema: z.ZodType<IdentityAuthenticationEvmCertificateEvidence>;
+export let IdentityAuthenticationEvmCertificateJournalFailureSchema: z.ZodType<IdentityAuthenticationEvmCertificateJournalFailure>;
+export let IdentityAuthenticationEvmCertificateNetworkIdentitySchema: z.ZodType<IdentityAuthenticationEvmCertificateNetworkIdentity>;
+export let IdentityAuthenticationEvmCertificateOperationKindSchema: z.ZodType<IdentityAuthenticationEvmCertificateOperationKind>;
+export let IdentityAuthenticationEvmCertificateProofResultSchema: z.ZodType<IdentityAuthenticationEvmCertificateProofResult>;
+export let IdentityAuthenticationEvmCertificateProofStatusSchema: z.ZodType<IdentityAuthenticationEvmCertificateProofStatus>;
+export let IdentityAuthenticationEvmCertificatePublicationStatusSchema: z.ZodType<IdentityAuthenticationEvmCertificatePublicationStatus>;
+export let IdentityAuthenticationEvmCertificateRegistryStateSchema: z.ZodType<IdentityAuthenticationEvmCertificateRegistryState>;
 export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
 export let IdentityAuthenticationGitHubCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationGitHubCallbackRequestDto>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
@@ -26847,6 +26959,53 @@ APIControllersStartMyAdRewardSessionInputSchema = z.object({
 APIControllersStartMyKycInputSchema = z.object({
   idempotencyKey: z.string().nullable().optional(),
 });
+
+/** Zod schema for APICoreIntegrationCertificateEvmEvidenceOutput. Local validity, durable publication state and fresh chain observation are independent facts. */
+APICoreIntegrationCertificateEvmEvidenceOutputSchema = z.object({
+  anchor: z.lazy(() => APICoreIntegrationCertificateEvmOperationViewSchema).optional(),
+  applicationStatus: z.lazy(() => LearningCertificatesCertificateStatusSchema).optional(),
+  certificateId: z.string().uuid().optional(),
+  chainProof: z.lazy(() => IdentityAuthenticationEvmCertificateProofResultSchema).optional(),
+  configured: z.boolean().optional(),
+  freshProofRequested: z.boolean().optional(),
+  locallyValid: z.boolean().optional(),
+  readStatus: z.lazy(() => APICoreIntegrationCertificateEvmEvidenceReadStatusSchema).optional(),
+  revocation: z.lazy(() => APICoreIntegrationCertificateEvmOperationViewSchema).optional(),
+  validity: z.lazy(() => APICoreIntegrationCertificateEvmValiditySchema).optional(),
+});
+
+/** Zod schema for APICoreIntegrationCertificateEvmEvidenceReadStatus. OpenAPI schema for API Core Integration Certificate Evm Evidence Read Status. */
+APICoreIntegrationCertificateEvmEvidenceReadStatusSchema = z.enum([
+  'Disabled',
+  'NoJournalEntry',
+  'Cached',
+  'NoRecordedTransaction',
+  'ProfileUnavailable',
+  'Observed',
+  'AmbiguousIdentity',
+  'Unavailable',
+]);
+
+/** Zod schema for APICoreIntegrationCertificateEvmOperationView. Public operation projection. Excludes owner/tenant IDs, signer references, budgets, nonces, raw envelopes and leases. */
+APICoreIntegrationCertificateEvmOperationViewSchema = z.object({
+  certificateHash: z.string().nullable().optional(),
+  chainId: z.number().int().optional(),
+  contractAddress: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  finalityMode: z.lazy(() => ConfigurationApplicationLayerEvmCertificateFinalityModeSchema).optional(),
+  issuerId: z.string().nullable().optional(),
+  kind: z.lazy(() => IdentityAuthenticationEvmCertificateOperationKindSchema).optional(),
+  lastFailure: z.lazy(() => IdentityAuthenticationEvmCertificateJournalFailureSchema).optional(),
+  minimumConfirmations: z.number().int().optional(),
+  operationId: z.string().uuid().optional(),
+  profile: z.string().nullable().optional(),
+  runtimeCodeSha256: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationEvmCertificatePublicationStatusSchema).optional(),
+  transactionHash: z.string().nullable().optional(),
+});
+
+/** Zod schema for APICoreIntegrationCertificateEvmValidity. OpenAPI schema for API Core Integration Certificate Evm Validity. */
+APICoreIntegrationCertificateEvmValiditySchema = z.enum(['Unknown', 'Valid', 'Invalid']);
 
 /** Zod schema for APIEventingDeadLetterEvent. Data model for API Eventing Dead Letter Event. */
 APIEventingDeadLetterEventSchema = z.object({
@@ -33091,6 +33250,9 @@ ComplianceKYCSumSubWebhookIngestionResultSchema = z.object({
   status: z.lazy(() => ComplianceKYCKycEvidenceIngestionStatusSchema).optional(),
 });
 
+/** Zod schema for ConfigurationApplicationLayerEvmCertificateFinalityMode. OpenAPI schema for Configuration Application Layer Evm Certificate Finality Mode. */
+ConfigurationApplicationLayerEvmCertificateFinalityModeSchema = z.enum(['Finalized', 'Confirmations']);
+
 /** Zod schema for ContentPagesContentResourceDto. Data model for Content Pages Content Resource Dto. */
 ContentPagesContentResourceDtoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -35767,6 +35929,79 @@ IdentityAuthenticationEmailVerificationResultSchema = z.object({
   success: z.boolean().optional(),
   userId: z.string().uuid().nullable().optional(),
   verifiedAt: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateBlockReference. Data model for Identity Authentication Evm Certificate Block Reference. */
+IdentityAuthenticationEvmCertificateBlockReferenceSchema = z.object({
+  hash: z.string().nullable().optional(),
+  number: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateEvidence. Data model for Identity Authentication Evm Certificate Evidence. */
+IdentityAuthenticationEvmCertificateEvidenceSchema = z.object({
+  certificateHash: z.string().nullable().optional(),
+  network: z.lazy(() => IdentityAuthenticationEvmCertificateNetworkIdentitySchema).optional(),
+  operation: z.lazy(() => IdentityAuthenticationEvmCertificateOperationKindSchema).optional(),
+  signer: z.string().nullable().optional(),
+  state: z.lazy(() => IdentityAuthenticationEvmCertificateRegistryStateSchema).optional(),
+  transactionBlock: z.lazy(() => IdentityAuthenticationEvmCertificateBlockReferenceSchema).optional(),
+  transactionHash: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateJournalFailure. OpenAPI schema for Identity Authentication Evm Certificate Journal Failure. */
+IdentityAuthenticationEvmCertificateJournalFailureSchema = z.enum([
+  'Conflict',
+  'LeaseLost',
+  'InvalidTransaction',
+  'InvalidState',
+  'InvalidEvidence',
+  'RpcUnavailable',
+  'SignerUnavailable',
+  'NonceExhausted',
+]);
+
+/** Zod schema for IdentityAuthenticationEvmCertificateNetworkIdentity. Data model for Identity Authentication Evm Certificate Network Identity. */
+IdentityAuthenticationEvmCertificateNetworkIdentitySchema = z.object({
+  chainId: z.number().int().optional(),
+  contractAddress: z.string().nullable().optional(),
+  finalityMode: z.lazy(() => ConfigurationApplicationLayerEvmCertificateFinalityModeSchema).optional(),
+  issuerId: z.string().nullable().optional(),
+  minimumConfirmations: z.number().int().optional(),
+  runtimeCodeSha256: z.string().nullable().optional(),
+  verificationBlock: z.lazy(() => IdentityAuthenticationEvmCertificateBlockReferenceSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateOperationKind. OpenAPI schema for Identity Authentication Evm Certificate Operation Kind. */
+IdentityAuthenticationEvmCertificateOperationKindSchema = z.enum(['Anchor', 'Revoke']);
+
+/** Zod schema for IdentityAuthenticationEvmCertificateProofResult. Data model for Identity Authentication Evm Certificate Proof Result. */
+IdentityAuthenticationEvmCertificateProofResultSchema = z.object({
+  evidence: z.lazy(() => IdentityAuthenticationEvmCertificateEvidenceSchema).optional(),
+  status: z.lazy(() => IdentityAuthenticationEvmCertificateProofStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateProofStatus. OpenAPI schema for Identity Authentication Evm Certificate Proof Status. */
+IdentityAuthenticationEvmCertificateProofStatusSchema = z.enum(['InvalidEvidence', 'Pending', 'Reverted', 'NotFinalized', 'Reorged', 'Revoked', 'Verified']);
+
+/** Zod schema for IdentityAuthenticationEvmCertificatePublicationStatus. OpenAPI schema for Identity Authentication Evm Certificate Publication Status. */
+IdentityAuthenticationEvmCertificatePublicationStatusSchema = z.enum([
+  'Queued',
+  'NonceReserved',
+  'Prepared',
+  'Submitted',
+  'Confirmed',
+  'Revoked',
+  'Reorged',
+  'Rejected',
+  'NeedsAttention',
+]);
+
+/** Zod schema for IdentityAuthenticationEvmCertificateRegistryState. Data model for Identity Authentication Evm Certificate Registry State. */
+IdentityAuthenticationEvmCertificateRegistryStateSchema = z.object({
+  anchoredAtBlock: z.number().int().optional(),
+  anchorSigner: z.string().nullable().optional(),
+  revokedAtBlock: z.number().int().optional(),
+  revokeSigner: z.string().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationExternalLoginLinkPreviewOutput. Authorization-time consent preview: the exact scopes a link flow will request from

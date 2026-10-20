@@ -77,6 +77,10 @@ public static class CertificateEvmHostServiceRegistration
         services.AddSingleton<IEvmCertificatePrivateKeySource>(keys);
         services.AddScoped<IEvmCertificateTransactionSigner, EvmCertificateSoftwareSigner>();
         services.AddEvmCertificatePublicationTransport(options.Network);
+        services.AddScoped<ICertificateEvmPublicationLookup, CertificateEvmJournalLookup>();
+        services.AddScoped<ICertificateEvmEvidenceReader>(provider => new EvmCertificateEvidenceReader(
+            provider.GetRequiredService<ICertificateEvmPublicationLookup>(), provider.GetRequiredService<IEvmCertificateProofVerifier>(),
+            policy.Network, provider.GetRequiredService<TimeProvider>()));
         services.AddCertificateEvmDurableEvidence(policy.Network, options.CanonicalIssuer);
         services.AddSingleton<IDatabaseMigrationPrerequisite>(static _ => new CertificateEvmJournalMigrationPrerequisite());
         services.AddSingleton<IHostedService, CertificateEvmJournalReadiness>();

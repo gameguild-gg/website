@@ -144,6 +144,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
         builder.Services.AddLearningEnrollmentsModule();
         builder.Services.AddCohortsModule();
         builder.Services.AddCertificatesModule();
+        builder.Services.AddCertificateEvmEvidenceApi();
         builder.Services.AddCertificateEvmHost(builder.Configuration);
         AddCertificateBlockchainAnchoring(builder);
         builder.Services.AddLearningWorkspacesModule();
