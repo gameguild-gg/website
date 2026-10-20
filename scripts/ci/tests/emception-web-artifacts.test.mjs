@@ -119,7 +119,8 @@ test('Web acquires a producer release independently of an optional build cache',
   assert.ok(acquire.includes('run: SOURCE_TREE_SHA="$(git rev-parse \'HEAD^{tree}\')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800'));
   assert.doesNotMatch(acquire, / {8}if:|cache-hit|cache-matched-key|continue-on-error|\|\| true/);
   assert.doesNotMatch(web, /Restore verified Toolchain builds for Web|Prepare and verify cached Toolchain release/);
-  assert.ok(web.indexOf('Acquire verified Toolchain release for Web') < web.indexOf('Build Web runtime dependencies'));
+  assert.ok(web.indexOf('Build Web runtime dependencies') < web.indexOf('Lint Web'));
+  assert.ok(web.indexOf('Lint suppression budget ratchet') < web.indexOf('Acquire verified Toolchain release for Web'));
 });
 
 test('the consumer uses classified source identity and only Actions read permission', () => {
@@ -130,13 +131,37 @@ test('the consumer uses classified source identity and only Actions read permiss
   assert.doesNotMatch(web, /actions: write|contents: write|--repo |npm pack emception@/);
 });
 
-test('the acquired release must pass frozen identity verification before Web dependencies', () => {
+test('the acquired release must pass frozen identity verification and compatibility staging before Web runtime gates', () => {
   const verify = step(web, 'Verify acquired frozen Toolchain identity');
   assert.match(verify, /if: steps\.emception-web-release\.outputs\.required == 'true'/);
   assert.match(verify, /await verifyCodingCycleToolchain/);
   assert.match(verify, /artifacts\/toolchain\/release\/cdn\/manifest\.json/);
   assert.doesNotMatch(verify, /continue-on-error|allow-failure|\|\| true|--no-sandbox/);
-  assert.ok(web.indexOf('Verify acquired frozen Toolchain identity') < web.indexOf('Build Web runtime dependencies'));
+  const stage = step(web, 'Stage verified Toolchain compatibility package');
+  assert.match(stage, /if: steps\.emception-web-release\.outputs\.required == 'true'/);
+  assert.match(stage, /run: node tools\/emception\/scripts\/stage-core-cdn\.mjs/);
+  assert.doesNotMatch(stage, /--optional|continue-on-error|allow-failure|\|\| true/);
+  assert.ok(web.indexOf('Verify acquired frozen Toolchain identity') < web.indexOf('Stage verified Toolchain compatibility package'));
+  for (const name of ['Typecheck Web', 'Test Web', 'Build Web']) {
+    assert.ok(web.indexOf('Stage verified Toolchain compatibility package') < web.indexOf('      - name: ' + name + '\n'));
+  }
+});
+
+test('Web completes source lint and the debt ratchet before waiting for Toolchain delivery', () => {
+  const names = ['Build Web runtime dependencies', 'Generate Web route types',
+    'Preserve Web lint verification inputs', 'Lint Web',
+    'Require checked-in Web suppressions to match active diagnostics',
+    'Upload Web lint verification evidence', 'Lint suppression budget ratchet',
+    'Acquire verified Toolchain release for Web', 'Verify acquired frozen Toolchain identity',
+    'Stage verified Toolchain compatibility package', 'Typecheck Web', 'Test Web', 'Build Web'];
+  for (let index = 1; index < names.length; index++) {
+    const previous = web.indexOf('      - name: ' + names[index - 1] + '\n');
+    const current = web.indexOf('      - name: ' + names[index] + '\n');
+    assert.ok(previous >= 0 && current > previous, 'Missing or out-of-order Web stage: ' + names[index]);
+  }
+  for (const name of names) {
+    assert.doesNotMatch(step(web, name), /--suppress-all|--suppress-rule|--pass-on-unpruned-suppressions|continue-on-error|allow-failure|\|\| true/);
+  }
 });
 
 test('the producer publishes only after release gates and before the independent browser cycle', () => {

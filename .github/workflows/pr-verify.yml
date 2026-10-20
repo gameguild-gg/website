@@ -188,17 +188,6 @@ jobs:
           name: feed-fixture-registration-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/feed-fixture-registration
           if-no-files-found: error
-      - name: Acquire verified Toolchain release for Web
-        id: emception-web-release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}
-          CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}
-        run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800
-      - name: Verify acquired frozen Toolchain identity
-        if: steps.emception-web-release.outputs.required == 'true'
-        run: |
-          node --input-type=module -e "import { verifyCodingCycleToolchain } from './apps/web/scripts/coding-cycle-toolchain-support.mjs'; await verifyCodingCycleToolchain('./tools/emception/artifacts/toolchain/release/cdn/manifest.json');"
       - name: Build Web runtime dependencies
         run: pnpm --filter @game-guild/web run build:emception-dependencies
       - name: Generate Web route types
@@ -241,6 +230,20 @@ jobs:
           if-no-files-found: error
       - name: Lint suppression budget ratchet
         run: node scripts/lint-budget.mjs
+      - name: Acquire verified Toolchain release for Web
+        id: emception-web-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}
+          CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}
+        run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800
+      - name: Verify acquired frozen Toolchain identity
+        if: steps.emception-web-release.outputs.required == 'true'
+        run: |
+          node --input-type=module -e "import { verifyCodingCycleToolchain } from './apps/web/scripts/coding-cycle-toolchain-support.mjs'; await verifyCodingCycleToolchain('./tools/emception/artifacts/toolchain/release/cdn/manifest.json');"
+      - name: Stage verified Toolchain compatibility package
+        if: steps.emception-web-release.outputs.required == 'true'
+        run: node tools/emception/scripts/stage-core-cdn.mjs
       - name: Typecheck Web
         run: pnpm --filter @game-guild/web exec tsc --noEmit
       - name: Test Web
