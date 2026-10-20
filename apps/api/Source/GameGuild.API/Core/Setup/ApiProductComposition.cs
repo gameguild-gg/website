@@ -37,6 +37,7 @@ using GameGuild.Learning.Lti;
 using GameGuild.ProjectWork;
 using GameGuild.Projects;
 using GameGuild.Social.Assets;
+using GameGuild.Social.Posts;
 using GameGuild.Social.Blog;
 using GameGuild.Social.Follows;
 using GameGuild.Social.Feed;
@@ -143,6 +144,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
         builder.Services.AddLearningEnrollmentsModule();
         builder.Services.AddCohortsModule();
         builder.Services.AddCertificatesModule();
+        builder.Services.AddCertificateEvmHost(builder.Configuration);
         AddCertificateBlockchainAnchoring(builder);
         builder.Services.AddLearningWorkspacesModule();
         builder.Services.AddLtiModule();
@@ -153,8 +155,8 @@ internal sealed class ApiProductComposition : IApiProductComposition
 
         builder.Services.AddSocialProfilesModule();
         builder.Services.AddSocialAssetsModule();
-        builder.Services.AddSocialBlogModule();
-        builder.Services.AddSocialFeedModule();
+        builder.Services.AddPostsModule();
+        builder.Services.AddSocialBlogModule();        builder.Services.AddSocialFeedModule();
         builder.Services.AddSocialGroupsModule();
         builder.Services.AddSocialReactionsModule();
 

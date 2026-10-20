@@ -74,6 +74,9 @@ public static class ServiceCollectionExtensions
         // Register verification services
         services.AddHttpClient<IPayPalSignatureVerificationService, PayPalSignatureVerificationService>();
         services.AddHttpClient<IApplePayReceiptValidationService, ApplePayReceiptValidationService>();
+        // Webhook signing-secret rotation (issue #408): resolves all currently-valid secrets
+        // (configuration + active/previous rotation secrets inside the window).
+        services.AddSingleton<IWebhookSigningSecretProvider, WebhookSigningSecretProvider>();
         services.AddSingleton<IStripeWebhookVerifier, StripeWebhookVerifier>();
         services.AddScoped<IStripeProviderObjectBindingValidator, StripeProviderObjectBindingValidator>();
 
@@ -84,6 +87,10 @@ public static class ServiceCollectionExtensions
         // Stripe dispute webhook reconciliation (issue #419): consumes verified
         // charge.dispute.* events into the payments dispute surface.
         services.AddScoped<IStripeVerifiedEventConsumer, StripeDisputeEventConsumer>();
+
+        // Stripe payment-method metadata reconciliation (issue #414): consumes verified
+        // payment_method.updated events into the local payment-method registry.
+        services.AddScoped<IStripeVerifiedEventConsumer, StripePaymentMethodUpdatedConsumer>();
         services.AddScoped<PayPalBillingWebhookService>();
         services.AddScoped<ApplePayBillingWebhookService>();
         services.AddSingleton<IGooglePayWebhookVerificationService, GooglePayWebhookVerificationService>();
@@ -137,6 +144,7 @@ public static class ServiceCollectionExtensions
 
         // Register webhook-specific services
         services.AddScoped<IBillingWebhookRepository, BillingWebhookRepository>();
+        services.AddSingleton<IWebhookSigningSecretProvider, WebhookSigningSecretProvider>();
         services.AddSingleton<IStripeWebhookVerifier, StripeWebhookVerifier>();
         services.AddScoped<IStripeProviderObjectBindingValidator, StripeProviderObjectBindingValidator>();
         

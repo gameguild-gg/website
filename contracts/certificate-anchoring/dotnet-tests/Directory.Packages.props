@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="../../../apps/api/Directory.Packages.props" />
+</Project>

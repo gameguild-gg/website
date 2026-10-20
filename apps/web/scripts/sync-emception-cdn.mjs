@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 import { extract } from 'tar';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -104,6 +105,61 @@ export async function extractPackageArchive(archivePath, destination, extractArc
   await extractArchive({ cwd: destination, file: archivePath, strict: true });
 }
 
+// Newest emception version actually published to the npm registry. The workspace
+// pins versions ahead of publication; fresh environments (CI runners) fall back
+// to this tarball when the pinned version has not been published yet.
+const LATEST_PUBLISHED_EMCEPTION = '4.4.0';
+const PACK_RETRY_DELAYS_MS = [2_000, 5_000];
+
+function npmFailureText(error) {
+  const stderr = typeof error?.stderr === 'string'
+    ? error.stderr
+    : Buffer.isBuffer(error?.stderr) ? error.stderr.toString('utf8') : '';
+  const message = error instanceof Error ? error.message : String(error);
+  return `${stderr}\n${message}`;
+}
+
+function isNotargetError(error) {
+  return /(?:ENOTARGET|notarget|No matching version found)/i.test(npmFailureText(error));
+}
+
+function canRetryTarball(error, version, attempt) {
+  const text = npmFailureText(error);
+  return attempt < PACK_RETRY_DELAYS_MS.length
+    && /(?:\bE404\b|404 Not Found)/i.test(text)
+    && text.includes(`/emception-${version}.tgz`);
+}
+
+async function packEmceptionAttempt(request, attempt) {
+  const { npmCommand, version, tempDir, run, wait } = request;
+  try {
+    const { stdout } = await run(
+      npmCommand,
+      ['pack', `emception@${version}`, '--pack-destination', tempDir, '--json', '--prefer-online'],
+      {
+        maxBuffer: 10 * 1024 * 1024,
+        timeout: 45_000,
+        // Windows exposes npm as npm.cmd, which requires cmd.exe dispatch.
+        shell: process.platform === 'win32',
+      },
+    );
+    return stdout;
+  } catch (error) {
+    if (!canRetryTarball(error, version, attempt)) throw error;
+    await wait(PACK_RETRY_DELAYS_MS[attempt]);
+    return packEmceptionAttempt(request, attempt + 1);
+  }
+}
+
+export function packEmceptionArchive(npmCommand, version, tempDir, {
+  run = execFileAsync,
+  wait = delay,
+} = {}) {
+  // A newly published tarball can briefly return 404 from a registry replica.
+  // Retry only that exact version; persistent failures still reach the caller.
+  return packEmceptionAttempt({ npmCommand, version, tempDir, run, wait }, 0);
+}
+
 async function hydratePublishedRelease({ srcDir, version, log }) {
   if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
     throw new Error(`invalid Toolchain package version: ${version}`);
@@ -112,15 +168,19 @@ async function hydratePublishedRelease({ srcDir, version, log }) {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gameguild-emception-'));
   try {
     const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-    const { stdout } = await execFileAsync(
-      npmCommand,
-      ['pack', `emception@${version}`, '--pack-destination', tempDir, '--json'],
-      {
-        maxBuffer: 10 * 1024 * 1024,
-        // Windows exposes npm as npm.cmd, which requires cmd.exe dispatch.
-        shell: process.platform === 'win32',
-      },
-    );
+    let stdout;
+    let packedVersion = version;
+    try {
+      stdout = await packEmceptionArchive(npmCommand, version, tempDir);
+    } catch (error) {
+      if (!isNotargetError(error)) throw error;
+      packedVersion = LATEST_PUBLISHED_EMCEPTION;
+      log(
+        `warning: emception@${version} has no published npm tarball; `
+        + `falling back to emception@${packedVersion}`,
+      );
+      stdout = await packEmceptionArchive(npmCommand, packedVersion, tempDir);
+    }
     const packResults = JSON.parse(stdout);
     const filename = Array.isArray(packResults) ? packResults.at(-1)?.filename : undefined;
     if (!filename) throw new Error('npm pack did not return a Toolchain archive filename');
@@ -128,13 +188,14 @@ async function hydratePublishedRelease({ srcDir, version, log }) {
     const archivePath = path.join(tempDir, filename);
     await extractPackageArchive(archivePath, tempDir);
     const publishedCdn = path.join(tempDir, 'package', 'cdn');
-    const manifest = await validatePublishedRelease(publishedCdn, version);
+    const manifest = await validatePublishedRelease(publishedCdn, packedVersion);
 
     await fs.rm(srcDir, { recursive: true, force: true });
     await fs.mkdir(srcDir, { recursive: true });
     await fs.cp(publishedCdn, srcDir, { recursive: true });
     const schemaVersion = manifest.schemaVersion ?? manifest.version;
-    log(`hydrated Toolchain release from emception@${version} (manifest schema ${schemaVersion})`);
+    log(`hydrated Toolchain release from emception@${packedVersion} (manifest schema ${schemaVersion})`);
+    return { version: packedVersion };
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true });
   }
@@ -166,12 +227,14 @@ export async function ensureCanonicalRelease({
     }
   }
 
-  await hydrate({ srcDir, version, log });
-  const manifest = await validatePublishedRelease(srcDir, version);
+  const hydrated = await hydrate({ srcDir, version, log });
+  // hydrate may resolve a fallback version when the pinned one is unpublished.
+  const hydratedVersion = typeof hydrated?.version === 'string' ? hydrated.version : version;
+  const manifest = await validatePublishedRelease(srcDir, hydratedVersion);
   return {
     action: 'hydrated',
     source: srcDir,
-    version,
+    version: hydratedVersion,
     schemaVersion: manifest.schemaVersion ?? manifest.version,
   };
 }
@@ -196,12 +259,14 @@ export async function syncEmceptionCdn(options = {}) {
   const tgtDir = options.tgtDir ?? TARGET;
   const log = options.log ?? console.log;
   let sourceSchemaVersion = 2;
+  let release;
   if (!Object.hasOwn(options, 'srcDir')) {
-    const release = await ensureCanonicalRelease({ srcDir, log });
+    release = await ensureCanonicalRelease({ srcDir, log });
     sourceSchemaVersion = release.schemaVersion;
   }
   if (sourceSchemaVersion === 1) {
-    const { version } = JSON.parse(await fs.readFile(TOOLCHAIN_PACKAGE_JSON, 'utf8'));
+    const version = release?.version
+      ?? JSON.parse(await fs.readFile(TOOLCHAIN_PACKAGE_JSON, 'utf8')).version;
     await validatePublishedRelease(srcDir, version);
   } else {
     await validateCanonicalRelease(srcDir);

@@ -9,10 +9,10 @@ on:
 permissions:
   contents: read
 
-# Official PostgreSQL indexes; see scripts/ci/postgres-test-images.md.
+# Official PostgreSQL indexes via Google's cache; see scripts/ci/postgres-test-images.md.
 env:
-  GAMEGUILD_TEST_POSTGRES_17_IMAGE: "public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
-  GAMEGUILD_TEST_POSTGRES_16_IMAGE: "public.ecr.aws/docker/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea"
+  GAMEGUILD_TEST_POSTGRES_17_IMAGE: "mirror.gcr.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+  GAMEGUILD_TEST_POSTGRES_16_IMAGE: "mirror.gcr.io/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea"
 
 concurrency:
   # Suffixed during PR #773 repair: synchronize events stopped creating runs for
@@ -45,10 +45,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           version: 10.34.6
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
       - name: Resolve PR base and head commits
@@ -70,7 +70,10 @@ jobs:
         id: identity
         run: echo "treeSha=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
       - name: Test classifier contract
-        run: node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs
+        run: |
+          node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs scripts/ci/tests/emception-web-artifacts.test.mjs apps/web/scripts/coding-cycle-editor-support.test.mjs apps/web/scripts/coding-cycle-toolchain-support.test.mjs
+          node --test scripts/ci/tests/dotnet-cache-policy.test.mjs
+          python3 -m unittest discover -s scripts/ci/tests -p 'acquire_emception_release_test.py'
       - name: Test docker build-context invariants
         run: node --test scripts/ci/tests/dockerignore-pnpm-patches.test.mjs scripts/ci/tests/dockerignore-api-analyzer-config.test.mjs
 
@@ -83,9 +86,15 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - name: Verify repository policy
         run: bash scripts/ci/verify-repository-policy.sh
+      - name: Verify grading and JavaScript runtime contracts
+        run: |
+          node tools/emception/grading/build.mjs
+          node --test apps/web/scripts/sync-javascript-runtime.test.mjs
+          node --test scripts/ci/tests/dev-runtime-registration.test.mjs scripts/ci/tests/lint-budget.test.mjs
+          node --test scripts/ci/tests/eslint-root-config.test.mjs
       - name: Upload policy evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: repository-policy-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results
@@ -96,7 +105,11 @@ jobs:
     needs: classify
     if: needs.classify.outputs.web == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Include the bounded producer wait and the existing Web gates.
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
@@ -104,6 +117,17 @@ jobs:
         run: pnpm --filter @game-guild/client build
       - name: Test credentials and MFA client integration
         run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts --maxWorkers=1
+      - name: Acquire verified Toolchain release for Web
+        id: emception-web-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}
+          CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}
+        run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800
+      - name: Verify acquired frozen Toolchain identity
+        if: steps.emception-web-release.outputs.required == 'true'
+        run: |
+          node --input-type=module -e "import { verifyCodingCycleToolchain } from './apps/web/scripts/coding-cycle-toolchain-support.mjs'; await verifyCodingCycleToolchain('./tools/emception/artifacts/toolchain/release/cdn/manifest.json');"
       - name: Build Web runtime dependencies
         run: pnpm --filter @game-guild/web run build:emception-dependencies
       - name: Generate Web route types
@@ -116,6 +140,10 @@ jobs:
         run: node scripts/lint-budget.mjs
       - name: Typecheck Web
         run: pnpm --filter @game-guild/web exec tsc --noEmit
+      - name: Validate quiz grading audit contracts
+        run: |
+          pnpm --filter @game-guild/web test:grading:scenario
+          pnpm --filter @game-guild/grading-adapter-quiz test
       - name: Test Web
         run: pnpm --filter @game-guild/web exec vitest run --maxWorkers=4
       - name: Build Web
@@ -149,7 +177,7 @@ jobs:
           --head "${{ needs.classify.outputs.headSha }}"
       - name: Upload affected API test evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: affected-api-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/affected-api
@@ -173,7 +201,7 @@ jobs:
           --results-directory artifacts/test-results/full-application-openapi
       - name: Upload full-application OpenAPI HTTP evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: full-application-openapi-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/full-application-openapi
@@ -200,7 +228,7 @@ jobs:
         run: pnpm --filter @game-guild/web test:browser:testing-lab
       - name: Upload Testing Lab evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: testing-lab-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results
@@ -214,7 +242,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        image: mirror.gcr.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
         env:
           POSTGRES_DB: gameguild
           POSTGRES_USER: postgres
@@ -237,7 +265,7 @@ jobs:
         run: bash scripts/ci/verify-openapi-surface.sh
       - name: Upload OpenAPI evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: openapi-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/openapi
@@ -251,7 +279,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        image: mirror.gcr.io/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
         env:
           POSTGRES_DB: gameguild
           POSTGRES_USER: postgres
@@ -284,10 +312,12 @@ jobs:
 
   economy:
     name: Economy Release Gate
-    needs: classify
+    needs: [classify, economy-api, economy-client]
     if: needs.classify.outputs.economyCritical == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Reuse the same-run API/client outputs. Coverage and regression remain
+    # required independent jobs; this lane verifies OpenAPI/web/browser surfaces.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -295,18 +325,139 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - uses: ./.github/actions/setup-playwright
-      - name: Run complete Economy release profile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: economy-api-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/economy-inputs/api
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: economy-client-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/economy-inputs/client
+      - name: Run Economy release surfaces
         env:
-          ECONOMY_GATE_PROFILE: full
-          ECONOMY_WHOLE_SOLUTION_JOBS: "2"
+          ECONOMY_GATE_PROFILE: browser
+          ECONOMY_INPUT_ROOT: ${{ runner.temp }}/economy-inputs
           ECONOMY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: bash scripts/ci/verify-economy.sh
       - name: Upload Economy evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-${{ github.event.pull_request.head.sha }}
-          path: artifacts/test-results
+          path: |
+            artifacts/test-results
+            !artifacts/test-results/economy/publish/**
+          if-no-files-found: error
+
+  economy-api:
+    name: Economy API publish
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-node-workspace
+      - uses: ./.github/actions/setup-dotnet
+      - name: Publish warning-clean API for browser verification
+        env:
+          ECONOMY_GATE_PROFILE: api-bundle
+        run: bash scripts/ci/verify-economy.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-api-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/economy-bundles/api
+          if-no-files-found: error
+          compression-level: 0
+      - name: Upload API producer evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-api-evidence-${{ github.event.pull_request.head.sha }}
+          path: |
+            artifacts/test-results/economy
+            !artifacts/test-results/economy/publish/**
+          if-no-files-found: error
+
+  economy-client:
+    name: Economy client tests and build
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-node-workspace
+      - name: Test and build complete client for browser verification
+        env:
+          ECONOMY_GATE_PROFILE: client-bundle
+        run: bash scripts/ci/verify-economy.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-client-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/economy-bundles/client
+          if-no-files-found: error
+          compression-level: 0
+      - name: Upload client producer evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-client-evidence-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/economy
+          if-no-files-found: error
+
+  economy-coverage:
+    name: Economy coverage and provider contracts
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-node-workspace
+      - uses: ./.github/actions/setup-dotnet
+      - name: Build full solution and verify complete Economy coverage
+        env:
+          ECONOMY_GATE_PROFILE: coverage
+        run: bash scripts/ci/verify-economy.sh
+      - name: Upload Economy coverage and provider evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-coverage-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/economy
+          if-no-files-found: error
+
+  economy-regression:
+    name: Economy regression (${{ matrix.shard }})
+    needs: classify
+    if: needs.classify.outputs.economyCritical == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      # Keep every shard's evidence when another shard fails.
+      fail-fast: false
+      matrix:
+        shard: [api-integration-1, api-integration-2, api-integration-3, api-integration-4, api-unit, remaining-1, remaining-2]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-node-workspace
+      - uses: ./.github/actions/setup-dotnet
+      - name: Run whole-solution regression shard
+        env:
+          ECONOMY_GATE_PROFILE: regression
+          ECONOMY_REGRESSION_SHARD: ${{ matrix.shard }}
+          ECONOMY_WHOLE_SOLUTION_JOBS: "2"
+          ECONOMY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash scripts/ci/verify-economy.sh
+      - name: Upload regression evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: economy-regression-${{ matrix.shard }}-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/economy
           if-no-files-found: error
 
   required-gate:
@@ -322,6 +473,10 @@ jobs:
         openapi,
         migration,
         economy,
+        economy-api,
+        economy-client,
+        economy-coverage,
+        economy-regression,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -338,6 +493,11 @@ jobs:
           OPENAPI: ${{ needs.openapi.result }}
           MIGRATION: ${{ needs.migration.result }}
           ECONOMY: ${{ needs.economy.result }}
+          ECONOMY_API: ${{ needs.economy-api.result }}
+          ECONOMY_CLIENT: ${{ needs.economy-client.result }}
+          ECONOMY_COVERAGE: ${{ needs.economy-coverage.result }}
+          ECONOMY_REGRESSION: ${{ needs.economy-regression.result }}
+          ECONOMY_SELECTED: ${{ needs.classify.outputs.economyCritical }}
         run: |
           node - <<'NODE'
           const gates = {
@@ -349,10 +509,21 @@ jobs:
             openapi: process.env.OPENAPI,
             migration: process.env.MIGRATION,
             economy: process.env.ECONOMY,
+            'economy-api': process.env.ECONOMY_API,
+            'economy-client': process.env.ECONOMY_CLIENT,
+            'economy-coverage': process.env.ECONOMY_COVERAGE,
+            'economy-regression': process.env.ECONOMY_REGRESSION,
           };
           const failed = Object.entries(gates)
             .filter(([, result]) => result === 'failure' || result === 'cancelled')
             .map(([name, result]) => `${name}=${result}`);
+          if (process.env.ECONOMY_SELECTED === 'true') {
+            for (const name of ['economy', 'economy-api', 'economy-client', 'economy-coverage', 'economy-regression']) {
+              if (gates[name] !== 'success' && !failed.some(item => item.startsWith(`${name}=`))) {
+                failed.push(`${name}=${gates[name]}`);
+              }
+            }
+          }
           if (failed.length) {
             console.error(`Required PR gates failed: ${failed.join(', ')}`);
             process.exit(1);

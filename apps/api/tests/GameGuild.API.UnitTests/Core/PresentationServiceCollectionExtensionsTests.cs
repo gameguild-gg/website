@@ -69,7 +69,8 @@ public class PresentationServiceCollectionExtensionsTests
         var mvc = provider.GetRequiredService<IOptions<MvcOptions>>().Value;
         mvc.Conventions.Should().Contain(convention => convention is MinimumOrderRouteApplicationModelConvention);
         mvc.Conventions.Should().HaveCount(2);
-        mvc.Filters.OfType<TypeFilterAttribute>().Should().NotContain(typeFilter =>
+        // The DAC permission authorization filter is enabled by default (issues #300/#320).
+        mvc.Filters.OfType<TypeFilterAttribute>().Should().Contain(typeFilter =>
             typeFilter.ImplementationType == typeof(ResourcePermissionAuthorizationFilter));
     }
 

@@ -113,6 +113,16 @@ public interface ISocialMediaAssetService
         Guid assetReferenceId,
         Guid ownerId,
         CancellationToken cancellationToken = default);
+
+    Task<SocialMediaAssetDescriptor?> ResolveReadyOwnedInTenantAsync(
+        Guid assetReferenceId,
+        Guid ownerId,
+        Guid? tenantId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<Guid, SocialMediaProcessingState>> GetProcessingStatesAsync(
+        IReadOnlyCollection<Guid> assetReferenceIds,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class SocialMediaAssetService(IAssetReferenceRepository references) : ISocialMediaAssetService
@@ -142,12 +152,51 @@ public sealed class SocialMediaAssetService(IAssetReferenceRepository references
             SocialMediaAssetPolicy.GetProcessingState(reference.Content));
     }
 
-    public async Task<SocialMediaAssetDescriptor?> ResolveReadyOwnedAsync(
+    public Task<SocialMediaAssetDescriptor?> ResolveReadyOwnedAsync(
         Guid assetReferenceId,
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
+        return ResolveReadyOwnedInTenantAsync(assetReferenceId, ownerId, tenantId: null, cancellationToken);
+    }
+
+    public async Task<SocialMediaAssetDescriptor?> ResolveReadyOwnedInTenantAsync(
+        Guid assetReferenceId,
+        Guid ownerId,
+        Guid? tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        if (tenantId.HasValue)
+        {
+            var reference = await references.GetByIdAsync(assetReferenceId, cancellationToken).ConfigureAwait(false);
+            if (reference?.TenantId is null || reference.TenantId.Value != tenantId.Value)
+            {
+                return null;
+            }
+        }
+
         var descriptor = await InspectOwnedAsync(assetReferenceId, ownerId, cancellationToken).ConfigureAwait(false);
         return descriptor?.State == SocialMediaProcessingState.Ready ? descriptor : null;
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, SocialMediaProcessingState>> GetProcessingStatesAsync(
+        IReadOnlyCollection<Guid> assetReferenceIds,
+        CancellationToken cancellationToken = default)
+    {
+        var states = new Dictionary<Guid, SocialMediaProcessingState>();
+        if (assetReferenceIds.Count == 0)
+        {
+            return states;
+        }
+
+        var loaded = await references.GetByIdsWithContentAsync(assetReferenceIds, cancellationToken).ConfigureAwait(false);
+        foreach (var reference in loaded)
+        {
+            states[reference.Id] = reference.Content is null
+                ? SocialMediaProcessingState.Rejected
+                : SocialMediaAssetPolicy.GetProcessingState(reference.Content);
+        }
+
+        return states;
     }
 }

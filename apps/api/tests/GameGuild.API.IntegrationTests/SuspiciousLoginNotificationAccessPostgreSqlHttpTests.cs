@@ -18,7 +18,15 @@ using Microsoft.Extensions.Hosting;
 
 namespace GameGuild.API.IntegrationTests;
 
-[Collection(ApiPostgreSqlCollection.Name)]
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class SecurityAlertAccessPostgreSqlCollection : ICollectionFixture<ApiPostgreSqlFixture>
+{
+    internal const string Name = "Security alert access PostgreSQL";
+}
+
+// These scenarios dispatch manually. A separate collection owns one database,
+// outside the shared collection's background consumers, for all eight cases.
+[Collection(SecurityAlertAccessPostgreSqlCollection.Name)]
 public sealed class SuspiciousLoginNotificationAccessPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
 {
     [Theory]
@@ -143,15 +151,7 @@ public sealed class SuspiciousLoginNotificationAccessPostgreSqlHttpTests(ApiPost
             eventId = signal.EventId;
             await scope.ServiceProvider.GetRequiredService<IDurableEventProducer>().RecordAsync(signal);
         }
-        for (var attempt = 0; attempt < 10; attempt++)
-        {
-            await using var scope = factory.Services.CreateAsyncScope();
-            if (await scope.ServiceProvider.GetRequiredService<IOutboxDispatcher>().DispatchPendingAsync() == 0)
-            {
-                break;
-            }
-            Assert.True(attempt < 9, "Synthetic security alert outbox did not settle.");
-        }
+        await DurableEventDeliveryWaiter.WaitForCompletionAsync(factory.Services, eventId);
         await using var verify = factory.Services.CreateAsyncScope();
         var notification = Assert.Single(await verify.ServiceProvider.GetRequiredService<ApplicationDbContext>()
             .Set<Notification>().AsNoTracking().Where(value => value.ReferenceEntityId == eventId && value.Channel == NotificationChannel.InApp).ToListAsync());

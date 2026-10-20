@@ -6,6 +6,7 @@ using GameGuild.Configuration;
 using GameGuild.Configuration.PresentationLayer.ApiVersioning;
 using GameGuild.Configuration.PresentationLayer.OpenAPI;
 using GameGuild.API.Setup;
+using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -26,6 +27,12 @@ namespace GameGuild.API;
 public static class OpenApiExtensions
 {
     internal const string AllowAnonymousExtensionName = "x-gameguild-allow-anonymous";
+
+    /// <summary>
+    ///     Extension name for the DAC permission requirements discovered on an operation
+    ///     (issue #321: authorization attribute discovery for API documentation).
+    /// </summary>
+    internal const string DacPermissionsExtensionName = "x-gameguild-required-permissions";
 
     // Document keys remain URL API versions; document metadata carries the product release.
     private static readonly string ReleaseVersion =
@@ -201,6 +208,7 @@ public static class OpenApiExtensions
                 c.OperationFilter<ModuleControllerTagOperationFilter>();
                 c.OperationFilter<ConfiguredSecurityOperationFilter>(options);
                 c.OperationFilter<AllowAnonymousOperationFilter>();
+                c.OperationFilter<DacPermissionOperationFilter>();
                 c.OperationFilter<DeclaredResponseContentTypesOperationFilter>();
                 var xmlPaths = Directory.EnumerateFiles(AppContext.BaseDirectory, "GameGuild.*.xml")
                     .OrderBy(path => path, StringComparer.Ordinal)
@@ -820,6 +828,114 @@ internal sealed class ModuleControllerTagOperationFilter : IOperationFilter
         }
 
         return builder.ToString();
+    }
+}
+
+/// <summary>
+///     Publishes the DAC permission requirements declared on an operation (issue #321:
+/// authorization attribute discovery for API documentation). Every declarative family
+/// member — <see cref="IDacPermissionAttribute"/>, the resource/content-type markers and
+/// the simple tenant attributes — contributes its layer and permission names to the
+/// <c>x-gameguild-required-permissions</c> extension so the published contract documents
+/// the enforced authorization surface.
+/// </summary>
+internal sealed class DacPermissionOperationFilter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        if (context.ApiDescription.ActionDescriptor is not ControllerActionDescriptor controllerAction)
+            return;
+
+        var requirements = new OpenApiArray();
+        Collect(controllerAction.MethodInfo.GetCustomAttributes(inherit: true).OfType<Attribute>(), requirements);
+        Collect(controllerAction.ControllerTypeInfo.GetCustomAttributes(inherit: true).OfType<Attribute>(), requirements);
+
+        if (requirements.Count == 0)
+            return;
+
+        operation.Extensions[OpenApiExtensions.DacPermissionsExtensionName] = requirements;
+    }
+
+    private static void Collect(IEnumerable<Attribute> attributes, OpenApiArray requirements)
+    {
+        foreach (var attribute in attributes)
+        {
+            switch (attribute)
+            {
+                case IDacPermissionAttribute dac:
+                {
+                    var requirement = new OpenApiObject
+                    {
+                        ["attribute"] = new OpenApiString(attribute.GetType().Name),
+                        ["layer"] = new OpenApiString(dac.Layer.ToString()),
+                        ["permissions"] = ToArray(dac.RequiredPermissions)
+                    };
+                    if (dac.ContentType is not null)
+                    {
+                        requirement["contentType"] = new OpenApiString(dac.ContentType);
+                    }
+
+                    requirements.Add(requirement);
+                    break;
+                }
+                case IResourcePermissionMarker resource:
+                {
+                    requirements.Add(new OpenApiObject
+                    {
+                        ["attribute"] = new OpenApiString(attribute.GetType().Name),
+                        ["layer"] = new OpenApiString(nameof(PermissionLayer.Resource)),
+                        ["permissions"] = ToArray([resource.RequiredPermission.ToString() ?? string.Empty]),
+                        ["contentType"] = new OpenApiString(resource.ResourceType.Name)
+                    });
+                    break;
+                }
+                case IContentTypePermissionMarker contentType:
+                {
+                    requirements.Add(new OpenApiObject
+                    {
+                        ["attribute"] = new OpenApiString(attribute.GetType().Name),
+                        ["layer"] = new OpenApiString(nameof(PermissionLayer.ContentType)),
+                        ["permissions"] = ToArray([contentType.Permission.ToString() ?? string.Empty]),
+                        ["contentType"] = new OpenApiString(contentType.ResourceType.Name)
+                    });
+                    break;
+                }
+                case RequiresPermissionAttribute simple:
+                {
+                    requirements.Add(new OpenApiObject
+                    {
+                        ["attribute"] = new OpenApiString(nameof(RequiresPermissionAttribute)),
+                        ["layer"] = new OpenApiString(nameof(PermissionLayer.Tenant)),
+                        ["permissions"] = ToArray([simple.PermissionName])
+                    });
+                    break;
+                }
+                case RequirePermissionAttribute simpleAlias:
+                {
+                    requirements.Add(new OpenApiObject
+                    {
+                        ["attribute"] = new OpenApiString(nameof(RequirePermissionAttribute)),
+                        ["layer"] = new OpenApiString(nameof(PermissionLayer.Tenant)),
+                        ["permissions"] = ToArray([simpleAlias.PermissionName])
+                    });
+                    break;
+                }
+                default:
+                    // Routing and other non-permission attributes add no DAC requirement.
+                    break;
+            }
+        }
+    }
+
+    private static OpenApiArray ToArray(IEnumerable<string> values)
+    {
+        var array = new OpenApiArray();
+        foreach (var value in values)
+        {
+            array.Add(new OpenApiString(value));
+        }
+
+        return array;
     }
 }
 

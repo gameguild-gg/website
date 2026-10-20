@@ -1,8 +1,10 @@
 using System.Net;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Xml.Linq;
 using GameGuild.API.Database;
 using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Compliance.Audit;
@@ -12,6 +14,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Moq;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
@@ -37,6 +40,8 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [InlineData("/v1/admin/audit-logs/:export", "csv", "text/csv")]
     [InlineData("/api/audit/export/json", "json", "application/json")]
     [InlineData("/v1/admin/audit-logs/export/json", "json", "application/json")]
+    [InlineData("/api/audit/export/xml", "xml", "application/xml")]
+    [InlineData("/v1/admin/audit-logs/export/xml", "xml", "application/xml")]
     public async Task Requested_export_routes_stream_filtered_records_with_download_headers(string route, string format, string mediaType)
     {
         var tenant = Guid.NewGuid(); var actor = Guid.NewGuid();
@@ -77,7 +82,7 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         Assert.Equal("1", response.Headers.GetValues("X-Audit-Total-Records").Single());
         Assert.DoesNotContain("excluded-", body);
         if (format == "csv") { Assert.Equal($"Description,ActionType\r\n\"target, \"\"quoted\"\"\",{action}\r\n", body); }
-        else
+        else if (format == "json")
         {
             using var json = JsonDocument.Parse(body);
             Assert.Equal("1.0", json.RootElement.GetProperty("schemaVersion").GetString());
@@ -86,6 +91,17 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
             Assert.Equal(actor, record.GetProperty("actor").GetProperty("userId").GetGuid());
             Assert.Equal(tenant, record.GetProperty("actor").GetProperty("tenantId").GetGuid());
             Assert.Equal("contract-proof", record.GetProperty("metadata").GetProperty("nested").GetProperty("id").GetString());
+        }
+        else
+        {
+            var document = XDocument.Parse(body);
+            Assert.Equal("1.0", document.Root!.Element("schemaVersion")!.Value);
+            Assert.Equal("1", document.Root.Element("pagination")!.Element("totalRecords")!.Value);
+            var record = Assert.Single(document.Root.Element("records")!.Elements("record"));
+            Assert.Equal(actor.ToString("D"), record.Element("actor")!.Element("userId")!.Value);
+            Assert.Equal(tenant.ToString("D"), record.Element("actor")!.Element("tenantId")!.Value);
+            using var metadata = JsonDocument.Parse(record.Element("metadata")!.Value);
+            Assert.Equal("contract-proof", metadata.RootElement.GetProperty("nested").GetProperty("id").GetString());
         }
         var exportId = Guid.Parse(response.Headers.GetValues("X-Audit-Export-Id").Single());
         var progress = await client.GetAsync($"/v1/admin/audit-logs/export/{exportId}/progress");
@@ -100,6 +116,7 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [Theory]
     [InlineData("csv")]
     [InlineData("json")]
+    [InlineData("xml")]
     public async Task Anonymous_and_non_admin_actors_cannot_export(string format)
     {
         using var anonymous = fixture.Factory.CreateClient();
@@ -113,6 +130,7 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [Theory]
     [InlineData("csv")]
     [InlineData("json")]
+    [InlineData("xml")]
     public async Task Invalid_pagination_returns_structured_errors_before_starting_export(string format)
     {
         using var client = fixture.CreateAuthenticatedClient(Guid.NewGuid(), Guid.NewGuid(), true);
@@ -144,6 +162,9 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [InlineData("json", "application/json;charset=utf-8;q=0, application/json;q=1")]
     [InlineData("json", "application/json;charset=iso-8859-1")]
     [InlineData("csv", "text/csv;q=0, text/*;q=1")]
+    [InlineData("xml", "application/json")]
+    [InlineData("xml", "application/xml;q=0, */*;q=1")]
+    [InlineData("xml", "application/xml;charset=iso-8859-1")]
     public async Task Unacceptable_export_media_types_do_not_start_export(string format, string accept)
     {
         using var client = fixture.CreateAuthenticatedClient(Guid.NewGuid(), Guid.NewGuid(), true);
@@ -160,6 +181,9 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [InlineData("json", "*/*")]
     [InlineData("json", "application/json;charset=utf-8")]
     [InlineData("json", "text/csv;q=1, application/json;q=0.5")]
+    [InlineData("xml", "application/*")]
+    [InlineData("xml", "*/*")]
+    [InlineData("xml", "application/xml;charset=utf-8")]
     public async Task Compatible_media_ranges_are_accepted(string format, string accept)
     {
         using var client = fixture.CreateAuthenticatedClient(Guid.NewGuid(), Guid.NewGuid(), true);
@@ -174,6 +198,8 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [InlineData("json", "invalid-media-range")]
     [InlineData("csv", "text/csv;q=2")]
     [InlineData("json", "application/json;q=banana")]
+    [InlineData("xml", "invalid-media-range")]
+    [InlineData("xml", "application/xml;q=banana")]
     public async Task Malformed_accept_headers_are_rejected_before_starting_export(string format, string accept)
     {
         using var client = fixture.CreateAuthenticatedClient(Guid.NewGuid(), Guid.NewGuid(), true);
@@ -183,8 +209,10 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         Assert.False(response.Headers.Contains("X-Audit-Export-Id"));
     }
 
-    [Fact]
-    public async Task Json_pagination_and_optional_gzip_preserve_schema_and_original_text()
+    [Theory]
+    [InlineData("json", "application/json")]
+    [InlineData("xml", "application/xml")]
+    public async Task Document_pagination_and_optional_gzip_preserve_schema_and_original_text(string format, string mediaType)
     {
         var actor = Guid.NewGuid();
         var tenant = Guid.NewGuid();
@@ -204,35 +232,54 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
             await db.SaveChangesAsync();
         }
         using var client = fixture.CreateAuthenticatedClient(actor, tenant, true);
-        client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+        client.DefaultRequestHeaders.Accept.ParseAdd(mediaType);
         client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip");
-        using var compressed = await client.PostAsJsonAsync("/api/audit/export/json",
+        using var compressed = await client.PostAsJsonAsync("/api/audit/export/" + format,
             new AuditExportRequest { TenantId = tenant, ActionType = action, PageNumber = 2, PageSize = 1 });
         Assert.Equal(HttpStatusCode.OK, compressed.StatusCode);
         Assert.Contains("gzip", compressed.Content.Headers.ContentEncoding);
         Assert.Contains("Accept-Encoding", compressed.Headers.Vary);
         await using var bytes = await compressed.Content.ReadAsStreamAsync();
         await using var gzip = new GZipStream(bytes, CompressionMode.Decompress);
-        using var json = await JsonDocument.ParseAsync(gzip);
-        var pagination = json.RootElement.GetProperty("pagination");
-        Assert.Equal(2, pagination.GetProperty("pageNumber").GetInt32());
-        Assert.Equal(1, pagination.GetProperty("pageSize").GetInt32());
-        Assert.Equal(3, pagination.GetProperty("totalRecords").GetInt32());
-        Assert.Equal(3, pagination.GetProperty("totalPages").GetInt32());
-        var record = Assert.Single(json.RootElement.GetProperty("records").EnumerateArray());
-        Assert.StartsWith("=1+1 ", record.GetProperty("description").GetString());
-        Assert.Equal(2, record.GetProperty("metadata").GetProperty("nested").GetProperty("items").GetArrayLength());
+        using var reader = new StreamReader(gzip);
+        var decompressed = await reader.ReadToEndAsync();
+        if (format == "json")
+        {
+            using var json = JsonDocument.Parse(decompressed);
+            var pagination = json.RootElement.GetProperty("pagination");
+            Assert.Equal(2, pagination.GetProperty("pageNumber").GetInt32());
+            Assert.Equal(1, pagination.GetProperty("pageSize").GetInt32());
+            Assert.Equal(3, pagination.GetProperty("totalRecords").GetInt32());
+            Assert.Equal(3, pagination.GetProperty("totalPages").GetInt32());
+            var record = Assert.Single(json.RootElement.GetProperty("records").EnumerateArray());
+            Assert.StartsWith("=1+1 ", record.GetProperty("description").GetString());
+            Assert.Equal(2, record.GetProperty("metadata").GetProperty("nested").GetProperty("items").GetArrayLength());
+        }
+        else
+        {
+            var xml = XDocument.Parse(decompressed);
+            var pagination = xml.Root!.Element("pagination")!;
+            Assert.Equal("2", pagination.Element("pageNumber")!.Value);
+            Assert.Equal("1", pagination.Element("pageSize")!.Value);
+            Assert.Equal("3", pagination.Element("totalRecords")!.Value);
+            Assert.Equal("3", pagination.Element("totalPages")!.Value);
+            var record = Assert.Single(xml.Root.Element("records")!.Elements("record"));
+            Assert.StartsWith("=1+1 ", record.Element("description")!.Value);
+            using var metadata = JsonDocument.Parse(record.Element("metadata")!.Value);
+            Assert.Equal(2, metadata.RootElement.GetProperty("nested").GetProperty("items").GetArrayLength());
+        }
 
         client.DefaultRequestHeaders.AcceptEncoding.Clear();
-        using var plain = await client.PostAsJsonAsync("/api/audit/export/json",
+        using var plain = await client.PostAsJsonAsync("/api/audit/export/" + format,
             new AuditExportRequest { TenantId = tenant, ActionType = action, PageNumber = 2, PageSize = 1 });
         Assert.Empty(plain.Content.Headers.ContentEncoding);
-        Assert.Equal(json.RootElement.GetRawText(), await plain.Content.ReadAsStringAsync());
+        Assert.Equal(decompressed, await plain.Content.ReadAsStringAsync());
     }
 
     [Theory]
     [InlineData("csv")]
     [InlineData("json")]
+    [InlineData("xml")]
     public async Task Preparation_failures_return_safe_structured_errors(string format)
     {
         var service = new Mock<IAuditService>();
@@ -258,6 +305,7 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [Theory]
     [InlineData("csv")]
     [InlineData("json")]
+    [InlineData("xml")]
     public async Task Concurrent_alias_and_versioned_exports_share_the_user_rate_limit(string format)
     {
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -320,8 +368,9 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         var document = fixture.Factory.Services.GetRequiredService<ISwaggerProvider>().GetSwagger("v1");
         foreach (var route in new[]
         {
-            "/api/audit/export/csv", "/api/audit/export/json",
-            "/v1/admin/audit-logs/export/csv", "/v1/admin/audit-logs/:export", "/v1/admin/audit-logs/export/json"
+            "/api/audit/export/csv", "/api/audit/export/json", "/api/audit/export/xml",
+            "/v1/admin/audit-logs/export/csv", "/v1/admin/audit-logs/:export", "/v1/admin/audit-logs/export/json",
+            "/v1/admin/audit-logs/export/xml"
         })
         {
             Assert.True(document.Paths.TryGetValue(route, out var path), "Missing OpenAPI route: " + route);
@@ -331,12 +380,171 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         Assert.Equal(new[] { "text/csv" }, csvContent.Keys);
         var csvSchema = csvContent["text/csv"].Schema;
         Assert.Equal("binary", csvSchema.Format);
+        var xmlContent = document.Paths["/api/audit/export/xml"].Operations[OperationType.Post].Responses["200"].Content;
+        Assert.Equal(new[] { "application/xml" }, xmlContent.Keys);
+        Assert.Equal("binary", xmlContent["application/xml"].Schema.Format);
         var artifact = Environment.GetEnvironmentVariable("AUDIT_EXPORT_OPENAPI_ARTIFACT");
         if (!string.IsNullOrWhiteSpace(artifact))
         {
             using var output = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
             document.SerializeAsV3(new OpenApiJsonWriter(output));
             File.WriteAllText(artifact, output.ToString());
+        }
+    }
+
+    [Theory]
+    [InlineData("xml")]
+    [InlineData("XML")]
+    public async Task Action_search_XML_exports_use_the_guarded_filtered_projection(string format)
+    {
+        var tenant = Guid.NewGuid();
+        var actor = Guid.NewGuid();
+        var action = "xml.search." + Guid.NewGuid().ToString("N");
+        await using (var seed = fixture.Factory.Services.CreateAsyncScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            db.AddRange(
+                new AuditLog { TenantId = tenant, UserId = actor, ActionType = action, ResourceType = "Permission", Description = "<visible>" },
+                new AuditLog { TenantId = Guid.NewGuid(), UserId = actor, ActionType = action, ResourceType = "Permission", Description = "foreign-tenant" });
+            await db.SaveChangesAsync();
+        }
+        using var client = fixture.CreateAuthenticatedClient(actor, tenant, true);
+        using var response = await client.GetAsync($"/v1/admin/audit-logs/search/by-action-type/export?format={format}&TenantId={tenant:D}&ActionTypes={action}");
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, body);
+        Assert.Equal("application/xml", response.Content.Headers.ContentType!.MediaType);
+        Assert.EndsWith(".xml", response.Content.Headers.ContentDisposition!.FileName!.Trim('"'));
+        var item = Assert.Single(XDocument.Parse(body).Root!.Element("records")!.Elements("record"));
+        Assert.Equal("<visible>", item.Element("description")!.Value);
+        Assert.Equal(tenant.ToString("D"), item.Element("actor")!.Element("tenantId")!.Value);
+        Assert.DoesNotContain("foreign-tenant", body);
+    }
+
+    [Fact]
+    public async Task Scheduled_XML_export_streams_real_PostgreSQL_rows_and_retains_hash_history_and_tenant_scoped_download()
+    {
+        // Collection-lived hosts have their own scheduled-export worker. Use a separate
+        // migrated database so none can claim this test's deliberately due operation.
+        var isolated = new ApiPostgreSqlFixture();
+        try
+        {
+            await isolated.InitializeAsync();
+            await VerifyScheduledXmlExportAsync(isolated);
+        }
+        finally
+        {
+            await isolated.DisposeAsync();
+        }
+    }
+
+    private static async Task VerifyScheduledXmlExportAsync(ApiPostgreSqlFixture isolated)
+    {
+        var tenant = Guid.NewGuid();
+        var actor = Guid.NewGuid();
+        var action = "xml.scheduled." + Guid.NewGuid().ToString("N");
+        var instant = DateTime.UtcNow;
+        var storage = new CapturingXmlStorage();
+        using var factory = isolated.CreateFactory(builder => builder.ConfigureTestServices(services =>
+        {
+            foreach (var worker in services.Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
+                         && descriptor.ImplementationType == typeof(ScheduledAuditExportBackgroundService)).ToArray())
+            {
+                services.Remove(worker);
+            }
+            services.RemoveAll<IAuditScheduledExportStorage>();
+            services.AddSingleton<IAuditScheduledExportStorage>(storage);
+        }));
+        await using (var seed = factory.Services.CreateAsyncScope())
+        {
+            // This factory has its own migrated database; the parent fixture's seeded policies do not apply.
+            await seed.ServiceProvider.GetRequiredService<PolicyDefinitionSeeder>().SeedAsync();
+            var db = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            db.AddRange(
+                new AuditLog { TenantId = tenant, UserId = actor, ActionType = action, ResourceType = "Permission",
+                    Description = "scheduled <record> & evidence", CreatedAt = instant, Metadata = "{\"proof\":true}" },
+                new AuditLog { TenantId = Guid.NewGuid(), UserId = actor, ActionType = action, ResourceType = "Permission",
+                    Description = "foreign scheduled row", CreatedAt = instant });
+            await db.SaveChangesAsync();
+        }
+        using var client = factory.CreateClient();
+        Authenticate(client, actor, tenant);
+        using var created = await client.PostAsJsonAsync("/v1/admin/audit-logs/scheduled-exports", new CreateScheduledAuditExportRequest
+        {
+            TenantId = tenant, JobName = "XML evidence", CronExpression = "0 0 * * *", Timezone = "UTC",
+            ExportFormat = ExportFormat.Xml, ActionType = action, StartDate = instant.AddSeconds(-1), EndDate = instant.AddSeconds(1)
+        });
+        var createdBody = await created.Content.ReadAsStringAsync();
+        Assert.True(created.StatusCode == HttpStatusCode.Created, createdBody);
+        using var createdJson = JsonDocument.Parse(createdBody);
+        var exportId = createdJson.RootElement.GetProperty("id").GetGuid();
+        await using (var forceDue = factory.Services.CreateAsyncScope())
+        {
+            await forceDue.ServiceProvider.GetRequiredService<ApplicationDbContext>().Set<ScheduledAuditExport>()
+                .Where(export => export.Id == exportId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(export => export.NextRunAt, instant.AddDays(-365)));
+        }
+        await using (var execute = factory.Services.CreateAsyncScope())
+        {
+            Assert.True(await execute.ServiceProvider.GetRequiredService<IScheduledAuditExportService>()
+                .ProcessDueAsync(CancellationToken.None) >= 1);
+        }
+        await using var inspect = factory.Services.CreateAsyncScope();
+        var service = inspect.ServiceProvider.GetRequiredService<IScheduledAuditExportService>();
+        var history = Assert.Single(await service.GetHistoryAsync(exportId, tenant, CancellationToken.None));
+        Assert.Equal(ExportStatus.Completed, history.Status);
+        Assert.Equal(1, history.RecordCount);
+        var stored = Assert.Single(storage.Files.Values, file => file.TenantId == tenant);
+        Assert.Equal("application/xml; charset=utf-8", stored.ContentType);
+        Assert.EndsWith(".xml", stored.FileName);
+        Assert.Equal(Convert.ToHexString(SHA256.HashData(stored.Content)).ToLowerInvariant(), stored.Hash);
+        var persisted = await inspect.ServiceProvider.GetRequiredService<ApplicationDbContext>().Set<AuditExportHistory>()
+            .AsNoTracking().SingleAsync(row => row.Id == history.Id);
+        Assert.Equal(stored.Hash, persisted.FileChecksum);
+        Assert.Equal(stored.Content.Length, history.FileSizeBytes);
+        var download = await service.OpenDownloadAsync(history.Id, tenant, CancellationToken.None);
+        Assert.NotNull(download);
+        Assert.Equal("application/xml; charset=utf-8", download.ContentType);
+        await using var content = download.Content;
+        var xml = await XDocument.LoadAsync(content, LoadOptions.None, CancellationToken.None);
+        var row = Assert.Single(xml.Root!.Element("records")!.Elements("record"));
+        Assert.Equal("scheduled <record> & evidence", row.Element("description")!.Value);
+        Assert.Equal(tenant.ToString("D"), row.Element("actor")!.Element("tenantId")!.Value);
+        using var metadata = JsonDocument.Parse(row.Element("metadata")!.Value);
+        Assert.True(metadata.RootElement.GetProperty("proof").GetBoolean());
+        Assert.Null(await service.OpenDownloadAsync(history.Id, Guid.NewGuid(), CancellationToken.None));
+        using var httpDownload = await client.GetAsync($"/v1/admin/audit-logs/scheduled-export-history/{history.Id:D}/download?tenantId={tenant:D}");
+        Assert.Equal(HttpStatusCode.OK, httpDownload.StatusCode);
+        Assert.Equal("application/xml", httpDownload.Content.Headers.ContentType!.MediaType);
+        Assert.Equal(stored.Content, await httpDownload.Content.ReadAsByteArrayAsync());
+    }
+
+    private sealed record StoredXml(Guid TenantId, byte[] Content, string Hash, string ContentType, string FileName);
+
+    private sealed class CapturingXmlStorage : IAuditScheduledExportStorage
+    {
+        public Dictionary<string, StoredXml> Files { get; } = new();
+        public async Task<string> StoreAsync(Guid tenantId, Stream content, string contentHash, string contentType,
+            string fileName, CancellationToken cancellationToken)
+        {
+            await using var copy = new MemoryStream();
+            await content.CopyToAsync(copy, cancellationToken);
+            var key = Guid.NewGuid().ToString("N");
+            Files.Add(key, new StoredXml(tenantId, copy.ToArray(), contentHash, contentType, fileName));
+            return key;
+        }
+        public Task<Stream> OpenReadAsync(Guid tenantId, string storageReference, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var file = Files[storageReference];
+            Assert.Equal(tenantId, file.TenantId);
+            return Task.FromResult<Stream>(new MemoryStream(file.Content, writable: false));
+        }
+        public Task DeleteAsync(Guid tenantId, string storageReference, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Assert.Equal(tenantId, Files[storageReference].TenantId);
+            Files.Remove(storageReference);
+            return Task.CompletedTask;
         }
     }
 

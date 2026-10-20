@@ -27,6 +27,47 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
     : IClassFixture<NotificationTokenStoragePostgreSqlFixture>
 {
     private static readonly NotificationMetadataProtector MetadataProtector = new(new EphemeralDataProtectionProvider());
+
+    [Fact]
+    public async Task MagicLinkTokens_AreSharedAcrossReplicas_AndOnlyOneConcurrentConsumeSucceeds()
+    {
+        await using var issuerContext = fixture.CreateContext();
+        var issuer = new DatabaseMagicLinkTokenStore(issuerContext);
+        var token = Guid.NewGuid().ToString("N");
+        var userId = Guid.NewGuid();
+        var now = SystemClock.UtcNow;
+        await issuer.AddAsync(token, userId, "Replica@Test.COM", now.AddMinutes(15));
+
+        await using var firstContext = fixture.CreateContext();
+        await using var secondContext = fixture.CreateContext();
+        var first = new DatabaseMagicLinkTokenStore(firstContext);
+        var second = new DatabaseMagicLinkTokenStore(secondContext);
+        Assert.True(await second.IsValidAsync(token, now));
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async Task<TokenValidationResult> ConsumeAsync(DatabaseMagicLinkTokenStore store)
+        {
+            await start.Task;
+            return await store.ConsumeAsync(token, now);
+        }
+
+        var firstAttempt = ConsumeAsync(first);
+        var secondAttempt = ConsumeAsync(second);
+        start.SetResult();
+        var results = await Task.WhenAll(firstAttempt, secondAttempt);
+
+        var accepted = Assert.Single(results, result => result.Success);
+        Assert.Equal(userId, accepted.UserId);
+        Assert.Equal("replica@test.com", accepted.Email);
+        Assert.Single(results, result => !result.Success);
+        Assert.False(await issuer.IsValidAsync(token, now));
+        Assert.False((await issuer.ConsumeAsync(token, now)).Success);
+        var stored = await issuerContext.Set<MagicLinkToken>().AsNoTracking().SingleAsync(value => value.UserId == userId);
+        Assert.Equal(64, stored.TokenHash.Length);
+        Assert.DoesNotContain(token, stored.TokenHash);
+        Assert.NotNull(stored.ConsumedAt);
+    }
+
     [Theory]
     [InlineData("verification")]
     [InlineData("reset")]
@@ -150,7 +191,9 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
         var migration = new ProtectNotificationCredentialMetadata();
         var generator = context.GetService<IMigrationsSqlGenerator>();
         foreach (var sql in generator.Generate(migration.UpOperations))
+        {
             await context.Database.ExecuteSqlRawAsync(sql.CommandText);
+        }
         var id = Guid.NewGuid();
         var value = new string('x', wide ? 5000 : 4000);
         await context.Database.ExecuteSqlRawAsync("INSERT INTO \"Notifications\" (\"Id\",\"Metadata\") VALUES ({0},{1})", id, value);
@@ -158,7 +201,9 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
         async Task Down()
         {
             foreach (var sql in generator.Generate(migration.DownOperations))
+            {
                 await context.Database.ExecuteSqlRawAsync(sql.CommandText);
+            }
         }
         if (wide)
         {
@@ -188,7 +233,10 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
             var row = Notification.Create(user.Id, NotificationType.PasswordReset, NotificationChannel.InApp,
                 "Historical request", "Requested operation", metadata: metadata);
             context.Entry(row).Property(value => value.DeliveryStatus).CurrentValue = status;
-            if (status == NotificationDeliveryStatus.Sent) row.MarkAsSent();
+            if (status == NotificationDeliveryStatus.Sent)
+            {
+                row.MarkAsSent();
+            }
             row.DeletedAt = SystemClock.UtcNow;
             return row;
         }).ToList();
@@ -213,7 +261,10 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
             preferences.Object, sender.Object, Options.Create(new EmailDispatcherOptions { SweepBatchSize = 2 }),
             NullLogger<EmailDispatcherService>.Instance, MetadataProtector);
         // Repeated bounded passes cover the six lifecycle states without scheduling a second worker.
-        for (var index = 0; index < rows.Count; index++) await dispatcher.SweepOnceAsync();
+        for (var index = 0; index < rows.Count; index++)
+        {
+            await dispatcher.SweepOnceAsync();
+        }
         context.ChangeTracker.Clear();
         foreach (var id in states.Keys)
         {
@@ -231,7 +282,8 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
     {
         var user = await CreateUser(context);
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var generator = new EmailVerificationService(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>());
+        var generator = new EmailVerificationService(NullLogger<EmailVerificationService>.Instance, cache, Mock.Of<IPublisher>(),
+            magicLinkTokenStore: new DatabaseMagicLinkTokenStore(context));
         var token = kind switch
         {
             "verification" => await generator.GenerateVerificationTokenAsync(user.Id, user.Email),
@@ -257,6 +309,8 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
                 await new SendMagicLinkRequestedHandler(NullLogger<SendMagicLinkRequestedHandler>.Instance, service, users.Object)
                     .Handle(new MagicLinkRequestedNotification { Email = user.Email, Token = token, UserName = user.Name }, CancellationToken.None);
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind));
         }
         var notification = await context.Set<Notification>().SingleAsync(value => value.RecipientId == user.Id);
         return (notification, token);
@@ -304,6 +358,9 @@ public sealed class NotificationTokenStoragePostgreSqlFixture : IAsyncLifetime
     }
     public async Task DisposeAsync()
     {
-        if (_database is not null) await _database.DisposeAsync();
+        if (_database is not null)
+        {
+            await _database.DisposeAsync();
+        }
     }
 }

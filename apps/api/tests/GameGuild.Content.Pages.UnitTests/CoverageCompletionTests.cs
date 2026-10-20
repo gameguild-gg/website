@@ -299,8 +299,8 @@ public class ContentPagesSmokeCoverageTests
         var ogController = new OpenGraphController(Mock.Of<IOpenGraphService>());
         var db = Mock.Of<IApplicationDbContext>();
 
-        var pageService = new PageService(db);
-        var resourceService = new ContentResourceService(db);
+        var pageService = new PageService(db, Mock.Of<IContentPagesAuditEventSink>());
+        var resourceService = new ContentResourceService(db, Mock.Of<IContentPagesAuditEventSink>());
         var ogService = new OpenGraphService(db);
 
         pageController.Should().NotBeNull();
@@ -381,7 +381,7 @@ public class MarketingLeadServiceCompletionTests
     public async Task CreateAsync_ShouldNormalizeRequiredAndOptionalFields()
     {
         await using var db = CreateDbContext();
-        var service = new MarketingLeadService(db);
+        var service = new MarketingLeadService(db, new RecordingContentPagesAuditEventSink());
 
         var lead = await service.CreateAsync(new CreateMarketingLeadDto
         {

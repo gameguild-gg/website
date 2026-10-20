@@ -13,12 +13,25 @@ namespace GameGuild.Commerce.Subscriptions.IntegrationTests;
 public class SubscriptionPlanPricingResolverIntegrationTests
 {
     private readonly Mock<ISubscriptionPlanService> _mockPlanService;
+    private readonly Mock<ISubscriptionPlanRepository> _mockPlanRepository;
     private readonly SubscriptionPlanPricingResolver _resolver;
 
     public SubscriptionPlanPricingResolverIntegrationTests()
     {
         _mockPlanService = new Mock<ISubscriptionPlanService>();
-        _resolver = new SubscriptionPlanPricingResolver(_mockPlanService.Object);
+        // The resolver delegates interval derivation to the real interval pricing service;
+        // without configured interval price points every cycle uses its derived fallback
+        // (including the plan-level annual discount, issue #416).
+        _mockPlanRepository = new Mock<ISubscriptionPlanRepository>();
+        _mockPlanRepository
+            .Setup(repository => repository.GetIntervalPriceAsync(It.IsAny<Guid>(), It.IsAny<BillingCycle>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SubscriptionPlanIntervalPrice?)null);
+        _mockPlanRepository
+            .Setup(repository => repository.GetIntervalPricesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SubscriptionPlanIntervalPrice>());
+        _resolver = new SubscriptionPlanPricingResolver(
+            _mockPlanService.Object,
+            new SubscriptionIntervalPricingService(_mockPlanRepository.Object));
     }
 
     #region GetPlanMonthlyPriceAsync Tests
@@ -206,11 +219,45 @@ public class SubscriptionPlanPricingResolverIntegrationTests
     public void Constructor_ShouldThrow_WhenPlanServiceIsNull()
     {
         // Act
-        var act = () => new SubscriptionPlanPricingResolver(null!);
+        var act = () => new SubscriptionPlanPricingResolver(null!,
+            new SubscriptionIntervalPricingService(_mockPlanRepository.Object));
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("planService");
+    }
+
+    [Fact]
+    public async Task GetPlanPriceAsync_ShouldApplyPlanLevelAnnualDiscount_WhenNoExplicitAnnualPrice()
+    {
+        // Issue #416: the pricing preview surfaces the plan-level annual discount through the
+        // shared interval pricing service.
+        var planId = Guid.NewGuid();
+        var plan = new SubscriptionPlan("Plan", "plan", 2999, "USD");
+        plan.UpdatePricing(2999, null, 20m); // 20% annual discount, no explicit annual price
+
+        _mockPlanService.Setup(s => s.GetByIdAsync(planId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(plan);
+
+        var result = await _resolver.GetPlanPriceAsync(planId, BillingCycle.Annually);
+
+        result.Should().NotBeNull();
+        result!.Amount.Should().Be(287.90m); // 29.99 x 12 discounted 20% = 287.904 -> 287.90
+    }
+
+    [Fact]
+    public async Task GetPlanPriceAsync_ShouldFailClosed_WhenEnterprisePlanIsCustomQuotePending()
+    {
+        var planId = Guid.NewGuid();
+        var plan = new SubscriptionPlan("Enterprise", "enterprise", -1, "USD");
+        plan.Reclassify(SubscriptionPlanType.Enterprise);
+
+        _mockPlanService.Setup(s => s.GetByIdAsync(planId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(plan);
+
+        var act = () => _resolver.GetPlanPriceAsync(planId, BillingCycle.Monthly);
+
+        await act.Should().ThrowAsync<SubscriptionPlanCustomQuotePendingException>();
     }
 
     #endregion

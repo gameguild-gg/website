@@ -215,8 +215,89 @@ public sealed class CachedAclStalePermissionSecurityTests
             "a legacy lookup that never observes a stable version must fail closed instead of serving a possibly stale decision");
     }
 
-    [Fact]
-    public async Task AlreadyExpiredDecision_IsReturnedButNeverCached()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task GrantExpiringDuringAsyncEvaluation_IsReevaluatedBeforeReturn(
+        bool useLegacyPath,
+        bool expiresDuringL2Write)
+    {
+        var tenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var entry = CreateAllowEntry(tenantId, userId, "Document", "doc-late", AccessLevel.Write, StartTime.AddSeconds(5));
+        var (inner, repository) = CreateDatabaseService(entry);
+        var clock = new MutableTimeProvider(new DateTimeOffset(StartTime));
+        SystemClock.SetProvider(clock);
+        try
+        {
+            var versionReads = 0;
+            var tenantVersions = new Mock<ITenantSecurityVersionStore>();
+            tenantVersions
+                .Setup(store => store.GetTenantAndGlobalVersionsAsync(tenantId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    if (!expiresDuringL2Write && ++versionReads == 2)
+                    {
+                        clock.Advance(TimeSpan.FromSeconds(6));
+                    }
+
+                    return (1L, 1L);
+                });
+            var userVersions = new Mock<IUserSecurityVersionStore>();
+            userVersions.Setup(store => store.GetVersionAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1L);
+            var hybrid = new Mock<IHybridPermissionCache>();
+            hybrid.Setup(cache => cache.SetValueAsync(
+                    It.IsAny<string>(), It.IsAny<CachedAclDecision>(), "acl", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback(() =>
+                {
+                    if (expiresDuringL2Write)
+                    {
+                        clock.Advance(TimeSpan.FromSeconds(6));
+                    }
+                })
+                .Returns(Task.CompletedTask);
+            using var memoryCache = new MemoryCache(new MemoryCacheOptions());
+            var service = new CachedAccessControlListService(
+                inner,
+                memoryCache,
+                tenantVersions.Object,
+                userVersions.Object,
+                Options.Create(new AuthorizationCacheOptions { AccessControlListTtlSeconds = 60 }),
+                hybrid.Object);
+
+            var level = useLegacyPath
+                ? await service.GetAccessLevelAsync(userId, tenantId, "Document", "doc-late")
+                : await service.EvaluateAccessAsync(AclSubject.ForUser(userId), tenantId, "Document", "doc-late");
+
+            level.Should().Be(AccessLevel.None,
+                "the grant expired while an asynchronous version check or L2 write was completing");
+            repository.Verify(repo => repo.GetByResourceAndPrincipalsAsync(
+                tenantId, "Document", "doc-late", It.IsAny<IEnumerable<(AclPrincipalType Type, Guid? Id)>>(),
+                It.IsAny<CancellationToken>()), Times.Exactly(2),
+                "the expired source decision must be discarded and the real ACL evaluator must run again");
+
+            var cachedLevel = useLegacyPath
+                ? await service.GetAccessLevelAsync(userId, tenantId, "Document", "doc-late")
+                : await service.EvaluateAccessAsync(AclSubject.ForUser(userId), tenantId, "Document", "doc-late");
+            cachedLevel.Should().Be(AccessLevel.None);
+            repository.Verify(repo => repo.GetByResourceAndPrincipalsAsync(
+                tenantId, "Document", "doc-late", It.IsAny<IEnumerable<(AclPrincipalType Type, Guid? Id)>>(),
+                It.IsAny<CancellationToken>()), Times.Exactly(2),
+                "the fresh denial replaces the expired allow in L1");
+        }
+        finally
+        {
+            SystemClock.Reset();
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PersistentlyExpiredSourceDecision_FailsClosedWithoutCaching(bool useLegacyPath)
     {
         var tenantId = Guid.NewGuid();
         var userId = Guid.NewGuid();
@@ -229,9 +310,12 @@ public sealed class CachedAclStalePermissionSecurityTests
             using var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var service = CreateCachedService(inner, memoryCache, tenantId, userId, accessControlListTtlSeconds: 60, hybrid);
 
-            (await service.EvaluateAccessAsync(AclSubject.ForUser(userId), tenantId, "Document", "doc-late"))
-                .Should().Be(AccessLevel.Write,
-                    "the authoritative source answer is returned even when its grants just lapsed");
+            var act = () => useLegacyPath
+                ? service.GetAccessLevelAsync(userId, tenantId, "Document", "doc-late")
+                : service.EvaluateAccessAsync(AclSubject.ForUser(userId), tenantId, "Document", "doc-late");
+
+            await act.Should().ThrowAsync<InvalidOperationException>(
+                "a source that repeatedly returns expired decisions must fail closed after bounded retries");
 
             hybrid.Verify(cache => cache.SetValueAsync(
                 It.IsAny<string>(), It.IsAny<CachedAclDecision>(), "acl", It.IsAny<int>(), It.IsAny<CancellationToken>()),
@@ -240,10 +324,8 @@ public sealed class CachedAclStalePermissionSecurityTests
                 It.IsAny<string>(), It.IsAny<CachedAclDecision>(), "acl", It.IsAny<CancellationToken>()),
                 Times.Never);
 
-            (await service.EvaluateAccessAsync(AclSubject.ForUser(userId), tenantId, "Document", "doc-late"))
-                .Should().Be(AccessLevel.Write);
-            inner.TimeBoundEvaluations.Should().Be(2,
-                "a decision whose grants already expired must not be cached under any TTL");
+            inner.TimeBoundEvaluations.Should().Be(3,
+                "expired source decisions must be retried with the existing bounded retry budget");
         }
         finally
         {

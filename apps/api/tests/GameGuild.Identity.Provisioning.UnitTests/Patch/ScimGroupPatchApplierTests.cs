@@ -138,4 +138,35 @@ public sealed class ScimGroupPatchApplierTests
         act.Should().Throw<ScimException>()
             .Which.ScimType.Should().Be("invalidValue");
     }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(null, "displayName")]
+    [InlineData(null, "members")]
+    [InlineData("", null)]
+    [InlineData("", "displayName")]
+    [InlineData("", "members")]
+    [InlineData(" ", null)]
+    [InlineData(" ", "displayName")]
+    [InlineData(" ", "members")]
+    [InlineData("merge", null)]
+    [InlineData("merge", "displayName")]
+    [InlineData("merge", "members")]
+    [InlineData("UpDaTe", null)]
+    [InlineData("UpDaTe", "displayName")]
+    [InlineData("UpDaTe", "members")]
+    public void UnsupportedOperation_RejectsWithoutMutatingState(string? op, string? path)
+    {
+        var member = Guid.NewGuid().ToString();
+        var state = new ScimGroupMutableState { DisplayName = "Existing", ExternalId = "original" };
+        state.MemberUserIds.Add(member);
+        var operation = new ScimPatchOperation { Op = op, Path = path, Value = JsonValue.Create("Rejected") };
+
+        var act = () => ScimGroupPatchApplier.Apply(state, [operation]);
+
+        act.Should().Throw<ScimException>().Which.ScimType.Should().Be("invalidValue");
+        state.DisplayName.Should().Be("Existing");
+        state.ExternalId.Should().Be("original");
+        state.MemberUserIds.Should().BeEquivalentTo([member]);
+    }
 }

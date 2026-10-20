@@ -5,6 +5,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const intlMiddleware = createMiddleware(routing);
 const INTERNAL_LOCALE_HEADER = "x-gameguild-internal-locale-rewrite";
+// Browser-visible path+query forwarded to server components, which cannot
+// otherwise recover it (layouts get no search params; issue #864).
+const PUBLIC_PATH_HEADER = "x-gameguild-path";
 const DEFAULT_LOCALE_PREFIX = `/${routing.defaultLocale}`;
 const NON_DEFAULT_LOCALE_PREFIXES = routing.locales
   .filter((locale) => locale !== routing.defaultLocale)
@@ -12,6 +15,14 @@ const NON_DEFAULT_LOCALE_PREFIXES = routing.locales
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+function publicPath(pathname: string, search: string): string {
+  const localePrefix = routing.locales
+    .map((locale) => `/${locale}`)
+    .find((prefix) => matchesPrefix(pathname, prefix));
+  const unprefixed = localePrefix ? pathname.slice(localePrefix.length) || "/" : pathname;
+  return search ? `${unprefixed}${search}` : unprefixed;
 }
 
 function rewriteWithLocale(request: NextRequest, pathname: string, locale: string): NextResponse {
@@ -23,6 +34,10 @@ function rewriteWithLocale(request: NextRequest, pathname: string, locale: strin
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(INTERNAL_LOCALE_HEADER, "1");
   requestHeaders.set("x-next-intl-locale", locale);
+  requestHeaders.set(
+    PUBLIC_PATH_HEADER,
+    publicPath(request.nextUrl.pathname, request.nextUrl.search),
+  );
 
   return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
 }
@@ -69,7 +84,12 @@ export function routeRequest(request: NextRequest): NextResponse {
     if (pathname === `${nonDefaultPrefix}/social`) {
       return redirectToPath(request, `${nonDefaultPrefix}/feed`);
     }
-    return intlMiddleware(request);
+    const response = intlMiddleware(request);
+    response.headers.set(
+      `x-middleware-request-${PUBLIC_PATH_HEADER}`,
+      publicPath(request.nextUrl.pathname, request.nextUrl.search),
+    );
+    return response;
   }
 
   if (pathname === "/social") {

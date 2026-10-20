@@ -216,6 +216,14 @@ services:
       - Assets__Storage__Region=${S3_REGION:-garage}
       - Assets__Storage__ForcePathStyle=true
       - Assets__Storage__PresignedUrlExpiryMinutes=${S3_PRESIGNED_EXPIRY:-60}
+      - Assets__Openinary__BaseUrl=${OPENINARY_INTERNAL_URL:-http://openinary:3000}
+      - Assets__Openinary__ApiKey=${OPENINARY_UPLOAD_API_KEY:-}
+      - Assets__Openinary__FolderPrefix=${OPENINARY_FOLDER_PREFIX:-gg/}
+      - Assets__Openinary__MaxFileMb=${OPENINARY_MAX_FILE_MB:-100}
+      - Assets__AutoModeration__Enabled=${ASSETS_AUTO_MODERATION_ENABLED:-true}
+      - Assets__AutoModeration__Classifier__BaseUrl=${ASSETS_CLASSIFIER_BASE_URL:-}
+      - Assets__AutoModeration__Classifier__ApiKey=${ASSETS_CLASSIFIER_API_KEY:-}
+      - Assets__AutoModeration__Classifier__Model=${ASSETS_CLASSIFIER_MODEL:-qwen3.8-flash-next}
       - SeedData__ImportSnapshotCourses=${SEED_SNAPSHOT_COURSES:-false}
       - OAuth__Google__ClientId=${GOOGLE_CLIENT_ID:-}
       - OAuth__Google__ClientSecret=${GOOGLE_CLIENT_SECRET:-}
@@ -323,6 +331,76 @@ services:
       api:
         condition: service_started
 
+
+  openinary:
+    # Local asset CDN + transformations (gameguild Assets integration).
+    # Stores originals in the compose Garage via STORAGE_* (see garage-init's
+    # second bucket). The API talks to it over HTTP only:
+    #   - upload: POST {OPENINARY_INTERNAL_URL}/upload
+    #   - /t/ transforms: 302 to {Assets__Openinary__BaseUrl}/t/...
+    # Browsers reach it on OPENINARY_PUBLIC_URL (default :3003).
+    image: openinary/openinary:0.5
+    container_name: game-guild-openinary
+    environment:
+      - NODE_ENV=production
+      - MODE=fullstack
+      - PORT=3000
+      - DATABASE_URL=postgres://openinary:openinary@postgres:5432/openinary
+      - BETTER_AUTH_SECRET=${OPENINARY_BETTER_AUTH_SECRET:-local-openinary-auth-secret-at-least-32-chars}
+      - BETTER_AUTH_URL=${OPENINARY_PUBLIC_URL:-http://localhost:3003}
+      - NEXT_PUBLIC_API_BASE_URL=/api
+      - API_SECRET=${OPENINARY_API_SECRET:-local-openinary-api-secret-at-least-32-chars}
+      - CORS_ORIGIN=${OPENINARY_PUBLIC_URL:-http://localhost:3003}
+      - STORAGE_ENDPOINT=http://garage:3900
+      - STORAGE_REGION=garage
+      - STORAGE_BUCKET_NAME=${OPENINARY_STORAGE_BUCKET:-openinary}
+      - STORAGE_ACCESS_KEY_ID=${OPENINARY_STORAGE_ACCESS_KEY_ID:-GK444444444444444444444444}
+      - STORAGE_SECRET_ACCESS_KEY=${OPENINARY_STORAGE_SECRET_ACCESS_KEY:-3333333333333333333333333333333333333333333333333333333333333333}
+      - STORAGE_PUBLIC_URL=${OPENINARY_PUBLIC_URL:-http://localhost:3003}
+      - MAX_FILE_SIZE_MB=${OPENINARY_MAX_FILE_MB:-100}
+      - OPENINARY_ADMIN_NAME=${OPENINARY_ADMIN_NAME:-admin}
+      - OPENINARY_ADMIN_EMAIL=${OPENINARY_ADMIN_EMAIL:-admin@openinary.local}
+      - OPENINARY_ADMIN_PASSWORD=${OPENINARY_ADMIN_PASSWORD:-openinary-admin-local}
+      - OPENINARY_GENERATE_API_KEY=true
+      - OPENINARY_TELEMETRY=false
+    volumes:
+      - openinary-cache:/app/apps/api/cache
+      - openinary-public:/app/apps/api/public
+    ports:
+      - '${OPENINARY_HOST_PORT:-3003}:3000'
+    networks:
+      public:
+        aliases:
+          - openinary
+      internal:
+        aliases:
+          - openinary
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      start_interval: ${HEALTHCHECK_START_INTERVAL:-10s}
+      start_period: ${HEALTHCHECK_START_PERIOD:-120s}
+      interval: ${HEALTHCHECK_INTERVAL:-30s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-10s}
+      retries: ${HEALTHCHECK_RETRIES:-5}
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.game-guild.app=openinary"
+      - "com.game-guild.tier=infrastructure"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage-init:
+        condition: service_healthy
+
 volumes:
   dataprotection-keys:
     name: game-guild-dataprotection-keys
@@ -335,4 +413,10 @@ volumes:
     driver: local
   redis-data:
     name: game-guild-redis-data
+    driver: local
+  openinary-cache:
+    name: game-guild-openinary-cache
+    driver: local
+  openinary-public:
+    name: game-guild-openinary-public
     driver: local

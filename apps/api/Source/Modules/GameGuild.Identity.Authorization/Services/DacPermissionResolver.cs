@@ -51,9 +51,9 @@ public sealed class DacPermissionResolver(
                 query.UserId,
                 query.TenantId,
                 query.Layer,
-                query.ContentType ?? "<none>",
-                query.ResourceType ?? "<none>",
-                query.ResourceId ?? "<none>");
+                LogRedaction.Sanitize(query.ContentType ?? "<none>"),
+                LogRedaction.Sanitize(query.ResourceType ?? "<none>"),
+                LogRedaction.Sanitize(query.ResourceId ?? "<none>"));
             return new DacPermissionResolution
             {
                 Query = query,
@@ -69,11 +69,15 @@ public sealed class DacPermissionResolver(
         }
 
         // A complete resource pair routes through the canonical resource context so that
-        // resource grants for exactly this resource contribute (context isolation).
+        // resource grants for exactly this resource contribute (context isolation); a
+        // content type without a resource pair routes through the content-type context so
+        // the engine's content-type layer contributes; otherwise the tenant context.
         var context = query.HasResource
             ? EffectivePermissionContext.ForResource(
                 query.UserId, query.TenantId, query.ResourceType!, query.ResourceId!)
-            : EffectivePermissionContext.ForTenant(query.UserId, query.TenantId);
+            : query.ContentType is { Length: > 0 } contentType
+                ? EffectivePermissionContext.ForContentType(query.UserId, query.TenantId, contentType)
+                : EffectivePermissionContext.ForTenant(query.UserId, query.TenantId);
 
         var effective = await effectiveResolver
             .ResolveAsync(context, cancellationToken)
@@ -84,9 +88,9 @@ public sealed class DacPermissionResolver(
             query.UserId,
             query.TenantId,
             query.Layer,
-            query.ContentType ?? "<none>",
-            query.ResourceType ?? "<none>",
-            query.ResourceId ?? "<none>",
+            LogRedaction.Sanitize(query.ContentType ?? "<none>"),
+            LogRedaction.Sanitize(query.ResourceType ?? "<none>"),
+            LogRedaction.Sanitize(query.ResourceId ?? "<none>"),
             effective.ContextValid,
             effective.Throttled,
             effective.Permissions.Count);
@@ -140,17 +144,26 @@ public sealed class DacPermissionResolver(
         EffectivePermissions effective,
         string permission)
     {
+        // Tenant layer (inheritance root): an unqualified grant satisfies every layer's
+        // Auto check — tenant → content-type → resource inheritance.
         if (effective.HasPermission(permission))
         {
             return true;
         }
 
-        if (!string.IsNullOrWhiteSpace(query.ContentType)
-            && effective.HasPermission($"{query.ContentType}.{permission}"))
+        // Content-type layer: the content type named by the query, or derived from the
+        // query's resource type (a resource of type T is content of content type T).
+        var contentType = !string.IsNullOrWhiteSpace(query.ContentType)
+            ? query.ContentType
+            : query.HasResource
+                ? query.ResourceType
+                : null;
+        if (contentType is { Length: > 0 } && effective.HasPermission($"{contentType}.{permission}"))
         {
             return true;
         }
 
+        // Resource layer: the exact resource's qualified name (owner-override parity).
         return query.HasResource
             && effective.HasPermission($"{query.ResourceType}.{query.ResourceId}.{permission}");
     }

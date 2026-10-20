@@ -7,6 +7,45 @@ namespace GameGuild.Learning.Assessments.Grading.Runtime;
 
 internal static class GradingRuntimeDatabaseLock
 {
+    private const string ExecutionMutationScope = "grading-execution";
+
+    public static Task<TResult> ExecuteWithStrategyAsync<TResult>(
+        IApplicationDbContext context,
+        Func<Task<TResult>> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        if (context is not DbContext dbContext ||
+            !dbContext.Database.IsRelational() ||
+            dbContext.Database.CurrentTransaction is not null)
+        {
+            return operation();
+        }
+
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        var attempt = 0;
+        return strategy.ExecuteAsync(async () =>
+        {
+            if (attempt++ > 0)
+            {
+                // A retry must not reuse entities left tracked by the failed attempt.
+                dbContext.ChangeTracker.Clear();
+            }
+
+            return await operation().ConfigureAwait(false);
+        });
+    }
+
+    public static Task<IDbContextTransaction?> AcquireExecutionAsync(
+        IApplicationDbContext context,
+        Guid executionId,
+        CancellationToken cancellationToken = default) =>
+        AcquireAsync(
+            context,
+            ExecutionMutationScope,
+            executionId,
+            cancellationToken: cancellationToken);
+
     public static async Task<IDbContextTransaction?> AcquireAsync(
         IApplicationDbContext context,
         string scope,

@@ -21,7 +21,7 @@ namespace GameGuild.Compliance.Audit;
 [Microsoft.AspNetCore.Http.Tags("compliance/audit")]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/admin/audit-logs")]
-[Authorize(Policy = Policies.SystemAdmin)]
+[Authorize]
 public class AuditController(
     IAuditService auditService,
     IActorContextAccessor actorContextAccessor,
@@ -40,13 +40,52 @@ public class AuditController(
     }
 
     /// <summary>
+    ///     Issue #294 tenant clamp for the audit self-service tier: system administrators
+    ///     keep their requested (platform-wide or any-tenant) scope; every other caller is
+    ///     pinned to their own tenant. An explicit cross-tenant request or a missing tenant
+    ///     context fails closed with 403.
+    /// </summary>
+    private bool TryClampToTenantScope(Guid? requestedTenantId, out Guid? tenantScope)
+    {
+        var actor = actorContextAccessor.ActorContext;
+        if (actor.IsSystemAdmin)
+        {
+            tenantScope = requestedTenantId;
+            return true;
+        }
+
+        if (!actor.TenantId.HasValue)
+        {
+            tenantScope = null;
+            return false;
+        }
+
+        if (requestedTenantId.HasValue && requestedTenantId.Value != actor.TenantId.Value)
+        {
+            tenantScope = null;
+            return false;
+        }
+
+        tenantScope = actor.TenantId.Value;
+        return true;
+    }
+
+    /// <summary>
     /// Get audit logs with filtering and pagination
     /// </summary>
     [HttpGet]
+    [Authorize(Policy = Policies.AuditRead)]
     public async Task<ActionResult<AuditLogResponse>> GetAuditLogs([FromQuery] AuditLogQueryRequest request)
     {
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
 
         _logger.LogInformation("Admin {AdminUserId} querying audit logs: ActionType={ActionType}, RiskLevel={RiskLevel}", adminUserId.Value, LogRedaction.Sanitize(request.ActionType), request.RiskLevel);
 
@@ -65,6 +104,7 @@ public class AuditController(
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             IpAddress = request.IpAddress,
+            SearchText = request.SearchText,
             Skip = request.Skip,
             Take = Math.Min(request.Take, 1000) // Cap at 1000 records
         };
@@ -87,6 +127,7 @@ public class AuditController(
     /// calendar day. Hourly or daily histogram buckets include both UTC and local timestamps.
     /// </remarks>
     [HttpGet("search/by-date-range")]
+    [Authorize(Policy = Policies.AuditRead)]
     [ProducesResponseType(typeof(AuditDateRangeSearchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuditDateRangeSearchResponse>> SearchAuditLogsByDateRange(
@@ -95,6 +136,13 @@ public class AuditController(
     {
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) { throw new UnauthorizedAccessException("User not authenticated"); }
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
 
         var requestValidation = ValidateRequest(request);
         if (requestValidation is not null) { return requestValidation; }
@@ -186,8 +234,41 @@ public class AuditController(
         });
     }
 
+    /// <summary>Searches audit events using a nested condition tree with boolean logic.</summary>
+    [HttpPost("search-filter")]
+    [HttpPost("/api/audit/search-filter")]
+    [Authorize(Policy = Policies.AuditRead)]
+    [ProducesResponseType(typeof(AuditLogResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AuditLogResponse>> SearchAuditLogsWithConditions([FromBody] AuditConditionSearchRequest request)
+    {
+        if (!TryValidateModel(request))
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var adminUserId = GetCurrentUserId();
+        if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
+
+        _logger.LogInformation("Admin {AdminUserId} searching audit logs with condition filters", adminUserId.Value);
+
+        var result = await sender.Send(new SearchAuditLogsWithConditionsCommand(adminUserId.Value, request)).ConfigureAwait(false);
+
+        var response = new AuditLogResponse { Logs = result.Logs.Select(MapToDto).ToList(), TotalCount = result.TotalCount, Skip = request.Skip, Take = request.Take };
+
+        return Ok(response);
+    }
+
     /// <summary>Searches audit events by multiple action types, groups, and taxonomy categories.</summary>
     [HttpGet("search/by-action-type")]
+    [Authorize(Policy = Policies.AuditRead)]
     [ProducesResponseType(typeof(AuditActionTypeSearchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuditActionTypeSearchResponse>> SearchAuditLogsByActionType(
@@ -201,6 +282,13 @@ public class AuditController(
 
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
 
         await auditService.LogAdminActionAsync(
             adminUserId.Value,
@@ -227,11 +315,13 @@ public class AuditController(
 
     /// <summary>Lists the hierarchical action type taxonomy and predefined investigation groups.</summary>
     [HttpGet("search/by-action-type/taxonomy")]
+    [Authorize(Policy = Policies.AuditRead)]
     [ProducesResponseType(typeof(AuditActionTypeTaxonomyResponse), StatusCodes.Status200OK)]
     public ActionResult<AuditActionTypeTaxonomyResponse> GetAuditActionTypeTaxonomy() => Ok(AuditActionTypeTaxonomy.GetTaxonomy());
 
-    /// <summary>Exports matching action-type audit events as CSV or JSON.</summary>
+    /// <summary>Exports matching action-type audit events as CSV, JSON or XML.</summary>
     [HttpGet("search/by-action-type/export")]
+    [Authorize(Policy = Policies.AuditExport)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status413PayloadTooLarge)]
@@ -246,14 +336,22 @@ public class AuditController(
         }
 
         if (!string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(format, "json", StringComparison.OrdinalIgnoreCase))
+            !string.Equals(format, "json", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(format, "xml", StringComparison.OrdinalIgnoreCase))
         {
-            ModelState.AddModelError(nameof(format), "Format must be csv or json.");
+            ModelState.AddModelError(nameof(format), "Format must be csv, json or xml.");
             return ValidationProblem(ModelState);
         }
 
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
 
         var export = await sender.Send(new ExportAuditActionTypesQuery(request, 10_000), cancellationToken).ConfigureAwait(false);
         if (export.ExceedsLimit)
@@ -279,6 +377,11 @@ public class AuditController(
         {
             return File(AuditActionTypeExportFormatter.ToJson(records), "application/json", $"audit-action-search-{timestamp}.json");
         }
+        if (string.Equals(format, "xml", StringComparison.OrdinalIgnoreCase))
+        {
+            var content = await AuditActionTypeExportFormatter.ToXmlAsync(records, cancellationToken).ConfigureAwait(false);
+            return File(content, "application/xml; charset=utf-8", $"audit-action-search-{timestamp}.xml");
+        }
 
         return File(AuditActionTypeExportFormatter.ToCsv(records), "text/csv; charset=utf-8", $"audit-action-search-{timestamp}.csv");
     }
@@ -287,10 +390,17 @@ public class AuditController(
     /// Get audit log statistics
     /// </summary>
     [HttpGet("statistics")]
+    [Authorize(Policy = Policies.AuditRead)]
     public async Task<ActionResult<AuditStatisticsResponse>> GetAuditStatistics([FromQuery] AuditStatisticsRequest request)
     {
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        // Issue #294: non-system callers only ever see statistics over their own tenant's rows.
+        if (!TryClampToTenantScope(null, out var tenantScope))
+        {
+            return Forbid();
+        }
 
         await auditService.LogAdminActionAsync(adminUserId.Value, "ViewAuditStatistics", "Admin accessed audit statistics").ConfigureAwait(false);
 
@@ -298,17 +408,17 @@ public class AuditController(
         var endDate = request.EndDate ?? SystemClock.UtcNow;
 
         // Get statistics for different categories
-        var authenticationQuery = new AuditLogQuery { Category = AuditCategory.Authentication, StartDate = startDate, EndDate = endDate };
+        var authenticationQuery = new AuditLogQuery { Category = AuditCategory.Authentication, TenantId = tenantScope, StartDate = startDate, EndDate = endDate };
 
-        var permissionQuery = new AuditLogQuery { Category = AuditCategory.Permission, StartDate = startDate, EndDate = endDate };
+        var permissionQuery = new AuditLogQuery { Category = AuditCategory.Permission, TenantId = tenantScope, StartDate = startDate, EndDate = endDate };
 
-        var securityQuery = new AuditLogQuery { Category = AuditCategory.Security, StartDate = startDate, EndDate = endDate };
+        var securityQuery = new AuditLogQuery { Category = AuditCategory.Security, TenantId = tenantScope, StartDate = startDate, EndDate = endDate };
 
-        var failedQuery = new AuditLogQuery { Success = false, StartDate = startDate, EndDate = endDate };
+        var failedQuery = new AuditLogQuery { Success = false, TenantId = tenantScope, StartDate = startDate, EndDate = endDate };
 
-        var highRiskQuery = new AuditLogQuery { RiskLevel = AuditRiskLevel.High, StartDate = startDate, EndDate = endDate };
+        var highRiskQuery = new AuditLogQuery { RiskLevel = AuditRiskLevel.High, TenantId = tenantScope, StartDate = startDate, EndDate = endDate };
 
-        var totalEvents = await auditService.GetAuditLogCountAsync(new AuditLogQuery { StartDate = startDate, EndDate = endDate }).ConfigureAwait(false);
+        var totalEvents = await auditService.GetAuditLogCountAsync(new AuditLogQuery { TenantId = tenantScope, StartDate = startDate, EndDate = endDate }).ConfigureAwait(false);
         var authenticationEvents = await auditService.GetAuditLogCountAsync(authenticationQuery).ConfigureAwait(false);
         var permissionEvents = await auditService.GetAuditLogCountAsync(permissionQuery).ConfigureAwait(false);
         var securityEvents = await auditService.GetAuditLogCountAsync(securityQuery).ConfigureAwait(false);
@@ -336,6 +446,7 @@ public class AuditController(
     [HttpPost(":export")]
     [HttpPost("export/csv")]
     [HttpPost("/api/audit/export/csv")]
+    [Authorize(Policy = Policies.AuditExport)]
     [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
     [Produces("text/csv")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "text/csv")]
@@ -346,6 +457,13 @@ public class AuditController(
     {
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
 
         var mediaValidation = ValidateExportMediaType("text/csv");
         if (mediaValidation is not null) { return mediaValidation; }
@@ -418,18 +536,44 @@ public class AuditController(
     /// </summary>
     [HttpPost("export/json")]
     [HttpPost("/api/audit/export/json")]
+    [Authorize(Policy = Policies.AuditExport)]
     [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
     [Produces("application/json")]
     [ProducesResponseType(typeof(AuditJsonExportDocument), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status406NotAcceptable)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult> ExportAuditLogsJson([FromBody] AuditExportRequest request)
+    public Task<ActionResult> ExportAuditLogsJson([FromBody] AuditExportRequest request) =>
+        ExportAuditDocumentAsync(request, ExportFormat.Json);
+
+    /// <summary>Streams a versioned XML audit export with pagination metadata.</summary>
+    [HttpPost("export/xml")]
+    [HttpPost("/api/audit/export/xml")]
+    [Authorize(Policy = Policies.AuditExport)]
+    [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
+    [Produces("application/xml")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/xml")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status406NotAcceptable)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public Task<ActionResult> ExportAuditLogsXml([FromBody] AuditExportRequest request) =>
+        ExportAuditDocumentAsync(request, ExportFormat.Xml);
+
+    private async Task<ActionResult> ExportAuditDocumentAsync(AuditExportRequest request, ExportFormat format)
     {
+        var extension = format == ExportFormat.Xml ? "xml" : "json";
+        var mediaType = format == ExportFormat.Xml ? "application/xml" : "application/json";
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
 
-        var mediaValidation = ValidateExportMediaType("application/json");
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope))
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope;
+
+        var mediaValidation = ValidateExportMediaType(mediaType);
         if (mediaValidation is not null) { return mediaValidation; }
 
         var requestValidation = ValidateExportRequest(request);
@@ -440,12 +584,12 @@ public class AuditController(
 
         var exportId = Guid.NewGuid();
         var cancellationToken = HttpContext.RequestAborted;
-        var export = await BeginExportAsync(adminUserId.Value, exportId, request, "json", cancellationToken).ConfigureAwait(false);
+        var export = await BeginExportAsync(adminUserId.Value, exportId, request, extension, cancellationToken).ConfigureAwait(false);
 
         var pageSize = request.PageSize.Value;
         var totalPages = export.TotalCount == 0 ? 0 : (int)Math.Ceiling(export.TotalCount / (double)pageSize);
-        Response.ContentType = "application/json; charset=utf-8";
-        Response.Headers["Content-Disposition"] = $"attachment; filename=\"audit-logs-{SystemClock.UtcNow:yyyy-MM-dd-HH-mm-ss}.json\"";
+        Response.ContentType = mediaType + "; charset=utf-8";
+        Response.Headers["Content-Disposition"] = $"attachment; filename=\"audit-logs-{SystemClock.UtcNow:yyyy-MM-dd-HH-mm-ss}.{extension}\"";
         Response.Headers["X-Audit-Export-Id"] = exportId.ToString("D");
         Response.Headers["X-Audit-Total-Records"] = export.TotalCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         Response.Headers["X-Audit-Page"] = request.PageNumber.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -458,18 +602,25 @@ public class AuditController(
 
         try
         {
-            await Response.WriteAsJsonAsync(document, cancellationToken).ConfigureAwait(false);
+            if (format == ExportFormat.Xml)
+            {
+                await AuditXmlExporter.WriteDocumentAsync(Response.Body, document, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await Response.WriteAsJsonAsync(document, cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, "json", "cancelled", null).ConfigureAwait(false);
+            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, extension, "cancelled", null).ConfigureAwait(false);
             return new EmptyResult();
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "JSON audit export {ExportId} failed", exportId);
+            _logger.LogError(exception, "{Format} audit export {ExportId} failed", extension, exportId);
             await MarkExportFailedAsync(export, adminUserId.Value).ConfigureAwait(false);
-            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, "json", "failed", "audit_export_failed").ConfigureAwait(false);
+            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, extension, "failed", "audit_export_failed").ConfigureAwait(false);
             if (Response.HasStarted)
             {
                 HttpContext.Abort();
@@ -482,12 +633,13 @@ public class AuditController(
                 detail: "The audit export could not be completed. Use the export ID when contacting support.");
         }
 
-        await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, "json", "completed", null).ConfigureAwait(false);
+        await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, extension, "completed", null).ConfigureAwait(false);
         return new EmptyResult();
     }
 
     /// <summary>Returns the current state of an export started by the authenticated administrator.</summary>
     [HttpGet("export/{exportId:guid}/progress")]
+    [Authorize(Policy = Policies.AuditExport)]
     [ProducesResponseType(typeof(AuditExportProgressResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AuditExportProgressResponse>> GetAuditExportProgress(Guid exportId)
@@ -506,6 +658,7 @@ public class AuditController(
     /// execution history remains available.
     /// </remarks>
     [HttpPost("scheduled-exports")]
+    [Authorize(Policy = Policies.AuditExport)]
     [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
     [ProducesResponseType(typeof(ScheduledAuditExportResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -514,6 +667,13 @@ public class AuditController(
     {
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) { throw new UnauthorizedAccessException("User not authenticated"); }
+
+        if (!TryClampToTenantScope(request.TenantId, out var tenantScope) || tenantScope is null)
+        {
+            return Forbid();
+        }
+
+        request.TenantId = tenantScope.Value;
 
         var validation = ValidateRequest(request);
         if (validation is not null) { return validation; }
@@ -538,11 +698,17 @@ public class AuditController(
 
     /// <summary>Lists recurring audit exports for a tenant.</summary>
     [HttpGet("scheduled-exports")]
+    [Authorize(Policy = Policies.AuditExport)]
     [ProducesResponseType(typeof(IReadOnlyList<ScheduledAuditExportResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ScheduledAuditExportResponse>>> GetScheduledAuditExports(
         [FromQuery] Guid tenantId)
     {
         if (tenantId == Guid.Empty) { return BadRequest(new ProblemDetails { Title = "TenantId is required." }); }
+
+        if (!TryClampToTenantScope(tenantId, out var tenantScope) || tenantScope is null || tenantScope.Value != tenantId)
+        {
+            return Forbid();
+        }
 
         var exports = await scheduledExportService.GetForTenantAsync(tenantId, HttpContext.RequestAborted).ConfigureAwait(false);
         return Ok(exports);
@@ -550,6 +716,7 @@ public class AuditController(
 
     /// <summary>Disables a recurring audit export without deleting its execution history.</summary>
     [HttpDelete("scheduled-exports/{exportId:guid}")]
+    [Authorize(Policy = Policies.AuditExport)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DisableScheduledAuditExport(Guid exportId, [FromQuery] Guid tenantId)
@@ -557,6 +724,11 @@ public class AuditController(
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) { throw new UnauthorizedAccessException("User not authenticated"); }
         if (tenantId == Guid.Empty) { return BadRequest(new ProblemDetails { Title = "TenantId is required." }); }
+
+        if (!TryClampToTenantScope(tenantId, out var tenantScope) || tenantScope is null || tenantScope.Value != tenantId)
+        {
+            return Forbid();
+        }
 
         var disabled = await sender.Send(
             new DisableScheduledAuditExportCommand(exportId, tenantId, adminUserId.Value),
@@ -566,12 +738,20 @@ public class AuditController(
 
     /// <summary>Lists recent executions for a scheduled audit export.</summary>
     [HttpGet("scheduled-exports/{exportId:guid}/history")]
+    [Authorize(Policy = Policies.AuditExport)]
     [ProducesResponseType(typeof(IReadOnlyList<AuditExportHistoryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<AuditExportHistoryResponse>>> GetScheduledAuditExportHistory(
         Guid exportId,
         [FromQuery] Guid tenantId)
     {
+        if (!TryClampToTenantScope(tenantId, out var historyScope) || historyScope is null || historyScope.Value != tenantId)
+        {
+            return tenantId == Guid.Empty
+                ? NotFound()
+                : Forbid();
+        }
+
         if (tenantId == Guid.Empty || await scheduledExportService.GetAsync(exportId, tenantId, HttpContext.RequestAborted).ConfigureAwait(false) is null)
         {
             return NotFound();
@@ -583,11 +763,17 @@ public class AuditController(
 
     /// <summary>Downloads a completed scheduled export stored for its tenant.</summary>
     [HttpGet("scheduled-export-history/{historyId:guid}/download")]
+    [Authorize(Policy = Policies.AuditExport)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DownloadScheduledAuditExport(Guid historyId, [FromQuery] Guid tenantId)
     {
         if (tenantId == Guid.Empty) { return NotFound(); }
+
+        if (!TryClampToTenantScope(tenantId, out var downloadScope) || downloadScope is null || downloadScope.Value != tenantId)
+        {
+            return Forbid();
+        }
 
         var download = await scheduledExportService.OpenDownloadAsync(historyId, tenantId, HttpContext.RequestAborted).ConfigureAwait(false);
         return download is null

@@ -49,7 +49,10 @@ public class VersioningController : BaseApiController
     [ProducesResponseType(403)]
     public async Task<IActionResult> CreateDraft([FromBody] CreateDraftRequest request, CancellationToken ct)
     {
-        if (!HasEditorialPermission(DraftPermissions)) return Forbid();
+        if (!HasEditorialPermission(DraftPermissions))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CreateContentDraftCommand(request), ct).ConfigureAwait(false);
 
@@ -68,7 +71,10 @@ public class VersioningController : BaseApiController
     [ProducesResponseType(404)]
     public async Task<IActionResult> UpdateDraft(Guid versionId, [FromBody] UpdateDraftRequest request, CancellationToken ct)
     {
-        if (!HasEditorialPermission(DraftPermissions)) return Forbid();
+        if (!HasEditorialPermission(DraftPermissions))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new UpdateContentDraftCommand(versionId, request), ct).ConfigureAwait(false);
 
@@ -101,7 +107,9 @@ public class VersioningController : BaseApiController
         var result = await _versioningService.GetVersionHistoryAsync(entityId, entityType, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(ContentVersionDto.FromEntity);
         return Ok(dtos);
@@ -165,7 +173,9 @@ public class VersioningController : BaseApiController
         var result = await _versioningService.GetPendingReviewAsync(entityType, skip, take, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(ContentVersionDto.FromEntity);
         return Ok(dtos);
@@ -226,7 +236,10 @@ public class VersioningController : BaseApiController
     [ProducesResponseType(404)]
     public async Task<IActionResult> SchedulePublish(Guid versionId, [FromBody] ScheduleRequest request, CancellationToken ct)
     {
-        if (!HasEditorialPermission(SchedulePermissions)) return Forbid();
+        if (!HasEditorialPermission(SchedulePermissions))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new ScheduleContentPublishCommand(versionId, request.ScheduledAt), ct).ConfigureAwait(false);
         return result.IsSuccess
@@ -244,7 +257,10 @@ public class VersioningController : BaseApiController
     [ProducesResponseType(404)]
     public async Task<IActionResult> CancelSchedule(Guid versionId, CancellationToken ct)
     {
-        if (!HasEditorialPermission(SchedulePermissions)) return Forbid();
+        if (!HasEditorialPermission(SchedulePermissions))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CancelContentPublishCommand(versionId), ct).ConfigureAwait(false);
         return result.IsSuccess
@@ -285,7 +301,10 @@ public class VersioningController : BaseApiController
         CancellationToken ct)
     {
         // Rollback authors a new draft from an earlier version, so it is an editorial edit operation.
-        if (!HasEditorialPermission(EditPermissions)) return Forbid();
+        if (!HasEditorialPermission(EditPermissions))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(
             new RollbackContentVersionCommand(entityId, entityType, request.TargetVersionNumber, request.Reason),

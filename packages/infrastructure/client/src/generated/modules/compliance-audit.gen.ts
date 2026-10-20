@@ -62,6 +62,52 @@ export class ComplianceAuditModule {
   }
 
   /**
+   * Streams a versioned XML audit export with pagination metadata.
+   */
+  async postApiAuditExportXml(body: Types.ComplianceAuditAuditExportInput): Promise<Result<Blob, ApiError>> {
+    const url = '/api/audit/export/xml';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditExportInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      responseType: 'blob',
+      headers: { Accept: 'application/xml' },
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<Blob, ApiError>;
+  }
+
+  /**
+   * Searches audit events using a nested condition tree with boolean logic.
+   */
+  async postApiAuditSearchFilter(body: Types.ComplianceAuditAuditConditionSearchInput): Promise<Result<Types.ComplianceAuditAuditLogOutput, ApiError>> {
+    const url = '/api/audit/search-filter';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditConditionSearchInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditLogOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Get audit logs with filtering and pagination
    */
   async getAdminAuditLogs(query?: {
@@ -75,6 +121,7 @@ export class ComplianceAuditModule {
     StartDate?: string;
     EndDate?: string;
     IpAddress?: string;
+    SearchText?: string;
     Skip?: number;
     Take?: number;
   }): Promise<Result<Types.ComplianceAuditAuditLogOutput, ApiError>> {
@@ -185,6 +232,27 @@ export class ComplianceAuditModule {
   }
 
   /**
+   * Streams a versioned XML audit export with pagination metadata.
+   */
+  async postAdminAuditLogsExportXml(body: Types.ComplianceAuditAuditExportInput): Promise<Result<Blob, ApiError>> {
+    const url = '/v1/admin/audit-logs/export/xml';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditExportInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      responseType: 'blob',
+      headers: { Accept: 'application/xml' },
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<Blob, ApiError>;
+  }
+
+  /**
    * Downloads a completed scheduled export stored for its tenant.
    */
   async getAdminAuditLogsScheduledExportHistoryDownload(historyId: string, query?: { tenantId?: string }): Promise<Result<void, ApiError>> {
@@ -283,6 +351,31 @@ export class ComplianceAuditModule {
   }
 
   /**
+   * Searches audit events using a nested condition tree with boolean logic.
+   */
+  async postAdminAuditLogsSearchFilter(body: Types.ComplianceAuditAuditConditionSearchInput): Promise<Result<Types.ComplianceAuditAuditLogOutput, ApiError>> {
+    const url = '/v1/admin/audit-logs/search-filter';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditAuditConditionSearchInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditAuditLogOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Searches audit events by multiple action types, groups, and taxonomy categories.
    */
   async getAdminAuditLogsSearchByActionType(query?: {
@@ -321,7 +414,7 @@ export class ComplianceAuditModule {
   }
 
   /**
-   * Exports matching action-type audit events as CSV or JSON.
+   * Exports matching action-type audit events as CSV, JSON or XML.
    */
   async getAdminAuditLogsSearchByActionTypeExport(query?: {
     format?: string;

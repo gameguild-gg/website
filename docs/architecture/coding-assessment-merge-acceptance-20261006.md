@@ -71,13 +71,34 @@ of running its sandbox. Supply these API configuration values as absolute paths:
 | `CodeGradingWorker:BrowserDirectory` | Optional Playwright browser installation directory |
 | `CodeGradingWorker:DeadlineSeconds` | 1–300; default 300 |
 
-Version 1 freezes artifact version `4.4.0`, ABI `emception-browser-v1` and
-canonical lock hash
-`bb4e8ca4a8cc4640ec8f7f1d2f7dc14829992e44ff0309527a44b8a83d0b14ed`.
-The worker requires a schema-v2 manifest with matching identity and valid release
-receipt/fingerprint metadata. Retain these artifacts for existing attempts. A
-compiler update requires another adapter version. Legacy local manifests cannot
-be relabeled to satisfy this requirement.
+Current authoring uses Code adapter/handler version 2, artifact version `4.5.0`,
+ABI `emception-browser-v1` and canonical patched lock hash
+`405e9f1fdd936ba31e11247fa1f901eaee24c4fcf641e343505df75c3d539b37`.
+Version 1 remains registered for historical execution, keeps artifact version
+`4.4.0` and its immutable reviewed lock hash
+`eb7e07aacb067ae32910fbebcb3762902da756b1a7ce64746f14f77a25057720`.
+It is not selected for new authoring. Both versions use the same bounded content,
+response, privacy and grading contracts; neither accepts the other compiler identity.
+
+The existing `RuntimeDirectory` and `CdnDirectory` settings select version 2
+artifacts. Historical version 1 execution additionally requires absolute
+`Version1RuntimeDirectory` and `Version1CdnDirectory` settings, containing the
+retained original grading runtime and schema-v2 compiler release respectively.
+Keep each original checkout's scripts, dependencies, runtime/CDN bytes and release
+receipts together. The worker checks the exact frozen identity and receipt/fingerprint
+metadata before learner execution. Missing version 1 files must fail closed; they
+never fall back to version 2 or a newest release. Legacy local manifests cannot be
+relabeled to satisfy either identity.
+
+The earlier draft recorded hash
+`bb4e8ca4a8cc4640ec8f7f1d2f7dc14829992e44ff0309527a44b8a83d0b14ed`;
+that draft value is retained here as historical context and is not accepted as either
+reviewed identity. The retained `grading/frozen-toolchains/code-v1-lock.json` proves
+the original reviewed lock identity, not binary availability. As of the source
+reconciliation on 2026-10-11, public npm version 4.4.0 was unavailable and the observed
+local legacy manifests lacked schema-v2 identity metadata. Actual retained version 1
+artifact bytes and receipts therefore remain unverified; the compatibility tests
+do not certify their availability.
 
 Each API worker admits one active execution, with a five-second slot wait. It
 limits request bytes, file/test counts, pipe output and browser console output;

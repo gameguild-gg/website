@@ -37,7 +37,7 @@ public class ProjectPermissionController : BaseApiController {
     var userId = GetCurrentUserId();
     var tenantId = GetCurrentTenantId();
 
-    var permissions = await _permissionResolver.GetEffectivePermissionsAsync<Project>(userId, tenantId, projectId, "Project").ConfigureAwait(false);
+    var permissions = await _permissionResolver.GetEffectivePermissionsAsync(userId, tenantId, projectId, "Project").ConfigureAwait(false);
 
     return Ok(permissions);
   }

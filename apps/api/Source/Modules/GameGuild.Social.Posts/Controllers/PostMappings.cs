@@ -1,3 +1,5 @@
+using GameGuild.Social.Assets.SocialMedia;
+
 namespace GameGuild.Social.Posts.Controllers;
 
 /// <summary>
@@ -12,6 +14,7 @@ internal static class PostMappings
         TenantId = post.TenantId,
         Content = post.Content,
         MediaUrl = post.MediaUrl,
+        MediaAssetReferenceId = post.MediaAssetReferenceId,
         MediaType = post.MediaType?.ToString(),
         Visibility = post.Visibility.ToString(),
         IsPinned = post.IsPinned,
@@ -26,6 +29,50 @@ internal static class PostMappings
         CreatedAt = post.CreatedAt,
         UpdatedAt = post.UpdatedAt
     };
+
+    /// <summary>
+    /// Public-read projection: managed media is hidden when its asset is not ready
+    /// to serve (fail closed). Legacy posts (no asset reference) are returned unchanged.
+    /// </summary>
+    public static PostDto MapPublicDto(Post post, bool mediaReady)
+    {
+        var dto = MapToDto(post);
+        if (post.MediaAssetReferenceId.HasValue && !mediaReady)
+        {
+            return dto with { MediaUrl = null, MediaAssetReferenceId = null, MediaType = null };
+        }
+
+        return dto;
+    }
+
+    /// <summary>
+    /// Batch public-read projection: resolves managed-media readiness once per page.
+    /// </summary>
+    public static async Task<IReadOnlyList<PostDto>> MapPublicDtosAsync(
+        IEnumerable<Post> posts,
+        ISocialMediaAssetService socialMediaAssets,
+        CancellationToken cancellationToken = default)
+    {
+        var list = posts.ToList();
+
+        var referenceIds = list
+            .Where(p => p.MediaAssetReferenceId.HasValue)
+            .Select(p => p.MediaAssetReferenceId!.Value)
+            .Distinct()
+            .ToList();
+
+        IReadOnlyDictionary<Guid, SocialMediaProcessingState> states = referenceIds.Count == 0
+            ? new Dictionary<Guid, SocialMediaProcessingState>()
+            : await socialMediaAssets.GetProcessingStatesAsync(referenceIds, cancellationToken).ConfigureAwait(false);
+
+        return list
+            .Select(p => PostMappings.MapPublicDto(
+                p,
+                !p.MediaAssetReferenceId.HasValue ||
+                (states.TryGetValue(p.MediaAssetReferenceId.Value, out var state) &&
+                 state == SocialMediaProcessingState.Ready)))
+            .ToList();
+    }
 
     public static CommentDto MapCommentToDto(PostComment comment) => new()
     {
@@ -85,6 +132,7 @@ public sealed record PostDto
     public Guid? TenantId { get; init; }
     public string Content { get; init; } = string.Empty;
     public string? MediaUrl { get; init; }
+    public Guid? MediaAssetReferenceId { get; init; }
     public string? MediaType { get; init; }
     public string Visibility { get; init; } = "Public";
     public bool IsPinned { get; init; }

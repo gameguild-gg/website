@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AllowFixedHardToSoftLineage
+public partial class AllowFixedHardToSoftLineage : Migration
 {
     private static void InstallFixedHardToSoftLineageValidation(MigrationBuilder migrationBuilder)
     {

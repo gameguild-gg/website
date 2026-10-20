@@ -15,7 +15,8 @@ public sealed class AuthenticatedSessionIssuer(
     IRefreshTokenHasher refreshTokenHasher,
     IRefreshTokenRepository refreshTokenRepository,
     ISessionManagementService sessionManagementService,
-    ISessionMfaEvidenceStore mfaEvidence) : IAuthenticatedSessionIssuer
+    ISessionMfaEvidenceStore mfaEvidence,
+    INewLoginAlertPublisher? newLoginAlertPublisher = null) : IAuthenticatedSessionIssuer
 {
     public Task<SignInResponse> IssueAsync(
         User user,
@@ -118,6 +119,16 @@ public sealed class AuthenticatedSessionIssuer(
             throw IssuanceFailure();
         }
         accessExpiresAt = accessExpiresAt < session.ExpiresAt ? accessExpiresAt : session.ExpiresAt;
+
+        // Informational new-login event for the host-side, preference-gated owner notification
+        // (default off). Best-effort: the publisher records durably in an independent scope and
+        // swallows its own failures, so it can never fail issuance.
+        if (newLoginAlertPublisher is not null)
+        {
+            var deviceSummary = SessionEnrichmentJson.DeserializeDeviceInfo(session.DeviceInfo)?.DeviceName;
+            await newLoginAlertPublisher.RecordAsync(
+                user.Id, context.TenantId, sessionId, deviceSummary, cancellationToken).ConfigureAwait(false);
+        }
 
         return new SignInResponse
         {

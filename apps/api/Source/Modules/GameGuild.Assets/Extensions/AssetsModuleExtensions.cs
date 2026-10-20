@@ -44,10 +44,27 @@ public static class AssetsModuleExtensions
             configuration.GetSection(VirusScanOptions.SectionName));
         services.Configure<AssetGarbageCollectionOptions>(
             configuration.GetSection(AssetGarbageCollectionOptions.SectionName));
+        services.Configure<BackgroundServices.TransformedAssetCleanupOptions>(
+            configuration.GetSection(BackgroundServices.TransformedAssetCleanupOptions.SectionName));
         services.Configure<TenantIsolationOptions>(
             configuration.GetSection(TenantIsolationOptions.SectionName));
         services.Configure<DownloadWindowOptions>(
             configuration.GetSection(DownloadWindowOptions.SectionName));
+        services.Configure<Openinary.OpeninaryOptions>(
+            configuration.GetSection(Openinary.OpeninaryOptions.SectionName));
+        services.Configure<AutoModerationOptions>(
+            configuration.GetSection(AutoModerationOptions.SectionName));
+
+        // Openinary typed client: options-driven BaseUrl/timeout with a retry
+        // handler for transient failures (408/5xx) only.
+        services.AddHttpClient<Openinary.IOpeninaryClient, Openinary.OpeninaryClient>((sp, client) =>
+        {
+            var openinaryOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Openinary.OpeninaryOptions>>().Value;
+            client.BaseAddress = new Uri(openinaryOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(openinaryOptions.TimeoutSeconds);
+        })
+        .AddHttpMessageHandler<Openinary.OpeninaryRetryHandler>()
+        .Services.AddSingleton<Openinary.OpeninaryRetryHandler>();
 
         // S3 Client
         services.AddSingleton<IAmazonS3>(sp =>
@@ -107,6 +124,14 @@ public static class AssetsModuleExtensions
         services.AddScoped<IVirusScanService, VirusScanService>();
         services.AddScoped<BackgroundServices.IAssetVirusScanProcessor, BackgroundServices.AssetVirusScanProcessor>();
         services.AddHostedService<BackgroundServices.VirusScanBackgroundService>();
+        services.AddHostedService<BackgroundServices.AssetGarbageCollectionService>();
+        services.AddHostedService<BackgroundServices.TransformedAssetCleanupService>();
+        // Fail-closed default: the composition root replaces it with the
+        // product's vision-model adapter; without one, every classification
+        // fails closed into NeedsReview (never auto-approve).
+        services.TryAddScoped<IAssetModerationClassifier, UnresolvedModerationClassifier>();
+        services.AddScoped<BackgroundServices.IAssetModerationProcessor, BackgroundServices.ModerationClassificationProcessor>();
+        services.AddHostedService<BackgroundServices.ModerationClassificationWorker>();
         services.AddScoped<IAssetGarbageCollectionService, AssetGarbageCollectionService>();
         services.AddScoped<ITenantAssetValidationService, TenantAssetValidationService>();
         services.AddScoped<IDownloadWindowService, DownloadWindowService>();
@@ -129,6 +154,7 @@ public static class AssetsModuleExtensions
         services.AddScoped<IRequestHandler<ReviewReportCommand, ReviewReportResponse?>, ReviewReportHandler>();
         services.AddScoped<IRequestHandler<RunAssetRetentionCommand, AssetRetentionRunResponse>, RunAssetRetentionHandler>();
         services.AddScoped<IRequestHandler<SetAssetLegalHoldCommand, AssetLegalHoldResponse?>, SetAssetLegalHoldHandler>();
+        services.AddScoped<IRequestHandler<RebindAssetParentCommand, RebindAssetParentResponse?>, RebindAssetParentHandler>();
 
         services.AddScoped<IRequestHandler<GetAssetQuery, AssetDto?>, GetAssetHandler>();
         services.AddScoped<IRequestHandler<GetAssetPreviewQuery, AssetPreviewResponse?>, GetAssetPreviewHandler>();

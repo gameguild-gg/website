@@ -251,4 +251,39 @@ public sealed class ScimUserPatchApplierTests
         act.Should().Throw<ScimException>()
             .Which.ScimType.Should().Be("invalidValue");
     }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(null, "displayName")]
+    [InlineData(null, "name.givenName")]
+    [InlineData("", null)]
+    [InlineData("", "displayName")]
+    [InlineData("", "name.givenName")]
+    [InlineData(" ", null)]
+    [InlineData(" ", "displayName")]
+    [InlineData(" ", "name.givenName")]
+    [InlineData("merge", null)]
+    [InlineData("merge", "displayName")]
+    [InlineData("merge", "name.givenName")]
+    [InlineData("UpDaTe", null)]
+    [InlineData("UpDaTe", "displayName")]
+    [InlineData("UpDaTe", "name.givenName")]
+    public void UnsupportedOperation_RejectsWithoutMutatingState(string? op, string? path)
+    {
+        var state = new ScimUserMutableState
+        {
+            UserName = "existing",
+            DisplayName = "Existing",
+            GivenName = "Original"
+        };
+        var operation = new ScimPatchOperation { Op = op, Path = path, Value = JsonValue.Create("Rejected") };
+
+        var act = () => ScimUserPatchApplier.Apply(state, [operation]);
+
+        act.Should().Throw<ScimException>().Which.ScimType.Should().Be("invalidValue");
+        state.UserName.Should().Be("existing");
+        state.DisplayName.Should().Be("Existing");
+        state.GivenName.Should().Be("Original");
+        state.DisplayNameExplicit.Should().BeFalse();
+    }
 }

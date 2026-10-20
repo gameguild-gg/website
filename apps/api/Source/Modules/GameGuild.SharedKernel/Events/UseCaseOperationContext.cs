@@ -33,6 +33,26 @@ public sealed record UseCaseOperationContext(
 
     public void MarkOperationEventCaptured() => OperationEventCaptured = true;
     public void MarkBusinessMutationObserved() => BusinessMutationObserved = true;
+
+    /// <summary>Capture operation state before a nested transaction/savepoint can produce events.</summary>
+    public Checkpoint CaptureCheckpoint() => new(OperationEventCaptured, BusinessMutationObserved,
+        _operationEvent, _producedEventTypes.ToArray());
+
+    /// <summary>Restore only the rolled-back nested operation's effects, preserving the outer operation.</summary>
+    public void RestoreCheckpoint(Checkpoint checkpoint)
+    {
+        ArgumentNullException.ThrowIfNull(checkpoint);
+        OperationEventCaptured = checkpoint.OperationEventCaptured;
+        BusinessMutationObserved = checkpoint.BusinessMutationObserved;
+        _operationEvent = checkpoint.OperationEvent;
+        _producedEventTypes.Clear();
+        _producedEventTypes.UnionWith(checkpoint.ProducedEventTypes);
+    }
+
+    /// <summary>Immutable event-state checkpoint used with nested transactional operations.</summary>
+    public sealed record Checkpoint(bool OperationEventCaptured, bool BusinessMutationObserved,
+        UseCaseOperationOccurredV1? OperationEvent, IReadOnlyCollection<Type> ProducedEventTypes);
+
     public void ResetForRetry()
     {
         OperationEventCaptured = false;

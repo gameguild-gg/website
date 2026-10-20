@@ -27,6 +27,19 @@ public sealed class AuditService(
             try
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
+                // Permission snapshots are already committed by the caller. Route their canonical
+                // events through durable security capture so alerting and spool replay apply too.
+                // Resolve here rather than in the constructor: the security logger's non-security
+                // fallback is this audit service, and constructor injection would form a cycle.
+                if (request.ResourceType == "Permission"
+                    && (request.ActionType is AuditActionTypes.PermissionGranted or AuditActionTypes.PermissionRevoked or AuditActionTypes.PermissionChanged)
+                    && PermissionMutationEvidence.GetChangeCount(request.Metadata) > 0
+                    && scope.ServiceProvider.GetService<ISecurityEventLogger>() is { } securityLogger)
+                {
+                    var capture = await securityLogger.RecordAsync(request, CancellationToken.None).ConfigureAwait(false);
+                    return capture.Outcome is SecurityEventCaptureOutcome.PersistedToDatabase or SecurityEventCaptureOutcome.SpooledLocally;
+                }
+
                 var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
                 var httpContext = httpContextAccessor.HttpContext;
 
@@ -414,6 +427,9 @@ public sealed class AuditService(
         if (query.StartDate.HasValue) { queryable = queryable.Where(a => a.CreatedAt >= query.StartDate.Value); }
         if (query.EndDate.HasValue) { queryable = queryable.Where(a => a.CreatedAt <= query.EndDate.Value); }
         if (!string.IsNullOrEmpty(query.IpAddress)) { queryable = queryable.Where(a => a.IpAddress == query.IpAddress); }
+        var searchPredicate = AuditLogSearchFilter.BuildPredicate(query.SearchText);
+        if (searchPredicate is not null) { queryable = queryable.Where(searchPredicate); }
+        if (query.Condition is not null) { queryable = queryable.Where(AuditConditionTreeTranslator.BuildPredicate(query.Condition)); }
 
         return queryable;
     }

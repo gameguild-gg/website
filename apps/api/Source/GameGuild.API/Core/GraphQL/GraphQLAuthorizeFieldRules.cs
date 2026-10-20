@@ -29,8 +29,17 @@ internal sealed record GraphQLAuthorizeFieldRule
 
     public string? ResourceIdParentPropertyName { get; init; }
 
+    /// <summary>
+    ///     Optional DAC content type (issues #360/#365/#320): content-type scoped rules
+    ///     check the engine's content-type qualified names.
+    /// </summary>
+    public string? ContentType { get; init; }
+
     /// <summary>True when the rule requires a resource-scoped permission evaluation.</summary>
     public bool IsResourceScoped => ResourceType is not null;
+
+    /// <summary>True when the rule requires a content-type scoped permission evaluation.</summary>
+    public bool IsContentTypeScoped => !IsResourceScoped && ContentType is not null;
 
     /// <summary>True when the rule carries permission requirements (vs policy/roles only).</summary>
     public bool HasPermissions => Permissions.Length > 0;
@@ -45,6 +54,7 @@ internal sealed record GraphQLAuthorizeFieldRule
         ResourceType = directive.ResourceType,
         ResourceIdArgumentName = directive.ResourceIdArgumentName,
         ResourceIdParentPropertyName = directive.ResourceIdParentPropertyName,
+        ContentType = directive.ContentType,
     };
 }
 

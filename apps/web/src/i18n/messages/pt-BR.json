@@ -68,10 +68,10 @@
     "nav": {
       "profile": "Perfil",
       "account": "Conta",
+      "security": "Segurança",
       "appearance": "Aparência",
       "localization": "Idioma e região",
       "privacy": "Privacidade",
-      "security": "Segurança",
       "accessibility": "Acessibilidade"
     },
     "profile": {
@@ -157,8 +157,138 @@
       }
     },
     "security": {
-      "title": "Segurança",
-      "description": "Gerencie as preferências de segurança que protegem sua conta do GameGuild.",
+      "title": "Segurança e sessões",
+      "description": "Revise todas as sessões ativas, nomeie os dispositivos que você reconhece e encerre qualquer atividade suspeita.",
+      "actionFailed": "A solicitação falhou. Tente novamente.",
+      "analysis": {
+        "title": "Análise de segurança da sessão",
+        "description": "{sessions, plural, =1 {1 sessão ativa} other {# sessões ativas}} em {devices, plural, =1 {1 dispositivo} other {# dispositivos}}.",
+        "risk": {
+          "low": "Risco baixo",
+          "medium": "Risco médio",
+          "high": "Risco alto",
+          "critical": "Risco crítico"
+        }
+      },
+      "sessions": {
+        "title": "Sessões ativas",
+        "description": "Dispositivos conectados à sua conta. Encerrar uma sessão desconecta o dispositivo imediatamente.",
+        "empty": "Nenhuma sessão ativa.",
+        "current": "Este dispositivo",
+        "trusted": "Confiável",
+        "lastUsed": "Usado por último {time}",
+        "terminate": "Encerrar",
+        "terminateAria": "Encerrar sessão {name}",
+        "terminated": "Sessão encerrada.",
+        "terminateOthers": "Encerrar outras sessões",
+        "othersTerminated": "As outras sessões foram encerradas.",
+        "terminateAll": "Encerrar todas as sessões",
+        "confirmTerminateAllTitle": "Encerrar todas as sessões?",
+        "confirmTerminateAllDescription": "Isso desconecta todos os dispositivos, incluindo o que você está usando agora. Você precisará entrar novamente.",
+        "confirmTerminateAll": "Encerrar tudo",
+        "confirmCancel": "Cancelar",
+        "allTerminated": "Todas as sessões foram encerradas."
+      },
+      "rename": {
+        "trigger": "Renomear",
+        "aria": "Renomear sessão {name}",
+        "label": "Nome da sessão",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "success": "Sessão renomeada.",
+        "nameRequired": "Informe um nome para a sessão.",
+        "nameTooLong": "O nome da sessão deve ter no máximo 64 caracteres."
+      },
+      "trustedDevices": {
+        "title": "Dispositivos confiáveis",
+        "description": "Dispositivos marcados como confiáveis pulam algumas solicitações de reautenticação.",
+        "empty": "Nenhum dispositivo confiável ainda.",
+        "unnamed": "Dispositivo sem nome",
+        "trustedAt": "Confiável desde {time}",
+        "expiresAt": "expira {time}",
+        "revoke": "Remover",
+        "revoked": "Dispositivo confiável removido.",
+        "trustCurrent": "Confiar neste dispositivo",
+        "trustCurrentDescription": "Marque o dispositivo que você está usando agora como confiável.",
+        "trustCurrentButton": "Confiar",
+        "trustedCurrent": "Este dispositivo agora é confiável."
+      },
+      "mfa": {
+        "title": "Autenticação multifator",
+        "description": "Gerencie seus fatores de login e códigos de recuperação.",
+        "status": {
+          "label": "Status do MFA",
+          "enabled": "Ativado desde {date}. Sua conta exige um segundo fator no login.",
+          "disabled": "Desativado. Sua conta está protegida apenas pela senha.",
+          "badgeEnabled": "Protegida",
+          "badgeDisabled": "Não protegida"
+        },
+        "methods": {
+          "enrolled": "Ativado",
+          "available": "Disponível",
+          "unavailable": "Indisponível",
+          "cancel": "Cancelar"
+        },
+        "totp": {
+          "start": "Adicionar app autenticador",
+          "started": "Leia o código no seu app autenticador e informe o código atual.",
+          "scan": "Leia este segredo com seu app autenticador (Google Authenticator, Authy, 1Password) e informe o código de seis dígitos exibido.",
+          "codeLabel": "Código do autenticador",
+          "complete": "Verificar e ativar",
+          "completed": "App autenticador ativado."
+        },
+        "sms": {
+          "start": "Adicionar códigos por SMS",
+          "unavailable": "A entrega de SMS não está configurada nesta plataforma.",
+          "phoneLabel": "Número de telefone (formato internacional)",
+          "send": "Enviar código",
+          "sent": "Código enviado para {phone}.",
+          "codeLabel": "Código SMS",
+          "complete": "Verificar e ativar",
+          "completed": "Códigos por SMS ativados."
+        },
+        "recovery": {
+          "title": "Códigos de recuperação",
+          "description": "Códigos de uso único para acesso de emergência quando seus outros fatores estiverem indisponíveis.",
+          "none": "Nenhum código de recuperação em arquivo. Gere um conjunto e guarde em local seguro.",
+          "remaining": "{remaining} de {total} códigos restantes.",
+          "generate": "Gerar códigos",
+          "regenerate": "Regenerar códigos",
+          "regenerated": "Novos códigos de recuperação gerados. Os anteriores foram invalidados.",
+          "freshWarning": "Estes códigos são exibidos apenas uma vez. Guarde-os em local seguro agora.",
+          "hide": "Salvei meus códigos"
+        },
+        "disable": {
+          "title": "Desativar MFA",
+           "description": "Informe a senha da conta para re-verificar e desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
+          "passwordLabel": "Senha da conta",
+          "cancel": "Cancelar",
+          "confirm": "Desativar MFA",
+          "success": "Autenticação multifator desativada.",
+          "wrongPassword": "Falha na verificação da senha. O MFA permanece ativado."
+        }
+      },
+      "policies": {
+        "title": "Políticas de segurança",
+        "description": "A postura de segurança do workspace é definida por administradores via configuração de ambiente no servidor. Os valores abaixo são somente leitura.",
+        "managedBadge": "Gerenciado por administradores",
+        "twoFactor": {
+          "title": "Autenticação de dois fatores",
+          "optional": "Opcional (opt-in)",
+          "required": "Obrigatória",
+          "description": "Se as contas precisam registrar um segundo fator antes do acesso completo."
+        },
+        "sessionTimeout": {
+          "title": "Tempo limite de sessão",
+          "value": "{minutes} minutos",
+          "description": "Tempo de inatividade da sessão antes de nova autenticação."
+        },
+        "apiKeyRotation": {
+          "title": "Rotação de chaves de API",
+          "value": "A cada {days} dias",
+          "description": "Idade máxima recomendada das chaves de API antes da rotação."
+        }
+      },
       "statusEnabled": "A autenticação de dois fatores está ativada.",
       "statusDisabled": "A autenticação de dois fatores está desativada.",
       "setUp": "Configurar autenticação de dois fatores",

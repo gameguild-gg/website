@@ -1,3 +1,4 @@
+using GameGuild.Assets.Commands;
 using GameGuild.CQRS;
 using GameGuild.Social.Assets.SocialMedia;
 using GameGuild.Identity.Context.Actors;
@@ -36,7 +37,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetPublicPostsAsync(skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
@@ -47,7 +48,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetPostByIdAsync(postId, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(PostMappings.MapToDto(result.Value!))
+            ? Ok((await PostMappings.MapPublicDtosAsync(new[] { result.Value! }, socialMediaAssets, cancellationToken).ConfigureAwait(false)).Single())
             : NotFound(result.Error);
     }
 
@@ -74,7 +75,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetTrendingPostsAsync(skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
@@ -85,7 +86,7 @@ public class PostsCrudController(
     {
         var result = await postService.GetPostsByAuthorAsync(authorId, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
@@ -117,7 +118,7 @@ public class PostsCrudController(
 
         var result = await postService.SearchPostsAsync(q, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 
@@ -138,9 +139,10 @@ public class PostsCrudController(
         SocialMediaAssetDescriptor? media = null;
         if (request.AssetReferenceId.HasValue)
         {
-            media = await socialMediaAssets.ResolveReadyOwnedAsync(
+            media = await socialMediaAssets.ResolveReadyOwnedInTenantAsync(
                 request.AssetReferenceId.Value,
                 userId,
+                actorContextAccessor.ActorContext.TenantId,
                 cancellationToken).ConfigureAwait(false);
             if (media is null)
             {
@@ -161,7 +163,19 @@ public class PostsCrudController(
                 ? MediaType.Video
                 : MediaType.Image,
             actorContextAccessor.ActorContext.TenantId,
-            request.Tags), cancellationToken).ConfigureAwait(false);
+            request.Tags,
+            request.AssetReferenceId), cancellationToken).ConfigureAwait(false);
+
+        if (result.IsSuccess && media is not null && result.Value is not null &&
+            actorContextAccessor.ActorContext.TenantId.HasValue)
+        {
+            await sender.Send(new RebindAssetParentCommand(
+                media.AssetReferenceId,
+                userId,
+                actorContextAccessor.ActorContext.TenantId,
+                "Post",
+                result.Value.Id), cancellationToken).ConfigureAwait(false);
+        }
 
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetPost), new { postId = result.Value!.Id }, PostMappings.MapToDto(result.Value))
@@ -196,9 +210,17 @@ public class PostsCrudController(
             return Unauthorized();
         }
 
+        var mediaAssetReferenceId = await GetPostMediaAssetReferenceIdAsync(postId, cancellationToken).ConfigureAwait(false);
+
         var result = await sender.Send(
-            new DeletePostEndpointCommand(postId, userId),
+            new DeletePostEndpointCommand(postId, userId, actorContextAccessor.ActorContext.TenantId),
             cancellationToken).ConfigureAwait(false);
+
+        if (result.IsSuccess && mediaAssetReferenceId.HasValue)
+        {
+            await DetachDeletedPostMediaAsync(mediaAssetReferenceId.Value, userId, cancellationToken).ConfigureAwait(false);
+        }
+
         return result.IsSuccess
             ? NoContent()
             : MapMutationFailure(result.Error);
@@ -212,6 +234,26 @@ public class PostsCrudController(
         ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, error),
         _ => BadRequest(error)
     };
+
+    private async Task<Guid?> GetPostMediaAssetReferenceIdAsync(Guid postId, CancellationToken cancellationToken)
+    {
+        var result = await postService.GetPostByIdAsync(postId, cancellationToken).ConfigureAwait(false);
+        return result.IsSuccess ? result.Value?.MediaAssetReferenceId : null;
+    }
+
+    private Task DetachDeletedPostMediaAsync(Guid assetReferenceId, Guid userId, CancellationToken cancellationToken)
+    {
+        var tenantId = actorContextAccessor.ActorContext.TenantId;
+        if (!tenantId.HasValue)
+        {
+            return Task.CompletedTask;
+        }
+
+        return sender.Send(new RebindAssetParentCommand(
+            assetReferenceId,
+            userId,
+            tenantId), cancellationToken);
+    }
 }
 
 #region Request DTOs

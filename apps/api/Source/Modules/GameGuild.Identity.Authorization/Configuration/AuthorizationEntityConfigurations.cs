@@ -291,6 +291,42 @@ public class TenantPermissionConfiguration : IEntityTypeConfiguration<TenantPerm
 }
 
 /// <summary>
+///     EF Core configuration for ContentTypePermissionGrant entity (the content-type
+///     layer's scoped grant store, issues #360/#365).
+/// </summary>
+public class ContentTypePermissionGrantConfiguration : IEntityTypeConfiguration<ContentTypePermissionGrant>
+{
+    public void Configure(EntityTypeBuilder<ContentTypePermissionGrant> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.HasQueryFilter(grant => grant.DeletedAt == null);
+        builder.HasIndex(e => e.TenantId);
+        builder.HasIndex(e => e.UserId);
+        builder.HasIndex(e => new { e.UserId, e.TenantId, e.ContentTypeName }, "IX_ContentTypePermissionGrants_Subject_Tenant_ContentType")
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
+        builder.HasIndex(e => new { e.TenantId, e.ContentTypeName }, "IX_ContentTypePermissionGrants_Tenant_ContentType");
+        builder.HasIndex(e => e.ExpiresAt);
+
+        builder.Property(e => e.ContentTypeName).IsRequired().HasMaxLength(256);
+        builder.Property(e => e.Permissions).IsRequired();
+        builder.Property(e => e.Reason).HasMaxLength(500);
+
+        // Explicitly map Metadata as a JSON-serialized property (not a navigation)
+        // so both Npgsql and InMemory providers handle Dictionary<string, object> correctly
+        builder.Property(e => e.Metadata)
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(v, (JsonSerializerOptions?)null)
+            );
+
+        builder.Property(e => e.Metadata)
+            .Metadata.SetValueComparer(JsonDictionaryValueComparers.ObjectDictionaryComparer);
+    }
+}
+
+/// <summary>
 ///     EF Core configuration for PermissionTemplate entity
 /// </summary>
 public class PermissionTemplateConfiguration : IEntityTypeConfiguration<PermissionTemplate>
@@ -324,4 +360,57 @@ internal static class JsonDictionaryValueComparers
                 : JsonSerializer.Deserialize<Dictionary<string, object>>(
                     JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
                     (JsonSerializerOptions?)null));
+}
+
+/// <summary>
+///     EF Core configuration for PermissionTemplateVersion (issue #370): append-only
+///     version snapshots written by every accepted template mutation.
+/// </summary>
+public class PermissionTemplateVersionConfiguration : IEntityTypeConfiguration<PermissionTemplateVersion>
+{
+    public void Configure(EntityTypeBuilder<PermissionTemplateVersion> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.HasIndex(e => new { e.TemplateId, e.VersionNumber })
+            .IsUnique()
+            .HasDatabaseName("IX_PermissionTemplateVersions_Template_Version");
+        builder.Property(e => e.Permissions).HasColumnType("text[]");
+        builder.Property(e => e.AddedPermissions).HasColumnType("text[]");
+        builder.Property(e => e.RemovedPermissions).HasColumnType("text[]");
+        builder.Property(e => e.UnchangedPermissions).HasColumnType("text[]");
+        builder.Property(e => e.Tags).HasColumnType("text[]");
+    }
+}
+
+/// <summary>
+///     EF Core configuration for PermissionTemplateMigration (issue #370): migration
+///     execution records with batched progress counters and rollback payloads.
+/// </summary>
+public class PermissionTemplateMigrationConfiguration : IEntityTypeConfiguration<PermissionTemplateMigration>
+{
+    public void Configure(EntityTypeBuilder<PermissionTemplateMigration> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.HasIndex(e => e.TemplateId).HasDatabaseName("IX_PermissionTemplateMigrations_TemplateId");
+        builder.Property(e => e.AffectedTenantIds).HasColumnType("uuid[]");
+        builder.Property(e => e.AffectedUserIds).HasColumnType("uuid[]");
+    }
+}
+
+/// <summary>
+///     EF Core configuration for PermissionTemplateInstantiation (issues #369/#370):
+///     per-target instantiation provenance consumed by template migrations.
+/// </summary>
+public class PermissionTemplateInstantiationConfiguration : IEntityTypeConfiguration<PermissionTemplateInstantiation>
+{
+    public void Configure(EntityTypeBuilder<PermissionTemplateInstantiation> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.HasIndex(e => e.TemplateId).HasDatabaseName("IX_PermissionTemplateInstantiations_TemplateId");
+        builder.HasIndex(e => new { e.TemplateId, e.TemplateVersionNumber })
+            .HasDatabaseName("IX_PermissionTemplateInstantiations_Template_Version");
+        builder.HasIndex(e => new { e.TemplateId, e.UserId, e.TenantId })
+            .IsUnique()
+            .HasDatabaseName("IX_PermissionTemplateInstantiations_Unique_Target");
+    }
 }

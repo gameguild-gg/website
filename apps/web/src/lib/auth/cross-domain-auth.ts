@@ -48,7 +48,17 @@ export function resolveAllowedAuthRedirect(
 ): string {
   const redirectTo = typeof value === "string" ? value.trim() : "";
 
-  return redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-    ? redirectTo
-    : fallback;
+  if (!redirectTo.startsWith("/") || redirectTo.startsWith("//")) {
+    return fallback;
+  }
+
+  try {
+    const base = new URL("https://auth-redirect.invalid");
+    const resolved = new URL(redirectTo, base);
+    return resolved.origin === base.origin
+      ? `${resolved.pathname}${resolved.search}${resolved.hash}`
+      : fallback;
+  } catch {
+    return fallback;
+  }
 }

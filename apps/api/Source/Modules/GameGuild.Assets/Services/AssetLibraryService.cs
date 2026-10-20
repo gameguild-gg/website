@@ -26,7 +26,8 @@ public sealed class AssetLibraryService(
     IApplicationDbContext context,
     IEnumerable<IAssetParentAuthorizationResolver> parentResolvers,
     IAssetAccessService assetAccessService,
-    IAssetFolderAuthorizationService folderAuthorizationService) : IAssetLibraryService
+    IAssetFolderAuthorizationService folderAuthorizationService,
+    IAssetContentRepository contentRepository) : IAssetLibraryService
 {
     private readonly IReadOnlyList<IAssetParentAuthorizationResolver> _parentResolvers = parentResolvers.ToArray();
 
@@ -169,6 +170,7 @@ public sealed class AssetLibraryService(
         var copy = source.CopyTo(userId, displayName, folderId);
         context.Set<AssetReference>().Add(copy);
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
+        await contentRepository.IncrementReferenceCountAsync(source.AssetContentId, ct).ConfigureAwait(false);
         return AssetLibraryResult<AssetReference>.Success(copy);
     }
 
@@ -221,9 +223,15 @@ public sealed class AssetLibraryService(
             return AssetLibraryResult<AssetReferenceRevision>.Failure("RevisionNotFound");
         }
 
+        var replacedContentId = reference.AssetContentId;
         var restored = reference.RestoreRevision(revision, userId);
         context.Set<AssetReferenceRevision>().Add(restored);
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
+        if (restored.AssetContentId != replacedContentId)
+        {
+            await contentRepository.DecrementReferenceCountAsync(replacedContentId, ct).ConfigureAwait(false);
+            await contentRepository.IncrementReferenceCountAsync(restored.AssetContentId, ct).ConfigureAwait(false);
+        }
         return AssetLibraryResult<AssetReferenceRevision>.Success(restored);
     }
 

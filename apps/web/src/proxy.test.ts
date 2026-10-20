@@ -24,6 +24,46 @@ describe("GameGuild internationalization proxy", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("forwards the browser-visible path (issue #864 callbackUrl source) to server components", () => {
+    const response = routeRequest(
+      new NextRequest(
+        "https://gameguild.gg/workspace/settings/security?section=mfa",
+      ),
+    );
+
+    expect(response.headers.get("x-middleware-request-x-gameguild-path")).toBe(
+      "/workspace/settings/security?section=mfa",
+    );
+  });
+
+  it("strips the default locale prefix from the forwarded public path", () => {
+    const response = routeRequest(
+      new NextRequest("https://gameguild.gg/en-US/workspace?view=list"),
+    );
+
+    expect(response.headers.get("location")).toBe("https://gameguild.gg/workspace?view=list");
+  });
+
+  it("forwards the public path on the internal RSC rewrite of a default-locale route", () => {
+    const response = routeRequest(new NextRequest("https://gameguild.gg/en-US/sign-in?redirectTo=%2Ffeed&_rsc=x", {
+      headers: { rsc: "1", "next-router-prefetch": "1" },
+    }));
+
+    expect(response.headers.get("x-middleware-request-x-gameguild-path")).toBe(
+      "/sign-in?redirectTo=%2Ffeed&_rsc=x",
+    );
+  });
+
+  it("forwards the public path (locale-stripped) for non-default locales", () => {
+    const response = routeRequest(
+      new NextRequest("https://gameguild.gg/pt-BR/workspace/settings/security"),
+    );
+
+    expect(response.headers.get("x-middleware-request-x-gameguild-path")).toBe(
+      "/workspace/settings/security",
+    );
+  });
+
   it("removes an explicit default-locale prefix", () => {
     const response = routeRequest(
       new NextRequest("https://gameguild.gg/en-US/projects?view=grid"),

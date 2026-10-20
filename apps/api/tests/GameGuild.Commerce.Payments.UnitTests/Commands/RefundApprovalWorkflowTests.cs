@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -298,6 +299,67 @@ public class RefundApprovalWorkflowTests
             Times.Once);
     }
 
+    [Theory]
+    [InlineData("approver@example.com")]
+    [InlineData("审批+refund@payments.example")]
+    public async Task ApproverNotificationFailure_ProtectsDiagnostics_AndKeepsApprovalWorkflow(string firstRecipient)
+    {
+        const string secondRecipient = "backup-approver@example.com";
+        const string privateMarker = "synthetic-private-notification-content";
+        var failure = new InvalidOperationException($"Delivery to {firstRecipient} failed\r\n{privateMarker}");
+        _options.ManualApprovalThresholdAmount = 10m;
+        _options.ApproverNotificationEmails = [firstRecipient, secondRecipient];
+        _notifications
+            .SetupSequence(service => service.SendAsync(
+                It.IsAny<Guid?>(), It.IsAny<GameGuild.Notifications.NotificationType>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<GameGuild.Notifications.NotificationChannel>(), It.IsAny<Guid?>(), It.IsAny<string?>(),
+                It.IsAny<GameGuild.Notifications.NotificationPriority>(), It.IsAny<Guid?>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure)
+            .ReturnsAsync(Result.Success(GameGuild.Notifications.Notification.Create(
+                null, GameGuild.Notifications.NotificationType.Billing, GameGuild.Notifications.NotificationChannel.Email,
+                "Refund approval required", "body")));
+        var logger = new Mock<ILogger<RefundProcessingService>>();
+        logger.Setup(log => log.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        var payment = SucceededPayment(50m);
+        await using var db = NewDatabase();
+        db.Add(payment);
+        await db.SaveChangesAsync();
+
+        var outcome = await CreateService(db, logger.Object).RequestRefundAsync(
+            new RefundRequestInput(payment.Id, 50m, "goodwill"), CancellationToken.None);
+
+        outcome.Success.Should().BeTrue();
+        outcome.RequiresApproval.Should().BeTrue();
+        outcome.Refund!.Status.Should().Be(RefundStatus.Pending);
+        (await db.Set<Refund>().SingleAsync()).Status.Should().Be(RefundStatus.Pending);
+        payment.RefundedAmount.Should().Be(0m);
+        payment.Status.Should().Be(PaymentStatus.Succeeded);
+        _gateway.Verify(gateway => gateway.ProcessRefundAsync(
+            It.IsAny<GatewayRefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        foreach (var recipient in new[] { firstRecipient, secondRecipient })
+        {
+            _notifications.Verify(service => service.SendAsync(
+                It.IsAny<Guid?>(), GameGuild.Notifications.NotificationType.Billing, It.IsAny<string>(), It.IsAny<string>(),
+                GameGuild.Notifications.NotificationChannel.Email, It.IsAny<Guid?>(), It.IsAny<string?>(),
+                It.IsAny<GameGuild.Notifications.NotificationPriority>(), It.IsAny<Guid?>(), nameof(Refund),
+                It.IsAny<string?>(), recipient, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        var warning = logger.Invocations.Where(call => call.Method.Name == nameof(ILogger.Log)
+            && (LogLevel)call.Arguments[0] == LogLevel.Warning).Should().ContainSingle().Which;
+        var message = warning.Arguments[2].ToString()!;
+        message.Should().NotContain(firstRecipient).And.NotContain(privateMarker);
+        message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
+        warning.Arguments[3].Should().BeNull("the original exception can contain the private notification payload");
+        var properties = ((IEnumerable<KeyValuePair<string, object?>>)warning.Arguments[2])
+            .ToDictionary(entry => entry.Key, entry => entry.Value);
+        properties.Should().NotContainKey("Email");
+        properties.Values.Should().NotContain(LogRedaction.MaskEmail(firstRecipient));
+        properties["ErrorType"].Should().Be(typeof(InvalidOperationException).FullName);
+        properties["RefundId"].Should().Be(outcome.Refund.Id);
+    }
+
     [Fact]
     public async Task GetPendingRefundApprovalsQuery_ReturnsOnlyQueuedRefundsForTheTenant()
     {
@@ -320,7 +382,9 @@ public class RefundApprovalWorkflowTests
         page.Items.Should().ContainSingle(item => item.TenantId == tenantId);
     }
 
-    private IRefundProcessingService CreateService(RefundsTestDbContext db) => new RefundProcessingService(
+    private IRefundProcessingService CreateService(
+        RefundsTestDbContext db,
+        ILogger<RefundProcessingService>? logger = null) => new RefundProcessingService(
         new RefundRepository((IApplicationDbContext)db, NullLogger<RefundRepository>.Instance),
         new PaymentRepository((IApplicationDbContext)db, NullLogger<PaymentRepository>.Instance),
         _gateway.Object,
@@ -328,7 +392,7 @@ public class RefundApprovalWorkflowTests
         _actorAccessor.Object,
         Options.Create(_options),
         _notifications.Object,
-        NullLogger<RefundProcessingService>.Instance);
+        logger ?? NullLogger<RefundProcessingService>.Instance);
 
     private RefundsTestDbContext NewDatabase()
     {

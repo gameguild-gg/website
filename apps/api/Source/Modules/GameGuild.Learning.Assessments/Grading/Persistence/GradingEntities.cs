@@ -71,6 +71,21 @@ public enum GradeResultReleaseStatus
     Released,
 }
 
+public enum PeerReviewClaimStatus
+{
+    Assigned,
+    Submitted,
+    Expired,
+    Cancelled,
+}
+
+public enum GradeResultReleaseScheduleStatus
+{
+    Scheduled,
+    Cancelled,
+    Released,
+}
+
 /// <summary>An immutable, executable assessment definition prepared by the server.</summary>
 public sealed class AssessmentDefinitionRevision
 {
@@ -585,6 +600,25 @@ public sealed class GradeRound : EntityBase
         FinalizedAt = finalizedAt.ToUniversalTime();
         Touch();
     }
+
+    public void Fail(DateTime failedAt)
+    {
+        if (Status == PersistedGradeRoundStatus.Finalized)
+        {
+            throw new InvalidOperationException("A finalized grade round cannot fail.");
+        }
+
+        if (Status == PersistedGradeRoundStatus.Failed)
+        {
+            return;
+        }
+
+        Status = PersistedGradeRoundStatus.Failed;
+        ResultState = "failed";
+        Score = null;
+        FinalizedAt = failedAt.ToUniversalTime();
+        Touch();
+    }
 }
 
 public sealed class ReviewStage : EntityBase
@@ -600,6 +634,7 @@ public sealed class ReviewStage : EntityBase
     public string? ProviderPolicyVersion { get; private set; }
     public PersistedReviewStageStatus Status { get; private set; }
     public DateTime? StartedAt { get; private set; }
+    public DateTime? EvidenceDeadlineAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
 
     public static ReviewStage Create(Guid? tenantId, Guid roundId, int sequence, AssessmentReviewStageManifestV1 manifest)
@@ -668,6 +703,23 @@ public sealed class ReviewStage : EntityBase
 
         StartedAt ??= SystemClock.UtcNow;
         Status = PersistedReviewStageStatus.AwaitingEvidence;
+        Touch();
+    }
+
+    public void SetEvidenceDeadline(DateTime deadlineAt)
+    {
+        if (Status is PersistedReviewStageStatus.Completed or PersistedReviewStageStatus.Failed)
+        {
+            throw new InvalidOperationException("A terminal review stage cannot change its evidence deadline.");
+        }
+
+        var normalized = deadlineAt.ToUniversalTime();
+        if (normalized <= SystemClock.UtcNow)
+        {
+            throw new ArgumentOutOfRangeException(nameof(deadlineAt), "Evidence deadline must be in the future.");
+        }
+
+        EvidenceDeadlineAt = normalized;
         Touch();
     }
 
@@ -757,6 +809,7 @@ public sealed class ReviewEvidence
     public Guid Id { get; private set; }
     public Guid? TenantId { get; private set; }
     public Guid ReviewStageId { get; private set; }
+    public Guid? SourceReviewEvidenceId { get; private set; }
     public string EvidenceKey { get; private set; } = string.Empty;
     public string? ItemId { get; private set; }
     public string EvidenceType { get; private set; } = string.Empty;
@@ -804,6 +857,46 @@ public sealed class ReviewEvidence
         return Create(tenantId, stageId, evidenceKey, evidenceType, schemaVersion, canonicalJson, itemId, null, service.Trim());
     }
 
+    public static ReviewEvidence CreateReference(
+        Guid? tenantId,
+        Guid stageId,
+        string evidenceKey,
+        ReviewEvidence source,
+        Guid supersededRoundId,
+        string service)
+    {
+        if (source.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Source evidence must be persisted.", nameof(source));
+        }
+
+        if (supersededRoundId == Guid.Empty)
+        {
+            throw new ArgumentException("Superseded round ID is required.", nameof(supersededRoundId));
+        }
+
+        var payload = GameGuild.Learning.Assessments.Grading.Contracts.CanonicalJson.Serialize(JsonSerializer.SerializeToElement(new
+        {
+            schemaVersion = 1,
+            sourceReviewEvidenceId = source.Id,
+            sourcePayloadHash = source.PayloadHash,
+            sourceHashVersion = source.HashVersion,
+            supersededRoundId,
+        }, GradingJson.Options));
+        var reference = Create(
+            tenantId,
+            stageId,
+            evidenceKey,
+            "review-evidence-reference",
+            "1",
+            payload,
+            source.ItemId,
+            null,
+            RequireText(service, nameof(service)));
+        reference.SourceReviewEvidenceId = source.Id;
+        return reference;
+    }
+
     private static ReviewEvidence Create(
         Guid? tenantId,
         Guid stageId,
@@ -841,6 +934,154 @@ public sealed class ReviewEvidence
 
     private static string RequireText(string value, string parameterName) =>
         string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("Value is required.", parameterName) : value.Trim();
+}
+
+/// <summary>
+/// Canonical lease for one reviewer on one peer-review stage. The target submission,
+/// assessment, round, and execution are always derived through ReviewStage.
+/// </summary>
+public sealed class PeerReviewClaim : EntityBase
+{
+    private PeerReviewClaim() { }
+
+    public Guid ReviewStageId { get; private set; }
+    public Guid? ReviewerUserId { get; private set; }
+    public Guid? ReviewerTestRunSubjectId { get; private set; }
+    public Guid? ReviewEvidenceId { get; private set; }
+    public PeerReviewClaimStatus Status { get; private set; }
+    public DateTime ClaimedAt { get; private set; }
+    public DateTime LeaseExpiresAt { get; private set; }
+    public DateTime? SubmittedAt { get; private set; }
+
+    public static PeerReviewClaim CreateOfficial(
+        Guid? tenantId,
+        Guid reviewStageId,
+        Guid reviewerUserId,
+        DateTime leaseExpiresAt) =>
+        Create(tenantId, reviewStageId, reviewerUserId, null, leaseExpiresAt);
+
+    public static PeerReviewClaim CreateAuthorTest(
+        Guid? tenantId,
+        Guid reviewStageId,
+        Guid reviewerTestRunSubjectId,
+        DateTime leaseExpiresAt) =>
+        Create(tenantId, reviewStageId, null, reviewerTestRunSubjectId, leaseExpiresAt);
+
+    public void Submit(Guid reviewEvidenceId, DateTime submittedAt)
+    {
+        if (reviewEvidenceId == Guid.Empty)
+        {
+            throw new ArgumentException("Review evidence ID is required.", nameof(reviewEvidenceId));
+        }
+
+        if (Status == PeerReviewClaimStatus.Submitted)
+        {
+            if (ReviewEvidenceId != reviewEvidenceId)
+            {
+                throw new InvalidOperationException("A submitted peer-review claim is immutable.");
+            }
+
+            return;
+        }
+
+        if (Status != PeerReviewClaimStatus.Assigned || LeaseExpiresAt <= submittedAt.ToUniversalTime())
+        {
+            throw new InvalidOperationException("Only an active peer-review claim can be submitted.");
+        }
+
+        ReviewEvidenceId = reviewEvidenceId;
+        Status = PeerReviewClaimStatus.Submitted;
+        SubmittedAt = submittedAt.ToUniversalTime();
+        Touch();
+    }
+
+    public void Expire(DateTime expiredAt)
+    {
+        if (Status != PeerReviewClaimStatus.Assigned)
+        {
+            return;
+        }
+
+        if (LeaseExpiresAt > expiredAt.ToUniversalTime())
+        {
+            throw new InvalidOperationException("An active lease cannot expire before its deadline.");
+        }
+
+        Status = PeerReviewClaimStatus.Expired;
+        Touch();
+    }
+
+    public void Cancel()
+    {
+        if (Status == PeerReviewClaimStatus.Submitted)
+        {
+            throw new InvalidOperationException("A submitted peer-review claim cannot be cancelled.");
+        }
+
+        if (Status == PeerReviewClaimStatus.Cancelled)
+        {
+            return;
+        }
+
+        Status = PeerReviewClaimStatus.Cancelled;
+        Touch();
+    }
+
+    public void ExtendLease(DateTime leaseExpiresAt)
+    {
+        if (Status != PeerReviewClaimStatus.Assigned)
+        {
+            throw new InvalidOperationException("Only an assigned peer-review claim can be extended.");
+        }
+
+        var normalized = leaseExpiresAt.ToUniversalTime();
+        if (normalized <= LeaseExpiresAt)
+        {
+            throw new ArgumentOutOfRangeException(nameof(leaseExpiresAt), "Extended lease must end after the current lease.");
+        }
+
+        LeaseExpiresAt = normalized;
+        Touch();
+    }
+
+    private static PeerReviewClaim Create(
+        Guid? tenantId,
+        Guid reviewStageId,
+        Guid? reviewerUserId,
+        Guid? reviewerTestRunSubjectId,
+        DateTime leaseExpiresAt)
+    {
+        if (reviewStageId == Guid.Empty)
+        {
+            throw new ArgumentException("Review stage ID is required.", nameof(reviewStageId));
+        }
+
+        if ((reviewerUserId.HasValue && reviewerUserId != Guid.Empty) ==
+            (reviewerTestRunSubjectId.HasValue && reviewerTestRunSubjectId != Guid.Empty))
+        {
+            throw new ArgumentException("A peer-review claim requires exactly one reviewer identity.");
+        }
+
+        var claimedAt = SystemClock.UtcNow;
+        var normalizedExpiry = leaseExpiresAt.ToUniversalTime();
+        if (normalizedExpiry <= claimedAt)
+        {
+            throw new ArgumentOutOfRangeException(nameof(leaseExpiresAt), "Claim lease must expire after it is created.");
+        }
+
+        var claim = new PeerReviewClaim
+        {
+            Id = Guid.NewGuid(),
+            ReviewStageId = reviewStageId,
+            ReviewerUserId = reviewerUserId,
+            ReviewerTestRunSubjectId = reviewerTestRunSubjectId,
+            Status = PeerReviewClaimStatus.Assigned,
+            ClaimedAt = claimedAt,
+            LeaseExpiresAt = normalizedExpiry,
+        };
+        claim.TenantId = tenantId;
+        return claim;
+    }
 }
 
 /// <summary>Append-only learner-visible release for one immutable grade round.</summary>
@@ -916,6 +1157,157 @@ public sealed class GradeResultRelease
             ReleasedAt = SystemClock.UtcNow,
         };
     }
+}
+
+/// <summary>Mutable operational schedule for one immutable grade round.</summary>
+public sealed class GradeResultReleaseSchedule : EntityBase
+{
+    private GradeResultReleaseSchedule() { }
+
+    public Guid GradeRoundId { get; private set; }
+    public DateTime ScheduledFor { get; private set; }
+    public GradeResultReleaseScheduleStatus Status { get; private set; }
+    public Guid? ScheduledByActorId { get; private set; }
+    public string? ScheduledByService { get; private set; }
+    public Guid? CancelledByActorId { get; private set; }
+    public string? CancellationReason { get; private set; }
+    public DateTime? CancelledAt { get; private set; }
+    public DateTime? ReleasedAt { get; private set; }
+
+    public static GradeResultReleaseSchedule CreateByActor(
+        Guid tenantId,
+        Guid roundId,
+        DateTime scheduledFor,
+        Guid actorId,
+        DateTime now) =>
+        Create(tenantId, roundId, scheduledFor, actorId, null, now, requireFuture: true);
+
+    public static GradeResultReleaseSchedule CreateByService(
+        Guid tenantId,
+        Guid roundId,
+        DateTime scheduledFor,
+        string service,
+        DateTime now) =>
+        Create(tenantId, roundId, scheduledFor, null, RequireText(service, nameof(service)), now, requireFuture: false);
+
+    public void RescheduleByActor(DateTime scheduledFor, Guid actorId, DateTime now)
+    {
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
+        Reschedule(scheduledFor, actorId, null, now, requireFuture: true);
+    }
+
+    public void RescheduleByService(DateTime scheduledFor, string service, DateTime now) =>
+        Reschedule(scheduledFor, null, RequireText(service, nameof(service)), now, requireFuture: false);
+
+    public void Cancel(Guid actorId, string reason, DateTime cancelledAt)
+    {
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
+        if (Status == GradeResultReleaseScheduleStatus.Released)
+        {
+            throw new InvalidOperationException("A released result cannot be withheld again.");
+        }
+
+        if (Status == GradeResultReleaseScheduleStatus.Cancelled)
+        {
+            return;
+        }
+
+        Status = GradeResultReleaseScheduleStatus.Cancelled;
+        CancelledByActorId = actorId;
+        CancellationReason = RequireText(reason, nameof(reason));
+        CancelledAt = cancelledAt.ToUniversalTime();
+        Touch();
+    }
+
+    public void MarkReleased(DateTime releasedAt)
+    {
+        if (Status == GradeResultReleaseScheduleStatus.Released)
+        {
+            return;
+        }
+
+        if (Status != GradeResultReleaseScheduleStatus.Scheduled)
+        {
+            throw new InvalidOperationException("Only a scheduled result can be released.");
+        }
+
+        Status = GradeResultReleaseScheduleStatus.Released;
+        ReleasedAt = releasedAt.ToUniversalTime();
+        Touch();
+    }
+
+    private static GradeResultReleaseSchedule Create(
+        Guid tenantId,
+        Guid roundId,
+        DateTime scheduledFor,
+        Guid? actorId,
+        string? service,
+        DateTime now,
+        bool requireFuture)
+    {
+        if (tenantId == Guid.Empty || roundId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant and grade round IDs are required.");
+        }
+
+        if ((actorId.HasValue && actorId != Guid.Empty) == !string.IsNullOrWhiteSpace(service))
+        {
+            throw new ArgumentException("A schedule requires exactly one actor or service producer.");
+        }
+
+        var schedule = new GradeResultReleaseSchedule
+        {
+            Id = Guid.NewGuid(),
+            GradeRoundId = roundId,
+            ScheduledFor = NormalizeScheduledFor(scheduledFor, now, requireFuture),
+            Status = GradeResultReleaseScheduleStatus.Scheduled,
+            ScheduledByActorId = actorId,
+            ScheduledByService = service,
+        };
+        schedule.TenantId = tenantId;
+        return schedule;
+    }
+
+    private void Reschedule(
+        DateTime scheduledFor,
+        Guid? actorId,
+        string? service,
+        DateTime now,
+        bool requireFuture)
+    {
+        if (Status == GradeResultReleaseScheduleStatus.Released)
+        {
+            throw new InvalidOperationException("A released result cannot be rescheduled.");
+        }
+
+        ScheduledFor = NormalizeScheduledFor(scheduledFor, now, requireFuture);
+        Status = GradeResultReleaseScheduleStatus.Scheduled;
+        ScheduledByActorId = actorId;
+        ScheduledByService = service;
+        CancelledByActorId = null;
+        CancellationReason = null;
+        CancelledAt = null;
+        Touch();
+    }
+
+    private static DateTime NormalizeScheduledFor(DateTime value, DateTime now, bool requireFuture)
+    {
+        var normalized = value.ToUniversalTime();
+        return !requireFuture || normalized > now.ToUniversalTime()
+            ? normalized
+            : throw new ArgumentOutOfRangeException(nameof(value), "Scheduled release must be in the future.");
+    }
+
+    private static string RequireText(string value, string parameterName) =>
+        string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("Value is required.", parameterName) : value.Trim();
 }
 
 /// <summary>Frozen member snapshot for a collective assessment submission.</summary>

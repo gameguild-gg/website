@@ -91,6 +91,7 @@ export function OrderingRenderer({
       {orderedItems.map((item, index) => (
         <div
           key={item.id}
+          data-testid={`ordering-item-${item.id}`}
           draggable={!disabled && !showFeedback}
           onDragStart={() => handleDragStart(index)}
           onDragOver={(e) => handleDragOver(e, index)}
@@ -111,6 +112,8 @@ export function OrderingRenderer({
             <div className="flex flex-col gap-1">
               <button
                 type="button"
+                aria-label={`Move ${item.text} up`}
+                title={`Move ${item.text} up`}
                 onClick={() => handleMoveUp(index)}
                 disabled={index === 0}
                 className={`
@@ -124,6 +127,8 @@ export function OrderingRenderer({
               </button>
               <button
                 type="button"
+                aria-label={`Move ${item.text} down`}
+                title={`Move ${item.text} down`}
                 onClick={() => handleMoveDown(index)}
                 disabled={index === orderedItems.length - 1}
                 className={`

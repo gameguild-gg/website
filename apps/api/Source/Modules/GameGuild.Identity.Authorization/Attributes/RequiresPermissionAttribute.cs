@@ -43,7 +43,7 @@ public sealed class RequirePermissionAttribute : Attribute
 }
 
 /// <summary>
-///     Specifies that the action method or endpoint requires a specific permission on a resource.
+///     Specifies that the action method requires a specific permission on a resource.
 ///     This is a generic attribute that allows type-safe resource permission checks.
 /// </summary>
 /// <typeparam name="TPermission">The permission enum type for the resource.</typeparam>
@@ -83,10 +83,36 @@ public sealed class RequireResourcePermissionAttribute<TPermission, TResource> :
     ///     Gets the permission type.
     /// </summary>
     public Type PermissionEnumType => typeof(TPermission);
-    
+
     // IResourcePermissionMarker implementation
     object IResourcePermissionMarker.RequiredPermission => RequiredPermission;
     string IResourcePermissionMarker.ResourceIdParameterName => ResourceIdParameterName;
+}
+
+/// <summary>
+///     Single-generic resource DAC requirement (issue #321):
+///     <c>RequireResourcePermissionAttribute&lt;T&gt;</c> enforces resource-level permissions
+///     with route extraction. The resource type comes from <typeparamref name="TResource"/>;
+///     the required permissions are names (AND logic). Enforcement runs through
+///     <see cref="IDacPermissionResolver"/> with a resource context, which also activates
+///     the owner-override and temporal-precedence behavior (issues #372/#363).
+/// </summary>
+/// <typeparam name="TResource">The resource entity type.</typeparam>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
+public sealed class RequireResourcePermissionAttribute<TResource> : DacPermissionAttributeBase
+    where TResource : class
+{
+    /// <summary>
+    ///     Initializes the requirement for <typeparamref name="TResource"/>.
+    /// </summary>
+    /// <param name="permissions">The required permission names (AND logic).</param>
+    /// <param name="resourceIdParameterName">The parameter holding the resource id (defaults to <c>id</c>).</param>
+    public RequireResourcePermissionAttribute(string[] permissions, string resourceIdParameterName = "id")
+        : base(PermissionLayer.Resource, permissions)
+    {
+        ContentType = typeof(TResource).Name;
+        ResourceIdParameterName = resourceIdParameterName;
+    }
 }
 
 /// <summary>

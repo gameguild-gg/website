@@ -9,7 +9,7 @@ namespace GameGuild.Projects;
 
 public sealed class ProjectPermissionResolver(IProjectAuthorizationService authorizationService) : IPermissionResolver
 {
-    public async Task<IEnumerable<EffectivePermission>> GetEffectivePermissionsAsync<T>(
+    public async Task<IEnumerable<EffectivePermission>> GetEffectivePermissionsAsync(
         Guid userId,
         Guid? tenantId,
         Guid resourceId,

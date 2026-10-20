@@ -527,33 +527,34 @@ public sealed class AuthorizationCoverageCompletionTests
         var attrs = InvokePrivateStatic<IEnumerable<Attribute>>(
                 typeof(ResourcePermissionAuthorizationFilter),
                 "GetPermissionAttributes",
-                actionDescriptor)
+                actionDescriptor,
+                true)
             .ToList();
         attrs.Should().HaveCountGreaterThan(1);
 
         foreach (var attr in attrs)
         {
-            InvokePrivateStatic<bool>(typeof(ResourcePermissionAuthorizationFilter), "IsPermissionAttribute", attr)
+            InvokePrivateStatic<bool>(typeof(ResourcePermissionAuthorizationFilter), "IsPermissionAttribute", attr, true)
                 .Should().BeTrue();
         }
 
-        InvokePrivateStatic<bool>(typeof(ResourcePermissionAuthorizationFilter), "IsPermissionAttribute", new ObsoleteAttribute())
+        InvokePrivateStatic<bool>(typeof(ResourcePermissionAuthorizationFilter), "IsPermissionAttribute", new ObsoleteAttribute(), true)
             .Should().BeFalse();
 
         var routeId = Guid.NewGuid();
         var httpContext = new DefaultHttpContext();
         httpContext.Request.RouteValues["id"] = routeId.ToString();
-        InvokePrivateStatic<Guid?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", httpContext, "id")
-            .Should().Be(routeId);
+        InvokePrivateStatic<string?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", httpContext, "id", DacResourceIdSource.RouteOrQuery)
+            .Should().Be(routeId.ToString("D"));
 
         httpContext.Request.RouteValues["id"] = "bad";
         var queryId = Guid.NewGuid();
         httpContext.Request.QueryString = new QueryString($"?id={queryId}");
-        InvokePrivateStatic<Guid?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", httpContext, "id")
-            .Should().Be(queryId);
+        InvokePrivateStatic<string?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", httpContext, "id", DacResourceIdSource.RouteOrQuery)
+            .Should().Be(queryId.ToString("D"));
 
         httpContext.Request.QueryString = new QueryString("?id=bad");
-        InvokePrivateStatic<Guid?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", httpContext, "id")
+        InvokePrivateStatic<string?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", httpContext, "id", DacResourceIdSource.RouteOrQuery)
             .Should().BeNull();
     }
 
@@ -1019,6 +1020,8 @@ public sealed class AuthorizationCoverageCompletionTests
         PrivateActor(new GetTenantPermissionsQueryHandler(
             Mock.Of<IPermissionQueryService>(),
             accessor.Object,
+            Mock.Of<ITenantSecurityVersionStore>(),
+            new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()),
             NullLogger<GetTenantPermissionsQueryHandler>.Instance)).Should().BeSameAs(actor);
         PrivateActor(new GetEffectivePermissionsQueryHandler(
             accessor.Object,
@@ -2548,7 +2551,7 @@ public sealed class AuthorizationCoverageCompletionTests
 
         var routeNullContext = new DefaultHttpContext();
         routeNullContext.Request.RouteValues["id"] = null;
-        InvokePrivateStatic<Guid?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", routeNullContext, "id")
+        InvokePrivateStatic<string?>(typeof(ResourcePermissionAuthorizationFilter), "ExtractResourceId", routeNullContext, "id", DacResourceIdSource.RouteOrQuery)
             .Should().BeNull();
 
         var fallbackTenantContext = new DefaultHttpContext();

@@ -2,10 +2,15 @@
 
 import { useMemo, useRef, useState } from 'react';
 import type {
+  AssessmentExecutionRuntimeViewV1,
   AssessmentTestRunRuntimeViewV1,
   InstructorReviewResolutionV1,
+  PeerReviewClaimRuntimeViewV1,
+  ReviewMethods,
   ScoreValue,
+  SelfReviewEvidenceV1,
 } from '@game-guild/grading';
+import { REVIEW_METHOD_FLAGS } from '@game-guild/grading';
 import {
   createQuizAnswerEnvelope,
   parseQuizAnswerEnvelope,
@@ -29,24 +34,32 @@ import { Textarea } from '@game-guild/ui/components/textarea';
 import {
   AlertTriangle,
   CheckCircle2,
+  ClipboardCheck,
   Loader2,
   Play,
   RotateCcw,
 } from 'lucide-react';
 import {
+  claimTestRunPeerReview,
+  getTestRunPeerReview,
   restartAssessmentTestRun,
   resolveTestRunInstructorReview,
   startAssessmentTestRun,
   submitAssessmentTestRun,
+  submitTestRunPeerReview,
+  submitTestRunSelfReview,
 } from '@/lib/learning/grading-runtime-actions';
 import {
   pointsToScoreUnits,
   scoreUnitsToPoints,
 } from '@/lib/learning/academic-values';
+import { SelfReviewForm } from './self-review-form';
 
 export interface RuntimeQuizTestRunProps {
   assessmentId: string;
   revisionId: string;
+  reviewMethods: ReviewMethods;
+  peerReviewsRequired?: number;
   disabled?: boolean;
 }
 
@@ -58,6 +71,8 @@ interface ScoreDraft {
 export function RuntimeQuizTestRun({
   assessmentId,
   revisionId,
+  reviewMethods,
+  peerReviewsRequired = 1,
   disabled = false,
 }: RuntimeQuizTestRunProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
@@ -72,10 +87,42 @@ export function RuntimeQuizTestRun({
   const [overrideReason, setOverrideReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [peerClaims, setPeerClaims] = useState<
+    Record<string, PeerReviewClaimRuntimeViewV1>
+  >({});
+  const [completedPeerReviewSubjects, setCompletedPeerReviewSubjects] =
+    useState<ReadonlySet<string>>(new Set());
+  const [peerScore, setPeerScore] = useState('');
+  const [peerFeedback, setPeerFeedback] = useState('');
+  const answerDrafts = useRef<
+    Record<string, { answers: Record<string, QuizAnswer>; recorded: ReadonlySet<string> }>
+  >({});
   const startKey = useRef(createIdempotencyKey());
   const submitCommand = useRef<{ hash: string; key: string } | null>(null);
+  const selfReviewCommand = useRef<{ hash: string; key: string } | null>(null);
 
-  const items = useMemo(() => (run ? readQuizItems(run) : []), [run]);
+  const subjects = run?.subjects?.length
+    ? run.subjects
+    : run
+      ? [
+          {
+            subjectId: 'primary',
+            personaKey: run.personaKey,
+            personaDisplayName: run.personaDisplayName,
+            execution: run.execution,
+          },
+        ]
+      : [];
+  const activeSubject =
+    subjects.find((subject) => subject.subjectId === selectedSubjectId) ??
+    subjects[0];
+  const execution = activeSubject?.execution ?? null;
+  const activeSubjectKey = activeSubject?.subjectId ?? 'primary';
+  const activePeerClaim = peerClaims[activeSubjectKey] ?? null;
+  const isPeerReview =
+    (reviewMethods & REVIEW_METHOD_FLAGS.PeerReview) !== 0;
+  const items = execution ? readQuizItems(execution) : [];
   const scoreRows = items.map((item) => {
     const raw = scores[item.itemId]?.points ?? '';
     let score: ScoreValue | null = null;
@@ -84,7 +131,7 @@ export function RuntimeQuizTestRun({
     } catch {
       score = null;
     }
-    const maxScore = run?.execution.itemMaxScores[item.itemId] ?? 0;
+    const maxScore = execution?.itemMaxScores[item.itemId] ?? 0;
     return {
       ...item,
       raw,
@@ -94,9 +141,45 @@ export function RuntimeQuizTestRun({
     };
   });
   const canResolve =
-    run?.execution.requiresInstructorReview === true &&
+    execution?.requiresInstructorReview === true &&
     scoreRows.length > 0 &&
     scoreRows.every((row) => row.valid) &&
+    !busy;
+  const allSubjectsSubmitted =
+    subjects.length > 0 &&
+    subjects.every((subject) => subject.execution.submittedResponse != null);
+  const showPeerReview =
+    isPeerReview &&
+    execution?.submittedResponse != null &&
+    !completedPeerReviewSubjects.has(activeSubjectKey);
+  const peerTargetAnswers = useMemo(() => {
+    if (!activePeerClaim?.responseEnvelopeCanonicalJson) return null;
+    try {
+      return parseQuizAnswerEnvelope(
+        JSON.parse(activePeerClaim.responseEnvelopeCanonicalJson),
+      ).payload.answers;
+    } catch {
+      return null;
+    }
+  }, [activePeerClaim]);
+  const peerMaximum = execution
+    ? Object.values(execution.itemMaxScores).reduce(
+        (total, value) => total + value,
+        0,
+      )
+    : 0;
+  let parsedPeerScore: ScoreValue | null = null;
+  try {
+    if (peerScore.trim()) parsedPeerScore = pointsToScoreUnits(peerScore);
+  } catch {
+    parsedPeerScore = null;
+  }
+  const canSubmitPeerReview =
+    activePeerClaim?.status === 'assigned' &&
+    parsedPeerScore != null &&
+    parsedPeerScore >= 0 &&
+    parsedPeerScore <= peerMaximum &&
+    peerFeedback.trim().length > 0 &&
     !busy;
 
   async function begin() {
@@ -108,6 +191,15 @@ export function RuntimeQuizTestRun({
       startKey.current,
       'instructor-test-learner',
       'Instructor test learner',
+      isPeerReview
+        ? Array.from(
+            { length: Math.min(Math.max(peerReviewsRequired + 1, 2), 16) },
+            (_, index) => ({
+              personaKey: `peer-${index + 1}`,
+              personaDisplayName: `Synthetic learner ${index + 1}`,
+            }),
+          )
+        : undefined,
     );
     setBusy(false);
     if (!result.success) {
@@ -120,7 +212,7 @@ export function RuntimeQuizTestRun({
   }
 
   async function submit() {
-    if (!run || run.execution.submittedResponse) return;
+    if (!run || !execution || execution.submittedResponse) return;
     const response = createQuizAnswerEnvelope(
       Object.fromEntries(
         items.map((item) => [
@@ -139,6 +231,7 @@ export function RuntimeQuizTestRun({
       run.testRunId,
       response,
       submitCommand.current.key,
+      activeSubject?.subjectId === 'primary' ? undefined : activeSubject?.subjectId,
     );
     setBusy(false);
     if (!result.success) {
@@ -151,7 +244,7 @@ export function RuntimeQuizTestRun({
   }
 
   async function resolveInstructorReview() {
-    if (!run || !canResolve) return;
+    if (!run || !execution || !canResolve) return;
     const resolution: InstructorReviewResolutionV1 = {
       schemaVersion: 1,
       items: scoreRows.map((row) => ({
@@ -168,12 +261,98 @@ export function RuntimeQuizTestRun({
       run.testRunId,
       resolution,
       createIdempotencyKey(),
+      activeSubject?.subjectId === 'primary' ? undefined : activeSubject?.subjectId,
     );
     setBusy(false);
     if (!result.success) {
       setError(result.error);
       return;
     }
+    adoptRun(
+      result.data as AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
+    );
+  }
+
+  async function submitSelfReview(evidence: SelfReviewEvidenceV1) {
+    if (!run || !execution) return;
+    const hash = JSON.stringify(evidence);
+    if (selfReviewCommand.current?.hash !== hash) {
+      selfReviewCommand.current = { hash, key: createIdempotencyKey() };
+    }
+    setBusy(true);
+    setError(null);
+    const result = await submitTestRunSelfReview(
+      run.testRunId,
+      evidence,
+      selfReviewCommand.current.key,
+      activeSubject?.subjectId === 'primary' ? undefined : activeSubject?.subjectId,
+    );
+    setBusy(false);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    selfReviewCommand.current = null;
+    adoptRun(
+      result.data as AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
+    );
+  }
+
+  async function claimPeerReview() {
+    if (!run || activeSubjectKey === 'primary') return;
+    setBusy(true);
+    setError(null);
+    const claimed = await claimTestRunPeerReview(
+      run.testRunId,
+      activeSubjectKey,
+    );
+    if (!claimed.success) {
+      setBusy(false);
+      setError(claimed.error);
+      return;
+    }
+    const loaded = await getTestRunPeerReview(
+      run.testRunId,
+      claimed.data.reviewId,
+    );
+    setBusy(false);
+    if (!loaded.success) {
+      setError(loaded.error);
+      return;
+    }
+    setPeerClaims((current) => ({
+      ...current,
+      [activeSubjectKey]: loaded.data,
+    }));
+    setPeerScore('');
+    setPeerFeedback('');
+  }
+
+  async function submitPeerReview() {
+    if (!run || !activePeerClaim || parsedPeerScore == null) return;
+    setBusy(true);
+    setError(null);
+    const result = await submitTestRunPeerReview(
+      run.testRunId,
+      activePeerClaim.id,
+      parsedPeerScore,
+      peerFeedback.trim(),
+    );
+    setBusy(false);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    setCompletedPeerReviewSubjects((current) =>
+      new Set(current).add(activeSubjectKey),
+    );
+    setPeerClaims((current) => {
+      const next = { ...current };
+      delete next[activeSubjectKey];
+      return next;
+    });
+    setPeerScore('');
+    setPeerFeedback('');
     adoptRun(
       result.data as AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
     );
@@ -193,6 +372,10 @@ export function RuntimeQuizTestRun({
       return;
     }
     submitCommand.current = null;
+    selfReviewCommand.current = null;
+    answerDrafts.current = {};
+    setPeerClaims({});
+    setCompletedPeerReviewSubjects(new Set());
     adoptRun(
       result.data as AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
     );
@@ -202,11 +385,34 @@ export function RuntimeQuizTestRun({
     next: AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
   ) {
     setRun(next);
-    const nextItems = readQuizItems(next);
+    const nextSubjects = next.subjects?.length
+      ? next.subjects
+      : [
+          {
+            subjectId: 'primary',
+            personaKey: next.personaKey,
+            personaDisplayName: next.personaDisplayName,
+            execution: next.execution,
+          },
+        ];
+    const nextSubject =
+      nextSubjects.find((subject) => subject.subjectId === selectedSubjectId) ??
+      nextSubjects[0];
+    setSelectedSubjectId(nextSubject.subjectId);
+    adoptExecution(nextSubject.execution, nextSubject.subjectId);
+  }
+
+  function adoptExecution(
+    nextExecution: AssessmentExecutionRuntimeViewV1<QuizLearnerDeliveryItemV1>,
+    subjectId: string,
+  ) {
+    const nextItems = readQuizItems(nextExecution);
     let nextAnswers: Record<string, QuizAnswer> = {};
-    if (next.execution.submittedResponse) {
-      nextAnswers = parseQuizAnswerEnvelope(next.execution.submittedResponse)
+    if (nextExecution.submittedResponse) {
+      nextAnswers = parseQuizAnswerEnvelope(nextExecution.submittedResponse)
         .payload.answers;
+    } else if (answerDrafts.current[subjectId]) {
+      nextAnswers = answerDrafts.current[subjectId].answers;
     } else {
       nextAnswers = Object.fromEntries(
         nextItems.map((item) => [
@@ -217,13 +423,13 @@ export function RuntimeQuizTestRun({
     }
     setAnswers(nextAnswers);
     setRecorded(
-      next.execution.submittedResponse
+      nextExecution.submittedResponse
         ? new Set(nextItems.map((item) => item.itemId))
-        : new Set(),
+        : answerDrafts.current[subjectId]?.recorded ?? new Set(),
     );
 
     const resultByItem = new Map(
-      (next.execution.instructorVisibleResult?.items ?? []).map((item) => [
+      (nextExecution.instructorVisibleResult?.items ?? []).map((item) => [
         item.itemId,
         item,
       ]),
@@ -245,8 +451,33 @@ export function RuntimeQuizTestRun({
         }),
       ),
     );
-    setOverallFeedback(next.execution.instructorVisibleResult?.feedback ?? '');
+    setOverallFeedback(nextExecution.instructorVisibleResult?.feedback ?? '');
     setOverrideReason('');
+  }
+
+  function selectSubject(subjectId: string) {
+    if (!run || subjectId === activeSubjectKey) return;
+    answerDrafts.current[activeSubjectKey] = { answers, recorded };
+    const subject = subjects.find((candidate) => candidate.subjectId === subjectId);
+    if (!subject) return;
+    setSelectedSubjectId(subjectId);
+    setPeerScore('');
+    setPeerFeedback('');
+    setError(null);
+    adoptExecution(subject.execution, subjectId);
+  }
+
+  function updateAnswer(itemId: string, answer: QuizAnswer, markRecorded = false) {
+    const nextAnswers = { ...answers, [itemId]: answer };
+    const nextRecorded = markRecorded
+      ? new Set([...recorded, itemId])
+      : recorded;
+    setAnswers(nextAnswers);
+    if (markRecorded) setRecorded(nextRecorded);
+    answerDrafts.current[activeSubjectKey] = {
+      answers: nextAnswers,
+      recorded: nextRecorded,
+    };
   }
 
   return (
@@ -283,12 +514,42 @@ export function RuntimeQuizTestRun({
 
           {run && (
             <div className="space-y-6">
+              {subjects.length > 1 && (
+                <div
+                  className="grid gap-1 rounded-md border bg-muted/30 p-1 sm:grid-cols-2 lg:grid-cols-4"
+                  role="tablist"
+                  aria-label="Synthetic learners"
+                >
+                  {subjects.map((subject) => (
+                    <Button
+                      key={subject.subjectId}
+                      type="button"
+                      size="sm"
+                      variant={
+                        subject.subjectId === activeSubjectKey
+                          ? 'secondary'
+                          : 'ghost'
+                      }
+                      role="tab"
+                      aria-selected={subject.subjectId === activeSubjectKey}
+                      onClick={() => selectSubject(subject.subjectId)}
+                    >
+                      {subject.personaDisplayName}
+                      {subject.execution.instructorVisibleResult?.state ===
+                        'final' && (
+                        <CheckCircle2 className="ml-2 size-3" />
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline">
                   Revision {run.definitionRevisionId.slice(0, 8)}
                 </Badge>
-                <span>Delivery {run.execution.deliveryHash.slice(0, 12)}</span>
-                <span>{run.personaDisplayName}</span>
+                <span>Delivery {execution?.deliveryHash.slice(0, 12)}</span>
+                <span>{activeSubject?.personaDisplayName}</span>
               </div>
 
               <div className="space-y-4">
@@ -303,7 +564,7 @@ export function RuntimeQuizTestRun({
                       </h3>
                       <Badge variant="secondary">
                         {scoreUnitsToPoints(
-                          run.execution.itemMaxScores[item.itemId] ?? 0,
+                          execution?.itemMaxScores[item.itemId] ?? 0,
                         )}{' '}
                         pts
                       </Badge>
@@ -314,36 +575,137 @@ export function RuntimeQuizTestRun({
                         answers[item.itemId] ??
                         createEmptyQuizAnswer(item.delivery.entry.type)
                       }
-                      onAnswerChange={(answer) =>
-                        setAnswers((current) => ({
-                          ...current,
-                          [item.itemId]: answer,
-                        }))
+                      onAnswerChange={(answer) => updateAnswer(item.itemId, answer)}
+                      onSubmit={(answer) => updateAnswer(item.itemId, answer, true)}
+                      submissionResult={
+                        execution
+                          ? readPlayerResult(execution, item.itemId, recorded)
+                          : undefined
                       }
-                      onSubmit={(answer) => {
-                        setAnswers((current) => ({
-                          ...current,
-                          [item.itemId]: answer,
-                        }));
-                        setRecorded((current) =>
-                          new Set([...current, item.itemId]),
-                        );
-                      }}
-                      submissionResult={readPlayerResult(run, item.itemId, recorded)}
-                      disabled={Boolean(run.execution.submittedResponse)}
+                      disabled={Boolean(execution?.submittedResponse)}
                     />
                   </section>
                 ))}
               </div>
 
-              {!run.execution.submittedResponse && (
+              {!execution?.submittedResponse && (
                 <Button type="button" onClick={() => void submit()} disabled={busy}>
                   {busy && <Loader2 className="mr-2 size-4 animate-spin" />}
                   Run grading workflow
                 </Button>
               )}
 
-              {run.execution.requiresInstructorReview && (
+              {execution?.submittedResponse && execution.selfReview && (
+                <SelfReviewForm
+                  items={items.map((item) => ({
+                    itemId: item.itemId,
+                    label: item.delivery.entry.stem || item.itemId,
+                    maxScore: execution.itemMaxScores[item.itemId] ?? 0,
+                  }))}
+                  state={execution.selfReview}
+                  busy={busy}
+                  onSubmit={submitSelfReview}
+                />
+              )}
+
+              {showPeerReview && (
+                <section className="space-y-4 border-t pt-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold">Peer review</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Review an anonymous response as the selected synthetic learner.
+                      </p>
+                    </div>
+                    {!activePeerClaim && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void claimPeerReview()}
+                        disabled={busy || !allSubjectsSubmitted}
+                      >
+                        {busy ? (
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                        ) : (
+                          <ClipboardCheck className="mr-2 size-4" />
+                        )}
+                        Claim anonymous response
+                      </Button>
+                    )}
+                  </div>
+
+                  {activePeerClaim && peerTargetAnswers && (
+                    <div className="space-y-4 rounded-md border bg-muted/20 p-4">
+                      {items.map((item, index) => (
+                        <div key={item.itemId} className="space-y-2">
+                          <p className="text-sm font-medium">
+                            Question {index + 1}
+                          </p>
+                          <QuizPlayer
+                            entry={item.delivery.entry}
+                            answer={
+                              peerTargetAnswers[item.itemId] ??
+                              createEmptyQuizAnswer(item.delivery.entry.type)
+                            }
+                            onAnswerChange={() => undefined}
+                            onSubmit={() => undefined}
+                            submissionResult={{
+                              status: 'pending',
+                              feedback: 'Anonymous response',
+                            }}
+                            disabled
+                          />
+                        </div>
+                      ))}
+                      <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)]">
+                        <div className="space-y-2">
+                          <label
+                            htmlFor={`peer-score-${activeSubjectKey}`}
+                            className="text-sm font-medium"
+                          >
+                            Score / {scoreUnitsToPoints(peerMaximum)}
+                          </label>
+                          <Input
+                            id={`peer-score-${activeSubjectKey}`}
+                            type="number"
+                            min={0}
+                            max={scoreUnitsToPoints(peerMaximum)}
+                            step="0.01"
+                            value={peerScore}
+                            onChange={(event) => setPeerScore(event.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label
+                            htmlFor={`peer-feedback-${activeSubjectKey}`}
+                            className="text-sm font-medium"
+                          >
+                            Feedback
+                          </label>
+                          <Textarea
+                            id={`peer-feedback-${activeSubjectKey}`}
+                            value={peerFeedback}
+                            onChange={(event) =>
+                              setPeerFeedback(event.target.value)
+                            }
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => void submitPeerReview()}
+                        disabled={!canSubmitPeerReview}
+                      >
+                        {busy && <Loader2 className="mr-2 size-4 animate-spin" />}
+                        Submit peer review
+                      </Button>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {execution?.requiresInstructorReview && (
                 <section className="space-y-4 border-t pt-6">
                   <div>
                     <h3 className="font-semibold">Instructor review</h3>
@@ -426,18 +788,18 @@ export function RuntimeQuizTestRun({
                 </section>
               )}
 
-              {run.execution.instructorVisibleResult?.state === 'final' && (
+              {execution?.instructorVisibleResult?.state === 'final' && (
                 <section className="space-y-3 rounded-md border bg-muted/30 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold">Diagnostic result</p>
                       <p className="text-sm text-muted-foreground">
                         {scoreUnitsToPoints(
-                          run.execution.instructorVisibleResult.score ?? 0,
+                          execution.instructorVisibleResult.score ?? 0,
                         )}{' '}
                         /{' '}
                         {scoreUnitsToPoints(
-                          run.execution.instructorVisibleResult.maxScore,
+                          execution.instructorVisibleResult.maxScore,
                         )}
                       </p>
                     </div>
@@ -494,10 +856,10 @@ export function RuntimeQuizTestRun({
 }
 
 function readQuizItems(
-  run: AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
+  execution: AssessmentExecutionRuntimeViewV1<QuizLearnerDeliveryItemV1>,
 ): Array<{ itemId: string; delivery: QuizLearnerDeliveryItemV1 }> {
-  return run.execution.delivery.itemOrder.map((itemId) => {
-    const item = run.execution.delivery.items[itemId];
+  return execution.delivery.itemOrder.map((itemId) => {
+    const item = execution.delivery.items[itemId];
     if (
       !item ||
       item.adapterKey !== QUIZ_ASSESSMENT_TYPE_ADAPTER.key ||
@@ -513,11 +875,11 @@ function readQuizItems(
 }
 
 function readPlayerResult(
-  run: AssessmentTestRunRuntimeViewV1<QuizLearnerDeliveryItemV1>,
+  execution: AssessmentExecutionRuntimeViewV1<QuizLearnerDeliveryItemV1>,
   itemId: string,
   recorded: ReadonlySet<string>,
 ): QuizSubmissionResult {
-  const result = run.execution.instructorVisibleResult?.items.find(
+  const result = execution.instructorVisibleResult?.items.find(
     (item) => item.itemId === itemId,
   );
   if (result?.state === 'graded' && result.score != null) {
@@ -526,10 +888,10 @@ function readPlayerResult(
       feedback: result.feedback ?? undefined,
     };
   }
-  if (run.execution.submittedResponse || recorded.has(itemId)) {
+  if (execution.submittedResponse || recorded.has(itemId)) {
     return {
       status: 'pending',
-      feedback: run.execution.submittedResponse
+      feedback: execution.submittedResponse
         ? 'Submitted to the grading workflow.'
         : 'Answer recorded for this test run.',
     };

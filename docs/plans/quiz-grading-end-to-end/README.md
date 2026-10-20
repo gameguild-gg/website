@@ -1,13 +1,15 @@
 # Quiz grading end-to-end
 
-Status: em implementação; Partes 1, 2, seu fechamento e o caminho crítico da
-Parte 3 concluídos. A Parte 4 possui gate de entrada aprovado e começa pela
-preparação `SEQ-12A`; os schemas de peer e release agendado ainda dependem de
-proposta e aprovação explícitas.
+Status: implementação das quatro partes concluída. A Parte 4 entregou o
+lifecycle comum, `SelfReview`, `PeerReview`, a porta durável de `AIReview`,
+release agendado e operação. A validação local de runtime, web, arquitetura e
+migrations passou; a reexecução HTTP + PostgreSQL está bloqueada antes do
+grading pela configuração externa de certificado de Data Protection do host de
+integração.
 
 Data: 2026-08-21.
 
-Atualizado: 2026-10-09.
+Atualizado: 2026-10-17.
 
 ## Objetivo
 
@@ -20,6 +22,13 @@ O plano auxiliar
 define a preparação reproduzível de cenários para teste humano e Playwright.
 Seu MVP está implementado e reduz o custo de validar os novos estados de
 review, sem alterar o runtime ou o modelo relacional.
+
+O plano de continuidade
+[`10-validation-program-and-capability-audit.md`](./10-validation-program-and-capability-audit.md)
+organiza a validação sistemática das jornadas, dos 14 tipos de questão, das
+personas e dos estados operacionais. Ele amplia o runner por matrizes
+ortogonais, produz evidências e separa bugs, lacunas, decisões de produto e
+falhas do próprio harness antes de novas implementações.
 
 O documento anterior
 [`quiz-assessment-end-to-end-grading-flow.md`](../quiz-assessment-end-to-end-grading-flow.md)

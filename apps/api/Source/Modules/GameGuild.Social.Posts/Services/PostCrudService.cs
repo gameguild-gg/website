@@ -59,10 +59,15 @@ public class PostCrudService : IPostCrudService
         string? mediaUrl = null,
         MediaType? mediaType = null,
         Guid? tenantId = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? mediaAssetReferenceId = null)
     {
         var post = Post.Create(authorId, content, visibility, tenantId);
-        if (!string.IsNullOrWhiteSpace(mediaUrl))
+        if (mediaAssetReferenceId.HasValue)
+        {
+            post.AttachMediaAsset(mediaAssetReferenceId.Value, mediaUrl ?? string.Empty, mediaType);
+        }
+        else if (!string.IsNullOrWhiteSpace(mediaUrl))
         {
             post.AttachMedia(mediaUrl, mediaType);
         }

@@ -706,7 +706,8 @@ public sealed class EmailVerificationCatchBlockTests
         var sut = new EmailVerificationService(
             Mock.Of<ILogger<EmailVerificationService>>(),
             mockCache.Object,
-            publisher.Object);
+            publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             sut.GenerateVerificationTokenAsync(Guid.NewGuid(), "test@test.com"));
@@ -727,7 +728,8 @@ public sealed class EmailVerificationCatchBlockTests
         var sut = new EmailVerificationService(
             Mock.Of<ILogger<EmailVerificationService>>(),
             mockCache.Object,
-            publisher.Object);
+            publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         var result = await sut.VerifyEmailTokenAsync(Guid.NewGuid(), "fake-token");
         result.Should().BeFalse();
@@ -749,7 +751,8 @@ public sealed class EmailVerificationCatchBlockTests
             Mock.Of<ILogger<EmailVerificationService>>(),
             mockCache.Object,
             publisher.Object,
-            mockRepo.Object);
+            mockRepo.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         var result = await sut.IsEmailVerifiedAsync(Guid.NewGuid());
         result.Should().BeFalse();
@@ -770,7 +773,8 @@ public sealed class EmailVerificationCatchBlockTests
         var sut = new EmailVerificationService(
             Mock.Of<ILogger<EmailVerificationService>>(),
             mockCache.Object,
-            publisher.Object);
+            publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         var result = await sut.ResendVerificationEmailAsync(Guid.NewGuid(), "test@test.com");
         result.Should().BeFalse();
@@ -791,7 +795,8 @@ public sealed class EmailVerificationCatchBlockTests
         var sut = new EmailVerificationService(
             Mock.Of<ILogger<EmailVerificationService>>(),
             mockCache.Object,
-            publisher.Object);
+            publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         var result = await sut.IsTokenValidAsync("some-token");
         result.Should().BeFalse();
@@ -819,6 +824,7 @@ public sealed class ZeroCoverageInstantiationTests
             Mock.Of<IFido2>(),
             Mock.Of<IWebAuthnCredentialRepository>(),
             Mock.Of<IUserRepository>(),
+            Mock.Of<IWebAuthnSessionStore>(),
             Mock.Of<ILogger<WebAuthnAuthenticationSubService>>());
         sut.Should().NotBeNull();
     }

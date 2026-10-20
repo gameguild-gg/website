@@ -185,6 +185,7 @@ public static class InfrastructureLayerExtensions
         // 03b. Authentication Data (repositories, JWT services, security services)
         stepStopwatch.Restart();
         services.AddAuthenticationData(configuration);
+        services.AddPermissionServiceContracts();
         logger.LogInformation("Authentication Data registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 03c. SCIM Provisioning (RFC 7643/7644 surface, feature-flagged via Scim:Enabled)
@@ -292,6 +293,16 @@ public static class InfrastructureLayerExtensions
         // Replace the Assets module's fail-closed default with this product's
         // commerce-backed order validation (paid-download windows).
         services.AddScoped<Assets.Security.IOrderValidationService, Security.CommerceOrderValidationService>();
+        // Replace the module's fail-closed moderation classifier with the
+        // product's LiteLLM (qwen vision lane) adapter.
+        services.Configure<Security.ModerationClassifierOptions>(
+            configuration.GetSection(Security.ModerationClassifierOptions.SectionName));
+        services.AddHttpClient<Assets.IAssetModerationClassifier, Security.LitellmModerationClassifier>((sp, client) =>
+        {
+            var classifierOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Security.ModerationClassifierOptions>>().Value;
+            client.BaseAddress = new Uri(classifierOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(classifierOptions.TimeoutSeconds);
+        });
         logger.LogInformation("Assets Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10b. Commerce Subscriptions Module (must be registered before Billing since Billing depends on it)
@@ -393,6 +404,10 @@ public static class InfrastructureLayerExtensions
         services.AddScoped<PermissionGovernanceAuditHook>();
         services.AddScoped<IPermissionAuditHook>(provider =>
             provider.GetRequiredService<PermissionGovernanceAuditHook>());
+        // Universal audit coverage for learning-course mutations (issues #180/#181/#184): the
+        // host owns this bridge because the audit module cannot reference Learning.Courses
+        // without closing a project-reference cycle.
+        services.AddScoped<LearningCoursesMutationAuditInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((provider, options) =>
         {
@@ -401,6 +416,10 @@ public static class InfrastructureLayerExtensions
             // Central audit-sink integration for the PII redaction pipeline (issue #192): every
             // AuditLog entity passes through the redaction rules before persistence.
             options.AddInterceptors(provider.GetRequiredService<AuditLogPiiRedactionInterceptor>());
+            // Universal audit coverage for learning-course mutations: every save that mutates an
+            // audited course entity also records its audit row in the same save batch, so the
+            // mutation cannot commit without its audit event.
+            options.AddInterceptors(provider.GetRequiredService<LearningCoursesMutationAuditInterceptor>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

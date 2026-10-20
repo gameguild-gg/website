@@ -32,6 +32,15 @@ public sealed class SecurityEventPipelineOptions
     /// <summary>Window (minutes) in which failed authentication events are counted toward the threshold.</summary>
     [Range(1, 1440)] public int FailedAuthenticationWindowMinutes { get; set; } = 15;
 
+    /// <summary>Successful permission mutations by one actor in a tenant before a burst alert is raised.</summary>
+    [Range(2, 1000)] public int PermissionChangeAlertThreshold { get; set; } = 10;
+
+    /// <summary>Window, in minutes, used for permission-mutation burst detection.</summary>
+    [Range(1, 1440)] public int PermissionChangeWindowMinutes { get; set; } = 5;
+
+    /// <summary>Permission records changed in one committed operation before a bulk-change alert is raised.</summary>
+    [Range(2, 100000)] public int BulkPermissionChangeAlertThreshold { get; set; } = 25;
+
     /// <summary>Interval at which the retention enforcement service applies tenant retention policies.</summary>
     public TimeSpan RetentionEnforcementInterval { get; set; } = TimeSpan.FromHours(24);
 
@@ -83,6 +92,21 @@ public static class SecurityEventPipelineOptionsConfiguration
         if (int.TryParse(section[nameof(SecurityEventPipelineOptions.FailedAuthenticationWindowMinutes)], out var windowMinutes))
         {
             options.FailedAuthenticationWindowMinutes = Math.Clamp(windowMinutes, 1, 1440);
+        }
+
+        if (int.TryParse(section[nameof(SecurityEventPipelineOptions.PermissionChangeAlertThreshold)], out var permissionThreshold))
+        {
+            options.PermissionChangeAlertThreshold = Math.Clamp(permissionThreshold, 2, 1000);
+        }
+
+        if (int.TryParse(section[nameof(SecurityEventPipelineOptions.PermissionChangeWindowMinutes)], out var permissionWindow))
+        {
+            options.PermissionChangeWindowMinutes = Math.Clamp(permissionWindow, 1, 1440);
+        }
+
+        if (int.TryParse(section[nameof(SecurityEventPipelineOptions.BulkPermissionChangeAlertThreshold)], out var bulkThreshold))
+        {
+            options.BulkPermissionChangeAlertThreshold = Math.Clamp(bulkThreshold, 2, 100000);
         }
 
         if (int.TryParse(section["RetentionEnforcementIntervalHours"], out var enforcementHours))

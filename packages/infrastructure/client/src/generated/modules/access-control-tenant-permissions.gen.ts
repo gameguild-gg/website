@@ -16,6 +16,30 @@ export class AccessControlTenantPermissionsModule {
   constructor(private readonly client: ApiClient) {}
 
   /**
+   * Validates a system-wide permission against the global default baseline (issue #307).
+   */
+  async getAuthorizationPermissionsGlobalCheck(query?: {
+    permission?: string;
+  }): Promise<Result<Types.IdentityAuthorizationHasGlobalPermissionOutput, ApiError>> {
+    const url = '/api/v1/authorization/permissions/global:check';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthorizationHasGlobalPermissionOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Checks if a user has a specific tenant-level permission.
    */
   async getAuthorizationTenantsHasPermission(tenantId: string, query?: { permission?: string; userId?: string }): Promise<Result<boolean, ApiError>> {
@@ -32,11 +56,11 @@ export class AccessControlTenantPermissionsModule {
   }
 
   /**
-   * Gets all tenant-level permissions for a user.
+   * Gets all tenant-level permissions for a user (paginated, issue #298/#307).
    */
   async getAuthorizationTenantsPermissions(
     tenantId: string,
-    query?: { userId?: string; includeEffective?: boolean },
+    query?: { userId?: string; includeEffective?: boolean; page?: number; pageSize?: number; sortDescending?: boolean },
   ): Promise<Result<Types.IdentityAuthorizationGetTenantPermissionsOutput, ApiError>> {
     const url = `/api/v1/authorization/tenants/${tenantId}/permissions`;
 

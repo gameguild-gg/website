@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
 import {
+  getValidationCase,
+  selectValidationCases,
+} from "./capability-catalog.mjs";
+import {
   assertApplicableCheckpoint,
   getScenarioDefinition,
   listScenarioDefinitions,
+  selectQuizDefinitions,
 } from "./definitions.mjs";
 import {
   assertLocalUrl,
@@ -18,6 +23,10 @@ const { positionals, values } = parseArgs({
   strict: true,
   options: {
     scenario: { type: "string", short: "s" },
+    quiz: { type: "string", multiple: true },
+    case: { type: "string", multiple: true },
+    "question-type": { type: "string", multiple: true },
+    suite: { type: "string", multiple: true },
     checkpoint: { type: "string", short: "c" },
     fresh: { type: "boolean", default: false },
     headed: { type: "boolean", default: false },
@@ -35,6 +44,10 @@ if (values.help || positionals.length === 0) {
 }
 
 const command = positionals[0];
+const selectedQuizKeys = parseQuizKeys(values.quiz);
+const selectedCaseIds = parseQuizKeys(values.case);
+const selectedQuestionTypes = parseQuizKeys(values["question-type"]);
+const selectedSuites = parseQuizKeys(values.suite);
 const apiBaseUrl = assertLocalUrl(
   values["api-base-url"] ??
     process.env.QUIZ_GRADING_API_BASE_URL ??
@@ -53,6 +66,8 @@ const webBaseUrl = assertLocalUrl(
 try {
   if (command === "list") {
     await list();
+  } else if (command === "catalog") {
+    await catalog();
   } else {
     const scenarioKey = requireScenario(values.scenario);
     if (command === "prepare") {
@@ -78,12 +93,20 @@ try {
   process.exitCode = 1;
 }
 
-async function prepare(scenarioKey, checkpoint) {
+async function prepare(
+  scenarioKey,
+  checkpoint,
+  quizKeys = selectedQuizKeys,
+  { applyCatalogFilters = true } = {},
+) {
   const definition = getScenarioDefinition(scenarioKey);
-  assertApplicableCheckpoint(definition, checkpoint);
+  const resolvedQuizKeys = applyCatalogFilters
+    ? resolveQuizKeys(definition, quizKeys)
+    : quizKeys;
+  const quizzes = selectQuizDefinitions(definition, resolvedQuizKeys);
+  assertApplicableCheckpoint(definition, checkpoint, quizzes);
   if (values.fresh) {
-    const existing = await readManifest(scenarioKey, { optional: true });
-    if (existing) await reset(scenarioKey);
+    await reset(scenarioKey);
   }
   const { prepareScenario } = await import("./provision.mjs");
   const { verifyScenario } = await import("./verify.mjs");
@@ -92,6 +115,7 @@ async function prepare(scenarioKey, checkpoint) {
     prepareScenario({
       scenarioKey,
       checkpoint,
+      quizKeys: resolvedQuizKeys,
       apiBaseUrl,
       webBaseUrl,
       onProgress: progress,
@@ -100,8 +124,15 @@ async function prepare(scenarioKey, checkpoint) {
   progress("Verifying the persisted scenario state.");
   const { report } = await verifyScenario(scenarioKey);
   await writeReport(scenarioKey, report);
+  const validationArtifacts = await writeCandidateValidationReport(
+    manifest,
+    report,
+  );
   progress("Scenario is ready. Use the URLs and persona credentials below.");
-  outputScenario(manifest, report, { credentials: true });
+  outputScenario(manifest, report, {
+    credentials: true,
+    validationArtifacts,
+  });
 }
 
 async function status(scenarioKey) {
@@ -125,11 +156,25 @@ async function status(scenarioKey) {
   }
 }
 
-async function verify(scenarioKey) {
+async function verify(
+  scenarioKey,
+  { completedAutomations = ["api"], results = [] } = {},
+) {
   const { verifyScenario } = await import("./verify.mjs");
   const { manifest, report } = await verifyScenario(scenarioKey);
   await writeReport(scenarioKey, report);
-  outputScenario(manifest, report, { credentials: false });
+  const validationArtifacts = await writeCandidateValidationReport(
+    manifest,
+    report,
+    {
+      completedAutomations,
+      results,
+    },
+  );
+  outputScenario(manifest, report, {
+    credentials: false,
+    validationArtifacts,
+  });
 }
 
 async function reset(scenarioKey) {
@@ -142,36 +187,67 @@ async function reset(scenarioKey) {
 
 async function test(scenarioKey, checkpoint) {
   const definition = getScenarioDefinition(scenarioKey);
-  assertApplicableCheckpoint(definition, checkpoint);
-  if (values.fresh) {
-    const existing = await readManifest(scenarioKey, { optional: true });
-    if (existing) await reset(scenarioKey);
-  }
-  await prepare(scenarioKey, checkpoint);
+  const resolvedQuizKeys = resolveQuizKeys(definition, selectedQuizKeys);
+  const quizzes = selectQuizDefinitions(definition, resolvedQuizKeys);
+  assertApplicableCheckpoint(definition, checkpoint, quizzes);
+  await prepare(scenarioKey, checkpoint, resolvedQuizKeys, {
+    applyCatalogFilters: false,
+  });
   const { runBrowserScenario } = await import("./browser.mjs");
   await withCliScenarioLock(scenarioKey, () =>
-    runBrowserScenario({ scenarioKey, headed: values.headed }),
+    runBrowserScenario({
+      scenarioKey,
+      quizKeys: resolvedQuizKeys,
+      headed: values.headed,
+    }),
   );
-  await verify(scenarioKey);
+  const manifest = await readManifest(scenarioKey);
+  const passedCaseIds = validationCasesForManifest(manifest)
+    .filter((candidate) => isBrowserPassCandidate(candidate, resolvedQuizKeys))
+    .map((candidate) => candidate.id);
+  const { listValidationEvidence } = await import("./report.mjs");
+  const results = await Promise.all(
+    passedCaseIds.map(async (caseId) => ({
+      caseId,
+      status: "pass",
+      evidence: await listValidationEvidence(manifest.runId, caseId),
+    })),
+  );
+  await verify(scenarioKey, {
+    completedAutomations: ["api", "browser"],
+    results,
+  });
   if (values.cleanup) await reset(scenarioKey);
 }
 
 async function list() {
   const entries = [];
   for (const definition of listScenarioDefinitions()) {
-    const manifest = await readManifest(definition.key, { optional: true });
+    let manifest = null;
+    let diagnostic = null;
+    try {
+      manifest = await readManifest(definition.key, { optional: true });
+    } catch (error) {
+      diagnostic = error.message;
+    }
     entries.push({
       key: definition.key,
       subject: definition.subject,
-      workflow: definition.reviewMethods.join(" + "),
-      prepared: Boolean(manifest),
+      quizzes: definition.quizzes.map((quiz) => ({
+        key: quiz.key,
+        workflow: quiz.reviewMethods.join(" + "),
+        validationCaseId: quiz.validationCaseId ?? null,
+        capability: quiz.officialCapability ?? null,
+        maxSupportedCheckpoint: quiz.maxSupportedCheckpoint,
+      })),
+      prepared: Boolean(manifest) || Boolean(diagnostic),
       checkpoint: manifest?.checkpoint ?? null,
+      ...(diagnostic ? { healthy: false } : {}),
+      ...(diagnostic ? { diagnostic } : {}),
       urls: manifest
         ? {
-            assessmentEditor: manifest.urls.assessmentEditor,
             learnerCourses: manifest.urls.learnerCourses,
-            learnerActivity: manifest.urls.learnerActivity,
-            speedGrader: manifest.urls.speedGrader,
+            quizzes: manifest.urls.quizzes,
           }
         : {},
     });
@@ -179,7 +255,30 @@ async function list() {
   output(entries);
 }
 
-function outputScenario(manifest, report, { credentials }) {
+async function catalog() {
+  const cases = selectValidationCases({
+    suites: selectedSuites,
+    caseIds: selectedCaseIds,
+    questionTypes: selectedQuestionTypes,
+  });
+  output(
+    cases.map((candidate) => ({
+      id: candidate.id,
+      key: candidate.key ?? null,
+      suite: candidate.suite,
+      capability: candidate.capability,
+      automation: candidate.automation,
+      requirement: candidate.requirement,
+      baseline: candidate.baseline,
+    })),
+  );
+}
+
+function outputScenario(
+  manifest,
+  report,
+  { credentials, validationArtifacts = null },
+) {
   output({
     scenario: manifest.definitionKey,
     runId: manifest.runId,
@@ -188,6 +287,7 @@ function outputScenario(manifest, report, { credentials }) {
     confirmedCheckpoint: report.confirmedCheckpoint,
     healthy: report.healthy,
     nextCheckpoint: report.nextCheckpoint,
+    checkpoints: report.checkpoints,
     urls: manifest.urls,
     ...(credentials
       ? {
@@ -205,7 +305,78 @@ function outputScenario(manifest, report, { credentials }) {
         }
       : {}),
     checks: report.checks,
+    validationArtifacts,
   });
+}
+
+async function writeCandidateValidationReport(
+  manifest,
+  scenarioReport,
+  { completedAutomations = ["api"], results = [] } = {},
+) {
+  const { createValidationReport, writeValidationReport } =
+    await import("./report.mjs");
+  const cases = validationCasesForManifest(manifest);
+  if (cases.length === 0) return null;
+  return writeValidationReport(
+    createValidationReport({
+      manifest,
+      scenarioReport,
+      cases,
+      results,
+      completedAutomations,
+    }),
+  );
+}
+
+function isBrowserPassCandidate(candidate, selectedKeys) {
+  const quizKey = candidate.quizKey ?? candidate.key;
+  if (quizKey && selectedKeys.length > 0 && !selectedKeys.includes(quizKey)) {
+    return false;
+  }
+  if (candidate.automation !== "browser") return false;
+  return !candidate.browser || candidate.browser.status === "required";
+}
+
+function validationCasesForManifest(manifest) {
+  if (manifest.definitionKey === "lifecycle-access-matrix") {
+    return selectValidationCases({ suites: ["lifecycle-access"] });
+  }
+  const definition = getScenarioDefinition(manifest.definitionKey);
+  return manifest.quizKeys.map((quizKey) => {
+    const quiz = definition.quizzes.find(
+      (candidate) => candidate.key === quizKey,
+    );
+    return quiz?.validationCaseId
+      ? getValidationCase(quiz.validationCaseId)
+      : getValidationCase(quizKey);
+  });
+}
+
+function resolveQuizKeys(definition, quizKeys) {
+  const hasCatalogFilter =
+    selectedCaseIds.length > 0 || selectedQuestionTypes.length > 0;
+  if (!hasCatalogFilter) return quizKeys;
+  const catalogCases = selectValidationCases({
+    caseIds: selectedCaseIds,
+    questionTypes: selectedQuestionTypes,
+  });
+  const available = new Set(definition.quizzes.map((quiz) => quiz.key));
+  const mapped = catalogCases
+    .map((candidate) => candidate.quizKey ?? candidate.key)
+    .filter((key) => key && available.has(key));
+  if (mapped.length === 0) {
+    throw new Error(
+      `The selected validation cases are not executable quizzes in scenario "${definition.key}".`,
+    );
+  }
+  if (quizKeys.length === 0) return [...new Set(mapped)];
+  const mappedSet = new Set(mapped);
+  const intersection = quizKeys.filter((key) => mappedSet.has(key));
+  if (intersection.length === 0) {
+    throw new Error("--quiz and validation case filters do not overlap.");
+  }
+  return intersection;
 }
 
 function output(value) {
@@ -235,19 +406,35 @@ function requireScenario(value) {
   return value;
 }
 
+function parseQuizKeys(values) {
+  return [
+    ...new Set(
+      (values ?? [])
+        .flatMap((value) => value.split(","))
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 function printHelp() {
   console.log(`Quiz Grading Scenario Runner
 
 Usage:
   pnpm grading:scenario list
+  pnpm grading:scenario catalog [--suite <suite>] [--case <id>]
   pnpm grading:scenario prepare --scenario <key> --checkpoint <checkpoint>
   pnpm grading:scenario status --scenario <key>
   pnpm grading:scenario verify --scenario <key>
-  pnpm grading:scenario test --scenario <key> [--headed] [--cleanup]
+  pnpm grading:scenario test --scenario <key> [--quiz <key>] [--headed] [--cleanup]
   pnpm grading:scenario reset --scenario <key>
 
 Options:
   --fresh                 Reset the owned execution before preparing it
+  --quiz <key>            Select one or more quizzes (repeat or comma-separate)
+  --case <id>             Select by stable validation case ID or key
+  --question-type <type>  Select by QuizEntryType value or question case key
+  --suite <suite>         Filter the catalog by validation suite
   --api-base-url <url>    Defaults to http://localhost:8080
   --web-base-url <url>    Defaults to http://localhost:3000
   --json                  Machine-readable output

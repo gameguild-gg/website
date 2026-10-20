@@ -1,4 +1,5 @@
 using GameGuild.CQRS;
+using GameGuild.Social.Assets.SocialMedia;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Social.Posts.Commands;
 using GameGuild.Social.Posts.Services;
@@ -16,7 +17,8 @@ namespace GameGuild.Social.Posts.Controllers;
 public class PostCommentsController(
     IPostService postService,
     IActorContextAccessor actorContextAccessor,
-    ISender sender)
+    ISender sender,
+    ISocialMediaAssetService socialMediaAssets)
     : BaseApiController
 {
     private Guid GetCurrentUserId()
@@ -125,7 +127,7 @@ public class PostCommentsController(
     {
         var result = await postService.GetPostsByTagsAsync(tags, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
-            ? Ok(result.Value!.Select(PostMappings.MapToDto))
+            ? Ok(await PostMappings.MapPublicDtosAsync(result.Value!, socialMediaAssets, cancellationToken).ConfigureAwait(false))
             : BadRequest(result.Error);
     }
 

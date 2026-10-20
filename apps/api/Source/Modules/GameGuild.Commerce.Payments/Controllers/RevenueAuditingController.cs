@@ -298,9 +298,20 @@ public sealed class RevenueAuditingController(
 
     private static void NormalizePaging(ref int skip, ref int take)
     {
-        if (skip < 0) skip = 0;
-        if (take < 1) take = 20;
-        if (take > 100) take = 100;
+        if (skip < 0)
+        {
+            skip = 0;
+        }
+
+        if (take < 1)
+        {
+            take = 20;
+        }
+
+        if (take > 100)
+        {
+            take = 100;
+        }
     }
 
     /// <summary>Request body for <see cref="RunReconciliation" />.</summary>

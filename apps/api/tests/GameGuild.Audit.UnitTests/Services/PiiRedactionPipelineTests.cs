@@ -301,6 +301,31 @@ public class PiiRedactionServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ApplyToAuditLogAsync_RewritesNestedJsonWithoutReparentingUnchangedNodes()
+    {
+        var rules = new FakeRuleProvider(MakeRule(PiiPresetPattern.Email));
+        var service = CreateService(rules);
+        var entry = new AuditLog
+        {
+            ActionType = "Update",
+            ResourceType = "Enrollment",
+            Metadata = JsonSerializer.Serialize(new
+            {
+                recipients = new[] { "staff", "learner@example.com" },
+                details = new { status = "active" }
+            })
+        };
+
+        var summary = await service.ApplyToAuditLogAsync(entry, _context, CancellationToken.None);
+
+        summary.Changed.Should().BeTrue();
+        entry.Metadata.Should().Contain("staff");
+        entry.Metadata.Should().Contain("active");
+        entry.Metadata.Should().NotContain("learner@example.com");
+        entry.Metadata.Should().Contain("[PII-REDACTED]");
+    }
+
+    [Fact]
     public async Task ApplyToAuditLogAsync_Tokenize_WritesEncryptedVaultEntryAndOperationTrail()
     {
         var rule = MakeRule(PiiPresetPattern.Email, PiiRuleAction.Tokenize);

@@ -311,7 +311,10 @@ public sealed class PermissionServiceAuditSnapshotTests
     {
         await using var fixture = new Fixture();
         var secondUser = Guid.NewGuid();
-        await fixture.Service.BulkGrantTenantPermissionAsync([fixture.UserId, secondUser, fixture.UserId, Guid.Empty], fixture.TenantId, [PermissionType.Read]);
+        Func<Task> invalid = () => fixture.Service.BulkGrantTenantPermissionAsync([fixture.UserId, secondUser, Guid.Empty], fixture.TenantId, [PermissionType.Read]);
+        await invalid.Should().ThrowAsync<ArgumentException>();
+        fixture.Entries.Should().BeEmpty();
+        await fixture.Service.BulkGrantTenantPermissionAsync([fixture.UserId, secondUser, fixture.UserId], fixture.TenantId, [PermissionType.Read]);
         fixture.Entries.Should().HaveCount(2);
         fixture.Entries.Should().OnlyContain(entry => entry.OldValue == null && entry.NewValue != null);
         fixture.Db.Set<TenantPermission>().Single(grant => grant.UserId == fixture.UserId).Version = 1; // The production version interceptor is absent from this test context.
@@ -397,7 +400,7 @@ public sealed class PermissionServiceAuditSnapshotTests
         public Fixture()
         {
             var actor = new Mock<IActorContextAccessor>();
-            actor.SetupGet(accessor => accessor.ActorContext).Returns(ActorContextBuilder.ForUser(ActorId).WithTenantId(TenantId).Build());
+            actor.SetupGet(accessor => accessor.ActorContext).Returns(ActorContextBuilder.ForUser(ActorId).WithTenantId(TenantId).WithRole("SystemAdmin").Build());
             VersionStore.Setup(store => store.IncrementVersionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(1L);
             Audit.Setup(audit => audit.LogPermissionChangeAsync(It.IsAny<PermissionOperationType>(), It.IsAny<Guid?>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PermissionAuditLog());
             Service = new PermissionService(Db, VersionStore.Object, Audit.Object, actor.Object);

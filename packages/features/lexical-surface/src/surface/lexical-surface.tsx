@@ -21,6 +21,7 @@ import type { PageSettings } from "../features/page";
 import { ToolbarContextProvider } from "../editor-ui/top-toolbar";
 import { EditorBody } from "./editor-body";
 import { createSurfaceConfig } from "./surface-config";
+import { MediaPlugin } from "../features/media/media-plugin";
 
 export type { LexicalSurfaceFeatures } from "../capabilities/feature-flags";
 
@@ -46,6 +47,7 @@ export interface LexicalSurfaceProps {
   initialPageSettings?: PageSettings;
   assetsRepository?: AssetRepository;
   assetScope?: AssetScope;
+  mediaPlugin?: React.ReactNode | null;
 }
 
 export function LexicalSurface({
@@ -67,6 +69,7 @@ export function LexicalSurface({
   initialPageSettings,
   assetsRepository,
   assetScope,
+  mediaPlugin,
 }: LexicalSurfaceProps) {
   const resolvedFeatures = useMemo(
     () => resolveLexicalSurfaceFeatures(features, readOnly),
@@ -86,26 +89,24 @@ export function LexicalSurface({
     [mountKey, readOnly, namespace],
   );
 
-  const content = (
-    <LexicalComposer key={mountKey} initialConfig={initialConfig}>
-      <ToolbarContextProvider initialPageSettings={initialPageSettings}>
-        <EditorBody
-          features={resolvedFeatures}
-          onChange={onChange}
-          onContentChange={onContentChange}
-          placeholder={placeholder}
-          accessibleLabel={accessibleLabel}
-          readOnly={readOnly}
-          contentClassName={contentClassName}
-          contentStyle={contentStyle}
-          className={className}
-          headerSlot={headerSlot}
-          toolbarWrapper={toolbarWrapper}
-          contentScrollable={contentScrollable}
-        />
-      </ToolbarContextProvider>
-    </LexicalComposer>
-  );
+   const content = (
+     <LexicalComposer key={mountKey} initialConfig={initialConfig}>
+       {mediaPlugin && <MediaPlugin />}
+       <ToolbarContextProvider initialPageSettings={initialPageSettings}>
+         <EditorBody
+           features={resolvedFeatures}
+           onChange={onChange}
+           onContentChange={onContentChange}
+           placeholder={placeholder}
+           accessibleLabel={accessibleLabel}
+           readOnly={readOnly}
+           contentClassName={contentClassName}
+           contentStyle={contentStyle}
+           contentScrollable={contentScrollable}
+         />
+       </ToolbarContextProvider>
+     </LexicalComposer>
+   );
 
   return assetsRepository || assetScope || !hasAssetsProvider
     ? <AssetsProvider repository={assetsRepository} scope={assetScope}>{content}</AssetsProvider>

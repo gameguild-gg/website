@@ -56,7 +56,10 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageDto>> GetPage(Guid id)
     {
         var page = await pageService.GetByIdAsync(id).ConfigureAwait(false);
-        if (page is null) return NotFound();
+        if (page is null)
+        {
+            return NotFound();
+        }
 
         // Get-by-id must not leak drafts: unpublished pages require a content permission.
         if (page.Status != PageStatus.Published && !CanViewUnpublished)
@@ -76,7 +79,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
         // SEO crawlers; restricting the query to published pages keeps drafts unlisted.
         var publishedOnly = !CanViewUnpublished;
         var page = await pageService.GetBySlugAsync(slug, publishedOnly).ConfigureAwait(false);
-        if (page is null) return NotFound();
+        if (page is null)
+        {
+            return NotFound();
+        }
+
         return Ok(page.ToDto());
     }
 
@@ -112,7 +119,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [HttpPost]
     public async Task<ActionResult<PageDto>> CreatePage([FromBody] CreatePageDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var page = await sender.Send(new CreatePageCommand(dto)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetPage), new { id = page.Id }, page.ToDto());
     }
@@ -123,10 +134,22 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [ProducesResponseType(403)]
     public async Task<ActionResult<PageDto>> UpdatePage(Guid id, [FromBody] UpdatePageDto dto)
     {
-        if (!CanEditContent) return Forbid();
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!CanEditContent)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var page = await sender.Send(new UpdatePageCommand(id, dto)).ConfigureAwait(false);
-        if (page is null) return NotFound();
+        if (page is null)
+        {
+            return NotFound();
+        }
+
         return Ok(page.ToDto());
     }
 
@@ -135,7 +158,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult> DeletePage(Guid id)
     {
         var deleted = await sender.Send(new DeletePageCommand(id)).ConfigureAwait(false);
-        if (!deleted) return NotFound();
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -144,10 +171,17 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageDto>> Publish(Guid id)
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!userId.HasValue) return Unauthorized();
+        if (!userId.HasValue)
+        {
+            return Unauthorized();
+        }
 
         var page = await sender.Send(new PublishPageCommand(id, userId.Value)).ConfigureAwait(false);
-        if (page is null) return NotFound();
+        if (page is null)
+        {
+            return NotFound();
+        }
+
         return Ok(page);
     }
 
@@ -156,7 +190,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageDto>> Unpublish(Guid id)
     {
         var page = await sender.Send(new UnpublishPageCommand(id)).ConfigureAwait(false);
-        if (page is null) return NotFound();
+        if (page is null)
+        {
+            return NotFound();
+        }
+
         return Ok(page.ToDto());
     }
 
@@ -174,7 +212,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [HttpPost("{pageId:guid}/sections")]
     public async Task<ActionResult<PageSectionDto>> CreateSection(Guid pageId, [FromBody] CreatePageSectionDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var section = await sender.Send(new CreatePageSectionCommand(pageId, dto)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetSection), new { pageId, sectionId = section.Id }, section.ToDto());
     }
@@ -184,7 +226,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageSectionDto>> GetSection(Guid pageId, Guid sectionId)
     {
         var section = await pageService.GetSectionByIdAsync(sectionId).ConfigureAwait(false);
-        if (section is null || section.PageId != pageId) return NotFound();
+        if (section is null || section.PageId != pageId)
+        {
+            return NotFound();
+        }
+
         return Ok(section.ToDto());
     }
 
@@ -194,10 +240,22 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [ProducesResponseType(403)]
     public async Task<ActionResult<PageSectionDto>> UpdateSection(Guid pageId, Guid sectionId, [FromBody] UpdatePageSectionDto dto)
     {
-        if (!CanEditContent) return Forbid();
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!CanEditContent)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var section = await sender.Send(new UpdatePageSectionCommand(pageId, sectionId, dto)).ConfigureAwait(false);
-        if (section is null) return NotFound();
+        if (section is null)
+        {
+            return NotFound();
+        }
+
         return Ok(section.ToDto());
     }
 
@@ -205,7 +263,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [HttpDelete("{pageId:guid}/sections/{sectionId:guid}")]
     public async Task<ActionResult> DeleteSection(Guid pageId, Guid sectionId)
     {
-        if (!await sender.Send(new DeletePageSectionCommand(pageId, sectionId)).ConfigureAwait(false)) return NotFound();
+        if (!await sender.Send(new DeletePageSectionCommand(pageId, sectionId)).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 

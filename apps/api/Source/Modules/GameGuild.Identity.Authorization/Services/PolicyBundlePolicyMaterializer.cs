@@ -154,14 +154,18 @@ public sealed class PolicyBundlePolicyMaterializer(
                 bundle.PolicyData,
                 JsonOptions);
             if (policies is null || policies.Count == 0)
+            {
                 throw new PolicyBundleSignatureException(
-                    $"Bundle '{bundle.Name}' carries no policy definitions in its PolicyData.");
+                $"Bundle '{bundle.Name}' carries no policy definitions in its PolicyData.");
+            }
 
             foreach (var policy in policies)
             {
                 if (string.IsNullOrWhiteSpace(policy.PolicyName))
+                {
                     throw new PolicyBundleSignatureException(
-                        $"Bundle '{bundle.Name}' contains a policy definition without a policyName.");
+                    $"Bundle '{bundle.Name}' contains a policy definition without a policyName.");
+                }
             }
 
             return policies;

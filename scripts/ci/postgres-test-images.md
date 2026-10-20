@@ -1,6 +1,6 @@
 # PostgreSQL images for hosted CI
 
-PR Verify and Emception use digest-pinned Docker Official Images from Amazon ECR Public. This avoids dependence on Docker Hub anonymous pulls, which failed before API, Economy, migration and OpenAPI tests on PR #704. Failed pulls still fail the gate; there is no retry fallback that changes the database version.
+PR Verify and Emception use the original digest-pinned Docker Official PostgreSQL images through Google's `mirror.gcr.io` cache. On 2026-10-17, ECR returned `toomanyrequests: Data limit exceeded` in required jobs on PR #869. Hosted CI now uses the independent cache while preserving both complete manifest digests and PostgreSQL major versions. Failed pulls still fail the gate; there is no retry fallback that changes the database version.
 
 ## Image identity
 
@@ -13,17 +13,25 @@ On 2026-10-09, public registry manifest reads returned byte-identical multi-plat
 
 AWS documents the `public.ecr.aws/docker/library` namespace as [Docker Official Images published to ECR Public](https://aws.amazon.com/blogs/containers/docker-official-images-now-available-on-amazon-elastic-container-registry-public/).
 
+On 2026-10-17, direct HTTPS manifest reads from `mirror.gcr.io/v2/library/postgres/manifests/<digest>` returned HTTP 200 for both original indexes. Each response contained 10,301 bytes, and its SHA-256 matched the original digest in the table. No image, database or container was downloaded or started for this comparison. Google documents the [managed Docker Hub cache](https://docs.cloud.google.com/artifact-registry/docs/pull-cached-dockerhub-images). Cache availability is not guaranteed indefinitely; the actual hosted gates must verify acquisition and test execution.
+
 ## Configuration
 
 - `GAMEGUILD_TEST_POSTGRES_17_IMAGE`: API and Economy test runners and the real coding assessment browser cycle.
 - `GAMEGUILD_TEST_POSTGRES_16_IMAGE`: the Testing Lab browser runner.
 - Migration and OpenAPI job services use the same pinned PostgreSQL 17 URI literally, because services are created before steps run.
 
-Both workflows set the image variables explicitly. Manual API and Economy invocations retain the ECR PostgreSQL 17 tag introduced in develop by commit 61e0e868b. Testing Lab uses the ECR PostgreSQL 16 tag introduced in develop by commit 01d08da6a as its manual fallback. The Code browser runner retains its previous Docker Hub tag for manual runs. Hosted workflows override these defaults with the pinned digests. Container ownership, passwords, readiness probes, storage, migration and cleanup rules are unchanged. Production Compose files and unrelated Testcontainers images are outside this configuration.
+Both workflows set the image variables explicitly. Main commit `1ae0f9d87` (PR #876) also moved the manual API and Economy PostgreSQL 17 defaults and Testing Lab's PostgreSQL 16 default to `mirror.gcr.io/library`. Those upstream defaults are preserved here. The Code browser runner retains its previous Docker Hub tag for manual runs. Hosted workflows override these defaults with the pinned digests. Container ownership, passwords, readiness probes, migration and cleanup rules are unchanged. Production Compose files and unrelated Testcontainers images are outside this configuration.
+
+## Disposable storage on hosted Linux
+
+The affected API runner uses `--tmpfs /var/lib/postgresql/data:rw` only when both `GITHUB_ACTIONS=true` and `RUNNER_OS=Linux`. This matches the existing Economy regression runners' disposable PostgreSQL storage. Manual invocations retain their previous Docker storage and memory behavior.
+
+This changes storage for the temporary test server only. The image digest, PostgreSQL settings, authenticated readiness probe, migrations, templates, selected projects, test filters and assertions remain the same. The offline source contract checks the hosted-only guard and argument placement; passing it does not establish a runtime improvement. Hosted results and timings must be compared before claiming that the change improves CI latency.
 
 ## Updating a pin
 
 1. Keep the existing PostgreSQL major version for each runner.
-2. Read the Docker Hub and ECR manifest indexes for that major tag; compare the complete response bytes and verify their SHA-256 digests. Confirm the required Linux platforms are present.
+2. Read the official manifest index and the selected registry/cache response for that major tag; compare the complete response bytes and verify their SHA-256 digests. Confirm the required Linux platforms are present.
 3. Update both workflow image variables, both service literals and the expected digests in `scripts/ci/tests/postgres-images.test.mjs` together.
 4. Run the offline source contract and require the actual hosted API, Economy, migration, OpenAPI, Testing Lab and Code gates to accept the new head. A passing source contract alone does not prove that the image can be pulled or that database tests pass.

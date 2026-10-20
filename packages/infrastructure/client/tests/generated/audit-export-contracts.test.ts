@@ -49,6 +49,47 @@ describe('Generated audit export contracts', () => {
     }
   });
 
+  it('downloads XML bytes through both guarded generated methods with XML Accept', async () => {
+    const xml = '<?xml version="1.0" encoding="utf-8"?><auditExport><records><record><description>ação &amp; evidence</description></record></records></auditExport>';
+    const observed: Array<{ path?: string; accept?: string; authorization?: string }> = [];
+    const server = createServer((request, response) => {
+      observed.push({ path: request.url, accept: request.headers.accept, authorization: request.headers.authorization });
+      if (request.headers.accept !== 'application/xml') {
+        response.writeHead(406, { 'Content-Type': 'application/problem+json' });
+        response.end(JSON.stringify({ status: 406, title: 'XML Accept required' }));
+        return;
+      }
+      response.writeHead(200, { 'Content-Type': 'application/xml;charset=utf-8' });
+      response.end(xml);
+    });
+    const listening = once(server, 'listening');
+    server.listen(0, '127.0.0.1');
+    await listening;
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('Missing local test port');
+      const audit = new ComplianceAuditModule(createClient({
+        baseUrl: 'http://127.0.0.1:' + address.port,
+        auth: { getAccessToken: async () => 'test-only' },
+        devtools: { enabled: false },
+      }));
+      for (const download of [
+        () => audit.postApiAuditExportXml({ pageNumber: 2, pageSize: 10 }),
+        () => audit.postAdminAuditLogsExportXml({ pageNumber: 2, pageSize: 10 }),
+      ]) {
+        const result = await download();
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('Expected XML download: ' + result.error.message);
+        expect(result.data).toBeInstanceOf(Blob);
+        expect(await result.data.text()).toBe(xml);
+      }
+      expect(observed.map((request) => request.path)).toEqual(['/api/audit/export/xml', '/v1/admin/audit-logs/export/xml']);
+      expect(observed.every((request) => request.accept === 'application/xml' && request.authorization === 'Bearer test-only')).toBe(true);
+    } finally {
+      await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+    }
+  });
+
   it('validates the same JSON export schema through the requested and versioned methods', async () => {
     const document = { schemaVersion: '1.0', pagination: { pageNumber: 2, pageSize: 10, totalRecords: 0, totalPages: 0 }, records: [] };
     const observed: string[] = [];

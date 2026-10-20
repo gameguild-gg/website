@@ -502,7 +502,10 @@ public class DelegatedAdminScopeGuardTests
         {
             var query = _scopes.Where(s => s.AdminUserId == adminUserId && s.IsActive);
             if (tenantId.HasValue)
+            {
                 query = query.Where(s => s.TenantId == new TenantId(tenantId.Value));
+            }
+
             return Task.FromResult(query.ToList());
         }
 

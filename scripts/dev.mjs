@@ -10,11 +10,12 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import net from 'node:net';
+import { resolveDevelopmentDataProtectionEnvironment } from './dev-data-protection.mjs';
+import { resolvePnpmProcess } from '../apps/web/scripts/pnpm-process.mjs';
 
 const API_PORT = 8080;
-
-// Windows: pnpm/docker are .cmd shims — need shell to resolve.
-const shell = process.platform === 'win32';
+// Resolve before starting children so run() can return a child synchronously.
+const pnpmProcess = await resolvePnpmProcess([], { env: process.env });
 
 // Minimal KEY=VALUE .env parser. Spawning `pnpm dev:api` instead would put
 // dotenv-cli/dotnet watch inside pnpm's own process groups, where group
@@ -36,13 +37,21 @@ function loadEnv(file) {
 // POSIX: detached makes each child its own process-group leader, so the
 // negative-pid group kill below reaches its whole subtree.
 function run(cmd, args) {
-  return spawn(cmd, args, { shell, stdio: 'inherit', detached: !shell });
+  const invocation = cmd === 'pnpm'
+    ? { command: pnpmProcess.command, args: [...pnpmProcess.args, ...args] }
+    : { command: cmd, args };
+  return spawn(invocation.command, invocation.args, {
+    shell: false,
+    stdio: 'inherit',
+    detached: process.platform !== 'win32',
+    windowsHide: true,
+  });
 }
 
 function killTree(child) {
   if (child.exitCode !== null) return;
   if (process.platform === 'win32') {
-    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { shell: true });
+    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { shell: false, windowsHide: true });
   } else {
     try {
       process.kill(-child.pid, 'SIGTERM');
@@ -92,6 +101,12 @@ await assertPortFree(API_PORT);
 // generate:watch polls the spec every 10s and retries until the API is up,
 // build:watch waits for regen output, web hot-reloads on client changes.
 console.log('[dev] starting API, web, client generate:watch, client build:watch');
+const apiEnvironment = resolveDevelopmentDataProtectionEnvironment({
+  environment: {
+    ...process.env,
+    ...loadEnv('.env'),
+  },
+});
 const api = spawn(
   'dotnet',
   ['watch', '--project', 'apps/api/Source/GameGuild.API/GameGuild.API.csproj', 'run', '--urls', 'http://localhost:8080'],
@@ -99,8 +114,7 @@ const api = spawn(
     stdio: 'inherit',
     detached: process.platform !== 'win32',
     env: {
-      ...process.env,
-      ...loadEnv('.env'),
+      ...apiEnvironment,
       // Polling watcher: FSEvents-backed watchers crash dotnet watch on
       // macOS 26 (fatal PAL_SEHException + infinite watcher-recreate loop).
       DOTNET_USE_POLLING_FILE_WATCHER: 'true',

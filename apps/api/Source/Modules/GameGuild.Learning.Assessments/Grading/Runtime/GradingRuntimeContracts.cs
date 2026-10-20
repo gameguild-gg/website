@@ -16,6 +16,53 @@ public sealed record InstructorReviewResolutionV1(
     string? OverrideReason = null,
     IReadOnlyDictionary<Guid, ScoreValue>? RubricScores = null);
 
+public sealed record SelfReviewItemV1(
+    string ItemId,
+    ScoreValue Score,
+    string? Feedback = null);
+
+public sealed record SelfReviewEvidenceV1(
+    int SchemaVersion,
+    IReadOnlyList<SelfReviewItemV1> Items,
+    string? Feedback = null);
+
+public sealed record PeerReviewEvidenceV1(
+    int SchemaVersion,
+    Guid ClaimId,
+    ScoreValue Score,
+    string Feedback,
+    string? RubricScores,
+    Guid? ReviewerUserId = null,
+    Guid? ReviewerTestRunSubjectId = null);
+
+public sealed record PeerReviewInsufficiencyResolutionV1(
+    int SchemaVersion,
+    IReadOnlyList<InstructorItemResolutionV1> Items,
+    string Reason,
+    string? Feedback = null);
+
+public sealed record SubmitSelfReviewCommand(
+    SelfReviewEvidenceV1 Evidence,
+    string IdempotencyKey,
+    long? ExpectedDraftVersion = null,
+    Guid? TestRunSubjectId = null);
+
+public sealed record SaveCollectiveSelfReviewDraftCommand(
+    SelfReviewEvidenceV1 Evidence,
+    long ExpectedVersion,
+    string IdempotencyKey);
+
+public sealed record SelfReviewRuntimeStateV1(
+    Guid ReviewStageId,
+    PersistedReviewStageStatus Status,
+    string? Instructions,
+    bool RequireFeedback,
+    long DraftVersion,
+    SelfReviewEvidenceV1? Draft,
+    Guid? LastDraftActorId,
+    SelfReviewEvidenceV1? SubmittedEvidence,
+    Guid? SubmittedByActorId);
+
 public sealed record GradingExecutionOutcome(
     Guid ExecutionId,
     Guid RoundId,
@@ -35,7 +82,8 @@ public sealed record GradeRoundViewV1(
     DateTime? FinalizedAt,
     GradeResultV1? Result,
     bool Released,
-    DateTime? ReleasedAt);
+    DateTime? ReleasedAt,
+    GradeResultReleaseScheduleViewV1? ReleaseSchedule = null);
 
 public sealed record AssessmentExecutionViewV1(
     Guid ExecutionId,
@@ -55,7 +103,8 @@ public sealed record AssessmentExecutionViewV1(
     IReadOnlyList<GradeRoundViewV1> History,
     System.Text.Json.JsonElement? InstructorVisibleContent = null,
     System.Text.Json.JsonElement? InstructorVisibleRubric = null,
-    IReadOnlyDictionary<Guid, ScoreValue>? InstructorVisibleRubricScores = null);
+    IReadOnlyDictionary<Guid, ScoreValue>? InstructorVisibleRubricScores = null,
+    SelfReviewRuntimeStateV1? SelfReview = null);
 
 public sealed record AssessmentTestRunViewV1(
     Guid TestRunId,
@@ -67,7 +116,14 @@ public sealed record AssessmentTestRunViewV1(
     AssessmentExecutionViewV1 Execution,
     bool CandidateStillMatchesDraft,
     bool ReadyForPublication,
-    IReadOnlyList<string> Diagnostics);
+    IReadOnlyList<string> Diagnostics,
+    IReadOnlyList<AssessmentTestRunSubjectViewV1>? Subjects = null);
+
+public sealed record AssessmentTestRunSubjectViewV1(
+    Guid SubjectId,
+    string PersonaKey,
+    string PersonaDisplayName,
+    AssessmentExecutionViewV1 Execution);
 
 public sealed record AssessmentSubmissionViewV1(
     Guid SubmissionId,
@@ -89,7 +145,12 @@ public sealed record StartAssessmentTestRunCommand(
     Guid RevisionId,
     string PersonaKey,
     string PersonaDisplayName,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    IReadOnlyList<AssessmentTestRunSubjectCommandV1>? Subjects = null);
+
+public sealed record AssessmentTestRunSubjectCommandV1(
+    string PersonaKey,
+    string PersonaDisplayName);
 
 public sealed record StartIndividualSubmissionCommand(
     Guid EnrollmentId,
@@ -105,7 +166,8 @@ public sealed record StartCollectiveSubmissionCommand(
 public sealed record SubmitAssessmentResponseCommand(
     AssessmentResponseEnvelopeV1 Response,
     string IdempotencyKey,
-    long? ExpectedDraftVersion = null);
+    long? ExpectedDraftVersion = null,
+    Guid? TestRunSubjectId = null);
 
 public sealed record SaveCollectiveAssessmentDraftCommand(
     AssessmentResponseEnvelopeV1 Response,
@@ -117,6 +179,21 @@ public sealed record ReleaseGradeResultCommand(
     long ExpectedSubmissionVersion,
     string IdempotencyKey,
     string? Reason = null);
+
+public sealed record ScheduleGradeResultReleaseCommand(
+    Guid ExpectedRoundId,
+    long ExpectedSubmissionVersion,
+    int ExpectedScheduleVersion,
+    DateTime ScheduledFor,
+    string IdempotencyKey,
+    string? Reason = null);
+
+public sealed record CancelScheduledGradeResultReleaseCommand(
+    Guid ExpectedRoundId,
+    long ExpectedSubmissionVersion,
+    int ExpectedScheduleVersion,
+    string IdempotencyKey,
+    string Reason);
 
 public sealed record RegradeExecutionCommand(
     string IdempotencyKey,

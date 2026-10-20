@@ -174,6 +174,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
         var command = new RequestMagicLinkCommand
         {
             Email = body.Email,
+            RedirectTo = body.RedirectTo,
+            Locale = body.Locale,
             TenantId = body.TenantId,
             IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
             UserAgent = Request.Headers.UserAgent.ToString()
@@ -577,6 +579,34 @@ public sealed class AuthController(ISender sender) : BaseApiController
         await sender.Send(command, ct).ConfigureAwait(false);
 
         return NoContent();
+    }
+
+    /// <summary>
+    ///     Read the caller's current authentication state (issue #221): session validity and
+    ///     expiry, token version, active-session count and MFA enrollment state.
+    /// </summary>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The session-state projection of the authenticated caller</returns>
+    [HttpGet("v{version:apiVersion}/auth/session-state")]
+    [EndpointSummary("Get current authentication session state")]
+    [EndpointDescription("Returns the caller's current session validity, session expiry, token version, active-session count and MFA enrollment state. Anonymous access is not viable: the state describes the authenticated caller's own session.")]
+    [ProducesResponseType<AuthSessionStateDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetSessionState(CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await sender.Send(new GetAuthSessionStateQuery(), ct).ConfigureAwait(false));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = "Session state requires an authenticated caller."
+            });
+        }
     }
 
     private async Task<IActionResult> ExecuteAuthCommandAsync<TCommand>(TCommand command, CancellationToken ct)

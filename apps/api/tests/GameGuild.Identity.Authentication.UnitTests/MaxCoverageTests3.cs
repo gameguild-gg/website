@@ -1036,7 +1036,8 @@ public sealed class EmailVerificationServiceCoverageTests
             Mock.Of<ILogger<EmailVerificationService>>(),
             cache,
             _publisher.Object,
-            _userRepo.Object);
+            _userRepo.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
     }
 
     [Fact]
