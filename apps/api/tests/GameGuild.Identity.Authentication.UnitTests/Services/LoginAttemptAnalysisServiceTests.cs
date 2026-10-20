@@ -434,7 +434,9 @@ public class LoginAttemptAnalysisServiceTests
             {
                 IpAddress = "10.0.0.1",
                 UserAgent = "TestBrowser/1.0",
-                Location = "Japan-Tokyo",
+                Country = "JP",
+                City = "Tokyo",
+                Location = "Tokyo, Japan",
                 AttemptedAt = lastAttemptTime
             });
 
@@ -449,6 +451,10 @@ public class LoginAttemptAnalysisServiceTests
 
         result.RiskScore.Should().BeGreaterThanOrEqualTo(50);
         result.DetectedAnomalies.Should().Contain("ImpossibleTravel");
+        _threatDetectionMock.Verify(x => x.DetectImpossibleTravelAsync(userId,
+            It.IsAny<LocationInfo>(),
+            It.Is<LocationInfo>(previous => previous.CountryCode == "JP" && previous.City == "Tokyo"),
+            It.IsAny<TimeSpan>()), Times.Once);
     }
 
     [Fact]
@@ -499,7 +505,9 @@ public class LoginAttemptAnalysisServiceTests
                 IpAddress = "10.0.0.1", // ip change +20
                 UserAgent = "OldBrowser/1.0", // ua change +15
                 DeviceFingerprint = "old-fp", // fp change +15
-                Location = "Japan-Tokyo",
+                Country = "JP",
+                City = "Tokyo",
+                Location = "Tokyo, Japan",
                 AttemptedAt = DateTime.UtcNow.AddMinutes(-10)
             });
 
