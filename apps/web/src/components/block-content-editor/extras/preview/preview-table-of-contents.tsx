@@ -4,7 +4,14 @@ import type React from "react"
 
 import { ScrollArea } from "@game-guild/ui/components/scroll-area"
 import { ChevronDown, ChevronRight, List, Settings } from "lucide-react"
+import type { SerializedEditorState, SerializedLexicalNode } from "lexical"
 import { useEffect, useState } from "react"
+
+interface OutlineNode extends SerializedLexicalNode {
+  tag?: string
+  text?: string
+  children?: OutlineNode[]
+}
 
 interface HeadingItem {
   id: string
@@ -14,7 +21,7 @@ interface HeadingItem {
 }
 
 interface PreviewTableOfContentsProps {
-  serializedState: any
+  serializedState: SerializedEditorState
   className?: string
 }
 
@@ -34,11 +41,11 @@ export function PreviewTableOfContents({ serializedState, className = "" }: Prev
       return
     }
 
-    const extractHeadings = (nodes: any[], level = 0): HeadingItem[] => {
+    const extractHeadings = (nodes: OutlineNode[], level = 0): HeadingItem[] => {
       const headingItems: HeadingItem[] = []
       let headingIndex = 0 // Use proper counter starting from 0
 
-      const processNode = (node: any) => {
+      const processNode = (node: OutlineNode) => {
         if (node.type === "heading" && node.tag) {
           const headingLevel = Number.parseInt(node.tag.replace("h", ""))
           const text = extractTextFromNode(node)
@@ -66,7 +73,7 @@ export function PreviewTableOfContents({ serializedState, className = "" }: Prev
       return headingItems
     }
 
-    const extractTextFromNode = (node: any): string => {
+    const extractTextFromNode = (node: OutlineNode): string => {
       if (node.type === "text") {
         return node.text || ""
       }
