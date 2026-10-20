@@ -23,6 +23,21 @@
 import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
 
+interface MonacoTestModel {
+    uri?: { path?: string };
+    setValue(value: string): void;
+}
+
+type EmceptionWindow = Window & {
+    __setFileContent?: (path: string, content: string) => void;
+    __emception_filesRef__?: {
+        current?: Record<string, { content?: string }>;
+    };
+    monaco?: {
+        editor?: { getModels?: () => MonacoTestModel[] };
+    };
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -155,7 +170,7 @@ test.describe('Compile & Run', () => {
                 '}',
             ].join('\n');
             await page.evaluate(({ path, code }) => {
-                const setContent = (window as any).__setFileContent;
+                const setContent = (window as EmceptionWindow).__setFileContent;
                 if (setContent) {
                     setContent(path, code);
                     return true;
@@ -165,7 +180,7 @@ test.describe('Compile & Run', () => {
 
             // Verify the file was actually updated in React state
             const fileContent = await page.evaluate((path) => {
-                const filesRef = (window as any).__emception_filesRef__;
+                const filesRef = (window as EmceptionWindow).__emception_filesRef__;
                 return filesRef?.current?.[path]?.content ?? null;
             }, '/home/user/cpp-terminal/main.cpp');
             console.log(`File content after __setFileContent (first 80 chars): "${fileContent?.substring(0, 80)}..."`);
@@ -383,7 +398,7 @@ test.describe('Compile & Run', () => {
 
         // Set file content directly in React state (bypasses Monaco timing issues)
         await page.evaluate(({ path, code }) => {
-            const setContent = (window as any).__setFileContent;
+            const setContent = (window as EmceptionWindow).__setFileContent;
             if (setContent) setContent(path, code);
         }, { path: '/home/user/cpp-terminal/main.cpp', code: stdinProgram });
 
@@ -437,16 +452,15 @@ test.describe('Compile & Run', () => {
 
         // Wait for workspace switch to complete
         await page.waitForFunction(() => {
-            const logs = (window as any).__emceptionLogs as string[] | undefined;
             return document.querySelector('[data-testid="compile-button"]')?.textContent?.includes('Run');
         }, { timeout: 10_000 });
 
         // Wait a moment for Monaco to settle and set our custom script
         await page.waitForTimeout(500);
         const modelSet = await page.evaluate((code) => {
-            const models = (window as any).monaco?.editor?.getModels?.() ?? [];
+            const models = (window as EmceptionWindow).monaco?.editor?.getModels?.() ?? [];
             // Find the Python model (main.py)
-            const pyModel = models.find((m: any) => m.uri?.path?.endsWith('.py')) ?? models[0];
+            const pyModel = models.find((m) => m.uri?.path?.endsWith('.py')) ?? models[0];
             if (pyModel) {
                 pyModel.setValue(code);
                 return true;
@@ -512,7 +526,7 @@ test.describe('Compile & Run', () => {
 
         // Set file content directly in React state (bypasses Monaco timing issues)
         await page.evaluate(({ path, code }) => {
-            const setContent = (window as any).__setFileContent;
+            const setContent = (window as EmceptionWindow).__setFileContent;
             if (setContent) setContent(path, code);
         }, { path: '/home/user/cpp-terminal/main.cpp', code: backspaceProgram });
 
