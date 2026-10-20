@@ -136,11 +136,12 @@ describe('createLoggingInterceptor', () => {
         includeRequestId: true,
       });
 
-      await interceptor.onRequest!({
+      const request = {
         method: 'GET',
         path: '/test',
         _requestId: 'req-12345678-abcd',
-      } satisfies RequestConfig & { _requestId: string });
+      } satisfies RequestConfig & { _requestId: string };
+      await interceptor.onRequest!(request);
 
       expect(logs[0]!.message).toContain('req-1234');
     });

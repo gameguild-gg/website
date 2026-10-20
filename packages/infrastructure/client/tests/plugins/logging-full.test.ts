@@ -167,12 +167,13 @@ describe('createLoggingInterceptor — full branch', () => {
       logger: (_level, message) => { calls.push(message); },
     });
 
-    await interceptor.onRequest!({
+    const request = {
       path: '/test',
       method: 'GET',
       headers: {},
       _requestId: 'req-123',
-    } satisfies RequestConfig & { _requestId: string });
+    } satisfies RequestConfig & { _requestId: string };
+    await interceptor.onRequest!(request);
 
     expect(calls[0]).not.toContain('req-123');
   });
