@@ -78,7 +78,7 @@ public static class CertificateEvmHostServiceRegistration
         services.AddScoped<IEvmCertificateTransactionSigner, EvmCertificateSoftwareSigner>();
         services.AddEvmCertificatePublicationTransport(options.Network);
         services.AddCertificateEvmDurableEvidence(policy.Network, options.CanonicalIssuer);
-        services.AddSingleton<IDatabaseMigrationPrerequisite, CertificateEvmJournalMigrationPrerequisite>();
+        services.AddSingleton<IDatabaseMigrationPrerequisite>(static _ => new CertificateEvmJournalMigrationPrerequisite());
         services.AddSingleton<IHostedService, CertificateEvmJournalReadiness>();
         services.AddEvmCertificatePublicationWorker(policy);
         return services;

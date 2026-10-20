@@ -6,8 +6,6 @@ namespace GameGuild.API.Database;
 /// <summary>Uses the existing startup migrator's connection and role; the runtime factory never applies DDL.</summary>
 internal sealed class CertificateEvmJournalMigrationPrerequisite : IDatabaseMigrationPrerequisite
 {
-    public CertificateEvmJournalMigrationPrerequisite() { }
-
     public async Task PrepareAsync(DbContext db, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(db);

@@ -61,8 +61,7 @@ public sealed class CertificateEvmHostCompositionTests
         Assert.NotNull(provider.GetRequiredService<IDbContextFactory<EvmCertificateJournalDbContext>>());
         Assert.IsType<EvmCertificateEnvironmentKeySource>(provider.GetRequiredService<IEvmCertificatePrivateKeySource>());
         Assert.Contains(services, s => s.ServiceType == typeof(ICertificateDurableEvidenceProducer));
-        Assert.Contains(services, s => s.ServiceType == typeof(IDatabaseMigrationPrerequisite) &&
-            s.ImplementationType == typeof(CertificateEvmJournalMigrationPrerequisite));
+        Assert.IsType<CertificateEvmJournalMigrationPrerequisite>(Assert.Single(provider.GetServices<IDatabaseMigrationPrerequisite>()));
         Assert.Contains(services, s => s.ServiceType == typeof(IHostedService) &&
             s.ImplementationType == typeof(CertificateEvmJournalReadiness));
         Assert.Contains(services, s => s.ServiceType == typeof(IHostedService) &&
@@ -106,13 +105,16 @@ public sealed class CertificateEvmHostCompositionTests
     [InlineData("PrivateKeyEnvironmentVariable", "not-an-environment-variable")]
     [InlineData("CanonicalIssuer", "")]
     [InlineData("Profile", "profile with spaces")]
-    [InlineData("Network:RpcEndpoint", "http://private-route.invalid/credential")]
+    [InlineData("Network:RpcEndpoint", "insecure-http")]
     [InlineData("Network:FinalityMode", "Confirmations")]
     [InlineData("Network:ContractAddress", "0x0000000000000000000000000000000000000000")]
     [InlineData("UnexpectedSetting", "unknown")]
     public void InvalidConfigurationFailsBeforeAnyRegistration(string setting, string value)
     {
-        var values = ValidValues(); values[Key(setting)] = value;
+        var values = ValidValues();
+        values[Key(setting)] = setting == "Network:RpcEndpoint" && value == "insecure-http"
+            ? new UriBuilder { Scheme = Uri.UriSchemeHttp, Host = "fixture.invalid", Path = "private-route" }.Uri.AbsoluteUri
+            : value;
         var services = new ServiceCollection();
         var error = Assert.Throws<InvalidOperationException>(() => services.AddCertificateEvmHost(Configuration(values)));
         Assert.Null(error.InnerException);

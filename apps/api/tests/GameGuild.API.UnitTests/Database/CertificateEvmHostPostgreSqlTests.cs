@@ -88,15 +88,13 @@ public sealed class CertificateEvmHostPostgreSqlTests(CertificateEvmHostPostgreS
     public async Task RestrictedRuntimeRoleCanPersistIntentsWithoutPermissionToChangeTheSchema()
     {
         await fixture.ResetAsync(); await Migrate();
-        var role = "evm_runtime_" + Guid.NewGuid().ToString("N");
         var password = Guid.NewGuid().ToString("N");
         await using var admin = new NpgsqlConnection(fixture.ConnectionString); await admin.OpenAsync(Ct);
-        await Execute(admin, $"CREATE ROLE \"{role}\" LOGIN PASSWORD '{password}'");
+        // This one class owns the role in its disposable database cluster. Existing roles are never reused.
+        await CreateRuntimeRole(admin, password);
         try
         {
-            await Execute(admin, $"GRANT USAGE ON SCHEMA \"gameguild.authentication\" TO \"{role}\"; " +
-                $"GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA \"gameguild.authentication\" TO \"{role}\"");
-            var runtime = new NpgsqlConnectionStringBuilder(fixture.ConnectionString) { Username = role, Password = password }.ConnectionString;
+            var runtime = new NpgsqlConnectionStringBuilder(fixture.ConnectionString) { Username = "gg_evm_runtime_fixture", Password = password }.ConnectionString;
             using var provider = ProviderFor(runtime); using var scope = provider.CreateScope();
             await new CertificateEvmJournalReadiness(provider.GetRequiredService<IDbContextFactory<EvmCertificateJournalDbContext>>()).StartingAsync(Ct);
             var policy = provider.GetRequiredService<EvmCertificatePublicationPolicy>();
@@ -105,13 +103,12 @@ public sealed class CertificateEvmHostPostgreSqlTests(CertificateEvmHostPostgreS
                 "0x" + new string('5', 64), EvmCertificateOperationKind.Anchor), Ct);
             Assert.Equal(EvmCertificatePublicationStatus.Queued, queued.Status);
             await using var connection = new NpgsqlConnection(runtime); await connection.OpenAsync(Ct);
-            var error = await Assert.ThrowsAsync<PostgresException>(() => Execute(connection,
-                "CREATE TABLE \"gameguild.authentication\".unexpected_runtime_ddl (id integer)"));
+            var error = await Assert.ThrowsAsync<PostgresException>(() => AttemptRuntimeDdl(connection));
             Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
         }
         finally
         {
-            await Execute(admin, $"DROP OWNED BY \"{role}\"; DROP ROLE \"{role}\"");
+            await RemoveRuntimeRole(admin);
         }
     }
 
@@ -144,16 +141,49 @@ public sealed class CertificateEvmHostPostgreSqlTests(CertificateEvmHostPostgreS
         return CertificateEvmHostCompositionTests.Configuration(values);
     }
 
-    private static async Task Execute(NpgsqlConnection connection, string sql)
+    private static async Task CreateRuntimeRole(NpgsqlConnection connection, string password)
     {
-        await using var command = new NpgsqlCommand(sql, connection); await command.ExecuteNonQueryAsync(Ct);
+        await using var transaction = await connection.BeginTransactionAsync(Ct);
+        await using var command = new NpgsqlCommand("""
+            SELECT set_config('gameguild.evm_test_role_password', @password, true);
+            DO $create_runtime_role$
+            BEGIN
+                EXECUTE format('CREATE ROLE gg_evm_runtime_fixture LOGIN PASSWORD %L',
+                    current_setting('gameguild.evm_test_role_password'));
+            END;
+            $create_runtime_role$;
+            GRANT USAGE ON SCHEMA "gameguild.authentication" TO gg_evm_runtime_fixture;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA "gameguild.authentication" TO gg_evm_runtime_fixture;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("password", password);
+        await command.ExecuteNonQueryAsync(Ct);
+        await transaction.CommitAsync(Ct);
+    }
+
+    private static async Task AttemptRuntimeDdl(NpgsqlConnection connection)
+    {
+        await using var command = new NpgsqlCommand(
+            "CREATE TABLE \"gameguild.authentication\".unexpected_runtime_ddl (id integer)", connection);
+        await command.ExecuteNonQueryAsync(Ct);
+    }
+
+    private static async Task RemoveRuntimeRole(NpgsqlConnection connection)
+    {
+        await using var command = new NpgsqlCommand("DROP OWNED BY gg_evm_runtime_fixture; DROP ROLE gg_evm_runtime_fixture", connection);
+        await command.ExecuteNonQueryAsync(Ct);
     }
 
     private sealed class StartProbe : IHostedService
     {
         public int StartCount { get; private set; }
-        public Task StartAsync(CancellationToken cancellationToken) { StartCount++; return Task.CompletedTask; }
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested(); StartCount++; return Task.CompletedTask;
+        }
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested(); return Task.CompletedTask;
+        }
     }
 }
 

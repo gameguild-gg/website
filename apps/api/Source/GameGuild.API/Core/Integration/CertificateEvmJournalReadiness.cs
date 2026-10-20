@@ -1,4 +1,3 @@
-using GameGuild.API.Database;
 using GameGuild.Identity.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -25,13 +24,12 @@ internal sealed class CertificateEvmJournalReadiness : IHostedLifecycleService
                 throw Unavailable();
             }
             // History alone is insufficient if a table was removed or the runtime role cannot read it.
-            foreach (var entity in journal.Model.GetEntityTypes())
-            {
-                var schema = DatabaseStartupInitializer.QuotePostgresIdentifier(entity.GetSchema()!);
-                var table = DatabaseStartupInitializer.QuotePostgresIdentifier(entity.GetTableName()!);
-                var sql = $"SELECT 1 FROM {schema}.{table} LIMIT 0";
-                await journal.Database.ExecuteSqlRawAsync(sql, cancellationToken).ConfigureAwait(false);
-            }
+            await journal.Database.ExecuteSqlRawAsync("""
+                SELECT 1 FROM "gameguild.authentication".evm_certificate_operations LIMIT 0;
+                SELECT 1 FROM "gameguild.authentication".evm_certificate_nonces LIMIT 0;
+                SELECT 1 FROM "gameguild.authentication".evm_certificate_attempts LIMIT 0;
+                SELECT 1 FROM "gameguild.authentication".evm_certificate_events LIMIT 0;
+                """, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
