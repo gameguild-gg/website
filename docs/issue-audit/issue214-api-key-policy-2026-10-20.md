@@ -49,3 +49,16 @@ not replace policy or principal services to make the assertions pass.
 
 Accepted #913/develop `915c16a4056752e900f2f03d5e4a47534f4082ef` is merged normally into this branch.
 The six-case candidate still changes only test/documentation source relative to that accepted base.
+
+## Early host configuration correction
+
+Source `a0e408a7fab0f8de7c42fa043bfef46353de7cd7` compiled, but all six cases failed the new
+scheme-registration precondition: the actual host had no ApiKey scheme. Artifact `12258914285`,
+SHA-256 `79400720d48fb32f627f34ccbe831328d99f016ada4ba2aa207e3affa928bde9`, contains no other
+failed cases. The previous unauthorized responses therefore did not prove a production actor-order defect.
+
+The fixture now uses early `IWebHostBuilder.UseSetting` values for the same supported root
+configuration. Program consumes these switches when registering services; deferred
+`ConfigureAppConfiguration` callbacks ran too late for that registration. The scheme, policy and
+Bearer-default preconditions and all six HTTP expectations remain in place. Fresh hosted evidence
+must confirm the fixture correction before any production behavior or issue completion is accepted.

@@ -8,9 +8,9 @@ using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GameGuild.API.IntegrationTests;
@@ -80,13 +80,13 @@ public sealed class ApiKeyPolicyPostgreSqlHttpTests(ApiPostgreSqlFixture fixture
 
     private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateFactory() => fixture.CreateFactory(builder =>
     {
-        builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["Authentication:EnableApiKeyAuthentication"] = "true",
-            ["Authorization:DefaultPolicy"] = "ApiKeyIntegrationAcceptance",
-            ["Authorization:Policies:ApiKeyIntegrationAcceptance:RequireAuthenticatedUser"] = "true",
-            ["Authorization:Policies:ApiKeyIntegrationAcceptance:AuthenticationSchemes:0"] = ApiKeyAuthenticationOptions.SchemeName
-        }));
+        // These switches are consumed while Program registers services. ConfigureAppConfiguration
+        // on the deferred test host runs after that registration; use early host settings instead.
+        builder.UseSetting("Authentication:EnableApiKeyAuthentication", "true");
+        builder.UseSetting("Authorization:DefaultPolicy", "ApiKeyIntegrationAcceptance");
+        builder.UseSetting("Authorization:Policies:ApiKeyIntegrationAcceptance:RequireAuthenticatedUser", "true");
+        builder.UseSetting("Authorization:Policies:ApiKeyIntegrationAcceptance:AuthenticationSchemes:0",
+            ApiKeyAuthenticationOptions.SchemeName);
         builder.ConfigureTestServices(services => services.PostConfigure<AuthenticationOptions>(options =>
         {
             // Remove the common fixture's synthetic default, retaining the real host's Bearer default.
