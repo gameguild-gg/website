@@ -1,6 +1,7 @@
 import { ungzip } from 'pako'
 import { Archive } from '@obsidize/tar-browserify'
 import type { BinaryWASIFS } from '@runno/wasi'
+import { CACHE_FORMAT_VERSION, deserializeCachedFilesystem, serializeCachedFilesystem } from './wasm-cache-codec'
 
 const wasmCache: Map<string, WebAssembly.Module> = new Map()
 
@@ -8,7 +9,6 @@ const wasmCache: Map<string, WebAssembly.Module> = new Map()
 const DB_NAME = 'wasm-cache'
 const DB_VERSION = 2 // Incrementado para invalidar cache antigo com timestamps Date
 const STORE_NAME = 'decompressed-files'
-const CACHE_FORMAT_VERSION = 2 // Versão do formato de serialização
 
 interface CachedFile {
   url: string
@@ -438,34 +438,15 @@ export async function loadTarGz(path: string): Promise<BinaryWASIFS> {
     try {
       // Deserializar o filesystem do cache
       const text = new TextDecoder().decode(cached)
-      const parsed = JSON.parse(text)
+      const parsed: unknown = JSON.parse(text)
       
       // Verificar versão do cache
-      if (parsed.version !== CACHE_FORMAT_VERSION) {
+      if (typeof parsed !== 'object' || parsed === null || !('version' in parsed) || parsed.version !== CACHE_FORMAT_VERSION) {
         console.log(`[WASM Cache] Invalidating old cache format for: ${path}`)
         await deleteCachedFile(path)
         // Continuar para baixar novamente
       } else {
-        // Converter base64 de volta para Uint8Array
-        const fs: BinaryWASIFS = {}
-        for (const [fpath, file] of Object.entries(parsed.files)) {
-          const fileData = file as any
-          
-          // Garantir que timestamps sejam Date objects (converter se necessário)
-          const timestamps = fileData.timestamps
-          const ensureDate = (val: any) => new Date(typeof val === 'number' ? val : Date.now())
-          
-          fs[fpath] = {
-            path: fileData.path,
-            timestamps: {
-              access: ensureDate(timestamps.access),
-              modification: ensureDate(timestamps.modification),
-              change: ensureDate(timestamps.change),
-            },
-            mode: fileData.mode,
-            content: Uint8Array.from(atob(fileData.contentBase64), c => c.charCodeAt(0))
-          }
-        }
+        const fs = deserializeCachedFilesystem(parsed)
         
         console.log(`[WASM Cache] Loaded tar.gz from cache: ${path}`)
         return fs
@@ -527,32 +508,7 @@ export async function loadTarGz(path: string): Promise<BinaryWASIFS> {
     }
 
     // Serializar para cache (converter Uint8Array para base64)
-    const serializable: any = {
-      version: CACHE_FORMAT_VERSION,
-      files: {}
-    }
-    
-    for (const [path, file] of Object.entries(fs)) {
-      // Pular se o conteúdo for null/undefined (diretórios)
-      if (!file.content) {
-        continue
-      }
-      
-      // Converter Uint8Array para base64 em chunks para evitar "too many arguments"
-      let binary = ''
-      const chunkSize = 8192
-      for (let i = 0; i < file.content.length; i += chunkSize) {
-        const chunk = file.content.subarray(i, i + chunkSize)
-        binary += String.fromCharCode(...chunk)
-      }
-      
-      serializable.files[path] = {
-        path: file.path,
-        timestamps: file.timestamps, // Já são números
-        mode: file.mode,
-        contentBase64: btoa(binary),
-      }
-    }
+    const serializable = serializeCachedFilesystem(fs)
     
     const serialized = JSON.stringify(serializable)
     const buffer = new TextEncoder().encode(serialized).buffer
