@@ -81,7 +81,10 @@ public sealed class PolicyAuthenticationHttpTests
         await using var app = await CreateApp("database");
         using var client = app.GetTestClient();
         client.DefaultRequestHeaders.Add("X-Test-ApiKey", "owner-b");
-        if (initiallyAuthenticated) client.DefaultRequestHeaders.Add("X-Test-Bearer", "owner-a");
+        if (initiallyAuthenticated)
+        {
+            client.DefaultRequestHeaders.Add("X-Test-Bearer", "owner-a");
+        }
         using var response = await client.GetAsync("/protected");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal(1, app.Services.GetRequiredService<DeferredPolicyProvider>().ResolvedAfterContext);
@@ -128,13 +131,20 @@ public sealed class PolicyAuthenticationHttpTests
             .AddScheme<AuthenticationSchemeOptions, SyntheticCredentialHandler>("Bearer", _ => { })
             .AddScheme<AuthenticationSchemeOptions, SyntheticCredentialHandler>("Cookies", _ => { });
         if (registerApiKey)
+        {
             authentication.AddScheme<AuthenticationSchemeOptions, SyntheticCredentialHandler>("ApiKey", _ => { });
+        }
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddAuthorization(options =>
         {
             if (mode is "default" or "mixed")
+            {
                 options.DefaultPolicy = BuildPolicy(mode == "mixed" ? ["Bearer", "ApiKey"] : ["ApiKey"]);
-            if (mode == "fallback") options.FallbackPolicy = BuildPolicy(["ApiKey"]);
+            }
+            if (mode == "fallback")
+            {
+                options.FallbackPolicy = BuildPolicy(["ApiKey"]);
+            }
             options.AddPolicy("StaticApiKey", BuildPolicy(["ApiKey"]));
         });
         builder.Services.AddSingleton<DeferredPolicyProvider>();
@@ -148,7 +158,10 @@ public sealed class PolicyAuthenticationHttpTests
         app.Use(async (context, next) =>
         {
             // Models optional-token rejection before capture; full revocation behavior has native tests.
-            if (mode == "public") context.User = new ClaimsPrincipal(new ClaimsIdentity());
+            if (mode == "public")
+            {
+                context.User = new ClaimsPrincipal(new ClaimsIdentity());
+            }
             context.Items["CapturedOwner"] = context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
             context.Items["TenantEstablished"] = true;
             await next(context);
@@ -181,9 +194,14 @@ public sealed class PolicyAuthenticationHttpTests
         public int ResolvedAfterContext { get; private set; }
         public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
         {
-            if (policyName is not ("DatabaseApiKey" or "DatabaseBearer")) return base.GetPolicyAsync(policyName);
+            if (policyName is not ("DatabaseApiKey" or "DatabaseBearer"))
+            {
+                return base.GetPolicyAsync(policyName);
+            }
             if (accessor.HttpContext?.Items["TenantEstablished"] is not true)
+            {
                 throw new InvalidOperationException("Tenant-dependent policy resolved before context.");
+            }
             ResolvedAfterContext++;
             return Task.FromResult<AuthorizationPolicy?>(BuildPolicy([policyName == "DatabaseApiKey" ? "ApiKey" : "Bearer"]));
         }
@@ -196,7 +214,10 @@ public sealed class PolicyAuthenticationHttpTests
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var owner = Request.Headers["X-Test-" + Scheme.Name].ToString();
-            if (string.IsNullOrEmpty(owner)) return Task.FromResult(AuthenticateResult.NoResult());
+            if (string.IsNullOrEmpty(owner))
+            {
+                return Task.FromResult(AuthenticateResult.NoResult());
+            }
             var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, owner)], Scheme.Name);
             return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name)));
         }
