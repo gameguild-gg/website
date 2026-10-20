@@ -465,6 +465,80 @@ test('JSX prop sorting retains diagnostics without overlapping fixes and preserv
   assert(safe[0].fix, 'A normal non-overlapping ordering fix remains available');
 });
 
+test('interface sorting preserves the diagnostic when a same-line comment produces overlapping edits', () => {
+  const run = () => lint('typescript-sort-keys/interface', 'eslint-plugin-typescript-sort-keys', 'interface',
+    'interface Contract {\n  z: string;\n  /* keep this documentation */ a: string;\n}', true);
+  if (!repaired) assert.throws(run, /Fix objects must not be overlapped in a report/);
+  else {
+    const messages = run();
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].ruleId, 'typescript-sort-keys/interface');
+    assert.equal(messages[0].fatal, undefined);
+    assert.equal(messages[0].fix, undefined, 'An invalid edit is refused while the ordering issue is retained');
+    assert.match(messages[0].message, /a.*z/);
+  }
+});
+
+test('interface sorting retains sorted inputs and ordinary non-overlapping fixes', () => {
+  const check = source => lint('typescript-sort-keys/interface', 'eslint-plugin-typescript-sort-keys', 'interface', source, true);
+  assert.deepEqual(check('interface Contract {\n  a: string;\n  /* keep this documentation */ z: string;\n}'), []);
+  const source = 'interface Contract {\n  z: string;\n  a: number;\n}';
+  const messages = check(source);
+  assert.equal(messages.length, 1);
+  const fix = messages[0].fix;
+  assert(fix, 'A valid ordering edit must remain available');
+  const output = source.slice(0, fix.range[0]) + fix.text + source.slice(fix.range[1]);
+  assert.deepEqual(check(output), []);
+  assert.match(output, /a: number/);
+  assert.match(output, /z: string/);
+});
+
+test('string-enum sorting retains diagnostics without overlapping comment edits and preserves safe fixes', () => {
+  const check = source => lint('typescript-sort-keys/string-enum', 'eslint-plugin-typescript-sort-keys', 'string-enum', source, true);
+  const run = () => check('enum Contract {\n  Z = "z",\n  /* keep this documentation */ A = "a",\n}');
+  if (!repaired) assert.throws(run, /Fix objects must not be overlapped in a report/);
+  else {
+    const messages = run();
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].ruleId, 'typescript-sort-keys/string-enum');
+    assert.equal(messages[0].fatal, undefined);
+    assert.equal(messages[0].fix, undefined);
+  }
+  assert.deepEqual(check('enum Contract {\n  A = "a",\n  Z = "z",\n}'), []);
+  const source = 'enum Contract {\n  Z = "z",\n  A = "a",\n}';
+  const messages = check(source);
+  assert.equal(messages.length, 1);
+  const fix = messages[0].fix;
+  assert(fix, 'A valid enum ordering edit must remain available');
+  const output = source.slice(0, fix.range[0]) + fix.text + source.slice(fix.range[1]);
+  assert.deepEqual(check(output), []);
+  assert.match(output, /A = "a"/);
+  assert.match(output, /Z = "z"/);
+});
+
+test('interface sorting preserves findings for the exact source observed in the hosted overlap failure', async () => {
+  const ruleId = 'typescript-sort-keys/interface';
+  const bytes = readFileSync(path.join(__dirname, 'fixtures/14-source-code-editor-view-sort-keys.tsx.txt'));
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), '7fca0228511879faf0cf1be6b996f2b74ce437072aec4044c9aa3b4781dc8922');
+  const profile = repositoryProfile(await projection());
+  const linter = new Linter();
+  linter.defineRule(ruleId, engineRequire('eslint-plugin-typescript-sort-keys').rules.interface);
+  linter.defineParser('engine-typescript', engineRequire('@typescript-eslint/parser'));
+  let messages;
+  try {
+    messages = linter.verify(bytes.toString('utf8'), {
+      parser: 'engine-typescript', parserOptions: { ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: { jsx: true } },
+      settings: profile.baseConfig.settings, rules: { [ruleId]: profile.baseConfig.rules[ruleId] },
+    }, { filename: 'observed-source-code-editor-view.tsx' });
+  } catch (error) {
+    assert.equal(repaired, false, 'The repaired engine must traverse the observed source without crashing');
+    assert.match(error.message, /Fix objects must not be overlapped in a report/);
+    return;
+  }
+  assert(messages.some(message => message.ruleId === ruleId), 'Ordering findings on the observed source must remain visible');
+  assert(messages.every(message => message.fatal !== true));
+});
+
 test('engine module origins are pinned while real cycles and TypeScript alias namespaces remain detectable', async (context) => {
   const projected = await projection();
   const profile = repositoryProfile(projected);

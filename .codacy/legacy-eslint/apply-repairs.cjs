@@ -10,6 +10,17 @@ const path = require('node:path');
 // The image retains each upstream package's license and the rest of its source.
 const repairs = [
   {
+    package: 'eslint-plugin-typescript-sort-keys',
+    version: '3.2.0',
+    file: 'lib/index.cjs.js',
+    sha256: 'd5c202094e1c1e587d2c69e571ded9458e995756ab195b240b5b529b5d3e58ab',
+    repairedSha256: '37f5a73f5dc6c3ee2266c6436c3540323ae35538be64f65564a52c54d74f0c5f',
+    replacements: [
+      ['return swapNodes(fixer, nodePositions, currentNode, replaceNode);',
+        'const fixes = swapNodes(fixer, nodePositions, currentNode, replaceNode);\n                            const ordered = [...fixes].sort((a, b) => a.range[0] - b.range[0] || a.range[1] - b.range[1]);\n                            if (ordered.some((fix, index) => index > 0 && ordered[index - 1].range[1] > fix.range[0])) return null;\n                            return fixes;'],
+    ],
+  },
+  {
     package: 'eslint-plugin-import',
     version: '2.29.1',
     file: 'lib/rules/no-namespace.js',

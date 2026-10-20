@@ -12,6 +12,13 @@ versions and file hashes must therefore match independently in hosted CI.
 
 ## Repairs
 
+- TypeScript sort keys 3.2.0: keep ordering diagnostics when the upstream
+  node/comment swap produces overlapping autofix ranges. Refuse only those
+  invalid edits; ordinary interface and string-enum fixes remain available.
+  Package version and both complete source hashes are checked before repair.
+  The candidate contracts cover the observed source and comment overlap;
+  hosted acceptance is still required.
+
 - Import 2.29.1: variables without definitions no longer crash namespace-import
   detection. A missing binding still produces the diagnostic without an unsafe
   automatic fix. Existing definition/reference handling is retained.
