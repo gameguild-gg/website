@@ -53,3 +53,18 @@ Pre-token geolocation input and velocity-policy integration remain in #211.
 
 All 49 new definitions await matching-source hosted execution. No local SDK, build, restore, tests,
 database, containers, application server or external geolocation execution was performed.
+
+## Existing coverage reconciled after hosted execution
+
+The first full execution of the expanded correction passed all 49 new cases, including all five
+PostgreSQL cases, but exposed two existing test failures. One reflected a deleted private parser;
+it now checks the public login-analysis behavior for missing history, legacy ISO country/city,
+explicit country-only metadata and an ambiguous display-only label. The other mocked travel fixture
+used an unstructured country-name-first string. Both related fixtures now use the actual writer's
+structured JP/Tokyo and `Tokyo, Japan` representation, while retaining the risk assertion and
+additionally verifying the normalized JP/city passed to the threat detector.
+
+The real writer's public storage format remains unchanged. Ambiguous display strings are not
+promoted to authoritative geography to preserve an old private reflection test. These are updates
+to existing coverage, not additional new definitions. The corrected source still requires a fresh
+hosted run of every selected gate; the earlier failures are retained as historical evidence.
