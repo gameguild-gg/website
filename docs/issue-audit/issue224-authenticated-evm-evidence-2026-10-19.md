@@ -39,3 +39,7 @@ pending for the full issue. The issue remains open.
 The existing OpenAPI CI verifier now archives the generated client source beside its captured
 contract before checking drift. The drift gate still fails until matching client output is reviewed
 and committed. This provides a source-bound reconciliation path without local API/SDK execution.
+The release classifier recognizes controller/contract filename suffixes outside conventional
+directories and changes to the OpenAPI verification scripts. Four additional authored classifier
+regressions cover those paths and preserve test-only/CI-only deployment behavior. Existing full
+Economy qualification for changes to the classifier remains in force.
