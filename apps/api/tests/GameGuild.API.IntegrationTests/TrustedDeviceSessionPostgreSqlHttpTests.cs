@@ -283,7 +283,7 @@ public sealed class TrustedDeviceSessionPostgreSqlHttpTests(ApiPostgreSqlFixture
         owner.Username = marker;
         var foreign = User.Create("foreign-" + marker + "@example.test", "Synthetic other owner");
         foreign.Username = "foreign-" + marker;
-        var tenant = new Tenant { Id = Guid.NewGuid(), Name = "Device trust acceptance", Slug = "trust-" + marker,
+        var tenant = new Tenant { Id = Guid.NewGuid(), Name = "Device trust " + marker, Slug = "trust-" + marker,
             AdminEmail = owner.Email, IsActive = true };
         db.AddRange(owner, foreign, tenant);
         foreach (var user in new[] { owner, foreign })
