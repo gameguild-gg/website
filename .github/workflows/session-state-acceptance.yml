@@ -60,7 +60,7 @@ jobs:
           mkdir -p artifacts/session-state
           git -c core.commitGraph=false rev-parse HEAD > artifacts/session-state/checkout-commit.txt
           git -c core.commitGraph=false rev-parse 'HEAD^{tree}' > artifacts/session-state/checkout-tree.txt
-          git -c core.commitGraph=false show --no-patch --format=%P HEAD > artifacts/session-state/checkout-parents.txt
+          git -c core.commitGraph=false cat-file -p HEAD | sed -n 's/^parent //p' | paste -sd' ' > artifacts/session-state/checkout-parents.txt
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - uses: ./.github/actions/setup-playwright

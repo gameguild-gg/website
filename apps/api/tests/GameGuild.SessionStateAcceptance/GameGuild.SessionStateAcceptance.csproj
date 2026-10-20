@@ -9,8 +9,7 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <ProjectReference Include="../../Source/GameGuild.API/GameGuild.API.csproj" />
-    <ProjectReference Include="../GameGuild.TestSupport.Finance.Economy/GameGuild.TestSupport.Finance.Economy.csproj" />
-    <Compile Include="../GameGuild.API.IntegrationTests/Infrastructure/ApiPostgreSqlFixture.cs" Link="Infrastructure/ApiPostgreSqlFixture.cs" />
+    <ProjectReference Include="../GameGuild.API.IntegrationTests/GameGuild.API.IntegrationTests.csproj" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>
