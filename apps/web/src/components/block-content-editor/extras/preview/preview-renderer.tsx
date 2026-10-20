@@ -1,5 +1,6 @@
 "use client"
 import type { SerializedEditorState } from "lexical"
+import type { ProjectData } from "../../lib/storage/editor/project-data"
 
 import { SerializedContentRenderer } from "./serialized-content-renderer"
 import { PreviewHeader } from "./preview-header"
@@ -11,7 +12,7 @@ interface PreviewRendererProps {
   className?: string
   projectId?: string
   storageAdapter?: {
-    load: (id: string) => Promise<any>
+    load: (id: string) => Promise<ProjectData | null>
   }
 }
 

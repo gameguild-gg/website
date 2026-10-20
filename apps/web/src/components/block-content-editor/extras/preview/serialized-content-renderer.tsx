@@ -1,5 +1,6 @@
 "use client"
 import type { SerializedEditorState } from "lexical"
+import type { ProjectData } from "../../lib/storage/editor/project-data"
 
 // Import all preview components
 import { PreviewQuiz } from "@/components/block-content-editor/plugins/preview-components/preview-quiz"
@@ -32,7 +33,7 @@ interface SerializedContentRendererProps {
   className?: string
   projectId?: string
   storageAdapter?: {
-    load: (id: string) => Promise<any>
+    load: (id: string) => Promise<ProjectData | null>
   }
 }
 

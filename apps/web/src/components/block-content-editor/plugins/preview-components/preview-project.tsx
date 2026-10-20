@@ -6,6 +6,7 @@ import { Button } from "@game-guild/ui/components/button"
 import { SerializedContentRenderer } from "../../extras/preview/serialized-content-renderer"
 import { toast } from "sonner"
 import type { SerializedEditorState } from "lexical"
+import type { ProjectData as StoredProjectData } from "../../lib/storage/editor/project-data"
 
 interface ProjectNodeData {
   projectId: string
@@ -24,7 +25,7 @@ interface PreviewProjectProps {
     data: ProjectNodeData
   }
   storageAdapter?: {
-    load: (id: string) => Promise<any>
+    load: (id: string) => Promise<StoredProjectData | null>
   }
 }
 
@@ -60,7 +61,7 @@ export function PreviewProject({ node, storageAdapter }: PreviewProjectProps) {
           const loadedProjectData: ProjectNodeData = {
             ...node.data,
             editorState,
-            size: fullProject.size,
+            size: fullProject.metadata.size,
           }
 
           setLoadedData(loadedProjectData)
