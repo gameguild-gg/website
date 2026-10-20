@@ -21,6 +21,24 @@
 import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
 
+interface MonacoTestModel {
+    getValue(): string;
+    getFullModelRange(): { endLineNumber: number };
+    getLineMaxColumn(lineNumber: number): number;
+    pushEditOperations(
+        beforeCursorState: [],
+        edits: Array<{
+            range: { startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number };
+            text: string;
+        }>,
+        cursorStateComputer: () => null,
+    ): unknown;
+}
+
+type MonacoTestWindow = Window & {
+    monaco?: { editor?: { getModels?: () => MonacoTestModel[] } };
+};
+
 const status = (page: Page) => page.getByTestId('status');
 const compileBtn = (page: Page) => page.getByTestId('compile-button');
 const sdlCanvas = (page: Page) => page.getByTestId('sdl-canvas');
@@ -37,9 +55,8 @@ function captureEmceptionLogs(page: Page): void {
 /** Get Monaco editor content via its JS API (more reliable than DOM scraping). */
 async function getMonacoValue(page: Page): Promise<string> {
     return await page.evaluate(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const models = (window as any).monaco?.editor?.getModels?.();
-        if (models && models.length > 0) return models[0].getValue() as string;
+        const models = (window as MonacoTestWindow).monaco?.editor?.getModels?.();
+        if (models && models.length > 0) return models[0].getValue();
         return '';
     });
 }
@@ -47,8 +64,7 @@ async function getMonacoValue(page: Page): Promise<string> {
 /** Append text to the end of the Monaco editor via its JS API. */
 async function appendToMonaco(page: Page, text: string): Promise<void> {
     await page.evaluate((t) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const models = (window as any).monaco?.editor?.getModels?.();
+        const models = (window as MonacoTestWindow).monaco?.editor?.getModels?.();
         if (models && models.length > 0) {
             const model = models[0];
             const fullRange = model.getFullModelRange();
@@ -81,7 +97,7 @@ test('editor accepts input after SDL3 compilation', async ({ page }) => {
 
     // Wait for Monaco editor to initialize models (it loads async)
     await page.waitForFunction(
-        () => !!(window as any).monaco?.editor?.getModels?.()?.length,
+        () => !!(window as MonacoTestWindow).monaco?.editor?.getModels?.()?.length,
         { timeout: 30_000 },
     );
     await page.waitForTimeout(500);

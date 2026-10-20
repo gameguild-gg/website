@@ -1,9 +1,5 @@
 import { RuntimeLoader } from './csharp/runtime-loader'
-
-interface CSharpCompilerExports {
-  compileAndRun(code: string): string
-  compileAndRunMultiple(mainCode: string, filesJson: string): string
-}
+import type { CSharpCompilerExports } from './types'
 
 export interface CSharpResult {
   output?: string

@@ -2,6 +2,11 @@
  * Type definitions for Mono WebAssembly Runtime
  */
 
+export interface CSharpCompilerExports {
+  compileAndRun(code: string): string
+  compileAndRunMultiple(mainCode: string, filesJson: string): string
+}
+
 export interface MonoConfig {
   assemblyRootFolder?: string
   assets?: MonoAsset[]

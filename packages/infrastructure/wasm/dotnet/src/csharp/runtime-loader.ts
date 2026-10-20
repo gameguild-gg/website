@@ -5,6 +5,10 @@
  * the .NET WASM runtime and exposes window.CSharpCompiler
  */
 
+import type { CSharpCompilerExports } from '../types'
+
+type CSharpCompilerWindow = Window & { CSharpCompiler?: CSharpCompilerExports }
+
 export class RuntimeLoader {
   private isLoaded = false
   private loadPromise: Promise<void> | null = null
@@ -26,7 +30,7 @@ export class RuntimeLoader {
     console.log('[DotNet] Initializing C# runtime...')
 
     // Check if already loaded
-    if ((window as any).CSharpCompiler) {
+    if ((window as CSharpCompilerWindow).CSharpCompiler) {
       this.isLoaded = true
       console.log('[DotNet] ✓ C# runtime already loaded')
       return
@@ -58,7 +62,7 @@ export class RuntimeLoader {
     // Wait for window.CSharpCompiler to be available
     const maxAttempts = 100 // 10 seconds
     for (let i = 0; i < maxAttempts; i++) {
-      if ((window as any).CSharpCompiler) {
+      if ((window as CSharpCompilerWindow).CSharpCompiler) {
         this.isLoaded = true
         console.log('[DotNet] ✓ C# runtime ready')
         return

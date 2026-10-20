@@ -22,6 +22,27 @@ import { createVFSManager } from './vfs/index.js';
 import type { FSManifest } from './vfs/lazy.js';
 import { LazyFS } from './vfs/lazy.js';
 
+interface BrotliModule {
+  HEAPU8: Uint8Array;
+  HEAPU32: Uint32Array;
+  _malloc(size: number): number;
+  _free(pointer: number): void;
+  cwrap(
+    name: 'brotli_decompress_buffer',
+    returnType: 'number',
+    argumentTypes: ['number', 'number', 'number'],
+  ): (inputPtr: number, inputLen: number, outLenPtr: number) => number;
+  cwrap(name: 'brotli_free_buffer', returnType: null, argumentTypes: ['number']): (pointer: number) => void;
+  cwrap(name: 'brotli_get_last_error_message', returnType: 'string', argumentTypes: []): () => string;
+}
+
+interface BrotliModuleExports {
+  default?: (options: {
+    wasmBinary: ArrayBuffer;
+    locateFile: (path: string) => string;
+  }) => Promise<BrotliModule>;
+}
+
 const P = '[Emception:Worker]';
 
 // Forward Worker console output to the main thread so Playwright
@@ -431,7 +452,7 @@ self.onmessage = async (ev: MessageEvent<MainToWorkerMessage>) => {
           const jsBlob = new Blob([jsText], { type: 'text/javascript' });
           const jsBlobUrl = URL.createObjectURL(jsBlob);
 
-          const brotliMod = (await import(/* @vite-ignore */ /* webpackIgnore: true */ jsBlobUrl)) as any;
+          const brotliMod = (await import(/* @vite-ignore */ /* webpackIgnore: true */ jsBlobUrl)) as BrotliModuleExports;
           if (typeof brotliMod.default !== 'function') {
             URL.revokeObjectURL(jsBlobUrl);
             throw new Error(
@@ -439,7 +460,7 @@ self.onmessage = async (ev: MessageEvent<MainToWorkerMessage>) => {
               `-sMODULARIZE=1 -sEXPORT_ES6=1 (see tools/emception/scripts/build-brotli.ts).`,
             );
           }
-          const brotliModule: any = await brotliMod.default({
+          const brotliModule = await brotliMod.default({
             wasmBinary,
             // Defensive: if the factory ever tries to fetch on its own, point
             // it back at the same URL we already validated.
@@ -453,11 +474,9 @@ self.onmessage = async (ev: MessageEvent<MainToWorkerMessage>) => {
           //   const char* brotli_get_last_error_message(void);
           const brotliDecompressBuffer = brotliModule.cwrap('brotli_decompress_buffer', 'number', [
             'number', 'number', 'number',
-          ]) as (inputPtr: number, inputLen: number, outLenPtr: number) => number;
-          const brotliFreeBuffer = brotliModule.cwrap('brotli_free_buffer', null, ['number']) as (
-            ptr: number,
-          ) => void;
-          const brotliGetLastError = brotliModule.cwrap('brotli_get_last_error_message', 'string', []) as () => string;
+          ]);
+          const brotliFreeBuffer = brotliModule.cwrap('brotli_free_buffer', null, ['number']);
+          const brotliGetLastError = brotliModule.cwrap('brotli_get_last_error_message', 'string', []);
 
           LazyFS.customBrotliDecompressor = (data: Uint8Array): Uint8Array => {
             const inputPtr = brotliModule._malloc(Math.max(data.length, 1));

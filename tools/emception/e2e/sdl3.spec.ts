@@ -28,6 +28,15 @@
 import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
 
+interface MonacoTestModel {
+    uri?: { path?: string };
+    getValue(): string;
+}
+
+type MonacoTestWindow = Window & {
+    monaco?: { editor?: { getModels?: () => MonacoTestModel[] } };
+};
+
 // ---------------------------------------------------------------------------
 // Helpers  (mirrors compile.spec.ts conventions)
 // ---------------------------------------------------------------------------
@@ -132,15 +141,13 @@ test.describe('SDL3 compile & canvas render', () => {
         // is populated (set in Ide.tsx's handleEditorDidMount callback) before
         // querying the editor models.
         await page.waitForFunction(
-            () => !!(window as any).monaco?.editor?.getModels?.()?.length,
+            () => !!(window as MonacoTestWindow).monaco?.editor?.getModels?.()?.length,
             { timeout: 30_000 },
         );
         const editorContent: string = await page.evaluate(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const w = window as any;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const model = w.monaco?.editor?.getModels?.()?.find((m: any) => m.uri?.path?.includes('sdl-main'));
-            return (model?.getValue?.() as string) ?? '';
+            const w = window as MonacoTestWindow;
+            const model = w.monaco?.editor?.getModels?.()?.find((m) => m.uri?.path?.includes('sdl-main'));
+            return model?.getValue?.() ?? '';
         });
         expect(editorContent).toContain('#include <SDL3/SDL.h>');
         console.log('SDL3 demo code confirmed in editor.');
