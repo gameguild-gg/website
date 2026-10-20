@@ -63,8 +63,11 @@ public sealed class StripeDisputeEventConsumer(
         }
         else
         {
-            existing.ApplyGatewayStatus(MapStatus(disputePayload.Status), disputePayload.EvidenceDueBy);
+            // Record the fee before applying the status: a terminal gateway status (won/lost)
+            // freezes the fee recorded at resolution time, so a dispute that closes on this
+            // event must capture its fee first (issue #419).
             existing.RecordDisputeFee(disputePayload.DisputeFee);
+            existing.ApplyGatewayStatus(MapStatus(disputePayload.Status), disputePayload.EvidenceDueBy);
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             logger.LogInformation(
                 "Dispute {DisputeId} reconciled to gateway status {Status} from Stripe event {EventId}",

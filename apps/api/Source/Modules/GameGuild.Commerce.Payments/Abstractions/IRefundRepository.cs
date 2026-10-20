@@ -44,6 +44,7 @@ public interface IRefundRepository
     /// <param name="maxExecutionAttempts">Total execution-attempt budget per refund (default 3).</param>
     /// <param name="failedBeforeUtc">Failed refunds are retried only after their last failure timestamp passes this instant.</param>
     /// <param name="take">Maximum number of refunds to return.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     Task<IReadOnlyList<Refund>> ListDueForWorkflowAsync(
         int maxExecutionAttempts,
         DateTime failedBeforeUtc,
