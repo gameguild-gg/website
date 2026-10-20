@@ -38,7 +38,7 @@ export const getExtensionForSelectedLanguage = (selectedLanguage: ProgrammingLan
 }
 
 // Get the content for a file
-export const getFileContent = (file: CodeFile, selectedLanguage?: any): string => {
+export const getFileContent = (file: CodeFile, _selectedLanguage?: unknown): string => {
   return file?.content || ""
 }
 

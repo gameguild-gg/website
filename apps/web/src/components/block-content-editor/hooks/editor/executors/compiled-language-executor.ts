@@ -15,8 +15,8 @@ export abstract class CompiledLanguageExecutor implements LanguageExecutor {
   protected abstract compile(
     sourceFiles: Record<string, string>,
     mainFile: string,
-  ): Promise<{ success: boolean; output: string[] }>
-  protected abstract executeCompiled(compiledCode: any): Promise<{ success: boolean; output: string[] }>
+  ): Promise<ExecutionResult>
+  protected abstract executeCompiled(compiledCode: ExecutionResult): Promise<ExecutionResult>
 
   // Implementation of the LanguageExecutor interface
   execute = async (fileId: string, context: ExecutionContext): Promise<ExecutionResult> => {
