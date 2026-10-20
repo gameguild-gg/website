@@ -57,15 +57,16 @@ describe('createAuthBroadcast', () => {
       onmessage: null,
     };
 
-    vi.stubGlobal(
-      'BroadcastChannel',
-      vi.fn(() => mockChannel),
-    );
+    const createChannel = vi.fn(function MockBroadcastChannel(_name: string) {
+      return mockChannel;
+    });
+    vi.stubGlobal('BroadcastChannel', createChannel);
 
     vi.resetModules();
     const { createAuthBroadcast } = await import('../../src/integrations/react/broadcast.js');
 
     const broadcast = createAuthBroadcast(vi.fn());
+    expect(createChannel).toHaveBeenCalledExactlyOnceWith('gg-auth-sync');
     expect(() => broadcast.send({ type: 'session-update', timestamp: Date.now() })).not.toThrow();
     expect(mockChannel.postMessage).toHaveBeenCalledOnce();
   });
@@ -81,27 +82,27 @@ describe('createAuthBroadcast', () => {
       onmessage: null,
     };
 
-    vi.stubGlobal(
-      'BroadcastChannel',
-      vi.fn(() => mockChannel),
-    );
+    const createChannel = vi.fn(function MockBroadcastChannel(_name: string) {
+      return mockChannel;
+    });
+    vi.stubGlobal('BroadcastChannel', createChannel);
 
     vi.resetModules();
     const { createAuthBroadcast } = await import('../../src/integrations/react/broadcast.js');
 
     const broadcast = createAuthBroadcast(vi.fn());
+    expect(createChannel).toHaveBeenCalledExactlyOnceWith('gg-auth-sync');
     expect(() => broadcast.close()).not.toThrow();
     expect(mockChannel.close).toHaveBeenCalledOnce();
   });
 
   it('should handle BroadcastChannel constructor error', async () => {
     vi.stubGlobal('window', { location: {} });
-    vi.stubGlobal(
-      'BroadcastChannel',
-      vi.fn(() => {
-        throw new Error('Not supported');
-      }),
-    );
+    const constructorError = new Error('Not supported');
+    const createChannel = vi.fn(function UnsupportedBroadcastChannel(_name: string) {
+      throw constructorError;
+    });
+    vi.stubGlobal('BroadcastChannel', createChannel);
 
     vi.resetModules();
     const { createAuthBroadcast } = await import('../../src/integrations/react/broadcast.js');
@@ -109,6 +110,8 @@ describe('createAuthBroadcast', () => {
     const onMessage = vi.fn();
     const broadcast = createAuthBroadcast(onMessage);
 
+    expect(createChannel).toHaveBeenCalledExactlyOnceWith('gg-auth-sync');
+    expect(createChannel.mock.results[0]).toMatchObject({ type: 'throw', value: constructorError });
     expect(() => broadcast.send({ type: 'sign-out', timestamp: 0 })).not.toThrow();
     expect(() => broadcast.close()).not.toThrow();
   });
