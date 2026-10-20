@@ -38,6 +38,25 @@ public static class PaymentsModule
             .ValidateOnStart();
         services.AddScoped<IRefundProcessingService, RefundProcessingService>();
 
+        // Automated refund workflow (issues #403/#419): approved refunds are executed and failed
+        // refunds retried (max 3 attempts by default) by an opt-in background worker; the
+        // workflow options also gate the opt-in wallet credit for partial refunds.
+        services.AddSingleton<IValidateOptions<RefundWorkflowOptions>, RefundWorkflowOptionsValidator>();
+        services.AddOptions<RefundWorkflowOptions>()
+            .Bind(configuration.GetSection(RefundWorkflowOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IRefundWorkflowWorker, RefundWorkflowWorker>();
+        services.AddHostedService<RefundWorkflowBackgroundService>();
+
+        // Dispute notifications (issue #419): team alerts on dispute creation and the opt-in
+        // daily evidence-deadline reminder worker.
+        services.AddSingleton<IValidateOptions<DisputeNotificationOptions>, DisputeNotificationOptionsValidator>();
+        services.AddOptions<DisputeNotificationOptions>()
+            .Bind(configuration.GetSection(DisputeNotificationOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IDisputeNotificationService, DisputeNotificationService>();
+        services.AddHostedService<DisputeDeadlineReminderBackgroundService>();
+
         // Revenue auditing (issue #404): external statement reconciliation, anomaly
         // detection, compliance reporting and CSV/JSON exports.
         services.AddScoped<IRevenueReconciliationRepository, RevenueReconciliationRepository>();

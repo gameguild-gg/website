@@ -4,9 +4,13 @@ using Microsoft.Extensions.Logging;
 namespace GameGuild.Commerce.Payments;
 
 /// <summary>
-///     Dispute service implementation
+/// Dispute service implementation
 /// </summary>
-public class DisputeService(IApplicationDbContext context, ILogger<DisputeService> logger) : IDisputeService
+public class DisputeService(
+    IApplicationDbContext context,
+    ILogger<DisputeService> logger,
+    IRevenueAuditService? revenueAuditService = null,
+    IDisputeNotificationService? disputeNotificationService = null) : IDisputeService
 {
     private DbSet<PaymentDispute> PaymentDisputes { get => context.Set<PaymentDispute>(); }
 
@@ -24,6 +28,18 @@ public class DisputeService(IApplicationDbContext context, ILogger<DisputeServic
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         logger.LogInformation("Dispute created with ID {DisputeId}", dispute.Id);
+
+        // Team alert (issue #419): locally created disputes notify the configured recipients too.
+        if (disputeNotificationService is not null)
+        {
+            var payment = await context.Set<Payment>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == paymentId, cancellationToken)
+                .ConfigureAwait(false);
+            await disputeNotificationService
+                .SendDisputeCreatedAlertAsync(dispute, payment, cancellationToken)
+                .ConfigureAwait(false);
+        }
 
         return dispute;
     }
@@ -88,6 +104,37 @@ public class DisputeService(IApplicationDbContext context, ILogger<DisputeServic
             dispute.Resolve(resolution, notes ?? string.Empty, resolvedBy ?? Guid.Empty);
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Dispute-fee accounting (issue #419 "record dispute fees / update accounting"): the
+        // gateway's chargeback fee is expensed once, at resolution time. Best-effort — the
+        // ledger write must never roll back the recorded resolution.
+        if (dispute.DisputeFee > 0 && revenueAuditService is not null)
+        {
+            try
+            {
+                await revenueAuditService.CreateLedgerEntryAsync(
+                    entryType: LedgerEntryType.Fee,
+                    debitAccount: LedgerAccount.RefundsAndChargebacks.ToAccountCode(),
+                    creditAccount: LedgerAccount.Cash.ToAccountCode(),
+                    amount: dispute.DisputeFee,
+                    currency: "USD",
+                    description: $"Dispute fee for dispute {dispute.Id} (payment {dispute.PaymentId}, outcome {resolution})",
+                    referenceNumber: dispute.GatewayDisputeId,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Dispute-fee ledger entry for dispute {DisputeId} failed; the resolution itself stays applied",
+                    dispute.Id);
+            }
+        }
+
         logger.LogInformation("Dispute {DisputeId} resolved", disputeId);
     }
 

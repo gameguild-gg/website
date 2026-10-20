@@ -413,6 +413,13 @@ public sealed class PaymentsController(
         var validationError = ValidateTenantAccess(payment.TenantId, "refund payment");
         if (validationError != null) return validationError;
 
+        // The refund reason is required for compliance (issue #415): refunds feed financial
+        // reporting and chargeback evidence, so an unattributed refund is rejected.
+        if (string.IsNullOrWhiteSpace(body.Reason))
+        {
+            return BadRequest(new { error = "A refund reason is required" });
+        }
+
         // Null amount means "refund everything that is left" (full refund of the remaining
         // balance). The query result carries the net (not yet refunded) amount, so coalescing
         // here yields a full refund instead of the historical 0 — which the domain rejected.
@@ -423,7 +430,7 @@ public sealed class PaymentsController(
             return BadRequest(new { error = "Amount must be positive; the payment has no remaining refundable amount." });
         }
 
-        var r = await sender.Send(new ProcessRefundCommand(paymentId, refundAmount, body.Reason ?? "No reason provided"), ct).ConfigureAwait(false);
+        var r = await sender.Send(new ProcessRefundCommand(paymentId, refundAmount, body.Reason), ct).ConfigureAwait(false);
 
         return Ok(r);
     }

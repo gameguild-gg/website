@@ -4,6 +4,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GameGuild.Commerce.Payments;
 
+/// <summary>How a refund amount was determined (issue #419).</summary>
+public enum RefundKind
+{
+    /// <summary>The full remaining refundable balance of the payment.</summary>
+    Full = 0,
+
+    /// <summary>An explicitly specified partial amount.</summary>
+    Partial = 1,
+
+    /// <summary>Computed from the unused time of the subscription billing period (issue #419 proration).</summary>
+    Prorated = 2
+}
+
 /// <summary>
 ///     A single refund against a payment (issue #419). Each refund attempt is one row with its
 ///     own lifecycle (Pending → Approved/Rejected → Processing → Completed/Failed); the payment's
@@ -45,6 +58,9 @@ public class Refund : EntityBase
     [Column(TypeName = "decimal(18,2)")]
     [Required]
     public decimal Amount { get; private set; }
+
+    /// <summary>How <see cref="Amount"/> was determined: full remaining, explicit partial, or computed proration.</summary>
+    public RefundKind Kind { get; private set; } = RefundKind.Full;
 
     /// <summary>ISO 4217 currency copied from the payment at request time</summary>
     [Required]
@@ -124,7 +140,8 @@ public class Refund : EntityBase
         Guid requestedByUserId,
         bool requiresApproval,
         string idempotencyKey,
-        Guid? disputeId = null)
+        Guid? disputeId = null,
+        RefundKind kind = RefundKind.Full)
     {
         if (tenantId == Guid.Empty)
         {
@@ -153,6 +170,7 @@ public class Refund : EntityBase
             TenantId = tenantId,
             PaymentId = paymentId,
             Amount = amount,
+            Kind = kind,
             Currency = currency.ToUpperInvariant(),
             Reason = reason.Trim(),
             ReasonDetails = reasonDetails,

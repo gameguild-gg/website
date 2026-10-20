@@ -27,4 +27,26 @@ public interface IRefundRepository
 
     /// <summary>Persists refund state changes.</summary>
     Task<Refund> UpdateAsync(Refund refund, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Gets the payment's open refund — <see cref="RefundStatus.Pending"/>,
+    ///     <see cref="RefundStatus.Approved"/> or <see cref="RefundStatus.Processing"/> — or the
+    ///     retryable <see cref="RefundStatus.Failed"/> row, when one exists (issue #419: prevents
+    ///     duplicate concurrent refunds on the same payment).
+    /// </summary>
+    Task<Refund?> GetOpenRefundForPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Lists refunds due for the automated refund workflow (issue #419): approved refunds
+    ///     waiting for execution, and failed refunds that still have execution attempts left and
+    ///     whose retry delay has elapsed.
+    /// </summary>
+    /// <param name="maxExecutionAttempts">Total execution-attempt budget per refund (default 3).</param>
+    /// <param name="failedBeforeUtc">Failed refunds are retried only after their last failure timestamp passes this instant.</param>
+    /// <param name="take">Maximum number of refunds to return.</param>
+    Task<IReadOnlyList<Refund>> ListDueForWorkflowAsync(
+        int maxExecutionAttempts,
+        DateTime failedBeforeUtc,
+        int take = 50,
+        CancellationToken cancellationToken = default);
 }
