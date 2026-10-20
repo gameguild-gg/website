@@ -10,10 +10,12 @@ using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace GameGuild.SessionStateAcceptance;
 
@@ -31,19 +33,26 @@ internal static class Runner
         }
         var repository = Path.GetFullPath(args[0]);
         var evidence = Path.GetFullPath(args[1]);
+        var apiContentRoot = Path.Combine(repository, "apps", "api", "Source", "GameGuild.API");
+        Assert.True(File.Exists(Path.Combine(apiContentRoot, "GameGuild.API.csproj")));
         Directory.CreateDirectory(evidence);
         var fixture = new ApiPostgreSqlFixture();
         try
         {
             await fixture.InitializeAsync();
-            fixture.RealAuthenticationFactory.UseKestrel(options => options.Listen(IPAddress.Loopback, 0));
-            var account = await SeedAsync(fixture);
-            var server = fixture.RealAuthenticationFactory.Services.GetRequiredService<IServer>();
+            // The standalone console has no test-runner content-root manifest. Bind the
+            // existing real-authentication fixture to the API's actual source directory.
+            using var factory = fixture.RealAuthenticationFactory.WithWebHostBuilder(
+                builder => builder.UseContentRoot(apiContentRoot));
+            factory.UseKestrel(options => options.Listen(IPAddress.Loopback, 0));
+            Assert.Equal(apiContentRoot, factory.Services.GetRequiredService<IHostEnvironment>().ContentRootPath);
+            var account = await SeedAsync(factory.Services);
+            var server = factory.Services.GetRequiredService<IServer>();
             Assert.StartsWith("Microsoft.AspNetCore.Server.Kestrel", server.GetType().Namespace!);
             var address = new Uri(Assert.Single(server.Features.Get<IServerAddressesFeature>()!.Addresses));
             Assert.True(address.IsLoopback && address.Scheme == "http" && address.Port > 0);
             string accessToken;
-            await using (var scope = fixture.RealAuthenticationFactory.Services.CreateAsyncScope())
+            await using (var scope = factory.Services.CreateAsyncScope())
             {
                 var schemes = scope.ServiceProvider.GetRequiredService<IAuthenticationSchemeProvider>();
                 Assert.Equal(typeof(JwtBearerHandler), (await schemes.GetSchemeAsync("Bearer"))!.HandlerType);
@@ -97,7 +106,7 @@ internal static class Runner
             using var browser = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(evidence, "browser.json")));
             Assert.True(browser.RootElement.GetProperty("passed").GetBoolean());
             Assert.Equal(account.SessionId.ToString(), browser.RootElement.GetProperty("sessionId").GetString());
-            await using (var scope = fixture.RealAuthenticationFactory.Services.CreateAsyncScope())
+            await using (var scope = factory.Services.CreateAsyncScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 var rows = await db.Set<UserSession>().AsNoTracking()
@@ -130,9 +139,9 @@ internal static class Runner
         }
     }
 
-    private static async Task<Account> SeedAsync(ApiPostgreSqlFixture fixture)
+    private static async Task<Account> SeedAsync(IServiceProvider services)
     {
-        await using var scope = fixture.RealAuthenticationFactory.Services.CreateAsyncScope();
+        await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var marker = Guid.NewGuid().ToString("N");
         var owner = User.Create(marker + "@example.test", "Synthetic session-state browser account");
