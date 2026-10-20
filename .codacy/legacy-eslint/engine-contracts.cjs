@@ -1041,7 +1041,7 @@ test('historical lint text and compiler AST retain matching bytes and typed depe
     const historical = 'import { value } from "./dependency";\nexport const historical = value;\n';
     writeFileSync(filename, current);
     writeFileSync(dependency, 'export const value: number = 42;\n');
-    writeFileSync(project, JSON.stringify({ files: [filename, dependency], compilerOptions: { strict: true } }));
+    writeFileSync(project, JSON.stringify({ files: [filename, dependency], compilerOptions: { strict: true, types: [] } }));
     const result = createSourceOverrideProgram(engineRequire, project,
       new Map([[filename, Buffer.from(historical)]]));
     assert.equal(result.program.getSourceFile(filename).getFullText(), historical);
@@ -1053,7 +1053,10 @@ test('historical lint text and compiler AST retain matching bytes and typed depe
       compilerSourceSha256: createHash('sha256').update(historical).digest('hex') }]);
     const options = result.program.getCompilerOptions();
     assert(options.strict && options.noEmit && options.noUnusedLocals && options.noUnusedParameters);
-    assert.equal(result.program.getSemanticDiagnostics().length, 0);
+    const diagnostics = result.program.getSemanticDiagnostics();
+    assert.equal(diagnostics.length, 0, JSON.stringify(diagnostics.map((diagnostic) => ({
+      code: diagnostic.code, file: path.basename(diagnostic.file?.fileName ?? ''), message: diagnostic.messageText,
+    }))));
     assert.throws(() => createSourceOverrideProgram(engineRequire, project,
       new Map([[path.join(directory, 'untracked.ts'), Buffer.from(historical)]])), { code: 'ERR_ASSERTION' });
   } finally {
