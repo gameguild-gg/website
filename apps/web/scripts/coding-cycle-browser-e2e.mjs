@@ -1336,6 +1336,33 @@ async function gradeCheck(fixture) {
     `scoreUnits=${sub?.score}; expectedPoints=${fixture.maxScore}`);
   record("submission feedback non-null", Boolean(sub?.feedback), `feedback=${sub?.feedback ? "present" : "null"}`);
 
+  // Read the same queue used by the instructor page after grading. This keeps
+  // the page's queue-count assertion tied to independently observed API state.
+  try {
+    const queue = unwrap(await adminClient.request({
+      method: "GET",
+      path: `/v1.0/assessments/${fixture.assessmentId}/grading-queue`,
+      requiresAuth: true,
+      cache: "no-store",
+    }), "Grading queue (grade check)");
+    const item = queue?.items?.find((entry) => entry.submissionId === sub?.id);
+    const queueState = JSON.stringify({
+      needsGrading: queue?.needsGrading ?? null,
+      itemFound: Boolean(item),
+      roundStatus: item?.activeGradeRoundStatus ?? null,
+      requiresStaffReview: item?.requiresStaffReview ?? false,
+    });
+    record("graded submission has a finalized queue round",
+      Boolean(item) && String(item.activeGradeRoundStatus ?? "").toLowerCase() === "finalized",
+      queueState);
+    record("grading queue has no remaining staff review",
+      Boolean(item) && (queue?.needsGrading ?? 0) === 0 && item.requiresStaffReview !== true,
+      queueState);
+  } catch {
+    record("canonical grading queue request succeeds", false,
+      "Request failed; inspect the preserved API log.");
+  }
+
   // RubricScoresPayload is not exposed on the submission DTO — probe the DB.
   let rubricPayload = null;
   let dbError = null;
