@@ -8,12 +8,12 @@ export function createAssemblyScriptBindings(
   return {
     // AssemblyScript runtime hooks
     abort: (message: unknown, fileName: unknown, line: number, column: number) => {
-      stderr(`AssemblyScript abort: ${message} at ${fileName}:${line}:${column}`)
-      throw new Error(`Abort: ${message}`)
+      stderr(`AssemblyScript abort: ${String(message)} at ${String(fileName)}:${line}:${column}`)
+      throw new Error(`Abort: ${String(message)}`)
     },
 
     trace: (message: unknown, n: number, ...args: number[]) => {
-      stdout(`[TRACE] ${message} n=${n} args=${args.join(', ')}`)
+      stdout(`[TRACE] ${String(message)} n=${n} args=${args.join(', ')}`)
     },
 
     seed: () => Date.now(),

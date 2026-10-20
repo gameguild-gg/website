@@ -489,9 +489,6 @@
     }
   },
   "src/components/block-content-editor/engines/editor-field.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     },
@@ -525,9 +522,6 @@
     }
   },
   "src/components/block-content-editor/engines/static-viewer.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
     },
@@ -542,9 +536,6 @@
     }
   },
   "src/components/block-content-editor/engines/viewer-field.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     },
@@ -690,9 +681,6 @@
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/python-runner.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/require-await": {
       "count": 1
     }
@@ -730,9 +718,6 @@
     "@next/next/no-assign-module-variable": {
       "count": 1
     },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 2
     },
@@ -762,39 +747,6 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/js.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/object.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 3
-    }
-  },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/reflect.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/builtin/window.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 9
@@ -815,11 +767,6 @@
       "count": 3
     }
   },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/assemblyscript.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/go.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -828,11 +775,6 @@
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/legacy/wasi.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 128
-    }
-  },
-  "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/types.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/wasi/clocks.ts": {
@@ -849,23 +791,14 @@
     }
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-runner.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
     },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 8
+      "count": 3
     },
     "@typescript-eslint/no-unsafe-call": {
-      "count": 8
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
+      "count": 3
     },
     "@typescript-eslint/require-await": {
       "count": 1
@@ -873,11 +806,6 @@
   },
   "src/components/block-content-editor/extras/code-studio/tree-operations.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/block-content-editor/extras/code-studio/types.ts": {
-    "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   },
@@ -1082,17 +1010,11 @@
     }
   },
   "src/components/block-content-editor/extras/manager-page/filters/filter-mime-types.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-assignment": {
       "count": 1
     }
   },
   "src/components/block-content-editor/extras/manager-page/filters/filters.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
     "@typescript-eslint/no-unsafe-assignment": {
       "count": 3
     },
@@ -1164,15 +1086,7 @@
     }
   },
   "src/components/block-content-editor/extras/media/audio-options.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/block-content-editor/extras/media/image-options.tsx": {
-    "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   },
@@ -1213,9 +1127,6 @@
     }
   },
   "src/components/block-content-editor/extras/media/unified-media-editor.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-assignment": {
       "count": 2
     },
@@ -1230,9 +1141,6 @@
     }
   },
   "src/components/block-content-editor/extras/media/video-options.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -1553,9 +1461,6 @@
     }
   },
   "src/components/block-content-editor/extras/source-code/utils.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-redundant-type-constituents": {
       "count": 1
     },
@@ -1594,11 +1499,6 @@
       "count": 1
     }
   },
-  "src/components/block-content-editor/hooks/editor/executors/compiled-language-executor.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/block-content-editor/hooks/editor/executors/executor-factory.ts": {
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
@@ -1633,9 +1533,6 @@
     }
   },
   "src/components/block-content-editor/hooks/editor/test-runners/utils.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 2
     },
@@ -1644,9 +1541,6 @@
     }
   },
   "src/components/block-content-editor/hooks/editor/use-code-execution.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
     },
@@ -1670,9 +1564,6 @@
     }
   },
   "src/components/block-content-editor/hooks/editor/use-google-drive-auth.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
     },
@@ -1808,9 +1699,6 @@
     }
   },
   "src/components/block-content-editor/hooks/useProjectHistory.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-member-access": {
       "count": 1
     },
@@ -1846,9 +1734,6 @@
     }
   },
   "src/components/block-content-editor/lib/api/editor/api-client.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-assignment": {
       "count": 14
     },
@@ -1984,9 +1869,6 @@
     }
   },
   "src/components/block-content-editor/lib/sync/editor/sync-queue.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 5
     },
