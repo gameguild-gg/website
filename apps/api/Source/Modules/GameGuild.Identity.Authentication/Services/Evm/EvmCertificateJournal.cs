@@ -57,6 +57,26 @@ public sealed class EvmCertificateJournal(IDbContextFactory<EvmCertificateJourna
         return op is null ? null : Snapshot(op);
     }
 
+    /// <summary>Trusted producer lookup, scoped to the immutable document owner and tenant; ambiguous prior networks fail closed.</summary>
+    public async Task<EvmCertificateJournalSnapshot?> FindByDocumentAsync(string producer, Guid documentId, Guid ownerUserId,
+        Guid? tenantId, EvmCertificateOperationKind kind, CancellationToken cancellationToken)
+    {
+        EvmCertificatePublicationValues.Key(producer, nameof(producer));
+        if (documentId == Guid.Empty || ownerUserId == Guid.Empty || tenantId == Guid.Empty || !Enum.IsDefined(kind))
+        {
+            throw new ArgumentException("A document, owner, tenant scope and operation are required.");
+        }
+        await using var db = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var matches = await db.Set<EvmCertificateJournalOperationRow>().AsNoTracking()
+            .Where(o => o.Producer == producer && o.DocumentId == documentId && o.OwnerUserId == ownerUserId && o.TenantId == tenantId && o.Kind == kind)
+            .Take(2).ToListAsync(cancellationToken).ConfigureAwait(false);
+        if (matches.Count > 1)
+        {
+            throw Failure(EvmCertificateJournalFailure.Conflict);
+        }
+        return matches.Count == 0 ? null : Snapshot(matches[0]);
+    }
+
     public async Task<IReadOnlyList<Guid>> FindDueAsync(string profile, int limit, CancellationToken cancellationToken)
     {
         EvmCertificatePublicationValues.Key(profile, nameof(profile));
