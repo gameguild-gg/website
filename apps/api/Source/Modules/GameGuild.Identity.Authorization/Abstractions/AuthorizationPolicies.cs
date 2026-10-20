@@ -124,6 +124,42 @@ public static class AuthorizationPolicies
     ///     Policy for self-service operations (user can only access their own data).
     /// </summary>
     public const string SelfOrAdmin = "SelfOrAdmin";
+
+    // ========================
+    // GUEST (ANONYMOUS) ACCESS
+    // ========================
+
+    /// <summary>
+    ///     Base guest-access policy: admits a well-formed guest principal (own claim/role
+    ///     namespace, never a user id) to endpoints explicitly marked for guest access.
+    ///     Applied together with the guest authentication scheme — it never weakens the
+    ///     default <c>[Authorize]</c> surface, which rejects guest credentials outright.
+    /// </summary>
+    public const string GuestAccess = "GuestAccess";
+
+    /// <summary>
+    ///     Policy name admitting guests holding one specific enumerated guest permission
+    ///     (e.g. <see cref="Models.GuestPermission.Keys.BrowseCatalog"/>).
+    ///     Permissions outside <c>GuestPermission.Allowlist</c> have no registered policy and
+    ///     are denied to guests by construction.
+    /// </summary>
+    public static string GuestAccessFor(string guestPermissionKey)
+    {
+        if (string.IsNullOrWhiteSpace(guestPermissionKey))
+        {
+            throw new ArgumentException("A guest permission key is required.", nameof(guestPermissionKey));
+        }
+
+        if (!Models.GuestPermission.Allowlist.Contains(guestPermissionKey))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(guestPermissionKey),
+                guestPermissionKey,
+                "Only enumerated GuestPermission keys have guest-access policies (fail closed).");
+        }
+
+        return $"{GuestAccess}:{guestPermissionKey}";
+    }
 }
 
 /// <summary>

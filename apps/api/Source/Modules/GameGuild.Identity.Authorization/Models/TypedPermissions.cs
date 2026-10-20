@@ -1215,3 +1215,61 @@ public sealed class MonetizationPermission : Permission
     /// <summary>Manage payment settings, subscription tiers, pricing models</summary>
     public static readonly MonetizationPermission Configure = new(Keys.Configure, "Manage payment settings, subscription tiers and pricing models");
 }
+
+/// <summary>
+///     Strongly-typed permissions for anonymous guest access (issue #213).
+/// </summary>
+/// <remarks>
+///     <para>
+///         <b>This is the complete, enumerated set of permissions a guest may ever hold.</b>
+///         <see cref="Allowlist"/> is the single fail-closed source consumed by the guest
+///         authorization path: a guest request for any other permission — including every
+///         tenant, resource and content-type permission in this file — is denied, because
+///         guests are not subjects of the permission database at all.
+///     </para>
+///     <para>
+///         Unlike the other typed permissions these keys are never granted, stored or
+///         inheritable; they are evaluated from the guest principal itself. Adding an entry
+///         here is a reviewed security-surface change: it widens what every anonymous guest
+///         session can reach.
+///     </para>
+/// </remarks>
+public sealed class GuestPermission : Permission
+{
+    private GuestPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in guest-access policies.
+    /// </summary>
+    public static class Keys
+    {
+        /// <summary>Browse public catalog and discovery listings surfaced to guests.</summary>
+        public const string BrowseCatalog = "guest:browse-catalog";
+
+        /// <summary>Read published public content surfaced to guests.</summary>
+        public const string ReadPublishedContent = "guest:read-published-content";
+    }
+
+    /// <summary>Browse public catalog and discovery listings surfaced to guests.</summary>
+    public static readonly GuestPermission BrowseCatalog = new(Keys.BrowseCatalog, "Browse public catalog and discovery listings surfaced to guests");
+
+    /// <summary>Read published public content surfaced to guests.</summary>
+    public static readonly GuestPermission ReadPublishedContent = new(Keys.ReadPublishedContent, "Read published public content surfaced to guests");
+
+    /// <summary>
+    ///     The complete allowlist of permissions a guest may hold (fail closed). Every entry
+    ///     must also exist as a static instance on this class so the two stay in sync.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Allowlist =
+    [
+        Keys.BrowseCatalog,
+        Keys.ReadPublishedContent
+    ];
+}
