@@ -100,7 +100,8 @@ public sealed class EffectivePermissionResolverService(
         {
             logger.LogWarning(
                 "Effective permission resolution requested with an invalid context (user {UserId}, tenant {TenantId}, resource {ResourceType}/{ResourceId}) - returning empty permissions (fail-closed).",
-                context.UserId, context.TenantId, context.ResourceType ?? "<none>", context.ResourceId ?? "<none>");
+                LogRedaction.RedactId(context.UserId, "uid"), LogRedaction.RedactId(context.TenantId),
+                context.ResourceType ?? "<none>", context.ResourceId ?? "<none>");
             return FailClosed(context);
         }
 
@@ -110,7 +111,7 @@ public sealed class EffectivePermissionResolverService(
         {
             logger.LogWarning(
                 "Effective permission resolution in tenant {TenantId} short-circuited by the evaluation denial throttle (fail-closed).",
-                context.TenantId);
+                LogRedaction.RedactId(context.TenantId));
             return new EffectivePermissions
             {
                 UserId = context.UserId,
@@ -291,7 +292,7 @@ public sealed class EffectivePermissionResolverService(
                     exception,
                     "Permission evaluation extension {ExtensionName} threw during evaluation in tenant {TenantId} - its contributions are skipped.",
                     extension.Name,
-                    context.TenantId);
+                    LogRedaction.RedactId(context.TenantId));
             }
 
             if (contribution is null)
@@ -325,7 +326,7 @@ public sealed class EffectivePermissionResolverService(
             {
                 logger.LogWarning(
                     "Attempted to deny static permission {Permission} for user {UserId} - denies cannot override static grants",
-                    denied, context.UserId);
+                    denied, LogRedaction.RedactId(context.UserId, "uid"));
                 continue;
             }
 
@@ -347,7 +348,8 @@ public sealed class EffectivePermissionResolverService(
 
         logger.LogDebug(
             "Resolved {Count} effective permissions ({AllowCount} allowed, {DenyCount} denied) for user {UserId} in tenant {TenantId}",
-            effectivePermissions.Count, allows.Count, denies.Count, context.UserId, context.TenantId);
+            effectivePermissions.Count, allows.Count, denies.Count,
+            LogRedaction.RedactId(context.UserId, "uid"), LogRedaction.RedactId(context.TenantId));
 
         return new EffectivePermissions
         {
@@ -456,7 +458,8 @@ public sealed class EffectivePermissionResolverService(
                 logger.LogError(
                     exception,
                     "External authorization decision provider threw while evaluating permission {Permission} for user {UserId} in tenant {TenantId} - the permission fails closed.",
-                    LogRedaction.Sanitize(permission), context.UserId, context.TenantId);
+                    LogRedaction.Sanitize(permission),
+                    LogRedaction.RedactId(context.UserId, "uid"), LogRedaction.RedactId(context.TenantId));
                 denies.Add(permission);
                 continue;
             }
@@ -468,7 +471,8 @@ public sealed class EffectivePermissionResolverService(
 
             logger.LogDebug(
                 "External authorization decision provider denied permission {Permission} for user {UserId} in tenant {TenantId}: {Reasons}",
-                LogRedaction.Sanitize(permission), context.UserId, context.TenantId,
+                LogRedaction.Sanitize(permission),
+                LogRedaction.RedactId(context.UserId, "uid"), LogRedaction.RedactId(context.TenantId),
                 LogRedaction.Sanitize(string.Join("; ", decision.Reasons)));
             denies.Add(permission);
         }
@@ -511,7 +515,7 @@ public sealed class EffectivePermissionResolverService(
             {
                 logger.LogWarning(
                     "Unknown Authorization:OwnerOverride:Mode '{Mode}' - the owner override fails closed to Off in tenant {TenantId}.",
-                    ownerOptions.Mode, context.TenantId);
+                    ownerOptions.Mode, LogRedaction.RedactId(context.TenantId));
             }
 
             return null;
@@ -583,7 +587,7 @@ public sealed class EffectivePermissionResolverService(
         // Durable audit coverage for ownership changes lives in TransferOwnershipCommand.
         logger.LogDebug(
             "Owner override applied on {ResourceType}/{ResourceId} in tenant {TenantId}: mode {Mode}, {PermissionCount} owner permissions, effective through {EffectiveThrough}.",
-            context.ResourceType, context.ResourceId, context.TenantId, mode, minted.Count,
+            context.ResourceType, context.ResourceId, LogRedaction.RedactId(context.TenantId), mode, minted.Count,
             effectiveThrough is null ? "indefinitely" : effectiveThrough.Value.ToString("O"));
 
         return new OwnerOverrideEvaluation(mode, ownership.OwnerUserId, minted, effectiveThrough);

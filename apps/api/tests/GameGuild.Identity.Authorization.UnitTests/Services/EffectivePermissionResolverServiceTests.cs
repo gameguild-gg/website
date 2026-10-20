@@ -1,6 +1,6 @@
 using FluentAssertions;
 using GameGuild.CQRS.Models;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -23,12 +23,14 @@ public class EffectivePermissionResolverServiceTests
     private readonly Mock<IAuthorizationRolePermissionProvider> _roleProvider = new();
     private readonly Mock<IResourcePermissionService> _resourceService = new();
     private readonly Mock<IJitElevationRequestRepository> _jitRepository = new();
+    private readonly Mock<ILogger<EffectivePermissionResolverService>> _logger = new();
 
     private readonly Guid _userId = Guid.NewGuid();
     private readonly Guid _tenantId = Guid.NewGuid();
 
     private EffectivePermissionResolverService CreateSut(Guid? systemAccountId = null, bool withJitElevations = false)
     {
+        _logger.Setup(logger => logger.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         var options = Options.Create(new GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationOptions
         {
             SystemAccountId = systemAccountId ?? SystemAccountId
@@ -40,7 +42,7 @@ public class EffectivePermissionResolverServiceTests
             [_roleProvider.Object],
             _resourceService.Object,
             options,
-            NullLogger<EffectivePermissionResolverService>.Instance,
+            _logger.Object,
             withJitElevations ? _jitRepository.Object : null);
     }
 
@@ -653,4 +655,83 @@ public class EffectivePermissionResolverServiceTests
         (await sut.HasAnyPermissionAsync(_userId, _tenantId, ["a", "missing"])).Should().BeTrue();
         (await sut.HasAnyPermissionAsync(_userId, _tenantId, ["x", "missing"])).Should().BeFalse();
     }
+
+    [Fact]
+    public async Task ResolveAsync_InvalidContext_RedactsLogIdentifiersAndRemainsFailClosed()
+    {
+        var context = new EffectivePermissionContext
+        {
+            UserId = _userId,
+            TenantId = _tenantId,
+            ResourceType = "document"
+        };
+
+        var result = await CreateSut().ResolveAsync(context);
+
+        result.ContextValid.Should().BeFalse();
+        result.Permissions.Should().BeEmpty();
+        result.UserId.Should().Be(_userId);
+        result.TenantId.Should().Be(_tenantId);
+        var logs = CapturedLogs();
+        logs.Should().ContainSingle();
+        var user = logs[0].Properties["UserId"].Should().BeOfType<string>().Subject;
+        var tenant = logs[0].Properties["TenantId"].Should().BeOfType<string>().Subject;
+        user.Should().MatchRegex("^uid:[0-9a-f]{8}$");
+        tenant.Should().MatchRegex("^tid:[0-9a-f]{8}$");
+        logs[0].Message.Should().NotContain(_userId.ToString("D")).And.NotContain(_userId.ToString("N"))
+            .And.NotContain(_tenantId.ToString("D")).And.NotContain(_tenantId.ToString("N"));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ResolutionSummary_RedactsLogIdentifiersAndPreservesGrants()
+    {
+        SetupNoData();
+        SetupTenantRow(_userId, _tenantId, ["documents:read"], []);
+
+        var result = await CreateSut().ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.ContextValid.Should().BeTrue();
+        result.UserId.Should().Be(_userId);
+        result.TenantId.Should().Be(_tenantId);
+        result.Permissions.Should().BeEquivalentTo(new[] { "documents:read" });
+        result.Sources["documents:read"].Should().Be(PermissionSource.DirectGrant);
+        var summary = CapturedLogs().Single(log => log.Properties.ContainsKey("Count"));
+        summary.Properties["Count"].Should().Be(1);
+        var user = summary.Properties["UserId"].Should().BeOfType<string>().Subject;
+        var tenant = summary.Properties["TenantId"].Should().BeOfType<string>().Subject;
+        user.Should().MatchRegex("^uid:[0-9a-f]{8}$");
+        tenant.Should().MatchRegex("^tid:[0-9a-f]{8}$");
+        summary.Message.Should().NotContain(_userId.ToString("D")).And.NotContain(_userId.ToString("N"))
+            .And.NotContain(_tenantId.ToString("D")).And.NotContain(_tenantId.ToString("N"));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_StaticDenyWarning_RedactsSystemIdentifierAndPreservesStaticGrant()
+    {
+        SetupNoData();
+        SetupTenantRow(SystemAccountId, _tenantId, [], ["*"]);
+
+        var result = await CreateSut().ResolveAsync(EffectivePermissionContext.ForTenant(SystemAccountId, _tenantId));
+
+        result.UserId.Should().Be(SystemAccountId);
+        result.Permissions.Should().BeEquivalentTo(new[] { "*" });
+        result.Sources["*"].Should().Be(PermissionSource.Static);
+        var warning = CapturedLogs().Single(log => log.Properties.ContainsKey("Permission"));
+        warning.Properties["Permission"].Should().Be("*");
+        var user = warning.Properties["UserId"].Should().BeOfType<string>().Subject;
+        user.Should().MatchRegex("^uid:[0-9a-f]{8}$");
+        warning.Message.Should().NotContain(SystemAccountId.ToString("D")).And.NotContain(SystemAccountId.ToString("N"));
+    }
+
+    private (string Message, Dictionary<string, object?> Properties)[] CapturedLogs()
+        => _logger.Invocations
+            .Where(invocation => invocation.Method.Name == nameof(ILogger.Log))
+            .Select(invocation =>
+            {
+                var state = invocation.Arguments[2];
+                var properties = ((IEnumerable<KeyValuePair<string, object?>>)state)
+                    .ToDictionary(property => property.Key, property => property.Value);
+                return (Message: state.ToString() ?? string.Empty, Properties: properties);
+            })
+            .ToArray();
 }
