@@ -40,16 +40,6 @@ export class CustomListNode extends ListNode {
   setMarkerColor(markerColor: string): void {
     const writable = this.getWritable()
     writable.__markerColor = markerColor
-    
-    // Forçar re-aplicação da cor imediatamente
-    setTimeout(() => {
-      const latestNode = this.getLatest()
-      const element = (latestNode as any).__dom
-      if (element) {
-        // Aplicar cor usando o nó mais recente
-        (latestNode as CustomListNode).applyMarkerColor(element)
-      }
-    }, 0)
   }
 
   static clone(node: CustomListNode): CustomListNode {
