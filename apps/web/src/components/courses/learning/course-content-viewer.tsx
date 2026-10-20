@@ -29,7 +29,7 @@ interface ContentItem {
   order: number;
   isRequired: boolean;
   activityType?: 'text' | 'code' | 'file' | 'quiz' | 'discussion';
-  content?: any;
+  content?: unknown;
   progress?: number;
   score?: number;
   maxScore?: number;

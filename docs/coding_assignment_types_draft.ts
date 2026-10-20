@@ -28,7 +28,7 @@ type FunctionParameterType = FunctionParameterBasic | FunctionParameterArray | F
 
 type FunctionParameter = {
     type: FunctionParameterType;
-    content: any;
+    content: unknown;
 }
 
 type FunctionParameterWithName = FunctionParameter & {

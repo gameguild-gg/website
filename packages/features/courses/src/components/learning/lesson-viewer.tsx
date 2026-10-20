@@ -16,7 +16,7 @@ interface ContentItem {
   description?: string;
   order: number;
   isRequired: boolean;
-  content?: any;
+  content?: unknown;
 }
 
 interface LessonViewerProps {
