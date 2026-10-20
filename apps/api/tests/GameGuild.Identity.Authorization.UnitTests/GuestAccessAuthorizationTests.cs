@@ -1,10 +1,12 @@
 using System.Security.Claims;
+using FluentAssertions;
 using GameGuild.Configuration.PresentationLayer.Authorization;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Authorization.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Xunit;
 
 namespace GameGuild.Identity.Authorization.UnitTests;
 

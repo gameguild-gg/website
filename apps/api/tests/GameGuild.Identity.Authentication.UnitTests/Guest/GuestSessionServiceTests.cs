@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using FluentAssertions;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Authorization.Models;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Xunit;
 
 namespace GameGuild.Identity.Authentication.UnitTests.Guest;
 
@@ -28,20 +30,20 @@ public sealed class GuestSessionServiceTests
     {
         public Fixture(bool enabled = true, int lifetimeMinutes = 30)
         {
-            Options = new GuestSessionOptions { IsEnabled = enabled, AccessTokenLifetimeMinutes = lifetimeMinutes };
-            TokenService = new GuestTokenService(Options.Create(TestJwtOptions), NullLogger<GuestTokenService>.Instance);
-            Cache = new MemoryDistributedCache(new MemoryDistributedCacheOptions());
-            Store = new DistributedCacheGuestSessionStore(Cache, Options.Create(Options), NullLogger<DistributedCacheGuestSessionStore>.Instance);
+            Settings = new GuestSessionOptions { IsEnabled = enabled, AccessTokenLifetimeMinutes = lifetimeMinutes };
+            TokenService = new GuestTokenService(Microsoft.Extensions.Options.Options.Create(TestJwtOptions), NullLogger<GuestTokenService>.Instance);
+            Cache = new MemoryDistributedCache(Microsoft.Extensions.Options.Options.Create(new MemoryDistributedCacheOptions()));
+            Store = new DistributedCacheGuestSessionStore(Cache, Microsoft.Extensions.Options.Options.Create(Settings), NullLogger<DistributedCacheGuestSessionStore>.Instance);
             AuditSink = new Mock<IAuthenticationAuditEventSink>();
             Service = new GuestSessionService(
                 Store,
                 TokenService,
-                Options.Create(Options),
+                Microsoft.Extensions.Options.Options.Create(Settings),
                 AuditSink.Object,
                 NullLogger<GuestSessionService>.Instance);
         }
 
-        public GuestSessionOptions Options { get; }
+        public GuestSessionOptions Settings { get; }
 
         public GuestTokenService TokenService { get; }
 
@@ -88,33 +90,34 @@ public sealed class GuestSessionServiceTests
     }
 
     [Fact]
-    public void IssuedToken_NeverCarriesUserOrTenantClaims()
+    public async Task IssuedToken_NeverCarriesUserOrTenantClaims()
     {
         var fixture = new Fixture();
-        var issued = fixture.Service.IssueAsync(new GuestSessionRequest()).GetAwaiter().GetResult();
+        var issued = await fixture.Service.IssueAsync(new GuestSessionRequest());
 
         var principal = fixture.TokenService.Validate(issued.AccessToken);
 
         principal.Should().NotBeNull();
-        principal!.IsGuest().Should().BeTrue();
-        principal.TryGetGuestId(out var guestId).Should().BeTrue();
+        var guest = principal!;
+        guest.IsGuest().Should().BeTrue();
+        guest.TryGetGuestId(out var guestId).Should().BeTrue();
         guestId.Should().Be(issued.GuestSessionId);
         // Identity namespace isolation: no user id, no email, no tenant.
-        principal.FindFirst(ClaimNames.Subject).Should().BeNull();
-        principal.FindFirst(ClaimNames.UserId).Should().BeNull();
-        principal.FindFirst(ClaimNames.NameIdentifier).Should().BeNull();
-        principal.FindFirst(ClaimNames.Email).Should().BeNull();
-        principal.FindFirst(ClaimNames.TenantId).Should().BeNull();
-        principal.FindFirst(ClaimNames.TenantIdAlt).Should().BeNull();
+        guest.FindFirst(ClaimNames.Subject).Should().BeNull();
+        guest.FindFirst(ClaimNames.UserId).Should().BeNull();
+        guest.FindFirst(ClaimNames.NameIdentifier).Should().BeNull();
+        guest.FindFirst(ClaimNames.Email).Should().BeNull();
+        guest.FindFirst(ClaimNames.TenantId).Should().BeNull();
+        guest.FindFirst(ClaimNames.TenantIdAlt).Should().BeNull();
     }
 
     [Fact]
-    public void IssuedToken_IsInvalidOnTheStandardUserAudience()
+    public async Task IssuedToken_IsInvalidOnTheStandardUserAudience()
     {
         // Structural fail-closed: the default bearer scheme validates the user audience and
         // must reject a guest token outright (it is not merely unauthorized, it is invalid).
         var fixture = new Fixture();
-        var issued = fixture.Service.IssueAsync(new GuestSessionRequest()).GetAwaiter().GetResult();
+        var issued = await fixture.Service.IssueAsync(new GuestSessionRequest());
 
         var handler = new JwtSecurityTokenHandler();
         var parameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
