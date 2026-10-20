@@ -83,7 +83,7 @@ export function ManagerFilters({
         {isProjectContext && (
           <FilterSelect
             value={filters.storageType || 'all'}
-            onChange={(value) => onFilterChange({ storageType: value as any })}
+            onChange={(value) => onFilterChange({ storageType: value })}
             options={STORAGE_TYPE_OPTIONS}
             placeholder="Storage type"
             className="w-[180px]"
@@ -99,7 +99,7 @@ export function ManagerFilters({
 
             <FilterSelect
               value={filters.assetType || 'all'}
-              onChange={(value) => onFilterChange({ assetType: value as any })}
+              onChange={(value) => onFilterChange({ assetType: value })}
               options={ASSET_TYPE_OPTIONS}
               placeholder="Asset type"
             />
@@ -116,7 +116,7 @@ export function ManagerFilters({
 
             <FilterSelect
               value={filters.usageFilter || 'all'}
-              onChange={(value) => onFilterChange({ usageFilter: value as any })}
+              onChange={(value) => onFilterChange({ usageFilter: value })}
               options={USAGE_FILTER_OPTIONS}
               placeholder="Usage"
             />

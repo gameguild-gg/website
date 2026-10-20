@@ -9,28 +9,28 @@ import {
   SelectValue,
 } from "@game-guild/ui/components/select"
 
-interface SelectOption {
-  value: string
-  label: string
+export interface SelectOption<Value extends string = string> {
+  readonly value: Value
+  readonly label: string
 }
 
-interface FilterSelectProps {
-  value: string
-  onChange: (value: string) => void
-  options: SelectOption[]
+interface FilterSelectProps<Value extends string> {
+  value: Value
+  onChange: (value: Value) => void
+  options: readonly SelectOption<Value>[]
   placeholder?: string
   className?: string
 }
 
-export function FilterSelect({ 
+export function FilterSelect<Value extends string>({
   value, 
   onChange, 
   options, 
   placeholder, 
   className = "w-[150px]" 
-}: FilterSelectProps) {
+}: FilterSelectProps<Value>) {
   return (
-    <Select value={value} onValueChange={(value) => value !== null && onChange(value)}>
+    <Select<Value> value={value} onValueChange={(value) => value !== null && onChange(value)}>
       <SelectTrigger className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

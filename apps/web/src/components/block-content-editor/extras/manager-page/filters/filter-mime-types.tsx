@@ -210,9 +210,10 @@ export function FilterMimeTypes({
                     
                     <Checkbox
                       checked={isFullySelected}
+                      indeterminate={isPartiallySelected}
+                      aria-label={option.label}
                       onCheckedChange={() => handleToggleCategory(option)}
                       className="mt-0"
-                      {...(isPartiallySelected ? { 'data-state': 'indeterminate' as any } : {})}
                     />
                     
                     <div className="flex-1 min-w-0 flex items-center gap-2">
