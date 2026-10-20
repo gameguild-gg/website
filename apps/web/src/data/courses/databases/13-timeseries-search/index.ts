@@ -15,7 +15,7 @@ export const week13TimeseriesSearchContent: ProgramContent = {
   isRequired: true,
   estimatedMinutes: 360,
   visibility: 1, // Published
-  program: undefined as any,
+  program: undefined,
   parent: undefined,
   children: [],
   contentInteractions: [],
@@ -36,7 +36,7 @@ export const week13TimescaleDBContent: ProgramContent = {
   isRequired: true,
   estimatedMinutes: 120,
   visibility: 1, // Published
-  program: undefined as any,
+  program: undefined,
   parent: week13TimeseriesSearchContent,
   children: [],
   contentInteractions: [],
@@ -57,7 +57,7 @@ export const week13ElasticsearchContent: ProgramContent = {
   isRequired: true,
   estimatedMinutes: 120,
   visibility: 1, // Published
-  program: undefined as any,
+  program: undefined,
   parent: week13TimeseriesSearchContent,
   children: [],
   contentInteractions: [],
@@ -78,7 +78,7 @@ export const week13QuizContent: ProgramContent = {
   isRequired: true,
   estimatedMinutes: 30,
   visibility: 1, // Published
-  program: undefined as any,
+  program: undefined,
   parent: week13TimeseriesSearchContent,
   children: [],
   contentInteractions: [],
@@ -99,7 +99,7 @@ export const week13ReadingsContent: ProgramContent = {
   isRequired: false,
   estimatedMinutes: 180,
   visibility: 1, // Published
-  program: undefined as any,
+  program: undefined,
   parent: week13TimeseriesSearchContent,
   children: [],
   contentInteractions: [],
