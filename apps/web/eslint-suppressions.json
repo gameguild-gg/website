@@ -2086,9 +2086,6 @@
     "@next/next/no-assign-module-variable": {
       "count": 3
     },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
     },
@@ -2097,21 +2094,6 @@
     },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
     },
     "react-hooks/set-state-in-effect": {
       "count": 1

@@ -8,6 +8,7 @@ import { Progress } from '@game-guild/ui/components/progress';
 import { useCallback, useEffect, useState } from 'react';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@game-guild/ui/components/tabs';
 import { CourseCompletionCertificateService } from '@/lib/courses/services/certificate.service';
+import type { CertificateEligibility } from '@/lib/courses/services/certificate.service';
 import { ContentReportService } from '@/lib/courses/services/content-report.service';
 import { CertificateNotification, ContentNavigationSidebar, LessonViewer, ReportContentDialog } from '@game-guild/courses/components/learning';
 import { BookOpen, CheckCircle, ChevronLeft, ChevronRight, Clock, FileText, Flag, MessageSquare, MoreVertical, Play, Trophy, Upload } from 'lucide-react';
@@ -68,7 +69,7 @@ export function CourseContentViewer({ courseSlug }: CourseContentViewerProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportMessage, setReportMessage] = useState<ContentReportMessage | null>(null);
-  const [certificateEligibility, setCertificateEligibility] = useState<any>(null);
+  const [certificateEligibility, setCertificateEligibility] = useState<CertificateEligibility | null>(null);
   const [showCertificateNotification, setShowCertificateNotification] = useState(false);
 
   const loadCourseData = useCallback(async () => {
@@ -227,11 +228,13 @@ export function CourseContentViewer({ courseSlug }: CourseContentViewerProps) {
       );
 
       if (result.success) {
-        setCertificateEligibility((current: any) => ({
-          ...current,
-          certificateId: result.certificateId,
-          certificateUrl: result.certificateUrl,
-        }));
+        setCertificateEligibility((current) =>
+          current ? {
+            ...current,
+            certificateId: result.certificateId,
+            certificateUrl: result.certificateUrl,
+          } : current,
+        );
 
         if (result.certificateUrl) {
           window.open(result.certificateUrl, '_blank', 'noopener,noreferrer');

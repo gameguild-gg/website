@@ -23,23 +23,28 @@ export interface CertificateGenerationResult {
   error?: string;
 }
 
-export interface CertificateCompletionResult {
-  showCertificateNotification: boolean;
-  eligibility: {
-    eligible?: boolean;
-    reason?: string;
-    courseId?: string;
-    courseTitle?: string;
-    completedAt?: Date;
-    finalGrade?: number;
-    templateId?: string;
-    enrollmentId?: string;
-    userId?: string;
-    certificateId?: string;
-    certificateNumber?: string;
-    certificateUrl?: string | null;
-  };
+export interface CertificateEligibility {
+  courseId: string;
+  courseTitle: string;
+  completedAt: Date;
+  finalGrade?: number;
+  templateId?: string;
+  enrollmentId?: string;
+  userId?: string;
+  certificateId?: string;
+  certificateNumber?: string;
+  certificateUrl?: string | null;
 }
+
+export type CertificateCompletionResult =
+  | {
+      showCertificateNotification: false;
+      eligibility: { eligible: false; reason: string };
+    }
+  | {
+      showCertificateNotification: true;
+      eligibility: CertificateEligibility;
+    };
 
 const CERTIFICATE_CONTEXT_ERROR = 'Certificate generation requires a completed enrollment and active certificate template.';
 
@@ -194,7 +199,7 @@ export async function handleCourseCompletion(
     };
   }
 
-  const eligibility: CertificateCompletionResult['eligibility'] = {
+  const eligibility: CertificateEligibility = {
     courseId,
     courseTitle: courseData.title ?? 'Course',
     completedAt: new Date(),
