@@ -4,7 +4,7 @@ import { Label } from "@game-guild/ui/components/label"
 import { Input } from "@game-guild/ui/components/input"
 import { Button } from "@game-guild/ui/components/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@game-guild/ui/components/select"
-import type { NewFileDialogProps } from "../types"
+import type { LanguageType, NewFileDialogProps } from "../types"
 import { useState } from "react"
 
 // export interface NewFileDialogProps {
@@ -62,7 +62,7 @@ export function NewFileDialog({
           </div>
           <div>
             <Label htmlFor="file-language">Language</Label>
-            <Select value={newFileLanguage} onValueChange={(value) => setNewFileLanguage(value as any)}>
+            <Select<LanguageType> value={newFileLanguage} onValueChange={(value) => value !== null && setNewFileLanguage(value)}>
               <SelectTrigger id="file-language" className="mt-1">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>

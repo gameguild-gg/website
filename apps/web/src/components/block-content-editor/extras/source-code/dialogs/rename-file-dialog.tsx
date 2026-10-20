@@ -4,7 +4,7 @@ import { Label } from "@game-guild/ui/components/label"
 import { Input } from "@game-guild/ui/components/input"
 import { Button } from "@game-guild/ui/components/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@game-guild/ui/components/select"
-import type { RenameFileDialogProps } from "../types"
+import type { LanguageType, RenameFileDialogProps } from "../types"
 import { useEffect } from "react"
 
 export function RenameFileDialog({
@@ -78,7 +78,7 @@ export function RenameFileDialog({
           </div>
           <div>
             <Label htmlFor="rename-file-language">Language</Label>
-            <Select value={renameFileLanguage} onValueChange={(value) => setRenameFileLanguage(value as any)}>
+            <Select<LanguageType> value={renameFileLanguage} onValueChange={(value) => value !== null && setRenameFileLanguage(value)}>
               <SelectTrigger id="rename-file-language" className="mt-1">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>

@@ -1312,23 +1312,11 @@
     }
   },
   "src/components/block-content-editor/extras/source-code/dialogs/new-file-dialog.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 5
     }
   },
   "src/components/block-content-editor/extras/source-code/dialogs/rename-file-dialog.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     }
