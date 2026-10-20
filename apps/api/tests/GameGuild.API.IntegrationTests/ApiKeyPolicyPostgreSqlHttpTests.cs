@@ -102,7 +102,7 @@ public sealed class ApiKeyPolicyPostgreSqlHttpTests(ApiPostgreSqlFixture fixture
         var marker = Guid.NewGuid().ToString("N");
         var owner = User.Create(marker + "@example.test", "Synthetic API-key integration account");
         owner.Username = marker;
-        var tenant = new Tenant { Id = Guid.NewGuid(), Name = "Synthetic API-key tenant", Slug = "key-" + marker,
+        var tenant = new Tenant { Id = Guid.NewGuid(), Name = "Synthetic API-key tenant " + marker, Slug = "key-" + marker,
             AdminEmail = marker + "@example.test", IsActive = true };
         var (key, plaintext) = ApiKey.Create(owner.Id, tenant.Id, "Synthetic integration key", [grantedScope]);
         if (credential == "expired") { key.ExpiresAt = DateTime.UtcNow.AddMinutes(-1); }
