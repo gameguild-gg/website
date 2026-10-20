@@ -149,7 +149,7 @@ public class LoginAttemptAnalysisService(
                 if (context.Location != null && lastSuccessful != null)
                 {
                     var timeBetween = context.AttemptedAt - lastSuccessful.AttemptedAt;
-                    var previousLocation = ParseLocation(lastSuccessful.Location);
+                    var previousLocation = BehavioralLocationIdentity.FromHistory(lastSuccessful);
 
                     if (previousLocation != null)
                     {
@@ -439,19 +439,4 @@ public class LoginAttemptAnalysisService(
         await Task.CompletedTask.ConfigureAwait(false);
     }
 
-    private static LocationInfo? ParseLocation(string? locationString)
-    {
-        if (string.IsNullOrEmpty(locationString))
-        {
-            return null;
-        }
-
-        var parts = locationString.Split('-');
-        if (parts.Length >= 2)
-        {
-            return new LocationInfo { Country = parts[0], City = parts[1] };
-        }
-
-        return new LocationInfo { Country = locationString };
-    }
 }

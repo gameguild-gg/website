@@ -26,22 +26,30 @@ Grouping occurs after normalization. Public history strings, database columns an
 are unchanged.
 
 Missing city/country, incomparable country representations and ambiguous display-only history
-contribute no location anomaly. Other existing risk factors continue to be evaluated. The code does
+contribute no behavioral location anomaly. Other existing risk factors continue to be evaluated. The code does
 not infer a city from arbitrary comma-separated text or invent country/city aliases.
+
+The login-analysis reader uses the same historical identity reader. Its former hyphen-only parser
+could interpret the entire actual writer display string as a country. Country comparisons now prefer
+compatible codes or names and reject nonpositive elapsed time. The existing coarse cross-country,
+under-one-hour suspicion heuristic remains explicit; this is not coordinate-based velocity proof.
+Pre-token geolocation input and velocity-policy integration remain in #211.
 
 ## Authored validation and required acceptance
 
 - 31 focused unit cases cover current/legacy storage, country-code priority, labels, whitespace/case,
   changed locations and unknown data. Four exercise the actual authentication writer with a
   controlled geolocation provider and repository boundaries, including comma/hyphen city names.
+- 13 additional unit cases compose the real login scorer and threat detector over controlled history
+  and SIEM boundaries, and cover direct compatible-country comparisons and invalid chronology.
 - Five cases use the actual API composition, migrated PostgreSQL, authentication writer and
   repository, and registered anomaly facade/behavioral scorer, including isolation from another
-  user's baseline. Only the geolocation provider is controlled. History
+  user's baseline and actual login-analysis geographic signals. Only the geolocation provider is controlled. History
   timestamps cover every hour to isolate location scoring. This is backend-service/storage
   integration; it does not establish HTTP sign-in risk input or external geolocation acceptance.
 - Existing facade, login analysis, threat-detection and behavioral suites must pass on the corrected
   source. Source/DI/functional evidence must be reconciled with the complete title-level issue scope
   before resolving #212 or recertifying #217.
 
-All 36 new definitions await matching-source hosted execution. No local SDK, build, restore, tests,
+All 49 new definitions await matching-source hosted execution. No local SDK, build, restore, tests,
 database, containers, application server or external geolocation execution was performed.

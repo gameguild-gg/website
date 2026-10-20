@@ -71,6 +71,14 @@ public sealed class BehavioralLocationRiskPostgreSqlTests(ApiPostgreSqlFixture f
         Assert.Equal(score > 0, result.DetectedAnomalies.Contains("Authentication from unfamiliar location"));
         Assert.Equal(score == 0, result.MatchesTypicalBehavior);
         Assert.Equal(score == 0 ? RiskLevel.Low : RiskLevel.Medium, result.RiskLevel);
+        var previous = await repository.GetLastSuccessfulAttemptAsync(user.Id);
+        Assert.NotNull(previous);
+        var loginRisk = await facade.AnalyzeLoginAttemptAsync(new AuthenticationAttemptContext
+        {
+            UserId = user.Id, IpAddress = SourceAddress, UserAgent = Agent, AttemptedAt = previous.AttemptedAt.AddMinutes(10),
+            Location = attemptContext.Location
+        });
+        Assert.Equal(code == "BR", loginRisk.DetectedAnomalies.Contains(SecurityAlertKinds.ImpossibleTravel));
         var unseenUser = Guid.NewGuid();
         attemptContext.UserId = unseenUser;
         var isolated = await facade.AnalyzeBehavioralPatternsAsync(unseenUser, attemptContext);

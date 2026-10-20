@@ -37,14 +37,64 @@ internal static class BehavioralLocationIdentity
 
     internal static Context? Capture(LocationInfo? location)
     {
-        if (location is null || Normalize(location.City) is not { } city)
+        var context = CaptureCountry(location);
+        return context is { City.Length: > 0 } ? context : null;
+    }
+
+    internal static bool TryComparableCountries(LocationInfo current, LocationInfo previous,
+        out string currentCountry, out string previousCountry)
+    {
+        currentCountry = string.Empty; previousCountry = string.Empty;
+        if (CaptureCountry(current) is not { } left || CaptureCountry(previous) is not { } right)
+        {
+            return false;
+        }
+        if (left.CountryCode is { } leftCode && right.CountryCode is { } rightCode)
+        {
+            currentCountry = leftCode; previousCountry = rightCode;
+            return true;
+        }
+        if (left.CountryName is { } leftName && right.CountryName is { } rightName)
+        {
+            currentCountry = leftName; previousCountry = rightName;
+            return true;
+        }
+        return false;
+    }
+
+    internal static LocationInfo? FromHistory(AuthenticationAttempt attempt)
+    {
+        var history = ReadHistory(attempt);
+        if (history is null && Normalize(attempt.Country) is { } explicitCountry)
+        {
+            var code = NormalizeCountryCode(explicitCountry);
+            history = new Context(code, code is null ? explicitCountry : null, Normalize(attempt.City) ?? string.Empty);
+        }
+        if (history is null && string.IsNullOrWhiteSpace(attempt.Country) && string.IsNullOrWhiteSpace(attempt.City) &&
+            NormalizeCountryCode(attempt.Location) is { } legacyCode)
+        {
+            history = new Context(legacyCode, null, string.Empty);
+        }
+        if (history is not { } value)
         {
             return null;
         }
+        var city = attempt.City?.Trim();
+        if (string.IsNullOrEmpty(city) && value.City.Length > 0)
+        {
+            var display = attempt.Location!.Trim();
+            city = display[3..].Trim();
+        }
+        return new LocationInfo { Country = value.CountryName ?? value.CountryCode, CountryCode = value.CountryCode, City = city };
+    }
+
+    private static Context? CaptureCountry(LocationInfo? location)
+    {
+        if (location is null) { return null; }
         // Country previously also carried ISO codes; the explicit code field takes priority.
         var code = NormalizeCountryCode(location.CountryCode) ?? NormalizeCountryCode(location.Country);
         var name = NormalizeCountryCode(location.Country) is null ? Normalize(location.Country) : null;
-        return code is null && name is null ? null : new Context(code, name, city);
+        return code is null && name is null ? null : new Context(code, name, Normalize(location.City) ?? string.Empty);
     }
 
     private static Context? ReadHistory(AuthenticationAttempt attempt)
