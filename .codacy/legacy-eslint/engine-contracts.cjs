@@ -14,6 +14,7 @@ const {
   createSourceOverrideProgram,
 } = require('./project-configuration.cjs');
 const { publicDiagnostics, engineRule, engineFailure, partitionSources,
+  sourceCosts, sourceSchedulingContext, schedulingContextSha256,
   analysisStatus, qualifiedAnalysisStatus } = require('./analyze-repository.cjs');
 const { dependencyFrames, captureWriteStack, observeWrite, warningMetadata } = require('./tool-output-provenance.cjs');
 const { repairs } = require('./apply-repairs.cjs');
@@ -767,6 +768,115 @@ test('byte-weighted allocation rejects missing and invalid source sizes', () => 
     assert.throws(() => partitionSources(files, 0, 2, new Map([['first.ts', 10], ['second.ts', value]])));
   }
   assert.throws(() => partitionSources(files, 0, 2, new Map([['first.ts', 10], ['other.ts', 10]])));
+});
+
+function timingProfile(sources) {
+  const engineContext = { 'engine-context': 'a'.repeat(64) };
+  return { schemaVersion: 1, engineContext,
+    engineContextSha256: schedulingContextSha256(engineContext), sources };
+}
+
+test('measured scheduling isolates small expensive sources without changing source coverage or order', () => {
+  const files = ['small-a.ts', 'large.ts', 'small-b.ts', 'slow.ts', 'empty.ts'];
+  const sizes = new Map([['small-a.ts', 10], ['large.ts', 1000], ['small-b.ts', 10],
+    ['slow.ts', 1], ['empty.ts', 0]]);
+  const weights = new Map([['small-a.ts', 1], ['large.ts', 200], ['small-b.ts', 1],
+    ['slow.ts', 10000], ['empty.ts', 1]]);
+  const before = JSON.stringify([files, [...sizes], [...weights]]);
+  const parts = [0, 1].map((index) => partitionSources(files, index, 2, sizes, weights));
+  assert.deepEqual(parts, [['slow.ts'], ['small-a.ts', 'large.ts', 'small-b.ts', 'empty.ts']]);
+  assert.deepEqual([...parts.flat()].sort(), [...files].sort());
+  assert.equal(new Set(parts.flat()).size, files.length);
+  assert.deepEqual(partitionSources(files, 0, 1, sizes, weights), files);
+  assert.equal(JSON.stringify([files, [...sizes], [...weights]]), before);
+});
+
+test('timing hints require exact source bytes and keep changed new empty and retired files explicit', () => {
+  const profile = timingProfile([
+    { file: 'stable.ts', bytes: 10, sha256: 'a'.repeat(64), milliseconds: 1000, samples: 2 },
+    { file: 'changed.ts', bytes: 20, sha256: 'b'.repeat(64), milliseconds: 600, samples: 1 },
+    { file: 'retired.ts', bytes: 99, sha256: 'c'.repeat(64), milliseconds: 99999, samples: 1 },
+  ]);
+  const current = [
+    { file: 'stable.ts', bytes: 10, sha256: 'a'.repeat(64) },
+    { file: 'changed.ts', bytes: 20, sha256: 'd'.repeat(64) },
+    { file: 'new.ts', bytes: 5, sha256: 'e'.repeat(64) },
+    { file: 'empty.ts', bytes: 0, sha256: 'f'.repeat(64) },
+  ];
+  const before = JSON.stringify([profile, current]);
+  const costs = sourceCosts(profile, current, profile.engineContextSha256);
+  assert.deepEqual([...costs.weights], [['stable.ts', 1000], ['changed.ts', 2000], ['new.ts', 500], ['empty.ts', 1]]);
+  assert.deepEqual(costs.entries.map((row) => row.basis), ['measured-milliseconds',
+    'estimated-milliseconds', 'estimated-milliseconds', 'estimated-milliseconds']);
+  assert.equal(costs.receipt.profiledSourceFiles, 1);
+  assert.equal(costs.receipt.estimatedSourceFiles, 3);
+  assert.equal(costs.weights.has('retired.ts'), false);
+  assert.equal(JSON.stringify([profile, current]), before);
+  const wrongSize = sourceCosts(profile, [{ ...current[0], bytes: 11 }], profile.engineContextSha256);
+  assert.equal(wrongSize.weights, undefined);
+  assert.equal(wrongSize.receipt.profiledSourceFiles, 0);
+});
+
+test('invalid timing profiles and missing unsafe or nonpositive partition weights fail visibly', () => {
+  const row = { file: 'source.ts', bytes: 10, sha256: 'a'.repeat(64), milliseconds: 100, samples: 1 };
+  const profile = timingProfile([row]);
+  const check = (candidate) => sourceCosts(candidate, [row], profile.engineContextSha256);
+  for (const milliseconds of [0, -1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, '100']) {
+    assert.throws(() => check(timingProfile([{ ...row, milliseconds }])));
+  }
+  for (const invalid of [{ bytes: -1 }, { bytes: 0.5 }, { samples: 0 }, { sha256: 'invalid' },
+    { file: '../source.ts' }, { file: '/source.ts' }, { file: 'C:\\source.ts' }]) {
+    assert.throws(() => check(timingProfile([{ ...row, ...invalid }])));
+  }
+  assert.throws(() => check(timingProfile([row, row])));
+  assert.throws(() => check({ ...profile, schemaVersion: 2 }));
+  assert.throws(() => check({ ...profile, engineContextSha256: 'b'.repeat(64) }));
+  assert.throws(() => sourceCosts(profile, [row, row], profile.engineContextSha256));
+  const files = ['source.ts'];
+  const sizes = new Map([['source.ts', 10]]);
+  for (const weights of [null, {}, new Map(), new Map([['other.ts', 1]]),
+    ...[0, -1, NaN, Infinity, 0.5, Number.MAX_SAFE_INTEGER + 1].map((cost) => new Map([['source.ts', cost]]))]) {
+    assert.throws(() => partitionSources(files, 0, 1, sizes, weights));
+  }
+  assert.throws(() => partitionSources(files, 0, 1, undefined, new Map([['source.ts', 1]])));
+});
+
+test('engine context drift falls back to byte scheduling without claiming measured coverage', () => {
+  const row = { file: 'source.ts', bytes: 10, sha256: 'a'.repeat(64), milliseconds: 100, samples: 1 };
+  const profile = timingProfile([row]);
+  for (const [current, context] of [[[row], 'b'.repeat(64)],
+    [[{ ...row, sha256: 'c'.repeat(64) }], profile.engineContextSha256]]) {
+    const costs = sourceCosts(profile, current, context);
+    assert.equal(costs.weights, undefined);
+    assert.equal(costs.receipt.strategy, 'largest-source-bytes-first-v1');
+    assert.equal(costs.receipt.profiledSourceFiles, 0);
+    assert.equal(costs.receipt.estimatedSourceFiles, 0);
+    assert.equal(costs.receipt.byteFallbackSourceFiles, 1);
+    assert.equal(costs.entries[0].basis, 'source-bytes');
+    assert.equal(costs.entries[0].cost, 10);
+  }
+});
+
+test('the checked-in hosted timing profile schedules every current tracked source exactly once', () => {
+  const profile = JSON.parse(readFileSync(path.join(__dirname, 'source-cost-profile.json'), 'utf8'));
+  const selection = selectTrackedFiles(readFileSync(process.env.GAMEGUILD_CODACY_TRACKED_FILES));
+  const sources = selection.sourceFiles.map((file) => {
+    const raw = readFileSync(path.join('/src', file));
+    return { file, bytes: raw.length, sha256: createHash('sha256').update(raw).digest('hex') };
+  });
+  const costs = sourceCosts(profile, sources, schedulingContextSha256(sourceSchedulingContext()));
+  assert.equal(costs.entries.length, selection.sourceFiles.length);
+  assert.equal(costs.receipt.profiledSourceFiles + costs.receipt.estimatedSourceFiles
+    + costs.receipt.byteFallbackSourceFiles, selection.sourceFiles.length);
+  const sizes = new Map(sources.map((row) => [row.file, row.bytes]));
+  const parts = Array.from({ length: 8 }, (value, index) =>
+    partitionSources(selection.sourceFiles, index, 8, sizes, costs.weights));
+  assert.deepEqual([...parts.flat()].sort(), [...selection.sourceFiles].sort());
+  assert.equal(new Set(parts.flat()).size, selection.sourceFiles.length);
+  const positions = new Map(selection.sourceFiles.map((file, index) => [file, index]));
+  for (const part of parts) {
+    assert.deepEqual(part, [...part].sort((left, right) => positions.get(left) - positions.get(right)));
+  }
 });
 
 test('typed JavaScript rules receive a real project and retain AST-node property diagnostics', async (context) => {

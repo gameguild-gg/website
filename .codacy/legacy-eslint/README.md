@@ -112,9 +112,24 @@ latency guarantee; an incomplete pass cannot be accepted as a complete scan.
 The analysis step has a shorter 20-minute limit, leaving time within the job
 budget for the unconditional checkpoint artifact upload after a failure.
 
-Eight independent partitions now cover the complete selected-source list by
-index modulo eight. The earlier four-partition scan exceeded the analysis limit
-in two partitions, including one generated file that took nearly eleven minutes.
+Eight independent partitions cover the complete selected-source list. The earlier
+round-robin and source-byte allocations exceeded the analysis limit in some jobs.
+The checked-in `source-cost-profile.json` records the maximum completed duration
+for identical source bytes from 23 hash-qualified hosted shard artifacts. One
+incomplete shard is explicitly excluded. These runs contain failing diagnostics;
+their timings are scheduling hints and do not establish a successful scan.
+
+The planner places the highest estimated cost in the lightest partition and keeps
+manifest order within each partition. Measured costs require exact source hash,
+byte length and engine/configuration context matches. New or changed files remain
+selected, with costs estimated from the matched sources' milliseconds per byte.
+Context drift or no exact matches falls back to the previous byte allocation.
+Malformed profiles fail visibly. The evidence includes the profile and context
+hashes, every source's scheduling cost and its basis, and each job's estimated
+cost. Hosted contracts exercise both planners, stale inputs, invalid profiles and
+complete current-source traversal. Future latency must be measured in the actual
+hosted pass; the cost model is not a runtime guarantee.
+
 No rule or source is removed and neither time limit is increased. Matrix
 fail-fast is disabled so an error in one partition does not cancel the others. A partition can only
 certify its own traversal; independent collection must derive the partition

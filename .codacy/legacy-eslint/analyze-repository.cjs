@@ -73,26 +73,114 @@ function engineFailure(error, categories) {
     dependencyFrames: dependencyFrames(error?.stack) };
 }
 
-function partitionSources(files, index, count, sourceSizes) {
+function schedulingContextSha256(inputs) {
+  assert(inputs && typeof inputs === 'object' && !Array.isArray(inputs), 'Invalid scheduling context');
+  const names = Object.keys(inputs).sort();
+  assert(names.length > 0, 'Scheduling context is required');
+  const serialized = names.map((name) => {
+    assert.match(inputs[name], /^[a-f0-9]{64}$/u, 'Invalid context input hash');
+    return `${name}\0${inputs[name]}\n`;
+  }).join('');
+  return createHash('sha256').update(serialized).digest('hex');
+}
+
+function sourceSchedulingContext() {
+  return Object.fromEntries(['Dockerfile', 'apply-repairs.cjs', 'effective-patterns.json',
+    'project-configuration.cjs', 'tool-output-provenance.cjs'].map((name) =>
+    [`.codacy/legacy-eslint/${name}`, createHash('sha256')
+      .update(readFileSync(path.join(__dirname, name))).digest('hex')]));
+}
+
+function sourceCosts(profile, sources, contextSha256) {
+  assert.equal(profile?.schemaVersion, 1, 'Unsupported scheduling profile');
+  assert.equal(schedulingContextSha256(profile.engineContext), profile.engineContextSha256,
+    'Scheduling context digest differs');
+  assert.match(contextSha256, /^[a-f0-9]{64}$/u, 'Invalid current context hash');
+  assert(Array.isArray(profile.sources) && profile.sources.length > 0, 'Measured sources are required');
+  assert(Array.isArray(sources) && sources.length > 0, 'Current sources are required');
+  const validate = (row) => {
+    assert(typeof row.file === 'string' && row.file.length > 0 && !row.file.startsWith('/')
+      && !/[\\\0\r\n:]/u.test(row.file)
+      && row.file.split('/').every((part) => part && part !== '.' && part !== '..'), 'Invalid source path');
+    assert(Number.isSafeInteger(row.bytes) && row.bytes >= 0, 'Invalid source bytes');
+    assert.match(row.sha256, /^[a-f0-9]{64}$/u, 'Invalid source hash');
+  };
+  const measured = new Map();
+  for (const row of profile.sources) {
+    validate(row);
+    assert(!measured.has(row.file), 'Duplicate measured source');
+    assert(Number.isSafeInteger(row.milliseconds) && row.milliseconds > 0, 'Invalid measured cost');
+    assert(Number.isSafeInteger(row.samples) && row.samples > 0, 'Invalid timing sample count');
+    measured.set(row.file, row);
+  }
+  const seen = new Set();
+  for (const row of sources) {
+    validate(row);
+    assert(!seen.has(row.file), 'Duplicate current source');
+    seen.add(row.file);
+  }
+  const contextMatches = profile.engineContextSha256 === contextSha256;
+  const matches = sources.filter((row) => contextMatches
+    && measured.get(row.file)?.sha256 === row.sha256 && measured.get(row.file)?.bytes === row.bytes);
+  const measuredMilliseconds = matches.reduce((total, row) => total + measured.get(row.file).milliseconds, 0);
+  const measuredBytes = matches.reduce((total, row) => total + row.bytes, 0);
+  assert(Number.isSafeInteger(measuredMilliseconds) && Number.isSafeInteger(measuredBytes), 'Unsafe cost totals');
+  const useMilliseconds = matches.length > 0;
+  const denominator = BigInt(Math.max(1, measuredBytes));
+  const entries = sources.map((row) => {
+    const observed = measured.get(row.file);
+    const exact = useMilliseconds && observed?.sha256 === row.sha256 && observed.bytes === row.bytes;
+    const estimated = (BigInt(row.bytes) * BigInt(measuredMilliseconds) + denominator - 1n) / denominator;
+    const cost = exact ? observed.milliseconds : useMilliseconds
+      ? Math.max(1, Number(estimated))
+      : Math.max(1, row.bytes);
+    assert(Number.isSafeInteger(cost) && cost > 0, 'Unsafe source scheduling cost');
+    return { ...row, cost, basis: exact ? 'measured-milliseconds' : useMilliseconds
+      ? 'estimated-milliseconds' : 'source-bytes' };
+  });
+  assert(Number.isSafeInteger(entries.reduce((total, row) => total + row.cost, 0)), 'Unsafe scheduling total');
+  return {
+    entries,
+    weights: useMilliseconds ? new Map(entries.map((row) => [row.file, row.cost])) : undefined,
+    receipt: {
+      strategy: useMilliseconds ? 'largest-measured-cost-first-v1' : 'largest-source-bytes-first-v1',
+      contextMatches,
+      profiledSourceFiles: matches.length,
+      estimatedSourceFiles: useMilliseconds ? sources.length - matches.length : 0,
+      byteFallbackSourceFiles: useMilliseconds ? 0 : sources.length,
+    },
+  };
+}
+
+function partitionSources(files, index, count, sourceSizes, sourceWeights) {
   assert(Number.isSafeInteger(count) && count > 0 && count <= files.length, 'Invalid partition count');
   assert(Number.isSafeInteger(index) && index >= 0 && index < count, 'Invalid partition index');
-  if (sourceSizes === undefined) return files.filter((filename, position) => position % count === index);
+  if (sourceSizes === undefined) {
+    assert.equal(sourceWeights, undefined, 'Weighted scheduling requires source sizes');
+    return files.filter((filename, position) => position % count === index);
+  }
   assert(sourceSizes instanceof Map && sourceSizes.size === files.length, 'Every source requires a size');
+  if (sourceWeights !== undefined) {
+    assert(sourceWeights instanceof Map && sourceWeights.size === files.length, 'Every source requires a cost');
+  }
   const sources = files.map((filename, position) => {
     const bytes = sourceSizes.get(filename);
     assert(Number.isSafeInteger(bytes) && bytes >= 0, 'Invalid source size');
-    return { filename, position, bytes: Math.max(1, bytes) };
+    const cost = sourceWeights === undefined ? Math.max(1, bytes) : sourceWeights.get(filename);
+    assert(Number.isSafeInteger(cost) && cost > 0, 'Invalid source cost');
+    return { filename, position, cost };
   });
-  const partitions = Array.from({ length: count }, () => ({ bytes: 0, sources: [] }));
-  // Place the largest inputs in the lightest partition, then retain manifest
+  const partitions = Array.from({ length: count }, () => ({ cost: 0, sources: [] }));
+  // Place the most expensive inputs in the lightest partition, then retain manifest
   // order within each job. Scheduling never changes selection or rule options.
-  sources.sort((left, right) => right.bytes - left.bytes || left.position - right.position);
+  sources.sort((left, right) => right.cost - left.cost || left.position - right.position);
   for (const source of sources) {
     const destination = partitions.reduce((best, candidate) =>
-      candidate.bytes < best.bytes || (candidate.bytes === best.bytes && candidate.sources.length < best.sources.length)
+      candidate.cost < best.cost || (candidate.cost === best.cost && candidate.sources.length < best.sources.length)
         ? candidate : best);
     destination.sources.push(source);
-    destination.bytes += source.bytes;
+    destination.cost += source.cost;
+    assert(Number.isSafeInteger(destination.cost), 'Unsafe partition cost');
   }
   return partitions[index].sources.sort((left, right) => left.position - right.position)
     .map((source) => source.filename);
@@ -185,15 +273,29 @@ async function analyze(output) {
     const casesPath = process.env.GAMEGUILD_CODACY_DIAGNOSTIC_CASES;
     const sourceSizes = casesPath ? undefined : new Map(selection.sourceFiles.map((filename) =>
       [filename, statSync(path.join('/src', filename)).size]));
-    let assigned = partitionSources(selection.sourceFiles, index, count, sourceSizes);
+    const profileBytes = casesPath ? undefined : readFileSync(path.join(__dirname, 'source-cost-profile.json'));
+    const costContext = casesPath ? undefined : sourceSchedulingContext();
+    const costs = casesPath ? undefined : sourceCosts(JSON.parse(profileBytes),
+      selection.sourceFiles.map((file) => ({ file, bytes: sourceSizes.get(file),
+        sha256: createHash('sha256').update(readFileSync(path.join('/src', file))).digest('hex') })),
+      schedulingContextSha256(costContext));
+    let assigned = partitionSources(selection.sourceFiles, index, count, sourceSizes, costs?.weights);
     if (sourceSizes) {
       const sizes = selection.sourceFiles.map((file) => ({ file, bytes: sourceSizes.get(file) }));
       const serialized = `${sizes.map((row) => JSON.stringify(row)).join('\n')}\n`;
       writeFileSync(path.join(output, 'source-sizes.jsonl'), serialized);
+      const serializedCosts = `${costs.entries.map((row) => JSON.stringify(row)).join('\n')}\n`;
+      writeFileSync(path.join(output, 'source-costs.jsonl'), serializedCosts);
       report.sourceScheduling = {
-        strategy: 'largest-source-bytes-first-v1',
+        ...costs.receipt,
+        profileSha256: createHash('sha256').update(profileBytes).digest('hex'),
+        contextSha256: schedulingContextSha256(costContext),
+        contextInputs: costContext,
+        sourceCostsSha256: createHash('sha256').update(serializedCosts).digest('hex'),
         sourceSizesSha256: createHash('sha256').update(serialized).digest('hex'),
         assignedSourceBytes: assigned.reduce((total, file) => total + sourceSizes.get(file), 0),
+        assignedEstimatedMilliseconds: costs.weights
+          ? assigned.reduce((total, file) => total + costs.weights.get(file), 0) : null,
       };
     }
     const cases = casesPath ? JSON.parse(readFileSync(casesPath, 'utf8')) : [];
@@ -316,6 +418,7 @@ async function analyze(output) {
 }
 
 module.exports = { publicDiagnostics, engineRule, engineFailure, partitionSources,
+  sourceCosts, sourceSchedulingContext, schedulingContextSha256,
   analysisStatus, qualifiedAnalysisStatus };
 
 if (require.main === module) {
