@@ -122,7 +122,123 @@ public class PolymorphicCredentialConverterTests
         var data = new EmailCredentialData { Email = "test@test.com", Password = "pass" };
         var json = JsonSerializer.Serialize<ICredentialData>(data, _options);
         json.Should().Contain("test@test.com");
+        using var document = JsonDocument.Parse(json);
+        document.RootElement.GetProperty("type").GetString().Should().Be("email");
+        var roundTrip = Assert.IsType<EmailCredentialData>(JsonSerializer.Deserialize<ICredentialData>(json, _options));
+        Assert.Equal(data.Email, roundTrip.Email);
+        Assert.Equal(data.Password, roundTrip.Password);
+        Assert.NotSame(data, roundTrip);
     }
+
+    [Fact]
+    public void Deserialize_CertificateType_PreservesCertificateProperties()
+    {
+        var json = """{"type":"certificate","thumbprint":"synthetic-thumbprint","spkiSha256":"synthetic-key-pin"}""";
+        var result = Assert.IsType<CertificateCredentialData>(JsonSerializer.Deserialize<ICredentialData>(json, _options));
+        Assert.Equal("synthetic-thumbprint", result.Thumbprint);
+        Assert.Equal("synthetic-key-pin", result.SpkiSha256);
+    }
+
+    [Fact]
+    public void Deserialize_AutoDetect_Certificate()
+    {
+        var json = """{"thumbprint":"synthetic-thumbprint","spkiSha256":"synthetic-key-pin"}""";
+        var result = Assert.IsType<CertificateCredentialData>(JsonSerializer.Deserialize<ICredentialData>(json, _options));
+        Assert.Equal("synthetic-thumbprint", result.Thumbprint);
+        Assert.Equal("synthetic-key-pin", result.SpkiSha256);
+    }
+
+    [Theory]
+    [InlineData("email")]
+    [InlineData("phone")]
+    [InlineData("username")]
+    [InlineData("oauth")]
+    [InlineData("web3")]
+    [InlineData("certificate")]
+    public void Serialize_AllDeclaredTypes_PreserveDiscriminatorAndRoundTripProperties(string type)
+    {
+        var original = CreateSyntheticCredential(type);
+        var json = JsonSerializer.Serialize<ICredentialData>(original, _options);
+        using var document = JsonDocument.Parse(json);
+        Assert.Equal(type, document.RootElement.GetProperty("type").GetString());
+        var roundTrip = JsonSerializer.Deserialize<ICredentialData>(json, _options);
+        Assert.NotNull(roundTrip);
+        Assert.NotSame(original, roundTrip);
+        Assert.Equal(original.GetType(), roundTrip.GetType());
+
+        switch ((original, roundTrip))
+        {
+            case (EmailCredentialData expectedEmail, EmailCredentialData actualEmail):
+                Assert.Equal(expectedEmail.Email, actualEmail.Email);
+                Assert.Equal(expectedEmail.Password, actualEmail.Password);
+                break;
+            case (PhoneCredentialData expectedPhone, PhoneCredentialData actualPhone):
+                Assert.Equal(expectedPhone.PhoneNumber, actualPhone.PhoneNumber);
+                Assert.Equal(expectedPhone.Password, actualPhone.Password);
+                break;
+            case (UsernameCredentialData expectedUsername, UsernameCredentialData actualUsername):
+                Assert.Equal(expectedUsername.Username, actualUsername.Username);
+                Assert.Equal(expectedUsername.Password, actualUsername.Password);
+                break;
+            case (OAuthCredentialData expectedOAuth, OAuthCredentialData actualOAuth):
+                Assert.Equal(expectedOAuth.Provider, actualOAuth.Provider);
+                Assert.Equal(expectedOAuth.Token, actualOAuth.Token);
+                break;
+            case (Web3CredentialData expectedWeb3, Web3CredentialData actualWeb3):
+                Assert.Equal(expectedWeb3.WalletAddress, actualWeb3.WalletAddress);
+                Assert.Equal(expectedWeb3.Signature, actualWeb3.Signature);
+                Assert.Equal(expectedWeb3.Message, actualWeb3.Message);
+                break;
+            case (CertificateCredentialData expectedCertificate, CertificateCredentialData actualCertificate):
+                Assert.Equal(expectedCertificate.Thumbprint, actualCertificate.Thumbprint);
+                Assert.Equal(expectedCertificate.SpkiSha256, actualCertificate.SpkiSha256);
+                break;
+            default:
+                throw new InvalidOperationException("The declared credential contract was not exercised.");
+        }
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("42")]
+    [InlineData("true")]
+    [InlineData("\"credential\"")]
+    public void Deserialize_NonObjectRoots_RejectsWithJsonException(string json)
+    {
+        var act = () => JsonSerializer.Deserialize<ICredentialData>(json, _options);
+        act.Should().Throw<JsonException>();
+    }
+
+    [Theory]
+    [InlineData("42")]
+    [InlineData("true")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("null")]
+    public void Deserialize_NonTextDiscriminators_RejectsWithoutLegacyEmailFallback(string discriminatorJson)
+    {
+        var json = "{\"type\":" + discriminatorJson + ",\"email\":\"synthetic@example.test\"}";
+        var act = () => JsonSerializer.Deserialize<ICredentialData>(json, _options);
+        act.Should().Throw<JsonException>();
+    }
+
+    [Fact]
+    public void NullCredentialPayloadKeepsDefaultSerializerNullContract()
+    {
+        Assert.Null(JsonSerializer.Deserialize<ICredentialData>("null", _options));
+        Assert.Equal("null", JsonSerializer.Serialize<ICredentialData?>(null, _options));
+    }
+
+    private static ICredentialData CreateSyntheticCredential(string type) => type switch
+    {
+        "email" => new EmailCredentialData { Email = "roundtrip@example.test", Password = Guid.NewGuid().ToString("N") },
+        "phone" => new PhoneCredentialData { PhoneNumber = "+15550001000", Password = Guid.NewGuid().ToString("N") },
+        "username" => new UsernameCredentialData { Username = "roundtrip-user", Password = Guid.NewGuid().ToString("N") },
+        "oauth" => new OAuthCredentialData { Provider = "synthetic-provider", Token = Guid.NewGuid().ToString("N") },
+        "web3" => new Web3CredentialData { WalletAddress = "synthetic-wallet", Signature = "synthetic-signature", Message = "synthetic-message" },
+        "certificate" => new CertificateCredentialData { Thumbprint = "synthetic-thumbprint", SpkiSha256 = "synthetic-key-pin" },
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown synthetic credential type.")
+    };
 }
 
 #endregion

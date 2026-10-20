@@ -234,7 +234,8 @@ public class EfConfigAndExtendedTests
         var svc = new EmailVerificationService(
             Mock.Of<ILogger<EmailVerificationService>>(),
             new MemoryCache(new MemoryCacheOptions()),
-            publisher.Object);
+            publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
         svc.Should().NotBeNull();
     }
 

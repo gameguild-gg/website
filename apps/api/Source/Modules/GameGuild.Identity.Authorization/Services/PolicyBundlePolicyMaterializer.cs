@@ -156,7 +156,7 @@ public sealed class PolicyBundlePolicyMaterializer(
             if (policies is null || policies.Count == 0)
             {
                 throw new PolicyBundleSignatureException(
-                    $"Bundle '{bundle.Name}' carries no policy definitions in its PolicyData.");
+                $"Bundle '{bundle.Name}' carries no policy definitions in its PolicyData.");
             }
 
             foreach (var policy in policies)
@@ -164,7 +164,7 @@ public sealed class PolicyBundlePolicyMaterializer(
                 if (string.IsNullOrWhiteSpace(policy.PolicyName))
                 {
                     throw new PolicyBundleSignatureException(
-                        $"Bundle '{bundle.Name}' contains a policy definition without a policyName.");
+                    $"Bundle '{bundle.Name}' contains a policy definition without a policyName.");
                 }
             }
 

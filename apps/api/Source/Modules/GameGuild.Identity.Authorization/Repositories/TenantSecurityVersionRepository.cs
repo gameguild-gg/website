@@ -20,8 +20,13 @@ public class TenantSecurityVersionRepository(IApplicationDbContext context) : IT
             return new Dictionary<Guid, long>();
         }
 
+        // A scope can already track an older version row. Materializing that entity again
+        // would reuse its old values and hide a concurrent permission invalidation.
+        // Read persisted scalars without refreshing or overwriting caller-owned entities.
         return await context.Set<TenantSecurityVersion>()
+            .AsNoTracking()
             .Where(version => requestedTenantIds.Contains(version.TenantId) && version.DeletedAt == null)
+            .Select(version => new { version.TenantId, version.SecurityVersion })
             .ToDictionaryAsync(version => version.TenantId, version => version.SecurityVersion, cancellationToken)
             .ConfigureAwait(false);
     }

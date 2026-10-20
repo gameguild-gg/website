@@ -110,6 +110,7 @@ public class HttpExternalAuthorizationDecisionProviderTests
         var entry = logger.Entries.Should().ContainSingle().Which;
         entry.Level.Should().Be(LogLevel.Information);
         entry.Message.Should().EndWith(": " + renderedReason);
+        entry.Message.Should().NotContain(_userId.ToString()).And.NotContain(_tenantId.ToString());
         entry.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
     }
 

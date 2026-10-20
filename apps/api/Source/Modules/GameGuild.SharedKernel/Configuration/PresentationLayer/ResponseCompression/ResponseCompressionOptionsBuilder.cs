@@ -14,7 +14,7 @@ public static class ResponseCompressionOptionsBuilder
     public static ResponseCompressionOptions Create()
     {
         return new ResponseCompressionOptions
-            { MimeTypes = ["application/json", "text/plain"], EnableCompression = true };
+            { MimeTypes = ["application/json", "text/plain", "application/xml"], EnableCompression = true };
     }
 
     /// <summary>

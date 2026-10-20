@@ -50,6 +50,18 @@ public sealed record RequestMagicLinkRequest
     public required string Email { get; init; }
 
     /// <summary>
+    ///     Optional same-site destination to open after sign-in.
+    /// </summary>
+    [StringLength(2048)]
+    public string? RedirectTo { get; init; }
+
+    /// <summary>
+    ///     Locale of the page that requested the link.
+    /// </summary>
+    [StringLength(16)]
+    public string? Locale { get; init; }
+
+    /// <summary>
     ///     Optional tenant context.
     /// </summary>
     public Guid? TenantId { get; init; }

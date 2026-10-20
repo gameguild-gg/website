@@ -83,22 +83,35 @@ function errorMessage(error?: { message?: string; detail?: string }): string | u
   return message && message.length > 0 ? message : undefined;
 }
 
+/**
+ * Defensive read for page loaders (issue #864): the generated client's
+ * safeParse THROWS on zod contract mismatch, and a throw inside a server
+ * component render crashes the page with React #441. Any failure — thrown
+ * validation/network error or a non-ok result — must degrade to `fallback`
+ * so the security page renders with empty data instead of erroring.
+ */
+async function safeLoad<T>(call: () => Promise<{ ok: boolean; data?: T }>, fallback: T | null): Promise<T | null> {
+  try {
+    const result = await call();
+    return result.ok ? (result.data ?? fallback) : fallback;
+  } catch {
+    // Contract drift between the deployed API and the generated client (issue #864):
+    // render the page with degraded data rather than crashing the RSC render.
+    return fallback;
+  }
+}
+
 /** Loads the MFA configuration, method catalog and recovery-code status in one pass. */
 export async function loadMfaData(): Promise<MfaPageData> {
-  const client = getApiClient();
-  const mfaModule = new GeneratedApi.AuthMultiFactorModule(client);
+  const mfaModule = new GeneratedApi.AuthMultiFactorModule(getApiClient());
 
-  const [configurationResult, methodsResult, backupCodesResult] = await Promise.all([
-    mfaModule.getAuthMfa(),
-    mfaModule.getAuthMfaMethods(),
-    mfaModule.getAuthMfaBackupCodes(),
+  const [configuration, methods, backupCodes] = await Promise.all([
+    safeLoad(() => mfaModule.getAuthMfa(), null),
+    safeLoad(() => mfaModule.getAuthMfaMethods(), null),
+    safeLoad(() => mfaModule.getAuthMfaBackupCodes(), null),
   ]);
 
-  return {
-    configuration: configurationResult.ok ? (configurationResult.data ?? null) : null,
-    methods: methodsResult.ok ? (methodsResult.data ?? null) : null,
-    backupCodes: backupCodesResult.ok ? (backupCodesResult.data ?? null) : null,
-  };
+  return { configuration, methods, backupCodes };
 }
 
 /** Starts authenticator-app (TOTP) enrollment, returning the secret and QR provisioning URI. */

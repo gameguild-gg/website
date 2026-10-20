@@ -9,6 +9,7 @@ public sealed class AuditExportTransportContractTests
     [Theory]
     [InlineData(nameof(AuditController.ExportAuditLogs), "/api/audit/export/csv")]
     [InlineData(nameof(AuditController.ExportAuditLogsJson), "/api/audit/export/json")]
+    [InlineData(nameof(AuditController.ExportAuditLogsXml), "/api/audit/export/xml")]
     public void Requested_routes_are_explicit_aliases_of_the_existing_guarded_actions(string action, string route)
     {
         var method = typeof(AuditController).GetMethod(action)!;

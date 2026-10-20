@@ -319,7 +319,7 @@ public class AuditController(
     [ProducesResponseType(typeof(AuditActionTypeTaxonomyResponse), StatusCodes.Status200OK)]
     public ActionResult<AuditActionTypeTaxonomyResponse> GetAuditActionTypeTaxonomy() => Ok(AuditActionTypeTaxonomy.GetTaxonomy());
 
-    /// <summary>Exports matching action-type audit events as CSV or JSON.</summary>
+    /// <summary>Exports matching action-type audit events as CSV, JSON or XML.</summary>
     [HttpGet("search/by-action-type/export")]
     [Authorize(Policy = Policies.AuditExport)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -336,9 +336,10 @@ public class AuditController(
         }
 
         if (!string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(format, "json", StringComparison.OrdinalIgnoreCase))
+            !string.Equals(format, "json", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(format, "xml", StringComparison.OrdinalIgnoreCase))
         {
-            ModelState.AddModelError(nameof(format), "Format must be csv or json.");
+            ModelState.AddModelError(nameof(format), "Format must be csv, json or xml.");
             return ValidationProblem(ModelState);
         }
 
@@ -375,6 +376,11 @@ public class AuditController(
         if (string.Equals(format, "json", StringComparison.OrdinalIgnoreCase))
         {
             return File(AuditActionTypeExportFormatter.ToJson(records), "application/json", $"audit-action-search-{timestamp}.json");
+        }
+        if (string.Equals(format, "xml", StringComparison.OrdinalIgnoreCase))
+        {
+            var content = await AuditActionTypeExportFormatter.ToXmlAsync(records, cancellationToken).ConfigureAwait(false);
+            return File(content, "application/xml; charset=utf-8", $"audit-action-search-{timestamp}.xml");
         }
 
         return File(AuditActionTypeExportFormatter.ToCsv(records), "text/csv; charset=utf-8", $"audit-action-search-{timestamp}.csv");
@@ -537,8 +543,26 @@ public class AuditController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status406NotAcceptable)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult> ExportAuditLogsJson([FromBody] AuditExportRequest request)
+    public Task<ActionResult> ExportAuditLogsJson([FromBody] AuditExportRequest request) =>
+        ExportAuditDocumentAsync(request, ExportFormat.Json);
+
+    /// <summary>Streams a versioned XML audit export with pagination metadata.</summary>
+    [HttpPost("export/xml")]
+    [HttpPost("/api/audit/export/xml")]
+    [Authorize(Policy = Policies.AuditExport)]
+    [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
+    [Produces("application/xml")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, "application/xml")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status406NotAcceptable)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public Task<ActionResult> ExportAuditLogsXml([FromBody] AuditExportRequest request) =>
+        ExportAuditDocumentAsync(request, ExportFormat.Xml);
+
+    private async Task<ActionResult> ExportAuditDocumentAsync(AuditExportRequest request, ExportFormat format)
     {
+        var extension = format == ExportFormat.Xml ? "xml" : "json";
+        var mediaType = format == ExportFormat.Xml ? "application/xml" : "application/json";
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
 
@@ -549,7 +573,7 @@ public class AuditController(
 
         request.TenantId = tenantScope;
 
-        var mediaValidation = ValidateExportMediaType("application/json");
+        var mediaValidation = ValidateExportMediaType(mediaType);
         if (mediaValidation is not null) { return mediaValidation; }
 
         var requestValidation = ValidateExportRequest(request);
@@ -560,12 +584,12 @@ public class AuditController(
 
         var exportId = Guid.NewGuid();
         var cancellationToken = HttpContext.RequestAborted;
-        var export = await BeginExportAsync(adminUserId.Value, exportId, request, "json", cancellationToken).ConfigureAwait(false);
+        var export = await BeginExportAsync(adminUserId.Value, exportId, request, extension, cancellationToken).ConfigureAwait(false);
 
         var pageSize = request.PageSize.Value;
         var totalPages = export.TotalCount == 0 ? 0 : (int)Math.Ceiling(export.TotalCount / (double)pageSize);
-        Response.ContentType = "application/json; charset=utf-8";
-        Response.Headers["Content-Disposition"] = $"attachment; filename=\"audit-logs-{SystemClock.UtcNow:yyyy-MM-dd-HH-mm-ss}.json\"";
+        Response.ContentType = mediaType + "; charset=utf-8";
+        Response.Headers["Content-Disposition"] = $"attachment; filename=\"audit-logs-{SystemClock.UtcNow:yyyy-MM-dd-HH-mm-ss}.{extension}\"";
         Response.Headers["X-Audit-Export-Id"] = exportId.ToString("D");
         Response.Headers["X-Audit-Total-Records"] = export.TotalCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         Response.Headers["X-Audit-Page"] = request.PageNumber.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -578,18 +602,25 @@ public class AuditController(
 
         try
         {
-            await Response.WriteAsJsonAsync(document, cancellationToken).ConfigureAwait(false);
+            if (format == ExportFormat.Xml)
+            {
+                await AuditXmlExporter.WriteDocumentAsync(Response.Body, document, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await Response.WriteAsJsonAsync(document, cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, "json", "cancelled", null).ConfigureAwait(false);
+            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, extension, "cancelled", null).ConfigureAwait(false);
             return new EmptyResult();
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "JSON audit export {ExportId} failed", exportId);
+            _logger.LogError(exception, "{Format} audit export {ExportId} failed", extension, exportId);
             await MarkExportFailedAsync(export, adminUserId.Value).ConfigureAwait(false);
-            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, "json", "failed", "audit_export_failed").ConfigureAwait(false);
+            await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, extension, "failed", "audit_export_failed").ConfigureAwait(false);
             if (Response.HasStarted)
             {
                 HttpContext.Abort();
@@ -602,7 +633,7 @@ public class AuditController(
                 detail: "The audit export could not be completed. Use the export ID when contacting support.");
         }
 
-        await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, "json", "completed", null).ConfigureAwait(false);
+        await NotifyExportWebhookAsync(request.WebhookUrl, adminUserId.Value, export, extension, "completed", null).ConfigureAwait(false);
         return new EmptyResult();
     }
 

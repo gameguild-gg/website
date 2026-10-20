@@ -482,16 +482,17 @@ public sealed class PermissionCommandSecurityTests
     {
         await using var db = new PermissionFacadeTestDb();
         var tenantId = Guid.NewGuid();
-        SetActor(AuthenticatedActor(roles: [], permissions: [], tenantId: tenantId));
+        SetActor(AuthenticatedActor(roles: ["TenantAdmin"], permissions: [], tenantId: tenantId));
         var service = new PermissionService(db, _versionStore.Object, _auditService.Object, _actorAccessor.Object);
 
-        await service.GrantTenantPermissionAsync(Guid.NewGuid(), tenantId, [PermissionType.Read]);
+        var grant = await service.GrantTenantPermissionAsync(Guid.NewGuid(), tenantId, [PermissionType.Read]);
+        grant.GrantedBy.Should().Be(_actorAccessor.Object.ActorContext.SubjectIdAsGuid);
 
         _versionStore.Verify(v => v.IncrementVersionAsync(tenantId.ToString(), It.IsAny<CancellationToken>()), Times.Once);
         _auditService.Verify(a => a.LogPermissionChangeAsync(
             PermissionOperationType.Grant,
             It.IsAny<Guid?>(),
-            It.IsAny<Guid>(),
+            _actorAccessor.Object.ActorContext.SubjectIdAsGuid!.Value,
             tenantId,
             It.IsAny<string?>(),
             It.IsAny<Guid?>(),
@@ -512,7 +513,7 @@ public sealed class PermissionCommandSecurityTests
         await using var db = new PermissionFacadeTestDb();
         var tenantId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        SetActor(AuthenticatedActor(roles: [], permissions: [], tenantId: tenantId));
+        SetActor(AuthenticatedActor(roles: ["TenantAdmin"], permissions: [], tenantId: tenantId));
         var service = new PermissionService(db, _versionStore.Object, _auditService.Object, _actorAccessor.Object);
 
         var grant = await service.GrantTenantPermissionAsync(userId, tenantId, [PermissionType.Read]);

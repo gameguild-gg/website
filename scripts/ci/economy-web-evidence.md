@@ -33,3 +33,16 @@ The six additional shell-contract groups run only in hosted CI under the local
 resource hold. They cover valid evidence, missing reports, failed/pending suites,
 coverage gaps, transfer identity/integrity and required routing. No SDK, product
 tests, fixtures, databases or containers were run locally for this change.
+
+## Develop backport
+
+The develop-target source `964820ff` still ran the Web suites inside the browser
+gate. Its hosted timing artifact recorded 283 seconds for the full Web suite,
+18 seconds for Web coverage and 346 seconds for the Next build; every stage
+passed. This backport uses the same verified transfer implementation and six
+contract groups as the main-target source `078525a2`. It preserves develop's
+registry fallback and all existing test commands, assertions and deadlines.
+
+The new develop source must retain its original case sets and coverage totals,
+verify the same-run/tree/digest transfer, and measure both gate duration and the
+producer-to-gate boundary before claiming a latency improvement.

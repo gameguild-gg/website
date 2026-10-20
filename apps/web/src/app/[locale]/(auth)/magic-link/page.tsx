@@ -12,9 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function Page({
+  params,
   searchParams,
 }: PageProps<"/[locale]/magic-link">): Promise<React.JSX.Element> {
-  const [query, t] = await Promise.all([
+  const [{ locale }, query, t] = await Promise.all([
+    params,
     searchParams,
     getTranslations("magicLink"),
   ]);
@@ -58,6 +60,7 @@ export default async function Page({
     <MagicLinkFlow
       token={token}
       redirectTo={redirectTo}
+      locale={locale}
       apiUrl={apiUrl}
       messages={messages}
     />

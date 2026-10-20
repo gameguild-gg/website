@@ -29,6 +29,8 @@ public class BuildersFiltersAndRegistryTests
     {
         var opts = ResponseCompressionOptionsBuilder.Create();
         opts.Should().NotBeNull();
+        opts.EnableCompression.Should().BeTrue();
+        opts.MimeTypes.Should().BeEquivalentTo("application/json", "text/plain", "application/xml");
     }
 
     [Fact]

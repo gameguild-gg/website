@@ -34,7 +34,7 @@ public sealed class SignedPolicyBundleStore(
         if (bundle is null)
         {
             throw new PolicyBundleSignatureException(
-                $"No published policy bundle named '{name}' exists for the requested scope.");
+            $"No published policy bundle named '{name}' exists for the requested scope.");
         }
 
         return VerifyOrThrow(bundle, publishedRead: true);
@@ -59,7 +59,7 @@ public sealed class SignedPolicyBundleStore(
         if (requiresSignature && string.IsNullOrWhiteSpace(bundle.DigitalSignature))
         {
             throw new PolicyBundleSignatureException(
-                $"Policy bundle {bundleId} in status {bundle.Status} carries no signature (fail closed).");
+            $"Policy bundle {bundleId} in status {bundle.Status} carries no signature (fail closed).");
         }
 
         return requiresSignature ? VerifyOrThrow(bundle, publishedRead: false) : bundle;

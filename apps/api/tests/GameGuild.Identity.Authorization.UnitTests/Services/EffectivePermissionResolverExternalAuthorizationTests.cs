@@ -98,6 +98,7 @@ public class EffectivePermissionResolverExternalAuthorizationTests
             e.Message.StartsWith("External authorization decision provider denied permission", StringComparison.Ordinal)).Which;
         entry.Level.Should().Be(LogLevel.Debug);
         entry.Message.Should().EndWith(": " + renderedReason);
+        entry.Message.Should().NotContain(_userId.ToString()).And.NotContain(_tenantId.ToString());
         foreach (var log in logger.Entries)
         {
             log.Message.Should().NotMatchRegex("[\\x00-\\x1F\\x7F-\\x9F\\u2028\\u2029]");
@@ -265,12 +266,13 @@ public class EffectivePermissionResolverExternalAuthorizationTests
         var properties = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(error.Arguments[2])
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         properties["Permission"].Should().Be(renderedPermission);
-        properties["UserId"].Should().Be(_userId);
-        properties["TenantId"].Should().Be(_tenantId);
+        properties["UserId"].Should().Be(LogRedaction.RedactId(_userId, "uid"));
+        properties["TenantId"].Should().Be(LogRedaction.RedactId(_tenantId));
+        properties.Values.Should().NotContain(_userId).And.NotContain(_tenantId);
         var formatter = Assert.IsAssignableFrom<Delegate>(error.Arguments[4]);
         var message = Assert.IsType<string>(formatter.DynamicInvoke(error.Arguments[2], error.Arguments[3]));
         message.Should().Be(
-            $"External authorization decision provider threw while evaluating permission {renderedPermission} for user {_userId} in tenant {_tenantId} - the permission fails closed.");
+            $"External authorization decision provider threw while evaluating permission {renderedPermission} for user {LogRedaction.RedactId(_userId, "uid")} in tenant {LogRedaction.RedactId(_tenantId)} - the permission fails closed.");
     }
 
     // ── Query shape: the provider sees the full authorization context ───────

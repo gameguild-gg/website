@@ -168,13 +168,21 @@ public sealed class PasswordCommandHandlersTests
             configuration,
             NullLogger<RequestMagicLinkCommandHandler>.Instance);
 
-        var result = await handler.Handle(new RequestMagicLinkCommand { Email = user.Email }, CancellationToken.None);
+        const string redirectTo = "/workspace?tab=files";
+        const string locale = "pt-BR";
+        var result = await handler.Handle(
+            new RequestMagicLinkCommand { Email = user.Email, RedirectTo = redirectTo, Locale = locale },
+            CancellationToken.None);
 
         result.Success.Should().BeTrue();
         result.DevelopmentPreviewToken.Should().Be("magic-token");
         publisher.Verify(
             p => p.Publish(
-                It.Is<MagicLinkRequestedNotification>(n => n.Email == user.Email && n.Token == "magic-token"),
+                It.Is<MagicLinkRequestedNotification>(n =>
+                    n.Email == user.Email &&
+                    n.Token == "magic-token" &&
+                    n.RedirectTo == redirectTo &&
+                    n.Locale == locale),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

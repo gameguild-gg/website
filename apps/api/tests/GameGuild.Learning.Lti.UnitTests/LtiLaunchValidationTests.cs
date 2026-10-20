@@ -340,6 +340,75 @@ public class LtiLaunchValidationTests
         result.Should().BeOfType<RedirectResult>().Which.Url.Should().Be("/dashboard/tasks");
     }
 
+    [Theory]
+    [InlineData(false, "inactive")]
+    [InlineData(true, "inactive")]
+    [InlineData(false, "suspended")]
+    [InlineData(true, "suspended")]
+    [InlineData(false, "deleted")]
+    [InlineData(true, "deleted")]
+    public async Task Launch_WithUnavailableAccount_DoesNotCreateMappingOrIssueToken(bool hasMapping, string accountState)
+    {
+        var user = await _db.Set<User>().SingleAsync(user => user.Id == _userId);
+        user.IsActive = accountState != "inactive";
+        user.IsSuspended = accountState == "suspended";
+        if (accountState == "deleted")
+        {
+            user.DeletedAt = DateTime.UtcNow;
+        }
+        if (hasMapping)
+        {
+            _db.Set<LtiUserMapping>().Add(LtiUserMapping.Create(_deployment.Id, _userId, "known-sub"));
+        }
+        await _db.SaveChangesAsync();
+        var (state, nonce) = LoginForState();
+        var token = BuildIdToken("known-sub", hasMapping ? null : "Student@Test.Com", nonce);
+        var http = LaunchForm(state, token);
+
+        var result = await CreateController(http).Launch();
+
+        result.Should().BeOfType<UnauthorizedObjectResult>();
+        http.Response.Headers.Should().NotContainKey("Set-Cookie");
+        _jwtTokenService.Invocations.Should().BeEmpty();
+        (await _db.Set<LtiUserMapping>().CountAsync()).Should().Be(hasMapping ? 1 : 0);
+        (await _db.Set<User>().CountAsync()).Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LaunchHandler_WithActiveAccount_UsesCurrentTokenVersionAndCancellation(bool hasMapping)
+    {
+        var user = await _db.Set<User>().SingleAsync(user => user.Id == _userId);
+        user.TokenVersion = 7;
+        user.TenantId = Guid.NewGuid();
+        if (hasMapping)
+        {
+            _db.Set<LtiUserMapping>().Add(LtiUserMapping.Create(_deployment.Id, _userId, "known-sub"));
+        }
+        await _db.SaveChangesAsync();
+        var (state, nonce) = LoginForState();
+        var token = BuildIdToken("known-sub", hasMapping ? null : "Student@Test.Com", nonce);
+        var handler = new LtiEndpointCommandHandler(
+            _db, _stateStore,
+            new LtiPlatformJwksService(PlatformJwksFactory(), NullLogger<LtiPlatformJwksService>.Instance),
+            _jwtTokenService.Object, NullLogger<LtiEndpointCommandHandler>.Instance);
+        using var cancellation = new CancellationTokenSource();
+
+        var result = await handler.Handle(new LaunchLtiCommand(state, token), cancellation.Token);
+
+        result.Status.Should().Be(LtiLaunchStatus.Success);
+        result.SessionToken.Should().Be("gg-test-token");
+        _jwtTokenService.Verify(service => service.GenerateAccessTokenAsync(
+            _userId, "student@test.com", It.Is<string[]>(roles => roles.Length == 0),
+            user.TenantId, 7, cancellation.Token), Times.Once);
+        _jwtTokenService.VerifyNoOtherCalls();
+        (await _db.Set<LtiUserMapping>().CountAsync()).Should().Be(1);
+        user.TokenVersion.Should().Be(7);
+        user.IsActive.Should().BeTrue();
+        user.IsSuspended.Should().BeFalse();
+    }
+
     [Fact]
     public async Task Launch_SetsSessionCookieFromTokenService()
     {

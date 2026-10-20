@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { QUESTION_TYPE_CASES } from "./capability-catalog.mjs";
 
 export const DEFINITION_SCHEMA_VERSION = 2;
 
@@ -65,6 +66,7 @@ const CORRECT_ANSWER = Object.freeze({
 const BASE_QUIZ = Object.freeze({
   subject: "individual",
   release: "manual",
+  maxSupportedCheckpoint: "released",
   description: "Local quiz grading scenario fixture.",
   document: QUIZ_DOCUMENT,
   correctAnswer: CORRECT_ANSWER,
@@ -77,7 +79,7 @@ const BASE_QUIZ = Object.freeze({
   },
 });
 
-const QUIZZES = Object.freeze({
+const REVIEW_QUIZZES = Object.freeze({
   automated: makeQuizDefinition({
     key: "automated",
     title: "Automated review",
@@ -121,6 +123,20 @@ const QUIZZES = Object.freeze({
   }),
 });
 
+const QUESTION_TYPE_QUIZZES = Object.freeze(
+  Object.fromEntries(
+    QUESTION_TYPE_CASES.map((validationCase) => [
+      validationCase.key,
+      makeQuestionTypeQuizDefinition(validationCase),
+    ]),
+  ),
+);
+
+const QUIZZES = Object.freeze({
+  ...REVIEW_QUIZZES,
+  ...QUESTION_TYPE_QUIZZES,
+});
+
 const DEFINITIONS = Object.freeze({
   automated: makeScenario("automated", "Automated review", ["automated"]),
   instructor: makeScenario("instructor", "Instructor review", ["instructor"]),
@@ -159,6 +175,32 @@ const DEFINITIONS = Object.freeze({
       "peer-instructor",
     ],
   ),
+  "question-type-matrix": makeScenario(
+    "question-type-matrix",
+    "Quiz question type matrix",
+    QUESTION_TYPE_CASES.map((candidate) => candidate.key),
+    { capAtQuizCapability: true },
+  ),
+  "lifecycle-access-matrix": makeScenario(
+    "lifecycle-access-matrix",
+    "Quiz lifecycle and access matrix",
+    ["automated", "automated-instructor"],
+  ),
+  "acceptance-lab": makeScenario(
+    "acceptance-lab",
+    "Quiz grading acceptance lab",
+    [
+      "automated",
+      "instructor",
+      "automated-instructor",
+      "self",
+      "self-instructor",
+      "peer",
+      "peer-instructor",
+      ...QUESTION_TYPE_CASES.map((candidate) => candidate.key),
+    ],
+    { capAtQuizCapability: true },
+  ),
 });
 
 function makeQuizDefinition(input) {
@@ -174,12 +216,68 @@ function makeQuizDefinition(input) {
   return Object.freeze(quiz);
 }
 
-function makeScenario(key, title, quizKeys) {
+function makeQuestionTypeQuizDefinition(validationCase) {
+  const { fixture } = validationCase;
+  const itemId = "q1";
+  const instructorReview = fixture.officialCapability === "instructor-review";
+  return makeQuizDefinition({
+    key: fixture.key,
+    title: questionTypeQuizTitle(fixture),
+    reviewMethods: instructorReview
+      ? ["InstructorReview"]
+      : ["AutomatedReview"],
+    validationCaseId: fixture.id,
+    questionType: fixture.quizEntryType,
+    fillBlankInputType: fixture.fillBlankInputType,
+    officialCapability: fixture.officialCapability,
+    maxSupportedCheckpoint: fixture.maxSupportedCheckpoint,
+    document: {
+      schemaVersion: 1,
+      order: [[itemId, "quiz"]],
+      blocks: { [itemId]: fixture.entry },
+      grading: { schemaVersion: 2, items: { [itemId]: {} } },
+    },
+    correctAnswer: {
+      schemaVersion: 1,
+      contentType: "quiz",
+      payloadSchema: "quiz-answer/v1",
+      payload: { answers: { [itemId]: fixture.answers.correct } },
+    },
+    expected: {
+      maxScore: fixture.entry.points,
+      automatedScore: fixture.expected.correct.score,
+      selfReviewScore: fixture.expected.correct.score,
+      peerReviewScore: fixture.expected.correct.score,
+      instructorScore: fixture.expected.instructorScore ?? fixture.entry.points,
+    },
+  });
+}
+
+function questionTypeQuizTitle(fixture) {
+  if (fixture.fillBlankInputType) {
+    return `${fixture.quizEntryType} / ${fixture.fillBlankInputType}`;
+  }
+  const canonicalKey = fixture.quizEntryType.toLowerCase().replaceAll("_", "-");
+  if (fixture.key === canonicalKey) return fixture.quizEntryType;
+  const variantPrefix = `${canonicalKey}-`;
+  const variant = fixture.key.startsWith(variantPrefix)
+    ? fixture.key.slice(variantPrefix.length)
+    : fixture.key;
+  return `${fixture.quizEntryType} / ${variant.toUpperCase().replaceAll("-", "_")}`;
+}
+
+function makeScenario(
+  key,
+  title,
+  quizKeys,
+  { capAtQuizCapability = false } = {},
+) {
   const quizzes = Object.freeze(quizKeys.map((quizKey) => QUIZZES[quizKey]));
   return Object.freeze({
     schemaVersion: DEFINITION_SCHEMA_VERSION,
     key,
     title,
+    capAtQuizCapability,
     gradingGroup: {
       title: "Scenario gradebook",
       // PercentValue uses hundredths of one percent: 100% = 10,000.
@@ -277,11 +375,33 @@ export function assertApplicableCheckpoint(
   quizzes = definition.quizzes,
 ) {
   assertCheckpoint(checkpoint);
+  const unsupported = quizzes.filter(
+    (quiz) =>
+      checkpointIndex(checkpoint) >
+      checkpointIndex(quiz.maxSupportedCheckpoint ?? "released"),
+  );
+  if (unsupported.length > 0 && !definition.capAtQuizCapability) {
+    throw new Error(
+      `Checkpoint ${checkpoint} exceeds the declared capability for ${unsupported.map((quiz) => `"${quiz.key}" (${quiz.maxSupportedCheckpoint})`).join(", ")}. Select supported cases or stop at their last observable checkpoint.`,
+    );
+  }
   if (checkpoint === "review-ready" && !quizzes.some(hasInstructorReview)) {
     throw new Error(
       `Checkpoint review-ready does not apply to scenario "${definition.key}" because none of its quizzes has an InstructorReview stage. Use release-ready instead.`,
     );
   }
+}
+
+export function targetCheckpointForQuiz(definition, checkpoint, quiz) {
+  assertCheckpoint(checkpoint);
+  const maximum = quiz.maxSupportedCheckpoint ?? "released";
+  if (
+    definition.capAtQuizCapability &&
+    checkpointIndex(checkpoint) > checkpointIndex(maximum)
+  ) {
+    return maximum;
+  }
+  return checkpoint;
 }
 
 export function nextApplicableCheckpoint(
@@ -293,7 +413,12 @@ export function nextApplicableCheckpoint(
   return (
     CHECKPOINTS.slice(currentIndex + 1).find(
       (candidate) =>
-        candidate !== "review-ready" || quizzes.some(hasInstructorReview),
+        (candidate !== "review-ready" || quizzes.some(hasInstructorReview)) &&
+        quizzes.every(
+          (quiz) =>
+            checkpointIndex(candidate) <=
+            checkpointIndex(quiz.maxSupportedCheckpoint ?? "released"),
+        ),
     ) ?? null
   );
 }
