@@ -30,6 +30,7 @@ overrides:
   hono: "4.13.11"
   lodash-es: "4.18.0"
   "syncpack>minimatch": "9.0.7"
+  "follow-redirects@<1.16.1": "1.16.1"
   handlebars: "4.7.10"
   icu-minify: "4.9.2"
   ip-address: "10.7.2"
