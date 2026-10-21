@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import type { ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,7 +19,11 @@ vi.mock('@/lib/auth/cross-domain-auth', () => ({
   resolveAllowedAuthRedirect: (value: string | undefined) => value ?? '/',
 }));
 vi.mock('@/components/sign-in-form', () => ({
-  SignInForm: () => <div data-testid="sign-in-form" />,
+  // Renders the providers slot so the composition assertions below can see
+  // the provider buttons the page passes into the form.
+  SignInForm: ({ providers }: { providers?: ReactNode }) => (
+    <div data-testid="sign-in-form">{providers}</div>
+  ),
 }));
 vi.mock('@/components/google-one-tap', () => ({
   GoogleOneTap: () => <div data-testid="google-one-tap" />,

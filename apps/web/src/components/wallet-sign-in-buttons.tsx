@@ -6,7 +6,7 @@ import {
   Web3Provider,
   createWalletAdapters,
   shortenAddress,
-  useWallet,
+  useWeb3,
   useWalletAddress,
 } from "@game-guild/web3";
 import type { SiweTransport, WalletAdapter } from "@game-guild/web3";
@@ -108,20 +108,13 @@ function WalletButtonGroup({
   labels: WalletSignInLabels;
 }) {
   const { signIn } = useAuth();
-  // Accessed through the context object (not destructured): the linter's unbound-method
-  // rule fires on functions separated from their owning object. The narrow local contract
-  // keeps the wallet buttons type-checked even where the host project cannot resolve the
-  // package's context generics.
-  const web3 = useWallet() as unknown as {
-    status: string;
-    error: { code: string; message: string } | null;
-    wallets: readonly { id: string; name: string; available: boolean }[];
-    connect: (walletId: string) => Promise<void>;
-    disconnect: () => Promise<void>;
-    authenticate: (transport: SiweTransport) => Promise<unknown>;
-    clearError: () => void;
-    isPending: boolean;
-  };
+  // Accessed through the context object (not destructured): the linter's
+  // unbound-method rule fires on functions separated from their owning
+  // object. `useWeb3` (not the `useWallet` snapshot) exposes `authenticate`
+  // alongside the connection lifecycle.
+  const web3 = useWeb3();
+  const isPending =
+    web3.state.status === "connecting" || web3.state.status === "signing";
   // The account lives on the full context state, not the wallet snapshot.
   const account = useWalletAddress() ?? null;
 
@@ -191,7 +184,7 @@ function WalletButtonGroup({
         >
           {labels.disconnect}
         </button>
-        {web3.error ? <WalletError error={web3.error} /> : null}
+        {web3.state.error ? <WalletError error={web3.state.error} /> : null}
       </div>
     );
   }
@@ -203,19 +196,19 @@ function WalletButtonGroup({
           key={wallet.id}
           type="button"
           data-testid={`${wallet.id}-sign-in-button`}
-          disabled={web3.isPending}
+          disabled={isPending}
           onClick={() => void handleConnect(wallet.id)}
           className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-white/10 text-sm font-medium text-white shadow-xs transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
           {walletIcon}
-          {web3.status === "signing"
+          {web3.state.status === "signing"
             ? labels.signing
-            : web3.status === "connecting" && web3.isPending
+            : web3.state.status === "connecting"
               ? labels.connecting
               : labels.continueWithWallet.replace("{wallet}", wallet.name)}
         </button>
       ))}
-      {web3.error ? <WalletError error={web3.error} /> : null}
+      {web3.state.error ? <WalletError error={web3.state.error} /> : null}
     </div>
   );
 }
