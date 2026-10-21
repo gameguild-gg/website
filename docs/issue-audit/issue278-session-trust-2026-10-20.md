@@ -83,3 +83,23 @@ this does not assert E2E acceptance of a production build.
 This is a correction candidate pending matching-source CI, not an accepted delivery.
 Issue 278 is reopened on the one qualified native defect. The full original scope
 remains pending; no new closure or full recertification is claimed.
+
+## Readiness-triggered CI follow-up
+
+The source at `85e2df20` passed its first complete CI execution. Marking the PR
+ready triggered PR Verify run `39485338624`, which must also pass before delivery.
+Its dependency audit rejected `follow-redirects` 1.16.0 for
+[GHSA-q3jh-wrc6-jgq8](https://github.com/advisories/GHSA-q3jh-wrc6-jgq8).
+The workspace now pins the upstream fix, 1.16.1, with the published registry
+integrity in the lockfile. The audit remains strict. Four CI regression cases use
+the installed dependency and actual loopback HTTP redirects: both object and
+array headers must strip built-in and custom credentials across origins, preserve
+them on the same origin, and retain ordinary headers.
+
+That later run also recorded two API integration timeouts (audit-export request
+entry and PostgreSQL connection during API-key host startup), with 704 other
+integration cases passing. The PR review bot separately exhausted its external
+model calls. These failures are retained as evidence; they are not waived or
+reclassified as successful. The dependency correction requires a new signed
+source commit and a complete, successful hosted execution before merge. No local
+product execution, manual workflow rerun or cancellation is used.
