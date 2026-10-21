@@ -190,25 +190,40 @@ test("accepts a challenge for an elevated-role account with a provisioned secret
   );
 });
 
-test("SignInForm keeps void callbacks without obsolete promise suppressions", async () => {
+test("sign-in forms keep void callbacks without obsolete promise suppressions", async () => {
   const { readFile } = await import("node:fs/promises");
-  const [baselineText, form] = await Promise.all([
+  const [baselineText, signInForm, mfaChallengeForm] = await Promise.all([
     readFile(new URL("../eslint-suppressions.json", import.meta.url), "utf8"),
     readFile(
       new URL("../src/components/sign-in-form.tsx", import.meta.url),
       "utf8",
     ),
+    readFile(
+      new URL(
+        "../src/components/auth/mfa-challenge-form.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
   ]);
+  const baseline = JSON.parse(baselineText);
   assert.equal(
-    Object.hasOwn(JSON.parse(baselineText), "src/components/sign-in-form.tsx"),
+    Object.hasOwn(baseline, "src/components/sign-in-form.tsx"),
+    false,
+  );
+  assert.equal(
+    Object.hasOwn(
+      baseline,
+      "src/components/auth/mfa-challenge-form.tsx",
+    ),
     false,
   );
   assert.match(
-    form,
-    /onSubmit=\{\(event\) => \{\s+void handleMfaSubmit\(event\);\s+\}\}/,
+    signInForm,
+    /onSubmit=\{\(event\) => \{\s+void handleSubmit\(event\);\s+\}\}/,
   );
   assert.match(
-    form,
+    mfaChallengeForm,
     /onSubmit=\{\(event\) => \{\s+void handleSubmit\(event\);\s+\}\}/,
   );
 });
