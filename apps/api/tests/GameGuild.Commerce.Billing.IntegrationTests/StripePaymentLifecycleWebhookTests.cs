@@ -133,7 +133,8 @@ public class StripePaymentLifecycleWebhookTests
     [Fact]
     public async Task TryConsumeAsync_RefundSucceeded_CompletesTheLocalRefundThroughTheCore()
     {
-        var consumer = CreateConsumer(out _, out var refundRepository, out _, out var reconciledRefunds);
+        var reconciledRefunds = new List<(string GatewayRefundId, Refund Refund)>();
+        var consumer = CreateConsumer(out _, out var refundRepository, out _, reconciledRefunds);
         var refund = ProcessingRefund();
         refundRepository
             .Setup(repo => repo.GetByGatewayRefundIdAsync("re_1", It.IsAny<CancellationToken>()))
@@ -202,7 +203,8 @@ public class StripePaymentLifecycleWebhookTests
     [Fact]
     public async Task TryConsumeAsync_ChargeRefunded_CompletesTheSingleInFlightRefund()
     {
-        var consumer = CreateConsumer(out var paymentRepository, out var refundRepository, out _, out var reconciledRefunds);
+        var reconciledRefunds = new List<(string GatewayRefundId, Refund Refund)>();
+        var consumer = CreateConsumer(out var paymentRepository, out var refundRepository, out _, reconciledRefunds);
         var payment = SucceededPayment();
         var refund = ProcessingRefund(payment.Id);
         paymentRepository
@@ -223,7 +225,8 @@ public class StripePaymentLifecycleWebhookTests
     [Fact]
     public async Task TryConsumeAsync_ChargeRefunded_WithoutInFlightRefund_DoesNothing()
     {
-        var consumer = CreateConsumer(out var paymentRepository, out var refundRepository, out _, out var reconciledRefunds);
+        var reconciledRefunds = new List<(string GatewayRefundId, Refund Refund)>();
+        var consumer = CreateConsumer(out var paymentRepository, out var refundRepository, out _, reconciledRefunds);
         var payment = SucceededPayment();
         paymentRepository
             .Setup(repo => repo.GetByProviderMappingAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
