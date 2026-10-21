@@ -237,10 +237,10 @@ public sealed class ValueSnapshotRetentionService(
             .ConfigureAwait(false);
 
         var groups = sides
-            .SelectMany(snapshot => new[]
+            .SelectMany(snapshot => new (MutationValueSnapshot Snapshot, string Side, string? Payload, string? Sha)[]
             {
-                (Snapshot: snapshot, Side: "B", snapshot.BeforePayload, snapshot.BeforeStoredSha256),
-                (Snapshot: snapshot, Side: "A", snapshot.AfterPayload, snapshot.AfterStoredSha256)
+                (snapshot, "B", snapshot.BeforePayload, snapshot.BeforeStoredSha256),
+                (snapshot, "A", snapshot.AfterPayload, snapshot.AfterStoredSha256)
             })
             .Where(item => item.Payload is not null && item.Sha is not null)
             .GroupBy(item => item.Sha!)

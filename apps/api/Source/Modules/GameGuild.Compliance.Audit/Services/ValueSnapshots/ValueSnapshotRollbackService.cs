@@ -224,8 +224,12 @@ public sealed class ValueSnapshotRollbackService(
                 foreach (var property in entry.Properties)
                 {
                     if (property.Metadata.IsPrimaryKey()
-                        || property.Metadata.Name is "Version" or "CreatedAt" or "UpdatedAt" or "DeletedAt" or "TenantId"
-                        || !targetState.TryGetValue(property.Metadata.Name, out var targetValue))
+                        || property.Metadata.Name is "Version" or "CreatedAt" or "UpdatedAt" or "DeletedAt" or "TenantId")
+                    {
+                        continue;
+                    }
+
+                    if (!targetState.TryGetValue(property.Metadata.Name, out var targetValue))
                     {
                         continue;
                     }
