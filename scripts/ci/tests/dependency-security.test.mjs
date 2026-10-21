@@ -166,6 +166,6 @@ for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
       },
     }), /issuer/i);
     assert.equal(requests, 0, "Issuer mismatch must fail before any credential-bearing request");
-    assert.equal(require(join(packageRoot, "package.json")).version, "1.32.0");
+    assert.equal(require(join(packageRoot, "package.json")).version, "1.32.1");
   });
 }

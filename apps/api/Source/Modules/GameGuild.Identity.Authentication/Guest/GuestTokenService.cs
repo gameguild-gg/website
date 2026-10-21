@@ -87,8 +87,8 @@ public sealed class GuestTokenService(
                 RoleClaimType = ClaimNames.Role
             };
 
-            // Keep the canonical claim names used by the dedicated GuestBearer scheme
-            // and the structural guest check, including the short "role" claim.
+            // Inbound claim mapping is disabled so structural guest checks see the literal
+            // claim types (role/guest_id); the host's guest bearer scheme matches this.
             var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
             var principal = handler.ValidateToken(guestToken, parameters, out _);
             // Structural guest check on top of cryptography: the right audience is not

@@ -30,6 +30,7 @@ vi.mock('@/i18n/navigation', () => ({
       {children}
     </a>
   ),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 
 // Must import AFTER mocks

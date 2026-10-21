@@ -25,7 +25,7 @@ public sealed class TenantCrossoverAdversarialTests(AdversarialSecurityFixture f
     [Fact]
     public async Task TenantBResourcesAreUnreachableFromTenantAToken()
     {
-        var accountA = await fixture.SeedAccountAsync(grantedPermissions: ["features:read"]);
+        var accountA = await fixture.SeedAccountAsync(grantedPermissions: ["features:read", "queries:list"]);
         var accountB = await fixture.SeedAccountAsync(grantedPermissions: ["features:read"]);
         using var client = await fixture.CreateBearerClientAsync(accountA);
 
