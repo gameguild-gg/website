@@ -7,24 +7,30 @@ namespace GameGuild.Commerce.Payments;
 /// </summary>
 internal static class StripeAmountConverter
 {
-    private static readonly HashSet<string> ZeroDecimalCurrencies =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF",
-            "UGX", "VND", "VUV", "XAF", "XOF", "XPF"
-        };
+    /// <summary>
+    ///     Converts a decimal amount to Stripe's integer format (smallest currency unit).
+    ///     The scale factor is driven by the ISO 4217 catalog's minor-unit exponent, so
+    ///     zero-decimal currencies (JPY, KRW, ...) pass through unchanged while three-decimal
+    ///     currencies (KWD, BHD, OMR, JOD, TND, IQD, LYD) scale by 1000 — the historical
+    ///     hard-coded x100 mis-scaled those by a factor of ten.
+    /// </summary>
+    public static long ToStripeAmount(decimal amount, string currency)
+    {
+        var exponent = Iso4217CurrencyCatalog.GetMinorUnitExponent(currency);
+        var scaled = exponent == 0 ? amount : amount * MinorUnitScale(exponent);
+        return (long)decimal.Round(scaled, 0, MidpointRounding.AwayFromZero);
+    }
 
     /// <summary>
-    ///     Converts a decimal amount to Stripe's integer format (cents / smallest currency unit).
+    ///     Converts a Stripe integer amount back to decimal using the catalog minor-unit exponent.
     /// </summary>
-    public static long ToStripeAmount(decimal amount, string currency) =>
-        ZeroDecimalCurrencies.Contains(currency) ? (long)amount : (long)(amount * 100);
+    public static decimal FromStripeAmount(long amount, string currency)
+    {
+        var exponent = Iso4217CurrencyCatalog.GetMinorUnitExponent(currency);
+        return exponent == 0 ? amount : amount / MinorUnitScale(exponent);
+    }
 
-    /// <summary>
-    ///     Converts a Stripe integer amount back to decimal.
-    /// </summary>
-    public static decimal FromStripeAmount(long amount, string currency) =>
-        ZeroDecimalCurrencies.Contains(currency) ? amount : amount / 100m;
+    private static decimal MinorUnitScale(int exponent) { return decimal.Parse("1".PadRight(exponent + 1, '0'), System.Globalization.CultureInfo.InvariantCulture); }
 }
 
 /// <summary>

@@ -49,6 +49,11 @@ public static class DependencyInjection
         // contract for the Payments module (delete guard, re-pointing, checkout assignment).
         services.AddScoped<ISubscriptionPaymentMethodCoordination, SubscriptionPaymentMethodCoordinationService>();
 
+        // Currency configuration guard (issue #412 spec A): data-backed implementation of the
+        // Payments-owned usage probe used by DisableCurrency's warn-and-require-confirmation
+        // guard. Registered with plain AddScoped BEFORE Payments runs its TryAdd fallback.
+        services.AddScoped<ICurrencySubscriptionUsageProbe, CurrencySubscriptionUsageProbe>();
+
         // Register SubscriptionService as thin facade for backward compatibility
         services.AddScoped<SubscriptionService>();
 
