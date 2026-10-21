@@ -15,7 +15,7 @@ public class LocalizationQueryExtensionsTests
         public ICollection<ResourceLocalization> Localizations { get; set; }
             = new List<ResourceLocalization>();
 
-        public ResourceLocalization AddLocalization(
+        public void AddLocalization(
             string fieldName,
             string content,
             Language language,
@@ -30,7 +30,6 @@ public class LocalizationQueryExtensionsTests
                 Status = status
             };
             Localizations.Add(localization);
-            return localization;
         }
     }
 

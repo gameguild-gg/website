@@ -44,7 +44,10 @@ export default [
   },
   {
     name: 'gameguild/root-test-globals',
-    files: ['**/*.{test,spec}.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'],
+    files: [
+      '**/*.{test,spec}.{js,mjs,cjs,jsx,ts,mts,cts,tsx}',
+      'packages/tooling/jest/src/**/*.js',
+    ],
     languageOptions: { globals: globals.jest },
   },
   {

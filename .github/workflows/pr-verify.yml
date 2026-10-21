@@ -363,7 +363,7 @@ jobs:
         env:
           ECONOMY_GATE_PROFILE: api-bundle
         run: bash scripts/ci/verify-economy.sh
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-api-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/economy-bundles/api
@@ -371,7 +371,7 @@ jobs:
           compression-level: 0
       - name: Upload API producer evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-api-evidence-${{ github.event.pull_request.head.sha }}
           path: |
@@ -392,7 +392,7 @@ jobs:
         env:
           ECONOMY_GATE_PROFILE: client-bundle
         run: bash scripts/ci/verify-economy.sh
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-client-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/economy-bundles/client
@@ -400,7 +400,7 @@ jobs:
           compression-level: 0
       - name: Upload client producer evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-client-evidence-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/economy
@@ -422,7 +422,7 @@ jobs:
         run: bash scripts/ci/verify-economy.sh
       - name: Upload Economy coverage and provider evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-coverage-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/economy
@@ -454,7 +454,7 @@ jobs:
         run: bash scripts/ci/verify-economy.sh
       - name: Upload regression evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-regression-${{ matrix.shard }}-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/economy
