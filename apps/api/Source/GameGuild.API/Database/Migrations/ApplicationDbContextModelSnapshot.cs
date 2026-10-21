@@ -15579,6 +15579,88 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("magic_link_tokens", "gameguild.authentication");
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.AccountRecoveryRequest", b =>
+                {
+                    b.Property<DateTimeOffset>("ApprovalWindowEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approval_window_ends_at");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<DateTimeOffset>("CooldownEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cooldown_ends_at");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<int>("RequiredApprovals")
+                        .HasColumnType("integer")
+                        .HasColumnName("required_approvals");
+
+                    b.Property<DateTimeOffset?>("ResetTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reset_token_expires_at");
+
+                    b.Property<string>("ResetTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("reset_token_hash");
+
+                    b.Property<DateTimeOffset?>("ResetUnlockedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reset_unlocked_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_account_recovery_requests_active_owner")
+                        .HasFilter("status IN ('PendingApprovals', 'ResetUnlocked')");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_account_recovery_requests_tenant_status");
+
+                    b.ToTable("account_recovery_requests", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_account_recovery_cooldown", "cooldown_ends_at >= requested_at");
+
+                            t.HasCheckConstraint("ck_account_recovery_required_approvals", "required_approvals >= 1");
+
+                            t.HasCheckConstraint("ck_account_recovery_reset_token", "(reset_token_hash IS NULL OR reset_token_hash ~ '^[a-f0-9]{64}$')");
+
+                            t.HasCheckConstraint("ck_account_recovery_status", "status IN ('PendingApprovals', 'ResetUnlocked', 'Completed', 'Cancelled', 'Expired')");
+
+                            t.HasCheckConstraint("ck_account_recovery_window", "approval_window_ends_at >= cooldown_ends_at");
+                        });
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.AdaptiveBehaviorBaseline", b =>
                 {
                     b.Property<Guid>("Id")
@@ -16464,6 +16546,88 @@ namespace GameGuild.API.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.RecoveryApproval", b =>
+                {
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<string>("ApprovalCodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("approval_code_hash");
+
+                    b.Property<string>("ApproverIpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("approver_ip_address");
+
+                    b.Property<string>("ApproverUserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("approver_user_agent");
+
+                    b.Property<string>("Factor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("factor");
+
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("issued_at");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<Guid>("RecoveryRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recovery_request_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid?>("TrustedContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trusted_contact_id");
+
+                    b.Property<Guid?>("WebAuthnCredentialId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("webauthn_credential_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecoveryRequestId")
+                        .HasDatabaseName("ix_recovery_approvals_request");
+
+                    b.HasIndex("RecoveryRequestId", "TrustedContactId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_recovery_approvals_request_contact")
+                        .HasFilter("trusted_contact_id IS NOT NULL");
+
+                    b.HasIndex("RecoveryRequestId", "WebAuthnCredentialId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_recovery_approvals_request_credential")
+                        .HasFilter("webauthn_credential_id IS NOT NULL");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_recovery_approvals_tenant");
+
+                    b.ToTable("recovery_approvals", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_recovery_approvals_factor", "factor IN ('TrustedContact', 'Passkey')");
+
+                            t.HasCheckConstraint("ck_recovery_approvals_factor_target", "(factor = 'Passkey' AND webauthn_credential_id IS NOT NULL AND approval_code_hash IS NULL AND trusted_contact_id IS NULL)\nOR (factor = 'TrustedContact' AND trusted_contact_id IS NOT NULL AND approval_code_hash IS NOT NULL AND webauthn_credential_id IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -17021,6 +17185,80 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("totp_replay_state", "gameguild.authentication", t =>
                         {
                             t.HasCheckConstraint("ck_totp_replay_state_nonnegative_step", "last_accepted_step >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.TrustedContact", b =>
+                {
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("InviteTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invite_token_expires_at");
+
+                    b.Property<string>("InviteTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("invite_token_hash");
+
+                    b.Property<DateTimeOffset>("InvitedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invited_at");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("Relation")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("relation");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "Email")
+                        .IsUnique()
+                        .HasDatabaseName("ux_trusted_contacts_active_owner_email")
+                        .HasFilter("status IN ('Invited', 'Confirmed')");
+
+                    b.HasIndex("OwnerUserId", "Status")
+                        .HasDatabaseName("ix_trusted_contacts_owner_status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_trusted_contacts_tenant");
+
+                    b.ToTable("trusted_contacts", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_trusted_contacts_invite_token", "(invite_token_hash IS NULL OR invite_token_hash ~ '^[a-f0-9]{64}$')");
+
+                            t.HasCheckConstraint("ck_trusted_contacts_status", "status IN ('Invited', 'Confirmed', 'Revoked')");
                         });
                 });
 
