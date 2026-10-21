@@ -48,6 +48,14 @@ public sealed class TenantMembershipRolePermissionProviderTests
             AuditPermission.Keys.Read
         ]);
 
+        // Issue #375: administrative roles carry the query-operations tier so the
+        // audit-query, security-event and permission-query surfaces keep working.
+        permissions.Should().Contain([
+            QueryPermission.Keys.List,
+            QueryPermission.Keys.Search,
+            QueryPermission.Keys.Query
+        ]);
+
         // ...while delegation-only capabilities stay absent.
         permissions.Should().NotContain([
             ManageRolesPermission.Keys.Manage,
@@ -86,7 +94,10 @@ public sealed class TenantMembershipRolePermissionProviderTests
             ManageRolesPermission.Keys.Manage,
             ManageSettingsPermission.Keys.Manage,
             AuditPermission.Keys.Read,
-            AuditPermission.Keys.Export
+            AuditPermission.Keys.Export,
+            QueryPermission.Keys.List,
+            QueryPermission.Keys.Search,
+            QueryPermission.Keys.Query
         ]);
     }
 

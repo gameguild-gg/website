@@ -31,17 +31,27 @@ public sealed class FraudReviewsController(
     /// <param name="tenantId">Optional tenant filter (system administrators only; other callers are scoped to their own tenant).</param>
     /// <param name="page">Page number for pagination (1-based).</param>
     /// <param name="pageSize">Items per page (1-100).</param>
+    /// <param name="minScore">Optional inclusive floor on the aggregate fraud score (0-100).</param>
+    /// <param name="riskLevel">Optional risk-band filter (Low, Medium, High, Critical).</param>
+    /// <param name="minAmount">Optional inclusive floor on the charged amount.</param>
+    /// <param name="fromUtc">Optional inclusive lower bound on the payment creation date (ISO-8601).</param>
+    /// <param name="toUtc">Optional inclusive upper bound on the payment creation date (ISO-8601).</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpGet]
     [EnableRateLimiting(RateLimitPolicies.Api)]
     [EndpointSummary("List pending fraud reviews")]
-    [EndpointDescription("Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.")]
+    [EndpointDescription("Lists payments held by the fraud gate with a pending manual review, oldest first. Supports filtering by minimum score, risk band, charged amount and creation date range. Requires the payments:admin permission.")]
     [ProducesResponseType<IEnumerable<FraudReviewListItem>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetReviews(
         [FromQuery] Guid? tenantId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] int? minScore = null,
+        [FromQuery] FraudRiskLevel? riskLevel = null,
+        [FromQuery] decimal? minAmount = null,
+        [FromQuery] DateTime? fromUtc = null,
+        [FromQuery] DateTime? toUtc = null,
         CancellationToken ct = default)
     {
         if (page < 1) page = 1;
@@ -57,7 +67,9 @@ public sealed class FraudReviewsController(
             tenantId = actorContext.TenantId;
         }
 
-        return Ok(await sender.Send(new GetFraudReviewsQuery(tenantId, page, pageSize), ct).ConfigureAwait(false));
+        return Ok(await sender.Send(
+            new GetFraudReviewsQuery(tenantId, page, pageSize, minScore, riskLevel, minAmount, fromUtc, toUtc),
+            ct).ConfigureAwait(false));
     }
 
     /// <summary>
@@ -98,8 +110,51 @@ public sealed class FraudReviewsController(
         return result.Success ? Ok(result) : NotFound(result);
     }
 
+    /// <summary>
+    ///     Bulk-approve pending fraud reviews, releasing the fraud holds.
+    /// </summary>
+    /// <param name="body">Payments whose reviews are approved, with optional shared notes.</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpPost("bulk-approve")]
+    [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
+    [EndpointSummary("Bulk-approve pending fraud reviews")]
+    [EndpointDescription("Approves the pending fraud reviews for a batch of held payments (2-100), releasing each fraud hold so the payment can be retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.")]
+    [ProducesResponseType<FraudReviewsBulkResolutionResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> BulkApproveReviews([FromBody] ResolveFraudReviewsBulkRequest body, CancellationToken ct)
+    {
+        var result = await sender.Send(
+            new ResolveFraudReviewsBulkCommand(body.PaymentIds, Approve: true, body.Notes), ct).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     Bulk-decline pending fraud reviews, keeping the payments failed and non-retryable.
+    /// </summary>
+    /// <param name="body">Payments whose reviews are declined, with optional shared notes.</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpPost("bulk-deny")]
+    [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
+    [EndpointSummary("Bulk-decline pending fraud reviews")]
+    [EndpointDescription("Declines the pending fraud reviews for a batch of held payments (2-100); each stays failed and is never retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.")]
+    [ProducesResponseType<FraudReviewsBulkResolutionResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> BulkDenyReviews([FromBody] ResolveFraudReviewsBulkRequest body, CancellationToken ct)
+    {
+        var result = await sender.Send(
+            new ResolveFraudReviewsBulkCommand(body.PaymentIds, Approve: false, body.Notes), ct).ConfigureAwait(false);
+        return Ok(result);
+    }
+
     /// <summary>Request body for resolving a fraud review.</summary>
     public sealed record ResolveFraudReviewRequest(string? Notes);
+
+    /// <summary>Request body for bulk-resolving fraud reviews.</summary>
+    /// <param name="PaymentIds">Payments whose reviews are resolved (2-100 items).</param>
+    /// <param name="Notes">Optional reviewer notes recorded with every resolution.</param>
+    public sealed record ResolveFraudReviewsBulkRequest(IReadOnlyList<Guid> PaymentIds, string? Notes = null);
 
     private IActionResult? ValidateTenantAccess(Guid requestedTenantId, string operation)
         => actorContextAccessor.ActorContext.IsSystemAdmin

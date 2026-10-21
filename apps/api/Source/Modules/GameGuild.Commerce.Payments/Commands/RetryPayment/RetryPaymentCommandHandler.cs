@@ -1,6 +1,9 @@
 using System.Text.Json;
+using GameGuild.Commerce;
 using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.Notifications;
+using GameGuild.Notifications.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -34,7 +37,9 @@ public sealed class RetryPaymentCommandHandler(
     IPaymentDunningLifecycleService dunningLifecycleService,
     IRevenueAuditService revenueAuditService,
     IActorContextAccessor actorContextAccessor,
-    ILogger<RetryPaymentCommandHandler> logger) : ICommandHandler<RetryPaymentCommand, PaymentRetryResult>
+    ILogger<RetryPaymentCommandHandler> logger,
+    INotificationService? notificationService = null,
+    IPaymentMethodRepository? paymentMethodRepository = null) : ICommandHandler<RetryPaymentCommand, PaymentRetryResult>
 {
     public async Task<PaymentRetryResult> Handle(RetryPaymentCommand request, CancellationToken cancellationToken)
     {
@@ -193,6 +198,11 @@ public sealed class RetryPaymentCommandHandler(
         await ApplyRecoveryLifecycleAsync(payment, gatewayResult.Success, gatewayResult.ErrorMessage, cancellationToken)
             .ConfigureAwait(false);
 
+        // Payment-event notifications (issue #415): a successful retry emails the payment
+        // receipt; the second failure overall prompts the customer to update the payment method.
+        await SendOutcomeNotificationsAsync(payment, gatewayResult.Success, cancellationToken)
+            .ConfigureAwait(false);
+
         if (gatewayResult.Success && payment.ProcessedAt.HasValue)
         {
             var billingCycleNumber = SubscriptionPaymentIdentity.TryGetBillingCycleNumber(payment.IdempotencyKey);
@@ -225,6 +235,122 @@ public sealed class RetryPaymentCommandHandler(
             MaxRetriesReached = payment.MaxRetriesReached,
             FailureReason = gatewayResult.Success ? null : gatewayResult.ErrorMessage
         };
+    }
+
+    /// <summary>
+    ///     Outcome notifications for a retry attempt (issue #415): the payment receipt on
+    ///     success, and the update-payment-method prompt on the second failure overall
+    ///     (first retry failure, <c>RetryCount == 1</c>). Best-effort: notification delivery
+    ///     problems never fail the recorded retry outcome.
+    /// </summary>
+    private async Task SendOutcomeNotificationsAsync(
+        Payment payment,
+        bool retrySucceeded,
+        CancellationToken cancellationToken)
+    {
+        if (notificationService is null)
+        {
+            return;
+        }
+
+        Guid? ownerUserId = null;
+        try
+        {
+            ownerUserId = await ResolvePaymentOwnerAsync(payment, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "Owner resolution for payment {PaymentId} outcome notifications failed",
+                payment.Id);
+        }
+
+        if (ownerUserId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (retrySucceeded)
+            {
+                var result = await notificationService.SendAsync(
+                    recipientId: ownerUserId.Value,
+                    type: NotificationType.PaymentReceipt,
+                    title: "Payment receipt",
+                    message:
+                        $"Your retried payment of {payment.Amount:0.##} {payment.Currency} was processed successfully " +
+                        $"on attempt {payment.RetryCount}. Payment reference " +
+                        $"{payment.ExternalTransactionId ?? payment.Id.ToString()}, processed {payment.ProcessedAt:u}.",
+                    channel: NotificationChannel.Email,
+                    tenantId: payment.TenantId,
+                    priority: NotificationPriority.Normal,
+                    referenceEntityId: payment.Id,
+                    referenceEntityType: nameof(Payment),
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (!result.IsSuccess)
+                {
+                    logger.LogInformation(
+                        "Payment receipt for payment {PaymentId} was not delivered: {Reason}",
+                        payment.Id,
+                        result.Error?.Description ?? "preference decision");
+                }
+
+                return;
+            }
+
+            if (payment.RetryCount == 1)
+            {
+                var prompt = await notificationService.SendAsync(
+                    recipientId: ownerUserId.Value,
+                    type: NotificationType.PaymentMethodUpdateRequired,
+                    title: "Update your payment method",
+                    message:
+                        $"Your payment of {payment.Amount:0.##} {payment.Currency} has failed twice" +
+                        (string.IsNullOrWhiteSpace(payment.FailureReason)
+                            ? string.Empty
+                            : $" ({payment.FailureReason})") +
+                        ". Please update your payment method so the next retry can succeed and your service stays active.",
+                    channel: NotificationChannel.Email,
+                    tenantId: payment.TenantId,
+                    priority: NotificationPriority.High,
+                    referenceEntityId: payment.Id,
+                    referenceEntityType: nameof(Payment),
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (!prompt.IsSuccess)
+                {
+                    logger.LogInformation(
+                        "Payment-method update prompt for payment {PaymentId} was not delivered: {Reason}",
+                        payment.Id,
+                        prompt.Error?.Description ?? "preference decision");
+                }
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "Outcome notification for payment {PaymentId} failed; the retry outcome stays recorded",
+                payment.Id);
+        }
+    }
+
+    /// <summary>Resolves the user that owns the payment through its payment-method registration.</summary>
+    private async Task<Guid?> ResolvePaymentOwnerAsync(Payment payment, CancellationToken cancellationToken)
+    {
+        if (paymentMethodRepository is null || string.IsNullOrWhiteSpace(payment.PaymentMethodId))
+        {
+            return null;
+        }
+
+        var method = await paymentMethodRepository
+            .GetByGatewayIdAsync(payment.TenantId, payment.Provider, payment.PaymentMethodId, cancellationToken)
+            .ConfigureAwait(false);
+
+        return method?.UserId;
     }
 
     private async Task RecordAttemptHistoryAsync(

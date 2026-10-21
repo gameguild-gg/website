@@ -39,7 +39,7 @@ const isAllowedByDockerignore = (dockerignore, path) => {
       .replace(/[.+^${}()|[\]\\]/g, "\\$&")
       .replace(/\*\*/g, "\u0000")
       .replace(/\*/g, "[^/]*")
-      .replace(/\u0000/g, ".*");
+      .replaceAll("\u0000", ".*");
     const anchored = pattern.includes("/");
     let matches;
     if (anchored) {

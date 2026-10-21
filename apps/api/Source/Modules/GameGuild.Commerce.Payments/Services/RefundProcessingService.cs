@@ -19,6 +19,12 @@ namespace GameGuild.Commerce.Payments;
 ///     When false (accept-dispute flow), the money already moved at the gateway (chargeback), so
 ///     the refund row, payment aggregate and accounting are recorded without a new gateway call.
 /// </param>
+/// <param name="Kind">
+///     How the amount is determined (issue #419): <see cref="RefundKind.Full"/> uses the remaining
+///     balance, <see cref="RefundKind.Partial"/> the explicit <paramref name="Amount"/>, and
+///     <see cref="RefundKind.Prorated"/> computes the unused-time credit of the subscription
+///     billing period (the explicit amount, when supplied, is ignored for prorated requests).
+/// </param>
 public sealed record RefundRequestInput(
     Guid PaymentId,
     decimal? Amount,
@@ -27,7 +33,8 @@ public sealed record RefundRequestInput(
     string? ClientIdempotencyKey = null,
     Guid? RequestedByUserId = null,
     Guid? DisputeId = null,
-    bool ExecuteAtGateway = true);
+    bool ExecuteAtGateway = true,
+    RefundKind Kind = RefundKind.Full);
 
 /// <summary>Outcome of a refund request.</summary>
 public sealed record RefundRequestOutcome
@@ -71,10 +78,30 @@ public interface IRefundProcessingService
 
     /// <summary>Executes a Pending/Approved/Failed refund through the gateway and completes the accounting.</summary>
     Task<RefundExecutionOutcome> ExecuteAsync(Refund refund, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Completes a refund whose gateway outcome arrived out-of-band through a webhook (issue
+    ///     #415 payment.refunded events): the money already moved at the gateway (typically a
+    ///     gateway call whose response was lost), so this records the completion — refund row,
+    ///     payment aggregate, accounting and post-completion steps — without a new gateway call.
+    ///     Idempotent: refunds already completed or rejected are returned as no-ops.
+    /// </summary>
+    /// <param name="refund">Local refund row awaiting its gateway outcome.</param>
+    /// <param name="gatewayRefundId">Gateway refund identifier reported by the webhook.</param>
+    /// <param name="gatewayName">Gateway that executed the refund (e.g. stripe).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<RefundExecutionOutcome> CompleteFromGatewayAsync(
+        Refund refund,
+        string gatewayRefundId,
+        string gatewayName,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-///     Default <see cref="IRefundProcessingService"/> implementation (issue #419).
+///     Default <see cref="IRefundProcessingService"/> implementation (issue #419). The
+///     proration, wallet and subscription-adjustment collaborators are optional: their features
+///     degrade gracefully (prorated refunds fail closed, wallet credit and subscription
+///     adjustment are skipped) when the composition root or a test omits them.
 /// </summary>
 public sealed class RefundProcessingService(
     IRefundRepository refundRepository,
@@ -84,9 +111,15 @@ public sealed class RefundProcessingService(
     IActorContextAccessor actorContextAccessor,
     IOptions<RefundApprovalOptions> options,
     INotificationService notificationService,
-    ILogger<RefundProcessingService> logger) : IRefundProcessingService
+    ILogger<RefundProcessingService> logger,
+    IPlanProrationCalculator? prorationCalculator = null,
+    IPaymentSubscriptionSyncService? subscriptionSyncService = null,
+    IWalletService? walletService = null,
+    IPaymentMethodRepository? paymentMethodRepository = null,
+    IOptions<RefundWorkflowOptions>? workflowOptions = null) : IRefundProcessingService
 {
     private readonly RefundApprovalOptions _options = options.Value;
+    private readonly RefundWorkflowOptions _workflowOptions = workflowOptions?.Value ?? new RefundWorkflowOptions();
 
     public async Task<RefundRequestOutcome> RequestRefundAsync(RefundRequestInput input, CancellationToken cancellationToken = default)
     {
@@ -106,6 +139,31 @@ public sealed class RefundProcessingService(
 
         var remainingRefundable = payment.Amount - payment.RefundedAmount;
         var amount = input.Amount ?? remainingRefundable;
+        var kind = input.Kind;
+
+        if (kind == RefundKind.Prorated)
+        {
+            var proration = await ComputeProratedRefundAsync(payment, remainingRefundable, cancellationToken).ConfigureAwait(false);
+            if (proration is null)
+            {
+                return Failure("Prorated refunds require a subscription-linked payment with a resolvable billing period");
+            }
+
+            (amount, var prorationNotes) = proration.Value;
+            if (amount <= 0)
+            {
+                return Failure($"Nothing left to refund on this payment (proration computed {amount})");
+            }
+
+            input = input with
+            {
+                Amount = amount,
+                ReasonDetails = string.IsNullOrWhiteSpace(input.ReasonDetails)
+                    ? prorationNotes
+                    : $"{input.ReasonDetails} | {prorationNotes}"
+            };
+        }
+
         if (amount <= 0)
         {
             return Failure("Nothing left to refund on this payment");
@@ -114,6 +172,12 @@ public sealed class RefundProcessingService(
         if (amount > remainingRefundable)
         {
             return Failure($"Refund amount {amount} exceeds maximum refundable {remainingRefundable}");
+        }
+
+        // An explicitly supplied amount on a "full" request is by definition a partial refund.
+        if (kind == RefundKind.Full && input.Amount.HasValue)
+        {
+            kind = RefundKind.Partial;
         }
 
         // Retry-safe when the client supplies a key: replays resolve to the recorded refund row
@@ -145,6 +209,25 @@ public sealed class RefundProcessingService(
                           ?? actorContextAccessor.ActorContext.SubjectIdAsGuid
                           ?? throw new UnauthorizedAccessException("An authenticated requester is required to request a refund.");
 
+        // Duplicate-refund guard (issue #419): while any refund for this payment is still open
+        // (pending approval, approved, in flight, or failed-but-retryable), no second refund may
+        // be created — retrying or cancelling the open row is the only way forward. Completed
+        // and rejected refunds are terminal and never block a new request.
+        var openRefund = await refundRepository
+            .GetOpenRefundForPaymentAsync(payment.Id, cancellationToken)
+            .ConfigureAwait(false);
+        if (openRefund is not null)
+        {
+            logger.LogWarning(
+                "Refund request for payment {PaymentId} rejected: refund {OpenRefundId} is still open in status {Status}",
+                payment.Id,
+                openRefund.Id,
+                openRefund.Status);
+            return Failure(
+                $"Payment {payment.Id} already has refund {openRefund.Id} in status {openRefund.Status}; " +
+                "retry or cancel it before requesting another refund");
+        }
+
         var refund = Refund.Create(
             payment.TenantId,
             payment.Id,
@@ -155,7 +238,8 @@ public sealed class RefundProcessingService(
             requestedBy,
             requiresApproval,
             idempotencyKey,
-            input.DisputeId);
+            input.DisputeId,
+            kind);
         refund = await refundRepository.AddAsync(refund, cancellationToken).ConfigureAwait(false);
 
         if (refund.IsTerminal || refund.Status != RefundStatus.Pending)
@@ -284,6 +368,90 @@ public sealed class RefundProcessingService(
             refund.Currency,
             payment.Id);
 
+        await ApplyPostCompletionAsync(payment, refund, executeAtGateway: true, cancellationToken).ConfigureAwait(false);
+
+        return new RefundExecutionOutcome { Success = true, Refund = refund };
+    }
+
+    /// <inheritdoc />
+    public async Task<RefundExecutionOutcome> CompleteFromGatewayAsync(
+        Refund refund,
+        string gatewayRefundId,
+        string gatewayName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(refund);
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayRefundId);
+
+        if (refund.IsTerminal)
+        {
+            return new RefundExecutionOutcome
+            {
+                Success = true,
+                Refund = refund,
+                FailureReason = null
+            };
+        }
+
+        if (refund.Status == RefundStatus.Rejected)
+        {
+            return new RefundExecutionOutcome
+            {
+                Success = false,
+                Refund = refund,
+                FailureReason = $"Refund in status {refund.Status} cannot be completed"
+            };
+        }
+
+        var payment = await paymentRepository.GetByIdAsync(refund.PaymentId, cancellationToken).ConfigureAwait(false);
+        if (payment is null)
+        {
+            return new RefundExecutionOutcome
+            {
+                Success = false,
+                Refund = refund,
+                FailureReason = $"Payment {refund.PaymentId} not found"
+            };
+        }
+
+        if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.Disputed or PaymentStatus.PartiallyRefunded))
+        {
+            // The webhook describes a refund the local payment aggregate cannot accept (e.g. a
+            // stale event for a payment that never succeeded locally). Fail closed instead of
+            // forcing an illegal transition.
+            return new RefundExecutionOutcome
+            {
+                Success = false,
+                Refund = refund,
+                FailureReason = $"Payment {payment.Id} in status {payment.Status} cannot be refunded"
+            };
+        }
+
+        var statusBeforeRefund = payment.Status;
+
+        if (refund.Status != RefundStatus.Processing)
+        {
+            refund.MarkProcessing();
+        }
+
+        refund.MarkCompleted(gatewayRefundId, gatewayName);
+        await refundRepository.UpdateAsync(refund, cancellationToken).ConfigureAwait(false);
+
+        payment.ProcessRefund(refund.Amount, gatewayRefundId, refund.Reason);
+        await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
+
+        await RecordRefundAccountingAsync(payment, refund, statusBeforeRefund, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Refund {RefundId} of {Amount} {Currency} completed from gateway webhook {GatewayRefundId} for payment {PaymentId}",
+            refund.Id,
+            refund.Amount,
+            refund.Currency,
+            gatewayRefundId,
+            payment.Id);
+
+        await ApplyPostCompletionAsync(payment, refund, executeAtGateway: false, cancellationToken).ConfigureAwait(false);
+
         return new RefundExecutionOutcome { Success = true, Refund = refund };
     }
 
@@ -315,7 +483,215 @@ public sealed class RefundProcessingService(
             refund.Currency,
             payment.Id);
 
+        await ApplyPostCompletionAsync(payment, refund, executeAtGateway: false, cancellationToken).ConfigureAwait(false);
+
         return new RefundRequestOutcome { Success = true, RequiresApproval = false, Refund = refund };
+    }
+
+    /// <summary>
+    ///     Computes the prorated refund amount for a subscription payment (issue #419): the
+    ///     unused-time credit of the current billing period, daily-rated by the shared proration
+    ///     calculator, capped at the remaining refundable balance. Fails closed (null) when the
+    ///     payment has no subscription link or the billing period cannot be resolved.
+    /// </summary>
+    private async Task<(decimal Amount, string Notes)?> ComputeProratedRefundAsync(
+        Payment payment,
+        decimal remainingRefundable,
+        CancellationToken cancellationToken)
+    {
+        if (prorationCalculator is null || subscriptionSyncService is null)
+        {
+            logger.LogWarning(
+                "Prorated refund for payment {PaymentId} requested without proration collaborators configured",
+                payment.Id);
+            return null;
+        }
+
+        var period = await subscriptionSyncService
+            .GetBillingPeriodAsync(payment.Id, payment.SubscriptionId, cancellationToken)
+            .ConfigureAwait(false);
+        if (period is null)
+        {
+            return null;
+        }
+
+        var now = SystemClock.UtcNow;
+        if (now >= period.PeriodEnd)
+        {
+            // Past the period end there is no unused time left to refund.
+            return (0m, "proration: billing period already ended");
+        }
+
+        var proration = await prorationCalculator
+            .CalculateProrationAsync(
+                new PlanProrationInput(
+                    OldAmount: new Money(payment.Amount, payment.Currency),
+                    NewAmount: new Money(payment.Amount, payment.Currency),
+                    PeriodStart: period.PeriodStart,
+                    PeriodEnd: period.PeriodEnd,
+                    EffectiveDate: now),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var proratedAmount = Math.Min(
+            Math.Round(proration.CreditForUnused, 2, MidpointRounding.AwayFromZero),
+            remainingRefundable);
+
+        return (proratedAmount, $"proration: {proration.DaysRemaining}/{proration.TotalDays} days unused");
+    }
+
+    /// <summary>
+    ///     Best-effort post-completion steps (issues #415/#419): refund confirmation email,
+    ///     wallet credit for partial refunds (opt-in) and subscription adjustment on full
+    ///     refunds. None of them may fail the already-completed refund.
+    /// </summary>
+    private async Task ApplyPostCompletionAsync(
+        Payment payment,
+        Refund refund,
+        bool executeAtGateway,
+        CancellationToken cancellationToken)
+    {
+        await SendRefundConfirmationAsync(payment, refund, cancellationToken).ConfigureAwait(false);
+
+        if (executeAtGateway && _workflowOptions.CreditWalletOnPartialRefund && refund.Kind == RefundKind.Partial)
+        {
+            await CreditWalletForPartialRefundAsync(payment, refund, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (payment.SubscriptionId.HasValue)
+        {
+            var fullyRefunded = payment.RefundedAmount >= payment.Amount;
+            if (fullyRefunded)
+            {
+                await AdjustSubscriptionForRefundAsync(payment, refund, cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>Sends the refund-confirmation email to the requester (issue #419). Best-effort.</summary>
+    private async Task SendRefundConfirmationAsync(Payment payment, Refund refund, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await notificationService.SendAsync(
+                recipientId: refund.RequestedByUserId,
+                type: NotificationType.RefundCompleted,
+                title: "Your refund has been processed",
+                message:
+                    $"A refund of {refund.Amount:0.##} {refund.Currency} for payment {payment.Id} " +
+                    $"(reason: {refund.Reason}) was processed on {refund.ProcessedAt:u} and is on its way back " +
+                    "to the original payment method. It may take several business days to appear.",
+                channel: NotificationChannel.Email,
+                tenantId: refund.TenantId,
+                priority: NotificationPriority.Normal,
+                referenceEntityId: refund.Id,
+                referenceEntityType: nameof(Refund),
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (!result.IsSuccess)
+            {
+                logger.LogInformation(
+                    "Refund confirmation for refund {RefundId} was not delivered: {Reason}",
+                    refund.Id,
+                    result.Error?.Description ?? "preference decision");
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "Failed to send the refund confirmation for refund {RefundId}; the refund itself stays completed",
+                refund.Id);
+        }
+    }
+
+    /// <summary>
+    ///     Credits the refunded amount to the customer wallet for a partial refund (issue #419
+    ///     example flow). Strictly opt-in via <c>Payments:Refunds:Workflow:CreditWalletOnPartialRefund</c>
+    ///     because the customer then receives the value twice (card refund + wallet credit).
+    ///     Best-effort: a wallet failure never rolls back the completed gateway refund.
+    /// </summary>
+    private async Task CreditWalletForPartialRefundAsync(Payment payment, Refund refund, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var ownerUserId = await ResolvePaymentOwnerAsync(payment, cancellationToken).ConfigureAwait(false);
+            if (ownerUserId is null)
+            {
+                logger.LogWarning(
+                    "Wallet credit for partial refund {RefundId} skipped: the payment owner could not be resolved",
+                    refund.Id);
+                return;
+            }
+
+            await walletService!.AddFundsAsync(
+                ownerUserId.Value,
+                refund.Amount,
+                $"Partial refund for payment {payment.Id}",
+                refund.Id.ToString(),
+                refund.Currency,
+                cancellationToken).ConfigureAwait(false);
+
+            logger.LogInformation(
+                "Wallet credited {Amount} {Currency} for partial refund {RefundId} (opt-in workflow option)",
+                refund.Amount,
+                refund.Currency,
+                refund.Id);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "Wallet credit for partial refund {RefundId} failed; the gateway refund stays completed",
+                refund.Id);
+        }
+    }
+
+    /// <summary>
+    ///     Adjusts the subscription after a payment was fully refunded (issue #415): the
+    ///     subscription is suspended with the refund dunning reason so reimbursed access does
+    ///     not keep running. Best-effort; implemented by the Subscriptions module seam.
+    /// </summary>
+    private async Task AdjustSubscriptionForRefundAsync(Payment payment, Refund refund, CancellationToken cancellationToken)
+    {
+        if (subscriptionSyncService is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await subscriptionSyncService.AdjustForRefundAsync(
+                payment.Id,
+                payment.SubscriptionId!.Value,
+                refund.Amount,
+                fullyRefunded: true,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "Subscription adjustment after full refund {RefundId} failed; the refund itself stays completed",
+                refund.Id);
+        }
+    }
+
+    /// <summary>Resolves the user that owns the payment through its payment-method registration.</summary>
+    private async Task<Guid?> ResolvePaymentOwnerAsync(Payment payment, CancellationToken cancellationToken)
+    {
+        if (paymentMethodRepository is not null && !string.IsNullOrWhiteSpace(payment.PaymentMethodId))
+        {
+            var method = await paymentMethodRepository
+                .GetByGatewayIdAsync(payment.TenantId, payment.Provider, payment.PaymentMethodId, cancellationToken)
+                .ConfigureAwait(false);
+            if (method is not null)
+            {
+                return method.UserId;
+            }
+        }
+
+        return null;
     }
 
     private async Task RecordRefundAccountingAsync(

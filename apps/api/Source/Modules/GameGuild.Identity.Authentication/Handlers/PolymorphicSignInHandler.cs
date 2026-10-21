@@ -18,7 +18,8 @@ public sealed class PolymorphicSignInHandler(
     IPasswordSignInAdmissionService admissionService,
     FluentValidation.IValidator<PolymorphicSignInCommand>? validator = null,
     TimeProvider? timeProvider = null,
-    IHttpContextAccessor? httpContextAccessor = null
+    IHttpContextAccessor? httpContextAccessor = null,
+    IGuestSessionService? guestSessionService = null
 ) : ICommandHandler<PolymorphicSignInCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(PolymorphicSignInCommand command, CancellationToken cancellationToken)
@@ -77,7 +78,13 @@ public sealed class PolymorphicSignInHandler(
         logger.LogInformation("Polymorphic password flow returned; success: {Success}", domainResult.Success);
 
         // Map from Domain response to Application DTO
-        return await domainResult.ToDto(userRepository, cancellationToken).ConfigureAwait(false);
+        var response = await domainResult.ToDto(userRepository, cancellationToken).ConfigureAwait(false);
+
+        // Session continuity (issue #213): a presented guest session migrates into the
+        // authenticated session; an invalid guest token never blocks the sign-in.
+        return guestSessionService is null
+            ? response
+            : await GuestSessionUpgradeIntegration.ApplyGuestUpgradeAsync(response, guestSessionService, command.GuestAccessToken, cancellationToken).ConfigureAwait(false);
     }
 
     private static CredentialType DetectCredentialType(string credential)

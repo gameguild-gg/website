@@ -6,6 +6,10 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <!-- HotChocolate 15.1 source generators emit C# interceptors for the explicit
+             GraphQL request pipelines used by the GraphQL test hosts; their namespace
+             must be opted into or the generated code fails with CS9137. -->
+        <InterceptorsNamespaces>$(InterceptorsNamespaces);HotChocolate.Execution.Generated</InterceptorsNamespaces>
     </PropertyGroup>
 
     <!-- ═══════════════════════════════════════════════════════════════════════════════ -->

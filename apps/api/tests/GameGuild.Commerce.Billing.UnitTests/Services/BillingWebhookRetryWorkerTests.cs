@@ -11,28 +11,28 @@ public sealed class BillingWebhookRetryWorkerTests
 {
     private readonly Mock<IBillingWebhookRepository> _webhookRepository = new();
     private readonly Mock<ISender> _sender = new();
+    private readonly Mock<IBillingWebhookDeadLetterService> _deadLetterService = new();
 
     private static BillingConfiguration Configuration(
         bool enabled = true,
         int maxRetryAttempts = 5,
         int batchSize = 20,
-        int initialDelaySeconds = 5,
-        bool jitter = false)
+        int[]? retryScheduleMinutes = null,
+        int terminalRetryScheduleMinutes = 1440)
     {
         var configuration = new BillingConfiguration();
         configuration.Webhook.RetryWorker.Enabled = enabled;
         configuration.Webhook.RetryWorker.MaxRetryAttempts = maxRetryAttempts;
         configuration.Webhook.RetryWorker.BatchSize = batchSize;
-        configuration.Webhook.RetryPolicy.InitialDelaySeconds = initialDelaySeconds;
-        configuration.Webhook.RetryPolicy.BackoffMultiplier = 2.0;
-        configuration.Webhook.RetryPolicy.MaxDelaySeconds = 300;
-        configuration.Webhook.RetryPolicy.AddJitter = jitter;
+        configuration.Webhook.RetryWorker.RetryScheduleMinutes = retryScheduleMinutes ?? [1, 5, 15, 60, 360];
+        configuration.Webhook.RetryWorker.TerminalRetryScheduleMinutes = terminalRetryScheduleMinutes;
         return configuration;
     }
 
     private BillingWebhookRetryWorker CreateWorker(BillingConfiguration configuration) => new(
         _webhookRepository.Object,
         _sender.Object,
+        _deadLetterService.Object,
         Options.Create(configuration),
         NullLogger<BillingWebhookRetryWorker>.Instance);
 
@@ -63,12 +63,15 @@ public sealed class BillingWebhookRetryWorkerTests
         _webhookRepository.Verify(repository => repository.GetRetryCandidatesAsync(
             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never,
             "a disabled worker must not touch the inbox");
+        _webhookRepository.Verify(repository => repository.GetExhaustedEventsAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task ProcessDueAsync_RequeuesEventsPastBackoffWindow()
     {
         var due = FailedEvent(attempts: 1, updatedAt: SystemClock.UtcNow.AddHours(-2));
+        SetupNoExhaustedEvents();
         _webhookRepository
             .Setup(repository => repository.GetRetryCandidatesAsync(5, 20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { due });
@@ -86,14 +89,15 @@ public sealed class BillingWebhookRetryWorkerTests
     [Fact]
     public async Task ProcessDueAsync_SkipsEventsStillInsideBackoffWindow()
     {
-        // Updated one second ago; the smallest configured delay is InitialDelaySeconds (5s),
-        // so the event must not be requeued on this cycle.
-        var notDue = FailedEvent(attempts: 1, updatedAt: SystemClock.UtcNow.AddSeconds(-1));
+        // Updated ten seconds ago; the smallest schedule delay is 1 minute for a first
+        // failure, so the event must not be requeued on this cycle.
+        var notDue = FailedEvent(attempts: 1, updatedAt: SystemClock.UtcNow.AddSeconds(-10));
+        SetupNoExhaustedEvents();
         _webhookRepository
             .Setup(repository => repository.GetRetryCandidatesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { notDue });
 
-        var requeued = await CreateWorker(Configuration(initialDelaySeconds: 5)).ProcessDueAsync();
+        var requeued = await CreateWorker(Configuration()).ProcessDueAsync();
 
         requeued.Should().Be(0);
         _sender.Verify(sender => sender.Send(It.IsAny<RetryWebhookEventCommand>(), It.IsAny<CancellationToken>()), Times.Never,
@@ -103,9 +107,11 @@ public sealed class BillingWebhookRetryWorkerTests
     [Fact]
     public async Task ProcessDueAsync_BackoffGrowsWithAttemptNumber()
     {
-        // Attempt 3 with a 10s initial delay and 2x multiplier: due only after 40s.
-        var recentHighAttempt = FailedEvent(attempts: 3, updatedAt: SystemClock.UtcNow.AddSeconds(-30));
-        var dueHighAttempt = FailedEvent(attempts: 3, updatedAt: SystemClock.UtcNow.AddMinutes(-5));
+        // Attempt 3 on the default schedule waits 15 minutes: an update 10 minutes ago is
+        // not due, an update 20 minutes ago is.
+        var recentHighAttempt = FailedEvent(attempts: 3, updatedAt: SystemClock.UtcNow.AddMinutes(-10));
+        var dueHighAttempt = FailedEvent(attempts: 3, updatedAt: SystemClock.UtcNow.AddMinutes(-20));
+        SetupNoExhaustedEvents();
         _webhookRepository
             .Setup(repository => repository.GetRetryCandidatesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { recentHighAttempt, dueHighAttempt });
@@ -113,10 +119,10 @@ public sealed class BillingWebhookRetryWorkerTests
             .Setup(sender => sender.Send(It.IsAny<RetryWebhookEventCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new WebhookRetryResult { Success = true });
 
-        var requeued = await CreateWorker(Configuration(initialDelaySeconds: 10)).ProcessDueAsync();
+        var requeued = await CreateWorker(Configuration()).ProcessDueAsync();
 
         requeued.Should().Be(1,
-            "only the attempt-3 event past the 40s backoff window is requeued");
+            "only the attempt-3 event past the 15-minute schedule delay is requeued");
         _sender.Verify(sender => sender.Send(
             It.Is<RetryWebhookEventCommand>(command => command.EventId == dueHighAttempt.Id.ToString()),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -125,6 +131,7 @@ public sealed class BillingWebhookRetryWorkerTests
     [Fact]
     public async Task ProcessDueAsync_HonorsConfiguredMaxAttemptsAndBatchSize()
     {
+        SetupNoExhaustedEvents();
         _webhookRepository
             .Setup(repository => repository.GetRetryCandidatesAsync(5, 20, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
@@ -138,6 +145,7 @@ public sealed class BillingWebhookRetryWorkerTests
     public async Task ProcessDueAsync_DoesNotRequeueWhenExistingRetryPathRefusesAtCeiling()
     {
         var exhausted = FailedEvent(attempts: 4);
+        SetupNoExhaustedEvents();
         _webhookRepository
             .Setup(repository => repository.GetRetryCandidatesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { exhausted });
@@ -155,10 +163,57 @@ public sealed class BillingWebhookRetryWorkerTests
     }
 
     [Fact]
+    public async Task ProcessDueAsync_DeadLettersExhaustedEvents_LeftBehindByTheRequeuePath()
+    {
+        // A row that failed its final (5th) attempt no longer matches the retry-candidates
+        // filter; the worker's dead-letter intake must terminally park it (issue #408).
+        var exhaustedRow = FailedEvent(attempts: 5);
+        _webhookRepository
+            .Setup(repository => repository.GetExhaustedEventsAsync(5, 20, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { exhaustedRow });
+        _webhookRepository
+            .Setup(repository => repository.GetRetryCandidatesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var requeued = await CreateWorker(Configuration()).ProcessDueAsync();
+
+        requeued.Should().Be(0);
+        _deadLetterService.Verify(service => service.DeadLetterAsync(
+            exhaustedRow,
+            It.Is<string>(reason => reason.Contains("Retry budget exhausted")),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessDueAsync_ContinuesWhenOneExhaustedDeadLetterThrows()
+    {
+        var throwing = FailedEvent(attempts: 5);
+        var parked = FailedEvent(attempts: 5);
+        _webhookRepository
+            .Setup(repository => repository.GetExhaustedEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { throwing, parked });
+        _deadLetterService
+            .SetupSequence(service => service.DeadLetterAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("transient persistence failure"))
+            .Returns(Task.CompletedTask);
+        _webhookRepository
+            .Setup(repository => repository.GetRetryCandidatesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var requeued = await CreateWorker(Configuration()).ProcessDueAsync();
+
+        requeued.Should().Be(0);
+        _deadLetterService.Verify(service => service.DeadLetterAsync(
+            parked, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once,
+            "one failing dead-letter transition must not abort the remaining rows");
+    }
+
+    [Fact]
     public async Task ProcessDueAsync_ContinuesWhenOneEventRetryThrows()
     {
         var failing = FailedEvent(attempts: 1);
         var succeeding = FailedEvent(attempts: 1);
+        SetupNoExhaustedEvents();
         _webhookRepository
             .Setup(repository => repository.GetRetryCandidatesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { failing, succeeding });
@@ -171,5 +226,34 @@ public sealed class BillingWebhookRetryWorkerTests
 
         requeued.Should().Be(1,
             "one failing event must not abort the remaining due events in the cycle");
+    }
+
+    private void SetupNoExhaustedEvents() =>
+        _webhookRepository
+            .Setup(repository => repository.GetExhaustedEventsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+}
+
+public sealed class WebhookRetryScheduleTests
+{
+    [Fact]
+    public void DelayFor_MatchesTheIssueBackoffSchedule()
+    {
+        // Issue #408: exponential backoff of 1, 5, 15, 60 and 360 minutes, then 24 hours.
+        var schedule = new[] { 1, 5, 15, 60, 360 };
+
+        WebhookRetrySchedule.DelayFor(1, schedule, 1440).Should().Be(TimeSpan.FromMinutes(1));
+        WebhookRetrySchedule.DelayFor(2, schedule, 1440).Should().Be(TimeSpan.FromMinutes(5));
+        WebhookRetrySchedule.DelayFor(3, schedule, 1440).Should().Be(TimeSpan.FromMinutes(15));
+        WebhookRetrySchedule.DelayFor(4, schedule, 1440).Should().Be(TimeSpan.FromMinutes(60));
+        WebhookRetrySchedule.DelayFor(5, schedule, 1440).Should().Be(TimeSpan.FromMinutes(360));
+        WebhookRetrySchedule.DelayFor(6, schedule, 1440).Should().Be(TimeSpan.FromMinutes(1440),
+            "attempt counts beyond the schedule fall back to the terminal cadence");
+    }
+
+    [Fact]
+    public void DelayFor_FallsBackToTerminalCadence_WhenScheduleIsEmpty()
+    {
+        WebhookRetrySchedule.DelayFor(1, Array.Empty<int>(), 1440).Should().Be(TimeSpan.FromMinutes(1440));
     }
 }
