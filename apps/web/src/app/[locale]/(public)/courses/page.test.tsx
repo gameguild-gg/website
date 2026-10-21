@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getPublicCourseCatalogMock = vi.fn();
@@ -88,7 +88,14 @@ const courseFixtures = [
 const { default: CoursesPage } = await import('./page');
 
 function hasStat(value: string, label: string) {
-  return screen.getByText((_, element) => element?.textContent === `${value}${label}`);
+  const statValue = screen.getByText(
+    (content, element) => element?.tagName === 'DD' && content === value,
+  );
+  const statCard = statValue.parentElement;
+  if (!statCard) {
+    throw new Error(`Stat card for ${value} not found`);
+  }
+  return within(statCard).getByText(label, { selector: 'p' });
 }
 
 describe('CoursesPage', () => {
@@ -107,11 +114,24 @@ describe('CoursesPage', () => {
 
     expect(screen.getByText('Build the game development portfolio you want to be known for.')).toBeInTheDocument();
     expect(hasStat('2', 'Courses')).toBeInTheDocument();
-    expect(hasStat('1', 'Open seats')).toBeInTheDocument();
+    expect(hasStat('1', 'Open enrollment')).toBeInTheDocument();
     expect(hasStat('30h', 'Study time')).toBeInTheDocument();
     expect(screen.getAllByText('Python Programming').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Portfolio Development').length).toBeGreaterThan(0);
     expect(publicCourseCatalogMock).toHaveBeenCalledWith(courseFixtures);
+  });
+
+  it('links returning learners to their enrolled courses from the hero', async () => {
+    getPublicCourseCatalogMock.mockResolvedValue({
+      success: true,
+      source: 'api',
+      data: courseFixtures,
+    });
+
+    render(await CoursesPage());
+
+    const continueLearning = screen.getByRole('link', { name: /continue learning/i });
+    expect(continueLearning).toHaveAttribute('href', '/learn/courses');
   });
 
   it('renders an empty live catalog without falling back to imported snapshots', async () => {
@@ -126,6 +146,25 @@ describe('CoursesPage', () => {
     expect(hasStat('0', 'Courses')).toBeInTheDocument();
     expect(screen.queryByText(/showing the imported GameGuild course snapshot/i)).not.toBeInTheDocument();
     expect(publicCourseCatalogMock).toHaveBeenCalledWith([]);
+  });
+
+  it('renders an explicit unavailable state instead of an empty catalog when the learning API fails', async () => {
+    getPublicCourseCatalogMock.mockResolvedValue({
+      success: false,
+      data: [],
+      error: '[503] Learning API unreachable',
+    });
+
+    render(await CoursesPage());
+
+    expect(screen.getByText('The course catalog is temporarily unavailable')).toBeInTheDocument();
+    expect(screen.getByText(/This is not an empty catalog/i)).toBeInTheDocument();
+    expect(screen.getByText(/latest error: \[503\] learning api unreachable/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /try again/i })).toHaveAttribute('href', '/courses');
+    expect(screen.getByRole('link', { name: /go to my courses/i })).toHaveAttribute('href', '/learn/courses');
+
+    expect(screen.queryByText('Build the game development portfolio you want to be known for.')).not.toBeInTheDocument();
+    expect(publicCourseCatalogMock).not.toHaveBeenCalled();
   });
 
 });
