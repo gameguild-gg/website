@@ -31,6 +31,17 @@ public class RefundDuplicateAndProrationTests
     {
         _gateway.SetupGet(gateway => gateway.ProviderId).Returns("stripe");
         _actorAccessor.SetupGet(accessor => accessor.ActorContext).Returns(AuthenticatedActor());
+        _revenueAudit
+            .Setup(service => service.RecordRevenueEventAsync(
+                It.IsAny<RevenueEventType>(),
+                It.IsAny<decimal>(),
+                It.IsAny<string>(),
+                It.IsAny<RevenueSource>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RevenueEvent { Id = Guid.NewGuid(), EventType = RevenueEventType.RefundProcessed });
         _notifications
             .Setup(service => service.SendAsync(
                 It.IsAny<Guid?>(),
