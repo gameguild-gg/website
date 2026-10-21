@@ -260,7 +260,9 @@ public sealed class AuditQueryOperationPostgreSqlHttpTests(ApiPostgreSqlFixture 
             DenyPermissions = deny is null ? [] : [deny]
         });
         if (foreignGrant)
+        {
             db.Add(new TenantPermission { UserId = owner.Id, TenantId = otherTenant.Id, Permissions = permissions });
+        }
         var now = DateTime.UtcNow.AddMinutes(-2);
         db.AddRange(
             new AuditLog { TenantId = tenant.Id, UserId = owner.Id, ResourceType = "Synthetic", ActionType = marker, Description = "own-" + marker, CreatedAt = now },
