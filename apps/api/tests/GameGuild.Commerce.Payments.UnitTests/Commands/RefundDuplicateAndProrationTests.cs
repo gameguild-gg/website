@@ -19,6 +19,23 @@ public class RefundDuplicateAndProrationTests
 {
     private readonly Mock<IPaymentGateway> _gateway = new();
     private readonly Mock<IRevenueAuditService> _revenueAudit = new();
+
+    public RefundDuplicateAndProrationTests()
+    {
+        // The refund accounting path links the ledger entry to the recorded revenue event;
+        // an unconfigured mock would surface as a NullReferenceException deep in production code.
+        _revenueAudit
+            .Setup(service => service.RecordRevenueEventAsync(
+                It.IsAny<RevenueEventType>(),
+                It.IsAny<decimal>(),
+                It.IsAny<string>(),
+                It.IsAny<RevenueSource>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RevenueEvent());
+    }
     private readonly Mock<IActorContextAccessor> _actorAccessor = new();
     private readonly Mock<INotificationService> _notifications = new();
     private readonly Mock<IPlanProrationCalculator> _prorationCalculator = new();
