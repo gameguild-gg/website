@@ -514,7 +514,7 @@ public class GraphQLDynamicSchemaProbe
     public string PublicQuery() => "public";
 
     [GraphQLAuthorize(PermissionType.Read)]
-    public string ProtectedQuery() => "protected";
+    public string? ProtectedQuery() => "protected";
 
     [GraphQLAuthorize(PermissionType.Edit)]
     public string? MaskedQuery() => "masked";

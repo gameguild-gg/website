@@ -19,6 +19,7 @@ public enum GraphQLSchemaVisibilityTier
     ///     administrators, or callers whose permission set satisfies every
     ///     planning-decidable rule).
     /// </summary>
+    [GraphQLName("Full")]
     Full = 0,
 
     /// <summary>
@@ -26,6 +27,7 @@ public enum GraphQLSchemaVisibilityTier
     ///     effective surface is restricted: protected operations are hidden at planning
     ///     time and introspection is denied).
     /// </summary>
+    [GraphQLName("Restricted")]
     Restricted = 1,
 }
 
