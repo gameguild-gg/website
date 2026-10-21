@@ -24,8 +24,11 @@ jobs:
       group: pr-agent-${{ github.event.pull_request.number || github.event.issue.number }}
       cancel-in-progress: true
     steps:
-      - uses: qodo-ai/pr-agent@main
+      # pr-agent v0.48.0, verified against the publisher's release attestation.
+      - uses: docker://pragent/pr-agent@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d
         env:
+          ARTIFACT_PATH: ""
+          ARTIFACT_INSTRUCTIONS: ""
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_KEY: ${{ secrets.OMNI_API_KEY }}
           OPENAI__API_BASE: https://omniroute.gameguild.gg/v1
