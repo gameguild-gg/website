@@ -743,6 +743,10 @@ Table "billing_webhook_events" {
   "ProcessingAttempts" integer [not null]
   "ErrorMessage" "character varying(2000)"
   "ProcessedAt" timestamp
+  "IsSignatureVerified" boolean
+  "SignatureVerifiedAt" timestamp
+  "DeadLetteredAt" timestamp
+  "DeadLetterReason" "character varying(1000)"
   "TenantId" uuid
   "SubscriptionId" uuid
   "Version" integer [not null]
@@ -759,6 +763,7 @@ Table "billing_webhook_events" {
   Indexes {
     Id [pk, name: "PK_billing_webhook_events"]
     CreatedAt [name: "ix_billing_webhook_events_created_at"]
+    DeadLetteredAt [name: "ix_billing_webhook_events_dead_lettered_at"]
     EventType [name: "ix_billing_webhook_events_event_type"]
     (ExternalEventId, Provider) [unique, name: "ix_billing_webhook_events_external_id_provider"]
     IsFailed [name: "ix_billing_webhook_events_is_failed"]
@@ -4166,6 +4171,7 @@ Table "posts" {
   "Content" "character varying(10000)" [not null]
   "MediaUrl" "character varying(2000)"
   "MediaType" integer
+  "MediaAssetReferenceId" uuid
   "Visibility" integer [not null]
   "IsPinned" boolean [not null]
   "IsEdited" boolean [not null]
@@ -4187,6 +4193,7 @@ Table "posts" {
     (AuthorId, RepostOfPostId) [unique, name: "IX_posts_AuthorId_RepostOfPostId"]
     CreatedAt [name: "IX_posts_CreatedAt"]
     IsPinned [name: "IX_posts_IsPinned"]
+    MediaAssetReferenceId [name: "IX_posts_MediaAssetReferenceId"]
     TenantId [name: "IX_posts_TenantId"]
     Visibility [name: "IX_posts_Visibility"]
   }
@@ -11219,6 +11226,37 @@ Table "GradeResultReleases" {
   }
 }
 
+Table "GradeResultReleaseSchedules" {
+  "Id" uuid [not null]
+  "GradeRoundId" uuid [not null]
+  "ScheduledFor" timestamp [not null]
+  "Status" "character varying(24)" [not null]
+  "ScheduledByActorId" uuid
+  "ScheduledByService" "character varying(160)"
+  "CancelledByActorId" uuid
+  "CancellationReason" text
+  "CancelledAt" timestamp
+  "ReleasedAt" timestamp
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Checks {
+    `("Status" = 'cancelled') = ("CancelledByActorId" IS NOT NULL AND "CancellationReason" IS NOT NULL AND "CancelledAt" IS NOT NULL)` [name: 'CK_GradeResultReleaseSchedules_Cancellation']
+    `num_nonnulls("ScheduledByActorId", "ScheduledByService") = 1` [name: 'CK_GradeResultReleaseSchedules_Producer']
+    `("Status" = 'released') = ("ReleasedAt" IS NOT NULL)` [name: 'CK_GradeResultReleaseSchedules_Release']
+    `"Status" IN ('scheduled', 'cancelled', 'released')` [name: 'CK_GradeResultReleaseSchedules_Status']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_GradeResultReleaseSchedules"]
+    GradeRoundId [unique, name: "IX_GradeResultReleaseSchedules_GradeRoundId"]
+    (Status, ScheduledFor) [name: "IX_GradeResultReleaseSchedules_Status_ScheduledFor"]
+  }
+}
+
 Table "GradeRounds" {
   "Id" uuid [not null]
   "GradingExecutionId" uuid [not null]
@@ -11319,6 +11357,7 @@ Table "ReviewStages" {
   "ProviderPolicyVersion" "character varying(64)"
   "Status" "character varying(48)" [not null]
   "StartedAt" timestamp
+  "EvidenceDeadlineAt" timestamp
   "CompletedAt" timestamp
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
@@ -11337,6 +11376,7 @@ Table "ReviewStages" {
   Indexes {
     Id [pk, name: "PK_ReviewStages"]
     (GradeRoundId, Sequence) [unique, name: "IX_ReviewStages_GradeRoundId_Sequence"]
+    (Status, EvidenceDeadlineAt) [name: "IX_ReviewStages_Status_EvidenceDeadlineAt"]
   }
 }
 
@@ -11344,6 +11384,7 @@ Table "ReviewEvidence" {
   "Id" uuid [not null]
   "TenantId" uuid
   "ReviewStageId" uuid [not null]
+  "SourceReviewEvidenceId" uuid
   "EvidenceKey" "character varying(160)" [not null]
   "ItemId" "character varying(200)"
   "EvidenceType" "character varying(128)" [not null]
@@ -11365,6 +11406,40 @@ Table "ReviewEvidence" {
   Indexes {
     Id [pk, name: "PK_ReviewEvidence"]
     (ReviewStageId, EvidenceKey) [unique, name: "IX_ReviewEvidence_ReviewStageId_EvidenceKey"]
+    SourceReviewEvidenceId [name: "IX_ReviewEvidence_SourceReviewEvidenceId"]
+  }
+}
+
+Table "PeerReviewClaims" {
+  "Id" uuid [not null]
+  "ReviewStageId" uuid [not null]
+  "ReviewerUserId" uuid
+  "ReviewerTestRunSubjectId" uuid
+  "ReviewEvidenceId" uuid
+  "Status" "character varying(24)" [not null]
+  "ClaimedAt" timestamp [not null]
+  "LeaseExpiresAt" timestamp [not null]
+  "SubmittedAt" timestamp
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Checks {
+    `"LeaseExpiresAt" > "ClaimedAt"` [name: 'CK_PeerReviewClaims_Lease']
+    `num_nonnulls("ReviewerUserId", "ReviewerTestRunSubjectId") = 1` [name: 'CK_PeerReviewClaims_Reviewer']
+    `"Status" IN ('assigned', 'submitted', 'expired', 'cancelled')` [name: 'CK_PeerReviewClaims_Status']
+    `("Status" = 'submitted') = ("ReviewEvidenceId" IS NOT NULL AND "SubmittedAt" IS NOT NULL)` [name: 'CK_PeerReviewClaims_Submission']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_PeerReviewClaims"]
+    ReviewerTestRunSubjectId [name: "IX_PeerReviewClaims_ReviewerTestRunSubjectId"]
+    ReviewEvidenceId [unique, name: "IX_PeerReviewClaims_ReviewEvidenceId"]
+    (ReviewStageId, ReviewerTestRunSubjectId) [unique, name: "IX_PeerReviewClaims_ReviewStageId_ReviewerTestRunSubjectId"]
+    (ReviewStageId, ReviewerUserId) [unique, name: "IX_PeerReviewClaims_ReviewStageId_ReviewerUserId"]
+    (Status, LeaseExpiresAt) [name: "IX_PeerReviewClaims_Status_LeaseExpiresAt"]
   }
 }
 
@@ -12100,7 +12175,15 @@ Ref "FK_GradingExecutions_GradeRounds_ActiveGradeRoundId_Id":"GradeRounds".("Id"
 
 Ref "FK_ReviewStages_GradeRounds_GradeRoundId":"GradeRounds"."Id" <? "ReviewStages"."GradeRoundId" [delete: cascade]
 
+Ref "FK_ReviewEvidence_ReviewEvidence_SourceReviewEvidenceId":"ReviewEvidence"."Id" ?<? "ReviewEvidence"."SourceReviewEvidenceId" [delete: restrict]
+
 Ref "FK_ReviewEvidence_ReviewStages_ReviewStageId":"ReviewStages"."Id" <? "ReviewEvidence"."ReviewStageId" [delete: cascade]
+
+Ref "FK_PeerReviewClaims_AssessmentTestRunSubjects_ReviewerTestRunS~":"AssessmentTestRunSubjects"."Id" ?<? "PeerReviewClaims"."ReviewerTestRunSubjectId" [delete: restrict]
+
+Ref "FK_PeerReviewClaims_ReviewEvidence_ReviewEvidenceId":"ReviewEvidence"."Id" ?<? "PeerReviewClaims"."ReviewEvidenceId" [delete: restrict]
+
+Ref "FK_PeerReviewClaims_ReviewStages_ReviewStageId":"ReviewStages"."Id" <? "PeerReviewClaims"."ReviewStageId" [delete: cascade]
 
 Ref "FK_AssessmentContentCompletionProjections_GradeRounds_GradeRou~":"GradeRounds"."Id" ?<? "AssessmentContentCompletionProjections"."GradeRoundId" [delete: restrict]
 
@@ -12111,6 +12194,8 @@ Ref "FK_GradeItemResults_ReviewStages_ReviewStageId":"ReviewStages"."Id" <? "Gra
 Ref "FK_GradeResultReleases_GradeRounds_GradeRoundId_GradingExecuti~":"GradeRounds".("Id", "GradingExecutionId") <? "GradeResultReleases".("GradeRoundId", "GradingExecutionId") [delete: restrict]
 
 Ref "FK_GradeResultReleases_GradingExecutions_GradingExecutionId_Ex~":"GradingExecutions".("Id", "ExecutionContext") <? "GradeResultReleases".("GradingExecutionId", "ExecutionContext") [delete: restrict]
+
+Ref "FK_GradeResultReleaseSchedules_GradeRounds_GradeRoundId":"GradeRounds"."Id" <? "GradeResultReleaseSchedules"."GradeRoundId" [delete: restrict]
 
 Ref "FK_GradeRounds_GradingExecutions_GradingExecutionId":"GradingExecutions"."Id" <? "GradeRounds"."GradingExecutionId" [delete: cascade]
 
@@ -12490,6 +12575,10 @@ Table "gameguild.authentication"."contenttypepermission" {
   "id" uuid [not null]
   "ContentTypeName" "character varying(256)" [not null]
   "Description" "character varying(1000)"
+  "ParentContentTypeName" "character varying(256)"
+  "Restrictions" "character varying(2000)"
+  "AppliesTo" "character varying(2000)"
+  "IsRegistered" boolean [not null, default: false]
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
@@ -12505,6 +12594,7 @@ Table "gameguild.authentication"."contenttypepermission" {
 
   Indexes {
     id [pk, name: "PK_contenttypepermission"]
+    ParentContentTypeName [name: "ix_contenttypepermission_parent_contenttype"]
     (TenantId, ContentTypeName) [name: "ix_contenttypepermission_tenant_contenttype"]
     TenantId [name: "ix_contenttypepermission_tenant_id"]
     UserId [name: "ix_contenttypepermission_user_id"]
@@ -12579,6 +12669,45 @@ Table "gameguild.authentication"."identityverification" {
     Status [name: "ix_identityverification_status"]
     UserId [name: "ix_identityverification_user_id"]
     (UserId, VerificationType) [name: "ix_identityverification_user_type"]
+  }
+}
+
+Table "gameguild.authentication"."magic_link_tokens" {
+  "token_hash" character(64) [not null]
+  "user_id" uuid [not null]
+  "email" "character varying(320)" [not null]
+  "expires_at" timestamp [not null]
+  "consumed_at" timestamp
+
+  Indexes {
+    token_hash [pk, name: "PK_magic_link_tokens"]
+    expires_at [name: "ix_magic_link_tokens_expires_at"]
+  }
+}
+
+Table "gameguild.authentication"."mfa_recovery_requests" {
+  "id" uuid [not null]
+  "user_id" text [not null]
+  "tenant_id" text [not null]
+  "requested_at" timestamp [not null]
+  "cooldown_ends_at" timestamp [not null]
+  "status" "character varying(32)" [not null]
+  "request_token_hash" "character varying(64)"
+  "confirmation_token_hash" "character varying(64)"
+  "confirmation_token_expires_at" timestamp
+  "consumed_at" timestamp
+
+  Checks {
+    `cooldown_ends_at >= requested_at` [name: 'ck_mfa_recovery_cooldown']
+    `status IN ('Pending', 'AwaitingConfirmation', 'Completed', 'Cancelled', 'Expired')` [name: 'ck_mfa_recovery_status']
+    `(request_token_hash IS NULL AND confirmation_token_hash IS NULL AND confirmation_token_expires_at IS NULL)
+OR (request_token_hash ~ '^[a-f0-9]{64}$')` [name: 'ck_mfa_recovery_tokens']
+  }
+
+  Indexes {
+    id [pk, name: "PK_mfa_recovery_requests"]
+    (tenant_id, status) [name: "ix_mfa_recovery_requests_tenant_status"]
+    user_id [unique, name: "ux_mfa_recovery_requests_active_user"]
   }
 }
 
@@ -13289,6 +13418,26 @@ Table "gameguild.resources"."sla_impact_analyses" {
     Severity [name: "ix_slaimpactanalysis_severity"]
     ViolationStartTime [name: "ix_slaimpactanalysis_start_time"]
     TenantId [name: "ix_slaimpactanalysis_tenant_id"]
+  }
+}
+
+Table "gameguild.audit"."entity_change_audit_records" {
+  "Id" uuid [not null]
+  "EntityName" "character varying(300)" [not null]
+  "KeyId" "character varying(300)" [not null]
+  "ChangeKind" "character varying(20)" [not null]
+  "BeforeValues" jsonb
+  "AfterValues" jsonb
+  "TenantId" uuid
+  "ActorId" uuid
+  "CorrelationId" "character varying(100)"
+  "OccurredAtUtc" timestamp [not null]
+
+  Indexes {
+    Id [pk, name: "PK_entity_change_audit_records"]
+    CorrelationId [name: "ix_entity_change_audit_correlation"]
+    (EntityName, KeyId, OccurredAtUtc) [name: "ix_entity_change_audit_entity"]
+    OccurredAtUtc [name: "ix_entity_change_audit_time"]
   }
 }
 

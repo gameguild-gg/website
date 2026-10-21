@@ -51,6 +51,24 @@ public sealed record RefundAnalyticsReport
     /// <summary>Refunded amount by currency for completed refunds in the window.</summary>
     public required IReadOnlyDictionary<string, decimal> CompletedRefundAmountByCurrency { get; init; }
 
+    /// <summary>Refund count by machine-readable reason in the window (issue #419 reason breakdown).</summary>
+    public required IReadOnlyDictionary<string, int> RefundCountByReason { get; init; }
+
+    /// <summary>Refunded amount by reason for completed refunds in the window (issue #419).</summary>
+    public required IReadOnlyDictionary<string, decimal> CompletedRefundAmountByReason { get; init; }
+
+    /// <summary>
+    ///     Share of succeeded payments in the window that received a refund; null when no
+    ///     payments succeeded (issue #419 refund rate).
+    /// </summary>
+    public double? RefundRatePerSucceededPayment { get; init; }
+
+    /// <summary>
+    ///     Share of succeeded payments in the window that were disputed; null when no payments
+    ///     succeeded (issue #419 dispute rate).
+    /// </summary>
+    public double? DisputeRatePerSucceededPayment { get; init; }
+
     /// <summary>UTC-day breakdown of refund counts and completed amounts.</summary>
     public required IReadOnlyList<RefundDailyBucket> RefundsByDay { get; init; }
 
@@ -101,6 +119,30 @@ public sealed class GetRefundAnalyticsQueryHandler(IApplicationDbContext context
         var refunds = await refundsQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
         var disputes = await disputesQuery.ToListAsync(cancellationToken).ConfigureAwait(false);
 
+        // Refund/dispute rates are denominatored by the payments that succeeded in the same
+        // window (tenant-scoped identically). Refunded and disputed payments have already left
+        // the plain Succeeded status, so every post-success state counts as "succeeded once".
+        var succeededPaymentsQuery = context.Set<Payment>().AsNoTracking()
+            .Where(payment => payment.ProcessedAt != null
+                && payment.ProcessedAt >= request.FromUtc
+                && payment.ProcessedAt <= request.ToUtc
+                && (payment.Status == PaymentStatus.Succeeded
+                    || payment.Status == PaymentStatus.PartiallyRefunded
+                    || payment.Status == PaymentStatus.Refunded
+                    || payment.Status == PaymentStatus.Disputed));
+        if (request.TenantId.HasValue)
+        {
+            succeededPaymentsQuery = succeededPaymentsQuery.Where(payment => payment.TenantId == request.TenantId.Value);
+        }
+
+        var succeededPayments = await succeededPaymentsQuery
+            .Select(payment => new { Refunded = payment.RefundedAmount > 0, Disputed = payment.Status == PaymentStatus.Disputed })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var succeededCount = succeededPayments.Count;
+        var refundedPaymentsCount = succeededPayments.Count(entry => entry.Refunded);
+        var disputedPaymentsCount = succeededPayments.Count(entry => entry.Disputed);
+
         var won = disputes.Count(dispute => dispute.Status == DisputeStatus.Won);
         var lost = disputes.Count(dispute => dispute.Status == DisputeStatus.Lost);
         var decided = won + lost;
@@ -127,6 +169,19 @@ public sealed class GetRefundAnalyticsQueryHandler(IApplicationDbContext context
                 .Where(refund => refund.Status == RefundStatus.Completed)
                 .GroupBy(refund => refund.Currency, StringComparer.Ordinal)
                 .ToDictionary(group => group.Key, group => group.Sum(refund => refund.Amount), StringComparer.Ordinal),
+            RefundCountByReason = refunds
+                .GroupBy(refund => refund.Reason, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal),
+            CompletedRefundAmountByReason = refunds
+                .Where(refund => refund.Status == RefundStatus.Completed)
+                .GroupBy(refund => refund.Reason, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.Sum(refund => refund.Amount), StringComparer.Ordinal),
+            RefundRatePerSucceededPayment = succeededCount == 0
+                ? null
+                : (double)refundedPaymentsCount / succeededCount,
+            DisputeRatePerSucceededPayment = succeededCount == 0
+                ? null
+                : (double)disputedPaymentsCount / succeededCount,
             RefundsByDay = refunds
                 .GroupBy(refund => refund.CreatedAt.Date)
                 .Select(group => new RefundDailyBucket(

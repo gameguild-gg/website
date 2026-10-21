@@ -1166,6 +1166,13 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DeadLetterReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("DeadLetteredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1197,6 +1204,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsProcessed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSignatureVerified")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Payload")
@@ -1235,6 +1245,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTime?>("SignatureVerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid");
 
@@ -1256,6 +1269,9 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("ix_billing_webhook_events_created_at");
+
+                    b.HasIndex("DeadLetteredAt")
+                        .HasDatabaseName("ix_billing_webhook_events_dead_lettered_at");
 
                     b.HasIndex("EventType")
                         .HasDatabaseName("ix_billing_webhook_events_event_type");
@@ -2493,6 +2509,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<decimal>("DisputeFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -2898,6 +2917,9 @@ namespace GameGuild.API.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("PaymentId")
                         .HasColumnType("uuid");

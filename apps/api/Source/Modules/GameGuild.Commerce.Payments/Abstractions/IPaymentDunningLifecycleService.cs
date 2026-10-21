@@ -8,6 +8,9 @@ public static class PaymentDunningReasons
 {
     /// <summary>The subscription was suspended because its payment exhausted the retry budget.</summary>
     public const string RetryExhausted = "payment_retry_exhausted";
+
+    /// <summary>The subscription was suspended because its payment was fully refunded (issue #415).</summary>
+    public const string RefundIssued = "payment_refund_issued";
 }
 
 /// <summary>

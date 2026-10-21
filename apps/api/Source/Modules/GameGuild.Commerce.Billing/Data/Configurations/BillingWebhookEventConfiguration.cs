@@ -69,6 +69,9 @@ public class BillingWebhookEventConfiguration : IEntityTypeConfiguration<Billing
         builder.Property(x => x.ErrorMessage)
             .HasMaxLength(2000);
 
+        builder.Property(x => x.DeadLetterReason)
+            .HasMaxLength(1000);
+
         builder.Property(x => x.ProcessingAttempts)
             .IsConcurrencyToken();
 
@@ -111,7 +114,12 @@ public class BillingWebhookEventConfiguration : IEntityTypeConfiguration<Billing
         
         builder.HasIndex(x => x.IsFailed)
             .HasDatabaseName("ix_billing_webhook_events_is_failed");
-        
+
+        // Dead-letter inspection queue (issue #408): exhausted events ordered by the
+        // moment they left the retry pipeline.
+        builder.HasIndex(x => x.DeadLetteredAt)
+            .HasDatabaseName("ix_billing_webhook_events_dead_lettered_at");
+
         builder.HasIndex(x => x.TenantId)
             .HasDatabaseName("ix_billing_webhook_events_tenant_id");
         

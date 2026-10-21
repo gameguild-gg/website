@@ -413,6 +413,13 @@ public sealed class PaymentsController(
         var validationError = ValidateTenantAccess(payment.TenantId, "refund payment");
         if (validationError != null) return validationError;
 
+        // The refund reason is required for compliance (issue #415): refunds feed financial
+        // reporting and chargeback evidence, so an unattributed refund is rejected.
+        if (string.IsNullOrWhiteSpace(body.Reason))
+        {
+            return BadRequest(new { error = "A refund reason is required" });
+        }
+
         // Null amount means "refund everything that is left" (full refund of the remaining
         // balance). The query result carries the net (not yet refunded) amount, so coalescing
         // here yields a full refund instead of the historical 0 — which the domain rejected.
@@ -423,7 +430,7 @@ public sealed class PaymentsController(
             return BadRequest(new { error = "Amount must be positive; the payment has no remaining refundable amount." });
         }
 
-        var r = await sender.Send(new ProcessRefundCommand(paymentId, refundAmount, body.Reason ?? "No reason provided"), ct).ConfigureAwait(false);
+        var r = await sender.Send(new ProcessRefundCommand(paymentId, refundAmount, body.Reason), ct).ConfigureAwait(false);
 
         return Ok(r);
     }
@@ -480,18 +487,20 @@ public sealed class PaymentsController(
     /// <param name="toUtc">Inclusive window end (UTC)</param>
     /// <param name="tenantId">Optional tenant ID filter</param>
     /// <param name="ct">Cancellation token</param>
-    /// <returns>Success rate, retry-recovery rate, recovered amounts per currency and dunning outcomes</returns>
+    /// <returns>Success rate, retry-recovery rate, recovered amounts per currency, dunning outcomes, failure-code distribution and recognition timing</returns>
     /// <remarks>
     ///     Aggregates the recovery analytics that billing administrators need to steer retry and
-    ///     dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
-    ///     amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
-    ///     exhausted). Non-admin actors are scoped to their own tenant.
+    ///     dunning strategy (issues #403/#415): first-attempt success rate, retry-recovery rate,
+    ///     recovered amounts grouped by currency, dunning outcome counters (pending retry, due for
+    ///     retry, exhausted), the failure-code distribution of failed payments and the
+    ///     creation-to-settlement timing of succeeded payments. Non-admin actors are scoped to
+    ///     their own tenant.
     /// </remarks>
     [HttpGet("recovery-metrics")]
     [EnableRateLimiting(RateLimitPolicies.Api)]
     [EndpointSummary("Get payment recovery metrics for a period")]
     [EndpointDescription(
-        "Returns payment success and failed-payment recovery metrics for an inclusive window: first-attempt success rate, retry-recovery rate, recovered amounts grouped by currency and dunning outcome counters. Non-admin actors are scoped to their own tenant."
+        "Returns payment success and failed-payment recovery metrics for an inclusive window: first-attempt success rate, retry-recovery rate, recovered amounts grouped by currency, dunning outcome counters, failure-code distribution and revenue recognition timing. Non-admin actors are scoped to their own tenant."
     )]
     [ProducesResponseType<PaymentRecoveryMetrics>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

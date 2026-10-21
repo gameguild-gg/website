@@ -355,7 +355,8 @@ public class OAuthServiceTests
     [Fact]
     public void ResolveAuthorizationScopes_UnsupportedProvider_Throws()
     {
-        var act = () => _oauthService.ResolveAuthorizationScopes("steam");
+        // Steam is a registered provider now (issue #246); use a name no provider claims.
+        var act = () => _oauthService.ResolveAuthorizationScopes("twitter");
 
         act.Should().Throw<NotSupportedException>().WithMessage("*OAuth provider not supported*");
     }

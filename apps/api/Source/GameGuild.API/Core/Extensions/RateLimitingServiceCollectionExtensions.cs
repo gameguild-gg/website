@@ -314,6 +314,32 @@ public static class RateLimitingServiceCollectionExtensions
                             });
                 });
 
+                // Guest issuance policy (issue #213): fixed window partitioned by IP for the
+                // anonymous guest-session endpoint. Guest issuance grants a (minimal)
+                // credential to anyone who asks, so it is throttled far below the general
+                // authentication budget and never queued.
+                rateLimiterOptions.AddPolicy(RateLimitPolicies.GuestIssuance, httpContext =>
+                {
+                    var partitionKey = GetIpPartitionKey(httpContext);
+                    if (accessOptions.IsAllowlisted(httpContext))
+                    {
+                        return RateLimitPartition.GetNoLimiter($"allowlisted:{RateLimitPolicies.GuestIssuance}:{partitionKey}");
+                    }
+
+                    return redisEnabled
+                        ? RateLimitPartition.GetNoLimiter($"redis:{RateLimitPolicies.GuestIssuance}:{partitionKey}")
+                        : RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey,
+                            _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = options.GuestIssuanceRequestsPerMinute,
+                                Window = options.GuestIssuanceWindow,
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 0, // No queuing: reject session farming early
+                                AutoReplenishment = true
+                            });
+                });
+
                 // ============ TOKEN BUCKET POLICIES ============
 
                 // Bursty policy: Token bucket for bursty traffic patterns
@@ -428,6 +454,7 @@ public static class RateLimitingServiceCollectionExtensions
             (nameof(options.UserWindow), options.UserWindow),
             (nameof(options.IpWindow), options.IpWindow),
             (nameof(options.WebhookWindow), options.WebhookWindow),
+            (nameof(options.GuestIssuanceWindow), options.GuestIssuanceWindow),
             (nameof(options.ApiKeyWindow), options.ApiKeyWindow),
             (nameof(options.TokenReplenishmentPeriod), options.TokenReplenishmentPeriod)
         };
@@ -692,6 +719,7 @@ public static class RateLimitingServiceCollectionExtensions
             RateLimitPolicies.PerUser => options.UserRequestsPerMinute,
             RateLimitPolicies.PerIp => options.IpRequestsPerMinute,
             RateLimitPolicies.Webhook => options.WebhookRequestsPerMinute,
+            RateLimitPolicies.GuestIssuance => options.GuestIssuanceRequestsPerMinute,
             RateLimitPolicies.Bursty => options.TokenBucketLimit,
             RateLimitPolicies.ApiKey => GetApiKeyPartitionKey(httpContext).StartsWith("premium:", StringComparison.Ordinal)
                 ? options.PremiumApiKeyRequestsPerMinute

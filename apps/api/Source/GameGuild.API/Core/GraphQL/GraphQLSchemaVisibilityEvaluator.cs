@@ -81,6 +81,50 @@ internal sealed class GraphQLSchemaVisibilityEvaluator(
         }
     }
 
+    /// <summary>
+    ///     Decides whether the caller's effective schema surface is unrestricted, without
+    ///     the environment-specific introspection restriction: schema administrators and
+    ///     callers whose permission set satisfies every protected field's
+    ///     planning-decidable rule see the Full tier (used by the permission-level schema
+    ///     version, issue #335). Fail-closed semantics match
+    ///     <see cref="AuthorizeIntrospectionAsync"/>.
+    /// </summary>
+    internal async Task<GraphQLIntrospectionDecision> EvaluateCallerVisibilityAsync(
+        IResolverContext resolverContext,
+        CancellationToken cancellationToken)
+    {
+        var options = graphQLOptions.SchemaAuthorization;
+
+        try
+        {
+            var actor = actorContextAccessor.ActorContext;
+
+            if (await IsSchemaAdminAsync(resolverContext, actor, options, cancellationToken).ConfigureAwait(false))
+            {
+                return GraphQLIntrospectionDecision.Allow();
+            }
+
+            if (!options.FilterSchema)
+            {
+                return GraphQLIntrospectionDecision.Allow();
+            }
+
+            return await CheckFullSchemaVisibilityAsync(resolverContext, actor, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "GraphQL schema visibility evaluation failed; the caller is treated as restricted (fail-closed).");
+            return GraphQLIntrospectionDecision.Deny("visibility_evaluation_failed");
+        }
+    }
+
     private async Task<bool> IsSchemaAdminAsync(
         IResolverContext resolverContext,
         ActorContext actor,

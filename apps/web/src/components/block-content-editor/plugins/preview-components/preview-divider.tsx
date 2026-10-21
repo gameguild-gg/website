@@ -34,7 +34,7 @@ export function PreviewDivider({ node }: { node: SerializedDividerNode }) {
         return (
           <div className={`${spacingClass} ${thicknessClass} ${colorClass}`} style={customStyle} aria-hidden="true" />
         )
-      case "double":
+      case "double": {
         // Duas linhas perpendiculares (paralelas horizontais)
         const doubleThickness = thickness === "thin" ? "1px" : thickness === "medium" ? "2px" : "3px"
         const doubleGap = thickness === "thin" ? "2px" : thickness === "medium" ? "3px" : "4px"
@@ -63,6 +63,7 @@ export function PreviewDivider({ node }: { node: SerializedDividerNode }) {
             </div>
           </div>
         )
+      }
       default:
         return <hr className={`${spacingClass} ${thicknessClass} ${colorClass} ${styleClass}`} style={customStyle} />
     }
