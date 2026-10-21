@@ -13,7 +13,8 @@ public sealed class LocalSignInHandler(
     IUserRepository userRepository,
     IHttpContextAccessor httpContextAccessor,
     ILogger<LocalSignInHandler> logger,
-    FluentValidation.IValidator<LocalSignInCommand> validator
+    FluentValidation.IValidator<LocalSignInCommand> validator,
+    IGuestSessionService? guestSessionService = null
 ) : ICommandHandler<LocalSignInCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(LocalSignInCommand command, CancellationToken cancellationToken)
@@ -45,7 +46,13 @@ public sealed class LocalSignInHandler(
         }
 
         // Map from Domain response to Application DTO
-        return await domainResult.ToDto(userRepository, cancellationToken).ConfigureAwait(false);
+        var response = await domainResult.ToDto(userRepository, cancellationToken).ConfigureAwait(false);
+
+        // Session continuity (issue #213): a presented guest session migrates into the
+        // authenticated session; an invalid guest token never blocks the sign-in.
+        return guestSessionService is null
+            ? response
+            : await GuestSessionUpgradeIntegration.ApplyGuestUpgradeAsync(response, guestSessionService, command.GuestAccessToken, cancellationToken).ConfigureAwait(false);
     }
 
     // Forwarded headers are interpreted by the configured trusted-proxy middleware.

@@ -15933,6 +15933,41 @@ export const postAuthGoogleSignInEndpoint = {
 } as const;
 
 /**
+ *     Introspect the caller's current guest session: guest id, role and the enumerated
+ * permissions it holds. Served only on the guest scheme — a user access token is not a
+ * valid credential here, and a guest token is not valid anywhere else.
+ *
+ * Returns the caller's guest session id, role and the enumerated guest permissions. Requires the guest bearer credential.
+ */
+export type GetAuthGuestSessionInput = void;
+export type GetAuthGuestSessionOutput = Types.IdentityAuthenticationGuestSessionStatus;
+export const getAuthGuestSessionEndpoint = {
+  operationId: 'getAuthGuestSession' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/guest-session' as const,
+  tags: ['AuthGuest'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Issue a short-lived anonymous guest session. No credentials are presented or
+ * returned beyond the guest token itself; there is no refresh token by design.
+ *
+ * Issues a short-lived guest session (guest audience bearer token, no refresh credential) holding only the enumerated public guest permissions. Rate limited per client address and audited through the security-event pipeline.
+ */
+export interface PostAuthGuestSessionInput {
+  body?: Types.IdentityAuthenticationGuestSessionIssueInput;
+}
+export type PostAuthGuestSessionOutput = Types.IdentityAuthenticationGuestSessionOutput;
+export const postAuthGuestSessionEndpoint = {
+  operationId: 'postAuthGuestSession' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/guest-session' as const,
+  tags: ['AuthGuest'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Consume a passwordless magic sign-in link.
  *
  * Consumes a short-lived one-time magic-link token and returns access and refresh tokens.
@@ -30774,6 +30809,8 @@ export const endpoints = {
   getAuthGithubAuthorize: getAuthGithubAuthorizeEndpoint,
   postAuthGithubCallback: postAuthGithubCallbackEndpoint,
   postAuthGoogleSignIn: postAuthGoogleSignInEndpoint,
+  getAuthGuestSession: getAuthGuestSessionEndpoint,
+  postAuthGuestSession: postAuthGuestSessionEndpoint,
   postAuthMagicLinkConsume: postAuthMagicLinkConsumeEndpoint,
   postAuthMagicLinkRequest: postAuthMagicLinkRequestEndpoint,
   getAuthMfa: getAuthMfaEndpoint,

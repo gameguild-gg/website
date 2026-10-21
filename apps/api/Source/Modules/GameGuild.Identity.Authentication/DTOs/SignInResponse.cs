@@ -51,6 +51,13 @@ public class SignInResponse
     public Guid UserId { get; set; }
 
     /// <summary>
+    ///     Guest session this authenticated session continues (issue #213). Set only when the
+    ///     caller presented a valid guest credential at sign-in/sign-up and it was upgraded;
+    ///     the guest session itself ends at that point.
+    /// </summary>
+    public Guid? UpgradedFromGuestSessionId { get; set; }
+
+    /// <summary>
     ///     User email
     /// </summary>
     public string Email { get; set; } = string.Empty;

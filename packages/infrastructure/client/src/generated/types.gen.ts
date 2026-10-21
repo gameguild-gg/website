@@ -10543,6 +10543,40 @@ export interface IdentityAuthenticationGoogleIdTokenRequestDto {
   tenantId?: string | null;
 }
 
+/** Request body for guest session issuance. Carries no credentials: the caller only
+proves possession of nothing, so issuance is strictly rate limited per IP and audited. */
+export interface IdentityAuthenticationGuestSessionIssueInput {
+  /** Optional client device fingerprint, stored as operational metadata. */
+  deviceFingerprint?: string | null;
+}
+
+/** Response for a successfully issued guest session. The token is a short-lived bearer
+credential valid ONLY on the guest scheme; there is no refresh token by design. */
+export interface IdentityAuthenticationGuestSessionOutput {
+  /** The short-lived guest access token (guest audience). */
+  accessToken?: string | null;
+  /** When the guest session expires. */
+  expiresAt?: string;
+  /** Lifetime in seconds. */
+  expiresIn?: number;
+  /** The guest session id — its own namespace, never a user id. */
+  guestSessionId?: string;
+  /** The enumerated permissions this guest session holds (the full allowlist). */
+  permissions?: string[] | null;
+  /** Always `Bearer`. */
+  tokenType?: string | null;
+}
+
+/** Introspection of the caller's current guest session (served on the guest scheme). */
+export interface IdentityAuthenticationGuestSessionStatus {
+  /** The guest session id. */
+  guestSessionId?: string;
+  /** The enumerated permissions held. */
+  permissions?: string[] | null;
+  /** The guest role value (own namespace). */
+  role?: string | null;
+}
+
 /** Request body to initiate an orchestrated authentication flow. */
 export interface IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto {
   /** Optional device fingerprint used for trusted-device recognition.
@@ -10580,6 +10614,11 @@ export interface IdentityAuthenticationLocalSignInInput {
   email: string;
   /** Alias for Email to support polymorphic sign-in scenarios */
   emailOrUsername?: string | null;
+  /** Optional guest bearer token presented by an anonymous visitor signing in
+(issue #213). Possession upgrades that guest session into this authenticated
+session (session continuity); an invalid or replayed guest token never blocks
+the sign-in itself. */
+  guestAccessToken?: string | null;
   password: string;
   /** When true, the session is persistent ("remember me"): the refresh token uses the
 configurable persistent lifetime (`Jwt:PersistentRefreshTokenExpirationDays`)
@@ -10594,6 +10633,10 @@ instead of the standard one. Null or false keeps the standard lifetime. */
 export interface IdentityAuthenticationLocalSignUpInput {
   email: string;
   firstName?: string | null;
+  /** Optional guest bearer token presented by an anonymous visitor registering
+(issue #213). A valid guest session is upgraded into the issued authenticated
+session (session continuity); an invalid token never blocks registration. */
+  guestAccessToken?: string | null;
   lastName?: string | null;
   password: string;
   phoneNumber?: string | null;
@@ -10884,6 +10927,9 @@ export interface IdentityAuthenticationPolymorphicSignInInput {
   credential?: string | null;
   credentialType?: IdentityAuthenticationCredentialType;
   deviceFingerprint?: string | null;
+  /** Optional guest bearer token presented by an anonymous visitor signing in (issue #213):
+a valid guest session is upgraded into the issued authenticated session. */
+  guestAccessToken?: string | null;
   password?: string | null;
   /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
   rememberMe?: boolean | null;
@@ -11206,6 +11252,10 @@ identity provider for this sign-in. Null for non-federated flows. */
   tempToken?: string | null;
   /** Current tenant ID */
   tenantId?: string | null;
+  /** Guest session this authenticated session continues (issue #213). Set only when the
+caller presented a valid guest credential at sign-in/sign-up and it was upgraded;
+the guest session itself ends at that point. */
+  upgradedFromGuestSessionId?: string | null;
   user?: IdentityAuthenticationUserDto;
   /** User ID */
   userId?: string;
@@ -25159,6 +25209,9 @@ export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType
 export let IdentityAuthenticationGitHubCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationGitHubCallbackRequestDto>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenRequestDtoSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenRequestDto>;
+export let IdentityAuthenticationGuestSessionIssueInputSchema: z.ZodType<IdentityAuthenticationGuestSessionIssueInput>;
+export let IdentityAuthenticationGuestSessionOutputSchema: z.ZodType<IdentityAuthenticationGuestSessionOutput>;
+export let IdentityAuthenticationGuestSessionStatusSchema: z.ZodType<IdentityAuthenticationGuestSessionStatus>;
 export let IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema: z.ZodType<IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto>;
 export let IdentityAuthenticationJwtKeyInfoDtoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfoDto>;
 export let IdentityAuthenticationLinkGoogleAccountInputSchema: z.ZodType<IdentityAuthenticationLinkGoogleAccountInput>;
@@ -36202,6 +36255,30 @@ IdentityAuthenticationGoogleIdTokenRequestDtoSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationGuestSessionIssueInput. Request body for guest session issuance. Carries no credentials: the caller only
+proves possession of nothing, so issuance is strictly rate limited per IP and audited. */
+IdentityAuthenticationGuestSessionIssueInputSchema = z.object({
+  deviceFingerprint: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationGuestSessionOutput. Response for a successfully issued guest session. The token is a short-lived bearer
+credential valid ONLY on the guest scheme; there is no refresh token by design. */
+IdentityAuthenticationGuestSessionOutputSchema = z.object({
+  accessToken: z.string().nullable().optional(),
+  expiresAt: z.string().datetime().optional(),
+  expiresIn: z.number().int().optional(),
+  guestSessionId: z.string().uuid().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  tokenType: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationGuestSessionStatus. Introspection of the caller's current guest session (served on the guest scheme). */
+IdentityAuthenticationGuestSessionStatusSchema = z.object({
+  guestSessionId: z.string().uuid().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  role: z.string().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto. Request body to initiate an orchestrated authentication flow. */
 IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema = z.object({
   deviceFingerprint: z.string().nullable().optional(),
@@ -36232,6 +36309,7 @@ IdentityAuthenticationLocalSignInInputSchema = z.object({
   deviceFingerprint: z.string().nullable().optional(),
   email: z.string().email().min(1),
   emailOrUsername: z.string().nullable().optional(),
+  guestAccessToken: z.string().nullable().optional(),
   password: z.string().min(1),
   rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
@@ -36242,6 +36320,7 @@ IdentityAuthenticationLocalSignInInputSchema = z.object({
 IdentityAuthenticationLocalSignUpInputSchema = z.object({
   email: z.string().email().min(1),
   firstName: z.string().nullable().optional(),
+  guestAccessToken: z.string().nullable().optional(),
   lastName: z.string().nullable().optional(),
   password: z.string().min(8),
   phoneNumber: z.string().nullable().optional(),
@@ -36474,6 +36553,7 @@ IdentityAuthenticationPolymorphicSignInInputSchema = z.object({
   credential: z.string().nullable().optional(),
   credentialType: z.lazy(() => IdentityAuthenticationCredentialTypeSchema).optional(),
   deviceFingerprint: z.string().nullable().optional(),
+  guestAccessToken: z.string().nullable().optional(),
   password: z.string().nullable().optional(),
   rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
@@ -36740,6 +36820,7 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   success: z.boolean().optional(),
   tempToken: z.string().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
+  upgradedFromGuestSessionId: z.string().uuid().nullable().optional(),
   user: z.lazy(() => IdentityAuthenticationUserDtoSchema).optional(),
   userId: z.string().uuid().optional(),
 });

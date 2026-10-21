@@ -215,6 +215,17 @@ public static class DataDependencyInjection
         // Session management
         services.AddScoped<ISessionManagementService, SessionManagementService>();
 
+        // Guest access (issue #213): anonymous guest sessions in their own identity namespace —
+        // short-lived tokens in a dedicated audience, an IDistributedCache-backed session
+        // store, and a one-time upgrade path into authenticated sessions. Options bind from
+        // Authentication:Guest with fail-closed validation.
+        services.AddOptions<GuestSessionOptions>()
+            .Bind(configuration.GetSection(GuestSessionOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IGuestTokenService, GuestTokenService>();
+        services.AddScoped<IGuestSessionStore, DistributedCacheGuestSessionStore>();
+        services.AddScoped<IGuestSessionService, GuestSessionService>();
+
         // WebAuthn/FIDO2 services
         RegisterWebAuthnServices(services, configuration);
     }

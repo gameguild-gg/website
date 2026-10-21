@@ -62,6 +62,13 @@ public static class ClaimNames
     public const string MfaTimestamp = "mfa_timestamp";
 
     /// <summary>
+    ///     Guest session id claim. Guests live in their own identity namespace: a guest
+    ///     principal NEVER carries <see cref="Subject"/>, <see cref="UserId"/> or
+    ///     <see cref="NameIdentifier"/> claims, so no guest can resolve to a real user id.
+    /// </summary>
+    public const string GuestId = "guest_id";
+
+    /// <summary>
     ///     Email claim.
     /// </summary>
     public const string Email = "email";
