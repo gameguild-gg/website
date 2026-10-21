@@ -148,6 +148,20 @@ public static class DataDependencyInjection
         services.AddScoped<IAuthenticatedSessionIssuer, AuthenticatedSessionIssuer>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IOAuthService, OAuthService>();
+        // Generic OAuth provider registry (issues #235/#246): each external sign-in
+        // provider is a self-contained IOAuthProvider; OAuthService dispatches by
+        // provider key with no per-provider switches, so adding a provider is one
+        // class plus one registration here. Unconfigured providers stay registered
+        // and fail closed on first use (503 at the API surface), mirroring the
+        // NoOp-default geolocation provider and the disabled threat-intelligence
+        // no-op in this module.
+        services.AddScoped<IOAuthProvider, GitHubOAuthProvider>();
+        services.AddScoped<IOAuthProvider, GoogleOAuthProvider>();
+        services.AddScoped<IOAuthProvider, DiscordOAuthProvider>();
+        services.AddScoped<IOAuthProvider, MicrosoftOAuthProvider>();
+        services.AddScoped<IOAuthProvider, SteamOpenIdProvider>();
+        services.AddScoped<IOAuthProvider, EpicGamesOAuthProvider>();
+        services.AddScoped<IOAuthProvider, FacebookOAuthProvider>();
         // Google ID token verifier — cryptographic signature + iss/aud/exp via Google.Apis.Auth.
         // Supersedes OAuthService.ValidateGoogleIdTokenInternalAsync (Todo 3 swaps the only caller).
         services.AddScoped<IGoogleIdTokenVerifier, GoogleIdTokenVerifier>();

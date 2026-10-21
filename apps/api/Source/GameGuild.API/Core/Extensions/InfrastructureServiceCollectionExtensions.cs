@@ -413,6 +413,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton(options);
         services.TryAddScoped<IPermissionEvaluationLogSink, AuditPermissionEvaluationLogSink>();
         services.TryAddScoped<GraphQLSchemaVisibilityEvaluator>();
+        services.TryAddScoped<GraphQLSchemaVersionEvaluator>();
 
         // General @authorize directive (issue #335): deny-by-default field enforcement for
         // permission, policy and role requirements, plus permission-aware introspection
@@ -420,6 +421,11 @@ public static class InfrastructureServiceCollectionExtensions
         // __type) as well; policy/role checks are enforced natively through the ASP.NET
         // Core authorization services, which is why HotChocolate's own @authorize
         // middleware registration is replaced by the general directive.
+        //
+        // The request pipeline is spelled out explicitly (mirroring HotChocolate's default
+        // pipeline) so the operation-planning authorization gate can run between document
+        // validation and operation compilation: unauthorized root operations are hidden
+        // from callers with the nonexistent-field error shape (issue #335).
         services.AddGraphQLServer()
             .AddDirectiveType<ProjectAuthorizationDirectiveType>()
             .AddDirectiveType<GraphQLAuthorizeDirectiveType>()
@@ -428,11 +434,25 @@ public static class InfrastructureServiceCollectionExtensions
             // HotChocolate's coarse introspection firewall is disabled so the
             // permission-aware schema gate can decide per caller (fail-closed).
             .DisableIntrospection(false)
+            .AddErrorFilter<GraphQLAuthorizationErrorFilter>()
             .UseField<GraphQLAuthorizeFieldMiddleware>()
+            .UseInstrumentation()
+            .UseExceptions()
+            .UseTimeout()
+            .UseDocumentCache()
+            .UseDocumentParser()
+            .UseDocumentValidation()
+            .UseOperationCache()
+            .UseRequest<GraphQLUnauthorizedOperationMiddleware>()
+            .UseOperationResolver()
+            .UseSkipWarmupExecution()
+            .UseOperationVariableCoercion()
+            .UseOperationExecution()
             .AddQueryType(descriptor => descriptor.Name("Query"))
             .AddType<ProjectGraphQLType>()
             .AddTypeExtension<ProjectQueries>()
             .AddTypeExtension<ProjectPermissionsResolvers>()
+            .AddTypeExtension<GraphQLSchemaVersionQueries>()
             .AddMutationType(descriptor => descriptor.Name("Mutation"))
             .AddTypeExtension<ProjectMutations>();
 

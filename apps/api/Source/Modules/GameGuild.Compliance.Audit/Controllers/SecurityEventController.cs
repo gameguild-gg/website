@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
+using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,19 +26,35 @@ public sealed class SecurityEventController(
     ISecurityLogRetentionService retentionService,
     ISender sender) : ControllerBase
 {
-    /// <summary>Returns the complete security event taxonomy used by the security event pipeline.</summary>
+    /// <summary>
+    ///     Returns the complete security event taxonomy used by the security event pipeline.
+    ///     Query-operations tier (issue #375): enumerating the taxonomy catalog requires the
+    ///     <c>queries:list</c> permission (fail-closed).
+    /// </summary>
     [HttpGet("taxonomy")]
+    [RequireDacPermission(QueryPermission.Keys.List)]
     [ProducesResponseType(typeof(SecurityEventTaxonomyResponse), StatusCodes.Status200OK)]
     public ActionResult<SecurityEventTaxonomyResponse> GetTaxonomy() => Ok(queryService.GetTaxonomy());
 
-    /// <summary>Returns the durable delivery status of the security event pipeline for this instance.</summary>
+    /// <summary>
+    ///     Returns the durable delivery status of the security event pipeline for this instance.
+    ///     Query-operations tier (issue #375): structured pipeline-status querying requires the
+    ///     <c>queries:query</c> permission (fail-closed).
+    /// </summary>
     [HttpGet("delivery-status")]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(SecurityEventDeliveryStatusResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<SecurityEventDeliveryStatusResponse>> GetDeliveryStatus(CancellationToken cancellationToken) =>
         Ok(await queryService.GetDeliveryStatusAsync(cancellationToken).ConfigureAwait(false));
 
-    /// <summary>Returns the security alert queue for the current tenant.</summary>
+    /// <summary>
+    ///     Returns the security alert queue for the current tenant.
+    ///     Query-operations tier (issue #375): enumerating the alert queue requires the
+    ///     <c>queries:list</c> permission; the service still clamps results to the caller's
+    ///     tenant (fail-closed).
+    /// </summary>
     [HttpGet("alerts")]
+    [RequireDacPermission(QueryPermission.Keys.List)]
     [ProducesResponseType(typeof(IReadOnlyList<SecurityAlertResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<SecurityAlertResponse>>> GetAlerts(

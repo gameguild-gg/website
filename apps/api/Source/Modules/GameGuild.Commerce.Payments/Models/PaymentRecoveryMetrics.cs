@@ -10,13 +10,17 @@ namespace GameGuild.Commerce.Payments;
 /// <param name="Attempts">First-attempt outcome counters and the overall success rate.</param>
 /// <param name="Retries">Retry-recovery counters and recovered amounts per currency.</param>
 /// <param name="Dunning">Dunning outcome counters for failed payments in the window.</param>
+/// <param name="FailureReasons">Distribution of failure codes across payments that failed in the window (issue #415).</param>
+/// <param name="RevenueRecognition">Charge-to-settlement timing of succeeded payments in the window (issue #415).</param>
 public sealed record PaymentRecoveryMetrics(
     DateTime FromUtc,
     DateTime ToUtc,
     Guid? TenantId,
     PaymentAttemptMetrics Attempts,
     PaymentRetryRecoveryMetrics Retries,
-    PaymentDunningOutcomeMetrics Dunning);
+    PaymentDunningOutcomeMetrics Dunning,
+    PaymentFailureReasonDistribution FailureReasons,
+    PaymentRevenueRecognitionTiming RevenueRecognition);
 
 /// <summary>First-attempt outcome counters for payments created in the window.</summary>
 /// <param name="TotalPayments">Payments created in the window.</param>
@@ -53,3 +57,39 @@ public sealed record PaymentDunningOutcomeMetrics(
 
 /// <summary>An amount total for one currency; currency totals are kept separate (issue #404 mixed-currency rule).</summary>
 public sealed record PaymentCurrencyAmount(string Currency, decimal Amount, int PaymentCount);
+
+/// <summary>
+///     Distribution of failure codes over the payments that failed at least once in the window
+///     (issue #415 failure reason distribution). Payments whose failure carries no gateway
+///     error code are counted under <c>unclassified</c>.
+/// </summary>
+/// <param name="TotalFailedPayments">Payments that failed at least once in the window.</param>
+/// <param name="Buckets">
+///     One bucket per failure code, ordered by descending count (ties by code): the machine-readable
+///     gateway error code (<c>unclassified</c> when none was recorded), how many payments carry it
+///     and its share of the failed total (0–100).
+/// </param>
+public sealed record PaymentFailureReasonDistribution(
+    int TotalFailedPayments,
+    IReadOnlyList<PaymentFailureReasonBucket> Buckets);
+
+/// <summary>One failure-code bucket of the <see cref="PaymentFailureReasonDistribution"/> (issue #415).</summary>
+/// <param name="FailureCode">Machine-readable gateway error code, or <c>unclassified</c>.</param>
+/// <param name="Count">Payments in the window whose last failure carries this code.</param>
+/// <param name="SharePercent">Count / total failed as a percentage (0–100).</param>
+public sealed record PaymentFailureReasonBucket(string FailureCode, int Count, decimal SharePercent);
+
+/// <summary>
+///     Revenue recognition timing for the window (issue #415): how long after a payment is
+///     created its revenue-bearing settlement (<see cref="Payment.ProcessedAt" /> on success)
+///     lands — the recognition lag introduced by asynchronous confirmations and 3DS flows.
+/// </summary>
+/// <param name="SucceededPayments">Succeeded payments in the window with a settlement timestamp.</param>
+/// <param name="AverageHours">Mean creation-to-settlement time in hours; null when none succeeded.</param>
+/// <param name="MedianHours">Median creation-to-settlement time in hours; null when none succeeded.</param>
+/// <param name="MaxHours">Longest creation-to-settlement time in hours; null when none succeeded.</param>
+public sealed record PaymentRevenueRecognitionTiming(
+    int SucceededPayments,
+    double? AverageHours,
+    double? MedianHours,
+    double? MaxHours);

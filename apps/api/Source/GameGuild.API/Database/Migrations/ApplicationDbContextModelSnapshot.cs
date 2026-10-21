@@ -2509,6 +2509,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<decimal>("DisputeFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -2914,6 +2917,9 @@ namespace GameGuild.API.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("PaymentId")
                         .HasColumnType("uuid");

@@ -14,6 +14,7 @@ public sealed class RefundConfiguration : IEntityTypeConfiguration<Refund>
         builder.ToTable("refunds");
         builder.HasKey(refund => refund.Id);
         builder.Property(refund => refund.Amount).HasColumnType("decimal(18,2)");
+        builder.Property(refund => refund.Kind).IsRequired();
         builder.Property(refund => refund.Currency).HasMaxLength(3).IsRequired();
         builder.Property(refund => refund.Reason).HasMaxLength(100).IsRequired();
         builder.Property(refund => refund.ReasonDetails).HasMaxLength(1000);
