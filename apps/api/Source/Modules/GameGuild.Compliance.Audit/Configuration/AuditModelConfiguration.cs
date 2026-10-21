@@ -281,5 +281,173 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.HasIndex(revision => revision.SavedAuditQueryId);
             entity.HasIndex(revision => new { revision.SavedAuditQueryId, revision.Revision }).IsUnique();
         });
+
+        // Mutation value snapshots (issue #176): insert-only forensic value store staged in the
+        // same SaveChanges call as each mutation. No FKs by design: snapshots outlive the rows
+        // they describe and retention may strip payloads while checksums stay verifiable.
+        modelBuilder.Entity<MutationValueSnapshot>(entity =>
+        {
+            entity.ToTable("MutationValueSnapshots");
+            entity.HasKey(snapshot => snapshot.Id);
+            entity.Property(snapshot => snapshot.TenantId);
+            entity.Property(snapshot => snapshot.EntityName).HasMaxLength(300).IsRequired();
+            entity.Property(snapshot => snapshot.KeyId).HasMaxLength(300).IsRequired();
+            entity.Property(snapshot => snapshot.ChangeKind).HasMaxLength(20).IsRequired();
+            entity.Property(snapshot => snapshot.BeforeIntegritySha256).HasMaxLength(64);
+            entity.Property(snapshot => snapshot.AfterIntegritySha256).HasMaxLength(64);
+            entity.Property(snapshot => snapshot.BeforeStoredSha256).HasMaxLength(64);
+            entity.Property(snapshot => snapshot.AfterStoredSha256).HasMaxLength(64);
+            entity.Property(snapshot => snapshot.BeforePayload).HasColumnType("text");
+            entity.Property(snapshot => snapshot.AfterPayload).HasColumnType("text");
+            entity.Property(snapshot => snapshot.StructuredDiffJson).HasColumnType("text").IsRequired();
+            entity.Property(snapshot => snapshot.StorageMode).HasMaxLength(10).IsRequired();
+            entity.Property(snapshot => snapshot.CorrelationId).HasMaxLength(100);
+            entity.HasIndex(snapshot => new { snapshot.TenantId, snapshot.EntityName, snapshot.KeyId, snapshot.OccurredAtUtc });
+            entity.HasIndex(snapshot => new { snapshot.TenantId, snapshot.OccurredAtUtc });
+            entity.HasIndex(snapshot => snapshot.CorrelationId);
+            entity.HasIndex(snapshot => snapshot.BeforeStoredSha256);
+            entity.HasIndex(snapshot => snapshot.AfterStoredSha256);
+        });
+
+        modelBuilder.Entity<MutationValuePayloadChunk>(entity =>
+        {
+            entity.ToTable("MutationValuePayloadChunks");
+            entity.HasKey(chunk => chunk.Id);
+            entity.Property(chunk => chunk.TenantId);
+            entity.Property(chunk => chunk.ContentSha256).HasMaxLength(64).IsRequired();
+            entity.Property(chunk => chunk.Content).HasColumnType("text").IsRequired();
+            entity.HasIndex(chunk => new { chunk.TenantId, chunk.ContentSha256 }).IsUnique();
+        });
+
+        modelBuilder.Entity<ValueSnapshotRetentionPolicy>(entity =>
+        {
+            entity.ToTable("ValueSnapshotRetentionPolicies");
+            entity.HasKey(policy => policy.Id);
+            entity.Property(policy => policy.TenantId).IsRequired();
+            entity.Property(policy => policy.EntityOverridesJson).HasColumnType("text").IsRequired();
+            entity.Property(policy => policy.Revision).IsConcurrencyToken();
+            entity.HasIndex(policy => policy.TenantId).IsUnique();
+        });
+
+        modelBuilder.Entity<ValueSnapshotRetentionExecution>(entity =>
+        {
+            entity.ToTable("ValueSnapshotRetentionExecutions");
+            entity.HasKey(execution => execution.Id);
+            entity.Property(execution => execution.TenantId).IsRequired();
+            entity.HasIndex(execution => new { execution.TenantId, execution.ExecutedAtUtc });
+        });
+
+        modelBuilder.Entity<ValueSnapshotRollbackPlan>(entity =>
+        {
+            entity.ToTable("ValueSnapshotRollbackPlans");
+            entity.HasKey(plan => plan.Id);
+            entity.Property(plan => plan.TenantId).IsRequired();
+            entity.Property(plan => plan.TargetEntityName).HasMaxLength(300).IsRequired();
+            entity.Property(plan => plan.TargetKeyId).HasMaxLength(300).IsRequired();
+            entity.Property(plan => plan.BasisStateJson).HasColumnType("text").IsRequired();
+            entity.Property(plan => plan.BasisStateSha256).HasMaxLength(64).IsRequired();
+            entity.Property(plan => plan.PlanJson).HasColumnType("text").IsRequired();
+            entity.Property(plan => plan.Status).HasMaxLength(20).IsRequired();
+            entity.Property(plan => plan.FailureReason).HasMaxLength(1000);
+            entity.Property(plan => plan.ResultJson).HasColumnType("text");
+            entity.HasIndex(plan => new { plan.TenantId, plan.TargetEntityName, plan.TargetKeyId });
+            entity.HasIndex(plan => new { plan.TenantId, plan.Status });
+        });
+
+        // Chain-of-custody store (issue #177): append-only custody chains, custodian authorization,
+        // transfer proofs, legal holds, notifications, and isolation-enforced access logs. No FKs
+        // by design: custody records must survive independent lifecycle of their neighbors.
+        modelBuilder.Entity<CustodyEvidenceItem>(entity =>
+        {
+            entity.ToTable("CustodyEvidenceItems");
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.TenantId).IsRequired();
+            entity.Property(item => item.SourceKind).HasMaxLength(60).IsRequired();
+            entity.Property(item => item.SourceId).HasMaxLength(300).IsRequired();
+            entity.Property(item => item.ContentType).HasMaxLength(120).IsRequired();
+            entity.Property(item => item.Content).IsRequired();
+            entity.Property(item => item.ContentSha256).HasMaxLength(64).IsRequired();
+            entity.Property(item => item.CustodyState).HasMaxLength(30).IsRequired();
+            entity.HasIndex(item => new { item.TenantId, item.CollectedAtUtc });
+            entity.HasIndex(item => new { item.TenantId, item.SourceKind, item.SourceId });
+            entity.HasIndex(item => new { item.TenantId, item.LegalHoldId });
+        });
+
+        modelBuilder.Entity<CustodyEvent>(entity =>
+        {
+            entity.ToTable("CustodyEvents");
+            entity.HasKey(custodyEvent => custodyEvent.Id);
+            entity.Property(custodyEvent => custodyEvent.TenantId).IsRequired();
+            entity.Property(custodyEvent => custodyEvent.EventType).HasMaxLength(40).IsRequired();
+            entity.Property(custodyEvent => custodyEvent.Purpose).HasMaxLength(1000);
+            entity.Property(custodyEvent => custodyEvent.ProofJson).HasColumnType("text");
+            entity.HasIndex(custodyEvent => new { custodyEvent.TenantId, custodyEvent.EvidenceId, custodyEvent.SequenceNumber }).IsUnique();
+            entity.HasIndex(custodyEvent => custodyEvent.TransferId);
+        });
+
+        modelBuilder.Entity<EvidenceCustodian>(entity =>
+        {
+            entity.ToTable("EvidenceCustodians");
+            entity.HasKey(custodian => custodian.Id);
+            entity.Property(custodian => custodian.TenantId).IsRequired();
+            entity.Property(custodian => custodian.DisplayName).HasMaxLength(200).IsRequired();
+            entity.Property(custodian => custodian.ScopesJson).HasColumnType("text").IsRequired();
+            entity.Property(custodian => custodian.RevocationReason).HasMaxLength(1000);
+            entity.HasIndex(custodian => new { custodian.TenantId, custodian.UserId }).IsUnique();
+        });
+
+        modelBuilder.Entity<EvidenceTransfer>(entity =>
+        {
+            entity.ToTable("EvidenceTransfers");
+            entity.HasKey(transfer => transfer.Id);
+            entity.Property(transfer => transfer.TenantId).IsRequired();
+            entity.Property(transfer => transfer.ChallengeNonce).HasMaxLength(64).IsRequired();
+            entity.Property(transfer => transfer.EvidenceHash).HasMaxLength(64).IsRequired();
+            entity.Property(transfer => transfer.ProofJson).HasColumnType("text").IsRequired();
+            entity.Property(transfer => transfer.Signature).HasMaxLength(512).IsRequired();
+            entity.Property(transfer => transfer.SigningKeyId).HasMaxLength(128).IsRequired();
+            entity.Property(transfer => transfer.AcknowledgmentSignature).HasMaxLength(512);
+            entity.Property(transfer => transfer.State).HasMaxLength(40).IsRequired();
+            entity.Property(transfer => transfer.Purpose).HasMaxLength(1000);
+            entity.HasIndex(transfer => new { transfer.TenantId, transfer.EvidenceId, transfer.State });
+        });
+
+        modelBuilder.Entity<LegalHold>(entity =>
+        {
+            entity.ToTable("LegalHolds");
+            entity.HasKey(hold => hold.Id);
+            entity.Property(hold => hold.TenantId).IsRequired();
+            entity.Property(hold => hold.CaseNumber).HasMaxLength(200).IsRequired();
+            entity.Property(hold => hold.Description).HasMaxLength(2000);
+            entity.Property(hold => hold.PreservationTargetsJson).HasColumnType("text").IsRequired();
+            entity.Property(hold => hold.NotificationTargetsJson).HasColumnType("text").IsRequired();
+            entity.Property(hold => hold.Status).HasMaxLength(20).IsRequired();
+            entity.Property(hold => hold.ReleaseReason).HasMaxLength(1000);
+            entity.HasIndex(hold => new { hold.TenantId, hold.CaseNumber }).IsUnique();
+            entity.HasIndex(hold => new { hold.TenantId, hold.Status });
+        });
+
+        modelBuilder.Entity<LegalHoldNotification>(entity =>
+        {
+            entity.ToTable("LegalHoldNotifications");
+            entity.HasKey(notification => notification.Id);
+            entity.Property(notification => notification.TenantId).IsRequired();
+            entity.Property(notification => notification.TargetKind).HasMaxLength(20).IsRequired();
+            entity.Property(notification => notification.Target).HasMaxLength(300).IsRequired();
+            entity.Property(notification => notification.Status).HasMaxLength(20).IsRequired();
+            entity.Property(notification => notification.FailureReason).HasMaxLength(1000);
+            entity.HasIndex(notification => new { notification.TenantId, notification.LegalHoldId, notification.Status });
+        });
+
+        modelBuilder.Entity<CustodyAccessLog>(entity =>
+        {
+            entity.ToTable("CustodyAccessLogs");
+            entity.HasKey(accessLog => accessLog.Id);
+            entity.Property(accessLog => accessLog.TenantId).IsRequired();
+            entity.Property(accessLog => accessLog.Decision).HasMaxLength(10).IsRequired();
+            entity.Property(accessLog => accessLog.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(accessLog => accessLog.Purpose).HasMaxLength(1000);
+            entity.HasIndex(accessLog => new { accessLog.TenantId, accessLog.EvidenceId, accessLog.OccurredAtUtc });
+        });
     }
 }
