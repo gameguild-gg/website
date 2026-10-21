@@ -26,9 +26,37 @@ function step(source, name) {
   return next < 0 ? source.slice(start) : source.slice(start, next);
 }
 
+function pullRequestBranches(source) {
+  const marker = '\n  pull_request:\n';
+  const start = source.indexOf(marker);
+  assert.ok(start >= 0, 'Missing pull_request trigger');
+  const remaining = source.slice(start + marker.length);
+  const next = remaining.search(/^(?: {2}\S|\S)/m);
+  const event = next < 0 ? remaining : remaining.slice(0, next);
+  const branches = event.match(/^    branches:([^\n]*)/m);
+  assert.ok(branches, 'The pull_request trigger must declare its branch targets');
+  const inline = branches[1].trim();
+  if (inline) {
+    assert.ok(inline.startsWith('[') && inline.endsWith(']'), 'Expected a branch sequence');
+    return inline.slice(1, -1).split(',').map((value) => value.trim().replace(/^['"]|['"]$/g, '')).sort();
+  }
+  const tail = event.slice(branches.index + branches[0].length);
+  const end = tail.search(/^    \S/m);
+  const list = end < 0 ? tail : tail.slice(0, end);
+  return [...list.matchAll(/^      - (.+)$/gm)]
+    .map((match) => match[1].trim().replace(/^['"]|['"]$/g, '')).sort();
+}
+
 const web = job(pr, 'web');
 const producer = job(emception, 'build-test-package');
 const acquire = step(web, 'Acquire verified Toolchain release for Web');
+
+test('every pull-request consumer branch can start the required Toolchain producer', () => {
+  const consumerTargets = pullRequestBranches(pr);
+  const producerTargets = pullRequestBranches(emception);
+  assert.deepEqual(producerTargets, consumerTargets);
+  assert.ok(producerTargets.includes('feature/**'), 'Stacked feature PRs require their own exact-source producer');
+});
 
 test('Web acquires a producer release independently of an optional build cache', () => {
   assert.match(acquire, /id: emception-web-release/);
