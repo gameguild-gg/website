@@ -1,4 +1,4 @@
-import { auth, authConfig } from '@/auth';
+import { auth, authConfig, readSessionUnCached } from '@/auth';
 import { GitHubStarPrompt } from '@/components/community/github-star-prompt';
 import { WorkspaceShell } from '@/components/console/workspace-shell';
 import { AccessibilitySyncInitializer } from '@/components/settings/accessibility-sync-initializer';
@@ -62,7 +62,9 @@ export default async function Layout({ children, params }: LayoutProps<'/[locale
 
     if (hasSessionCookie) {
       await new Promise((resolve) => setTimeout(resolve, 150));
-      session = await auth();
+      // auth() is memoized per request (cache()); retry through the
+      // uncached reader so the re-read sees the rotated session cookie.
+      session = await readSessionUnCached();
     }
 
     if (!session || typeof session === 'function') {

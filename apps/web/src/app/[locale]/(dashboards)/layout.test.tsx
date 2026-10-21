@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  readSessionUnCached: vi.fn(),
   headers: vi.fn(),
   cookies: vi.fn(),
   redirect: vi.fn(),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/auth', () => ({
   auth: mocks.auth,
+  readSessionUnCached: mocks.readSessionUnCached,
   authConfig: {
     cookies: { name: 'gameguild', secure: false, sameSite: 'lax', path: '/' },
   },
@@ -158,10 +160,9 @@ describe('dashboard layout session-cookie retry (issue #864 post-MFA flash)', ()
     cleanup();
   });
 
-  it('retries auth() when a session cookie is present and renders once it resolves', async () => {
-    mocks.auth
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(anonymousSession);
+  it('retries the uncached session read when a cookie is present and renders once it resolves', async () => {
+    mocks.auth.mockResolvedValue(null);
+    mocks.readSessionUnCached.mockResolvedValue(anonymousSession);
     mocks.cookies.mockResolvedValue(
       cookieStoreWith({ [SESSION_COOKIE]: 'encrypted-session' }),
     );
@@ -175,12 +176,13 @@ describe('dashboard layout session-cookie retry (issue #864 post-MFA flash)', ()
     const ui = await pending;
     render(ui);
 
-    expect(mocks.auth).toHaveBeenCalledTimes(2);
+    expect(mocks.readSessionUnCached).toHaveBeenCalledTimes(1);
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
-  it('redirects after one retry when the cookie exists but auth() stays null', async () => {
+  it('redirects after one retry when the cookie exists but the uncached read stays null', async () => {
     mocks.auth.mockResolvedValue(null);
+    mocks.readSessionUnCached.mockResolvedValue(null);
     mocks.cookies.mockResolvedValue(
       cookieStoreWith({ [SESSION_COOKIE]: 'stale-or-expired' }),
     );
@@ -198,7 +200,7 @@ describe('dashboard layout session-cookie retry (issue #864 post-MFA flash)', ()
     await vi.advanceTimersByTimeAsync(150);
     await assertion;
 
-    expect(mocks.auth).toHaveBeenCalledTimes(2);
+    expect(mocks.readSessionUnCached).toHaveBeenCalledTimes(1);
     expect(mocks.redirect).toHaveBeenCalledWith({
       href: { pathname: '/sign-in', query: { callbackUrl: '/workspace' } },
       locale: 'en-US',

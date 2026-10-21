@@ -313,7 +313,10 @@ describe("SignInForm MFA", () => {
     await user.type(screen.getByLabelText("Password"), "password123");
     await user.click(screen.getByRole("button", { name: /sign in$/i }));
 
-    expect(mockRouter.replace).toHaveBeenCalledWith("/sign-in/2fa");
+    expect(mockRouter.replace).toHaveBeenCalledWith({
+      pathname: "/sign-in/2fa",
+      query: { redirectTo: "/dashboard" },
+    });
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.queryByLabelText("Authentication code")).not.toBeInTheDocument();
   });

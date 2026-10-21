@@ -80,13 +80,15 @@ export function SignInForm({
     } catch (err) {
       // The MFA challenge lives on the dedicated /sign-in/2fa route; the
       // app-wide useAuth state (mfaChallenge) survives the navigation.
+      // redirectTo rides along so the challenge returns to the caller's
+      // original target (issue #864 callbackUrl flow).
       if (
         err instanceof Error &&
         "type" in err &&
         err.type === "MfaRequired"
       ) {
         form.reset();
-        router.replace("/sign-in/2fa");
+        router.replace({ pathname: "/sign-in/2fa", query: { redirectTo } });
       }
       // error state is set by useAuth
     }
