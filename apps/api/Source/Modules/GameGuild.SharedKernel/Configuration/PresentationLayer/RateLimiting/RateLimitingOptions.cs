@@ -181,6 +181,17 @@ public sealed class RateLimitingOptions : BaseOptions
 
     public TimeSpan WebhookWindow { get; set; } = TimeSpan.FromMinutes(1);
 
+    /// <summary>
+    ///     Guest-session issuance rate limit (requests per minute), applied by the
+    ///     <see cref="RateLimitPolicies.GuestIssuance"/> policy on the anonymous guest
+    ///     endpoint (issue #213). Default: 5 req/min — guest issuance grants a credential to
+    ///     anyone who asks, so it is throttled far below the general authentication budget.
+    ///     Partitioned by: IP address.
+    /// </summary>
+    public int GuestIssuanceRequestsPerMinute { get; set; } = 5;
+
+    public TimeSpan GuestIssuanceWindow { get; set; } = TimeSpan.FromMinutes(1);
+
     public int SlidingWindowSegments { get; set; } = 4;
 
     /// <summary>
@@ -303,6 +314,7 @@ public sealed class RateLimitingOptions : BaseOptions
         ValidatePositive(ApiRequestsPerMinute, nameof(ApiRequestsPerMinute));
         ValidatePositive(IpRequestsPerMinute, nameof(IpRequestsPerMinute));
         ValidatePositive(WebhookRequestsPerMinute, nameof(WebhookRequestsPerMinute));
+        ValidatePositive(GuestIssuanceRequestsPerMinute, nameof(GuestIssuanceRequestsPerMinute));
         ValidatePositive(TenantRequestsPerMinute, nameof(TenantRequestsPerMinute));
         ValidatePositive(UserRequestsPerMinute, nameof(UserRequestsPerMinute));
         ValidatePositive(StandardApiKeyRequestsPerMinute, nameof(StandardApiKeyRequestsPerMinute));
@@ -316,6 +328,7 @@ public sealed class RateLimitingOptions : BaseOptions
         ValidatePositive(ApiWindow, nameof(ApiWindow));
         ValidatePositive(IpWindow, nameof(IpWindow));
         ValidatePositive(WebhookWindow, nameof(WebhookWindow));
+        ValidatePositive(GuestIssuanceWindow, nameof(GuestIssuanceWindow));
         ValidatePositive(TenantWindow, nameof(TenantWindow));
         ValidatePositive(UserWindow, nameof(UserWindow));
         ValidatePositive(ApiKeyWindow, nameof(ApiKeyWindow));
@@ -379,7 +392,8 @@ public sealed class RateLimitingOptions : BaseOptions
             RateLimitPolicies.ApiKey,
             RateLimitPolicies.ExpensiveOperations,
             RateLimitPolicies.PerIp,
-            RateLimitPolicies.Webhook
+            RateLimitPolicies.Webhook,
+            RateLimitPolicies.GuestIssuance
         };
         var configuredNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (name, policy) in Policies)
