@@ -119,11 +119,13 @@ describe("SocialProfileView", () => {
   it("renders persisted posts and projects with real locale-aware routes", () => {
     render(<SocialProfileView profile={profile} currentUserId="user-1" posts={posts} projects={projects} />);
 
-    expect(screen.getByText("A persisted launch update")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /skybound/i })).toHaveAttribute(
       "href",
       "/projects/skybound",
     );
+    // Posts live behind the second tab; activate it before asserting its content.
+    fireEvent.click(screen.getByRole("tab", { name: /posts/i }));
+    expect(screen.getByText("A persisted launch update")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open post/i })).toHaveAttribute(
       "href",
       "/social/posts/post-1",
@@ -140,8 +142,9 @@ describe("SocialProfileView", () => {
   it("renders truthful collection empty states", () => {
     render(<SocialProfileView profile={profile} currentUserId="user-1" posts={[]} projects={[]} />);
 
-    expect(screen.getByText("No public posts yet.")).toBeInTheDocument();
     expect(screen.getByText("No public projects yet.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /posts/i }));
+    expect(screen.getByText("No public posts yet.")).toBeInTheDocument();
   });
 
   it("renders a recoverable collection error without fake cards", () => {
