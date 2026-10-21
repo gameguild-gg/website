@@ -139,8 +139,6 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
                  'we_two', true, 'payment.succeeded', '{}', false, false, 0, 1, now(), now());
             """);
 
-        await AssertAtomicWebhookClaimAsync(connectionString);
-
         var duplicateEvent = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(connection, """
             INSERT INTO billing_webhook_events
                 ("Id", "Provider", "ExternalEventId", "ProviderEnvironment", "ProviderAccountId",
@@ -252,13 +250,33 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
         (await ScalarAsync<long>(connection, "SELECT count(*) FROM payments;")).Should().Be(3);
     }
 
-    private static async Task AssertAtomicWebhookClaimAsync(string connectionString)
+    [DockerFact]
+    public async Task Atomic_Webhook_Claim_Uses_Current_Schema_On_PostgreSql()
     {
-        // This assertion intentionally runs the current repository against a historical
-        // schema from before the universal audit table existed. Production contexts cannot
-        // disable capture; only this internal migration harness bypasses the newer concern.
-        await using var firstContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
-        await using var secondContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
+        // The repository uses the current model, including fields added after the rollup.
+        // Keep its concurrency check on the current schema and the historical migration
+        // up/down/partial-state assertions above on their original migration boundary.
+        await using var container = await EconomyPostgreSqlTestDatabase.CreateAsync("provider_current_claim");
+        var connectionString = container.ConnectionString;
+        await using (var seedContext = CreateContext(connectionString))
+        {
+            await seedContext.Database.MigrateAsync();
+            seedContext.Set<BillingWebhookEvent>().Add(new BillingWebhookEvent
+            {
+                Provider = "stripe",
+                ProviderEnvironment = "live",
+                ProviderAccountId = "acct_one",
+                WebhookEndpointId = "we_one",
+                ExternalEventId = "evt_scoped",
+                IsLiveMode = true,
+                EventType = "payment.succeeded",
+                Payload = "{}"
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        await using var firstContext = CreateContext(connectionString);
+        await using var secondContext = CreateContext(connectionString);
         var firstRepository = new BillingWebhookRepository(
             firstContext,
             NullLogger<BillingWebhookRepository>.Instance);
@@ -278,20 +296,21 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
         (await secondRepository.TryClaimProcessingAsync(
             secondCandidate!,
             DateTime.UtcNow.AddMinutes(-1))).Should().BeFalse();
+
+        await using var verificationContext = CreateContext(connectionString);
+        var persisted = await verificationContext.Set<BillingWebhookEvent>().AsNoTracking().SingleAsync();
+        persisted.ProcessingAttempts.Should().Be(1);
+        persisted.IsProcessed.Should().BeFalse();
     }
 
-    private static ApplicationDbContext CreateContext(
-        string connectionString,
-        bool enableEntityChangeAuditCapture = true)
+    private static ApplicationDbContext CreateContext(string connectionString)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseNpgsql(connectionString, npgsql =>
                 npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName))
             .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
-        return enableEntityChangeAuditCapture
-            ? new ApplicationDbContext(options)
-            : new ApplicationDbContext(options, enableEntityChangeAuditCapture: false);
+        return new ApplicationDbContext(options);
     }
 
     private static async Task ExecuteAsync(NpgsqlConnection connection, string sql)

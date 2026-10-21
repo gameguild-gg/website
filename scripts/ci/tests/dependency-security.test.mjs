@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { randomBytes } from "node:crypto";
+import { createServer } from "node:http";
+import { once } from "node:events";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { test } from "node:test";
@@ -52,6 +54,72 @@ for (const packageRoot of installedConsumers("shell-quote")) {
   });
 }
 
+async function startHeaderServer(context, handler) {
+  const server = createServer(handler);
+  context.after(() => new Promise((resolveClose, rejectClose) => {
+    server.closeAllConnections();
+    server.close(error => error ? rejectClose(error) : resolveClose());
+  }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  return `http://127.0.0.1:${server.address().port}`;
+}
+
+function readRedirectedHeaders(client, url, headers) {
+  return new Promise((resolveHeaders, rejectHeaders) => {
+    const request = client.get(url, { headers, sensitiveHeaders: ["X-Test-Credential"] }, response => {
+      const chunks = [];
+      response.on("data", chunk => chunks.push(chunk));
+      response.on("error", rejectHeaders);
+      response.on("end", () => {
+        try {
+          assert.equal(response.statusCode, 200);
+          resolveHeaders(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+        } catch (error) {
+          rejectHeaders(error);
+        }
+      });
+    });
+    request.on("error", rejectHeaders);
+    request.setTimeout(5000, () => request.destroy(new Error("Redirect fixture timed out")));
+  });
+}
+
+for (const packageRoot of installedConsumers("follow-redirects")) {
+  for (const arrayHeaders of [false, true]) {
+    for (const crossOrigin of [false, true]) {
+      test(`${packageRoot}: ${arrayHeaders ? "array" : "object"} headers ${crossOrigin ? "strip credentials across origins" : "preserve credentials on the same origin"}`, async context => {
+        assert.equal(require(join(packageRoot, "package.json")).version, "1.16.1");
+        const client = require(packageRoot).http;
+        const capture = (request, response) => {
+          request.resume();
+          response.setHeader("Content-Type", "application/json");
+          response.end(JSON.stringify(request.headers));
+        };
+        const target = await startHeaderServer(context, capture);
+        const origin = await startHeaderServer(context, (request, response) => {
+          if (request.url === "/capture") {
+            capture(request, response);
+            return;
+          }
+          request.resume();
+          response.writeHead(302, { Location: crossOrigin ? target + "/capture" : "/capture" });
+          response.end();
+        });
+        const value = randomBytes(16).toString("hex");
+        const credentials = { Authorization: value, "Proxy-Authorization": value, Cookie: `fixture=${value}`, "X-Test-Credential": value };
+        const headers = { ...credentials, "X-Ordinary": "retained" };
+        const observed = await readRedirectedHeaders(client, origin, arrayHeaders ? Object.entries(headers).flat() : headers);
+        for (const [name, expected] of Object.entries(credentials)) {
+          assert.equal(observed[name.toLowerCase()], crossOrigin ? undefined : expected);
+        }
+        assert.equal(observed["x-ordinary"], "retained");
+        assert.equal(observed.host, new URL(crossOrigin ? target : origin).host);
+      });
+    }
+  }
+}
+
 for (const packageRoot of installedConsumers("sharp")) {
   const sharp = require(packageRoot);
   test(`${packageRoot}: fixed librsvg still renders ordinary SVG images`, async () => {
@@ -64,6 +132,12 @@ for (const packageRoot of installedConsumers("sharp")) {
     assert.equal(info.height, 8);
     assert.equal(info.format, "png");
     assert.ok(data.length > 0);
+  });
+}
+
+for (const packageRoot of installedConsumers("launch-editor")) {
+  test(`${packageRoot}: every editor consumer uses the reviewed security release`, () => {
+    assert.equal(require(join(packageRoot, "package.json")).version, "2.14.2");
   });
 }
 

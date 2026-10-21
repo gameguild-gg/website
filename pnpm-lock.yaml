@@ -9820,8 +9820,6 @@ packages:
   follow-redirects@1.16.1:
     resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
     engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
     peerDependenciesMeta:
       debug:
         optional: true
@@ -21428,7 +21426,6 @@ snapshots:
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
-      - debug
       - supports-color
 
   axobject-query@4.1.0: {}
