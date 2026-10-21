@@ -942,27 +942,24 @@
   },
   "src/components/block-content-editor/extras/code-studio/runners/wat-runner.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 9
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 5
     },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 12
-    },
-    "@typescript-eslint/no-unsafe-function-type": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 4
     },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 8
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 8
+    },
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 3
+    },
     "@typescript-eslint/no-unsafe-member-access": {
-      "count": 11
+      "count": 7
     },
     "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
     "@typescript-eslint/require-await": {
