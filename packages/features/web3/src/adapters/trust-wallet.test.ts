@@ -115,13 +115,21 @@ describe('discoverTrustWallet', () => {
     const trustEntry = flaggedTrustProvider(createMockEip1193Provider());
     installWindow({
       ethereum: {
-        request: async () => null,
+        // The outer multi-wallet provider must never answer account calls.
+        request: async () => {
+          throw new Error('wrong provider answered');
+        },
         providers: [{ isMetaMask: true, request: async () => null }, trustEntry],
       },
     });
     const discovery = await discoverTrustWallet();
     expect(discovery?.source).toBe('window.ethereum');
-    expect(discovery?.provider.request).toBe(trustEntry.request);
+    // The discovered provider delegates to the Trust-flagged providers[]
+    // entry, not the outer multi-wallet object (discovery wraps the entry,
+    // so assert delegation rather than function identity).
+    await expect(discovery?.provider.request({ method: 'eth_accounts' })).resolves.toEqual([
+      TEST_ADDRESS,
+    ]);
   });
 });
 
@@ -178,10 +186,11 @@ describe('TrustWalletAdapter', () => {
 
   it('covers signing failure: provider errors propagate raw for the context taxonomy', async () => {
     const provider = createMockEip1193Provider();
-    provider.failNextRequest(Object.assign(new Error('sign transport closed'), { code: -32603 }));
     installWindow({ trustwallet: flaggedTrustProvider(provider) });
     const adapter = createTrustWalletAdapter();
     await adapter.connect();
+    // Armed after connect so the failure targets the personal_sign request.
+    provider.failNextRequest(Object.assign(new Error('sign transport closed'), { code: -32603 }));
 
     await expect(adapter.signMessage(TEST_ADDRESS, 'msg')).rejects.toMatchObject({
       code: -32603,
@@ -243,6 +252,8 @@ describe('TrustWalletAdapter', () => {
     const provider = createMockEip1193Provider();
     let switchAttempts = 0;
     provider.onRequest((args) => {
+      if (args.method === 'eth_requestAccounts') return [TEST_ADDRESS];
+      if (args.method === 'eth_chainId') return '0x1';
       if (args.method === 'wallet_switchEthereumChain') {
         switchAttempts += 1;
         if (switchAttempts === 1) throw Object.assign(new Error('Unrecognized chain ID.'), { code: 4902 });

@@ -101,6 +101,46 @@ export type WalletConnectAdapter = WalletAdapter & {
   getPairingUri(): string | undefined;
 };
 
+/**
+ * SDK module specifier, held in a deliberately widened `string` binding so
+ * no bundler or test runner can statically resolve it: the repository does
+ * not vendor `@walletconnect/ethereum-provider` (proprietary WalletConnect/
+ * Reown Community License), so a statically analyzable specifier would fail
+ * vite transforms, turbopack/webpack production builds and vitest imports
+ * of this file even though the import only ever executes in deployments
+ * that installed the SDK. Its rejection is handled by the fail-closed
+ * `loadProvider` path (mapped to `wallet_not_found`).
+ */
+const ETHEREUM_PROVIDER_MODULE: string = '@walletconnect/ethereum-provider';
+
+/**
+ * `EthereumProvider.init` options accepted by the default loader — the
+ * runtime mirror of the ambient declaration in
+ * `src/types/walletconnect-ethereum-provider.d.ts` (which documents the
+ * full SDK for hosts that install it).
+ */
+export interface WalletConnectInitOptions {
+  projectId: string;
+  chains?: number[];
+  optionalChains?: number[];
+  rpcMap?: Record<string, string>;
+  metadata?: {
+    name?: string;
+    description?: string;
+    url?: string;
+    icons?: string[];
+  };
+  showQrModal?: boolean;
+  qrModalOptions?: Record<string, unknown>;
+}
+
+/** The slice of the SDK module the default loader consumes. */
+interface WalletConnectEthereumProviderModule {
+  readonly default: {
+    init(options: WalletConnectInitOptions): Promise<WalletConnectEthereumProviderLike>;
+  };
+}
+
 const toNumberChains = (chains: readonly string[]): number[] =>
   chains.map((chainId) => Number.parseInt(chainId, 10));
 
@@ -134,7 +174,12 @@ export const createWalletConnectAdapter = (
   const loadProvider =
     options.loadProvider ??
     (async (): Promise<WalletConnectEthereumProviderLike> => {
-      const module = await import('@walletconnect/ethereum-provider');
+      // Dynamic specifier + @vite-ignore: the import is only ever resolved
+      // at runtime, in deployments that installed the SDK. Everywhere else
+      // the rejection lands in the fail-closed catch below.
+      const module = (await import(
+        /* @vite-ignore */ ETHEREUM_PROVIDER_MODULE
+      )) as WalletConnectEthereumProviderModule;
       return module.default.init({
         projectId: projectId as string,
         chains: toNumberChains(chains),

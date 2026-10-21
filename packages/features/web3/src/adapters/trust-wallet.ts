@@ -26,6 +26,7 @@ import type {
   WalletAdapter,
   WalletConnection,
   WalletEventHandlers,
+  Web3Error,
 } from '../types';
 import { parseChainId, utf8ToHex } from '../lib/utils';
 import { requestChainSwitch } from './chain-switch';
@@ -227,7 +228,7 @@ export const createTrustWalletAdapter = (options: TrustWalletAdapterOptions = {}
     return activeProvider;
   };
 
-  const deepLinkHandOff = (): Error => {
+  const deepLinkHandOff = (): Web3Error => {
     const href = buildTrustWalletDeepLink(getCurrentUrl());
     navigate(href);
     return toWeb3Error(

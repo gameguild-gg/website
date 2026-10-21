@@ -213,7 +213,6 @@ describe('WalletConnectAdapter (challenge signing and verification)', () => {
 
   it('covers signing failure: provider errors propagate raw for the context taxonomy', async () => {
     const eip1193 = createMockEip1193Provider();
-    eip1193.failNextRequest(Object.assign(new Error('session request rejected'), { code: 4001 }));
     const harness = createProviderHarness(eip1193);
     const adapter = createWalletConnectAdapter({
       enabled: true,
@@ -221,6 +220,9 @@ describe('WalletConnectAdapter (challenge signing and verification)', () => {
       loadProvider: async () => harness.provider,
     });
     await adapter.connect();
+    // Armed after connect so the failure targets the personal_sign session
+    // request instead of the account lookup.
+    eip1193.failNextRequest(Object.assign(new Error('session request rejected'), { code: 4001 }));
 
     await expect(adapter.signMessage(TEST_ADDRESS, 'msg')).rejects.toMatchObject({
       code: 4001,
@@ -230,7 +232,6 @@ describe('WalletConnectAdapter (challenge signing and verification)', () => {
 
   it('maps a rejected signature prompt to user_rejected inside the SIWE journey', async () => {
     const eip1193 = createMockEip1193Provider();
-    eip1193.failNextRequest(Object.assign(new Error('User rejected'), { code: 4001 }));
     const harness = createProviderHarness(eip1193);
     const adapter = createWalletConnectAdapter({
       enabled: true,
@@ -238,6 +239,8 @@ describe('WalletConnectAdapter (challenge signing and verification)', () => {
       loadProvider: async () => harness.provider,
     });
     const connection = await adapter.connect();
+    // Armed after connect so the rejection targets the signature prompt.
+    eip1193.failNextRequest(Object.assign(new Error('User rejected'), { code: 4001 }));
 
     const transport: SiweTransport = {
       getChallenge: async () => ({ challenge: 'challenge', nonce: 'nonce-1' }),
@@ -290,6 +293,8 @@ describe('WalletConnectAdapter (challenge signing and verification)', () => {
     const eip1193 = createMockEip1193Provider();
     let switchAttempts = 0;
     eip1193.onRequest((args) => {
+      if (args.method === 'eth_accounts') return [TEST_ADDRESS];
+      if (args.method === 'eth_chainId') return '0x1';
       if (args.method === 'wallet_switchEthereumChain') {
         switchAttempts += 1;
         if (switchAttempts === 1) {
