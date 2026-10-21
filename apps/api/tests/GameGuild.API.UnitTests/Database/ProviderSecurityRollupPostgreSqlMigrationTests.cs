@@ -139,8 +139,6 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
                  'we_two', true, 'payment.succeeded', '{}', false, false, 0, 1, now(), now());
             """);
 
-        await AssertAtomicWebhookClaimAsync(connectionString);
-
         var duplicateEvent = await Assert.ThrowsAsync<PostgresException>(() => ExecuteAsync(connection, """
             INSERT INTO billing_webhook_events
                 ("Id", "Provider", "ExternalEventId", "ProviderEnvironment", "ProviderAccountId",
@@ -250,15 +248,17 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
         (await ScalarAsync<long>(connection, $"SELECT count(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '{RollupMigration}';"))
             .Should().Be(1);
         (await ScalarAsync<long>(connection, "SELECT count(*) FROM payments;")).Should().Be(3);
+
+        // The repository materializes the current entity model, so exercise it only
+        // after the historical migration checks have returned to the latest schema.
+        await migrator.MigrateAsync();
+        await AssertAtomicWebhookClaimAsync(connectionString);
     }
 
     private static async Task AssertAtomicWebhookClaimAsync(string connectionString)
     {
-        // This assertion intentionally runs the current repository against a historical
-        // schema from before the universal audit table existed. Production contexts cannot
-        // disable capture; only this internal migration harness bypasses the newer concern.
-        await using var firstContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
-        await using var secondContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
+        await using var firstContext = CreateContext(connectionString);
+        await using var secondContext = CreateContext(connectionString);
         var firstRepository = new BillingWebhookRepository(
             firstContext,
             NullLogger<BillingWebhookRepository>.Instance);
@@ -280,18 +280,14 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
             DateTime.UtcNow.AddMinutes(-1))).Should().BeFalse();
     }
 
-    private static ApplicationDbContext CreateContext(
-        string connectionString,
-        bool enableEntityChangeAuditCapture = true)
+    private static ApplicationDbContext CreateContext(string connectionString)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseNpgsql(connectionString, npgsql =>
                 npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName))
             .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
-        return enableEntityChangeAuditCapture
-            ? new ApplicationDbContext(options)
-            : new ApplicationDbContext(options, enableEntityChangeAuditCapture: false);
+        return new ApplicationDbContext(options);
     }
 
     private static async Task ExecuteAsync(NpgsqlConnection connection, string sql)
