@@ -258,6 +258,35 @@ public sealed class SamlFederationService(
         return url;
     }
 
+    /// <inheritdoc />
+    public IReadOnlyList<OidcDiscoveredProvider> FindProvidersForEmailDomain(string emailDomain)
+    {
+        if (string.IsNullOrWhiteSpace(emailDomain))
+        {
+            return [];
+        }
+
+        var normalized = emailDomain.Trim().TrimStart('@').ToLowerInvariant();
+        var providers = authenticationOptions?.ExternalProviders?.Saml;
+        if (providers is null)
+        {
+            return [];
+        }
+
+        return providers
+            .Where(entry => entry.Value?.Enabled == true &&
+                            entry.Value.EmailDomains.Any(domain =>
+                                domain.Trim().TrimStart('@').Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+            .Select(entry => new OidcDiscoveredProvider
+            {
+                Slug = entry.Key,
+                DisplayName = string.IsNullOrWhiteSpace(entry.Value.DisplayName) ? entry.Key : entry.Value.DisplayName!,
+                Protocol = "saml"
+            })
+            .OrderBy(provider => provider.Slug, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     // ── Provider registry (fail closed) ────────────────────────────────────────
 
     private SamlProviderOptions RequireEnabledProvider(string slug)

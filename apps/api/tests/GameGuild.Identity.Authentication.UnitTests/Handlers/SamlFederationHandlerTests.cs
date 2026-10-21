@@ -173,3 +173,46 @@ public class SamlFederationQueryHandlerTests
         result.LogoutUrl.Should().BeNull();
     }
 }
+
+public class SamlDiscoveryHandlerTests
+{
+    [Fact]
+    public async Task DiscoverProviders_MergesOidcAndSamlProvidersBySlug()
+    {
+        var oidc = new Mock<IOidcFederationService>();
+        oidc
+            .Setup(s => s.FindProvidersForEmailDomain("corp.example.test"))
+            .Returns([new OidcDiscoveredProvider { Slug = "zen-oauth", DisplayName = "Zen OAuth" }]);
+        var saml = new Mock<ISamlFederationService>();
+        saml
+            .Setup(s => s.FindProvidersForEmailDomain("corp.example.test"))
+            .Returns([new OidcDiscoveredProvider { Slug = "alpha-saml", DisplayName = "Alpha SAML", Protocol = "saml" }]);
+
+        var handler = new DiscoverOidcProvidersQueryHandler(
+            oidc.Object,
+            NullLogger<DiscoverOidcProvidersQueryHandler>.Instance,
+            saml.Object);
+
+        var response = await handler.Handle(new DiscoverOidcProvidersQuery { Email = "jane@corp.example.test" }, CancellationToken.None);
+
+        response.Providers.Select(provider => provider.Slug).Should().Equal("alpha-saml", "zen-oauth");
+        response.Providers.Should().OnlyContain(provider => provider.Protocol == "oidc" || provider.Protocol == "saml");
+    }
+
+    [Fact]
+    public async Task DiscoverProviders_WithoutSamlService_KeepsOidcOnlyResults()
+    {
+        var oidc = new Mock<IOidcFederationService>();
+        oidc
+            .Setup(s => s.FindProvidersForEmailDomain("corp.example.test"))
+            .Returns([new OidcDiscoveredProvider { Slug = "corp-idp", DisplayName = "Corp SSO" }]);
+
+        var handler = new DiscoverOidcProvidersQueryHandler(
+            oidc.Object,
+            NullLogger<DiscoverOidcProvidersQueryHandler>.Instance);
+
+        var response = await handler.Handle(new DiscoverOidcProvidersQuery { Email = "jane@corp.example.test" }, CancellationToken.None);
+
+        response.Providers.Should().ContainSingle().Which.Protocol.Should().Be("oidc");
+    }
+}

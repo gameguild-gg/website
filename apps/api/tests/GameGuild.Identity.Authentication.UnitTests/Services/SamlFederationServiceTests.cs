@@ -613,6 +613,34 @@ public sealed class SamlFederationServiceTests : IDisposable
         DeflateDecode(url!).Should().Contain("<samlp:LogoutRequest").And.Contain($"<saml:Issuer>{SpEntityId}</saml:Issuer>");
     }
 
+    // ── Email-domain discovery ─────────────────────────────────────────────────
+
+    [Fact]
+    public void FindProvidersForEmailDomain_MatchesEnabledSamlProvidersCaseInsensitively()
+    {
+        var sut = CreateSut(AuthOptionsWith(ProviderOptions(emailDomains: ["Corp.Example.Test"])));
+
+        var providers = sut.FindProvidersForEmailDomain("JANE@CORP.example.test");
+
+        providers.Should().ContainSingle().Which.Should().Match<OidcDiscoveredProvider>(provider =>
+            provider.Slug == Slug &&
+            provider.DisplayName == Slug &&
+            provider.Protocol == "saml");
+    }
+
+    [Fact]
+    public void FindProvidersForEmailDomain_DisabledProviderOrUnknownDomain_ReturnsEmpty()
+    {
+        var disabled = ProviderOptions(emailDomains: ["corp.example.test"]);
+        disabled.Enabled = false;
+        var disabledSut = CreateSut(AuthOptionsWith(disabled));
+        disabledSut.FindProvidersForEmailDomain("jane@corp.example.test").Should().BeEmpty();
+
+        var enabledSut = CreateSut(AuthOptionsWith(ProviderOptions(emailDomains: ["corp.example.test"])));
+        enabledSut.FindProvidersForEmailDomain("jane@unknown.example.test").Should().BeEmpty();
+        enabledSut.FindProvidersForEmailDomain("   ").Should().BeEmpty();
+    }
+
     // ── Test identity provider (signed SAML response builder) ──────────────────
 
     private sealed record ResponseScenario(

@@ -469,8 +469,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
     /// <returns>Federation providers whose configured email domains match</returns>
     [AllowAnonymous]
     [HttpGet("v{version:apiVersion}/auth/oidc:discover-provider")]
-    [EndpointSummary("Discover OIDC federation providers by email domain")]
-    [EndpointDescription("Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.")]
+    [EndpointSummary("Discover federation providers by email domain (OIDC and SAML)")]
+    [EndpointDescription("Lists the enabled enterprise federation providers — OIDC and SAML — whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists. Each entry carries the protocol it serves.")]
     [ProducesResponseType<OidcDiscoverProviderResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> OidcDiscoverProvider([FromQuery] string email, CancellationToken ct)

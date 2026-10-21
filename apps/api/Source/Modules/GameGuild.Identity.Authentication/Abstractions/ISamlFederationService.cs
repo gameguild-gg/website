@@ -110,4 +110,11 @@ public interface ISamlFederationService
     ///     a single logout service URL; null when logout stays local.
     /// </summary>
     string? BuildLogoutRedirectUrl(string slug, string? postLogoutRedirectUri);
+
+    /// <summary>
+    ///     Domain-to-provider discovery: lists the enabled SAML providers whose configured
+    ///     <c>EmailDomains</c> include the requested address's domain, so the login page can
+    ///     route enterprise users before any session exists. Reveals only configured slugs.
+    /// </summary>
+    IReadOnlyList<OidcDiscoveredProvider> FindProvidersForEmailDomain(string emailDomain);
 }
