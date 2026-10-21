@@ -2720,7 +2720,17 @@ export type CommercePaymentsDisputeType =
 
 /** Evidence types */
 export type CommercePaymentsEvidenceType =
-  'Receipt' | 'Communication' | 'Photo' | 'Video' | 'ShippingInfo' | 'Contract' | 'BankStatement' | 'Documentation' | 'Other';
+  | 'Receipt'
+  | 'Communication'
+  | 'Photo'
+  | 'Video'
+  | 'ShippingInfo'
+  | 'Contract'
+  | 'BankStatement'
+  | 'Documentation'
+  | 'Other'
+  | 'Invoice'
+  | 'SubscriptionRecord';
 
 /** Read model for one pending fraud review. */
 export interface CommercePaymentsFraudReviewListItem {
@@ -3002,6 +3012,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   /** Detailed description */
   description?: string | null;
+  /** Dispute (chargeback) fee charged by the gateway, in major currency units (issue #419).
+Zero when the gateway reported no fee. Recorded once from the gateway webhook; later
+gateway values overwrite only while the dispute is unresolved. */
+  disputeFee?: number;
   /** Domain events raised by this entity */
   domainEvents?: CQRSIDomainEvent[] | null;
   /** Due date for response */
@@ -3056,6 +3070,28 @@ export interface CommercePaymentsPaymentDunningOutcomeMetrics {
   pendingRetryPayments?: number;
 }
 
+/** One failure-code bucket of the GameGuild.Commerce.Payments.PaymentFailureReasonDistribution (issue #415). */
+export interface CommercePaymentsPaymentFailureReasonBucket {
+  /** Payments in the window whose last failure carries this code. */
+  count?: number;
+  /** Machine-readable gateway error code, or `unclassified`. */
+  failureCode?: string | null;
+  /** Count / total failed as a percentage (0–100). */
+  sharePercent?: number;
+}
+
+/** Distribution of failure codes over the payments that failed at least once in the window
+(issue #415 failure reason distribution). Payments whose failure carries no gateway
+error code are counted under `unclassified`. */
+export interface CommercePaymentsPaymentFailureReasonDistribution {
+  /** One bucket per failure code, ordered by descending count (ties by code): the machine-readable
+gateway error code (`unclassified` when none was recorded), how many payments carry it
+and its share of the failed total (0–100). */
+  buckets?: CommercePaymentsPaymentFailureReasonBucket[] | null;
+  /** Payments that failed at least once in the window. */
+  totalFailedPayments?: number;
+}
+
 /** Display-safe projection of a registered payment method. */
 export interface CommercePaymentsPaymentMethodDto {
   id?: string;
@@ -3100,9 +3136,11 @@ Powers `GET api/v{v}/payments/recovery-metrics`. */
 export interface CommercePaymentsPaymentRecoveryMetrics {
   attempts?: CommercePaymentsPaymentAttemptMetrics;
   dunning?: CommercePaymentsPaymentDunningOutcomeMetrics;
+  failureReasons?: CommercePaymentsPaymentFailureReasonDistribution;
   /** Inclusive window start. */
   fromUtc?: string;
   retries?: CommercePaymentsPaymentRetryRecoveryMetrics;
+  revenueRecognition?: CommercePaymentsPaymentRevenueRecognitionTiming;
   /** Tenant the metrics were scoped to, or null for all tenants. */
   tenantId?: string | null;
   /** Inclusive window end. */
@@ -3174,6 +3212,20 @@ export interface CommercePaymentsPaymentRetryResult {
   paymentResult?: CommercePaymentsPaymentResult;
   retryAttempt?: number;
   success?: boolean;
+}
+
+/** Revenue recognition timing for the window (issue #415): how long after a payment is
+created its revenue-bearing settlement (GameGuild.Commerce.Payments.Payment.ProcessedAt on success)
+lands — the recognition lag introduced by asynchronous confirmations and 3DS flows. */
+export interface CommercePaymentsPaymentRevenueRecognitionTiming {
+  /** Mean creation-to-settlement time in hours; null when none succeeded. */
+  averageHours?: number | null;
+  /** Longest creation-to-settlement time in hours; null when none succeeded. */
+  maxHours?: number | null;
+  /** Median creation-to-settlement time in hours; null when none succeeded. */
+  medianHours?: number | null;
+  /** Succeeded payments in the window with a settlement timestamp. */
+  succeededPayments?: number;
 }
 
 /** Data model for Commerce Payments Payments Controller+Cancel Payment Request. */
@@ -3625,6 +3677,8 @@ export interface CommercePaymentsRefundAnalyticsReport {
   averageDisputeResolutionHours?: number | null;
   /** Refunded amount by currency for completed refunds in the window. */
   completedRefundAmountByCurrency: Record<string, number> | null;
+  /** Refunded amount by reason for completed refunds in the window (issue #419). */
+  completedRefundAmountByReason: Record<string, number> | null;
   /** Dispute count by status in the window. */
   disputeCountByStatus: {
     Cancelled?: number;
@@ -3636,6 +3690,9 @@ export interface CommercePaymentsRefundAnalyticsReport {
     UnderReview?: number;
     Won?: number;
   } | null;
+  /** Share of succeeded payments in the window that were disputed; null when no payments
+succeeded (issue #419 dispute rate). */
+  disputeRatePerSucceededPayment?: number | null;
   /** Share of decided (won or lost) disputes among all disputes; null when there are none. */
   disputeResolutionRate?: number | null;
   /** Disputes lost by the merchant in the window. */
@@ -3650,8 +3707,13 @@ export interface CommercePaymentsRefundAnalyticsReport {
   refundAmountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
   /** Refund count by currency in the window (all statuses). */
   refundCountByCurrency: Record<string, number> | null;
+  /** Refund count by machine-readable reason in the window (issue #419 reason breakdown). */
+  refundCountByReason: Record<string, number> | null;
   /** Refund count by lifecycle status in the window. */
   refundCountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** Share of succeeded payments in the window that received a refund; null when no
+payments succeeded (issue #419 refund rate). */
+  refundRatePerSucceededPayment?: number | null;
   /** UTC-day breakdown of refund counts and completed amounts. */
   refundsByDay: CommercePaymentsRefundDailyBucket[] | null;
   /** Total disputes considered in the window. */
@@ -3693,6 +3755,9 @@ export interface CommercePaymentsRefundDecisionResult {
   success: boolean;
 }
 
+/** How a refund amount was determined (issue #419). */
+export type CommercePaymentsRefundKind = 'Full' | 'Partial' | 'Prorated';
+
 /** Paged read model for refund listings. */
 export interface CommercePaymentsRefundListPage {
   /** Refunds for the requested page, newest first. */
@@ -3729,6 +3794,7 @@ export interface CommercePaymentsRefundRecord {
   gatewayName?: string | null;
   /** Gateway refund identifier once the gateway accepted the refund. */
   gatewayRefundId?: string | null;
+  kind: CommercePaymentsRefundKind;
   /** Payment the refund was issued against. */
   paymentId: string;
   /** When the gateway confirmed the refund. */
@@ -3759,6 +3825,7 @@ export interface CommercePaymentsRefundsControllerRefundDecisionInput {
 export interface CommercePaymentsRefundsControllerRequestRefundHttpInput {
   amount?: number | null;
   idempotencyKey?: string | null;
+  kind?: CommercePaymentsRefundKind;
   paymentId?: string;
   reason?: string | null;
   reasonDetails?: string | null;
@@ -24460,6 +24527,8 @@ export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePa
 export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
 export let CommercePaymentsPaymentDisputeSchema: z.ZodType<CommercePaymentsPaymentDispute>;
 export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
+export let CommercePaymentsPaymentFailureReasonBucketSchema: z.ZodType<CommercePaymentsPaymentFailureReasonBucket>;
+export let CommercePaymentsPaymentFailureReasonDistributionSchema: z.ZodType<CommercePaymentsPaymentFailureReasonDistribution>;
 export let CommercePaymentsPaymentMethodDtoSchema: z.ZodType<CommercePaymentsPaymentMethodDto>;
 export let CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody>;
 export let CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody>;
@@ -24468,6 +24537,7 @@ export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymen
 export let CommercePaymentsPaymentRetryAttemptDtoSchema: z.ZodType<CommercePaymentsPaymentRetryAttemptDto>;
 export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
 export let CommercePaymentsPaymentRetryResultSchema: z.ZodType<CommercePaymentsPaymentRetryResult>;
+export let CommercePaymentsPaymentRevenueRecognitionTimingSchema: z.ZodType<CommercePaymentsPaymentRevenueRecognitionTiming>;
 export let CommercePaymentsPaymentsControllerCancelPaymentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCancelPaymentInput>;
 export let CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInput>;
 export let CommercePaymentsPaymentsControllerCreateSetupIntentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCreateSetupIntentInput>;
@@ -24501,6 +24571,7 @@ export let CommercePaymentsRefundAnalyticsReportSchema: z.ZodType<CommercePaymen
 export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
 export let CommercePaymentsRefundDailyBucketSchema: z.ZodType<CommercePaymentsRefundDailyBucket>;
 export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
+export let CommercePaymentsRefundKindSchema: z.ZodType<CommercePaymentsRefundKind>;
 export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
 export let CommercePaymentsRefundRecordSchema: z.ZodType<CommercePaymentsRefundRecord>;
 export let CommercePaymentsRefundsControllerRefundDecisionInputSchema: z.ZodType<CommercePaymentsRefundsControllerRefundDecisionInput>;
@@ -28831,6 +28902,8 @@ CommercePaymentsEvidenceTypeSchema = z.enum([
   'BankStatement',
   'Documentation',
   'Other',
+  'Invoice',
+  'SubscriptionRecord',
 ]);
 
 /** Zod schema for CommercePaymentsFraudReviewListItem. Read model for one pending fraud review. */
@@ -29031,6 +29104,7 @@ CommercePaymentsPaymentDisputeSchema = z.object({
   createdAt: z.string().datetime(),
   deletedAt: z.string().datetime().nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
+  disputeFee: z.number().optional(),
   domainEvents: z
     .array(z.lazy(() => CQRSIDomainEventSchema))
     .nullable()
@@ -29069,6 +29143,24 @@ CommercePaymentsPaymentDunningOutcomeMetricsSchema = z.object({
   dueForRetryPayments: z.number().int().optional(),
   exhaustedPayments: z.number().int().optional(),
   pendingRetryPayments: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentFailureReasonBucket. One failure-code bucket of the GameGuild.Commerce.Payments.PaymentFailureReasonDistribution (issue #415). */
+CommercePaymentsPaymentFailureReasonBucketSchema = z.object({
+  count: z.number().int().optional(),
+  failureCode: z.string().nullable().optional(),
+  sharePercent: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentFailureReasonDistribution. Distribution of failure codes over the payments that failed at least once in the window
+(issue #415 failure reason distribution). Payments whose failure carries no gateway
+error code are counted under `unclassified`. */
+CommercePaymentsPaymentFailureReasonDistributionSchema = z.object({
+  buckets: z
+    .array(z.lazy(() => CommercePaymentsPaymentFailureReasonBucketSchema))
+    .nullable()
+    .optional(),
+  totalFailedPayments: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentMethodDto. Display-safe projection of a registered payment method. */
@@ -29115,8 +29207,10 @@ Powers `GET api/v{v}/payments/recovery-metrics`. */
 CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
   attempts: z.lazy(() => CommercePaymentsPaymentAttemptMetricsSchema).optional(),
   dunning: z.lazy(() => CommercePaymentsPaymentDunningOutcomeMetricsSchema).optional(),
+  failureReasons: z.lazy(() => CommercePaymentsPaymentFailureReasonDistributionSchema).optional(),
   fromUtc: z.string().datetime().optional(),
   retries: z.lazy(() => CommercePaymentsPaymentRetryRecoveryMetricsSchema).optional(),
+  revenueRecognition: z.lazy(() => CommercePaymentsPaymentRevenueRecognitionTimingSchema).optional(),
   tenantId: z.string().uuid().nullable().optional(),
   toUtc: z.string().datetime().optional(),
 });
@@ -29169,6 +29263,16 @@ CommercePaymentsPaymentRetryResultSchema = z.object({
   paymentResult: z.lazy(() => CommercePaymentsPaymentResultSchema).optional(),
   retryAttempt: z.number().int().optional(),
   success: z.boolean().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRevenueRecognitionTiming. Revenue recognition timing for the window (issue #415): how long after a payment is
+created its revenue-bearing settlement (GameGuild.Commerce.Payments.Payment.ProcessedAt on success)
+lands — the recognition lag introduced by asynchronous confirmations and 3DS flows. */
+CommercePaymentsPaymentRevenueRecognitionTimingSchema = z.object({
+  averageHours: z.number().nullable().optional(),
+  maxHours: z.number().nullable().optional(),
+  medianHours: z.number().nullable().optional(),
+  succeededPayments: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentsControllerCancelPaymentInput. Data model for Commerce Payments Payments Controller+Cancel Payment Request. */
@@ -29526,6 +29630,7 @@ CommercePaymentsReferrerLeaderboardEntrySchema = z.object({
 CommercePaymentsRefundAnalyticsReportSchema = z.object({
   averageDisputeResolutionHours: z.number().nullable().optional(),
   completedRefundAmountByCurrency: z.record(z.string(), z.number()).nullable(),
+  completedRefundAmountByReason: z.record(z.string(), z.number()).nullable(),
   disputeCountByStatus: z
     .object({
       Cancelled: z.number().int(),
@@ -29538,6 +29643,7 @@ CommercePaymentsRefundAnalyticsReportSchema = z.object({
       Won: z.number().int(),
     })
     .nullable(),
+  disputeRatePerSucceededPayment: z.number().nullable().optional(),
   disputeResolutionRate: z.number().nullable().optional(),
   disputesLost: z.number().int(),
   disputesWon: z.number().int(),
@@ -29554,6 +29660,7 @@ CommercePaymentsRefundAnalyticsReportSchema = z.object({
     })
     .nullable(),
   refundCountByCurrency: z.record(z.string(), z.number().int()).nullable(),
+  refundCountByReason: z.record(z.string(), z.number().int()).nullable(),
   refundCountByStatus: z
     .object({
       Approved: z.number().int(),
@@ -29564,6 +29671,7 @@ CommercePaymentsRefundAnalyticsReportSchema = z.object({
       Rejected: z.number().int(),
     })
     .nullable(),
+  refundRatePerSucceededPayment: z.number().nullable().optional(),
   refundsByDay: z.array(z.lazy(() => CommercePaymentsRefundDailyBucketSchema)).nullable(),
   totalDisputeCount: z.number().int(),
   totalRefundCount: z.number().int(),
@@ -29592,6 +29700,9 @@ CommercePaymentsRefundDecisionResultSchema = z.object({
   success: z.boolean(),
 });
 
+/** Zod schema for CommercePaymentsRefundKind. How a refund amount was determined (issue #419). */
+CommercePaymentsRefundKindSchema = z.enum(['Full', 'Partial', 'Prorated']);
+
 /** Zod schema for CommercePaymentsRefundListPage. Paged read model for refund listings. */
 CommercePaymentsRefundListPageSchema = z.object({
   items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
@@ -29613,6 +29724,7 @@ CommercePaymentsRefundRecordSchema = z.object({
   failureReason: z.string().nullable().optional(),
   gatewayName: z.string().nullable().optional(),
   gatewayRefundId: z.string().nullable().optional(),
+  kind: z.lazy(() => CommercePaymentsRefundKindSchema),
   paymentId: z.string().uuid(),
   processedAt: z.string().datetime().nullable().optional(),
   reason: z.string().nullable(),
@@ -29634,6 +29746,7 @@ CommercePaymentsRefundsControllerRefundDecisionInputSchema = z.object({
 CommercePaymentsRefundsControllerRequestRefundHttpInputSchema = z.object({
   amount: z.number().nullable().optional(),
   idempotencyKey: z.string().nullable().optional(),
+  kind: z.lazy(() => CommercePaymentsRefundKindSchema).optional(),
   paymentId: z.string().uuid().optional(),
   reason: z.string().nullable().optional(),
   reasonDetails: z.string().nullable().optional(),

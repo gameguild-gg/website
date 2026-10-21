@@ -358,6 +358,31 @@ public class PaymentsControllerTests
     }
 
     [Fact]
+    public async Task Refund_WithoutAReason_ReturnsBadRequestBeforeDispatching()
+    {
+        // Compliance (issue #415): refunds feed financial reporting and chargeback evidence,
+        // so an unattributed refund is rejected instead of defaulting to "No reason provided".
+        var tenantId = Guid.NewGuid();
+        var paymentId = Guid.NewGuid();
+        var sender = CreateSenderWithPayment(paymentId, tenantId, netAmount: 25m);
+        var controller = CreateController(
+            sender.Object,
+            CreateAuthenticatedActorContext(tenantId),
+            Mock.Of<IStripeCustomerService>(),
+            Mock.Of<ISubscriptionPaymentContextService>());
+
+        var result = await controller.Refund(
+            paymentId,
+            new PaymentsController.RefundRequest(5m, "   "),
+            CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        sender.Verify(
+            service => service.Send(It.IsAny<ProcessRefundCommand>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Refund_WithExplicitAmount_PassesItThroughUnchanged()
     {
         var tenantId = Guid.NewGuid();

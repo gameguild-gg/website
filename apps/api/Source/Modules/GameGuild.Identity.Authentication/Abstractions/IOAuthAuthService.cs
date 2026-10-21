@@ -24,6 +24,32 @@ public interface IOAuthAuthService
     Task<SignInResponse> GitHubCallbackSignInAsync(GitHubCallbackSignInRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Completes a Steam OpenID 2.0 sign-in: verifies the signed callback assertion
+    ///     with Steam, normalizes the player summary, and applies the shared
+    ///     auto-link/JIT policy. Steam supplies no email claim; first-time users get an
+    ///     internal unverified identifier (wallet sign-in policy).
+    /// </summary>
+    Task<SignInResponse> SteamCallbackSignInAsync(SteamCallbackSignInRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Completes an Epic Games OAuth 2.0 authorization-code sign-in (code exchange,
+    ///     userInfo profile normalization, auto-link/JIT policy, granted-scope record).
+    /// </summary>
+    Task<SignInResponse> EpicCallbackSignInAsync(EpicCallbackSignInRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Completes a Facebook Graph OAuth 2.0 authorization-code sign-in (code
+    ///     exchange, /me profile normalization, auto-link/JIT policy, granted-scope record).
+    /// </summary>
+    Task<SignInResponse> FacebookCallbackSignInAsync(FacebookCallbackSignInRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Completes a Microsoft OIDC v2 authorization-code sign-in (code exchange,
+    ///     Graph userinfo normalization, auto-link/JIT policy, granted-scope record).
+    /// </summary>
+    Task<SignInResponse> MicrosoftCallbackSignInAsync(MicrosoftCallbackSignInRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Completes a generic OIDC federation sign-in: validates the provider ID token,
     ///     applies the same auto-link/JIT policy as the social providers, and enforces the
     ///     platform MFA policy fail-closed against the provider's <c>amr</c> proof.

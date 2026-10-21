@@ -35,13 +35,21 @@ public sealed class TenantMembershipRolePermissionProvider(
         // carry tenant administration plus member management, tenant settings and the
         // self-service audit-read tier. Role administration (roles:manage) and audit
         // exports (audit:export) stay delegation-only.
+        //
+        // Query-operations tier (issue #375): administrative roles also carry the
+        // list/search/query operation keys so audit-query, security-event and
+        // permission-query surfaces keep working; non-administrative members receive
+        // nothing implicitly (fail-closed, explicit grants only).
         return
         [
             AdminPermission.Keys.TenantAdmin,
             ManageMembersPermission.Keys.Manage,
             ManageSettingsPermission.Keys.Read,
             ManageSettingsPermission.Keys.Manage,
-            AuditPermission.Keys.Read
+            AuditPermission.Keys.Read,
+            QueryPermission.Keys.List,
+            QueryPermission.Keys.Search,
+            QueryPermission.Keys.Query
         ];
     }
 

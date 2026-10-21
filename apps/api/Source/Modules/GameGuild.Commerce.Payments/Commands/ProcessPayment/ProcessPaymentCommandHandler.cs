@@ -276,6 +276,23 @@ public sealed class ProcessPaymentCommandHandler(
                 subscription.BillingCycleNumber,
                 payment.ProcessedAt.Value,
                 cancellationToken).ConfigureAwait(false);
+
+            if (subscription.OwnerUserId.HasValue)
+            {
+                await NotifyPaymentReceiptAsync(payment, subscription.OwnerUserId.Value, appliedCredit, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        if (!gatewayResult.Success
+            && gatewayResult.Status != PaymentStatus.RequiresAction
+            && payment.RetryCount == 1
+            && subscription.OwnerUserId.HasValue)
+        {
+            // Second failure overall (the first retry of this payment just failed): prompt the
+            // customer to update the payment method (issue #415 dunning ladder).
+            await NotifyPaymentMethodUpdateRequiredAsync(payment, subscription.OwnerUserId.Value, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         if (appliedCredit > 0m && autoApplyOwnerId.HasValue)
@@ -467,6 +484,112 @@ public sealed class ProcessPaymentCommandHandler(
             logger.LogWarning(
                 exception,
                 "Failed to send the credit-applied notice for payment {PaymentId}",
+                payment.Id);
+        }
+    }
+
+    /// <summary>
+    ///     Payment receipt email for a successful charge (issue #415). Best-effort: delivery
+    ///     problems must never fail the settled payment.
+    /// </summary>
+    private async Task NotifyPaymentReceiptAsync(
+        Payment payment,
+        Guid ownerUserId,
+        decimal appliedCredit,
+        CancellationToken cancellationToken)
+    {
+        if (notificationService is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var chargedAmount = payment.Amount - appliedCredit;
+            var result = await notificationService
+                .SendAsync(
+                    recipientId: ownerUserId,
+                    type: NotificationType.PaymentReceipt,
+                    title: "Payment receipt",
+                    message:
+                        $"Your payment of {payment.Amount:0.##} {payment.Currency} was processed successfully" +
+                        (appliedCredit > 0m
+                            ? $" ({appliedCredit:0.##} {payment.Currency} paid with account credit, {chargedAmount:0.##} {payment.Currency} charged to your payment method)"
+                            : string.Empty) +
+                        $". Payment reference {payment.ExternalTransactionId ?? payment.Id.ToString()}, processed {payment.ProcessedAt:u}.",
+                    channel: NotificationChannel.Email,
+                    tenantId: payment.TenantId,
+                    priority: NotificationPriority.Normal,
+                    referenceEntityId: payment.Id,
+                    referenceEntityType: nameof(Payment),
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!result.IsSuccess)
+            {
+                logger.LogInformation(
+                    "Payment receipt for payment {PaymentId} was not delivered: {Reason}",
+                    payment.Id,
+                    result.Error?.Description ?? "preference decision");
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "Failed to send the payment receipt for payment {PaymentId}",
+                payment.Id);
+        }
+    }
+
+    /// <summary>
+    ///     Payment-method update prompt fired on the second consecutive failure of a payment
+    ///     (issue #415 dunning ladder). Best-effort.
+    /// </summary>
+    private async Task NotifyPaymentMethodUpdateRequiredAsync(
+        Payment payment,
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        if (notificationService is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await notificationService
+                .SendAsync(
+                    recipientId: ownerUserId,
+                    type: NotificationType.PaymentMethodUpdateRequired,
+                    title: "Update your payment method",
+                    message:
+                        $"Your payment of {payment.Amount:0.##} {payment.Currency} has failed twice" +
+                        (string.IsNullOrWhiteSpace(payment.FailureReason)
+                            ? string.Empty
+                            : $" ({payment.FailureReason})") +
+                        ". Please update your payment method so the next retry can succeed and your service stays active.",
+                    channel: NotificationChannel.Email,
+                    tenantId: payment.TenantId,
+                    priority: NotificationPriority.High,
+                    referenceEntityId: payment.Id,
+                    referenceEntityType: nameof(Payment),
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!result.IsSuccess)
+            {
+                logger.LogInformation(
+                    "Payment-method update prompt for payment {PaymentId} was not delivered: {Reason}",
+                    payment.Id,
+                    result.Error?.Description ?? "preference decision");
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "Failed to send the payment-method update prompt for payment {PaymentId}",
                 payment.Id);
         }
     }

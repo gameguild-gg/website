@@ -794,6 +794,37 @@ public enum PermissionType
     Deployment = 214,
 
     #endregion
+
+    #region Query Operations GameGuild.Permissions (issue #375)
+
+    /// <summary>
+    ///     Permission to enumerate collections of resources: paged or filtered listings
+    ///     that return multiple records of one kind (saved-view listings, template
+    ///     catalogs, alert queues, permission collections). Distinct from single-resource
+    ///     <see cref="Read"/>, which governs fetching one known resource by identifier;
+    ///     List governs discovering which resources exist (issue #375).
+    /// </summary>
+    List = 215,
+
+    /// <summary>
+    ///     Permission to run free-text or loosely-filtered discovery operations: keyword
+    ///     searches, full-text matches and "find anything matching" inputs. Distinct from
+    ///     <see cref="List"/> (bounded, structured enumeration) and from
+    ///     <see cref="Query"/> (structured/API querying); each is grantable and deniable
+    ///     independently (issue #375).
+    /// </summary>
+    Search = 216,
+
+    /// <summary>
+    ///     Permission to run structured/API querying: typed filter DSLs, saved-query
+    ///     execution and other API-exposed query surfaces — including the
+    ///     permission-query APIs themselves (who-holds-what checks). Distinct from
+    ///     single-resource <see cref="Read"/>: Query returns derived result sets, not a
+    ///     known resource (issue #375).
+    /// </summary>
+    Query = 217,
+
+    #endregion
 }
 
 /// <summary>

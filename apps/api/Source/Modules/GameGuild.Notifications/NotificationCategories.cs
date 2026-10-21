@@ -51,7 +51,12 @@ public static class NotificationCategories
             or NotificationType.InvoiceIssued
             or NotificationType.PaymentMethodExpiring
             or NotificationType.WalletBalanceBelowThreshold
-            or NotificationType.CreditApplied => "Billing",
+            or NotificationType.CreditApplied
+            or NotificationType.PaymentReceipt
+            or NotificationType.RefundCompleted
+            or NotificationType.PaymentMethodUpdateRequired
+            or NotificationType.DisputeCreated
+            or NotificationType.DisputeDeadlineReminder => "Billing",
 
         NotificationType.EmailVerification
             or NotificationType.PasswordReset

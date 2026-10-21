@@ -9237,9 +9237,11 @@ export const getPaymentsGatewaysMetricsEndpoint = {
  * Payment success and failed-payment recovery metrics for an inclusive window.
  *
  * Aggregates the recovery analytics that billing administrators need to steer retry and
- * dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
- * amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
- * exhausted). Non-admin actors are scoped to their own tenant.
+ * dunning strategy (issues #403/#415): first-attempt success rate, retry-recovery rate,
+ * recovered amounts grouped by currency, dunning outcome counters (pending retry, due for
+ * retry, exhausted), the failure-code distribution of failed payments and the
+ * creation-to-settlement timing of succeeded payments. Non-admin actors are scoped to
+ * their own tenant.
  */
 export interface GetPaymentsRecoveryMetricsInput {
   query?: {
@@ -10000,7 +10002,7 @@ export const getRefundsEndpoint = {
  * are queued as pending; amounts below it (or all refunds when no threshold is
  * configured) execute immediately.
  *
- * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway.
+ * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway. Use kind=prorated to refund the unused time of the subscription billing period (subscription-linked payments only).
  */
 export interface PostRefundsInput {
   body?: Types.CommercePaymentsRefundsControllerRequestRefundHttpInput;

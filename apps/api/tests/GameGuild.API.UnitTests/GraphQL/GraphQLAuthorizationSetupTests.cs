@@ -63,16 +63,21 @@ public sealed class GraphQLAuthorizationSetupTests
         userRequest.Headers.Add("Authorization", "Bearer user");
         using var userResponse = await client.SendAsync(userRequest);
 
+        // The operation-planning authorization gate hides the protected root operation from
+        // callers without a resolvable permission context: the request fails closed with the
+        // nonexistent-field error shape (a request error → 400), revealing neither the
+        // operation's existence, an authorization code, nor a response path.
         var responseBody = await userResponse.Content.ReadAsStringAsync();
-        userResponse.StatusCode.Should().Be(HttpStatusCode.OK, responseBody);
+        userResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest, responseBody);
         using var responseDocument = JsonDocument.Parse(responseBody);
         responseDocument.RootElement.GetProperty("errors").GetArrayLength().Should().BeGreaterThan(0);
-        responseDocument.RootElement.GetProperty("data")
-            .ValueKind.Should().Be(JsonValueKind.Null);
-        var errorMessages = responseDocument.RootElement.GetProperty("errors")
+        responseDocument.RootElement.TryGetProperty("data", out _).Should().BeFalse(responseBody);
+        responseDocument.RootElement.GetProperty("errors")
             .EnumerateArray()
-            .Select(error => error.GetProperty("message").GetString());
-        string.Join("\n", errorMessages).ToLowerInvariant().Should().Contain("authorized");
+            .Select(error => error.GetProperty("message").GetString())
+            .Should().Contain("The field `deletedProjects` does not exist on the type `Query`.");
+        responseBody.Should().NotContain("AUTHORIZATION");
+        responseBody.ToLowerInvariant().Should().NotContain("authorized");
     }
 
     private static async Task<WebApplication> CreateApplicationAsync()

@@ -320,6 +320,92 @@ public sealed class DeploymentPermission : Permission
 }
 
 /// <summary>
+///     Strongly-typed permissions for query operations: List, Search and Query
+///     (issue #375).
+/// </summary>
+/// <remarks>
+///     <para>
+///         Three tenant-tier keys governing how resources are discovered, one per
+///         operation class:
+///         <list type="bullet">
+///             <item><see cref="List"/> (<c>queries:list</c>) — enumerate collections:
+///             paged/filtered listings that return multiple records of one kind
+///             (saved-view listings, template catalogs, alert queues, permission
+///             collections).</item>
+///             <item><see cref="Search"/> (<c>queries:search</c>) — free-text or
+///             loosely-filtered discovery: keyword searches, full-text matches,
+///             light-syntax text queries.</item>
+///             <item><see cref="Query"/> (<c>queries:query</c>) — structured/API
+///             querying: typed filter DSLs, saved-query execution and API-exposed query
+///             surfaces, including the permission-query APIs themselves.</item>
+///         </list>
+///     </para>
+///     <para>
+///         <b>Relationship to Read.</b> The <c>Read</c> family (content:read,
+///         users:read, audit:read, …) governs fetching a single known resource by
+///         identifier. The query-operation keys govern operations that return derived
+///         result sets — enumerations, match sets and structured query projections.
+///         Neither implies the other: a grant of Read does not satisfy a List, Search or
+///         Query requirement, and vice versa (fail-closed).
+///     </para>
+///     <para>
+///         <b>Relationship to the permission-query APIs (#307).</b> The
+///         who-holds-what endpoints (tenant permission listings, has-permission checks,
+///         global baseline checks) are themselves query surfaces and are gated by
+///         <see cref="Query"/>. #307 tracks the broader authorization-query system;
+///         these keys are its operation-level permission contract.
+///     </para>
+///     <para>
+///         <b>Grant model.</b> The keys are ordinary tenant-level permission strings:
+///         they flow through the existing grant/inheritance/precedence machinery (global
+///         defaults, tenant defaults, direct grants, role providers, deny-wins) without
+///         special casing. Administrative tenant membership roles carry all three keys
+///         through the role-permission providers (self-service tier, mirroring
+///         <c>audit:read</c> from issue #294); non-administrative users receive nothing
+///         implicitly and must be granted explicitly.
+///     </para>
+/// </remarks>
+public sealed class QueryPermission : Permission
+{
+    private QueryPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    /// <example>
+    ///     [RequireDacPermission(QueryPermission.Keys.Query)]
+    ///     public IActionResult ExecuteQuery() { }
+    /// </example>
+    public static class Keys
+    {
+        /// <summary>Enumerate collections of resources (paged/filtered listings)</summary>
+        public const string List = "queries:list";
+
+        /// <summary>Run free-text or loosely-filtered discovery (keyword/full-text search)</summary>
+        public const string Search = "queries:search";
+
+        /// <summary>Run structured/API querying, including the permission-query APIs themselves</summary>
+        public const string Query = "queries:query";
+    }
+
+    /// <summary>Enumerate collections of resources (paged/filtered listings)</summary>
+    public static readonly QueryPermission List = new(Keys.List, "Enumerate collections of resources");
+
+    /// <summary>Run free-text or loosely-filtered discovery (keyword/full-text search)</summary>
+    public static readonly QueryPermission Search = new(Keys.Search, "Run free-text or filtered discovery");
+
+    /// <summary>Run structured/API querying, including the permission-query APIs themselves</summary>
+    public static readonly QueryPermission Query = new(Keys.Query, "Run structured or API querying");
+}
+
+/// <summary>
 ///     Strongly-typed permissions for project operations.
 ///     Provides compile-time safety for permission checks.
 /// </summary>
