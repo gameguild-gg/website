@@ -117,11 +117,13 @@ public sealed class GraphQLSchemaVersionQueries
 {
     /// <summary>
     ///     The permission-level schema version for the current caller: a deterministic
-    ///     revision of the caller's effective schema surface (issue #335).
+    ///     revision of the caller's effective schema surface (issue #335). The internal
+    ///     evaluator is resolved from the request services so it never surfaces in the
+    ///     public resolver signature.
     /// </summary>
-    public async Task<GraphQLSchemaVersion> SchemaVersionAsync(
-        [Service] GraphQLSchemaVersionEvaluator evaluator,
+    public Task<GraphQLSchemaVersion> SchemaVersionAsync(
         IResolverContext resolverContext,
         CancellationToken cancellationToken)
-        => await evaluator.EvaluateAsync(resolverContext, cancellationToken).ConfigureAwait(false);
+        => resolverContext.Service<GraphQLSchemaVersionEvaluator>()
+            .EvaluateAsync(resolverContext, cancellationToken);
 }

@@ -11,6 +11,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+// The ASP.NET Core implicit usings expose Microsoft.AspNetCore.Http.RequestDelegate,
+// which collides with the HotChocolate request-pipeline delegate of the same name.
+using RequestDelegate = HotChocolate.Execution.RequestDelegate;
+
 namespace GameGuild.API.Core.GraphQL;
 
 /// <summary>
@@ -78,12 +82,21 @@ public sealed class GraphQLUnauthorizedOperationMiddleware(RequestDelegate next)
         GraphQLSchemaAuthorizationOptions options,
         ILogger logger)
     {
+        // InvokeAsync only reaches this point with a parsed document; the local keeps the
+        // nullability flow visible to the compiler for every use below, including the
+        // fail-closed catch path.
+        var document = context.Document;
+        if (document is null)
+        {
+            return null;
+        }
+
         try
         {
             var actor = services.GetService<IActorContextAccessor>()?.ActorContext ?? ActorContext.Anonymous;
 
             var referencedRootFields = EnumerateReferencedRootFields(
-                context.Document, context.Schema, context.Request.OperationName);
+                document, context.Schema, context.Request.OperationName);
             foreach (var selection in referencedRootFields)
             {
                 var rules = GraphQLAuthorizeFieldRules.Get(selection.Field);
@@ -145,7 +158,7 @@ public sealed class GraphQLUnauthorizedOperationMiddleware(RequestDelegate next)
             logger.LogError(
                 exception,
                 "GraphQL operation-visibility evaluation failed; the request is denied (fail-closed).");
-            return CreateFallbackError(context.Document);
+            return CreateFallbackError(document);
         }
     }
 

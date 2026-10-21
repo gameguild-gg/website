@@ -24,7 +24,7 @@ public sealed class GraphQLAuthorizationErrorFilter : IErrorFilter
         }
 
         return ErrorBuilder.FromError(error)
-            .SetPath(null)
+            .SetPath((HotChocolate.Path?)null)
             .Build();
     }
 }
