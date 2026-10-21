@@ -94,8 +94,40 @@
       "saving": "Salvando...",
       "saved": "Perfil salvo.",
       "saveFailed": "Não foi possível salvar seu perfil.",
+      "bioCount": "{current}/{limit} caracteres",
+      "viewPublicProfile": "Ver perfil público",
+      "sections": {
+        "account": "Conta",
+        "accountDescription": "A identidade da sua conta é gerenciada pelo provedor de login.",
+        "community": "Presença na comunidade",
+        "communityDescription": "Como você aparece em feeds, perfis e espaços da comunidade.",
+        "details": "Links e detalhes",
+        "detailsDescription": "Detalhes opcionais exibidos no seu perfil público.",
+        "images": "Imagens do perfil",
+        "imagesDescription": "Vincule um avatar e uma imagem de capa ao seu perfil público."
+      },
+      "avatarUrl": "URL da imagem de avatar",
+      "avatarUrlDescription": "Imagem quadrada, mínimo 200×200px.",
+      "bannerUrl": "URL da imagem de capa",
+      "bannerUrlDescription": "Imagem larga, mínimo 1200×360px.",
+      "visibility": {
+        "title": "Visibilidade do perfil",
+        "description": "Controle quem pode ver seu perfil público na comunidade.",
+        "label": "Quem pode ver seu perfil",
+        "placeholder": "Selecione a visibilidade",
+        "public": "Público — qualquer pessoa no GameGuild",
+        "members": "Somente membros — membros autenticados",
+        "private": "Privado — somente você",
+        "hint": "Perfis privados retornam não encontrado para outros membros.",
+        "requiresProfile": "Salve seu perfil uma vez para liberar os controles de visibilidade.",
+        "saved": "Visibilidade do perfil salva.",
+        "saveFailed": "Não foi possível salvar a visibilidade do perfil."
+      },
       "errors": {
-        "tooLong": "Use no máximo {limit} caracteres."
+        "tooLong": "Use no máximo {limit} caracteres.",
+        "required": "Este campo é obrigatório.",
+        "handleRequired": "Use pelo menos 3 caracteres.",
+        "url": "Informe uma URL http(s) válida."
       }
     },
     "appearance": {
@@ -849,6 +881,36 @@
       "requeued": "Notificação reenfileirada.",
       "error": "A ação falhou. Tente novamente.",
       "unauthorized": "Sua sessão expirou. Entre novamente."
+    }
+  },
+  "socialProfile": {
+    "backToFeed": "Voltar ao feed",
+    "share": "Compartilhar",
+    "linkCopied": "Link do perfil copiado.",
+    "linkCopyFailed": "Não foi possível copiar o link do perfil.",
+    "follow": "Seguir",
+    "following": "Seguindo",
+    "followName": "Seguir {name}",
+    "unfollowName": "Deixar de seguir {name}",
+    "followFailed": "Não foi possível atualizar o seguimento.",
+    "editProfile": "Editar perfil",
+    "verified": "Verificado",
+    "avatarAlt": "Avatar de {name}",
+    "website": "Site",
+    "collectionsError": "Não foi possível carregar os trabalhos públicos. Atualize para tentar novamente.",
+    "tabsLabel": "Trabalhos do perfil",
+    "openPost": "Abrir publicação",
+    "emptyProjects": "Nenhum projeto público ainda.",
+    "emptyPosts": "Nenhuma publicação pública ainda.",
+    "stats": {
+      "posts": "Publicações",
+      "projects": "Projetos",
+      "followers": "Seguidores",
+      "following": "Seguindo"
+    },
+    "tabs": {
+      "projects": "Projetos",
+      "posts": "Publicações"
     }
   }
 }

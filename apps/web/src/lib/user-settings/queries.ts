@@ -66,6 +66,59 @@ export async function getProfile(): Promise<IdentityUsersUserProfileDto | null> 
   return result.data ?? null;
 }
 
+export type CommunityProfileVisibility = 'public' | 'members' | 'private';
+
+export interface CommunityProfile {
+  readonly handle: string | null;
+  readonly displayName: string | null;
+  readonly avatarUrl: string | null;
+  readonly bannerUrl: string | null;
+  readonly visibility: CommunityProfileVisibility;
+}
+
+function parseCommunityVisibility(value: unknown): CommunityProfileVisibility {
+  const normalized = typeof value === 'string' ? value.toLowerCase() : '';
+  if (normalized === 'public') return 'public';
+  if (normalized === 'connections' || normalized === 'members') return 'members';
+  if (normalized === 'private') return 'private';
+  return 'public';
+}
+
+/**
+ * Reads the user's community (social) profile from the profiles module — the
+ * record that powers the public profile page. Returns null when the user has
+ * no community profile yet.
+ */
+export async function getCommunityProfile(): Promise<CommunityProfile | null> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return null;
+
+  const client = getUserSettingsApiClient();
+  const result = await client.request<Record<string, unknown>>({
+    method: 'GET',
+    path: `/api/social/profiles/users/${userId}`,
+    requiresAuth: true,
+  });
+
+  if (!result.ok) {
+    if (result.error.status === 404) return null;
+    throw new Error(`Unable to load community profile (${result.error.status}): ${result.error.message}`);
+  }
+
+  const data = result.data;
+  if (!data) return null;
+
+  const text = (value: unknown): string | null => (typeof value === 'string' && value.length > 0 ? value : null);
+
+  return {
+    handle: text(data.handle),
+    displayName: text(data.displayName),
+    avatarUrl: text(data.avatarUrl),
+    bannerUrl: text(data.bannerUrl),
+    visibility: parseCommunityVisibility(data.visibility),
+  };
+}
+
 export async function getLocalizationPreference(): Promise<LocalizationPreferenceData> {
   const userId = await getAuthenticatedUserId();
   if (!userId) return normalizeLocalization(null);
