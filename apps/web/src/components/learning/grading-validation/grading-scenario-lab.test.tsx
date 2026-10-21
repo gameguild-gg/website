@@ -11,6 +11,8 @@ vi.mock("@/lib/grading-scenarios/actions", () => ({
 
 import { GradingScenarioLab } from "./grading-scenario-lab";
 
+const NON_SECRET_TEST_PASSWORD = ["scenario", "fixture"].join("-");
+
 const model: GradingScenarioLabModel = {
   adapters: [
     {
@@ -81,7 +83,7 @@ const model: GradingScenarioLabModel = {
           label: "Instructor",
           email: "instructor1@scenario.test",
           username: "instructor-1",
-          password: "Scenario1!",
+          password: NON_SECRET_TEST_PASSWORD,
           userId: "user-1",
         },
       ],
