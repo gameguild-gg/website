@@ -75,6 +75,11 @@
     "node": ">=20.0.0",
     "pnpm": ">=10.34.6 <11"
   },
+  "pnpm": {
+    "overrides": {
+      "follow-redirects@<1.16.1": ">=1.16.1"
+    }
+  },
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.0",
     "@changesets/cli": "^3.0.3",
