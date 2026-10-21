@@ -8749,13 +8749,18 @@ export const deleteEmailDeliverySuppressionsEndpoint = {
 /**
  * List the pending manual fraud reviews, oldest first.
  *
- * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+ * Lists payments held by the fraud gate with a pending manual review, oldest first. Supports filtering by minimum score, risk band, charged amount and creation date range. Requires the payments:admin permission.
  */
 export interface GetFraudReviewsInput {
   query?: {
     tenantId?: string;
     page?: number;
     pageSize?: number;
+    minScore?: number;
+    riskLevel?: Types.CommercePaymentsFraudRiskLevel;
+    minAmount?: number;
+    fromUtc?: string;
+    toUtc?: string;
   };
 }
 export type GetFraudReviewsOutput = Types.CommercePaymentsFraudReviewListItem[];
@@ -8799,6 +8804,40 @@ export const postFraudReviewsDenyEndpoint = {
   operationId: 'postFraudReviewsDeny' as const,
   method: 'POST' as const,
   path: '/api/v1/fraud/reviews/{paymentId}:deny' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-approve pending fraud reviews, releasing the fraud holds.
+ *
+ * Approves the pending fraud reviews for a batch of held payments (2-100), releasing each fraud hold so the payment can be retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsBulkApproveInput {
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput;
+}
+export type PostFraudReviewsBulkApproveOutput = Types.CommercePaymentsFraudReviewsBulkResolutionResult;
+export const postFraudReviewsBulkApproveEndpoint = {
+  operationId: 'postFraudReviewsBulkApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/bulk-approve' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-decline pending fraud reviews, keeping the payments failed and non-retryable.
+ *
+ * Declines the pending fraud reviews for a batch of held payments (2-100); each stays failed and is never retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsBulkDenyInput {
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput;
+}
+export type PostFraudReviewsBulkDenyOutput = Types.CommercePaymentsFraudReviewsBulkResolutionResult;
+export const postFraudReviewsBulkDenyEndpoint = {
+  operationId: 'postFraudReviewsBulkDeny' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/bulk-deny' as const,
   tags: ['CommercePaymentsFraudReviews'] as const,
   requiresAuth: true,
 } as const;
@@ -9237,9 +9276,11 @@ export const getPaymentsGatewaysMetricsEndpoint = {
  * Payment success and failed-payment recovery metrics for an inclusive window.
  *
  * Aggregates the recovery analytics that billing administrators need to steer retry and
- * dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
- * amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
- * exhausted). Non-admin actors are scoped to their own tenant.
+ * dunning strategy (issues #403/#415): first-attempt success rate, retry-recovery rate,
+ * recovered amounts grouped by currency, dunning outcome counters (pending retry, due for
+ * retry, exhausted), the failure-code distribution of failed payments and the
+ * creation-to-settlement timing of succeeded payments. Non-admin actors are scoped to
+ * their own tenant.
  */
 export interface GetPaymentsRecoveryMetricsInput {
   query?: {
@@ -10000,7 +10041,7 @@ export const getRefundsEndpoint = {
  * are queued as pending; amounts below it (or all refunds when no threshold is
  * configured) execute immediately.
  *
- * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway.
+ * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway. Use kind=prorated to refund the unused time of the subscription billing period (subscription-linked payments only).
  */
 export interface PostRefundsInput {
   body?: Types.CommercePaymentsRefundsControllerRequestRefundHttpInput;
@@ -15888,6 +15929,41 @@ export const postAuthGoogleSignInEndpoint = {
   method: 'POST' as const,
   path: '/v1/auth/google:sign-in' as const,
   tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ *     Introspect the caller's current guest session: guest id, role and the enumerated
+ * permissions it holds. Served only on the guest scheme — a user access token is not a
+ * valid credential here, and a guest token is not valid anywhere else.
+ *
+ * Returns the caller's guest session id, role and the enumerated guest permissions. Requires the guest bearer credential.
+ */
+export type GetAuthGuestSessionInput = void;
+export type GetAuthGuestSessionOutput = Types.IdentityAuthenticationGuestSessionStatus;
+export const getAuthGuestSessionEndpoint = {
+  operationId: 'getAuthGuestSession' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/guest-session' as const,
+  tags: ['AuthGuest'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Issue a short-lived anonymous guest session. No credentials are presented or
+ * returned beyond the guest token itself; there is no refresh token by design.
+ *
+ * Issues a short-lived guest session (guest audience bearer token, no refresh credential) holding only the enumerated public guest permissions. Rate limited per client address and audited through the security-event pipeline.
+ */
+export interface PostAuthGuestSessionInput {
+  body?: Types.IdentityAuthenticationGuestSessionIssueInput;
+}
+export type PostAuthGuestSessionOutput = Types.IdentityAuthenticationGuestSessionOutput;
+export const postAuthGuestSessionEndpoint = {
+  operationId: 'postAuthGuestSession' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/guest-session' as const,
+  tags: ['AuthGuest'] as const,
   requiresAuth: false,
 } as const;
 
@@ -30304,6 +30380,8 @@ export const endpoints = {
   getFraudReviews: getFraudReviewsEndpoint,
   postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
   postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
+  postFraudReviewsBulkApprove: postFraudReviewsBulkApproveEndpoint,
+  postFraudReviewsBulkDeny: postFraudReviewsBulkDenyEndpoint,
   postGifts: postGiftsEndpoint,
   getGifts: getGiftsEndpoint,
   postGiftsRedeem: postGiftsRedeemEndpoint,
@@ -30731,6 +30809,8 @@ export const endpoints = {
   getAuthGithubAuthorize: getAuthGithubAuthorizeEndpoint,
   postAuthGithubCallback: postAuthGithubCallbackEndpoint,
   postAuthGoogleSignIn: postAuthGoogleSignInEndpoint,
+  getAuthGuestSession: getAuthGuestSessionEndpoint,
+  postAuthGuestSession: postAuthGuestSessionEndpoint,
   postAuthMagicLinkConsume: postAuthMagicLinkConsumeEndpoint,
   postAuthMagicLinkRequest: postAuthMagicLinkRequestEndpoint,
   getAuthMfa: getAuthMfaEndpoint,

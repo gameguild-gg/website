@@ -36,4 +36,7 @@ public class PolymorphicSignInCommand : ICommand<SignInResponse>
     ///     When true, issues a persistent ("remember me") refresh token using the persistent lifetime.
     /// </summary>
     public bool? RememberMe { get; init; }
+
+    /// <summary>Optional guest token to upgrade into the issued session (issue #213).</summary>
+    public string? GuestAccessToken { get; init; }
 }

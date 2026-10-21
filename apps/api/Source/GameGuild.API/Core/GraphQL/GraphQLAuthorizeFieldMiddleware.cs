@@ -1,8 +1,10 @@
+using GameGuild.Configuration.PresentationLayer.GraphQL;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Authorization.GraphQL;
 using GameGuild.Identity.Context.Actors;
 using HotChocolate;
 using HotChocolate.Resolvers;
+using HotChocolate.Types;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -89,7 +91,7 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
                 [],
                 PermissionEvaluationOutcome.Deny,
                 decision.Reason).ConfigureAwait(false);
-            throw CreateAuthorizationError();
+            throw GraphQLAuthorizationSupport.CreateAuthorizationError();
         }
 
         await GraphQLAuthorizationSupport.RecordEvaluationAsync(
@@ -328,7 +330,6 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
         string? resourceId = null,
         string? resourceType = null)
     {
-        var mask = rules.All(rule => rule.MaskUnauthorized);
         _logger.LogWarning(
             "GraphQL authorization denied for field {FieldName}: {Reason}.",
             fieldName, reason);
@@ -342,13 +343,13 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
             PermissionEvaluationOutcome.Deny,
             reason).ConfigureAwait(false);
 
-        if (mask)
+        if (ShouldMask(context, rules))
         {
             context.Result = null;
             return;
         }
 
-        throw CreateAuthorizationError();
+        throw GraphQLAuthorizationSupport.CreateAuthorizationError();
     }
 
     private async Task UnavailableAsync(
@@ -359,7 +360,6 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
         Guid? resourceId,
         string? resourceType)
     {
-        var mask = rules.All(rule => rule.MaskUnauthorized);
         _logger.LogError(
             "GraphQL authorization could not be evaluated for field {FieldName}: {Reason}.",
             fieldName, reason);
@@ -373,7 +373,7 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
             PermissionEvaluationOutcome.Error,
             reason).ConfigureAwait(false);
 
-        if (mask)
+        if (ShouldMask(context, rules))
         {
             context.Result = null;
             return;
@@ -382,15 +382,24 @@ public sealed class GraphQLAuthorizeFieldMiddleware(
         throw new GraphQLException(
             ErrorBuilder.New()
                 .SetMessage("Authorization could not be evaluated.")
-                .SetCode("AUTHORIZATION_UNAVAILABLE")
+                .SetCode(GraphQLAuthorizationSupport.UnavailableErrorCode)
                 .Build());
     }
 
-    private static GraphQLException CreateAuthorizationError() => new(
-        ErrorBuilder.New()
-            .SetMessage("Not authorized to access this resource.")
-            .SetCode("AUTHORIZATION_DENIED")
-            .Build());
+    /// <summary>
+    ///     Conditional field exposure (issue #335): a denied field resolves to null when
+    ///     every applied rule opts into masking or the host defaults to masking, and the
+    ///     field's nullability allows it. Non-nullable fields keep the bounded error —
+    ///     nullability is static in GraphQL, and a null result for a non-nullable field
+    ///     would surface as HotChocolate's non-null violation error, which names the field.
+    /// </summary>
+    private static bool ShouldMask(IMiddlewareContext context, GraphQLAuthorizeFieldRule[] rules)
+    {
+        var options = context.Service<IServiceProvider>()
+            .GetService<GraphQLOptions>()?.SchemaAuthorization;
+        var mask = rules.All(rule => rule.MaskUnauthorized) || options?.MaskUnauthorizedFieldsByDefault == true;
+        return mask && context.Selection.Field.Type is not NonNullType;
+    }
 
     private enum PolicyCheckResult
     {

@@ -135,6 +135,12 @@ for (const packageRoot of installedConsumers("sharp")) {
   });
 }
 
+for (const packageRoot of installedConsumers("launch-editor")) {
+  test(`${packageRoot}: every editor consumer uses the reviewed security release`, () => {
+    assert.equal(require(join(packageRoot, "package.json")).version, "2.14.2");
+  });
+}
+
 for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
   test(`${packageRoot}: saved OAuth credentials cannot be sent to a different issuer`, async () => {
     const { fetchToken } = await import(pathToFileURL(join(packageRoot, "dist/esm/client/auth.js")).href);
@@ -160,6 +166,6 @@ for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
       },
     }), /issuer/i);
     assert.equal(requests, 0, "Issuer mismatch must fail before any credential-bearing request");
-    assert.equal(require(join(packageRoot, "package.json")).version, "1.31.0");
+    assert.equal(require(join(packageRoot, "package.json")).version, "1.32.0");
   });
 }

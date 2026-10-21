@@ -78,6 +78,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
 
     /// <summary>
     ///     Gets all tenant-level permissions for a user (paginated, issue #298/#307).
+    ///     Query-operations tier (issue #375): enumerating permission collections requires
+    ///     the <c>queries:list</c> permission (fail-closed; the query handler still clamps
+    ///     to the caller's own tenant).
     /// </summary>
     /// <param name="tenantId">The tenant ID.</param>
     /// <param name="userId">Optional user ID (defaults to current user).</param>
@@ -90,7 +93,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     /// <response code="200">Permissions retrieved successfully.</response>
     /// <response code="400">Invalid request.</response>
     /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">Missing <c>queries:list</c> (issue #375) or cross-tenant access.</response>
     [HttpGet("{tenantId}/permissions")]
+    [RequireDacPermission(QueryPermission.Keys.List)]
     [ProducesResponseType(typeof(GetTenantPermissionsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -120,6 +125,8 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
 
     /// <summary>
     ///     Validates a system-wide permission against the global default baseline (issue #307).
+    ///     Query-operations tier (issue #375): the permission-query APIs are structured query
+    ///     surfaces themselves and require the <c>queries:query</c> permission (fail-closed).
     /// </summary>
     /// <param name="permission">The permission to validate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -127,8 +134,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     /// <response code="200">Validation completed.</response>
     /// <response code="400">Invalid request.</response>
     /// <response code="401">User is not authenticated.</response>
-    /// <response code="403">Requires system administration or system:manage-global-defaults.</response>
+    /// <response code="403">Requires system administration or system:manage-global-defaults, plus <c>queries:query</c> (issue #375).</response>
     [HttpGet("~/api/v{version:apiVersion}/authorization/permissions/global:check")]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(HasGlobalPermissionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -146,6 +154,8 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
 
     /// <summary>
     ///     Checks if a user has a specific tenant-level permission.
+    ///     Query-operations tier (issue #375): who-holds-what checks are structured query
+    ///     surfaces and require the <c>queries:query</c> permission (fail-closed).
     /// </summary>
     /// <param name="tenantId">The tenant ID.</param>
     /// <param name="permission">The permission to check.</param>
@@ -155,7 +165,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     /// <response code="200">Permission check completed.</response>
     /// <response code="400">Invalid request.</response>
     /// <response code="401">User is not authenticated.</response>
+    /// <response code="403">Missing <c>queries:query</c> (issue #375) or cross-tenant access.</response>
     [HttpGet("{tenantId}/has-permission")]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

@@ -19,6 +19,10 @@ public sealed class AuthenticationDtoHandlerContractTests
     [InlineData("google-id")]
     [InlineData("discord")]
     [InlineData("github")]
+    [InlineData("steam")]
+    [InlineData("epic")]
+    [InlineData("facebook")]
+    [InlineData("microsoft")]
     public async Task CurrentHandlersApplyProfileConversionAndKeepServerTokens(string flow)
     {
         using var cancellation = new CancellationTokenSource();
@@ -48,6 +52,10 @@ public sealed class AuthenticationDtoHandlerContractTests
         service.Setup(auth => auth.GoogleIdTokenSignInAsync(It.Is<GoogleIdTokenRequest>(request => request.IdToken == "synthetic-input-id" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
         oauth.Setup(auth => auth.DiscordSignInAsync(It.Is<DiscordSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
         oauth.Setup(auth => auth.GitHubCallbackSignInAsync(It.Is<GitHubCallbackSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
+        oauth.Setup(auth => auth.SteamCallbackSignInAsync(It.Is<SteamCallbackSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
+        oauth.Setup(auth => auth.EpicCallbackSignInAsync(It.Is<EpicCallbackSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
+        oauth.Setup(auth => auth.FacebookCallbackSignInAsync(It.Is<FacebookCallbackSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
+        oauth.Setup(auth => auth.MicrosoftCallbackSignInAsync(It.Is<MicrosoftCallbackSignInRequest>(request => request.Code == "synthetic-input-code" && request.TenantId == source.TenantId), cancellation.Token)).ReturnsAsync(source);
 
         var mapped = flow switch
         {
@@ -67,6 +75,14 @@ public sealed class AuthenticationDtoHandlerContractTests
                 .Handle(new DiscordCallbackCommand { Code = "synthetic-input-code", TenantId = source.TenantId }, cancellation.Token),
             "github" => await new GitHubCallbackCommandHandler(oauth.Object, repository.Object, NullLogger<GitHubCallbackCommandHandler>.Instance, Validator<GitHubCallbackCommand>())
                 .Handle(new GitHubCallbackCommand { Code = "synthetic-input-code", RedirectUri = "https://web.example.com/api/auth/callback/github", TenantId = source.TenantId }, cancellation.Token),
+            "steam" => await new SteamCallbackCommandHandler(oauth.Object, repository.Object, NullLogger<SteamCallbackCommandHandler>.Instance, Validator<SteamCallbackCommand>())
+                .Handle(new SteamCallbackCommand { Code = "synthetic-input-code", RedirectUri = "https://web.example.com/api/auth/callback/steam", TenantId = source.TenantId }, cancellation.Token),
+            "epic" => await new EpicCallbackCommandHandler(oauth.Object, repository.Object, NullLogger<EpicCallbackCommandHandler>.Instance, Validator<EpicCallbackCommand>())
+                .Handle(new EpicCallbackCommand { Code = "synthetic-input-code", RedirectUri = "https://web.example.com/api/auth/callback/epic", TenantId = source.TenantId }, cancellation.Token),
+            "facebook" => await new FacebookCallbackCommandHandler(oauth.Object, repository.Object, NullLogger<FacebookCallbackCommandHandler>.Instance, Validator<FacebookCallbackCommand>())
+                .Handle(new FacebookCallbackCommand { Code = "synthetic-input-code", RedirectUri = "https://web.example.com/api/auth/callback/facebook", TenantId = source.TenantId }, cancellation.Token),
+            "microsoft" => await new MicrosoftCallbackCommandHandler(oauth.Object, repository.Object, NullLogger<MicrosoftCallbackCommandHandler>.Instance, Validator<MicrosoftCallbackCommand>())
+                .Handle(new MicrosoftCallbackCommand { Code = "synthetic-input-code", RedirectUri = "https://web.example.com/api/auth/callback/microsoft", TenantId = source.TenantId }, cancellation.Token),
             _ => throw new InvalidOperationException("Unknown handler contract case.")
         };
 

@@ -103,3 +103,33 @@ model calls. These failures are retained as evidence; they are not waived or
 reclassified as successful. The dependency correction requires a new signed
 source commit and a complete, successful hosted execution before merge. No local
 product execution, manual workflow rerun or cancellation is used.
+
+The complete hosted audit for `9030c283` no longer reports the redirect advisory.
+It lists seven additional unmitigated findings: three in `launch-editor` 2.14.1
+and four in `@modelcontextprotocol/sdk` 1.31.0. The follow-up pins upstream
+`launch-editor` 2.14.2 and SDK 1.32.0, retaining the resolved dependency graph
+and the existing security assertions. Registry metadata confirms identical SDK
+dependencies, peers and Node requirements; launch-editor's updated shell-quote
+range is already satisfied by the pinned 1.11.0.
+
+The installed-editor version guard verifies resolution only; it does not claim a
+Windows editor runtime reproduction. The existing SDK issuer-isolation case
+remains required. All seven advisories must disappear from the hosted audit;
+only the existing braces/sprintf local patches retain their independently
+verified exceptions. The security gate has no new exemption.
+
+### Reconciliation with develop on 2026-10-21
+
+Develop advanced to `af91298f` while the above CI was running. PR #927 had
+independently delivered all three patched dependency versions. This merge adopts
+its conditional overrides without duplicate unconditional entries, preserves the
+reviewed registry metadata correction and keeps the redirect/editor regressions.
+The other changes delivered on develop are preserved.
+
+Run 39569225255 on `9030c283` ended with 705 integration passes and one failure:
+`AuditReplayPostgreSqlHttpTests.OpenApiDocumentsRequiredRangeAndSafeReplayResponse`
+was cancelled while reading the Swagger HTTP response after its request timeout.
+All 18 trusted-device cases passed; later supporting suites did not run. The
+available log does not establish the timeout's root cause. No timeout, assertion,
+skip, retry or exception is changed here. This is retained as failed evidence;
+the combined source requires a complete successful hosted CI before merge.

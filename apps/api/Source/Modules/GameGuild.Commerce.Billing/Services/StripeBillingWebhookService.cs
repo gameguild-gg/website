@@ -8,8 +8,16 @@ namespace GameGuild.Commerce.Billing;
 ///     Stripe-specific implementation of the billing webhook service.
 ///     Handles webhook events from Stripe payment gateway.
 /// </summary>
-public class StripeBillingWebhookService : BillingWebhookService
+public class StripeBillingWebhookService : BillingWebhookService, IBillingWebhookReplayHandler
 {
+    /// <summary>Replay-handler provider key (issue #408 execution arm).</summary>
+    string IBillingWebhookReplayHandler.Provider => ProviderName;
+
+    Task<WebhookProcessingResult> IBillingWebhookReplayHandler.ReplayAsync(
+        BillingWebhookEvent webhookEvent,
+        CancellationToken cancellationToken) =>
+        ReplayStripeWebhookAsync(webhookEvent, cancellationToken);
+
     private readonly IBillingWebhookRepository _webhookRepository;
     private readonly ILogger<StripeBillingWebhookService> _logger;
     private readonly IStripeWebhookVerifier _webhookVerifier;
@@ -134,7 +142,11 @@ public class StripeBillingWebhookService : BillingWebhookService
                 signatureRetained = false
             }),
             TenantId = binding?.TenantId ?? paymentBinding?.TenantId ?? verifiedEvent.TenantId,
-            SubscriptionId = binding?.SubscriptionId
+            SubscriptionId = binding?.SubscriptionId,
+            // Stripe rows only reach the inbox after signature and endpoint checks pass
+            // (the verifier runs before storage), so acceptance implies verification.
+            IsSignatureVerified = true,
+            SignatureVerifiedAt = SystemClock.UtcNow
         };
 
         if (existingEvent is null)
@@ -191,6 +203,104 @@ public class StripeBillingWebhookService : BillingWebhookService
 
             return WebhookProcessingResult.Failed(verifiedEvent.EventId, ex.Message);
         }
+    }
+
+    /// <summary>
+    ///     Replays a previously accepted Stripe inbox row through its event routing
+    ///     (issue #408). Replay is the execution arm of the retry pipeline: the manual
+    ///     retry command and the hosted retry worker both land here. The row's retained
+    ///     (minimized) payload is reconstructed into a verified event shape — Stripe rows
+    ///     only enter the inbox after signature verification, and the row identity fields
+    ///     carry the verified provider scope.
+    /// </summary>
+    /// <param name="webhookEvent">Stored inbox row to replay.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Processing result of the replay attempt.</returns>
+    public async Task<WebhookProcessingResult> ReplayStripeWebhookAsync(
+        BillingWebhookEvent webhookEvent,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(webhookEvent);
+
+        if (!string.Equals(webhookEvent.Provider, PaymentProviders.Stripe, StringComparison.Ordinal))
+        {
+            throw new ArgumentException("The webhook event does not belong to the Stripe provider.", nameof(webhookEvent));
+        }
+
+        if (webhookEvent.IsProcessed)
+        {
+            return WebhookProcessingResult.AlreadyProcessed(webhookEvent.ExternalEventId, webhookEvent.ProcessedAt);
+        }
+
+        if (webhookEvent.IsSignatureVerified != true)
+        {
+            // Fail closed: legacy rows accepted before the verification flag existed have no
+            // retained proof of authenticity, so they are never re-routed by the retry pipeline.
+            const string reason = "Replay refused: the stored delivery has no retained signature-verification proof.";
+            _logger.LogWarning("Stripe webhook replay refused for {EventId}: no verification proof.", webhookEvent.ExternalEventId);
+            webhookEvent.MarkAsFailed(reason);
+            await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
+            return WebhookProcessingResult.Failed(webhookEvent.ExternalEventId, reason, requiresRetry: false);
+        }
+
+        var replayedEvent = ReconstructVerifiedEvent(webhookEvent);
+
+        try
+        {
+            await RouteStripeEventAsync(replayedEvent, cancellationToken).ConfigureAwait(false);
+
+            webhookEvent.MarkAsProcessed();
+            await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: true, cancellationToken).ConfigureAwait(false);
+
+            _logger.LogInformation("Successfully replayed Stripe webhook: {EventId}", webhookEvent.ExternalEventId);
+            return WebhookProcessingResult.Success(webhookEvent.ExternalEventId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to replay Stripe webhook: {EventId}", webhookEvent.ExternalEventId);
+
+            webhookEvent.MarkAsFailed(ex.Message);
+            await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
+
+            return WebhookProcessingResult.Failed(webhookEvent.ExternalEventId, ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     Rebuilds the verified-event shape from a stored inbox row for replay. The
+    ///     retained payload re-parses through the same routing parser used for live
+    ///     deliveries; identity fields come from the row's verified provider scope.
+    /// </summary>
+    private static VerifiedStripeWebhookEvent ReconstructVerifiedEvent(BillingWebhookEvent webhookEvent)
+    {
+        var parsed = ParseStripePayload(webhookEvent.EventType, webhookEvent.Payload);
+
+        return new VerifiedStripeWebhookEvent
+        {
+            EventId = webhookEvent.ExternalEventId,
+            EventType = webhookEvent.EventType,
+            OccurredAt = new DateTimeOffset(webhookEvent.CreatedAt, TimeSpan.Zero),
+            IsLiveMode = webhookEvent.IsLiveMode ?? false,
+            ProviderEnvironment = webhookEvent.ProviderEnvironment ?? "unknown",
+            ProviderAccountId = webhookEvent.ProviderAccountId ?? string.Empty,
+            WebhookEndpointId = webhookEvent.WebhookEndpointId ?? string.Empty,
+            EventSchemaVersion = webhookEvent.EventSchemaVersion ?? string.Empty,
+            ProviderObjectId = webhookEvent.ProviderObjectId ?? string.Empty,
+            ProviderObjectType = webhookEvent.ProviderObjectType ?? string.Empty,
+            ProviderMonetaryLeg = webhookEvent.ProviderMonetaryLeg ?? string.Empty,
+            TenantId = webhookEvent.TenantId,
+            ExternalSubscriptionId = parsed.ExternalSubscriptionId,
+            Amount = parsed.Amount,
+            Currency = parsed.Currency,
+            VerifiedPayload = webhookEvent.Payload,
+            RetainedPayload = webhookEvent.Payload,
+            PayloadSha256 = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes(webhookEvent.Payload))).ToLowerInvariant()
+        };
     }
 
     /// <summary>

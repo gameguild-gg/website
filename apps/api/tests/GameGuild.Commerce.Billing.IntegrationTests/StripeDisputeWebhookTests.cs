@@ -155,9 +155,75 @@ public class StripeDisputeWebhookTests
         dispute.ResolvedAt.Should().NotBeNull();
     }
 
+    [Fact]
+    public async Task TryConsumeAsync_CreatedEvent_RecordsTheGatewayDisputeFee()
+    {
+        var consumer = CreateConsumer(out var db, out var paymentRepository);
+        var payment = SucceededBoundPayment();
+        paymentRepository
+            .Setup(repo => repo.GetByProviderMappingAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(payment);
+        await using var context = db;
+
+        var handled = await consumer.TryConsumeAsync(
+            VerifiedEvent("charge.dispute.created", disputeId: "dp_fee", disputeFeeCents: 1500),
+            CancellationToken.None);
+
+        handled.Should().BeTrue();
+        (await context.Set<PaymentDispute>().SingleAsync()).DisputeFee.Should().Be(15m);
+    }
+
+    [Fact]
+    public async Task TryConsumeAsync_CreatedEvent_CollectsAutomaticEvidenceAndAlertsTheTeam()
+    {
+        var notifications = new Mock<IDisputeNotificationService>();
+        var consumer = CreateConsumer(out var db, out var paymentRepository, notifications);
+        var payment = SucceededBoundPayment(subscriptionId: Guid.NewGuid());
+        paymentRepository
+            .Setup(repo => repo.GetByProviderMappingAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(payment);
+        await using var context = db;
+
+        var handled = await consumer.TryConsumeAsync(
+            VerifiedEvent("charge.dispute.created", disputeId: "dp_evidence", disputeFeeCents: 2000),
+            CancellationToken.None);
+
+        handled.Should().BeTrue();
+        var dispute = await context.Set<PaymentDispute>().SingleAsync();
+        var evidence = await context.Set<DisputeEvidence>().ToListAsync();
+        evidence.Should().OnlyContain(item => item.DisputeId == dispute.Id && item.IsFromMerchant);
+        evidence.Should().Contain(item => item.EvidenceType == EvidenceType.Receipt);
+        evidence.Should().Contain(item => item.EvidenceType == EvidenceType.SubscriptionRecord);
+        dispute.DisputeFee.Should().Be(20m);
+
+        notifications.Verify(service => service.SendDisputeCreatedAlertAsync(
+            It.Is<PaymentDispute>(alerted => alerted.Id == dispute.Id),
+            It.Is<Payment>(alerted => alerted.Id == payment.Id),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public void ParseDisputePayload_ParsesTheBalanceTransactionFee()
+    {
+        var payload = DisputeEventPayload(
+            eventType: "charge.dispute.created",
+            disputeId: "dp_fee",
+            status: "needs_response",
+            reason: "fraudulent",
+            amountCents: 5000,
+            evidenceDueBy: null,
+            paymentIntent: "pi_1",
+            disputeFeeCents: 1525);
+
+        var parsed = StripeDisputeEventConsumer.ParseDisputePayload(payload);
+
+        parsed!.DisputeFee.Should().Be(15.25m);
+    }
+
     private static StripeDisputeEventConsumer CreateConsumer(
         out StripeDisputeWebhookTestDbContext db,
-        out Mock<IPaymentRepository> paymentRepository)
+        out Mock<IPaymentRepository> paymentRepository,
+        Mock<IDisputeNotificationService>? disputeNotifications = null)
     {
         var options = new DbContextOptionsBuilder<StripeDisputeWebhookTestDbContext>()
             .UseInMemoryDatabase($"webhook-{Guid.NewGuid():N}")
@@ -165,16 +231,18 @@ public class StripeDisputeWebhookTests
         db = new StripeDisputeWebhookTestDbContext(options);
         paymentRepository = new Mock<IPaymentRepository>();
         var methodRepository = new Mock<IPaymentMethodRepository>();
+        disputeNotifications ??= new Mock<IDisputeNotificationService>();
         return new StripeDisputeEventConsumer(
             paymentRepository.Object,
             methodRepository.Object,
+            disputeNotifications.Object,
             db,
             NullLogger<StripeDisputeEventConsumer>.Instance);
     }
 
-    private static Payment SucceededBoundPayment()
+    private static Payment SucceededBoundPayment(Guid? subscriptionId = null)
     {
-        var payment = Payment.Create(Guid.NewGuid(), 50m, "USD", $"idem-{Guid.NewGuid():N}");
+        var payment = Payment.Create(Guid.NewGuid(), 50m, "USD", $"idem-{Guid.NewGuid():N}", subscriptionId: subscriptionId);
         payment.MarkAsProcessing();
         payment.MarkAsSucceeded("pi_dispute", "ch_dispute");
         return payment;
@@ -186,7 +254,8 @@ public class StripeDisputeWebhookTests
         string status = "needs_response",
         long amountCents = 5000,
         long? evidenceDueBy = null,
-        string paymentIntent = "pi_dispute") =>
+        string paymentIntent = "pi_dispute",
+        long? disputeFeeCents = null) =>
         new()
         {
             EventId = $"evt_{Guid.NewGuid():N}",
@@ -198,7 +267,7 @@ public class StripeDisputeWebhookTests
             ProviderObjectId = paymentIntent,
             ProviderObjectType = "dispute",
             ProviderMonetaryLeg = "dispute",
-            VerifiedPayload = DisputeEventPayload(eventType, disputeId, status, "fraudulent", amountCents, evidenceDueBy, paymentIntent),
+            VerifiedPayload = DisputeEventPayload(eventType, disputeId, status, "fraudulent", amountCents, evidenceDueBy, paymentIntent, disputeFeeCents),
             RetainedPayload = "{}",
             PayloadSha256 = "sha",
             OccurredAt = DateTimeOffset.UtcNow,
@@ -214,7 +283,8 @@ public class StripeDisputeWebhookTests
         string reason,
         long amountCents,
         long? evidenceDueBy,
-        string paymentIntent)
+        string paymentIntent,
+        long? disputeFeeCents = null)
     {
         var dispute = new Dictionary<string, object?>
         {
@@ -229,6 +299,13 @@ public class StripeDisputeWebhookTests
         if (evidenceDueBy.HasValue)
         {
             dispute["evidence_due_by"] = evidenceDueBy.Value;
+        }
+        if (disputeFeeCents.HasValue)
+        {
+            dispute["balance_transactions"] = new object[]
+            {
+                new Dictionary<string, object?> { ["id"] = "txn_1", ["amount"] = amountCents, ["fee"] = disputeFeeCents.Value }
+            };
         }
 
         return JsonSerializer.Serialize(new Dictionary<string, object?>

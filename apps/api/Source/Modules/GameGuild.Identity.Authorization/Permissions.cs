@@ -277,6 +277,19 @@ public static class Permissions
     public const string SystemDeployment = DeploymentPermission.Keys.Deploy;
 
     // ========================
+    // QUERY OPERATIONS PERMISSIONS (issue #375)
+    // ========================
+
+    /// <summary>Enumerate collections of resources: paged/filtered listings (issue #375)</summary>
+    public const string QueriesList = QueryPermission.Keys.List;
+
+    /// <summary>Run free-text or loosely-filtered discovery (keyword/full-text search) (issue #375)</summary>
+    public const string QueriesSearch = QueryPermission.Keys.Search;
+
+    /// <summary>Run structured/API querying, including the permission-query APIs themselves (issue #375)</summary>
+    public const string QueriesQuery = QueryPermission.Keys.Query;
+
+    // ========================
     // ASSETS PERMISSIONS
     // ========================
 

@@ -49,9 +49,15 @@ public static class ServiceCollectionExtensions
         // Named billing integration events (issue #396): publish through the durable transport.
         services.AddScoped<IBillingIntegrationEventPublisher, BillingIntegrationEventPublisher>();
 
-        // Hosted asynchronous retry of failed webhook inbox events (issue #396).
+        // Hosted asynchronous retry of failed webhook inbox events (issues #396, #408).
         services.AddScoped<IBillingWebhookRetryWorker, BillingWebhookRetryWorker>();
         services.AddHostedService<BillingWebhookRetryBackgroundService>();
+
+        // Webhook retry execution + dead-lettering (issue #408): the replay dispatcher
+        // resolves the provider-specific execution arm used by the retry path, and the
+        // dead-letter service terminally parks exhausted rows with a security event.
+        services.AddScoped<IBillingWebhookDeadLetterService, BillingWebhookDeadLetterService>();
+        services.AddScoped<BillingWebhookReplayDispatcher>();
 
         // Invoice materialization (issue #411): the production writer behind both payment-success
         // paths (first-party charges via the Subscriptions port, provider-billed cycles via the
@@ -59,13 +65,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInvoiceGenerationService, InvoiceGenerationService>();
         services.AddScoped<GameGuild.Commerce.Subscriptions.ISubscriptionInvoiceMaterializer, SubscriptionInvoiceMaterializer>();
         services.AddScoped<GameGuild.Notifications.Services.Email.IEmailRenderer, Services.Email.Renderers.InvoiceIssuedEmailRenderer>();
-
-        // Named billing integration events (issue #396): publish through the durable transport.
-        services.AddScoped<IBillingIntegrationEventPublisher, BillingIntegrationEventPublisher>();
-
-        // Hosted asynchronous retry of failed webhook inbox events (issue #396).
-        services.AddScoped<IBillingWebhookRetryWorker, BillingWebhookRetryWorker>();
-        services.AddHostedService<BillingWebhookRetryBackgroundService>();
 
         // Register Apple sub-services
         services.AddSingleton<IAppleJwsVerificationService, AppleJwsVerificationService>();
@@ -91,10 +90,22 @@ public static class ServiceCollectionExtensions
         // Stripe payment-method metadata reconciliation (issue #414): consumes verified
         // payment_method.updated events into the local payment-method registry.
         services.AddScoped<IStripeVerifiedEventConsumer, StripePaymentMethodUpdatedConsumer>();
+
+        // Stripe payment lifecycle reconciliation (issue #415): consumes verified
+        // payment_intent.succeeded / payment_intent.payment_failed and refund lifecycle events
+        // into the local payment and refund aggregates.
+        services.AddScoped<IStripeVerifiedEventConsumer, StripePaymentLifecycleEventConsumer>();
         services.AddScoped<PayPalBillingWebhookService>();
         services.AddScoped<ApplePayBillingWebhookService>();
         services.AddSingleton<IGooglePayWebhookVerificationService, GooglePayWebhookVerificationService>();
         services.AddScoped<GooglePayBillingWebhookService>();
+
+        // Webhook replay execution arms (issue #408): Stripe and PayPal deliveries that
+        // were signature-verified at acceptance can be re-routed from the durable inbox
+        // by the retry pipeline. Providers without a replay arm (Apple, Google) surface
+        // an explicit failure when retried instead of a silent no-op.
+        services.AddScoped<IBillingWebhookReplayHandler>(provider => provider.GetRequiredService<StripeBillingWebhookService>());
+        services.AddScoped<IBillingWebhookReplayHandler>(provider => provider.GetRequiredService<PayPalBillingWebhookService>());
 
         // Register webhook source security controls (IP allowlist, threshold monitor,
         // security-event publishing, and the authorization filter that enforces them).

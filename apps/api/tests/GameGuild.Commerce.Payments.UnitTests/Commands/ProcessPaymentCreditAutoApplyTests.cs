@@ -167,7 +167,26 @@ public class ProcessPaymentCreditAutoApplyTests
                 It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<decimal>(),
                 It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        _notificationService.VerifyNoOtherCalls();
+
+        // No credit notice fires, but the successful charge now emails the payment receipt
+        // to the subscription owner (issue #415).
+        NotificationShouldHaveBeenSent(NotificationType.PaymentReceipt);
+        _notificationService.Verify(
+            service => service.SendAsync(
+                It.IsAny<Guid?>(),
+                NotificationType.CreditApplied,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<NotificationChannel>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<string?>(),
+                It.IsAny<NotificationPriority>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

@@ -44,7 +44,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
             Email = body.Email,
             Password = body.Password,
             Username = body.Username,
-            TenantId = body.TenantId
+            TenantId = body.TenantId,
+            GuestAccessToken = body.GuestAccessToken
         };
 
         SignInResponse result = await sender.Send(command, ct).ConfigureAwait(false);
@@ -78,7 +79,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
             Password = body.Password,
             TenantId = body.TenantId,
             DeviceFingerprint = body.DeviceFingerprint,
-            RememberMe = body.RememberMe
+            RememberMe = body.RememberMe,
+            GuestAccessToken = body.GuestAccessToken
         };
 
         return await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
@@ -126,7 +128,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
             Password = body.Password,
             TenantId = body.TenantId,
             DeviceFingerprint = body.DeviceFingerprint,
-            RememberMe = body.RememberMe
+            RememberMe = body.RememberMe,
+            GuestAccessToken = body.GuestAccessToken
         }, ct);
     }
 

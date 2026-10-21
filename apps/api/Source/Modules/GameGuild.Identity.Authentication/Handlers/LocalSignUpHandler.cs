@@ -11,7 +11,8 @@ public sealed class LocalSignUpHandler(
     IAuthService authService,
     IUserRepository userRepository,
     ISender sender,
-    ILogger<LocalSignUpHandler> logger) : ICommandHandler<LocalSignUpCommand, SignInResponse>
+    ILogger<LocalSignUpHandler> logger,
+    IGuestSessionService? guestSessionService = null) : ICommandHandler<LocalSignUpCommand, SignInResponse>
 {
     private const string VerificationSentMessage = "Sign-up successful. A verification email has been sent to your email address.";
     private const string VerificationPendingMessage = "Sign-up successful. The verification email could not be queued; please request it again from your account settings.";
@@ -54,6 +55,10 @@ public sealed class LocalSignUpHandler(
             response.Message = VerificationPendingMessage;
         }
 
-        return response;
+        // Session continuity (issue #213): a guest registering from an anonymous session
+        // migrates that session into the issued authenticated session.
+        return guestSessionService is null
+            ? response
+            : await GuestSessionUpgradeIntegration.ApplyGuestUpgradeAsync(response, guestSessionService, command.GuestAccessToken, cancellationToken).ConfigureAwait(false);
     }
 }
