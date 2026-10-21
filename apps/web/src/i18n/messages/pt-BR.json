@@ -11,7 +11,19 @@
   "signIn": {
     "continueWithDiscord": "Continuar com o Discord",
     "magicLink": "Entrar com link por e-mail",
-    "emailCode": "Entrar com um código por e-mail"
+    "emailCode": "Entrar com um código por e-mail",
+    "mfa": {
+      "title": "Autenticação de dois fatores",
+      "description": "Confirme seu acesso com seu app autenticador. Este desafio expira após cinco minutos.",
+      "methodLabel": "Método de verificação",
+      "methodTotp": "App autenticador",
+      "methodBackupCode": "Código de recuperação",
+      "codeLabel": "Código de autenticação",
+      "submit": "Verificar e entrar",
+      "startAgain": "Começar o acesso novamente",
+      "noChallenge": "Nenhum desafio de dois fatores ativo. Inicie o acesso para receber um novo código.",
+      "backToSignIn": "Voltar ao acesso"
+    }
   },
   "magicLink": {
     "request": {
@@ -260,7 +272,7 @@
         },
         "disable": {
           "title": "Desativar MFA",
-           "description": "Informe a senha da conta para re-verificar e desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
+          "description": "Informe a senha da conta para re-verificar e desativar a autenticação multifator. Todos os fatores e códigos de recuperação serão removidos.",
           "passwordLabel": "Senha da conta",
           "cancel": "Cancelar",
           "confirm": "Desativar MFA",

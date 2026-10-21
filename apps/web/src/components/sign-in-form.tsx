@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useState, useSyncExternalStore } from "react";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@game-guild/client/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@game-guild/ui/components/button";
@@ -38,14 +38,8 @@ export function SignInForm({
   emailCodeLabel?: string;
   providers?: React.ReactNode;
 }) {
-  const {
-    signIn,
-    isLoading,
-    error,
-    clearError,
-    mfaChallenge,
-    clearMfa,
-  } = useAuth();
+  const router = useRouter();
+  const { signIn, isLoading, error, clearError } = useAuth();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const isHydrated = useSyncExternalStore(
     subscribeToHydration,
@@ -84,28 +78,17 @@ export function SignInForm({
         redirectTo,
       });
     } catch (err) {
-      if (err instanceof Error && "type" in err && err.type === "MfaRequired")
+      // The MFA challenge lives on the dedicated /sign-in/2fa route; the
+      // app-wide useAuth state (mfaChallenge) survives the navigation.
+      if (
+        err instanceof Error &&
+        "type" in err &&
+        err.type === "MfaRequired"
+      ) {
         form.reset();
+        router.replace("/sign-in/2fa");
+      }
       // error state is set by useAuth
-    }
-  }
-
-  async function handleMfaSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!mfaChallenge) return;
-    const form = e.currentTarget;
-    const data = new FormData(form);
-    clearError();
-    try {
-      await signIn("credentials", {
-        mfaToken: mfaChallenge.mfaToken,
-        method: data.get("method") || "Totp",
-        code: data.get("code") as string,
-        redirectTo,
-      });
-      form.reset();
-    } catch {
-      /* The hook keeps the current challenge and exposes the error. */
     }
   }
 
@@ -121,7 +104,7 @@ export function SignInForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {providers && !mfaChallenge && (
+          {providers && (
             <>
               <div className="mb-6">{providers}</div>
               <div className="flex w-full items-center gap-3 text-xs text-slate-400">
@@ -131,191 +114,127 @@ export function SignInForm({
               </div>
             </>
           )}
-          {mfaChallenge ? (
-            <form
-              method="post"
-              onSubmit={(event) => {
-                void handleMfaSubmit(event);
-              }}
-              data-auth-ready={isHydrated ? "true" : "false"}
-            >
-              <FieldGroup>
-                <FieldDescription>
-                  Confirm your sign-in with your authenticator app. This sign-in
-                  challenge expires after five minutes. New to two-factor
-                  authentication? Enable it from Security in workspace settings
-                  after signing in.
-                </FieldDescription>
-                {mfaChallenge.availableMethods.includes("BackupCode") && (
-                    <Field>
-                      <FieldLabel htmlFor="mfa-method">
-                        Verification method
-                      </FieldLabel>
-                      <select
-                        id="mfa-method"
-                        name="method"
-                        defaultValue="Totp"
-                        disabled={isLoading}
-                        className="h-10 rounded border border-white/10 bg-slate-900 px-3"
-                      >
-                        <option value="Totp">Authenticator app</option>
-                        <option value="BackupCode">Recovery code</option>
-                      </select>
-                    </Field>
-                  )}
-                <Field>
-                  <FieldLabel htmlFor="mfa-code">
-                    Authentication code
-                  </FieldLabel>
-                  <Input
-                    id="mfa-code"
-                    name="code"
-                    autoComplete="one-time-code"
-                    required
-                    disabled={isLoading}
-                    className="h-10 border-white/10 bg-white/5 text-white"
-                  />
-                </Field>
-                {error &&
-                  !("type" in error && error.type === "MfaRequired") && (
-                    <FieldError>{error.message}</FieldError>
-                  )}
-                <Button type="submit" disabled={isLoading || !isHydrated}>
-                  Verify and sign in
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
+          <form
+            method="post"
+            onSubmit={(event) => {
+              void handleSubmit(event);
+            }}
+            noValidate
+            data-auth-ready={isHydrated ? "true" : "false"}
+          >
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  autoComplete="email"
+                  required
                   disabled={isLoading}
-                  className="text-slate-200 hover:bg-white/10 hover:text-white"
-                  onClick={() => {
-                    clearMfa();
-                  }}
+                  className="h-10 border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                  aria-invalid={!!fieldErrors.email}
+                  onChange={() =>
+                    fieldErrors.email &&
+                    setFieldErrors((prev) => ({ ...prev, email: "" }))
+                  }
+                />
+                {fieldErrors.email && (
+                  <FieldError>{fieldErrors.email}</FieldError>
+                )}
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  disabled={isLoading}
+                  className="h-10 border-white/10 bg-white/5 text-white"
+                  aria-invalid={!!fieldErrors.password}
+                  onChange={() =>
+                    fieldErrors.password &&
+                    setFieldErrors((prev) => ({ ...prev, password: "" }))
+                  }
+                />
+                {fieldErrors.password && (
+                  <FieldError>{fieldErrors.password}</FieldError>
+                )}
+                <Link
+                  href="/forgot-password"
+                  className="ml-auto w-fit text-sm text-sky-200 underline-offset-4 hover:underline"
+                  tabIndex={-1}
                 >
-                  Start sign-in again
+                  Forgot your password?
+                </Link>
+              </Field>
+              <Field>
+                <label
+                  htmlFor="rememberMe"
+                  className="flex cursor-pointer items-center gap-2 text-sm text-slate-300 select-none"
+                >
+                  <Checkbox
+                    id="rememberMe"
+                    name="rememberMe"
+                    disabled={isLoading}
+                    aria-label="Remember me on this device"
+                  />
+                  Remember me
+                </label>
+                <FieldDescription className="text-slate-400">
+                  Keeps you signed in on this device for up to 30 days.
+                </FieldDescription>
+              </Field>
+              {error &&
+                !("type" in error && error.type === "MfaRequired") && (
+                  <FieldError>{error.message}</FieldError>
+                )}
+              <Field>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isLoading || !isHydrated}
+                >
+                  {isLoading ? "Signing in..." : "Sign in"}
                 </Button>
-              </FieldGroup>
-            </form>
-          ) : (
-            <form
-              method="post"
-              onSubmit={(event) => {
-                void handleSubmit(event);
-              }}
-              noValidate
-              data-auth-ready={isHydrated ? "true" : "false"}
-            >
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    autoComplete="email"
-                    required
-                    disabled={isLoading}
-                    className="h-10 border-white/10 bg-white/5 text-white placeholder:text-slate-500"
-                    aria-invalid={!!fieldErrors.email}
-                    onChange={() =>
-                      fieldErrors.email &&
-                      setFieldErrors((prev) => ({ ...prev, email: "" }))
-                    }
-                  />
-                  {fieldErrors.email && (
-                    <FieldError>{fieldErrors.email}</FieldError>
-                  )}
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <PasswordInput
-                    id="password"
-                    name="password"
-                    autoComplete="current-password"
-                    required
-                    disabled={isLoading}
-                    className="h-10 border-white/10 bg-white/5 text-white"
-                    aria-invalid={!!fieldErrors.password}
-                    onChange={() =>
-                      fieldErrors.password &&
-                      setFieldErrors((prev) => ({ ...prev, password: "" }))
-                    }
-                  />
-                  {fieldErrors.password && (
-                    <FieldError>{fieldErrors.password}</FieldError>
-                  )}
+                <FieldDescription className="text-center text-slate-300">
+                  Don&apos;t have an account?{" "}
                   <Link
-                    href="/forgot-password"
-                    className="ml-auto w-fit text-sm text-sky-200 underline-offset-4 hover:underline"
-                    tabIndex={-1}
+                    href={
+                      redirectTo
+                        ? `/sign-up?redirectTo=${encodeURIComponent(redirectTo)}`
+                        : "/sign-up"
+                    }
+                    className="text-sky-200 underline-offset-4 hover:underline"
                   >
-                    Forgot your password?
+                    Sign up
                   </Link>
-                </Field>
-                <Field>
-                  <label
-                    htmlFor="rememberMe"
-                    className="flex cursor-pointer items-center gap-2 text-sm text-slate-300 select-none"
-                  >
-                    <Checkbox
-                      id="rememberMe"
-                      name="rememberMe"
-                      disabled={isLoading}
-                      aria-label="Remember me on this device"
-                    />
-                    Remember me
-                  </label>
-                  <FieldDescription className="text-slate-400">
-                    Keeps you signed in on this device for up to 30 days.
-                  </FieldDescription>
-                </Field>
-                {error && <FieldError>{error.message}</FieldError>}
-                <Field>
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={isLoading || !isHydrated}
-                  >
-                    {isLoading ? "Signing in..." : "Sign in"}
-                  </Button>
+                </FieldDescription>
+                {magicLinkLabel ? (
                   <FieldDescription className="text-center text-slate-300">
-                    Don&apos;t have an account?{" "}
                     <Link
-                      href={
-                        redirectTo
-                          ? `/sign-up?redirectTo=${encodeURIComponent(redirectTo)}`
-                          : "/sign-up"
-                      }
+                      href={`/magic-link?redirectTo=${encodeURIComponent(redirectTo)}`}
                       className="text-sky-200 underline-offset-4 hover:underline"
                     >
-                      Sign up
+                      {magicLinkLabel}
                     </Link>
                   </FieldDescription>
-                  {magicLinkLabel ? (
-                    <FieldDescription className="text-center text-slate-300">
-                      <Link
-                        href={`/magic-link?redirectTo=${encodeURIComponent(redirectTo)}`}
-                        className="text-sky-200 underline-offset-4 hover:underline"
-                      >
-                        {magicLinkLabel}
-                      </Link>
-                    </FieldDescription>
-                  ) : null}
-                  {emailCodeLabel ? (
-                    <FieldDescription className="text-center text-slate-300">
-                      <Link
-                        href="/email-code"
-                        className="text-sky-200 underline-offset-4 hover:underline"
-                      >
-                        {emailCodeLabel}
-                      </Link>
-                    </FieldDescription>
-                  ) : null}
-                </Field>
-              </FieldGroup>
-            </form>
-          )}
+                ) : null}
+                {emailCodeLabel ? (
+                  <FieldDescription className="text-center text-slate-300">
+                    <Link
+                      href="/email-code"
+                      className="text-sky-200 underline-offset-4 hover:underline"
+                    >
+                      {emailCodeLabel}
+                    </Link>
+                  </FieldDescription>
+                ) : null}
+              </Field>
+            </FieldGroup>
+          </form>
         </CardContent>
       </Card>
     </div>
