@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const ADAPTER_DIR = dirname(fileURLToPath(import.meta.url));
 
 export const QUESTION_TYPE_FIXTURE_PATH = resolve(
-  SCRIPT_DIR,
-  "../../../../packages/features/grading-adapter-quiz/fixtures/quiz-validation-cases-v1.json",
+  ADAPTER_DIR,
+  "../../../../../../../packages/features/grading-adapter-quiz/fixtures/quiz-validation-cases-v1.json",
 );
 
 export const VALIDATION_SUITES = Object.freeze([
@@ -303,8 +303,9 @@ export function selectValidationCases({ suites, caseIds, questionTypes } = {}) {
     }
     if (
       requestedTypes.size > 0 &&
-      !requestedTypes.has(candidate.questionType) &&
-      !requestedTypes.has(candidate.key)
+      (candidate.suite !== "question-type" ||
+        (!requestedTypes.has(candidate.questionType) &&
+          !requestedTypes.has(candidate.key)))
     ) {
       return false;
     }
@@ -493,7 +494,7 @@ function createQuestionTypeValidationCase(fixture) {
           : fixture.browser.reason,
       tracking:
         fixture.browser.status === "required"
-          ? `command:grading:scenario test --scenario question-type-matrix --case ${fixture.id}`
+          ? `playwright:${fixture.id}`
           : `decision:${fixture.id}-BROWSER`,
       owner: "quiz",
     },

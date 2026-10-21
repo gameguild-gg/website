@@ -9,12 +9,15 @@ const configuredDevOrigins = process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(",")
 const fastDev =
   process.env.GAMEGUILD_FAST_DEV === "1" ||
   process.env.npm_lifecycle_event === "dev:fast";
+const gradingValidationE2e = process.env.GRADING_VALIDATION_E2E === "1";
 const isolatedDistDir =
   process.env.CODING_CYCLE_E2E === "1"
     ? ".next-e2e-coding-cycle"
-    : fastDev
-      ? ".next-fast"
-      : undefined;
+    : gradingValidationE2e
+      ? ".next-e2e-grading-turbo"
+      : fastDev
+        ? ".next-fast"
+        : undefined;
 
 const nextConfig: NextConfig = {
   // ponytail: isolated E2E boots a second `next dev` on a dedicated port

@@ -3,7 +3,6 @@
 Reviewed baseline: 2026-10-17
 
 Code baseline: `3cace6a45656` plus the validation-program worktree
-
 Catalog size: 44 cases (9 review, 18 question type, 10 lifecycle/access, 7
 failure/recovery)
 
@@ -21,7 +20,7 @@ browser case has not yet been promoted by a successful recorded execution.
   `AssessmentGradingPostgreSqlHttpTests`.
 - **C5:** authoring/publication, gradebook, queue, peer privacy, and access unit
   or integration tests.
-- **C6:** Scenario Runner support tests for catalog, selection, ownership,
+- **C6:** Validation harness support tests for catalog, selection, ownership,
   locks, sanitization, and reports.
 - **B1:** new per-type Playwright drivers/specs; candidate until executed
   against the local full stack.
