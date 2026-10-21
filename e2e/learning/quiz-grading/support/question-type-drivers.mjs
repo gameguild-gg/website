@@ -1,4 +1,4 @@
-import { QUESTION_TYPE_CASES } from "./capability-catalog.mjs";
+import { QUESTION_TYPE_CASES } from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/capability-catalog.mjs";
 
 const DRIVERS = Object.freeze({
   "single-choice": answerChoice,

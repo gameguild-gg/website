@@ -21,8 +21,8 @@ import {
 
 export const MANIFEST_SCHEMA_VERSION = 2;
 
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-export const WEB_ROOT = resolve(SCRIPT_DIR, "../..");
+const ADAPTER_DIR = dirname(fileURLToPath(import.meta.url));
+export const WEB_ROOT = resolve(ADAPTER_DIR, "../../../../..");
 export const REPO_ROOT = resolve(WEB_ROOT, "../..");
 export const RESULTS_ROOT = resolve(
   WEB_ROOT,

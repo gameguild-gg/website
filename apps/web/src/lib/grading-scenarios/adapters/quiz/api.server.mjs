@@ -1,9 +1,4 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-import { REPO_ROOT } from "./manifest.mjs";
-
-let clientPackagePromise;
+import { createClient, GeneratedApi } from "@game-guild/client";
 
 const silentDevToolsLogger = Object.freeze({
   group() {},
@@ -58,7 +53,6 @@ export async function authenticatePersona(
   const persona = manifest.personas[personaKey];
   if (!persona)
     throw new Error(`Persona "${personaKey}" is not present in this scenario.`);
-  const { createClient, GeneratedApi } = await loadClientPackage();
   const anonymousClient = createClient({
     baseUrl: manifest.environment.apiBaseUrl,
     devtools: quietDevTools,
@@ -145,7 +139,6 @@ export async function createAuthenticatedClient({
   token,
   tenantId,
 }) {
-  const { createClient } = await loadClientPackage();
   return createClient({
     baseUrl: apiBaseUrl,
     auth: { getAccessToken: async () => token },
@@ -201,49 +194,6 @@ async function retryNetworkResult(operation) {
     }
   }
   return result;
-}
-
-async function loadClientPackage() {
-  clientPackagePromise ??= importClientPackage();
-  return clientPackagePromise;
-}
-
-async function importClientPackage() {
-  const target = resolveClientBuildTarget();
-  if (!target) {
-    throw new Error(
-      '@game-guild/client has no build output. Keep "pnpm dev:fast" running or run "pnpm --filter @game-guild/client build", then retry.',
-    );
-  }
-  try {
-    return await import(target.specifier);
-  } catch (error) {
-    throw new Error(
-      `Unable to load @game-guild/client from ${target.label}: ${error.message}`,
-    );
-  }
-}
-
-export function resolveClientBuildTarget({
-  repoRoot = REPO_ROOT,
-  fileExists = existsSync,
-} = {}) {
-  const standardEntry = resolve(
-    repoRoot,
-    "packages/infrastructure/client/dist/index.js",
-  );
-  if (fileExists(standardEntry)) {
-    return { label: "dist", specifier: "@game-guild/client" };
-  }
-
-  const fastEntry = resolve(
-    repoRoot,
-    "packages/infrastructure/client/dist-fast/index.js",
-  );
-  if (fileExists(fastEntry)) {
-    return { label: "dist-fast", specifier: pathToFileURL(fastEntry).href };
-  }
-  return null;
 }
 
 function safeStringify(value) {

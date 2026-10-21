@@ -3,12 +3,23 @@ import { createHmac } from "node:crypto";
 /** Deterministic test secrets for elevated-role E2E accounts that require MFA. */
 const DETERMINISTIC_TEST_SECRETS = new Map([
   ["admin@game-guild.com", "G2ZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"], // RFC 6238 public test key
-  ["testing-lab-browser-owner-1749xxx@example.test", "G2ZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"],
-  ["testing-lab-browser-reviewer-1749xxx@example.test", "GEZDGNBVGY3TQOJQGEGDGNBVGY3TQOJQ"],
-  ["testing-lab-browser-tester-1749xxx@example.test", "GEGDGNBVGY3TQOJQGEGDGNBVGY3TQOJQ"],
+  [
+    "testing-lab-browser-owner-1749xxx@example.test",
+    "G2ZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+  ],
+  [
+    "testing-lab-browser-reviewer-1749xxx@example.test",
+    "GEZDGNBVGY3TQOJQGEGDGNBVGY3TQOJQ",
+  ],
+  [
+    "testing-lab-browser-tester-1749xxx@example.test",
+    "GEGDGNBVGY3TQOJQGEGDGNBVGY3TQOJQ",
+  ],
 ]);
 
-export const E2E_ADMIN_TOTP_SECRET = DETERMINISTIC_TEST_SECRETS.get("admin@game-guild.com");
+export const E2E_ADMIN_TOTP_SECRET = DETERMINISTIC_TEST_SECRETS.get(
+  "admin@game-guild.com",
+);
 
 /** Independent RFC 6238 SHA-1 generator for disposable browser test accounts. */
 export function generateTotpCode(secret, timeMilliseconds = Date.now()) {
@@ -52,13 +63,13 @@ export function createMfaSignInContinuation({
     const { mfaToken } = firstFactor;
     if (typeof mfaToken !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(mfaToken))
       throw new Error("Sign-in did not provide a valid limited MFA challenge");
-    
+
     // Check deterministic test secrets first
     const deterministicSecret = DETERMINISTIC_TEST_SECRETS.get(accountKey);
     if (deterministicSecret) {
       secrets.set(accountKey, deterministicSecret);
     }
-    
+
     const secret = secrets.get(accountKey);
     if (!secret)
       throw new Error(
@@ -81,4 +92,31 @@ export function createMfaSignInContinuation({
       throw new Error("MFA sign-in did not complete");
     return completed;
   };
+}
+
+/**
+ * Retries one rejected MFA completion with a fresh server challenge.
+ * The shared continuation advances to a new TOTP counter before the retry,
+ * preserving the server's replay protection across adjacent test processes.
+ */
+export async function completeMfaSignInWithReplayRetry({
+  accountKey,
+  begin,
+  continuation = createMfaSignInContinuation(),
+  isReplayFailure,
+  maxReplayRetries = 1,
+  send,
+}) {
+  let replayRetries = 0;
+  while (true) {
+    const firstFactor = await begin();
+    try {
+      return await continuation(firstFactor, send, accountKey);
+    } catch (error) {
+      if (replayRetries >= maxReplayRetries || !isReplayFailure(error)) {
+        throw error;
+      }
+      replayRetries += 1;
+    }
+  }
 }
