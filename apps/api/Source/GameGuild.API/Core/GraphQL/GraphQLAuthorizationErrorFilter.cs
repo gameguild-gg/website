@@ -10,6 +10,14 @@ namespace GameGuild.API.Core.GraphQL;
 ///     attacker probing a protected field learns only that the request was denied, not the
 ///     identity of the denied field. Root operations denied at planning time additionally
 ///     receive the nonexistent-field error shape from the operation gate middleware.
+///     <para>
+///         Note: HotChocolate re-attaches a response path to resolver-raised errors AFTER
+///         the error-filter stage, so this filter alone cannot keep denied-field paths out
+///         of the final response; the operation gate middleware completes the hygiene by
+///         wrapping the finished result (<see cref="GraphQLAuthorizationResult"/>). The
+///         filter remains registered as defense in depth for errors built through the
+///         error-handler pipeline.
+///     </para>
 /// </summary>
 public sealed class GraphQLAuthorizationErrorFilter : IErrorFilter
 {

@@ -157,11 +157,13 @@ public sealed class GraphQLSchemaVersionTests
         var server = builder.Services.AddGraphQLServer();
         if (addExtraProtectedField)
         {
-            server = server.AddQueryType<GraphQLVersionProbeWithExtraProtectedField>();
+            server = server.AddQueryType<GraphQLVersionProbeWithExtraProtectedField>(
+                descriptor => descriptor.Name("Query"));
         }
         else
         {
-            server = server.AddQueryType<GraphQLVersionProbe>();
+            server = server.AddQueryType<GraphQLVersionProbe>(
+                descriptor => descriptor.Name("Query"));
         }
 
         server

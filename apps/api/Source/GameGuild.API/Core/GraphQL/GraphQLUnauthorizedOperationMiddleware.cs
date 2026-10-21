@@ -31,10 +31,12 @@ namespace GameGuild.API.Core.GraphQL;
 ///         Planning-decidable rules are tenant-scoped permissions, content-type scoped
 ///         permissions, roles and policies. Resource-scoped rules depend on a concrete
 ///         resource (and its owner-override state) and remain enforced during execution by
-///         <see cref="GraphQLAuthorizeFieldMiddleware"/>, where the authorization error
-///         filter strips the denied field's path. Schema administrators bypass the gate.
-///         Every failure mode (anonymous actor, unresolvable actor context, unknown
-///         permission keys, evaluation errors) denies.
+///         <see cref="GraphQLAuthorizeFieldMiddleware"/>, where the response path is
+///         stripped from the denial error (<see cref="GraphQLAuthorizationResult"/>).
+///         Fields that mask on denial (per-field <c>maskUnauthorized</c> or the host
+///         default) are not hidden: their denial resolves to null at execution. Schema
+///         administrators bypass the gate. Every failure mode (anonymous actor,
+///         unresolvable actor context, unknown permission keys, evaluation errors) denies.
 ///     </para>
 /// </summary>
 public sealed class GraphQLUnauthorizedOperationMiddleware(RequestDelegate next)
@@ -49,6 +51,7 @@ public sealed class GraphQLUnauthorizedOperationMiddleware(RequestDelegate next)
         if (context.Document is null || context.Result is not null)
         {
             await _next(context).ConfigureAwait(false);
+            SanitizeAuthorizationErrorPaths(context);
             return;
         }
 
@@ -58,6 +61,7 @@ public sealed class GraphQLUnauthorizedOperationMiddleware(RequestDelegate next)
         if (!options.HideUnauthorizedOperations)
         {
             await _next(context).ConfigureAwait(false);
+            SanitizeAuthorizationErrorPaths(context);
             return;
         }
 
@@ -74,6 +78,22 @@ public sealed class GraphQLUnauthorizedOperationMiddleware(RequestDelegate next)
         }
 
         await _next(context).ConfigureAwait(false);
+        SanitizeAuthorizationErrorPaths(context);
+    }
+
+    /// <summary>
+    ///     Error hygiene (issue #335): strips the response path from execution-time
+    ///     authorization errors on the finished result. HotChocolate re-attaches a path to
+    ///     resolver-raised errors after the error-filter stage, so the path is removed here,
+    ///     where the result is complete. Applies whether or not the operation gate is
+    ///     enabled; gate-produced errors already carry no path by construction.
+    /// </summary>
+    private static void SanitizeAuthorizationErrorPaths(IRequestContext context)
+    {
+        if (context.Result is IOperationResult result && GraphQLAuthorizationResult.NeedsSanitizing(result))
+        {
+            context.Result = new GraphQLAuthorizationResult(result);
+        }
     }
 
     private async Task<HiddenOperationError?> FindUnauthorizedOperationAsync(
@@ -108,6 +128,15 @@ public sealed class GraphQLUnauthorizedOperationMiddleware(RequestDelegate next)
                 if (await IsSchemaAdminAsync(context, services, actor, options).ConfigureAwait(false))
                 {
                     return null;
+                }
+
+                // Fields that mask on denial expose their shape by choice (per-field
+                // maskUnauthorized or the host default): the denial resolves to null at
+                // execution instead of hiding the operation at planning time, so masking
+                // and operation hiding never fight over the same field.
+                if (rules.All(rule => rule.MaskUnauthorized) || options.MaskUnauthorizedFieldsByDefault)
+                {
+                    continue;
                 }
 
                 foreach (var rule in rules)

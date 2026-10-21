@@ -47,28 +47,21 @@ public sealed class GraphQLUnauthorizedOperationTests
         var hidden = await ExecuteAsync(client, "{ protectedQuery }");
         var nonexistent = await ExecuteAsync(client, "{ definitelyNotAField }");
 
-        hidden.Status.Should().Be(HttpStatusCode.OK, hidden.Body);
-        nonexistent.Status.Should().Be(HttpStatusCode.OK, nonexistent.Body);
+        // GraphQL-over-HTTP: request-level errors (validation and the gate's replicated
+        // nonexistent-field error) map to 400 Bad Request — both requests map the same.
+        hidden.Status.Should().Be(HttpStatusCode.BadRequest, hidden.Body);
+        nonexistent.Status.Should().Be(HttpStatusCode.BadRequest, nonexistent.Body);
 
         // The hidden-operation response must not reveal that the protected operation
-        // exists: no data payload, no path, no authorization code. The field name only
-        // appears inside the replicated "does not exist" message, exactly as it does for
-        // a genuinely unknown field.
+        // exists: no data payload, no path, no authorization code. The response is
+        // byte-for-byte identical to the genuinely-unknown-field response modulo the
+        // field name the caller themselves supplied.
         hidden.Json.RootElement.TryGetProperty("data", out _).Should().BeFalse(hidden.Body);
         hidden.Body.Should().NotContain("AUTHORIZATION");
         hidden.Body.Should().Contain("does not exist");
 
-        var hiddenError = ExtractError(hidden);
-        var nonexistentError = ExtractError(nonexistent);
-        hiddenError.GetProperty("message").GetString()
-            .Should().Be(nonexistentError.GetProperty("message").GetString());
-        hiddenError.TryGetProperty("path", out _).Should()
-            .Be(nonexistentError.TryGetProperty("path", out _));
-        hiddenError.GetProperty("extensions").EnumerateObject()
-            .Select(extension => (extension.Name, extension.Value.ToString()))
-            .Should().BeEquivalentTo(
-                nonexistentError.GetProperty("extensions").EnumerateObject()
-                    .Select(extension => (extension.Name, extension.Value.ToString())));
+        hidden.Body.Replace("protectedQuery", "probedField")
+            .Should().Be(nonexistent.Body.Replace("definitelyNotAField", "probedField"), hidden.Body);
     }
 
     [Fact]
@@ -111,12 +104,12 @@ public sealed class GraphQLUnauthorizedOperationTests
 
         var result = await ExecuteAsync(
             client,
-            "query { ...ProtectedFragment } fragment ProtectedFragment on Query { protectedQuery }");
+            "query { ...ProtectedFragment } fragment ProtectedFragment on GraphQLDynamicSchemaProbe { protectedQuery }");
 
         result.Json.RootElement.TryGetProperty("data", out _).Should().BeFalse(result.Body);
         var error = ExtractError(result);
         error.GetProperty("message").GetString()
-            .Should().Be("The field `protectedQuery` does not exist on the type `Query`.");
+            .Should().Be("The field `protectedQuery` does not exist on the type `GraphQLDynamicSchemaProbe`.");
         error.TryGetProperty("path", out _).Should().BeFalse();
     }
 

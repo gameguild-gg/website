@@ -215,7 +215,14 @@ roles, policies) against the caller's resolved permission set.
   execution: the response carries only the error HotChocolate produces for a nonexistent
   field (`The field \`X\` does not exist on the type \`Query\`.`), with **no `data`
   payload, no path and no authorization code** — indistinguishable from querying an
-  unknown field, so protected operations never reveal their existence.
+  unknown field, so protected operations never reveal their existence. Like genuine
+  document-validation errors, these request-level errors map to HTTP 400.
+- **Fields that mask on denial are not hidden**: a field whose rules opt into masking
+  (per-field `maskUnauthorized`, or the host default
+  [MaskUnauthorizedFieldsByDefault](#conditional-field-exposure-masking)) exposes its
+  shape by choice — its denial resolves to `null` at execution instead of failing the
+  request at planning time, so masking and operation hiding never fight over the same
+  field.
 - **Resource-scoped rules are not planning-decidable** (they need the concrete resource
   and its owner-override state); they remain enforced during execution by the field
   middleware, and their execution-time denial errors never carry a path (see error
@@ -234,12 +241,21 @@ roles, policies) against the caller's resolved permission set.
 
 ## Error hygiene (non-revealing authorization errors)
 
-The `GraphQLAuthorizationErrorFilter` normalizes execution-time authorization failures:
-`AUTHORIZATION_DENIED` / `AUTHORIZATION_UNAVAILABLE` errors keep their generic message
-and code, but their response `path` is stripped, so an attacker probing a protected field
-learns only that *something* was denied — never which field. Combined with the
-planning-time gate above, both the existence and the identity of protected fields stay
-hidden from unauthorized callers.
+Execution-time authorization failures are normalized so they never reveal which field
+was denied: `AUTHORIZATION_DENIED` / `AUTHORIZATION_UNAVAILABLE` errors keep their
+generic message and code, and their response `path` is stripped, so an attacker probing a
+protected field learns only that *something* was denied — never which field.
+
+HotChocolate re-attaches a response path to resolver-raised errors **after** the
+error-filter stage (`MiddlewareContext.ReportError` → `EnsurePathAndLocation`), so an
+`IErrorFilter` alone cannot keep denied-field paths out of the response. The gate
+middleware therefore also wraps the finished operation result
+(`GraphQLAuthorizationResult`, registered in `SetupGraphQL`): the HTTP transport
+serializes results through the interface properties, so the sanitized error list is what
+clients see. The `GraphQLAuthorizationErrorFilter` remains registered as defense in depth
+for errors built through the error-handler pipeline. Combined with the planning-time
+gate, both the existence and the identity of protected fields stay hidden from
+unauthorized callers.
 
 ## Conditional field exposure (masking)
 
