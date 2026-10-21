@@ -20,7 +20,7 @@ packages:
 
 overrides:
   "@babel/plugin-transform-modules-systemjs": "7.29.7"
-  "@modelcontextprotocol/sdk@<1.31.0": "1.31.0"
+  "@modelcontextprotocol/sdk@<1.32.0": "1.32.0"
   "@tootallnate/once": "2.0.1"
   "@excalidraw/excalidraw>nanoid": "3.3.18"
   "@excalidraw/mermaid-to-excalidraw>mermaid": "11.16.1"
