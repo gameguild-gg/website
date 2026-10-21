@@ -5,7 +5,7 @@ import {
   isMissing,
   request,
   unwrap,
-} from "./api.mjs";
+} from "./api.server.mjs";
 import {
   assertApplicableCheckpoint,
   checkpointIndex,
@@ -23,7 +23,7 @@ import {
   recomputeManifestCheckpoint,
   selectedManifestQuizzes,
   writeManifest,
-} from "./manifest.mjs";
+} from "./manifest.server.mjs";
 import { buildScenarioUrls } from "./urls.mjs";
 
 export async function prepareScenario({
