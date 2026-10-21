@@ -133,7 +133,7 @@ export async function boot(manifestUrl: string, terminalContainerOrTerminal: HTM
     pythonMajorMinor: manifest.toolVersions?.pythonMajorMinor ?? '3.13',
     pythonMajorMinorCompact: manifest.toolVersions?.pythonMajorMinorCompact ?? '313',
   });
-  const isTerminalInstance = typeof (terminalContainerOrTerminal as any).writeln === 'function';
+  const isTerminalInstance = 'writeln' in terminalContainerOrTerminal && typeof terminalContainerOrTerminal.writeln === 'function';
   console.log(`${P}   TTYBridge: reusing existing Terminal=${isTerminalInstance}`);
   const tty = new TTYBridge(terminalContainerOrTerminal);
   const shell = new MiniShell(runner, tty, vfs);
@@ -175,7 +175,7 @@ export async function bootInWorker(
   console.log(`${P} ===== BOOT (Worker mode) START =====`);
 
   // Create the terminal (stays on main thread)
-  const isTerminalInstance = typeof (terminalContainerOrTerminal as any).writeln === 'function';
+  const isTerminalInstance = 'writeln' in terminalContainerOrTerminal && typeof terminalContainerOrTerminal.writeln === 'function';
   console.log(`${P} TTYBridge: reusing existing Terminal=${isTerminalInstance}`);
   const tty = new TTYBridge(terminalContainerOrTerminal);
 
@@ -207,8 +207,7 @@ export async function bootInWorker(
   // When exclusive stdin is active (a WASI program is reading stdin),
   // keystrokes are routed through TTYBridge.readByteExclusive → feedStdin
   // instead, so we must NOT also send them to the shell (id: 0).
-  const terminal = (tty as any).terminal as import('@xterm/xterm').Terminal;
-  terminal.onData((data: string) => {
+  tty.onData((data: string) => {
     if (tty.isExclusiveStdin) return;
     for (let i = 0; i < data.length; i++) {
       worker.postMessage({ type: 'stdin', id: 0, byte: data.charCodeAt(i) });
