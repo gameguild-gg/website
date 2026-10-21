@@ -325,11 +325,11 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - uses: ./.github/actions/setup-playwright
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: economy-api-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/economy-inputs/api
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: economy-client-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/economy-inputs/client
