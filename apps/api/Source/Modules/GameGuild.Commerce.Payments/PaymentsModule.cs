@@ -84,6 +84,11 @@ public static class PaymentsModule
             .Bind(configuration.GetSection(FraudAssessmentOptions.SectionName))
             .ValidateOnStart();
         services.AddScoped<IFraudSignalProvider, VelocityFraudSignalProvider>();
+        // Fraud model expansion (issue #409): card-testing pattern (small rapid bursts),
+        // account-age (first-cycle high-value) and behavior-anomaly (amount vs baseline).
+        services.AddScoped<IFraudSignalProvider, CardTestingPatternFraudSignalProvider>();
+        services.AddScoped<IFraudSignalProvider, AccountAgeFraudSignalProvider>();
+        services.AddScoped<IFraudSignalProvider, BehaviorAnomalyFraudSignalProvider>();
         services.AddScoped<IFraudDetectionService, FraudDetectionService>();
 
         // Failure-code retry policy + automated retry queue (issue #415): classifies gateway

@@ -8749,13 +8749,18 @@ export const deleteEmailDeliverySuppressionsEndpoint = {
 /**
  * List the pending manual fraud reviews, oldest first.
  *
- * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+ * Lists payments held by the fraud gate with a pending manual review, oldest first. Supports filtering by minimum score, risk band, charged amount and creation date range. Requires the payments:admin permission.
  */
 export interface GetFraudReviewsInput {
   query?: {
     tenantId?: string;
     page?: number;
     pageSize?: number;
+    minScore?: number;
+    riskLevel?: Types.CommercePaymentsFraudRiskLevel;
+    minAmount?: number;
+    fromUtc?: string;
+    toUtc?: string;
   };
 }
 export type GetFraudReviewsOutput = Types.CommercePaymentsFraudReviewListItem[];
@@ -8799,6 +8804,40 @@ export const postFraudReviewsDenyEndpoint = {
   operationId: 'postFraudReviewsDeny' as const,
   method: 'POST' as const,
   path: '/api/v1/fraud/reviews/{paymentId}:deny' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-approve pending fraud reviews, releasing the fraud holds.
+ *
+ * Approves the pending fraud reviews for a batch of held payments (2-100), releasing each fraud hold so the payment can be retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsBulkApproveInput {
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput;
+}
+export type PostFraudReviewsBulkApproveOutput = Types.CommercePaymentsFraudReviewsBulkResolutionResult;
+export const postFraudReviewsBulkApproveEndpoint = {
+  operationId: 'postFraudReviewsBulkApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/bulk-approve' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-decline pending fraud reviews, keeping the payments failed and non-retryable.
+ *
+ * Declines the pending fraud reviews for a batch of held payments (2-100); each stays failed and is never retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsBulkDenyInput {
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput;
+}
+export type PostFraudReviewsBulkDenyOutput = Types.CommercePaymentsFraudReviewsBulkResolutionResult;
+export const postFraudReviewsBulkDenyEndpoint = {
+  operationId: 'postFraudReviewsBulkDeny' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/bulk-deny' as const,
   tags: ['CommercePaymentsFraudReviews'] as const,
   requiresAuth: true,
 } as const;
@@ -30341,6 +30380,8 @@ export const endpoints = {
   getFraudReviews: getFraudReviewsEndpoint,
   postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
   postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
+  postFraudReviewsBulkApprove: postFraudReviewsBulkApproveEndpoint,
+  postFraudReviewsBulkDeny: postFraudReviewsBulkDenyEndpoint,
   postGifts: postGiftsEndpoint,
   getGifts: getGiftsEndpoint,
   postGiftsRedeem: postGiftsRedeemEndpoint,

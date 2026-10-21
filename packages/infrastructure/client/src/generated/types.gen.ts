@@ -2772,9 +2772,41 @@ export interface CommercePaymentsFraudReviewResolutionResult {
   success: boolean;
 }
 
+/** Outcome of one payment in a bulk fraud-review resolution. */
+export interface CommercePaymentsFraudReviewsBulkItemResult {
+  /** Skip reason when GameGuild.Commerce.Payments.FraudReviewsBulkItemResult.Success is false. */
+  failureReason?: string | null;
+  /** Payment the item refers to. */
+  paymentId: string;
+  /** Whether the item's review was resolved. */
+  success: boolean;
+}
+
+/** Aggregate outcome of a bulk fraud-review resolution. */
+export interface CommercePaymentsFraudReviewsBulkResolutionResult {
+  /** Per-item outcomes, in request order. */
+  items: CommercePaymentsFraudReviewsBulkItemResult[] | null;
+  /** Number of payments the batch requested. */
+  requested: number;
+  /** Number of reviews actually resolved. */
+  resolved: number;
+  /** Administrator who resolved the batch. */
+  reviewedByUserId: string;
+  /** Number of items skipped (missing payment or no pending review). */
+  skipped: number;
+}
+
 /** Request body for resolving a fraud review. */
 export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewInput {
   notes?: string | null;
+}
+
+/** Request body for bulk-resolving fraud reviews. */
+export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput {
+  /** Optional reviewer notes recorded with every resolution. */
+  notes?: string | null;
+  /** Payments whose reviews are resolved (2-100 items). */
+  paymentIds?: string[] | null;
 }
 
 /** Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
@@ -24503,7 +24535,10 @@ export let CommercePaymentsDisputeTypeSchema: z.ZodType<CommercePaymentsDisputeT
 export let CommercePaymentsEvidenceTypeSchema: z.ZodType<CommercePaymentsEvidenceType>;
 export let CommercePaymentsFraudReviewListItemSchema: z.ZodType<CommercePaymentsFraudReviewListItem>;
 export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewResolutionResult>;
+export let CommercePaymentsFraudReviewsBulkItemResultSchema: z.ZodType<CommercePaymentsFraudReviewsBulkItemResult>;
+export let CommercePaymentsFraudReviewsBulkResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewsBulkResolutionResult>;
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
+export let CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput>;
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
 export let CommercePaymentsGatewayCircuitSnapshotSchema: z.ZodType<CommercePaymentsGatewayCircuitSnapshot>;
@@ -28931,9 +28966,31 @@ CommercePaymentsFraudReviewResolutionResultSchema = z.object({
   success: z.boolean(),
 });
 
+/** Zod schema for CommercePaymentsFraudReviewsBulkItemResult. Outcome of one payment in a bulk fraud-review resolution. */
+CommercePaymentsFraudReviewsBulkItemResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsBulkResolutionResult. Aggregate outcome of a bulk fraud-review resolution. */
+CommercePaymentsFraudReviewsBulkResolutionResultSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsFraudReviewsBulkItemResultSchema)).nullable(),
+  requested: z.number().int(),
+  resolved: z.number().int(),
+  reviewedByUserId: z.string().uuid(),
+  skipped: z.number().int(),
+});
+
 /** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewInput. Request body for resolving a fraud review. */
 CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema = z.object({
   notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput. Request body for bulk-resolving fraud reviews. */
+CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+  paymentIds: z.array(z.string().uuid()).nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsFraudReviewStatus. Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
