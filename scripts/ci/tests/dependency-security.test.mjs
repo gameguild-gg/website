@@ -93,7 +93,176 @@ for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
       },
     }), /issuer/i);
     assert.equal(requests, 0, "Issuer mismatch must fail before any credential-bearing request");
-    assert.equal(require(join(packageRoot, "package.json")).version, "1.31.0");
+    assert.equal(require(join(packageRoot, "package.json")).version, "1.32.0");
+  });
+}
+
+for (const packageRoot of installedConsumers("launch-editor")) {
+  const constructCommand = require(join(packageRoot, "construct-windows-launch-command.js"));
+  const parseFile = require(join(packageRoot, "parse-file.js"));
+  const editorArguments = require(join(packageRoot, "get-args.js"));
+
+  test(packageRoot + ": Windows editor arguments reject variable expansion and line breaks", () => {
+    for (const value of ["%EDITOR_INPUT%", "%CMDCMDLINE:~-38%", "%VAR:old=new%", "line\rbreak", "line\nbreak"]) {
+      assert.throws(() => constructCommand("code", ["C:\\project\\" + value]), /argument containing/);
+    }
+    assert.equal(require(join(packageRoot, "package.json")).version, "2.14.2");
+  });
+
+  test(packageRoot + ": ordinary editor arguments retain quoting and route characters", () => {
+    assert.equal(
+      constructCommand("C:\\Program Files\\Editor\\editor.exe", ["C:\\my project\\file.js"]),
+      '"C:\\Program Files\\Editor\\editor.exe" "C:\\my project\\file.js"',
+    );
+    for (const name of ["+page.svelte", "$route.tsx", "(group)\\page.tsx", "@route\\page.tsx", "[slug]\\page.tsx"]) {
+      assert.equal(constructCommand("code", [name]), "code " + name);
+    }
+    assert.equal(constructCommand("code", ["C:\\project\\&file.js"]), 'code ^"C:\\project\\^&file.js^"');
+  });
+
+  test(packageRoot + ": option-like file names become absolute editor operands", () => {
+    for (const name of ["+fixture.js", "--fixture.js"]) {
+      const expected = resolve(name);
+      for (const editor of ["vim", "emacs", "notepad++"]) {
+        assert.deepEqual(editorArguments(editor, name), [expected]);
+      }
+    }
+    const file = resolve("ordinary.js");
+    assert.deepEqual(editorArguments("code", file, "12", "3"), ["-r", "-g", file + ":12:3"]);
+  });
+
+  test(packageRoot + ": position parsing resolves the exact path used by the existence check", () => {
+    const parent = join(repositoryRoot, "synthetic-project");
+    assert.deepEqual(parseFile(join(parent, "synthetic-component", "..") + ":1:1"), {
+      fileName: parent, lineNumber: "1", columnNumber: "1",
+    });
+    const rawTraversal = parent + "/synthetic-component/..:1:1";
+    assert.equal(parseFile(rawTraversal).fileName, parent);
+    assert.equal(parseFile(parent + "/%EDITOR_INPUT%/..:1:1").fileName, parent);
+    assert.equal(parseFile(":1:1").fileName, "");
+    const ordinary = join(repositoryRoot, "ordinary.js");
+    assert.equal(parseFile(pathToFileURL(ordinary).href).fileName, ordinary);
+  });
+}
+
+function readFixtureRequest(incoming, complete) {
+  let body = "";
+  incoming.setEncoding("utf8");
+  incoming.on("data", (chunk) => { body += chunk; });
+  incoming.on("end", () => complete({ headers: incoming.headers, body }));
+}
+
+for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
+  for (const status of [302, 307, 308]) {
+    for (const sameOrigin of [false, true]) {
+      test(packageRoot + ": MCP " + status + " redirects respect origin boundaries (" + sameOrigin + ")", { timeout: 15000 }, async (context) => {
+        const { StreamableHTTPClientTransport } = await import(pathToFileURL(join(packageRoot, "dist/esm/client/streamableHttp.js")).href);
+        const sourceRequests = [], targetRequests = [];
+        const receiveTarget = (incoming, response) => readFixtureRequest(incoming, (observed) => {
+          targetRequests.push(observed);
+          response.writeHead(202);
+          response.end();
+        });
+        const target = await startRedirectServer(context, receiveTarget);
+        const source = await startRedirectServer(context, (incoming, response) => {
+          if (sameOrigin && incoming.url === "/target") return receiveTarget(incoming, response);
+          readFixtureRequest(incoming, (observed) => {
+            sourceRequests.push(observed);
+            response.writeHead(status, { Location: sameOrigin ? "/target" : target.href });
+            response.end();
+          });
+        });
+        const apiKey = randomBytes(16).toString("hex");
+        const sessionId = randomBytes(16).toString("hex");
+        const message = { jsonrpc: "2.0", method: "notifications/progress", params: { progressToken: "fixture", progress: 1 } };
+        const transport = new StreamableHTTPClientTransport(source, {
+          requestInit: { headers: { "X-API-Key": apiKey } },
+          fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.any([init.signal, AbortSignal.timeout(5000)].filter(Boolean)) }),
+          sessionId,
+        });
+        context.after(() => transport.close());
+        await transport.start();
+        if (sameOrigin && status !== 302) {
+          await transport.send(message);
+          assert.equal(targetRequests.length, 1);
+          assert.equal(targetRequests[0].headers["x-api-key"], apiKey);
+          assert.equal(targetRequests[0].headers["mcp-session-id"], sessionId);
+          assert.deepEqual(JSON.parse(targetRequests[0].body), message);
+        } else {
+          await assert.rejects(() => transport.send(message), /redirect/i);
+          assert.equal(targetRequests.length, 0, "Custom headers, session and body must not reach the redirect target");
+        }
+        assert.equal(sourceRequests.length, 1);
+        assert.equal(sourceRequests[0].headers["x-api-key"], apiKey);
+        assert.equal(sourceRequests[0].headers["mcp-session-id"], sessionId);
+        assert.deepEqual(JSON.parse(sourceRequests[0].body), message);
+      });
+    }
+  }
+
+  for (const status of [307, 308]) {
+    for (const sameOrigin of [false, true]) {
+      test(packageRoot + ": OAuth " + status + " credential redirects respect origin boundaries (" + sameOrigin + ")", { timeout: 15000 }, async (context) => {
+        const { fetchToken } = await import(pathToFileURL(join(packageRoot, "dist/esm/client/auth.js")).href);
+        const sourceRequests = [], targetRequests = [];
+        const receiveTarget = (incoming, response) => readFixtureRequest(incoming, (observed) => {
+          targetRequests.push(observed);
+          response.writeHead(200, { "Content-Type": "application/json" });
+          response.end(JSON.stringify({ access_token: "synthetic-access-token", token_type: "Bearer" }));
+        });
+        const target = await startRedirectServer(context, receiveTarget);
+        const source = await startRedirectServer(context, (incoming, response) => {
+          if (sameOrigin && incoming.url === "/target") return receiveTarget(incoming, response);
+          readFixtureRequest(incoming, (observed) => {
+            sourceRequests.push(observed);
+            response.writeHead(status, { Location: sameOrigin ? "/target" : target.href });
+            response.end();
+          });
+        });
+        const clientSecret = randomBytes(16).toString("hex");
+        const refreshToken = randomBytes(16).toString("hex");
+        const provider = {
+          clientMetadata: {},
+          clientInformation: () => ({ client_id: "disposable-test-client", client_secret: clientSecret, issuer: source.href }),
+          prepareTokenRequest: () => new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken }),
+        };
+        const request = () => fetchToken(provider, source, {
+          metadata: { issuer: source.href, token_endpoint: source.href, token_endpoint_auth_methods_supported: ["client_secret_post"] },
+          fetchFn: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(5000) }),
+        });
+        if (sameOrigin) {
+          assert.equal((await request()).access_token, "synthetic-access-token");
+          assert.equal(targetRequests.length, 1);
+          assert.equal(new URLSearchParams(targetRequests[0].body).get("client_secret"), clientSecret);
+          assert.equal(new URLSearchParams(targetRequests[0].body).get("refresh_token"), refreshToken);
+        } else {
+          await assert.rejects(request);
+          assert.equal(targetRequests.length, 0, "OAuth credentials must not reach a different origin");
+        }
+        assert.equal(sourceRequests.length, 1);
+        assert.equal(new URLSearchParams(sourceRequests[0].body).get("client_secret"), clientSecret);
+        assert.equal(new URLSearchParams(sourceRequests[0].body).get("refresh_token"), refreshToken);
+      });
+    }
+  }
+}
+
+for (const packageRoot of installedConsumers("shadcn")) {
+  test(packageRoot + ": the installed shadcn MCP server retains its tool catalog", { timeout: 15000 }, async (context) => {
+    const consumerRequire = createRequire(join(packageRoot, "package.json"));
+    const sdkRoot = resolve(dirname(consumerRequire.resolve("@modelcontextprotocol/sdk/client/index.js")), "../../..");
+    const { Client } = await import(pathToFileURL(join(sdkRoot, "dist/esm/client/index.js")).href);
+    const { InMemoryTransport } = await import(pathToFileURL(join(sdkRoot, "dist/esm/inMemory.js")).href);
+    const { server } = await import(pathToFileURL(join(packageRoot, "dist/mcp/index.js")).href);
+    const client = new Client({ name: "dependency-compatibility-fixture", version: "1.0.0" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    context.after(async () => { await client.close(); await server.close(); });
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    const result = await client.listTools();
+    assert.ok(result.tools.some((tool) => tool.name === "get_project_registries"));
+    assert.ok(result.tools.some((tool) => tool.name === "search_items_in_registries"));
+    assert.ok(result.tools.every((tool) => tool.inputSchema.type === "object"));
   });
 }
 
