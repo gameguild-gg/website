@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
+import { createServer } from "node:http";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { test } from "node:test";
@@ -93,5 +94,128 @@ for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
     }), /issuer/i);
     assert.equal(requests, 0, "Issuer mismatch must fail before any credential-bearing request");
     assert.equal(require(join(packageRoot, "package.json")).version, "1.31.0");
+  });
+}
+
+async function startRedirectServer(context, handler) {
+  const server = createServer(handler);
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      server.removeListener("error", reject);
+      resolve();
+    });
+  });
+  context.after(() => new Promise((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+    server.closeAllConnections();
+  }));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  return new URL(`http://127.0.0.1:${address.port}`);
+}
+
+function echoRedirectRequest(incoming, response) {
+  let body = "";
+  incoming.setEncoding("utf8");
+  incoming.on("data", (chunk) => { body += chunk; });
+  incoming.on("end", () => {
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ headers: incoming.headers, method: incoming.method, body }));
+  });
+}
+
+function followRedirectRequest(transport, url, options, body) {
+  assert.equal(url.hostname, "127.0.0.1");
+  assert.equal(url.protocol, "http:");
+  return new Promise((resolve, reject) => {
+    const outgoing = transport.request(url, options, (response) => {
+      let data = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => { data += chunk; });
+      response.on("error", reject);
+      response.on("end", () => {
+        try { resolve(JSON.parse(data)); } catch (error) { reject(error); }
+      });
+    });
+    outgoing.on("error", reject);
+    outgoing.setTimeout(5000, () => outgoing.destroy(new Error("Redirect fixture timed out")));
+    outgoing.end(body);
+  });
+}
+
+for (const packageRoot of installedConsumers("follow-redirects")) {
+  const { default: redirectTransport } = await import(pathToFileURL(join(packageRoot, "index.js")).href);
+  const sensitiveName = "X-Private^Header|Value";
+  const fixedPublisher = () => {
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+    assert.equal(manifest.version, "1.16.1");
+    assert.equal(
+      createHash("sha256").update(readFileSync(join(packageRoot, "index.js"))).digest("hex"),
+      "656e169cc2e8043ec00b7d912f3ff523a01026a3fd38e04516b37fb39be94f14",
+    );
+  };
+  const credentials = () => ({
+    Authorization: randomBytes(16).toString("hex"),
+    "pRoXy-AuThOrIzAtIoN": randomBytes(16).toString("hex"),
+    COOKIE: `session=${randomBytes(16).toString("hex")}`,
+    [sensitiveName]: randomBytes(16).toString("hex"),
+  });
+  const asHeaders = (representation, values) => representation === "array" ? Object.entries(values).flat() : values;
+
+  for (const representation of ["object", "array"]) {
+    test(`${packageRoot}: ${representation} credentials are stripped across redirect origins`, { timeout: 15000 }, async (context) => {
+      const target = await startRedirectServer(context, echoRedirectRequest);
+      const source = await startRedirectServer(context, (incoming, response) => {
+        incoming.resume();
+        incoming.on("end", () => { response.writeHead(302, { Location: target.href }); response.end(); });
+      });
+      const privateHeaders = credentials();
+      const headers = asHeaders(representation, { ...privateHeaders, Host: source.host, Value: "ordinary" });
+      const observed = await followRedirectRequest(redirectTransport.http, source, { headers, sensitiveHeaders: [sensitiveName] });
+      for (const name of Object.keys(privateHeaders)) assert.equal(observed.headers[name.toLowerCase()], undefined);
+      assert.equal(observed.headers.host, target.host);
+      assert.equal(observed.headers.value, "ordinary", "Literal sensitive names must not remove unrelated headers");
+      fixedPublisher();
+    });
+
+    test(`${packageRoot}: ${representation} credentials remain on same-origin redirects`, { timeout: 15000 }, async (context) => {
+      const source = await startRedirectServer(context, (incoming, response) => {
+        if (incoming.url === "/redirect") {
+          incoming.resume();
+          incoming.on("end", () => { response.writeHead(302, { Location: "/target" }); response.end(); });
+        } else {
+          echoRedirectRequest(incoming, response);
+        }
+      });
+      const privateHeaders = credentials();
+      const headers = asHeaders(representation, { ...privateHeaders, Host: source.host });
+      const observed = await followRedirectRequest(redirectTransport.http, new URL("/redirect", source), { headers, sensitiveHeaders: [sensitiveName] });
+      for (const [name, value] of Object.entries(privateHeaders)) assert.equal(observed.headers[name.toLowerCase()], value);
+      assert.equal(observed.headers.host, source.host);
+      fixedPublisher();
+    });
+  }
+
+  test(`${packageRoot}: array headers and POST bodies are updated together on 302 redirects`, { timeout: 15000 }, async (context) => {
+    const target = await startRedirectServer(context, echoRedirectRequest);
+    let sourceBody = "";
+    const source = await startRedirectServer(context, (incoming, response) => {
+      incoming.setEncoding("utf8");
+      incoming.on("data", (chunk) => { sourceBody += chunk; });
+      incoming.on("end", () => { response.writeHead(302, { Location: target.href }); response.end(); });
+    });
+    const body = "redirect-fixture-body";
+    const privateHeaders = credentials();
+    const headers = asHeaders("array", { ...privateHeaders, Host: source.host, "Content-Type": "text/plain", "Content-Length": String(Buffer.byteLength(body)) });
+    const observed = await followRedirectRequest(redirectTransport.http, source, { method: "POST", headers, sensitiveHeaders: [sensitiveName] }, body);
+    assert.equal(sourceBody, body);
+    assert.equal(observed.method, "GET");
+    assert.equal(observed.body, "");
+    assert.equal(observed.headers["content-type"], undefined);
+    assert.equal(observed.headers["content-length"], undefined);
+    for (const name of Object.keys(privateHeaders)) assert.equal(observed.headers[name.toLowerCase()], undefined);
+    assert.equal(observed.headers.host, target.host);
+    fixedPublisher();
   });
 }
