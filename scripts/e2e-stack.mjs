@@ -95,8 +95,12 @@ export async function startStackSupervisor() {
       );
     }
 
-    console.log("[e2e-stack] starting lean dev stack (pnpm dev:fast)...");
-    dev = spawn("pnpm", ["run", "dev:fast"], {
+    console.log("[e2e-stack] starting lean dev-fast orchestrator...");
+    // Start the orchestrator itself instead of wrapping it in `pnpm run`.
+    // dev-fast owns its API/web process trees and exits cleanly after SIGTERM;
+    // signalling a pnpm process group makes that expected teardown look like an
+    // ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL even when every Playwright test passed.
+    dev = spawn(process.execPath, ["scripts/dev-fast.mjs"], {
       cwd: root,
       stdio: "inherit",
       detached: process.platform !== "win32",
@@ -122,22 +126,33 @@ export async function startStackSupervisor() {
   return async () => {
     if (!dev) return;
 
-    const stopped =
-      dev.exitCode === null ? waitForProcessExit(dev, 30_000) : null;
-    terminateProcessTree(dev, "SIGTERM");
-    await stopped;
+    if (dev.exitCode !== null) return;
+
+    const stopped = waitForProcessExit(dev, 30_000);
+    signalProcess(dev, "SIGTERM");
+    if (await stopped) return;
+
+    // Keep a hard fallback for a wedged orchestrator. Under normal operation
+    // dev-fast handles SIGTERM and shuts down its own detached child groups.
+    terminateProcessGroup(dev, "SIGKILL");
+    await waitForProcessExit(dev, 5_000);
   };
 }
 
-function terminateProcessTree(child, signal) {
+function signalProcess(child, signal) {
+  try {
+    child.kill(signal);
+  } catch (error) {
+    if (error?.code !== "ESRCH") throw error;
+  }
+}
+
+function terminateProcessGroup(child, signal) {
   try {
     if (process.platform === "win32") {
       child.kill(signal);
       return;
     }
-
-    // The supervisor starts pnpm as a process-group leader. Signalling the
-    // group reaches dev-fast, whose shutdown handler owns its API/web trees.
     process.kill(-child.pid, signal);
   } catch (error) {
     if (error?.code !== "ESRCH") throw error;
@@ -146,11 +161,16 @@ function terminateProcessTree(child, signal) {
 
 function waitForProcessExit(child, timeoutMs) {
   return new Promise((resolve) => {
-    const timeout = setTimeout(resolve, timeoutMs);
+    if (child.exitCode !== null) {
+      resolve(true);
+      return;
+    }
+
+    const timeout = setTimeout(() => resolve(false), timeoutMs);
     timeout.unref();
     child.once("exit", () => {
       clearTimeout(timeout);
-      resolve();
+      resolve(true);
     });
   });
 }

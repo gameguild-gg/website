@@ -127,7 +127,14 @@ test("browser validation boots the lean stack without SDK watchers", async () =>
     "utf8",
   );
 
-  assert.match(supervisor, /spawn\("pnpm", \["run", "dev:fast"\]/);
+  assert.match(
+    supervisor,
+    /spawn\(process\.execPath, \["scripts\/dev-fast\.mjs"\]/,
+  );
+  assert.doesNotMatch(
+    supervisor,
+    /spawn\("pnpm", \["run", "dev:fast"\]/,
+  );
   assert.doesNotMatch(supervisor, /spawn\("pnpm", \["run", "dev"\]/);
   assert.doesNotMatch(supervisor, /generate:watch|build:watch/);
   assert.match(supervisor, /DEV_FAST_API_WATCH: "0"/);
@@ -137,6 +144,17 @@ test("browser validation boots the lean stack without SDK watchers", async () =>
   assert.match(supervisor, /DEV_FAST_WEB_BUNDLER: "turbopack"/);
   assert.match(supervisor, /DEV_FAST_WEB_MAX_OLD_SPACE_SIZE_MB/);
   assert.match(supervisor, /GRADING_VALIDATION_E2E: "1"/);
+  assert.match(supervisor, /signalProcess\(dev, "SIGTERM"\)/);
+
+  const devFast = await readFile(
+    resolve(REPO_ROOT, "scripts/dev-fast.mjs"),
+    "utf8",
+  );
+  assert.match(devFast, /web = run\(process\.execPath, webCommand/);
+  assert.doesNotMatch(
+    devFast,
+    /\["--filter", "@game-guild\/web", "run", "dev:fast"\]/,
+  );
 
   const nextConfig = await readFile(
     resolve(REPO_ROOT, "apps/web/next.config.ts"),

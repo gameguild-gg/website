@@ -7,6 +7,7 @@ import { verifyQuizGradingScenario } from "../../../../apps/web/src/lib/grading-
 import { listValidationEvidence } from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/report.server.mjs";
 import { assertSharedAuthCookie } from "../../../../apps/web/scripts/learning-browser-e2e-support.mjs";
 import {
+  completeMfaSignInWithReplayRetry,
   createMfaSignInContinuation,
   E2E_ADMIN_TOTP_SECRET,
 } from "../../../../apps/web/scripts/sign-in-mfa-support.mjs";
@@ -193,34 +194,44 @@ async function withAdminPage(webBaseUrl, work) {
 }
 
 async function signIn(context, webBaseUrl) {
-  const firstFactor = await postCredentials(context, webBaseUrl, {
-    email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD,
-  });
-  if (!firstFactor.ok && firstFactor.data?.error !== "MfaRequired") {
-    throw new Error(
-      `SystemAdmin browser sign-in failed (HTTP ${firstFactor.status}).`,
-    );
-  }
-
-  await continueMfaSignIn(
-    firstFactor.data,
-    async (action, body) => {
+  await completeMfaSignInWithReplayRetry({
+    accountKey: ADMIN_EMAIL,
+    begin: async () => {
+      const firstFactor = await postCredentials(context, webBaseUrl, {
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+      });
+      if (!firstFactor.ok && firstFactor.data?.error !== "MfaRequired") {
+        throw new Error(
+          `SystemAdmin browser sign-in failed (HTTP ${firstFactor.status}).`,
+        );
+      }
+      return firstFactor.data;
+    },
+    continuation: continueMfaSignIn,
+    isReplayFailure: (error) =>
+      error instanceof SystemAdminMfaHttpError && error.status === 401,
+    send: async (action, body) => {
       if (action !== "complete") {
         throw new Error(`Unsupported SystemAdmin MFA action "${action}".`);
       }
       const completed = await postCredentials(context, webBaseUrl, body);
       if (!completed.ok) {
-        throw new Error(
-          `SystemAdmin browser MFA failed (HTTP ${completed.status}).`,
-        );
+        throw new SystemAdminMfaHttpError(completed.status);
       }
       return completed.data;
     },
-    ADMIN_EMAIL,
-  );
+  });
 
   assertSharedAuthCookie(await context.cookies([webBaseUrl]));
+}
+
+class SystemAdminMfaHttpError extends Error {
+  constructor(status) {
+    super(`SystemAdmin browser MFA failed (HTTP ${status}).`);
+    this.name = "SystemAdminMfaHttpError";
+    this.status = status;
+  }
 }
 
 async function postCredentials(context, webBaseUrl, credentials) {

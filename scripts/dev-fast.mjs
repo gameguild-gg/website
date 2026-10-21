@@ -5,6 +5,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import net from "node:net";
+import path from "node:path";
 import { resolveDevelopmentDataProtectionEnvironment } from "./dev-data-protection.mjs";
 import { registerDevProcess } from "./dev-runtime.mjs";
 import { resolvePnpmProcess } from "../apps/web/scripts/pnpm-process.mjs";
@@ -15,6 +16,11 @@ const API_PORT = 8080;
 const API_HEALTH_URL = `http://localhost:${API_PORT}/health`;
 const DEFAULT_API_STARTUP_TIMEOUT_MS = 10 * 60 * 1000;
 const CHILD_SHUTDOWN_GRACE_MS = 4_000;
+const WEB_WORKSPACE = path.resolve("apps/web");
+const NEXT_CLI = path.resolve(
+  WEB_WORKSPACE,
+  "node_modules/next/dist/bin/next",
+);
 const runtimeEnv = process.env;
 const skipCompose = process.env.DEV_FAST_SKIP_COMPOSE === "1";
 const watchApi = process.env.DEV_FAST_API_WATCH !== "0";
@@ -378,11 +384,17 @@ const webEnvironment = webHeapMb
       NODE_OPTIONS: withMaxOldSpaceSize(runtimeEnv.NODE_OPTIONS, webHeapMb),
     }
   : runtimeEnv;
-const webCommand =
-  webBundler === "webpack"
-    ? ["--filter", "@game-guild/web", "exec", "next", "dev", "--webpack"]
-    : ["--filter", "@game-guild/web", "run", "dev:fast"];
-web = run("pnpm", webCommand, { env: webEnvironment });
+const webCommand = [
+  NEXT_CLI,
+  "dev",
+  webBundler === "webpack" ? "--webpack" : "--turbopack",
+];
+// Next is the process-group leader here. Avoiding a pnpm wrapper means a
+// normal SIGTERM cannot be reported as a recursive-run failure during teardown.
+web = run(process.execPath, webCommand, {
+  cwd: WEB_WORKSPACE,
+  env: webEnvironment,
+});
 console.log(
   `[dev:fast] dynamic ${webBundler === "webpack" ? "Webpack" : "Turbopack"} mode enabled; SDK polling and declarations disabled${webHeapMb ? `; web heap capped at ${webHeapMb} MB` : ""}`,
 );
