@@ -50,6 +50,17 @@ public interface ICertificateService
     Task<Result<CertificateVerificationResult>> VerifyCertificateAsync(string certificateNumber);
 
     /// <summary>
+    /// Verifies the blockchain anchor of a certificate by querying the anchoring backend for its
+    /// on-chain record (recomputed canonical digest, digest match, chain confirmation).
+    /// </summary>
+    /// <param name="certificateNumber">The unique certificate number whose anchor should be verified.</param>
+    /// <returns>
+    /// Result containing the on-chain anchor verification (verified / digest mismatch / revoked /
+    /// not anchored / unreachable — fail-closed on backend errors).
+    /// </returns>
+    Task<Result<CertificateAnchorVerification>> VerifyCertificateAnchoringAsync(string certificateNumber);
+
+    /// <summary>
     /// Revokes a certificate
     /// </summary>
     /// <param name="certificateId">The ID of the certificate to revoke</param>

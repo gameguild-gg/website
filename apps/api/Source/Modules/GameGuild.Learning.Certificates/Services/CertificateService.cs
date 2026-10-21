@@ -240,6 +240,39 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
         }
     }
 
+    public async Task<Result<CertificateAnchorVerification>> VerifyCertificateAnchoringAsync(string certificateNumber)
+    {
+        try
+        {
+            var certificate = await GetCertificateByNumberAsync(certificateNumber).ConfigureAwait(false);
+
+            if (certificate == null)
+            {
+                return Result.Failure<CertificateAnchorVerification>(
+                    Error.NotFound("Certificate", "Certificate not found"));
+            }
+
+            // The anchoring port is fail-closed by contract (backend errors surface as
+            // Unreachable, never as verified); this defensive catch keeps a throwing
+            // implementation from turning a query into a 500.
+            var verification = await _certificateAnchoring
+                .VerifyAnchoringAsync(certificate)
+                .ConfigureAwait(false);
+
+            return Result.Success(verification);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error verifying the blockchain anchor of certificate {CertificateNumber} (fail closed)",
+                LogRedaction.Sanitize(certificateNumber));
+
+            return Result.Failure<CertificateAnchorVerification>(
+                Error.Failure("VerifyCertificateAnchoring", "Failed to verify certificate anchoring"));
+        }
+    }
+
     public async Task<Result> RevokeCertificateAsync(Guid certificateId, string reason)
     {
         try

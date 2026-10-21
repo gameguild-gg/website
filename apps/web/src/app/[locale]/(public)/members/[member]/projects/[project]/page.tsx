@@ -4,10 +4,45 @@ import { buttonVariants } from '@game-guild/ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@game-guild/ui/components/card';
 import { ArrowLeft, ExternalLink, User } from 'lucide-react';
 import Image from 'next/image';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import React from 'react';
 import { getMemberProject } from '@/lib/community/queries/members';
+
+// Dynamic metadata for the public portfolio-project page; shares the request-scoped
+// lookup with the page body.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ member: string; project: string }>;
+}): Promise<Metadata> {
+  const { member, project } = await params;
+  const result = await getMemberProject(member, project);
+
+  if (!result) {
+    return {
+      title: 'Project Not Found',
+      description: 'The requested portfolio project could not be found.',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = `${result.project.title} by ${result.member.displayName}`;
+  const description =
+    result.project.description?.trim().slice(0, 200) ||
+    `${result.project.title} — a ${result.project.tech} project by ${result.member.displayName} on GameGuild.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(result.project.imageUrl ? { images: [result.project.imageUrl] } : {}),
+    },
+  };
+}
 
 export default async function Page({
   params,

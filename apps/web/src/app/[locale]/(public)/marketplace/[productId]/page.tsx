@@ -5,8 +5,37 @@ import { getMarketplaceProduct } from '@/lib/marketplace/queries';
 import { Badge } from '@game-guild/ui/components/badge';
 import { buttonVariants } from '@game-guild/ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@game-guild/ui/components/card';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+
+// Dynamic metadata for the storefront product page; shares the request-scoped product
+// lookup with the page body (getMarketplaceProduct is React-cache'd).
+export async function generateMetadata({ params }: { params: Promise<{ productId: string }> }): Promise<Metadata> {
+  const { productId } = await params;
+  const product = await getMarketplaceProduct(productId);
+
+  if (!product || product.type === 'Physical' || product.type === 'Subscription') {
+    return {
+      title: 'Product Not Found',
+      description: 'The requested marketplace product could not be found.',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const name = product.name ?? 'Marketplace product';
+  const description = product.shortDescription ?? product.description ?? `View ${name} on the GameGuild Marketplace.`;
+
+  return {
+    title: name,
+    description,
+    openGraph: {
+      title: name,
+      description,
+      ...(product.imageUrl ? { images: [product.imageUrl] } : {}),
+    },
+  };
+}
 
 export default async function MarketplaceProductPage({ params }: { params: Promise<{ productId: string }> }) {
   const [{ productId }, t] = await Promise.all([params, getTranslations('marketplace')]);

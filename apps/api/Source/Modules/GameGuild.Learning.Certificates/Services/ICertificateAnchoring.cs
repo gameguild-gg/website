@@ -33,4 +33,26 @@ public interface ICertificateAnchoring
     /// <param name="reason">The local revocation reason (must not be published verbatim).</param>
     /// <param name="cancellationToken">Optional cancellation token.</param>
     Task RecordRevocationAsync(Certificate certificate, string reason, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Queries the anchoring backend to prove (or disprove) that a certificate's canonical
+    ///     digest was anchored on chain, and reports the on-chain evidence.
+    /// </summary>
+    /// <param name="certificate">The certificate whose anchor should be verified.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <remarks>
+    ///     <para>
+    ///         Implementations recompute the canonical SHA-256 digest the same way the anchoring
+    ///         path does, look up the anchor for that digest, and confirm the chain record. The
+    ///         result is fail-closed: backend errors must surface as
+    ///         <see cref="CertificateAnchorVerificationStatus.Unreachable" />, never as verified.
+    ///     </para>
+    ///     <para>
+    ///         This is a read-only query: verification must not mutate the certificate, the anchor
+    ///         store, or the chain. Like the anchoring operations it is auxiliary evidence — but
+    ///         unlike them its outcome is reported, so callers can distinguish a proof from an
+    ///         absence of proof.
+    ///     </para>
+    /// </remarks>
+    Task<CertificateAnchorVerification> VerifyAnchoringAsync(Certificate certificate, CancellationToken cancellationToken = default);
 }

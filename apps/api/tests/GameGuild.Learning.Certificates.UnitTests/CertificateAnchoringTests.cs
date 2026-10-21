@@ -120,6 +120,69 @@ public class CertificateAnchoringTests
         (await context.Set<Certificate>().SingleAsync()).Status.Should().Be(CertificateStatus.Revoked);
     }
 
+    [Fact]
+    public async Task NoOpCertificateAnchoring_VerifyAnchoring_ReportsNotAnchoredWithoutConfirming()
+    {
+        var certificate = Certificate.Issue(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Recipient", "Course");
+
+        var verification = await NoOpCertificateAnchoring.Instance.VerifyAnchoringAsync(certificate);
+
+        verification.Status.Should().Be(CertificateAnchorVerificationStatus.NotAnchored);
+        verification.IsVerified.Should().BeFalse();
+        verification.CertificateId.Should().Be(certificate.Id.ToString());
+    }
+
+    [Fact]
+    public async Task VerifyCertificateAnchoringAsync_QueriesTheAnchoringPort_AndReturnsItsFailClosedResult()
+    {
+        await using var context = CertificateAnchoringDbContext.Create();
+        var anchoring = new RecordingCertificateAnchoring
+        {
+            VerificationResult = CertificateAnchorVerification.BackendUnreachable(
+                "00000000-0000-0000-0000-000000000000", null, "chain rpc unreachable"),
+        };
+        var service = new CertificateService(context, NullLogger<CertificateService>.Instance, new NoopLearningAuditEventSink(), anchoring);
+        var (templateId, enrollmentId, userId, courseId) = SeedTemplateAndIssue(service, context);
+        var issued = await service.IssueCertificateAsync(templateId, enrollmentId, userId, courseId);
+
+        var result = await service.VerifyCertificateAnchoringAsync(issued.Value.CertificateNumber);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Status.Should().Be(CertificateAnchorVerificationStatus.Unreachable);
+        result.Value.IsVerified.Should().BeFalse();
+        anchoring.Verified.Should().ContainSingle(certificate => certificate.Id == issued.Value.Id);
+    }
+
+    [Fact]
+    public async Task VerifyCertificateAnchoringAsync_UnknownCertificateNumber_FailsWithNotFound()
+    {
+        await using var context = CertificateAnchoringDbContext.Create();
+        var service = new CertificateService(context, NullLogger<CertificateService>.Instance, new NoopLearningAuditEventSink());
+
+        var result = await service.VerifyCertificateAnchoringAsync("CERT-20990101-DOESNOT");
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Type.Should().Be(ErrorType.NotFound);
+    }
+
+    [Fact]
+    public async Task VerifyCertificateAnchoringAsync_ThrowingBackend_FailsClosedInsteadOfThrowing()
+    {
+        await using var context = CertificateAnchoringDbContext.Create();
+        var service = new CertificateService(
+            context,
+            NullLogger<CertificateService>.Instance,
+            new NoopLearningAuditEventSink(),
+            new ThrowingCertificateAnchoring());
+        var (templateId, enrollmentId, userId, courseId) = SeedTemplateAndIssue(service, context);
+        var issued = await service.IssueCertificateAsync(templateId, enrollmentId, userId, courseId);
+
+        var result = await service.VerifyCertificateAnchoringAsync(issued.Value.CertificateNumber);
+
+        // A throwing anchoring backend surfaces as a failed query, never as a verified anchor.
+        result.IsSuccess.Should().BeFalse();
+    }
+
     private static (Guid TemplateId, Guid EnrollmentId, Guid UserId, Guid CourseId) SeedTemplateAndIssue(
         CertificateService service,
         CertificateAnchoringDbContext context)
@@ -138,6 +201,11 @@ public class CertificateAnchoringTests
 
         public List<(Certificate Certificate, string Reason)> Revoked { get; } = [];
 
+        public List<Certificate> Verified { get; } = [];
+
+        public CertificateAnchorVerification VerificationResult { get; set; } =
+            CertificateAnchorVerification.NotAnchored("00000000-0000-0000-0000-000000000000");
+
         public Task AnchorIssuedCertificateAsync(Certificate certificate, CancellationToken cancellationToken = default)
         {
             Anchored.Add(certificate);
@@ -149,6 +217,12 @@ public class CertificateAnchoringTests
             Revoked.Add((certificate, reason));
             return Task.CompletedTask;
         }
+
+        public Task<CertificateAnchorVerification> VerifyAnchoringAsync(Certificate certificate, CancellationToken cancellationToken = default)
+        {
+            Verified.Add(certificate);
+            return Task.FromResult(VerificationResult);
+        }
     }
 
     private sealed class ThrowingCertificateAnchoring : ICertificateAnchoring
@@ -157,6 +231,9 @@ public class CertificateAnchoringTests
             => throw new InvalidOperationException("anchor backend unavailable");
 
         public Task RecordRevocationAsync(Certificate certificate, string reason, CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("anchor backend unavailable");
+
+        public Task<CertificateAnchorVerification> VerifyAnchoringAsync(Certificate certificate, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("anchor backend unavailable");
     }
 
