@@ -1,6 +1,9 @@
+import { Link } from '@/i18n/navigation';
+import { getGradingScenarioLabAccess } from '@/lib/grading-scenarios/access.server';
 import { getInstructorStats, getRecentActivity } from '@/lib/learning';
+import { buttonVariants } from '@game-guild/ui/components/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@game-guild/ui/components/card';
-import { Activity, BookOpen, Star, TrendingUp, Users } from 'lucide-react';
+import { Activity, BookOpen, FlaskConical, Star, TrendingUp, Users } from 'lucide-react';
 import React from 'react';
 
 function formatActivityType(type: 'enrollment' | 'completion' | 'review' | 'comment' | 'activity'): string {
@@ -20,9 +23,12 @@ function formatActivityType(type: 'enrollment' | 'completion' | 'review' | 'comm
 
 export default async function Page({ params }: PageProps<'/[locale]/workspace/learning/overview'>): Promise<React.JSX.Element> {
   const { locale } = await params;
-  void locale;
 
-  const [stats, activity] = await Promise.all([getInstructorStats(), getRecentActivity()]);
+  const [stats, activity, validationLabAccess] = await Promise.all([
+    getInstructorStats(),
+    getRecentActivity(),
+    getGradingScenarioLabAccess(),
+  ]);
 
   const totalCourses = stats.courses.length;
   const totalEnrollments = stats.courses.reduce((acc, course) => acc + course.enrolledCount, 0);
@@ -48,9 +54,21 @@ export default async function Page({ params }: PageProps<'/[locale]/workspace/le
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Learning Overview</h1>
-        <p className="text-muted-foreground">Your instructor dashboard — courses, students, and performance.</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Learning Overview</h1>
+          <p className="text-muted-foreground">Your instructor dashboard — courses, students, and performance.</p>
+        </div>
+        {validationLabAccess.allowed ? (
+          <Link
+            href="/workspace/learning/grading-validation"
+            locale={locale}
+            className={buttonVariants({ variant: 'outline' })}
+          >
+            <FlaskConical className="size-4" />
+            Grading validation
+          </Link>
+        ) : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

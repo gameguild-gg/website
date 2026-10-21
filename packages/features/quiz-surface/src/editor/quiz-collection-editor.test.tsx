@@ -65,6 +65,26 @@ describe("QuizCollectionEditor", () => {
     ).toBeInTheDocument();
   });
 
+  it("reports hydration and opens an existing question in the focused editor", () => {
+    const { container } = render(
+      <QuizCollectionEditor
+        items={[question("first", "First question")]}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      container.querySelector("[data-quiz-collection-editor]"),
+    ).toHaveAttribute("data-hydrated", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit question 1" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Quiz Builder" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Question")).toHaveValue("First question");
+  });
+
   it("shows the animated drop target and commits drag-and-drop ordering", async () => {
     const items = [
       question("first", "First question"),

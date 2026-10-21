@@ -16,6 +16,15 @@ const API_HEALTH_URL = `http://localhost:${API_PORT}/health`;
 const DEFAULT_API_STARTUP_TIMEOUT_MS = 10 * 60 * 1000;
 const CHILD_SHUTDOWN_GRACE_MS = 4_000;
 const runtimeEnv = process.env;
+const skipCompose = process.env.DEV_FAST_SKIP_COMPOSE === "1";
+const watchApi = process.env.DEV_FAST_API_WATCH !== "0";
+const skipApiBuild = !watchApi && process.env.DEV_FAST_API_NO_BUILD === "1";
+const webBundler = process.env.DEV_FAST_WEB_BUNDLER ?? "turbopack";
+if (webBundler !== "turbopack" && webBundler !== "webpack") {
+  throw new Error(
+    `DEV_FAST_WEB_BUNDLER must be "turbopack" or "webpack"; received "${webBundler}"`,
+  );
+}
 // Resolve once before starting children; spawning remains synchronous so every
 // caller can attach lifecycle listeners immediately to the returned child.
 const pnpmProcess = await resolvePnpmProcess([], { env: runtimeEnv });
@@ -185,20 +194,26 @@ function rejectWhenChildExits(child, label) {
   });
 }
 
-const compose = run("docker", [
-  "compose",
-  "-f",
-  "compose.yaml",
-  "up",
-  "-d",
-  "--wait",
-]);
-const composeCode = await new Promise((resolve) => compose.on("exit", resolve));
-if (composeCode !== 0) process.exit(composeCode ?? 1);
+if (!skipCompose) {
+  const compose = run("docker", [
+    "compose",
+    "-f",
+    "compose.yaml",
+    "up",
+    "-d",
+    "--wait",
+  ]);
+  const composeCode = await new Promise((resolve) =>
+    compose.on("exit", resolve),
+  );
+  if (composeCode !== 0) process.exit(composeCode ?? 1);
+}
 
 await assertPortFree(API_PORT);
 
-console.log("[dev:fast] starting API and preparing the web application");
+console.log(
+  `[dev:fast] starting API${watchApi ? " with hot reload" : " without hot reload"} and preparing the web application`,
+);
 const apiEnvironment = resolveDevelopmentDataProtectionEnvironment({
   environment: {
     ...process.env,
@@ -207,14 +222,23 @@ const apiEnvironment = resolveDevelopmentDataProtectionEnvironment({
 });
 const api = spawn(
   "dotnet",
-  [
-    "watch",
-    "--project",
-    "apps/api/Source/GameGuild.API/GameGuild.API.csproj",
-    "run",
-    "--urls",
-    "http://localhost:8080",
-  ],
+  watchApi
+    ? [
+        "watch",
+        "--project",
+        "apps/api/Source/GameGuild.API/GameGuild.API.csproj",
+        "run",
+        "--urls",
+        "http://localhost:8080",
+      ]
+    : [
+        "run",
+        ...(skipApiBuild ? ["--no-build"] : []),
+        "--project",
+        "apps/api/Source/GameGuild.API/GameGuild.API.csproj",
+        "--urls",
+        "http://localhost:8080",
+      ],
   {
     stdio: ["ignore", "inherit", "inherit"],
     detached: process.platform !== "win32",
@@ -347,11 +371,36 @@ try {
   await new Promise(() => {});
 }
 
-web = run("pnpm", ["--filter", "@game-guild/web", "run", "dev:fast"]);
+const webHeapMb = process.env.DEV_FAST_WEB_MAX_OLD_SPACE_SIZE_MB;
+const webEnvironment = webHeapMb
+  ? {
+      ...runtimeEnv,
+      NODE_OPTIONS: withMaxOldSpaceSize(runtimeEnv.NODE_OPTIONS, webHeapMb),
+    }
+  : runtimeEnv;
+const webCommand =
+  webBundler === "webpack"
+    ? ["--filter", "@game-guild/web", "exec", "next", "dev", "--webpack"]
+    : ["--filter", "@game-guild/web", "run", "dev:fast"];
+web = run("pnpm", webCommand, { env: webEnvironment });
 console.log(
-  "[dev:fast] dynamic Turbopack mode enabled; SDK polling and declarations disabled",
+  `[dev:fast] dynamic ${webBundler === "webpack" ? "Webpack" : "Turbopack"} mode enabled; SDK polling and declarations disabled${webHeapMb ? `; web heap capped at ${webHeapMb} MB` : ""}`,
 );
 
 web.on("exit", (code) => {
   void shutdown(code ?? 0);
 });
+
+function withMaxOldSpaceSize(currentOptions, rawMegabytes) {
+  const megabytes = Number(rawMegabytes);
+  if (!Number.isInteger(megabytes) || megabytes < 1024) {
+    throw new Error(
+      `DEV_FAST_WEB_MAX_OLD_SPACE_SIZE_MB must be an integer of at least 1024; received "${rawMegabytes}"`,
+    );
+  }
+
+  const remaining = (currentOptions ?? "")
+    .replace(/--max-old-space-size(?:=|\s+)\d+/g, "")
+    .trim();
+  return `${remaining} --max-old-space-size=${megabytes}`.trim();
+}
