@@ -100,7 +100,7 @@ export function getMermaidThemePair(
   themeDark: MermaidTheme;
 } {
   switch (mode) {
-    case "light":
+    case "light": {
       // Always use the selected theme (treating it as light)
       // If a dark variant is selected, use the light version
       const lightTheme = theme.replace("-dark", "") as MermaidTheme;
@@ -108,15 +108,15 @@ export function getMermaidThemePair(
         themeLight: lightTheme,
         themeDark: lightTheme,
       };
-
-    case "dark":
+    }
+    case "dark": {
       // Always use dark variant
       const darkTheme = getDarkVariant(theme);
       return {
         themeLight: darkTheme,
         themeDark: darkTheme,
       };
-
+    }
     case "both":
       // Use the same theme for both modes
       return {
@@ -125,13 +125,14 @@ export function getMermaidThemePair(
       };
 
     case "system":
-    default:
+    default: {
       // Smart pairing: use dark variant for dark mode, light theme for light mode
       const baseTheme = theme.replace("-dark", "") as MermaidTheme;
       return {
         themeLight: baseTheme,
         themeDark: getDarkVariant(baseTheme),
       };
+    }
   }
 }
 

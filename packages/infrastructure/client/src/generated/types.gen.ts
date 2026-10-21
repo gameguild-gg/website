@@ -771,6 +771,45 @@ export interface APIControllersStartMyKycInput {
   idempotencyKey?: string | null;
 }
 
+/** Local validity, durable publication state and fresh chain observation are independent facts. */
+export interface APICoreIntegrationCertificateEvmEvidenceOutput {
+  anchor?: APICoreIntegrationCertificateEvmOperationView;
+  applicationStatus?: LearningCertificatesCertificateStatus;
+  certificateId?: string;
+  chainProof?: IdentityAuthenticationEvmCertificateProofResult;
+  configured?: boolean;
+  freshProofRequested?: boolean;
+  locallyValid?: boolean;
+  readStatus?: APICoreIntegrationCertificateEvmEvidenceReadStatus;
+  revocation?: APICoreIntegrationCertificateEvmOperationView;
+  validity?: APICoreIntegrationCertificateEvmValidity;
+}
+
+/** OpenAPI schema for API Core Integration Certificate Evm Evidence Read Status. */
+export type APICoreIntegrationCertificateEvmEvidenceReadStatus =
+  'Disabled' | 'NoJournalEntry' | 'Cached' | 'NoRecordedTransaction' | 'ProfileUnavailable' | 'Observed' | 'AmbiguousIdentity' | 'Unavailable';
+
+/** Public operation projection. Excludes owner/tenant IDs, signer references, budgets, nonces, raw envelopes and leases. */
+export interface APICoreIntegrationCertificateEvmOperationView {
+  certificateHash?: string | null;
+  chainId?: number;
+  contractAddress?: string | null;
+  createdAt?: string;
+  finalityMode?: ConfigurationApplicationLayerEvmCertificateFinalityMode;
+  issuerId?: string | null;
+  kind?: IdentityAuthenticationEvmCertificateOperationKind;
+  lastFailure?: IdentityAuthenticationEvmCertificateJournalFailure;
+  minimumConfirmations?: number;
+  operationId?: string;
+  profile?: string | null;
+  runtimeCodeSha256?: string | null;
+  status?: IdentityAuthenticationEvmCertificatePublicationStatus;
+  transactionHash?: string | null;
+}
+
+/** OpenAPI schema for API Core Integration Certificate Evm Validity. */
+export type APICoreIntegrationCertificateEvmValidity = 'Unknown' | 'Valid' | 'Invalid';
+
 /** Data model for API Eventing Dead Letter Event. */
 export interface APIEventingDeadLetterEvent {
   attemptCount?: number;
@@ -2681,7 +2720,17 @@ export type CommercePaymentsDisputeType =
 
 /** Evidence types */
 export type CommercePaymentsEvidenceType =
-  'Receipt' | 'Communication' | 'Photo' | 'Video' | 'ShippingInfo' | 'Contract' | 'BankStatement' | 'Documentation' | 'Other';
+  | 'Receipt'
+  | 'Communication'
+  | 'Photo'
+  | 'Video'
+  | 'ShippingInfo'
+  | 'Contract'
+  | 'BankStatement'
+  | 'Documentation'
+  | 'Other'
+  | 'Invoice'
+  | 'SubscriptionRecord';
 
 /** Read model for one pending fraud review. */
 export interface CommercePaymentsFraudReviewListItem {
@@ -2723,9 +2772,41 @@ export interface CommercePaymentsFraudReviewResolutionResult {
   success: boolean;
 }
 
+/** Outcome of one payment in a bulk fraud-review resolution. */
+export interface CommercePaymentsFraudReviewsBulkItemResult {
+  /** Skip reason when GameGuild.Commerce.Payments.FraudReviewsBulkItemResult.Success is false. */
+  failureReason?: string | null;
+  /** Payment the item refers to. */
+  paymentId: string;
+  /** Whether the item's review was resolved. */
+  success: boolean;
+}
+
+/** Aggregate outcome of a bulk fraud-review resolution. */
+export interface CommercePaymentsFraudReviewsBulkResolutionResult {
+  /** Per-item outcomes, in request order. */
+  items: CommercePaymentsFraudReviewsBulkItemResult[] | null;
+  /** Number of payments the batch requested. */
+  requested: number;
+  /** Number of reviews actually resolved. */
+  resolved: number;
+  /** Administrator who resolved the batch. */
+  reviewedByUserId: string;
+  /** Number of items skipped (missing payment or no pending review). */
+  skipped: number;
+}
+
 /** Request body for resolving a fraud review. */
 export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewInput {
   notes?: string | null;
+}
+
+/** Request body for bulk-resolving fraud reviews. */
+export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput {
+  /** Optional reviewer notes recorded with every resolution. */
+  notes?: string | null;
+  /** Payments whose reviews are resolved (2-100 items). */
+  paymentIds?: string[] | null;
 }
 
 /** Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
@@ -2963,6 +3044,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   /** Detailed description */
   description?: string | null;
+  /** Dispute (chargeback) fee charged by the gateway, in major currency units (issue #419).
+Zero when the gateway reported no fee. Recorded once from the gateway webhook; later
+gateway values overwrite only while the dispute is unresolved. */
+  disputeFee?: number;
   /** Domain events raised by this entity */
   domainEvents?: CQRSIDomainEvent[] | null;
   /** Due date for response */
@@ -3017,6 +3102,28 @@ export interface CommercePaymentsPaymentDunningOutcomeMetrics {
   pendingRetryPayments?: number;
 }
 
+/** One failure-code bucket of the GameGuild.Commerce.Payments.PaymentFailureReasonDistribution (issue #415). */
+export interface CommercePaymentsPaymentFailureReasonBucket {
+  /** Payments in the window whose last failure carries this code. */
+  count?: number;
+  /** Machine-readable gateway error code, or `unclassified`. */
+  failureCode?: string | null;
+  /** Count / total failed as a percentage (0–100). */
+  sharePercent?: number;
+}
+
+/** Distribution of failure codes over the payments that failed at least once in the window
+(issue #415 failure reason distribution). Payments whose failure carries no gateway
+error code are counted under `unclassified`. */
+export interface CommercePaymentsPaymentFailureReasonDistribution {
+  /** One bucket per failure code, ordered by descending count (ties by code): the machine-readable
+gateway error code (`unclassified` when none was recorded), how many payments carry it
+and its share of the failed total (0–100). */
+  buckets?: CommercePaymentsPaymentFailureReasonBucket[] | null;
+  /** Payments that failed at least once in the window. */
+  totalFailedPayments?: number;
+}
+
 /** Display-safe projection of a registered payment method. */
 export interface CommercePaymentsPaymentMethodDto {
   id?: string;
@@ -3061,9 +3168,11 @@ Powers `GET api/v{v}/payments/recovery-metrics`. */
 export interface CommercePaymentsPaymentRecoveryMetrics {
   attempts?: CommercePaymentsPaymentAttemptMetrics;
   dunning?: CommercePaymentsPaymentDunningOutcomeMetrics;
+  failureReasons?: CommercePaymentsPaymentFailureReasonDistribution;
   /** Inclusive window start. */
   fromUtc?: string;
   retries?: CommercePaymentsPaymentRetryRecoveryMetrics;
+  revenueRecognition?: CommercePaymentsPaymentRevenueRecognitionTiming;
   /** Tenant the metrics were scoped to, or null for all tenants. */
   tenantId?: string | null;
   /** Inclusive window end. */
@@ -3135,6 +3244,20 @@ export interface CommercePaymentsPaymentRetryResult {
   paymentResult?: CommercePaymentsPaymentResult;
   retryAttempt?: number;
   success?: boolean;
+}
+
+/** Revenue recognition timing for the window (issue #415): how long after a payment is
+created its revenue-bearing settlement (GameGuild.Commerce.Payments.Payment.ProcessedAt on success)
+lands — the recognition lag introduced by asynchronous confirmations and 3DS flows. */
+export interface CommercePaymentsPaymentRevenueRecognitionTiming {
+  /** Mean creation-to-settlement time in hours; null when none succeeded. */
+  averageHours?: number | null;
+  /** Longest creation-to-settlement time in hours; null when none succeeded. */
+  maxHours?: number | null;
+  /** Median creation-to-settlement time in hours; null when none succeeded. */
+  medianHours?: number | null;
+  /** Succeeded payments in the window with a settlement timestamp. */
+  succeededPayments?: number;
 }
 
 /** Data model for Commerce Payments Payments Controller+Cancel Payment Request. */
@@ -3586,6 +3709,8 @@ export interface CommercePaymentsRefundAnalyticsReport {
   averageDisputeResolutionHours?: number | null;
   /** Refunded amount by currency for completed refunds in the window. */
   completedRefundAmountByCurrency: Record<string, number> | null;
+  /** Refunded amount by reason for completed refunds in the window (issue #419). */
+  completedRefundAmountByReason: Record<string, number> | null;
   /** Dispute count by status in the window. */
   disputeCountByStatus: {
     Cancelled?: number;
@@ -3597,6 +3722,9 @@ export interface CommercePaymentsRefundAnalyticsReport {
     UnderReview?: number;
     Won?: number;
   } | null;
+  /** Share of succeeded payments in the window that were disputed; null when no payments
+succeeded (issue #419 dispute rate). */
+  disputeRatePerSucceededPayment?: number | null;
   /** Share of decided (won or lost) disputes among all disputes; null when there are none. */
   disputeResolutionRate?: number | null;
   /** Disputes lost by the merchant in the window. */
@@ -3611,8 +3739,13 @@ export interface CommercePaymentsRefundAnalyticsReport {
   refundAmountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
   /** Refund count by currency in the window (all statuses). */
   refundCountByCurrency: Record<string, number> | null;
+  /** Refund count by machine-readable reason in the window (issue #419 reason breakdown). */
+  refundCountByReason: Record<string, number> | null;
   /** Refund count by lifecycle status in the window. */
   refundCountByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** Share of succeeded payments in the window that received a refund; null when no
+payments succeeded (issue #419 refund rate). */
+  refundRatePerSucceededPayment?: number | null;
   /** UTC-day breakdown of refund counts and completed amounts. */
   refundsByDay: CommercePaymentsRefundDailyBucket[] | null;
   /** Total disputes considered in the window. */
@@ -3654,6 +3787,9 @@ export interface CommercePaymentsRefundDecisionResult {
   success: boolean;
 }
 
+/** How a refund amount was determined (issue #419). */
+export type CommercePaymentsRefundKind = 'Full' | 'Partial' | 'Prorated';
+
 /** Paged read model for refund listings. */
 export interface CommercePaymentsRefundListPage {
   /** Refunds for the requested page, newest first. */
@@ -3690,6 +3826,7 @@ export interface CommercePaymentsRefundRecord {
   gatewayName?: string | null;
   /** Gateway refund identifier once the gateway accepted the refund. */
   gatewayRefundId?: string | null;
+  kind: CommercePaymentsRefundKind;
   /** Payment the refund was issued against. */
   paymentId: string;
   /** When the gateway confirmed the refund. */
@@ -3720,6 +3857,7 @@ export interface CommercePaymentsRefundsControllerRefundDecisionInput {
 export interface CommercePaymentsRefundsControllerRequestRefundHttpInput {
   amount?: number | null;
   idempotencyKey?: string | null;
+  kind?: CommercePaymentsRefundKind;
   paymentId?: string;
   reason?: string | null;
   reasonDetails?: string | null;
@@ -7701,6 +7839,9 @@ export interface ComplianceKYCSumSubWebhookIngestionResult {
   status?: ComplianceKYCKycEvidenceIngestionStatus;
 }
 
+/** OpenAPI schema for Configuration Application Layer Evm Certificate Finality Mode. */
+export type ConfigurationApplicationLayerEvmCertificateFinalityMode = 'Finalized' | 'Confirmations';
+
 /** Data model for Content Pages Content Resource Dto. */
 export interface ContentPagesContentResourceDto {
   id?: string;
@@ -10310,6 +10451,62 @@ export interface IdentityAuthenticationEmailVerificationResult {
   verifiedAt?: string | null;
 }
 
+/** Data model for Identity Authentication Evm Certificate Block Reference. */
+export interface IdentityAuthenticationEvmCertificateBlockReference {
+  hash?: string | null;
+  number?: number;
+}
+
+/** Data model for Identity Authentication Evm Certificate Evidence. */
+export interface IdentityAuthenticationEvmCertificateEvidence {
+  certificateHash?: string | null;
+  network?: IdentityAuthenticationEvmCertificateNetworkIdentity;
+  operation?: IdentityAuthenticationEvmCertificateOperationKind;
+  signer?: string | null;
+  state?: IdentityAuthenticationEvmCertificateRegistryState;
+  transactionBlock?: IdentityAuthenticationEvmCertificateBlockReference;
+  transactionHash?: string | null;
+}
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Journal Failure. */
+export type IdentityAuthenticationEvmCertificateJournalFailure =
+  'Conflict' | 'LeaseLost' | 'InvalidTransaction' | 'InvalidState' | 'InvalidEvidence' | 'RpcUnavailable' | 'SignerUnavailable' | 'NonceExhausted';
+
+/** Data model for Identity Authentication Evm Certificate Network Identity. */
+export interface IdentityAuthenticationEvmCertificateNetworkIdentity {
+  chainId?: number;
+  contractAddress?: string | null;
+  finalityMode?: ConfigurationApplicationLayerEvmCertificateFinalityMode;
+  issuerId?: string | null;
+  minimumConfirmations?: number;
+  runtimeCodeSha256?: string | null;
+  verificationBlock?: IdentityAuthenticationEvmCertificateBlockReference;
+}
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Operation Kind. */
+export type IdentityAuthenticationEvmCertificateOperationKind = 'Anchor' | 'Revoke';
+
+/** Data model for Identity Authentication Evm Certificate Proof Result. */
+export interface IdentityAuthenticationEvmCertificateProofResult {
+  evidence?: IdentityAuthenticationEvmCertificateEvidence;
+  status?: IdentityAuthenticationEvmCertificateProofStatus;
+}
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Proof Status. */
+export type IdentityAuthenticationEvmCertificateProofStatus = 'InvalidEvidence' | 'Pending' | 'Reverted' | 'NotFinalized' | 'Reorged' | 'Revoked' | 'Verified';
+
+/** OpenAPI schema for Identity Authentication Evm Certificate Publication Status. */
+export type IdentityAuthenticationEvmCertificatePublicationStatus =
+  'Queued' | 'NonceReserved' | 'Prepared' | 'Submitted' | 'Confirmed' | 'Revoked' | 'Reorged' | 'Rejected' | 'NeedsAttention';
+
+/** Data model for Identity Authentication Evm Certificate Registry State. */
+export interface IdentityAuthenticationEvmCertificateRegistryState {
+  anchoredAtBlock?: number;
+  anchorSigner?: string | null;
+  revokedAtBlock?: number;
+  revokeSigner?: string | null;
+}
+
 /** Authorization-time consent preview: the exact scopes a link flow will request from
 the provider, shown to the user before they continue (issue #250). */
 export interface IdentityAuthenticationExternalLoginLinkPreviewOutput {
@@ -10344,6 +10541,40 @@ export interface IdentityAuthenticationGoogleIdTokenRequestDto {
   /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
   rememberMe?: boolean | null;
   tenantId?: string | null;
+}
+
+/** Request body for guest session issuance. Carries no credentials: the caller only
+proves possession of nothing, so issuance is strictly rate limited per IP and audited. */
+export interface IdentityAuthenticationGuestSessionIssueInput {
+  /** Optional client device fingerprint, stored as operational metadata. */
+  deviceFingerprint?: string | null;
+}
+
+/** Response for a successfully issued guest session. The token is a short-lived bearer
+credential valid ONLY on the guest scheme; there is no refresh token by design. */
+export interface IdentityAuthenticationGuestSessionOutput {
+  /** The short-lived guest access token (guest audience). */
+  accessToken?: string | null;
+  /** When the guest session expires. */
+  expiresAt?: string;
+  /** Lifetime in seconds. */
+  expiresIn?: number;
+  /** The guest session id — its own namespace, never a user id. */
+  guestSessionId?: string;
+  /** The enumerated permissions this guest session holds (the full allowlist). */
+  permissions?: string[] | null;
+  /** Always `Bearer`. */
+  tokenType?: string | null;
+}
+
+/** Introspection of the caller's current guest session (served on the guest scheme). */
+export interface IdentityAuthenticationGuestSessionStatus {
+  /** The guest session id. */
+  guestSessionId?: string;
+  /** The enumerated permissions held. */
+  permissions?: string[] | null;
+  /** The guest role value (own namespace). */
+  role?: string | null;
 }
 
 /** Request body to initiate an orchestrated authentication flow. */
@@ -10383,6 +10614,11 @@ export interface IdentityAuthenticationLocalSignInInput {
   email: string;
   /** Alias for Email to support polymorphic sign-in scenarios */
   emailOrUsername?: string | null;
+  /** Optional guest bearer token presented by an anonymous visitor signing in
+(issue #213). Possession upgrades that guest session into this authenticated
+session (session continuity); an invalid or replayed guest token never blocks
+the sign-in itself. */
+  guestAccessToken?: string | null;
   password: string;
   /** When true, the session is persistent ("remember me"): the refresh token uses the
 configurable persistent lifetime (`Jwt:PersistentRefreshTokenExpirationDays`)
@@ -10397,6 +10633,10 @@ instead of the standard one. Null or false keeps the standard lifetime. */
 export interface IdentityAuthenticationLocalSignUpInput {
   email: string;
   firstName?: string | null;
+  /** Optional guest bearer token presented by an anonymous visitor registering
+(issue #213). A valid guest session is upgraded into the issued authenticated
+session (session continuity); an invalid token never blocks registration. */
+  guestAccessToken?: string | null;
   lastName?: string | null;
   password: string;
   phoneNumber?: string | null;
@@ -10687,6 +10927,9 @@ export interface IdentityAuthenticationPolymorphicSignInInput {
   credential?: string | null;
   credentialType?: IdentityAuthenticationCredentialType;
   deviceFingerprint?: string | null;
+  /** Optional guest bearer token presented by an anonymous visitor signing in (issue #213):
+a valid guest session is upgraded into the issued authenticated session. */
+  guestAccessToken?: string | null;
   password?: string | null;
   /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
   rememberMe?: boolean | null;
@@ -11009,6 +11252,10 @@ identity provider for this sign-in. Null for non-federated flows. */
   tempToken?: string | null;
   /** Current tenant ID */
   tenantId?: string | null;
+  /** Guest session this authenticated session continues (issue #213). Set only when the
+caller presented a valid guest credential at sign-in/sign-up and it was upgraded;
+the guest session itself ends at that point. */
+  upgradedFromGuestSessionId?: string | null;
   user?: IdentityAuthenticationUserDto;
   /** User ID */
   userId?: string;
@@ -12611,7 +12858,10 @@ export type IdentityAuthorizationPermissionType =
   | 'EditMetadata'
   | 'Maintenance'
   | 'Monitoring'
-  | 'Deployment';
+  | 'Deployment'
+  | 'List'
+  | 'Search'
+  | 'Query';
 
 /** Result of updating permissions. */
 export interface IdentityAuthorizationPermissionUpdateResult {
@@ -24097,6 +24347,10 @@ export let APIControllersRuntimeDetailsSchema: z.ZodType<APIControllersRuntimeDe
 export let APIControllersSettleMyMarketplaceOrderInputSchema: z.ZodType<APIControllersSettleMyMarketplaceOrderInput>;
 export let APIControllersStartMyAdRewardSessionInputSchema: z.ZodType<APIControllersStartMyAdRewardSessionInput>;
 export let APIControllersStartMyKycInputSchema: z.ZodType<APIControllersStartMyKycInput>;
+export let APICoreIntegrationCertificateEvmEvidenceOutputSchema: z.ZodType<APICoreIntegrationCertificateEvmEvidenceOutput>;
+export let APICoreIntegrationCertificateEvmEvidenceReadStatusSchema: z.ZodType<APICoreIntegrationCertificateEvmEvidenceReadStatus>;
+export let APICoreIntegrationCertificateEvmOperationViewSchema: z.ZodType<APICoreIntegrationCertificateEvmOperationView>;
+export let APICoreIntegrationCertificateEvmValiditySchema: z.ZodType<APICoreIntegrationCertificateEvmValidity>;
 export let APIEventingDeadLetterEventSchema: z.ZodType<APIEventingDeadLetterEvent>;
 export let APIEventingEventTransportStatusSchema: z.ZodType<APIEventingEventTransportStatus>;
 export let APIProjectsAddProjectTeamInputSchema: z.ZodType<APIProjectsAddProjectTeamInput>;
@@ -24284,7 +24538,10 @@ export let CommercePaymentsDisputeTypeSchema: z.ZodType<CommercePaymentsDisputeT
 export let CommercePaymentsEvidenceTypeSchema: z.ZodType<CommercePaymentsEvidenceType>;
 export let CommercePaymentsFraudReviewListItemSchema: z.ZodType<CommercePaymentsFraudReviewListItem>;
 export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewResolutionResult>;
+export let CommercePaymentsFraudReviewsBulkItemResultSchema: z.ZodType<CommercePaymentsFraudReviewsBulkItemResult>;
+export let CommercePaymentsFraudReviewsBulkResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewsBulkResolutionResult>;
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
+export let CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput>;
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
 export let CommercePaymentsGatewayCircuitSnapshotSchema: z.ZodType<CommercePaymentsGatewayCircuitSnapshot>;
@@ -24308,6 +24565,8 @@ export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePa
 export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
 export let CommercePaymentsPaymentDisputeSchema: z.ZodType<CommercePaymentsPaymentDispute>;
 export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
+export let CommercePaymentsPaymentFailureReasonBucketSchema: z.ZodType<CommercePaymentsPaymentFailureReasonBucket>;
+export let CommercePaymentsPaymentFailureReasonDistributionSchema: z.ZodType<CommercePaymentsPaymentFailureReasonDistribution>;
 export let CommercePaymentsPaymentMethodDtoSchema: z.ZodType<CommercePaymentsPaymentMethodDto>;
 export let CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody>;
 export let CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody>;
@@ -24316,6 +24575,7 @@ export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymen
 export let CommercePaymentsPaymentRetryAttemptDtoSchema: z.ZodType<CommercePaymentsPaymentRetryAttemptDto>;
 export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
 export let CommercePaymentsPaymentRetryResultSchema: z.ZodType<CommercePaymentsPaymentRetryResult>;
+export let CommercePaymentsPaymentRevenueRecognitionTimingSchema: z.ZodType<CommercePaymentsPaymentRevenueRecognitionTiming>;
 export let CommercePaymentsPaymentsControllerCancelPaymentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCancelPaymentInput>;
 export let CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInput>;
 export let CommercePaymentsPaymentsControllerCreateSetupIntentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCreateSetupIntentInput>;
@@ -24349,6 +24609,7 @@ export let CommercePaymentsRefundAnalyticsReportSchema: z.ZodType<CommercePaymen
 export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
 export let CommercePaymentsRefundDailyBucketSchema: z.ZodType<CommercePaymentsRefundDailyBucket>;
 export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
+export let CommercePaymentsRefundKindSchema: z.ZodType<CommercePaymentsRefundKind>;
 export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
 export let CommercePaymentsRefundRecordSchema: z.ZodType<CommercePaymentsRefundRecord>;
 export let CommercePaymentsRefundsControllerRefundDecisionInputSchema: z.ZodType<CommercePaymentsRefundsControllerRefundDecisionInput>;
@@ -24683,6 +24944,7 @@ export let ComplianceKYCKycAmlOnboardingSchema: z.ZodType<ComplianceKYCKycAmlOnb
 export let ComplianceKYCKycAmlStateSchema: z.ZodType<ComplianceKYCKycAmlState>;
 export let ComplianceKYCKycEvidenceIngestionStatusSchema: z.ZodType<ComplianceKYCKycEvidenceIngestionStatus>;
 export let ComplianceKYCSumSubWebhookIngestionResultSchema: z.ZodType<ComplianceKYCSumSubWebhookIngestionResult>;
+export let ConfigurationApplicationLayerEvmCertificateFinalityModeSchema: z.ZodType<ConfigurationApplicationLayerEvmCertificateFinalityMode>;
 export let ContentPagesContentResourceDtoSchema: z.ZodType<ContentPagesContentResourceDto>;
 export let ContentPagesContentResourceStatusSchema: z.ZodType<ContentPagesContentResourceStatus>;
 export let ContentPagesContentResourceTypeSchema: z.ZodType<ContentPagesContentResourceType>;
@@ -24937,10 +25199,22 @@ export let IdentityAuthenticationDiscordSignInOutputSchema: z.ZodType<IdentityAu
 export let IdentityAuthenticationEmailCodeRequestResultSchema: z.ZodType<IdentityAuthenticationEmailCodeRequestResult>;
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
+export let IdentityAuthenticationEvmCertificateBlockReferenceSchema: z.ZodType<IdentityAuthenticationEvmCertificateBlockReference>;
+export let IdentityAuthenticationEvmCertificateEvidenceSchema: z.ZodType<IdentityAuthenticationEvmCertificateEvidence>;
+export let IdentityAuthenticationEvmCertificateJournalFailureSchema: z.ZodType<IdentityAuthenticationEvmCertificateJournalFailure>;
+export let IdentityAuthenticationEvmCertificateNetworkIdentitySchema: z.ZodType<IdentityAuthenticationEvmCertificateNetworkIdentity>;
+export let IdentityAuthenticationEvmCertificateOperationKindSchema: z.ZodType<IdentityAuthenticationEvmCertificateOperationKind>;
+export let IdentityAuthenticationEvmCertificateProofResultSchema: z.ZodType<IdentityAuthenticationEvmCertificateProofResult>;
+export let IdentityAuthenticationEvmCertificateProofStatusSchema: z.ZodType<IdentityAuthenticationEvmCertificateProofStatus>;
+export let IdentityAuthenticationEvmCertificatePublicationStatusSchema: z.ZodType<IdentityAuthenticationEvmCertificatePublicationStatus>;
+export let IdentityAuthenticationEvmCertificateRegistryStateSchema: z.ZodType<IdentityAuthenticationEvmCertificateRegistryState>;
 export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
 export let IdentityAuthenticationGitHubCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationGitHubCallbackRequestDto>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenRequestDtoSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenRequestDto>;
+export let IdentityAuthenticationGuestSessionIssueInputSchema: z.ZodType<IdentityAuthenticationGuestSessionIssueInput>;
+export let IdentityAuthenticationGuestSessionOutputSchema: z.ZodType<IdentityAuthenticationGuestSessionOutput>;
+export let IdentityAuthenticationGuestSessionStatusSchema: z.ZodType<IdentityAuthenticationGuestSessionStatus>;
 export let IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema: z.ZodType<IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto>;
 export let IdentityAuthenticationJwtKeyInfoDtoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfoDto>;
 export let IdentityAuthenticationLinkGoogleAccountInputSchema: z.ZodType<IdentityAuthenticationLinkGoogleAccountInput>;
@@ -26848,6 +27122,53 @@ APIControllersStartMyKycInputSchema = z.object({
   idempotencyKey: z.string().nullable().optional(),
 });
 
+/** Zod schema for APICoreIntegrationCertificateEvmEvidenceOutput. Local validity, durable publication state and fresh chain observation are independent facts. */
+APICoreIntegrationCertificateEvmEvidenceOutputSchema = z.object({
+  anchor: z.lazy(() => APICoreIntegrationCertificateEvmOperationViewSchema).optional(),
+  applicationStatus: z.lazy(() => LearningCertificatesCertificateStatusSchema).optional(),
+  certificateId: z.string().uuid().optional(),
+  chainProof: z.lazy(() => IdentityAuthenticationEvmCertificateProofResultSchema).optional(),
+  configured: z.boolean().optional(),
+  freshProofRequested: z.boolean().optional(),
+  locallyValid: z.boolean().optional(),
+  readStatus: z.lazy(() => APICoreIntegrationCertificateEvmEvidenceReadStatusSchema).optional(),
+  revocation: z.lazy(() => APICoreIntegrationCertificateEvmOperationViewSchema).optional(),
+  validity: z.lazy(() => APICoreIntegrationCertificateEvmValiditySchema).optional(),
+});
+
+/** Zod schema for APICoreIntegrationCertificateEvmEvidenceReadStatus. OpenAPI schema for API Core Integration Certificate Evm Evidence Read Status. */
+APICoreIntegrationCertificateEvmEvidenceReadStatusSchema = z.enum([
+  'Disabled',
+  'NoJournalEntry',
+  'Cached',
+  'NoRecordedTransaction',
+  'ProfileUnavailable',
+  'Observed',
+  'AmbiguousIdentity',
+  'Unavailable',
+]);
+
+/** Zod schema for APICoreIntegrationCertificateEvmOperationView. Public operation projection. Excludes owner/tenant IDs, signer references, budgets, nonces, raw envelopes and leases. */
+APICoreIntegrationCertificateEvmOperationViewSchema = z.object({
+  certificateHash: z.string().nullable().optional(),
+  chainId: z.number().int().optional(),
+  contractAddress: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  finalityMode: z.lazy(() => ConfigurationApplicationLayerEvmCertificateFinalityModeSchema).optional(),
+  issuerId: z.string().nullable().optional(),
+  kind: z.lazy(() => IdentityAuthenticationEvmCertificateOperationKindSchema).optional(),
+  lastFailure: z.lazy(() => IdentityAuthenticationEvmCertificateJournalFailureSchema).optional(),
+  minimumConfirmations: z.number().int().optional(),
+  operationId: z.string().uuid().optional(),
+  profile: z.string().nullable().optional(),
+  runtimeCodeSha256: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationEvmCertificatePublicationStatusSchema).optional(),
+  transactionHash: z.string().nullable().optional(),
+});
+
+/** Zod schema for APICoreIntegrationCertificateEvmValidity. OpenAPI schema for API Core Integration Certificate Evm Validity. */
+APICoreIntegrationCertificateEvmValiditySchema = z.enum(['Unknown', 'Valid', 'Invalid']);
+
 /** Zod schema for APIEventingDeadLetterEvent. Data model for API Eventing Dead Letter Event. */
 APIEventingDeadLetterEventSchema = z.object({
   attemptCount: z.number().int().optional(),
@@ -28619,6 +28940,8 @@ CommercePaymentsEvidenceTypeSchema = z.enum([
   'BankStatement',
   'Documentation',
   'Other',
+  'Invoice',
+  'SubscriptionRecord',
 ]);
 
 /** Zod schema for CommercePaymentsFraudReviewListItem. Read model for one pending fraud review. */
@@ -28646,9 +28969,31 @@ CommercePaymentsFraudReviewResolutionResultSchema = z.object({
   success: z.boolean(),
 });
 
+/** Zod schema for CommercePaymentsFraudReviewsBulkItemResult. Outcome of one payment in a bulk fraud-review resolution. */
+CommercePaymentsFraudReviewsBulkItemResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsBulkResolutionResult. Aggregate outcome of a bulk fraud-review resolution. */
+CommercePaymentsFraudReviewsBulkResolutionResultSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsFraudReviewsBulkItemResultSchema)).nullable(),
+  requested: z.number().int(),
+  resolved: z.number().int(),
+  reviewedByUserId: z.string().uuid(),
+  skipped: z.number().int(),
+});
+
 /** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewInput. Request body for resolving a fraud review. */
 CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema = z.object({
   notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput. Request body for bulk-resolving fraud reviews. */
+CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+  paymentIds: z.array(z.string().uuid()).nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsFraudReviewStatus. Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
@@ -28819,6 +29164,7 @@ CommercePaymentsPaymentDisputeSchema = z.object({
   createdAt: z.string().datetime(),
   deletedAt: z.string().datetime().nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
+  disputeFee: z.number().optional(),
   domainEvents: z
     .array(z.lazy(() => CQRSIDomainEventSchema))
     .nullable()
@@ -28857,6 +29203,24 @@ CommercePaymentsPaymentDunningOutcomeMetricsSchema = z.object({
   dueForRetryPayments: z.number().int().optional(),
   exhaustedPayments: z.number().int().optional(),
   pendingRetryPayments: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentFailureReasonBucket. One failure-code bucket of the GameGuild.Commerce.Payments.PaymentFailureReasonDistribution (issue #415). */
+CommercePaymentsPaymentFailureReasonBucketSchema = z.object({
+  count: z.number().int().optional(),
+  failureCode: z.string().nullable().optional(),
+  sharePercent: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentFailureReasonDistribution. Distribution of failure codes over the payments that failed at least once in the window
+(issue #415 failure reason distribution). Payments whose failure carries no gateway
+error code are counted under `unclassified`. */
+CommercePaymentsPaymentFailureReasonDistributionSchema = z.object({
+  buckets: z
+    .array(z.lazy(() => CommercePaymentsPaymentFailureReasonBucketSchema))
+    .nullable()
+    .optional(),
+  totalFailedPayments: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentMethodDto. Display-safe projection of a registered payment method. */
@@ -28903,8 +29267,10 @@ Powers `GET api/v{v}/payments/recovery-metrics`. */
 CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
   attempts: z.lazy(() => CommercePaymentsPaymentAttemptMetricsSchema).optional(),
   dunning: z.lazy(() => CommercePaymentsPaymentDunningOutcomeMetricsSchema).optional(),
+  failureReasons: z.lazy(() => CommercePaymentsPaymentFailureReasonDistributionSchema).optional(),
   fromUtc: z.string().datetime().optional(),
   retries: z.lazy(() => CommercePaymentsPaymentRetryRecoveryMetricsSchema).optional(),
+  revenueRecognition: z.lazy(() => CommercePaymentsPaymentRevenueRecognitionTimingSchema).optional(),
   tenantId: z.string().uuid().nullable().optional(),
   toUtc: z.string().datetime().optional(),
 });
@@ -28957,6 +29323,16 @@ CommercePaymentsPaymentRetryResultSchema = z.object({
   paymentResult: z.lazy(() => CommercePaymentsPaymentResultSchema).optional(),
   retryAttempt: z.number().int().optional(),
   success: z.boolean().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRevenueRecognitionTiming. Revenue recognition timing for the window (issue #415): how long after a payment is
+created its revenue-bearing settlement (GameGuild.Commerce.Payments.Payment.ProcessedAt on success)
+lands — the recognition lag introduced by asynchronous confirmations and 3DS flows. */
+CommercePaymentsPaymentRevenueRecognitionTimingSchema = z.object({
+  averageHours: z.number().nullable().optional(),
+  maxHours: z.number().nullable().optional(),
+  medianHours: z.number().nullable().optional(),
+  succeededPayments: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentsControllerCancelPaymentInput. Data model for Commerce Payments Payments Controller+Cancel Payment Request. */
@@ -29314,6 +29690,7 @@ CommercePaymentsReferrerLeaderboardEntrySchema = z.object({
 CommercePaymentsRefundAnalyticsReportSchema = z.object({
   averageDisputeResolutionHours: z.number().nullable().optional(),
   completedRefundAmountByCurrency: z.record(z.string(), z.number()).nullable(),
+  completedRefundAmountByReason: z.record(z.string(), z.number()).nullable(),
   disputeCountByStatus: z
     .object({
       Cancelled: z.number().int(),
@@ -29326,6 +29703,7 @@ CommercePaymentsRefundAnalyticsReportSchema = z.object({
       Won: z.number().int(),
     })
     .nullable(),
+  disputeRatePerSucceededPayment: z.number().nullable().optional(),
   disputeResolutionRate: z.number().nullable().optional(),
   disputesLost: z.number().int(),
   disputesWon: z.number().int(),
@@ -29342,6 +29720,7 @@ CommercePaymentsRefundAnalyticsReportSchema = z.object({
     })
     .nullable(),
   refundCountByCurrency: z.record(z.string(), z.number().int()).nullable(),
+  refundCountByReason: z.record(z.string(), z.number().int()).nullable(),
   refundCountByStatus: z
     .object({
       Approved: z.number().int(),
@@ -29352,6 +29731,7 @@ CommercePaymentsRefundAnalyticsReportSchema = z.object({
       Rejected: z.number().int(),
     })
     .nullable(),
+  refundRatePerSucceededPayment: z.number().nullable().optional(),
   refundsByDay: z.array(z.lazy(() => CommercePaymentsRefundDailyBucketSchema)).nullable(),
   totalDisputeCount: z.number().int(),
   totalRefundCount: z.number().int(),
@@ -29380,6 +29760,9 @@ CommercePaymentsRefundDecisionResultSchema = z.object({
   success: z.boolean(),
 });
 
+/** Zod schema for CommercePaymentsRefundKind. How a refund amount was determined (issue #419). */
+CommercePaymentsRefundKindSchema = z.enum(['Full', 'Partial', 'Prorated']);
+
 /** Zod schema for CommercePaymentsRefundListPage. Paged read model for refund listings. */
 CommercePaymentsRefundListPageSchema = z.object({
   items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
@@ -29401,6 +29784,7 @@ CommercePaymentsRefundRecordSchema = z.object({
   failureReason: z.string().nullable().optional(),
   gatewayName: z.string().nullable().optional(),
   gatewayRefundId: z.string().nullable().optional(),
+  kind: z.lazy(() => CommercePaymentsRefundKindSchema),
   paymentId: z.string().uuid(),
   processedAt: z.string().datetime().nullable().optional(),
   reason: z.string().nullable(),
@@ -29422,6 +29806,7 @@ CommercePaymentsRefundsControllerRefundDecisionInputSchema = z.object({
 CommercePaymentsRefundsControllerRequestRefundHttpInputSchema = z.object({
   amount: z.number().nullable().optional(),
   idempotencyKey: z.string().nullable().optional(),
+  kind: z.lazy(() => CommercePaymentsRefundKindSchema).optional(),
   paymentId: z.string().uuid().optional(),
   reason: z.string().nullable().optional(),
   reasonDetails: z.string().nullable().optional(),
@@ -33091,6 +33476,9 @@ ComplianceKYCSumSubWebhookIngestionResultSchema = z.object({
   status: z.lazy(() => ComplianceKYCKycEvidenceIngestionStatusSchema).optional(),
 });
 
+/** Zod schema for ConfigurationApplicationLayerEvmCertificateFinalityMode. OpenAPI schema for Configuration Application Layer Evm Certificate Finality Mode. */
+ConfigurationApplicationLayerEvmCertificateFinalityModeSchema = z.enum(['Finalized', 'Confirmations']);
+
 /** Zod schema for ContentPagesContentResourceDto. Data model for Content Pages Content Resource Dto. */
 ContentPagesContentResourceDtoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -35769,6 +36157,79 @@ IdentityAuthenticationEmailVerificationResultSchema = z.object({
   verifiedAt: z.string().datetime().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationEvmCertificateBlockReference. Data model for Identity Authentication Evm Certificate Block Reference. */
+IdentityAuthenticationEvmCertificateBlockReferenceSchema = z.object({
+  hash: z.string().nullable().optional(),
+  number: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateEvidence. Data model for Identity Authentication Evm Certificate Evidence. */
+IdentityAuthenticationEvmCertificateEvidenceSchema = z.object({
+  certificateHash: z.string().nullable().optional(),
+  network: z.lazy(() => IdentityAuthenticationEvmCertificateNetworkIdentitySchema).optional(),
+  operation: z.lazy(() => IdentityAuthenticationEvmCertificateOperationKindSchema).optional(),
+  signer: z.string().nullable().optional(),
+  state: z.lazy(() => IdentityAuthenticationEvmCertificateRegistryStateSchema).optional(),
+  transactionBlock: z.lazy(() => IdentityAuthenticationEvmCertificateBlockReferenceSchema).optional(),
+  transactionHash: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateJournalFailure. OpenAPI schema for Identity Authentication Evm Certificate Journal Failure. */
+IdentityAuthenticationEvmCertificateJournalFailureSchema = z.enum([
+  'Conflict',
+  'LeaseLost',
+  'InvalidTransaction',
+  'InvalidState',
+  'InvalidEvidence',
+  'RpcUnavailable',
+  'SignerUnavailable',
+  'NonceExhausted',
+]);
+
+/** Zod schema for IdentityAuthenticationEvmCertificateNetworkIdentity. Data model for Identity Authentication Evm Certificate Network Identity. */
+IdentityAuthenticationEvmCertificateNetworkIdentitySchema = z.object({
+  chainId: z.number().int().optional(),
+  contractAddress: z.string().nullable().optional(),
+  finalityMode: z.lazy(() => ConfigurationApplicationLayerEvmCertificateFinalityModeSchema).optional(),
+  issuerId: z.string().nullable().optional(),
+  minimumConfirmations: z.number().int().optional(),
+  runtimeCodeSha256: z.string().nullable().optional(),
+  verificationBlock: z.lazy(() => IdentityAuthenticationEvmCertificateBlockReferenceSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateOperationKind. OpenAPI schema for Identity Authentication Evm Certificate Operation Kind. */
+IdentityAuthenticationEvmCertificateOperationKindSchema = z.enum(['Anchor', 'Revoke']);
+
+/** Zod schema for IdentityAuthenticationEvmCertificateProofResult. Data model for Identity Authentication Evm Certificate Proof Result. */
+IdentityAuthenticationEvmCertificateProofResultSchema = z.object({
+  evidence: z.lazy(() => IdentityAuthenticationEvmCertificateEvidenceSchema).optional(),
+  status: z.lazy(() => IdentityAuthenticationEvmCertificateProofStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationEvmCertificateProofStatus. OpenAPI schema for Identity Authentication Evm Certificate Proof Status. */
+IdentityAuthenticationEvmCertificateProofStatusSchema = z.enum(['InvalidEvidence', 'Pending', 'Reverted', 'NotFinalized', 'Reorged', 'Revoked', 'Verified']);
+
+/** Zod schema for IdentityAuthenticationEvmCertificatePublicationStatus. OpenAPI schema for Identity Authentication Evm Certificate Publication Status. */
+IdentityAuthenticationEvmCertificatePublicationStatusSchema = z.enum([
+  'Queued',
+  'NonceReserved',
+  'Prepared',
+  'Submitted',
+  'Confirmed',
+  'Revoked',
+  'Reorged',
+  'Rejected',
+  'NeedsAttention',
+]);
+
+/** Zod schema for IdentityAuthenticationEvmCertificateRegistryState. Data model for Identity Authentication Evm Certificate Registry State. */
+IdentityAuthenticationEvmCertificateRegistryStateSchema = z.object({
+  anchoredAtBlock: z.number().int().optional(),
+  anchorSigner: z.string().nullable().optional(),
+  revokedAtBlock: z.number().int().optional(),
+  revokeSigner: z.string().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationExternalLoginLinkPreviewOutput. Authorization-time consent preview: the exact scopes a link flow will request from
 the provider, shown to the user before they continue (issue #250). */
 IdentityAuthenticationExternalLoginLinkPreviewOutputSchema = z.object({
@@ -35795,6 +36256,30 @@ IdentityAuthenticationGoogleIdTokenRequestDtoSchema = z.object({
   idToken: z.string().min(1),
   rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationGuestSessionIssueInput. Request body for guest session issuance. Carries no credentials: the caller only
+proves possession of nothing, so issuance is strictly rate limited per IP and audited. */
+IdentityAuthenticationGuestSessionIssueInputSchema = z.object({
+  deviceFingerprint: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationGuestSessionOutput. Response for a successfully issued guest session. The token is a short-lived bearer
+credential valid ONLY on the guest scheme; there is no refresh token by design. */
+IdentityAuthenticationGuestSessionOutputSchema = z.object({
+  accessToken: z.string().nullable().optional(),
+  expiresAt: z.string().datetime().optional(),
+  expiresIn: z.number().int().optional(),
+  guestSessionId: z.string().uuid().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  tokenType: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationGuestSessionStatus. Introspection of the caller's current guest session (served on the guest scheme). */
+IdentityAuthenticationGuestSessionStatusSchema = z.object({
+  guestSessionId: z.string().uuid().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  role: z.string().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto. Request body to initiate an orchestrated authentication flow. */
@@ -35827,6 +36312,7 @@ IdentityAuthenticationLocalSignInInputSchema = z.object({
   deviceFingerprint: z.string().nullable().optional(),
   email: z.string().email().min(1),
   emailOrUsername: z.string().nullable().optional(),
+  guestAccessToken: z.string().nullable().optional(),
   password: z.string().min(1),
   rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
@@ -35837,6 +36323,7 @@ IdentityAuthenticationLocalSignInInputSchema = z.object({
 IdentityAuthenticationLocalSignUpInputSchema = z.object({
   email: z.string().email().min(1),
   firstName: z.string().nullable().optional(),
+  guestAccessToken: z.string().nullable().optional(),
   lastName: z.string().nullable().optional(),
   password: z.string().min(8),
   phoneNumber: z.string().nullable().optional(),
@@ -36069,6 +36556,7 @@ IdentityAuthenticationPolymorphicSignInInputSchema = z.object({
   credential: z.string().nullable().optional(),
   credentialType: z.lazy(() => IdentityAuthenticationCredentialTypeSchema).optional(),
   deviceFingerprint: z.string().nullable().optional(),
+  guestAccessToken: z.string().nullable().optional(),
   password: z.string().nullable().optional(),
   rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
@@ -36335,6 +36823,7 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   success: z.boolean().optional(),
   tempToken: z.string().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
+  upgradedFromGuestSessionId: z.string().uuid().nullable().optional(),
   user: z.lazy(() => IdentityAuthenticationUserDtoSchema).optional(),
   userId: z.string().uuid().optional(),
 });
@@ -37670,6 +38159,9 @@ IdentityAuthorizationPermissionTypeSchema = z.enum([
   'Maintenance',
   'Monitoring',
   'Deployment',
+  'List',
+  'Search',
+  'Query',
 ]);
 
 /** Zod schema for IdentityAuthorizationPermissionUpdateResult. Result of updating permissions. */

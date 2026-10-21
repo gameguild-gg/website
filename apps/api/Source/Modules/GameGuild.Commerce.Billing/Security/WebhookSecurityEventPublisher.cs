@@ -20,7 +20,10 @@ public enum WebhookSecurityEventKind
     RateLimitExceeded = 4,
 
     /// <summary>Source temporarily blocked for repeated security failures.</summary>
-    SourceBlocked = 5
+    SourceBlocked = 5,
+
+    /// <summary>Event dead-lettered after exhausting its retry budget (issue #408).</summary>
+    DeadLettered = 6
 }
 
 /// <summary>
@@ -51,7 +54,8 @@ public sealed class WebhookSecurityEventPublisher(
             [WebhookSecurityEventKind.SourceIpRejected] = AuditActionTypes.WebhookSourceIpRejected,
             [WebhookSecurityEventKind.ReplayDetected] = AuditActionTypes.WebhookReplayDetected,
             [WebhookSecurityEventKind.RateLimitExceeded] = AuditActionTypes.WebhookRateLimitExceeded,
-            [WebhookSecurityEventKind.SourceBlocked] = AuditActionTypes.WebhookSourceBlocked
+            [WebhookSecurityEventKind.SourceBlocked] = AuditActionTypes.WebhookSourceBlocked,
+            [WebhookSecurityEventKind.DeadLettered] = AuditActionTypes.WebhookDeadLettered
         };
 
     public async Task PublishAsync(
@@ -116,6 +120,7 @@ public sealed class WebhookSecurityEventPublisher(
         WebhookSecurityEventKind.ReplayDetected => AuditRiskLevel.Low,
         WebhookSecurityEventKind.RateLimitExceeded => AuditRiskLevel.Medium,
         WebhookSecurityEventKind.SourceBlocked => AuditRiskLevel.High,
+        WebhookSecurityEventKind.DeadLettered => AuditRiskLevel.Critical,
         _ => AuditRiskLevel.Medium
     };
 }

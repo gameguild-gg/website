@@ -25,6 +25,7 @@ public sealed class EvmCertificateReadServiceRegistrationTests
         var sockets = Assert.IsType<SocketsHttpHandler>(handler);
         Assert.False(sockets.AllowAutoRedirect);
         Assert.False(sockets.UseCookies);
+        Assert.Null(sockets.ActivityHeadersPropagator);
         using var scope = provider.CreateScope();
         Assert.IsType<EvmCertificateRpcClient>(scope.ServiceProvider.GetRequiredService<IEvmCertificateRpc>());
         Assert.IsType<EvmCertificateProofVerifier>(scope.ServiceProvider.GetRequiredService<IEvmCertificateProofVerifier>());
@@ -58,6 +59,30 @@ public sealed class EvmCertificateReadServiceRegistrationTests
         Assert.Throws<ArgumentException>(() => services.AddEvmCertificateVerification(options));
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IEvmCertificateRpc));
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IEvmCertificateProofVerifier));
+    }
+
+    [Fact]
+    public void PublicationTransportIsExplicitAndDoesNotActivateAKeySourceOrSigner()
+    {
+        var services = new ServiceCollection();
+        services.AddEvmCertificatePublicationTransport(EvmCertificateNetworkOptionsTests.ValidOptions());
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+        Assert.IsType<EvmCertificatePublicationRpcClient>(scope.ServiceProvider.GetRequiredService<IEvmCertificatePublicationRpc>());
+        Assert.IsType<EvmCertificateProofVerifier>(scope.ServiceProvider.GetRequiredService<IEvmCertificateProofVerifier>());
+        Assert.Null(scope.ServiceProvider.GetService<IEvmCertificateTransactionSigner>());
+        Assert.Null(scope.ServiceProvider.GetService<IEvmCertificatePrivateKeySource>());
+    }
+
+    [Fact]
+    public void IncompletePublicationSettingsFailBeforeAnyPortIsRegistered()
+    {
+        var services = new ServiceCollection();
+        var options = EvmCertificateNetworkOptionsTests.ValidOptions();
+        options.ContractAddress = string.Empty;
+        Assert.Throws<ArgumentException>(() => services.AddEvmCertificatePublicationTransport(options));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IEvmCertificatePublicationRpc));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IEvmCertificateRpc));
     }
 
     private sealed class ReplyHandler : HttpMessageHandler

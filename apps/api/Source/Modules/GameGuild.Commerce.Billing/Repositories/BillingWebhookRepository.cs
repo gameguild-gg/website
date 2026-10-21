@@ -68,7 +68,7 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
     {
         logger.LogDebug("Getting failed webhook events with max attempts: {MaxAttempts}", maxAttempts);
         return await Entities
-            .Where(e => e.IsFailed && e.ProcessingAttempts < maxAttempts)
+            .Where(e => e.IsFailed && e.DeadLetteredAt == null && e.ProcessingAttempts < maxAttempts)
             .OrderBy(e => e.CreatedAt)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -85,7 +85,25 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
             maxAttempts,
             take);
         return await Entities
-            .Where(e => e.IsFailed && !e.IsProcessed && e.ProcessingAttempts < maxAttempts)
+            .Where(e => e.IsFailed && !e.IsProcessed && e.DeadLetteredAt == null && e.ProcessingAttempts < maxAttempts)
+            .OrderBy(e => e.UpdatedAt)
+            .Take(take)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<BillingWebhookEvent>> GetExhaustedEventsAsync(
+        int maxAttempts,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug(
+            "Getting exhausted webhook events with max attempts {MaxAttempts}, take {Take}",
+            maxAttempts,
+            take);
+        return await Entities
+            .Where(e => e.IsFailed && !e.IsProcessed && e.DeadLetteredAt == null && e.ProcessingAttempts >= maxAttempts)
             .OrderBy(e => e.UpdatedAt)
             .Take(take)
             .ToListAsync(cancellationToken)
@@ -106,7 +124,8 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
         query = criteria.Status switch
         {
             BillingEventStatusFilter.Processed => query.Where(e => e.IsProcessed && !e.IsFailed),
-            BillingEventStatusFilter.Failed => query.Where(e => e.IsFailed),
+            BillingEventStatusFilter.Failed => query.Where(e => e.IsFailed && e.DeadLetteredAt == null),
+            BillingEventStatusFilter.DeadLettered => query.Where(e => e.DeadLetteredAt != null),
             BillingEventStatusFilter.Pending => query.Where(e => !e.IsProcessed && !e.IsFailed),
             _ => query
         };

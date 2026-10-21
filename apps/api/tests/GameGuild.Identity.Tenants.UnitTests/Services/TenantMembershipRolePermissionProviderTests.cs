@@ -38,13 +38,19 @@ public sealed class TenantMembershipRolePermissionProviderTests
         // Issue #294: administrative membership roles carry the administrative permission
         // tier. Role administration (roles:manage) and audit exports (audit:export) are
         // deliberately absent - they are delegation-only capabilities.
+        // Issue #375: administrative roles also carry the query-operations tier
+        // (list/search/query) so audit-query, security-event and permission-query
+        // surfaces keep working for tenant administrators.
         permissions.Should().BeEquivalentTo(new[]
         {
             AdminPermission.Keys.TenantAdmin,
             ManageMembersPermission.Keys.Manage,
             ManageSettingsPermission.Keys.Read,
             ManageSettingsPermission.Keys.Manage,
-            AuditPermission.Keys.Read
+            AuditPermission.Keys.Read,
+            QueryPermission.Keys.List,
+            QueryPermission.Keys.Search,
+            QueryPermission.Keys.Query
         });
     }
 

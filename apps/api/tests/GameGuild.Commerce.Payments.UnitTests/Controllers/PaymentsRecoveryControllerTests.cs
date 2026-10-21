@@ -145,7 +145,9 @@ public class PaymentsRecoveryControllerTests
             tenantId,
             new PaymentAttemptMetrics(10, 8, 2, 80m),
             new PaymentRetryRecoveryMetrics(4, 4, 2, 50m, [new PaymentCurrencyAmount("USD", 50m, 2)]),
-            new PaymentDunningOutcomeMetrics(1, 1, 2));
+            new PaymentDunningOutcomeMetrics(1, 1, 2),
+            new PaymentFailureReasonDistribution(4, [new PaymentFailureReasonBucket("card_declined", 3, 75m), new PaymentFailureReasonBucket("unclassified", 1, 25m)]),
+            new PaymentRevenueRecognitionTiming(8, 1.5, 1.0, 6.0));
 
     private static ActorContext CreateAuthenticatedActorContext(Guid? tenantId)
         => new()

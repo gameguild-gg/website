@@ -100,10 +100,56 @@ Enforcement is centralized in the host's GraphQL authorization field middleware
   resource ids, unknown permission keys and evaluation exceptions all deny. Evaluation
   exceptions surface the bounded `AUTHORIZATION_UNAVAILABLE` error (never store details).
 - Denials produce the bounded error `AUTHORIZATION_DENIED` ("Not authorized to access this
-  resource.") — or `null` when every application requests `maskUnauthorized`. The resolver
+  resource.") — or `null` when every application requests `maskUnauthorized` (see
+  [Conditional field exposure](#conditional-field-exposure-masking)). The resolver
   is never invoked on denial.
 - Effective-permission resolution and role attribution are cached per request, so
   multi-field queries pay once per (user, tenant, resource).
+
+### Computed-field authorization from related-entity permissions
+
+A protected field's authorization can be derived from a RELATED entity's permission
+instead of the parent type's: declare a resource-scoped rule whose resource id is bound
+to a parent property path. Dotted paths resolve nested related entities, and the
+resource type may differ from the parent type:
+
+```csharp
+[ExtendObjectType(nameof(Course))]
+public sealed class CourseResolvers
+{
+    // Authorized by the RELATED author's Read permission — id from the nested
+    // parent path Author.Id.
+    [GraphQLAuthorize(PermissionType.Read,
+        ResourceType = "User",
+        ResourceIdParentPropertyName = "Author.Id")]
+    public string? AuthorBiography() => ...;
+
+    // Authorized by the related category entity — id from the parent's scalar property.
+    [GraphQLAuthorize(PermissionType.Read,
+        ResourceType = "CourseCategory",
+        ResourceIdParentPropertyName = "CategoryId")]
+    public string? CategoryLabel() => ...;
+}
+```
+
+Computed resolvers that resolve the related entity themselves (or derive it from
+arguments) use the imperative helper, which routes through the same engine (owner
+override, expiration-aware precedence), the per-request permission cache and evaluation
+logging, and never throws (fail-closed outcomes):
+
+```csharp
+public async Task<bool> CanEditCategoryAsync(
+    [Parent] Course course,
+    IResolverContext resolverContext)
+{
+    var outcome = await GraphQLAuthorizationSupport.AuthorizeRelatedEntityAsync(
+        resolverContext,
+        resourceType: "CourseCategory",
+        relatedEntityId: course.CategoryId,
+        permissions: [PermissionType.Edit]).ConfigureAwait(false);
+    return outcome.Allowed; // Deny/Unavailable reasons are machine-readable server detail
+}
+```
 
 The project-specific `@projectAuthorize` directive (PR #585) remains active for the
 Projects domain and is unaffected; new cross-domain fields should use `@authorize`.
@@ -143,7 +189,9 @@ takes the **fail-closed visibility** approach:
   "SchemaAuthorization": {
     "FilterSchema": true,
     "RestrictIntrospectionToSchemaAdminsInProduction": true,
-    "SchemaAdminPermission": "SystemAdmin"
+    "SchemaAdminPermission": "SystemAdmin",
+    "HideUnauthorizedOperations": true,
+    "MaskUnauthorizedFieldsByDefault": false
   }
 }
 ```
@@ -152,17 +200,124 @@ Introspection denials use the same bounded `AUTHORIZATION_DENIED` error; normal 
 and `__typename` continue to work for restricted callers, and schema admins always
 introspect the full schema.
 
+## Dynamic schema filtering for unauthorized operations (operation hiding)
+
+HotChocolate compiles one static schema per process, so per-user *schema documents* are
+not constructible without forking the platform. The framework instead hides unauthorized
+operations at the **operation-planning stage**: a request-pipeline middleware
+(`GraphQLUnauthorizedOperationMiddleware`, registered between document validation and
+operation compilation) walks every root field referenced by the request — directly,
+through inline fragments or fragment spreads — and evaluates each protected operation's
+planning-decidable `@authorize` rules (tenant-scoped and content-type scoped permissions,
+roles, policies) against the caller's resolved permission set.
+
+- Any referenced unauthorized operation fails the **whole request closed**, before
+  execution: the response carries only the error HotChocolate produces for a nonexistent
+  field (`The field \`X\` does not exist on the type \`Query\`.`), with **no `data`
+  payload, no path and no authorization code** — indistinguishable from querying an
+  unknown field, so protected operations never reveal their existence. Like genuine
+  document-validation errors, these request-level errors map to HTTP 400.
+- **Fields that mask on denial are not hidden**: a field whose rules opt into masking
+  (per-field `maskUnauthorized`, or the host default
+  [MaskUnauthorizedFieldsByDefault](#conditional-field-exposure-masking)) exposes its
+  shape by choice — its denial resolves to `null` at execution instead of failing the
+  request at planning time, so masking and operation hiding never fight over the same
+  field.
+- **Resource-scoped rules are not planning-decidable** (they need the concrete resource
+  and its owner-override state); they remain enforced during execution by the field
+  middleware, and their execution-time denial errors never carry a path (see error
+  hygiene below).
+- Schema administrators (see `SchemaAdminPermission`) bypass the gate; they receive the
+  honest execution-time denial instead.
+- Anonymous callers, unknown permission keys and evaluation failures deny (fail-closed).
+- Fields referenced under `@skip`/`@include` are still gated: the directives are not
+  evaluated at planning time (variables are not coerced yet), so conditionally skipped
+  protected operations are conservatively hidden. Split such queries into separate
+  documents.
+
+| Setting | Default | Behavior |
+|---|---|---|
+| `HideUnauthorizedOperations` | `true` | Enables the operation-planning gate. When `false`, unauthorized operations fail at execution time with the bounded `AUTHORIZATION_DENIED` error (path stripped). |
+
+## Error hygiene (non-revealing authorization errors)
+
+Execution-time authorization failures are normalized so they never reveal which field
+was denied: `AUTHORIZATION_DENIED` / `AUTHORIZATION_UNAVAILABLE` errors keep their
+generic message and code, and their response `path` is stripped, so an attacker probing a
+protected field learns only that *something* was denied — never which field.
+
+HotChocolate re-attaches a response path to resolver-raised errors **after** the
+error-filter stage (`MiddlewareContext.ReportError` → `EnsurePathAndLocation`), so an
+`IErrorFilter` alone cannot keep denied-field paths out of the response. The gate
+middleware therefore also wraps the finished operation result
+(`GraphQLAuthorizationResult`, registered in `SetupGraphQL`): the HTTP transport
+serializes results through the interface properties, so the sanitized error list is what
+clients see. The `GraphQLAuthorizationErrorFilter` remains registered as defense in depth
+for errors built through the error-handler pipeline. Combined with the planning-time
+gate, both the existence and the identity of protected fields stay hidden from
+unauthorized callers.
+
+## Conditional field exposure (masking)
+
+Per-request field masking on results adapts the response shape to the caller's
+permission set: a denied field resolves to `null` instead of erroring, while sibling
+public fields keep resolving.
+
+| Setting | Default | Behavior |
+|---|---|---|
+| `MaskUnauthorizedFieldsByDefault` | `false` | When `true`, every denied protected field with a **nullable** result type resolves to `null` (unless a client error is required). Per-field `maskUnauthorized: true` on the directive remains the explicit opt-in and composes with the host default. |
+
+- Nullability is static in GraphQL: a **non-nullable** field cannot be nulled without
+  producing HotChocolate's non-null violation error (which names the field), so
+  non-nullable denied fields keep the bounded `AUTHORIZATION_DENIED` error (path
+  stripped). Design protected fields as nullable when they should mask.
+- Masked responses are the honest approximation of "conditional field exposure": the
+  query shape is stable and the caller's effective values depend on their permission
+  set.
+
+## Permission-level schema versioning
+
+The `schemaVersion` query field returns the caller's effective schema surface version
+(`GraphQLSchemaVersionEvaluator`):
+
+```graphql
+{ schemaVersion { revision visibilityTier introspectionAllowed } }
+```
+
+- `revision` — deterministic SHA-256 tag (16 hex characters) over the schema's
+  protected-surface manifest plus the caller's visibility tier and introspection
+  eligibility. Callers on the same permission level resolve the same revision; the
+  revision changes when the protected surface changes or the caller's level changes.
+- `visibilityTier` — `Full` (schema administrators, or callers whose permission set
+  satisfies every planning-decidable protected rule) or `Restricted`.
+- `introspectionAllowed` — whether this caller may introspect (includes the Production
+  restriction).
+
+**Documented limitation.** HotChocolate builds one static schema per process and its
+introspection resolvers bypass field middleware; true per-user *compiled* schemas and
+partial introspection responses are not constructible without forking the platform. The
+framework's contract is therefore: values hidden at execution (masking/errors),
+operations hidden at planning (nonexistent-field shape), introspection all-or-nothing
+per visibility, and a per-level revision marker for clients to detect surface changes.
+The revision response never exposes a field inventory.
+
 ## Testing utilities
 
 The test suite exercises the framework through `WebApplication` + `TestServer` hosts with
 fake `IEffectivePermissionResolver` implementations (see
-`GameGuild.API.UnitTests/GraphQL/GraphQLAuthorizeDirectiveTests.cs` and
-`GraphQLSchemaAuthorizationTests.cs`): allow/deny/mask matrix, Any/All composition,
-repeatable applications, role and policy variants, resource-scoped and owner-override
-paths (in-force vs lapsed ownership), anonymous denial, per-request caching, evaluation
-logging (allow + deny + error, with role attribution), introspection gating matrix
-(visibility, production restriction, schema admin bypass, fail-closed on errors) and
-configuration validation.
+`GameGuild.API.UnitTests/GraphQL/GraphQLAuthorizeDirectiveTests.cs`,
+`GraphQLSchemaAuthorizationTests.cs`, `GraphQLUnauthorizedOperationTests.cs`,
+`GraphQLSchemaVersionTests.cs` and `GraphQLRelatedEntityAuthorizationTests.cs`):
+allow/deny/mask matrix, Any/All composition, repeatable applications, role and policy
+variants, resource-scoped and owner-override paths (in-force vs lapsed ownership),
+anonymous denial, per-request caching, evaluation logging (allow + deny + error, with
+role attribution), introspection gating matrix (visibility, production restriction,
+schema admin bypass, fail-closed on errors), configuration validation, operation-hiding
+equivalence with nonexistent-field errors (query and mutation roots, fragment-wrapped
+selections), execution-time denial path stripping, default and per-field masking
+(nullable vs non-nullable), permission-level schema versioning (stable per level,
+distinct across levels and surface changes, no inventory leak) and related-entity
+computed-field authorization (nested and scalar parent paths, imperative helper).
 
 ## References
 

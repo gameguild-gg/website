@@ -161,6 +161,31 @@ public static class SecurityServiceCollectionExtensions
                 }
             );
 
+        // Guest bearer scheme (issue #213): validates guest-audience tokens with the same
+        // signing key and issuer but its own audience, so a guest credential is structurally
+        // invalid on the standard scheme (and a user token here) — fail closed by construction.
+        authenticationBuilder.AddJwtBearer(GuestAccessDefaults.AuthenticationScheme, guestOptions =>
+        {
+            guestOptions.SaveToken = false;
+            guestOptions.MapInboundClaims = false;
+            guestOptions.RequireHttpsMetadata = !isDevelopmentOrTesting;
+
+            guestOptions.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = resolvedJwtOptions.ValidateIssuerSigningKey,
+                IssuerSigningKey = securityKey,
+                ValidateIssuer = resolvedJwtOptions.ValidateIssuer,
+                ValidIssuer = resolvedJwtOptions.Issuer,
+                ValidateAudience = true,
+                ValidAudience = GuestAccessDefaults.Audience,
+                ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                ValidateLifetime = resolvedJwtOptions.ValidateLifetime,
+                ClockSkew = TimeSpan.FromSeconds(resolvedJwtOptions.ClockSkewSeconds),
+                NameClaimType = ClaimNames.GuestId,
+                RoleClaimType = ClaimNames.Role
+            };
+        });
+
         if (options.EnableApiKeyAuthentication)
         {
             authenticationBuilder.AddApiKeyAuthentication(apiKeyOptions =>
@@ -317,6 +342,22 @@ public static class SecurityServiceCollectionExtensions
             authzOptions.AddPolicy("RequireTenantAccess", policy =>
                 policy.RequireAssertion(context => HasTenantClaim(context.User)));
 
+            // Guest access policies (issue #213): registered for the base policy and for each
+            // enumerated guest permission. Endpoints opt in explicitly with
+            // [Authorize(AuthenticationSchemes = GuestAccessDefaults.AuthenticationScheme, Policy = ...)];
+            // the requirement is evaluated fail-closed by GuestAccessHandler (no guest claim
+            // namespace, no permission outside the allowlist, no user-id claims).
+            authzOptions.AddPolicy(AuthorizationPolicies.GuestAccess, policy =>
+                policy.RequireAuthenticatedUser().AddRequirements(new GuestAccessRequirement(null)));
+            foreach (var guestPermission in GuestPermission.Allowlist)
+            {
+                authzOptions.AddPolicy(
+                    AuthorizationPolicies.GuestAccessFor(guestPermission),
+                    policy => policy
+                        .RequireAuthenticatedUser()
+                        .AddRequirements(new GuestAccessRequirement(guestPermission)));
+            }
+
             foreach (var (name, configuredPolicy) in options.Policies)
             {
                 if (Policies.IsValid(name))
@@ -364,6 +405,7 @@ public static class SecurityServiceCollectionExtensions
         });
 
         services.AddScoped<IAuthorizationMiddlewareResultHandler, AuditingAuthorizationMiddlewareResultHandler>();
+        services.AddTransient<IPolicyEvaluator, ActorBoundPolicyEvaluator>();
 
         if (services.LastOrDefault(descriptor => descriptor.ServiceType == typeof(IAuthorizationPermissionService))?.ImplementationType ==
             typeof(AuthorizationPermissionServiceAdapter))

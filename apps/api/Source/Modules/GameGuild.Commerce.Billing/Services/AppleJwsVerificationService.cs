@@ -162,6 +162,20 @@ public class AppleJwsVerificationService(
             // Build the chain
             var isValid = chain.Build(leafCert);
 
+            // A partial chain means the extra-store certificates never linked to the leaf:
+            // Build() alone returns true for an unrelated self-signed leaf under
+            // AllowUnknownCertificateAuthority, so an explicit linkage failure must reject.
+            if (chain.ChainStatus.Any(status => status.Status == X509ChainStatusFlags.PartialChain))
+            {
+                logger.LogWarning("Certificate chain incomplete: the presented intermediates did not issue the leaf");
+                foreach (var cert in certificates)
+                {
+                    cert.Dispose();
+                }
+
+                return false;
+            }
+
             if (!isValid)
             {
                 foreach (var status in chain.ChainStatus)

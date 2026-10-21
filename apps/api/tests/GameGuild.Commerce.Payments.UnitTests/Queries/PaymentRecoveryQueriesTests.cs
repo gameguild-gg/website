@@ -91,6 +91,70 @@ public class PaymentRecoveryQueriesTests
     }
 
     [Fact]
+    public async Task RecoveryMetrics_DistributeFailureCodesAcrossFailedPayments()
+    {
+        await using var context = await CreateContextAsync();
+        var tenantId = Guid.NewGuid();
+
+        var cardDeclinedA = Failed(tenantId, 10m, errorCode: "card_declined");
+        var cardDeclinedB = Failed(tenantId, 20m, errorCode: "card_declined");
+        var insufficientFunds = Failed(tenantId, 30m, errorCode: "insufficient_funds");
+        var unclassified = Failed(tenantId, 40m);
+        context.Set<Payment>().AddRange(cardDeclinedA, cardDeclinedB, insufficientFunds, unclassified);
+        await context.SaveChangesAsync();
+
+        var handler = new GetPaymentRecoveryMetricsQueryHandler(context);
+        var metrics = await handler.Handle(
+            new GetPaymentRecoveryMetricsQuery(SystemClock.UtcNow.AddDays(-7), SystemClock.UtcNow.AddMinutes(1), tenantId),
+            CancellationToken.None);
+
+        metrics.FailureReasons.TotalFailedPayments.Should().Be(4);
+        metrics.FailureReasons.Buckets.Should().HaveCount(3);
+        metrics.FailureReasons.Buckets[0].Should().BeEquivalentTo(
+            new PaymentFailureReasonBucket("card_declined", 2, 50m));
+        // Ties (1 payment each) are ordered by code, so insufficient_funds precedes unclassified.
+        metrics.FailureReasons.Buckets[1].FailureCode.Should().Be("insufficient_funds");
+        metrics.FailureReasons.Buckets[1].SharePercent.Should().Be(25m);
+        metrics.FailureReasons.Buckets[2].FailureCode.Should().Be("unclassified");
+        metrics.FailureReasons.Buckets[2].SharePercent.Should().Be(25m);
+    }
+
+    [Fact]
+    public async Task RecoveryMetrics_ReportRevenueRecognitionTimingForSettledPayments()
+    {
+        await using var context = await CreateContextAsync();
+        var tenantId = Guid.NewGuid();
+        var now = SystemClock.UtcNow;
+
+        // Three settled payments with 2h, 6h and 10h creation-to-settlement spans...
+        var fast = Succeeded(tenantId, 10m);
+        var medium = Succeeded(tenantId, 20m);
+        var slow = Succeeded(tenantId, 30m);
+        // ...and a failed payment that never settles (excluded from the timing).
+        var failed = Failed(tenantId, 40m);
+        context.Set<Payment>().AddRange(fast, medium, slow, failed);
+        await context.SaveChangesAsync();
+
+        // The entity stamps CreatedAt/ProcessedAt at transition time; pin deterministic spans
+        // through EF's property API (private setters).
+        SetCreatedAt(context, fast, now.AddHours(-2));
+        SetCreatedAt(context, medium, now.AddHours(-6));
+        SetCreatedAt(context, slow, now.AddHours(-10));
+        SetCreatedAt(context, failed, now.AddHours(-3));
+        await context.SaveChangesAsync();
+
+        var handler = new GetPaymentRecoveryMetricsQueryHandler(context);
+        var metrics = await handler.Handle(
+            new GetPaymentRecoveryMetricsQuery(SystemClock.UtcNow.AddDays(-1), SystemClock.UtcNow.AddMinutes(1), tenantId),
+            CancellationToken.None);
+
+        metrics.RevenueRecognition.SucceededPayments.Should().Be(3);
+        metrics.RevenueRecognition.AverageHours.Should().BeApproximately(6d, 0.5d);
+        metrics.RevenueRecognition.MedianHours.Should().BeApproximately(6d, 0.5d);
+        metrics.RevenueRecognition.MaxHours.Should().BeApproximately(10d, 0.5d);
+    }
+
+    [Fact]
     public async Task RecoveryMetrics_EmptyWindow_ReportsZeroRatesWithoutDividingByZero()
     {
         await using var context = await CreateContextAsync();
@@ -104,6 +168,12 @@ public class PaymentRecoveryQueriesTests
         metrics.Attempts.SuccessRate.Should().Be(0m);
         metrics.Retries.RetryRecoveryRate.Should().Be(0m);
         metrics.Retries.RecoveredAmounts.Should().BeEmpty();
+        metrics.FailureReasons.TotalFailedPayments.Should().Be(0);
+        metrics.FailureReasons.Buckets.Should().BeEmpty();
+        metrics.RevenueRecognition.SucceededPayments.Should().Be(0);
+        metrics.RevenueRecognition.AverageHours.Should().BeNull();
+        metrics.RevenueRecognition.MedianHours.Should().BeNull();
+        metrics.RevenueRecognition.MaxHours.Should().BeNull();
     }
 
     [Fact]
@@ -182,6 +252,10 @@ public class PaymentRecoveryQueriesTests
     private static void ScheduleRetryAt(PaymentsPersistenceTestDbContext context, Payment payment, DateTime nextRetryAt)
         => context.Entry(payment).Property(p => p.NextRetryAt).CurrentValue = nextRetryAt;
 
+    /// <summary>Sets an explicit creation time through EF's property API (private setter).</summary>
+    private static void SetCreatedAt(PaymentsPersistenceTestDbContext context, Payment payment, DateTime createdAt)
+        => context.Entry(payment).Property(p => p.CreatedAt).CurrentValue = createdAt;
+
     private static Payment Succeeded(Guid tenantId, decimal amount, string currency = "USD")
     {
         var payment = Payment.Create(tenantId, amount, currency, $"idem-{Guid.NewGuid():N}");
@@ -190,11 +264,16 @@ public class PaymentRecoveryQueriesTests
         return payment;
     }
 
-    private static Payment Failed(Guid tenantId, decimal amount, string currency = "USD", int? maxRetries = null)
+    private static Payment Failed(
+        Guid tenantId,
+        decimal amount,
+        string currency = "USD",
+        int? maxRetries = null,
+        string? errorCode = null)
     {
         var payment = Payment.Create(tenantId, amount, currency, $"idem-{Guid.NewGuid():N}", maxRetries: maxRetries);
         payment.MarkAsProcessing();
-        payment.MarkAsFailed("test failure");
+        payment.MarkAsFailed("test failure", errorCode);
         return payment;
     }
 }

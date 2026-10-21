@@ -15,6 +15,9 @@ public sealed record RefundRecord
     /// <summary>Refund amount in major currency units.</summary>
     public required decimal Amount { get; init; }
 
+    /// <summary>How the amount was determined: full remaining, explicit partial, or computed proration.</summary>
+    public required RefundKind Kind { get; init; }
+
     /// <summary>ISO 4217 currency code.</summary>
     public required string Currency { get; init; }
 
@@ -73,6 +76,7 @@ public sealed record RefundRecord
         TenantId = refund.TenantId,
         PaymentId = refund.PaymentId,
         Amount = refund.Amount,
+        Kind = refund.Kind,
         Currency = refund.Currency,
         Reason = refund.Reason,
         ReasonDetails = refund.ReasonDetails,

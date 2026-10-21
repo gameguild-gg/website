@@ -55,6 +55,61 @@ public class FraudReviewQueueAndAuthorizationTests : IAsyncDisposable
         secondPage.Select(review => review.PaymentId).Should().Equal(newest.Id);
     }
 
+    [Fact]
+    public async Task GetFraudReviewsQuery_ShouldFilterByMinimumScore()
+    {
+        var tenantId = Guid.NewGuid();
+        await ReviewHeldPaymentAsync(tenantId, score: 45);
+        var high = await ReviewHeldPaymentAsync(tenantId, score: 80);
+
+        var handler = new GetFraudReviewsQueryHandler(_context);
+        var reviews = await handler.Handle(new GetFraudReviewsQuery(tenantId, MinScore: 60), CancellationToken.None);
+
+        reviews.Select(review => review.PaymentId).Should().Equal(high.Id);
+    }
+
+    [Fact]
+    public async Task GetFraudReviewsQuery_ShouldFilterByRiskBand()
+    {
+        var tenantId = Guid.NewGuid();
+        await ReviewHeldPaymentAsync(tenantId, score: 45);  // Medium (31-60)
+        var critical = await ReviewHeldPaymentAsync(tenantId, score: 92); // Critical (86+)
+
+        var handler = new GetFraudReviewsQueryHandler(_context);
+        var reviews = await handler.Handle(new GetFraudReviewsQuery(tenantId, RiskLevel: FraudRiskLevel.Critical), CancellationToken.None);
+
+        reviews.Select(review => review.PaymentId).Should().Equal(critical.Id);
+        reviews.Single().RiskLevel.Should().Be(FraudRiskLevel.Critical);
+    }
+
+    [Fact]
+    public async Task GetFraudReviewsQuery_ShouldFilterByMinimumAmount()
+    {
+        var tenantId = Guid.NewGuid();
+        await ReviewHeldPaymentAsync(tenantId, amount: 25m);
+        var large = await ReviewHeldPaymentAsync(tenantId, amount: 500m);
+
+        var handler = new GetFraudReviewsQueryHandler(_context);
+        var reviews = await handler.Handle(new GetFraudReviewsQuery(tenantId, MinAmount: 100m), CancellationToken.None);
+
+        reviews.Select(review => review.PaymentId).Should().Equal(large.Id);
+    }
+
+    [Fact]
+    public async Task GetFraudReviewsQuery_ShouldFilterByCreationDateRange()
+    {
+        var tenantId = Guid.NewGuid();
+        await ReviewHeldPaymentAsync(tenantId, createdAt: SystemClock.UtcNow.AddDays(-5));
+        var recent = await ReviewHeldPaymentAsync(tenantId, createdAt: SystemClock.UtcNow.AddHours(-1));
+
+        var handler = new GetFraudReviewsQueryHandler(_context);
+        var reviews = await handler.Handle(
+            new GetFraudReviewsQuery(tenantId, FromUtc: SystemClock.UtcNow.AddDays(-1), ToUtc: SystemClock.UtcNow),
+            CancellationToken.None);
+
+        reviews.Select(review => review.PaymentId).Should().Equal(recent.Id);
+    }
+
     [Theory]
     [MemberData(nameof(FraudAdminRequests))]
     public void FraudAdminRequests_ShouldRequireThePaymentsAdminPermission(Type requestType)
@@ -84,14 +139,15 @@ public class FraudReviewQueueAndAuthorizationTests : IAsyncDisposable
     public static TheoryData<Type> FraudAdminRequests => new()
     {
         typeof(GetFraudReviewsQuery),
-        typeof(ResolveFraudReviewCommand)
+        typeof(ResolveFraudReviewCommand),
+        typeof(ResolveFraudReviewsBulkCommand)
     };
 
-    private async Task<Payment> ReviewHeldPaymentAsync(Guid tenantId, DateTime? createdAt = null)
+    private async Task<Payment> ReviewHeldPaymentAsync(Guid tenantId, DateTime? createdAt = null, int score = 55, decimal amount = 25m)
     {
-        var payment = CreatePayment(tenantId);
+        var payment = CreatePayment(tenantId, amount);
         payment.MarkAsProcessing();
-        payment.RecordFraudAssessment(FraudDecision.Review, 55, "queue test review", "{}");
+        payment.RecordFraudAssessment(FraudDecision.Review, score, "queue test review", "{}");
         if (createdAt.HasValue)
         {
             payment.CreatedAt = createdAt.Value;
@@ -133,9 +189,9 @@ public class FraudReviewQueueAndAuthorizationTests : IAsyncDisposable
         return payment;
     }
 
-    private static Payment CreatePayment(Guid tenantId) => Payment.Create(
+    private static Payment CreatePayment(Guid tenantId, decimal amount = 25m) => Payment.Create(
         tenantId,
-        25m,
+        amount,
         "USD",
         $"queue-{Guid.NewGuid():N}",
         provider: "stripe",

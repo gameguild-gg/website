@@ -159,7 +159,7 @@ export function DividerLexicalComponent({
             aria-hidden="true"
           />
         );
-      case "double":
+      case "double": {
         const doubleThickness =
           thickness === "thin" ? "1px" : thickness === "medium" ? "2px" : "3px";
         const doubleGap =
@@ -187,6 +187,7 @@ export function DividerLexicalComponent({
             </div>
           </div>
         );
+      }
       default:
         return (
           <hr

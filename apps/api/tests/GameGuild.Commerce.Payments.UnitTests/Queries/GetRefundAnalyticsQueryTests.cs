@@ -77,6 +77,19 @@ public class GetRefundAnalyticsQueryTests
             CreatedAt = createdAtUtc
         };
 
+    private static Payment SucceededPayment(Guid tenantId)
+    {
+        var payment = Payment.Create(
+            tenantId,
+            50m,
+            "USD",
+            $"idem-{Guid.NewGuid():N}",
+            provider: "stripe");
+        payment.MarkAsProcessing();
+        payment.MarkAsSucceeded("pi_analytics", "ch_analytics");
+        return payment;
+    }
+
     [Fact]
     public async Task Aggregates_RefundsByStatusCurrencyAndDay_WithDisputeResolutionRates()
     {
@@ -140,6 +153,14 @@ public class GetRefundAnalyticsQueryTests
             ["USD"] = 25m,
             ["EUR"] = 10m
         });
+        report.RefundCountByReason.Should().BeEquivalentTo(new Dictionary<string, int>
+        {
+            ["duplicate"] = 3
+        });
+        report.CompletedRefundAmountByReason.Should().BeEquivalentTo(new Dictionary<string, decimal>
+        {
+            ["duplicate"] = 35m
+        });
 
         report.RefundsByDay.Should().HaveCount(2);
         report.RefundsByDay[0].Should().BeEquivalentTo(new { Date = dayOne.Date, Count = 2, CompletedAmount = 25m });
@@ -151,6 +172,45 @@ public class GetRefundAnalyticsQueryTests
         report.DisputeWinRate.Should().Be(0.5);
         report.DisputeResolutionRate.Should().BeApproximately(2.0 / 3.0, 0.0001);
         report.AverageDisputeResolutionHours.Should().Be(12.0); // (6 + 18) / 2
+    }
+
+    [Fact]
+    public async Task Rates_AreDenominatedBySucceededPaymentsOfTheSameWindow()
+    {
+        var tenantId = Guid.NewGuid();
+        var day = SystemClock.UtcNow.AddHours(-1);
+        var windowStart = SystemClock.UtcNow.AddDays(-1);
+        var windowEnd = SystemClock.UtcNow.AddDays(1);
+        await using var context = await CreateContextAsync();
+
+        // Two succeeded payments (one refunded, one disputed) and one non-succeeded payment
+        // that must stay out of the denominator.
+        var refundedPayment = SucceededPayment(tenantId);
+        var disputedPayment = SucceededPayment(tenantId);
+        disputedPayment.MarkAsDisputed();
+        var failedPayment = Payment.Create(
+            tenantId,
+            30m,
+            "USD",
+            $"idem-{Guid.NewGuid():N}",
+            provider: "stripe");
+        failedPayment.MarkAsProcessing();
+        failedPayment.MarkAsFailed("declined", "card_declined");
+        context.Set<Payment>().AddRange(refundedPayment, disputedPayment, failedPayment);
+
+        var refund = NewRefund(tenantId, 25m, "USD", RefundStatus.Completed, day);
+        refundedPayment.ProcessRefund(25m, "re_analytics", "duplicate");
+        var dispute = NewDispute(disputedPayment.Id, DisputeStatus.UnderReview, day);
+        context.Set<Refund>().Add(refund);
+        context.Set<PaymentDispute>().Add(dispute);
+        await context.SaveChangesAsync();
+
+        var report = await new GetRefundAnalyticsQueryHandler(context).Handle(
+            new GetRefundAnalyticsQuery(windowStart, windowEnd, tenantId),
+            CancellationToken.None);
+
+        report.RefundRatePerSucceededPayment.Should().BeApproximately(0.5, 0.0001);
+        report.DisputeRatePerSucceededPayment.Should().BeApproximately(0.5, 0.0001);
     }
 
     [Fact]
