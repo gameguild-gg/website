@@ -76,7 +76,7 @@ describe('PublicCourseCatalog', () => {
   it('renders courses with accessible search and filter groups', () => {
     render(<PublicCourseCatalog initialCourses={courseFixtures} />);
 
-    expect(screen.getByRole('textbox', { name: /search courses by title, tool, or outcome/i })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: /search courses by title, tool, or outcome/i })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /filter courses by package/i })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /filter courses by discipline/i })).toBeInTheDocument();
 
@@ -112,7 +112,7 @@ describe('PublicCourseCatalog', () => {
     const user = userEvent.setup();
     render(<PublicCourseCatalog initialCourses={courseFixtures} />);
 
-    const search = screen.getByRole('textbox', { name: /search courses/i });
+    const search = screen.getByRole('searchbox', { name: /search courses/i });
     await user.type(search, 'unmatched-discipline');
 
     expect(screen.getByText('0 matching courses')).toBeInTheDocument();
