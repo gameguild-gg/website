@@ -12858,7 +12858,10 @@ export type IdentityAuthorizationPermissionType =
   | 'EditMetadata'
   | 'Maintenance'
   | 'Monitoring'
-  | 'Deployment';
+  | 'Deployment'
+  | 'List'
+  | 'Search'
+  | 'Query';
 
 /** Result of updating permissions. */
 export interface IdentityAuthorizationPermissionUpdateResult {
@@ -38156,6 +38159,9 @@ IdentityAuthorizationPermissionTypeSchema = z.enum([
   'Maintenance',
   'Monitoring',
   'Deployment',
+  'List',
+  'Search',
+  'Query',
 ]);
 
 /** Zod schema for IdentityAuthorizationPermissionUpdateResult. Result of updating permissions. */
