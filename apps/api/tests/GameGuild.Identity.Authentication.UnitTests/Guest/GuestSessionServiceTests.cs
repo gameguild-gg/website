@@ -200,14 +200,15 @@ public sealed class GuestSessionServiceTests
     public async Task Upgrade_RejectsExpiredGuestSessions()
     {
         var fixture = new Fixture();
-        // Issue with the minimum lifetime, then age the snapshot past expiry by writing it
-        // directly through the store with a past expiry.
         var issued = await fixture.Service.IssueAsync(new GuestSessionRequest());
+        // Age the snapshot past logical expiry but keep it inside the store's eviction
+        // slack (5 minutes) so the entry is still physically readable — proving expiry is
+        // enforced on read against the domain clock, not by cache eviction alone.
         await fixture.Store.SaveAsync(new GuestSessionSnapshot
         {
             GuestSessionId = issued.GuestSessionId,
             IssuedAt = SystemClock.UtcNow.AddMinutes(-10),
-            ExpiresAt = SystemClock.UtcNow.AddMinutes(-5)
+            ExpiresAt = SystemClock.UtcNow.AddMinutes(-1)
         });
 
         var upgrade = await fixture.Service.UpgradeAsync(issued.AccessToken, Guid.NewGuid(), Guid.NewGuid());
@@ -237,7 +238,7 @@ public sealed class GuestSessionServiceTests
     }
 
     [Fact]
-    public void GuestAccessDisabledException_MapsTheFailClosedOutcome()
+    public async Task GuestAccessDisabledException_MapsTheFailClosedOutcome()
     {
         var handler = new IssueGuestSessionHandler(
             new DisabledGuestSessionService(),
@@ -245,7 +246,7 @@ public sealed class GuestSessionServiceTests
             logger: NullLogger<IssueGuestSessionHandler>.Instance);
 
         var act = () => handler.Handle(new IssueGuestSessionCommand(), CancellationToken.None);
-        act.Should().ThrowAsync<GuestAccessDisabledException>();
+        await act.Should().ThrowAsync<GuestAccessDisabledException>();
     }
 
     private sealed class DisabledGuestSessionService : IGuestSessionService
