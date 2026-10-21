@@ -4,6 +4,7 @@ import { TestingEventJoin } from '@/components/testing-lab/testing-event-join';
 import { TestingEventDateRange } from '@/components/testing-lab/testing-event-date-range';
 import { Link } from '@/i18n/navigation';
 import { getPublicTestingEventExperience } from '@/lib/testing-lab/events-queries';
+import { getPublicTestingEvent } from '@/lib/testing-lab/events-public-queries';
 import { getTestingProjectVersionOptions } from '@/lib/testing-lab/queries';
 import { getLocalizationPreference } from '@/lib/user-settings/queries';
 import type {
@@ -16,11 +17,42 @@ import {
   MessageSquare,
   Users,
 } from 'lucide-react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 // The public event body can include account-specific participation data.
 // Always request a fresh render so one visitor's private state cannot leak to another.
 export const dynamic = 'force-dynamic';
+
+// Dynamic metadata for the public playtest page. Uses the public-only event
+// lookup (no request auth) so crawlers get the event title/description without
+// any account-specific participation state.
+export async function generateMetadata({ params }: { params: Promise<{ eventId: string }> }): Promise<Metadata> {
+  const { eventId } = await params;
+  const event = await getPublicTestingEvent(eventId);
+
+  if (!event) {
+    return {
+      title: 'Playtest Not Found',
+      description: 'The requested playtest could not be found.',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = event.name?.trim() || 'Community playtest';
+  const description =
+    event.description?.trim().slice(0, 200) ||
+    `${title} — join playtests, submit your game, and share feedback on GameGuild.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+  };
+}
 
 function safeTimeZone(timeZone?: string | null) {
   if (!timeZone) return 'UTC';
