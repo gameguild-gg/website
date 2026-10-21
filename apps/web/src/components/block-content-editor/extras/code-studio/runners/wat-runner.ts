@@ -1,6 +1,7 @@
 import type { CodeRunner, RunnerResult, RunnerOptions, FileMap } from './types'
-import { WASIWorkerHost, type WASIFS } from '@runno/wasi'
+import type { WASIFS } from '@runno/wasi'
 import { createWatEnvironment } from './wat-env-bindings'
+import { createWasiStdinReader } from './wasi-stdin'
 
 // Load wabt from local public assets (managed by update-wasm.mjs script)
 let wabtInstance: any = null
@@ -250,8 +251,17 @@ export class WatRunner implements CodeRunner {
         stderr: (err: string) => { wasmStderr += err },
       })
 
-      // Add WASI imports to import object
-      importObject.wasi_snapshot_preview1 = (wasi as any).wasiImport
+      // The pinned WASI string callback truncates encoded input to each iovec.
+      // Share a byte cursor across both namespaces; retain native reads for all
+      // other descriptors and every other native WASI operation.
+      const readStdin = createWasiStdinReader(stdin ?? '', () => wasi.memory)
+      const wasiImports = wasi.getImportObject()
+      for (const namespace of Object.values(wasiImports)) {
+        const fdRead = namespace.fd_read
+        namespace.fd_read = (fd, pointer, length, result) =>
+          fd === 0 ? readStdin(pointer, length, result) : fdRead(fd, pointer, length, result)
+      }
+      Object.assign(importObject, wasiImports)
 
       // Instantiate the main module with imports
       const instantiateResult = await WebAssembly.instantiate(
@@ -260,14 +270,9 @@ export class WatRunner implements CodeRunner {
       )
       const instantiatedSource = instantiateResult as WebAssembly.WebAssemblyInstantiatedSource
       
-      // Add stdin if provided
-      if (stdin) {
-        (wasi as any).pushStdin(stdin)
-        (wasi as any).pushEOF()
-      }
-      
       // Check if module has _start (WASI command) or _initialize (WASI reactor)
       const exports = instantiatedSource.instance.exports
+      const memory = exports.memory instanceof WebAssembly.Memory ? exports.memory : sharedMemory
       let exitCode = 0
       
       console.log('[WatRunner] Module exports:', Object.keys(exports))
@@ -275,12 +280,11 @@ export class WatRunner implements CodeRunner {
       if ('_start' in exports && typeof exports._start === 'function') {
         // It's a WASI command - run it
         console.log('[WatRunner] Running WASI command with _start')
-        const result = wasi.start(instantiatedSource)
-        exitCode = typeof result === 'number' ? result : ((result as any)?.code ?? 0)
+        exitCode = wasi.start(instantiatedSource, { memory }).exitCode
       } else if ('_initialize' in exports && typeof exports._initialize === 'function') {
         // It's a WASI reactor - initialize it
         console.log('[WatRunner] Initializing WASI reactor with _initialize')
-        ;(exports._initialize as Function)()
+        wasi.initialize(instantiatedSource, { memory })
         
         // If there's a main function, call it
         if ('main' in exports && typeof exports.main === 'function') {
@@ -290,6 +294,7 @@ export class WatRunner implements CodeRunner {
         }
       } else if ('main' in exports && typeof exports.main === 'function') {
         // Module has main but no WASI initialization
+        wasi.initialize(instantiatedSource, { memory })
         console.log('[WatRunner] Calling main function')
         
         try {
@@ -316,6 +321,7 @@ export class WatRunner implements CodeRunner {
         }
       } else {
         // No standard entry point - this might be a pure library module
+        wasi.initialize(instantiatedSource, { memory })
         // Try to find any exported function that looks like an entry point
         const exportKeys = Object.keys(exports)
         const callableFuncs = exportKeys.filter(key => typeof exports[key] === 'function')
