@@ -237,7 +237,7 @@ public sealed class ValueSnapshotAnalysisService(
 
     internal static ValueTrendStatistics ComputeStatistics(IReadOnlyList<ValueHistoryEntry> changes, DateTime fromUtc, DateTime toUtc)
     {
-        var values = changes.Select(change => change.Value).Where(value => value is not null).ToList()!;
+        var values = changes.Select(change => change.Value).OfType<string>().ToList();
         var numerics = new List<decimal>();
         foreach (var value in values)
         {

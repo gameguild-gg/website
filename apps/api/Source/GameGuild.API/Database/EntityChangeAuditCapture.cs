@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Logging;
 using GameGuild.API.Eventing;
+using GameGuild.Compliance.Audit;
 using GameGuild.Identity.Authorization;
 
 namespace GameGuild.API.Database;

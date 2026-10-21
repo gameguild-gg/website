@@ -90,6 +90,7 @@ public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
     {
         _actors.SetupGet(accessor => accessor.ActorContext).Returns(new ActorContext
         {
+            ActorKind = ActorKind.User,
             SubjectId = Guid.NewGuid().ToString(),
             IsAuthenticated = true,
             Roles = new HashSet<string>(),

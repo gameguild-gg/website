@@ -204,8 +204,7 @@ public sealed class ValueSnapshotRollbackService(
             var dbContext = context as DbContext
                 ?? throw new ValueSnapshotRollbackException("The database context does not support dynamic entity access.");
             await using var transaction = await context.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-            var set = dbContext.Set(clrType);
-            var live = await set.FindAsync([key], cancellationToken).ConfigureAwait(false);
+            var live = await dbContext.FindAsync(clrType, [key], cancellationToken).ConfigureAwait(false);
 
             if (live is null)
             {
@@ -214,7 +213,7 @@ public sealed class ValueSnapshotRollbackService(
                 // Preserve the original key: the re-inserted entity must occupy the identity it
                 // had at the basis point, otherwise references and future snapshots diverge.
                 clrType.GetProperty("Id")?.SetValue(recreated, key);
-                set.Add(recreated);
+                dbContext.Add(recreated);
                 ApplyState(recreated, clrType, targetState, operations);
                 operations.Add($"reinserted {plan.TargetEntityName} {plan.TargetKeyId} with {targetState.Count} fields");
             }

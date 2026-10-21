@@ -28,7 +28,6 @@ public sealed class ChainOfCustodyController(
     IEvidenceCustodianService custodians,
     IEvidenceTransferService transfers,
     ILegalHoldService legalHolds,
-    ICourtAdmissiblePackagingService packaging,
     ISender sender) : ControllerBase
 {
     /// <summary>Lists preserved evidence for the tenant (custody-gated access; every read is logged).</summary>
