@@ -28,7 +28,9 @@ The standalone authentication-attempt endpoint retains its existing SystemAdmin 
 
 ## Acceptance evidence required
 
-The increment defines 34 HTTP/PostgreSQL cases using the real JWT handler and persisted permission grants, plus 12 attribute contract cases. They cover denied operation grants, the three positive operation paths, non-substitution, cross-tenant grant/request isolation, explicit denies, text-search composition and authentication data/aggregate isolation on list, dashboard and export routes.
+The increment defines 34 HTTP/PostgreSQL cases using the real JWT handler and persisted permission grants, eight repository/PostgreSQL cases, plus 12 attribute contract cases. They cover denied operation grants, the three positive operation paths, non-substitution, cross-tenant grant/request isolation, explicit denies, text-search composition and authentication data/aggregate isolation on list, dashboard and export routes.
+
+The first hosted run on `1bdd550d07fb0b03c9d59dad3dc1a33c65464a89` executed all 34 HTTP cases: 29 passed and five security-audit requests returned HTTP 500. The server diagnostics identify an existing EF query translation failure in `PermissionAuditLogRepository.GetByDateRangeAsync`: dereferencing the converted `TenantId` value inside the expression cannot be translated by PostgreSQL. All eight repository query shapes using that predicate now compare the mapped value object directly, retaining server-side tenant filtering. Each new repository case checks own-tenant results, absence of results for an unknown tenant, and the intentional platform-wide behavior of a null scope. The five HTTP failures must also pass before accepting this correction.
 
 These are test definitions until hosted CI executes them. Full current-source CI, the existing authorization/audit/API suites, and review of actual results are required before accepting the increment. This document is not proof that the full issue is complete.
 
