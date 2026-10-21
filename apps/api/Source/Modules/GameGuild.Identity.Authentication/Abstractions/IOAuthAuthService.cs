@@ -30,6 +30,16 @@ public interface IOAuthAuthService
     /// </summary>
     Task<SignInResponse> OidcSignInAsync(OidcSignInRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    ///     Completes a SAML 2.0 federation sign-in (Assertion Consumer Service): validates
+    ///     the posted response (provider signature, issuer, audience, destination,
+    ///     lifetimes, InResponseTo correlation, replay), applies the same auto-link/JIT
+    ///     policy as the social providers, enforces the platform MFA policy fail-closed
+    ///     against the assertion's AuthnContext, and binds the session to the provider's
+    ///     tenant allowlist when one is configured.
+    /// </summary>
+    Task<SignInResponse> SamlSignInAsync(SamlSignInRequest request, CancellationToken cancellationToken = default);
+
     Task<string> GetGitHubAuthUrlAsync(string redirectUri);
 
     Task<string> GetGoogleAuthUrlAsync(string redirectUri);

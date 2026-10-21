@@ -29,7 +29,8 @@ public class OAuthAuthService(
     ISender sender,
     ISessionManagementService sessionManagementService,
     ILogger<OAuthAuthService> logger,
-    IOptions<JwtOptions>? jwtOptions = null
+    IOptions<JwtOptions>? jwtOptions = null,
+    ISamlFederationService? samlFederationService = null
 ) : IOAuthAuthService
 {
     public async Task<SignInResponse> GitHubSignInAsync(OAuthSignInRequest request, CancellationToken cancellationToken = default)
@@ -299,6 +300,117 @@ public class OAuthAuthService(
         response.AuthenticationContextClassReference = identity.Acr;
         response.MfaVerifiedByProvider = identity.HasMfaProof;
         return response;
+    }
+
+    /// <summary>
+    ///     Completes a SAML 2.0 federation sign-in (Assertion Consumer Service, issue #268):
+    ///     the federation service verifies the posted response against the provider's
+    ///     configured certificates (issuer/audience/destination/lifetimes, InResponseTo
+    ///     correlation, replay), then the shared auto-link/JIT policy resolves the platform
+    ///     user (provider key <c>saml-&lt;slug&gt;</c>). Fail closed: the platform MFA policy must be
+    ///     satisfied by the assertion's AuthnContext proof, and the resolved tenant must be
+    ///     inside the provider's configured tenant allowlist when one exists.
+    /// </summary>
+    public async Task<SignInResponse> SamlSignInAsync(SamlSignInRequest request, CancellationToken cancellationToken = default)
+    {
+        var federationService = samlFederationService
+            ?? throw new InvalidOperationException("SAML federation is not configured on this host.");
+
+        var stopwatch = Stopwatch.StartNew();
+        var authenticationMethod = $"Saml:{request.Slug}";
+        logger.LogInformation("Processing SAML federation sign-in for provider {Slug}", request.Slug);
+
+        var (user, identity) = await RunProviderAuthenticationAsync(
+            authenticationMethod,
+            stopwatch,
+            async () =>
+            {
+                var federatedIdentity = await federationService
+                    .ConsumeAssertionAsync(request.Slug, request.SamlResponse, cancellationToken)
+                    .ConfigureAwait(false);
+
+                // Tenant binding: when the provider is pinned to specific tenants, the
+                // requested tenant must already be one of them (fail closed before any
+                // user resolution side effects).
+                if (federatedIdentity.TenantAllowlist.Count > 0 &&
+                    request.TenantId is { } requestedTenant &&
+                    !federatedIdentity.TenantAllowlist.Contains(requestedTenant))
+                {
+                    throw new UnauthorizedAccessException($"SAML provider '{request.Slug}' does not serve the requested tenant.");
+                }
+
+                var email = federatedIdentity.Email ?? throw new UnauthorizedAccessException($"SAML assertion for provider '{request.Slug}' has no email attribute");
+
+                var resolvedUser = await ResolveExternalUserAsync(
+                    $"saml-{request.Slug}",
+                    email,
+                    federatedIdentity.ProviderKey,
+                    federatedIdentity.Name,
+                    federatedIdentity.EmailVerified,
+                    ["saml"],
+                    cancellationToken).ConfigureAwait(false);
+
+                await EnforceSamlMfaPolicyAsync(resolvedUser.Id, federatedIdentity, request.Slug, cancellationToken).ConfigureAwait(false);
+
+                return (resolvedUser, federatedIdentity);
+            }).ConfigureAwait(false);
+
+        await DefaultTenantMembershipProvisioner.EnsureAsync(sender, user.Id, cancellationToken).ConfigureAwait(false);
+        var tenantAccessContext = await ResolveTenantAccessContextAsync(user.Id, request.TenantId, cancellationToken).ConfigureAwait(false);
+
+        // Tenant binding (resolved side): with an allowlist configured, the session's
+        // effective tenant must land inside it.
+        if (identity.TenantAllowlist.Count > 0 &&
+            tenantAccessContext.TenantId is { } resolvedTenant &&
+            !identity.TenantAllowlist.Contains(resolvedTenant))
+        {
+            throw new UnauthorizedAccessException($"SAML provider '{request.Slug}' does not serve the resolved tenant.");
+        }
+
+        var httpContext = httpContextAccessor.HttpContext;
+        var ipAddress = authAttemptService.GetClientIpAddress(httpContext);
+        var userAgent = httpContext?.Request.Headers.UserAgent.ToString();
+        var deviceInfo = new DeviceInfo { Fingerprint = Guid.NewGuid().ToString(), IpAddress = ipAddress, UserAgent = userAgent, DeviceName = "OAuth Device", DeviceType = "Web" };
+
+        logger.LogInformation("SAML federation sign-in successful for provider {Slug}", request.Slug);
+
+        var response = await CompleteSignInAsync(
+            user,
+            tenantAccessContext,
+            deviceInfo,
+            ipAddress,
+            userAgent,
+            $"SAML sign-in successful ({request.Slug})",
+            authenticationMethod,
+            stopwatch,
+            request.RememberMe == true,
+            cancellationToken).ConfigureAwait(false);
+
+        // Surface the assertion's authentication context so clients and conditional
+        // policies can consume it alongside the existing step-up fields.
+        response.AuthenticationContextClassReference = identity.AuthnContextClassRefs.FirstOrDefault();
+        response.MfaVerifiedByProvider = identity.HasMfaProof;
+        return response;
+    }
+
+    /// <summary>
+    ///     Fail-closed MFA gate for federated SAML sign-in: when the platform policy requires
+    ///     MFA for the resolved user, the assertion's AuthnContext must reference a class
+    ///     the provider configuration recognizes as multi-factor, or the sign-in is refused.
+    /// </summary>
+    private async Task EnforceSamlMfaPolicyAsync(Guid userId, SamlFederatedIdentity identity, string slug, CancellationToken cancellationToken)
+    {
+        if (identity.HasMfaProof)
+        {
+            return;
+        }
+
+        var mfaRequired = await mfaService.IsMfaRequiredAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (mfaRequired)
+        {
+            throw new UnauthorizedAccessException(
+                $"SAML sign-in for provider '{slug}' requires multi-factor authentication, but the assertion did not carry a configured MFA AuthnContext class.");
+        }
     }
 
     /// <summary>

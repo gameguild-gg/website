@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using FluentAssertions;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Configuration.PresentationLayer.Authentication;
@@ -929,5 +930,215 @@ public class SharedJsonOptionsTests
     public void Strict_ShouldHaveEnumConverter()
     {
         SharedJsonOptions.Strict.Converters.Should().Contain(c => c is System.Text.Json.Serialization.JsonStringEnumConverter);
+    }
+}
+
+public class SamlProviderOptionsTests
+{
+    private static string ValidCertificateBase64()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+            "CN=corp-idp-signing", rsa, System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(1));
+        return Convert.ToBase64String(certificate.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Cert));
+    }
+
+    private static SamlProviderOptions ValidProvider() => new()
+    {
+        Enabled = true,
+        SpEntityId = "https://gameguild.example.test/auth/saml",
+        AssertionConsumerServiceUrl = "https://gameguild.example.test/auth/saml/corp-idp/callback",
+        IdpEntityId = "https://sts.corp.example.test",
+        IdpSigningCertificates = [ValidCertificateBase64()],
+        IdpSignInServiceUrl = "https://sts.corp.example.test/sso",
+        EmailDomains = ["corp.example.test"]
+    };
+
+    [Fact]
+    public void Validate_WithFullyConfiguredProvider_DoesNotThrow()
+    {
+        var act = () => ValidProvider().Validate("corp-idp");
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_WithDisabledProvider_RequiresNothing()
+    {
+        // Fail-closed default: an empty, disabled entry is valid configuration.
+        var act = () => new SamlProviderOptions().Validate("corp-idp");
+        act.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData("Corp-Idp")]
+    [InlineData("corp_idp")]
+    [InlineData("corp idp")]
+    public void Validate_WithInvalidSlug_Throws(string slug)
+    {
+        var act = () => ValidProvider().Validate(slug);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*slug*");
+    }
+
+    [Theory]
+    [InlineData("http://gameguild.example.test/cb")]
+    [InlineData("https://user:pass@gameguild.example.test/cb")]
+    [InlineData("https://gameguild.example.test/cb?x=1")]
+    [InlineData("not-a-uri")]
+    [InlineData("")]
+    public void Validate_WithNonHttpsOrMalformedAssertionConsumerServiceUrl_Throws(string acsUrl)
+    {
+        var provider = ValidProvider();
+        provider.AssertionConsumerServiceUrl = acsUrl;
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*assertion consumer service URL*");
+    }
+
+    [Fact]
+    public void Validate_WithoutCertificates_Throws()
+    {
+        var provider = ValidProvider();
+        provider.IdpSigningCertificates = [];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*at least one*");
+    }
+
+    [Fact]
+    public void Validate_WithGarbageCertificate_Throws()
+    {
+        var provider = ValidProvider();
+        provider.IdpSigningCertificates = ["not-base64!!!"];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Base64*");
+    }
+
+    [Fact]
+    public void Validate_WithOnlyExpiredCertificates_Throws()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+            "CN=expired-idp-signing", rsa, System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        using var expired = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-60), DateTimeOffset.UtcNow.AddDays(-1));
+        var provider = ValidProvider();
+        provider.IdpSigningCertificates = [Convert.ToBase64String(expired.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Cert))];
+
+        var act = () => provider.Validate("corp-idp");
+
+        // Fail closed at startup: an all-expired trust base can never verify a new assertion.
+        act.Should().Throw<InvalidOperationException>().WithMessage("*expired*");
+    }
+
+    [Fact]
+    public void Validate_WithRotationOverlap_ExpiredPlusValidCertificate_DoesNotThrow()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+            "CN=old-idp-signing", rsa, System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        using var expired = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-60), DateTimeOffset.UtcNow.AddDays(-1));
+        var provider = ValidProvider();
+        provider.IdpSigningCertificates = [provider.IdpSigningCertificates[0], Convert.ToBase64String(expired.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Cert))];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_WithDuplicateCertificates_Throws()
+    {
+        var provider = ValidProvider();
+        provider.IdpSigningCertificates = [provider.IdpSigningCertificates[0], provider.IdpSigningCertificates[0]];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*duplicates*");
+    }
+
+    [Fact]
+    public void Validate_WithUnsupportedClaimMappingKey_Throws()
+    {
+        var provider = ValidProvider();
+        provider.ClaimMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["sub"] = "NameID" };
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*supported logical claim*");
+    }
+
+    [Fact]
+    public void Validate_WithClockSkewOutOfRange_Throws()
+    {
+        var provider = ValidProvider();
+        provider.AllowedClockSkewSeconds = SamlProviderOptions.MaxClockSkewSeconds + 1;
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*clock skew*");
+    }
+
+    [Fact]
+    public void Validate_WithEmptyGuidTenant_Throws()
+    {
+        var provider = ValidProvider();
+        provider.TenantIds = [Guid.Empty];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*tenant*");
+    }
+
+    [Fact]
+    public void Validate_NullSamlMap_OnExternalProviders_Throws()
+    {
+        var options = new ExternalProviderOptions { Saml = null! };
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*SAML federation provider settings*");
+    }
+
+    [Fact]
+    public void Validate_SamlEntry_ValidatedThroughExternalProviders()
+    {
+        var options = new ExternalProviderOptions
+        {
+            Saml = new Dictionary<string, SamlProviderOptions>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["corp-idp"] = ValidProvider()
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void AuthenticationOptions_Validate_SamlEnabledWithAuthenticationDisabled_Throws()
+    {
+        var options = new AuthenticationOptions
+        {
+            EnableAuthentication = false,
+            ExternalProviders = new ExternalProviderOptions
+            {
+                Saml = new Dictionary<string, SamlProviderOptions>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["corp-idp"] = ValidProvider()
+                }
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*authentication is disabled*");
     }
 }

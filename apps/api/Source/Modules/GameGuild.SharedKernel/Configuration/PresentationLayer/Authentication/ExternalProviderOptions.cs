@@ -47,6 +47,17 @@ public sealed partial class ExternalProviderOptions
             (oidcOptions ?? throw new InvalidOperationException($"OIDC federation settings for '{slug}' are required."))
                 .Validate(slug);
         }
+
+        if (Saml is null)
+        {
+            throw new InvalidOperationException("SAML federation provider settings are required.");
+        }
+
+        foreach (var (slug, samlOptions) in Saml)
+        {
+            (samlOptions ?? throw new InvalidOperationException($"SAML federation settings for '{slug}' are required."))
+                .Validate(slug);
+        }
     }
 }
 

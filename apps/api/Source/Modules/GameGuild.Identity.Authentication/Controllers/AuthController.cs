@@ -518,6 +518,148 @@ public sealed class AuthController(ISender sender) : BaseApiController
 
     #endregion
 
+    #region SAML federation sign-in - /v1/auth/saml
+
+    /// <summary>
+    ///     Initiate SAML federation provider sign-in
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="body">Optional RelayState echoed by the provider on callback</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Identity provider redirect URL (HTTP-Redirect binding) and RelayState token</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/saml/{slug}:sign-in-authorize")]
+    [EndpointSummary("Initiate SAML federation sign-in")]
+    [EndpointDescription("Issues a SAML AuthnRequest for a configured enterprise identity provider (Authentication:ExternalProviders:Saml:<slug>) and returns the provider's sign-on redirect URL (HTTP-Redirect binding) with a RelayState token for the caller's state cookie.")]
+    [ProducesResponseType<SamlSignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> SamlSignIn([FromRoute] string slug, [FromBody] SamlAuthorizeRequestDto? body, CancellationToken ct)
+    {
+        var command = new SamlSignInCommand { Slug = slug, RelayState = body?.RelayState };
+
+        try
+        {
+            var result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return SamlNotConfigured(ex);
+        }
+    }
+
+    /// <summary>
+    ///     Handle the posted SAML response (Assertion Consumer Service)
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="body">Callback with the Base64 SAMLResponse posted by the provider and optional tenant context</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Authentication tokens on success</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/saml/{slug}:assertion-consumer")]
+    [EndpointSummary("SAML federation sign-in callback (Assertion Consumer Service)")]
+    [EndpointDescription("Validates the posted SAMLResponse (XML-DSig signature against the provider's configured certificates, issuer, audience, destination, clock-skew-bounded lifetimes, InResponseTo correlation, assertion-ID replay protection) and applies the same account matching and auto-link policy as the other providers. Fail closed when unsigned, wrongly signed, expired, replayed, or when the platform MFA policy is not attested by the assertion's AuthnContext.")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> SamlCallback([FromRoute] string slug, [FromBody] SamlCallbackRequestDto body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new SamlCallbackCommand
+        {
+            Slug = slug,
+            SamlResponse = body.SamlResponse,
+            RelayState = body.RelayState,
+            TenantId = body.TenantId,
+            RememberMe = body.RememberMe
+        };
+
+        try
+        {
+            SignInResponse result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return SamlNotConfigured(ex);
+        }
+    }
+
+    /// <summary>
+    ///     Serve this service provider's SAML 2.0 metadata document
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The SP entity descriptor XML for exchange with the identity provider</returns>
+    [AllowAnonymous]
+    [HttpGet("v{version:apiVersion}/auth/saml/{slug}:metadata")]
+    [EndpointSummary("SAML service provider metadata")]
+    [EndpointDescription("Returns this deployment's SAML 2.0 service provider metadata (entity ID and POST-binding assertion consumer service) for the configured provider, to be registered with the enterprise identity provider.")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/samlmetadata+xml")]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> SamlMetadata([FromRoute] string slug, CancellationToken ct)
+    {
+        try
+        {
+            var query = new GetSamlServiceProviderMetadataQuery { Slug = slug };
+            var result = await sender.Send(query, ct).ConfigureAwait(false);
+            return Content(result.MetadataXml, "application/samlmetadata+xml");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return SamlNotConfigured(ex);
+        }
+    }
+
+    /// <summary>
+    ///     Resolve the provider's front-channel single-logout redirect
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="postLogoutRedirectUri">Where the provider should return the browser after its logout</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The single-logout redirect URL, or null when the provider has none configured</returns>
+    [Authorize]
+    [HttpGet("v{version:apiVersion}/auth/saml/{slug}:logout-url")]
+    [EndpointSummary("Resolve SAML logout forwarding URL")]
+    [EndpointDescription("Returns the provider's single-logout redirect (an unsigned LogoutRequest via the HTTP-Redirect binding) when the provider is configured with a single logout service; null keeps logout local. Local refresh-token revocation is unchanged and remains the caller's responsibility.")]
+    [ProducesResponseType<SamlLogoutUrlResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> SamlLogoutUrl([FromRoute] string slug, [FromQuery] string? postLogoutRedirectUri, CancellationToken ct)
+    {
+        var query = new GetSamlLogoutUrlQuery { Slug = slug, PostLogoutRedirectUri = postLogoutRedirectUri };
+
+        try
+        {
+            var result = await sender.Send(query, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return SamlNotConfigured(ex);
+        }
+    }
+
+    private ObjectResult SamlNotConfigured(InvalidOperationException ex)
+    {
+        return Problem(
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "SAML federation provider is not configured",
+            detail: ex.Message);
+    }
+
+    #endregion
+
     #region Token Operations - /v1/auth/tokens
 
     /// <summary>
