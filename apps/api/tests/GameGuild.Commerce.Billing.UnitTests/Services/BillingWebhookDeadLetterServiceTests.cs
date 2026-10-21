@@ -40,7 +40,7 @@ public sealed class BillingWebhookDeadLetterServiceTests
             WebhookSecurityEventKind.DeadLettered,
             PaymentProviders.Stripe,
             null,
-            It.Is<string>(detail => detail.Contains("evt_dl") && detail.Contains("5 attempt(s)")),
+            It.Is<string>(detail => detail.Contains("evt_dl") && detail.Contains("5 attempts")),
             "evt_dl",
             It.IsAny<CancellationToken>()), Times.Once,
             "the dead-letter must raise a security event so the central alert pipeline surfaces repeated delivery failures");
