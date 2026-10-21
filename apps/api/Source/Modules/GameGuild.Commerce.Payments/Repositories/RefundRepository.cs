@@ -144,6 +144,18 @@ public class RefundRepository(
     }
 
     /// <inheritdoc />
+    public async Task<Refund?> GetByGatewayRefundIdAsync(
+        string gatewayRefundId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayRefundId);
+        logger.LogDebug("Getting refund by gateway refund id {GatewayRefundId}", LogRedaction.Sanitize(gatewayRefundId));
+        return await Query
+            .FirstOrDefaultAsync(refund => refund.GatewayRefundId == gatewayRefundId, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Refund>> ListDueForWorkflowAsync(
         int maxExecutionAttempts,
         DateTime failedBeforeUtc,

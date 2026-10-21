@@ -91,6 +91,11 @@ public static class ServiceCollectionExtensions
         // Stripe payment-method metadata reconciliation (issue #414): consumes verified
         // payment_method.updated events into the local payment-method registry.
         services.AddScoped<IStripeVerifiedEventConsumer, StripePaymentMethodUpdatedConsumer>();
+
+        // Stripe payment lifecycle reconciliation (issue #415): consumes verified
+        // payment_intent.succeeded / payment_intent.payment_failed and refund lifecycle events
+        // into the local payment and refund aggregates.
+        services.AddScoped<IStripeVerifiedEventConsumer, StripePaymentLifecycleEventConsumer>();
         services.AddScoped<PayPalBillingWebhookService>();
         services.AddScoped<ApplePayBillingWebhookService>();
         services.AddSingleton<IGooglePayWebhookVerificationService, GooglePayWebhookVerificationService>();

@@ -487,18 +487,20 @@ public sealed class PaymentsController(
     /// <param name="toUtc">Inclusive window end (UTC)</param>
     /// <param name="tenantId">Optional tenant ID filter</param>
     /// <param name="ct">Cancellation token</param>
-    /// <returns>Success rate, retry-recovery rate, recovered amounts per currency and dunning outcomes</returns>
+    /// <returns>Success rate, retry-recovery rate, recovered amounts per currency, dunning outcomes, failure-code distribution and recognition timing</returns>
     /// <remarks>
     ///     Aggregates the recovery analytics that billing administrators need to steer retry and
-    ///     dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
-    ///     amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
-    ///     exhausted). Non-admin actors are scoped to their own tenant.
+    ///     dunning strategy (issues #403/#415): first-attempt success rate, retry-recovery rate,
+    ///     recovered amounts grouped by currency, dunning outcome counters (pending retry, due for
+    ///     retry, exhausted), the failure-code distribution of failed payments and the
+    ///     creation-to-settlement timing of succeeded payments. Non-admin actors are scoped to
+    ///     their own tenant.
     /// </remarks>
     [HttpGet("recovery-metrics")]
     [EnableRateLimiting(RateLimitPolicies.Api)]
     [EndpointSummary("Get payment recovery metrics for a period")]
     [EndpointDescription(
-        "Returns payment success and failed-payment recovery metrics for an inclusive window: first-attempt success rate, retry-recovery rate, recovered amounts grouped by currency and dunning outcome counters. Non-admin actors are scoped to their own tenant."
+        "Returns payment success and failed-payment recovery metrics for an inclusive window: first-attempt success rate, retry-recovery rate, recovered amounts grouped by currency, dunning outcome counters, failure-code distribution and revenue recognition timing. Non-admin actors are scoped to their own tenant."
     )]
     [ProducesResponseType<PaymentRecoveryMetrics>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

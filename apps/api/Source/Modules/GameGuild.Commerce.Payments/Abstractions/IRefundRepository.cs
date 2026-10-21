@@ -37,6 +37,15 @@ public interface IRefundRepository
     Task<Refund?> GetOpenRefundForPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Gets the refund recorded with the given gateway refund identifier (issue #415
+    ///     payment.refunded webhook reconciliation). Null when the gateway refund has no local
+    ///     row — e.g. a refund initiated directly in the gateway dashboard.
+    /// </summary>
+    /// <param name="gatewayRefundId">Gateway refund identifier reported by the webhook.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<Refund?> GetByGatewayRefundIdAsync(string gatewayRefundId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Lists refunds due for the automated refund workflow (issue #419): approved refunds
     ///     waiting for execution, and failed refunds that still have execution attempts left and
     ///     whose retry delay has elapsed.

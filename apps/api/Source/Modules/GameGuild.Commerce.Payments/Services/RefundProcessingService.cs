@@ -78,6 +78,23 @@ public interface IRefundProcessingService
 
     /// <summary>Executes a Pending/Approved/Failed refund through the gateway and completes the accounting.</summary>
     Task<RefundExecutionOutcome> ExecuteAsync(Refund refund, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Completes a refund whose gateway outcome arrived out-of-band through a webhook (issue
+    ///     #415 payment.refunded events): the money already moved at the gateway (typically a
+    ///     gateway call whose response was lost), so this records the completion — refund row,
+    ///     payment aggregate, accounting and post-completion steps — without a new gateway call.
+    ///     Idempotent: refunds already completed or rejected are returned as no-ops.
+    /// </summary>
+    /// <param name="refund">Local refund row awaiting its gateway outcome.</param>
+    /// <param name="gatewayRefundId">Gateway refund identifier reported by the webhook.</param>
+    /// <param name="gatewayName">Gateway that executed the refund (e.g. stripe).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<RefundExecutionOutcome> CompleteFromGatewayAsync(
+        Refund refund,
+        string gatewayRefundId,
+        string gatewayName,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -352,6 +369,88 @@ public sealed class RefundProcessingService(
             payment.Id);
 
         await ApplyPostCompletionAsync(payment, refund, executeAtGateway: true, cancellationToken).ConfigureAwait(false);
+
+        return new RefundExecutionOutcome { Success = true, Refund = refund };
+    }
+
+    /// <inheritdoc />
+    public async Task<RefundExecutionOutcome> CompleteFromGatewayAsync(
+        Refund refund,
+        string gatewayRefundId,
+        string gatewayName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(refund);
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayRefundId);
+
+        if (refund.IsTerminal)
+        {
+            return new RefundExecutionOutcome
+            {
+                Success = true,
+                Refund = refund,
+                FailureReason = null
+            };
+        }
+
+        if (refund.Status == RefundStatus.Rejected)
+        {
+            return new RefundExecutionOutcome
+            {
+                Success = false,
+                Refund = refund,
+                FailureReason = $"Refund in status {refund.Status} cannot be completed"
+            };
+        }
+
+        var payment = await paymentRepository.GetByIdAsync(refund.PaymentId, cancellationToken).ConfigureAwait(false);
+        if (payment is null)
+        {
+            return new RefundExecutionOutcome
+            {
+                Success = false,
+                Refund = refund,
+                FailureReason = $"Payment {refund.PaymentId} not found"
+            };
+        }
+
+        if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.Disputed or PaymentStatus.PartiallyRefunded))
+        {
+            // The webhook describes a refund the local payment aggregate cannot accept (e.g. a
+            // stale event for a payment that never succeeded locally). Fail closed instead of
+            // forcing an illegal transition.
+            return new RefundExecutionOutcome
+            {
+                Success = false,
+                Refund = refund,
+                FailureReason = $"Payment {payment.Id} in status {payment.Status} cannot be refunded"
+            };
+        }
+
+        var statusBeforeRefund = payment.Status;
+
+        if (refund.Status != RefundStatus.Processing)
+        {
+            refund.MarkProcessing();
+        }
+
+        refund.MarkCompleted(gatewayRefundId, gatewayName);
+        await refundRepository.UpdateAsync(refund, cancellationToken).ConfigureAwait(false);
+
+        payment.ProcessRefund(refund.Amount, gatewayRefundId, refund.Reason);
+        await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
+
+        await RecordRefundAccountingAsync(payment, refund, statusBeforeRefund, cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation(
+            "Refund {RefundId} of {Amount} {Currency} completed from gateway webhook {GatewayRefundId} for payment {PaymentId}",
+            refund.Id,
+            refund.Amount,
+            refund.Currency,
+            gatewayRefundId,
+            payment.Id);
+
+        await ApplyPostCompletionAsync(payment, refund, executeAtGateway: false, cancellationToken).ConfigureAwait(false);
 
         return new RefundExecutionOutcome { Success = true, Refund = refund };
     }
