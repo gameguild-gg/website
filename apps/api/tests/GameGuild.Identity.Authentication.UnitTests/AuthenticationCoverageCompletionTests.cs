@@ -807,7 +807,12 @@ public sealed class AuthenticationCoverageCompletionTests
     [Fact]
     public void OAuthAndTotpPrivateHelpers_CoverRemainingBranches()
     {
-        var oauth = new OAuthService(new HttpClient(), EmptyConfiguration(), NullLogger<OAuthService>.Instance);
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["OAuth:google:ClientId"] = "coverage-google-client"
+        }).Build();
+        using var httpClient = new HttpClient();
+        var oauth = new OAuthService(httpClient, configuration, NullLogger<OAuthService>.Instance);
 
         oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", null)
             .Result.Should().Contain("openid%20email%20profile");
