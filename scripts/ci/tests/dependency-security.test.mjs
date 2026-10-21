@@ -177,7 +177,6 @@ for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
         const message = { jsonrpc: "2.0", method: "notifications/progress", params: { progressToken: "fixture", progress: 1 } };
         const transport = new StreamableHTTPClientTransport(source, {
           requestInit: { headers: { "X-API-Key": apiKey } },
-          fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.any([init.signal, AbortSignal.timeout(5000)].filter(Boolean)) }),
           sessionId,
         });
         context.after(() => transport.close());
@@ -228,7 +227,6 @@ for (const packageRoot of installedConsumers("@modelcontextprotocol/sdk")) {
         };
         const request = () => fetchToken(provider, source, {
           metadata: { issuer: source.href, token_endpoint: source.href, token_endpoint_auth_methods_supported: ["client_secret_post"] },
-          fetchFn: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(5000) }),
         });
         if (sameOrigin) {
           assert.equal((await request()).access_token, "synthetic-access-token");
