@@ -809,29 +809,14 @@ public sealed class AuthenticationCoverageCompletionTests
     {
         var oauth = new OAuthService(new HttpClient(), EmptyConfiguration(), NullLogger<OAuthService>.Instance);
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            null).Should().Contain("openid%20email%20profile");
+        oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", null)
+            .Result.Should().Contain("openid%20email%20profile");
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            Array.Empty<string>()).Should().Contain("openid%20email%20profile");
+        oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", Array.Empty<string>())
+            .Result.Should().Contain("openid%20email%20profile");
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            new[] { "openid", "email", "calendar.read" }).Should().Contain("calendar.read");
+        oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", new[] { "openid", "email", "calendar.read" })
+            .Result.Should().Contain("calendar.read");
 
         const string secret = "JBSWY3DPEHPK3PXP";
         var totpInstant = DateTimeOffset.UtcNow;
