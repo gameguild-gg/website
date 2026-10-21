@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.Email;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Users;
 using Microsoft.Extensions.Logging.Abstractions;
