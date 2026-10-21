@@ -11,4 +11,10 @@ public sealed class PolymorphicSignInRequest
 
     /// <summary>When true, issues a persistent ("remember me") refresh token using the persistent lifetime.</summary>
     public bool? RememberMe { get; init; }
+
+    /// <summary>
+    ///     Optional guest bearer token presented by an anonymous visitor signing in (issue #213):
+    ///     a valid guest session is upgraded into the issued authenticated session.
+    /// </summary>
+    public string? GuestAccessToken { get; init; }
 }

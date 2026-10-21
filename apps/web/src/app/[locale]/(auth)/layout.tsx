@@ -1,5 +1,7 @@
 import { auth } from '@/auth';
 import { GameGuildLogo } from '@/components/brand/game-guild-logo';
+import { resolveAllowedAuthRedirect } from '@/lib/auth/cross-domain-auth';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import React from 'react';
@@ -7,9 +9,29 @@ import React from 'react';
 export default async function Layout({ children, params }: LayoutProps<'/[locale]'>): Promise<React.JSX.Element> {
   const { locale } = await params;
 
-  // Hard guard: redirect authenticated users away from auth pages
+  // Hard guard: redirect authenticated users away from auth pages, honoring
+  // an allowlisted callbackUrl (issue #864) so a transient post-2FA bounce
+  // through /sign-in returns the user to their original target. The proxy
+  // forwards the browser-visible path+query; the bounce target is the
+  // callbackUrl/redirectTo QUERY the dashboard guard attached to /sign-in —
+  // parse it from the forwarded query, never from the path (the path here is
+  // the auth page itself, and redirecting to it would loop).
   const session = await auth();
-  if (session) redirect(`/${locale}`);
+  if (session) {
+    const forwarded = (await headers()).get('x-gameguild-path') ?? '';
+    const queryStart = forwarded.indexOf('?');
+    const params = new URLSearchParams(queryStart >= 0 ? forwarded.slice(queryStart) : '');
+    let callbackUrl = resolveAllowedAuthRedirect(
+      params.get('redirectTo') ?? params.get('callbackUrl') ?? undefined,
+    );
+
+    // Self-target guard: bouncing to another auth page would loop.
+    if (callbackUrl.startsWith('/sign-in') || callbackUrl.startsWith('/sign-up')) {
+      callbackUrl = resolveAllowedAuthRedirect(undefined);
+    }
+
+    redirect(`/${locale}${callbackUrl}`);
+  }
 
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-slate-950 text-white">

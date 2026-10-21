@@ -282,7 +282,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         return await SendCredentialTransitionAsync(
             new DeactivateWebAuthnCredentialCommand(userId.Value, credentialId),
@@ -307,7 +309,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         return await SendCredentialTransitionAsync(
             new ActivateWebAuthnCredentialCommand(userId.Value, credentialId),

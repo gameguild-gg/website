@@ -32,6 +32,8 @@ public sealed class RequestMagicLinkCommandHandler(
                         Email = user.Email,
                         Token = token,
                         UserName = user.Username ?? user.Name,
+                        RedirectTo = request.RedirectTo,
+                        Locale = request.Locale,
                         TenantId = request.TenantId,
                         IpAddress = request.IpAddress,
                         UserAgent = request.UserAgent
@@ -42,9 +44,9 @@ public sealed class RequestMagicLinkCommandHandler(
             {
                 throw;
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                logger.LogError(exception, "Failed to dispatch magic-link notification for user {UserId}", user.Id);
+                logger.LogError("Failed to dispatch magic-link notification");
             }
 
             logger.LogInformation(

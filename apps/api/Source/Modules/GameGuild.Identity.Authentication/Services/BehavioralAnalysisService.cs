@@ -96,22 +96,20 @@ public class BehavioralAnalysisService(
             }
 
             // Analyze geolocation patterns if available
-            var currentLocationKey = attemptContext.Location != null
-                ? $"{attemptContext.Location.Country}-{attemptContext.Location.City}"
-                : null;
-
-            if (!string.IsNullOrEmpty(currentLocationKey))
+            if (BehavioralLocationIdentity.Capture(attemptContext.Location) is { } currentLocation)
             {
                 var commonLocations = successfulAttempts
-                    .Where(a => !string.IsNullOrEmpty(a.Location))
-                    .GroupBy(a => a.Location)
-                    .Select(g => new { Location = g.Key, Count = g.Count() })
+                    .Select(currentLocation.HistoricalKey)
+                    .Where(key => key.HasValue)
+                    .Select(key => key.GetValueOrDefault())
+                    .GroupBy(key => key)
+                    .Select(group => new { Location = group.Key, Count = group.Count() })
                     .OrderByDescending(x => x.Count)
                     .Take(3)
                     .Select(x => x.Location)
                     .ToList();
 
-                if (commonLocations.Any() && !commonLocations.Contains(currentLocationKey))
+                if (commonLocations.Any() && !commonLocations.Contains(currentLocation.CurrentKey))
                 {
                     result.RiskScore += 25;
                     result.DetectedAnomalies.Add("Authentication from unfamiliar location");

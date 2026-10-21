@@ -17,6 +17,7 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
     private readonly ICertificateAnchoring _certificateAnchoring;
     private readonly ILearningAuditEventSink _auditSink;
     private readonly IRequestContextAccessor? _requestContextAccessor;
+    private readonly ICertificateDurableEvidenceProducer _evidenceProducer;
 
     public CertificateService(
         IApplicationDbContext context,
@@ -24,12 +25,18 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
         ILearningAuditEventSink auditSink,
         ICertificateAnchoring? certificateAnchoring = null,
         IRequestContextAccessor? requestContextAccessor = null)
+        : this(context, logger, auditSink, certificateAnchoring, requestContextAccessor, null) { }
+
+    public CertificateService(IApplicationDbContext context, ILogger<CertificateService> logger, ILearningAuditEventSink auditSink,
+        ICertificateAnchoring? certificateAnchoring, IRequestContextAccessor? requestContextAccessor,
+        ICertificateDurableEvidenceProducer? evidenceProducer)
     {
         _context = context;
         _logger = logger;
         _auditSink = auditSink ?? throw new ArgumentNullException(nameof(auditSink));
         _certificateAnchoring = certificateAnchoring ?? NoOpCertificateAnchoring.Instance;
         _requestContextAccessor = requestContextAccessor;
+        _evidenceProducer = evidenceProducer ?? NoOpCertificateDurableEvidenceProducer.Instance;
     }
 
     private Guid? ActingUserId => _requestContextAccessor?.CurrentUserId;
@@ -82,7 +89,9 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
                 userId,
                 courseId,
                 recipientName,
-                courseName);
+                courseName,
+                expiresAt: null,
+                tenantId: tenantId);
 
             _context.Set<Certificate>().Add(certificate);
             // The certificate and its audit event share one transaction; an audit emission
@@ -90,6 +99,7 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
             var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
             try
             {
+                _evidenceProducer.StageIssued(certificate);
                 await _context.SaveChangesAsync().ConfigureAwait(false);
                 await _auditSink.RecordAsync(new LearningAuditEvent(
                     "Learning.Certificates.CertificateIssued", "Certificate", certificate.Id.ToString(),
@@ -241,6 +251,11 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
                 return Result.Failure(Error.NotFound("Certificate", "Certificate not found"));
             }
 
+            if (certificate.Status == CertificateStatus.Revoked)
+            {
+                return Result.Success();
+            }
+
             certificate.Revoke(reason);
             _context.Set<Certificate>().Update(certificate);
             // Same fail-closed contract as issuance: a revocation whose audit event cannot be
@@ -248,6 +263,7 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
             var transaction = await _context.BeginAuditedMutationTransactionAsync().ConfigureAwait(false);
             try
             {
+                _evidenceProducer.StageRevoked(certificate);
                 await _context.SaveChangesAsync().ConfigureAwait(false);
                 await _auditSink.RecordAsync(new LearningAuditEvent(
                     "Learning.Certificates.CertificateRevoked", "Certificate", certificate.Id.ToString(),

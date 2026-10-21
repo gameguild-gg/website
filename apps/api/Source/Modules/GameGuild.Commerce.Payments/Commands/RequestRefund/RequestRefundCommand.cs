@@ -16,12 +16,18 @@ namespace GameGuild.Commerce.Payments;
 /// <param name="Reason">Short machine-readable reason (e.g. <c>duplicate</c>).</param>
 /// <param name="ReasonDetails">Optional human-readable details.</param>
 /// <param name="IdempotencyKey">Optional client idempotency key; replays return the recorded refund.</param>
+/// <param name="Kind">
+///     How the amount is determined (issue #419): Full (default) uses the remaining balance,
+///     Partial the explicit amount, and Prorated computes the unused-time credit of the
+///     subscription billing period (requires a subscription-linked payment).
+/// </param>
 public sealed record RequestRefundCommand(
     Guid PaymentId,
     decimal? Amount,
     string Reason,
     string? ReasonDetails = null,
-    string? IdempotencyKey = null) : ICommand<RequestRefundResult>;
+    string? IdempotencyKey = null,
+    RefundKind Kind = RefundKind.Full) : ICommand<RequestRefundResult>;
 
 /// <summary>Validator for <see cref="RequestRefundCommand"/>.</summary>
 public sealed class RequestRefundCommandValidator : AbstractValidator<RequestRefundCommand>
@@ -39,6 +45,8 @@ public sealed class RequestRefundCommandValidator : AbstractValidator<RequestRef
             .Matches("^[a-zA-Z0-9_\\-\\.]+$")
             .When(command => !string.IsNullOrWhiteSpace(command.IdempotencyKey))
             .WithMessage("Idempotency key may only contain letters, digits, '-', '_' and '.'");
+        RuleFor(command => command.Kind).IsInEnum()
+            .WithMessage("Refund kind must be a known value (full, partial or prorated)");
     }
 }
 

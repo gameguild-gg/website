@@ -9,6 +9,7 @@ import { redirect } from '@/i18n/navigation';
 import { getDashboardNotificationSummary } from '@/lib/dashboard-notifications';
 import { getDashboardContexts } from '@/lib/dashboard-contexts';
 import { getMfaStatus } from '@/lib/user-settings/mfa-actions';
+import { headers } from 'next/headers';
 import React from 'react';
 
 /**
@@ -25,13 +26,29 @@ async function fetchTwoFactorEnabled(): Promise<boolean | null> {
   }
 }
 
+/**
+ * The browser-visible path the proxy forwarded (issue #864): layouts receive
+ * no search params, so a transient unauthenticated render recovers the real
+ * target for the sign-in callbackUrl instead of losing it to `/workspace`.
+ * The proxy strips the locale prefix; non-slash-relative values are rejected.
+ */
+async function currentPublicPath(): Promise<string | null> {
+  try {
+    const forwarded = (await headers()).get('x-gameguild-path');
+    return forwarded?.startsWith('/') && !forwarded.startsWith('//') ? forwarded : null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function Layout({ children, params }: LayoutProps<'/[locale]'>): Promise<React.JSX.Element> {
   const { locale } = await params;
 
   const session = await auth();
 
   if (!session || typeof session === 'function') {
-    redirect({ href: { pathname: '/sign-in', query: { callbackUrl: '/workspace' } }, locale });
+    const callbackUrl = (await currentPublicPath()) ?? '/workspace';
+    redirect({ href: { pathname: '/sign-in', query: { callbackUrl } }, locale });
     throw new Error('Unauthenticated dashboard access');
   }
 

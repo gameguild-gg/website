@@ -23,7 +23,8 @@ public sealed class RequestRefundCommandHandler(
                 Amount: request.Amount,
                 Reason: request.Reason,
                 ReasonDetails: request.ReasonDetails,
-                ClientIdempotencyKey: request.IdempotencyKey),
+                ClientIdempotencyKey: request.IdempotencyKey,
+                Kind: request.Kind),
             cancellationToken).ConfigureAwait(false);
 
         if (!outcome.Success || outcome.Refund is null)

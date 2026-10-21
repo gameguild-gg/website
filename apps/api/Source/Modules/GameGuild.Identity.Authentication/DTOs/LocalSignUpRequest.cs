@@ -29,4 +29,11 @@ public class LocalSignUpRequest
 
     [Phone]
     public string? PhoneNumber { get; set; }
+
+    /// <summary>
+    ///     Optional guest bearer token presented by an anonymous visitor registering
+    ///     (issue #213). A valid guest session is upgraded into the issued authenticated
+    ///     session (session continuity); an invalid token never blocks registration.
+    /// </summary>
+    public string? GuestAccessToken { get; set; }
 }

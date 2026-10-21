@@ -354,7 +354,8 @@ public class RefundApprovalWorkflowTests
         warning.Arguments[3].Should().BeNull("the original exception can contain the private notification payload");
         var properties = ((IEnumerable<KeyValuePair<string, object?>>)warning.Arguments[2])
             .ToDictionary(entry => entry.Key, entry => entry.Value);
-        properties["Email"].Should().BeOfType<string>().Which.Should().MatchRegex("^email:[a-f0-9]{64}$");
+        properties.Should().NotContainKey("Email");
+        properties.Values.Should().NotContain(LogRedaction.MaskEmail(firstRecipient));
         properties["ErrorType"].Should().Be(typeof(InvalidOperationException).FullName);
         properties["RefundId"].Should().Be(outcome.Refund.Id);
     }

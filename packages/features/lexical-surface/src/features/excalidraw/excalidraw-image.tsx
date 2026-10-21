@@ -6,7 +6,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import type {
   ExcalidrawElement,
@@ -50,6 +50,7 @@ export default function ExcalidrawImage({
   height = "inherit",
 }: Props): React.JSX.Element {
   const [svg, setSvg] = useState<SVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +74,13 @@ export default function ExcalidrawImage({
     };
   }, [elements, files, appState]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container === null) return;
+    if (svg === null) container.replaceChildren();
+    else container.replaceChildren(svg);
+  }, [svg]);
+
   const containerStyle: React.CSSProperties = {};
   if (width !== "inherit") containerStyle.width = `${width}px`;
   if (height !== "inherit") containerStyle.height = `${height}px`;
@@ -80,11 +88,11 @@ export default function ExcalidrawImage({
   return (
     <div
       ref={(node) => {
+        containerRef.current = node;
         if (node && imageContainerRef) imageContainerRef.current = node;
       }}
       className={rootClassName ?? ""}
       style={containerStyle}
-      dangerouslySetInnerHTML={{ __html: svg?.outerHTML ?? "" }}
     />
   );
 }

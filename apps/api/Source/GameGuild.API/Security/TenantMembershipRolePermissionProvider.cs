@@ -58,6 +58,14 @@ public sealed class TenantMembershipRolePermissionProvider(ITenantMemberReposito
             permissions.Add(ManageSettingsPermission.Keys.Read);
             permissions.Add(ManageSettingsPermission.Keys.Manage);
             permissions.Add(AuditPermission.Keys.Read);
+
+            // Query-operations tier (issue #375): administrative roles carry the
+            // list/search/query operation keys so the audit-query, security-event and
+            // permission-query surfaces keep working for tenant administrators. Regular
+            // members receive nothing implicitly (fail-closed, explicit grants only).
+            permissions.Add(QueryPermission.Keys.List);
+            permissions.Add(QueryPermission.Keys.Search);
+            permissions.Add(QueryPermission.Keys.Query);
         }
 
         return permissions.ToArray();

@@ -37,7 +37,8 @@ public sealed class AuthenticationCoverageCompletionTests
         var service = new EmailVerificationService(
             NullLogger<EmailVerificationService>.Instance,
             cache,
-            publisher.Object);
+            publisher.Object,
+            magicLinkTokenStore: new global::GameGuild.Identity.Authentication.UnitTests.Services.EmailVerificationServiceTests.InMemoryMagicLinkTokenStore());
 
         var userId = Guid.NewGuid();
         var passwordResetToken = await service.GeneratePasswordResetTokenAsync(userId, "User@Example.com");
@@ -582,18 +583,49 @@ public sealed class AuthenticationCoverageCompletionTests
     }
 
     [Fact]
-    public void LoginAttemptAnalysisService_ParseLocation_CoversFallbacks()
+    public async Task LoginAttemptAnalysisService_UsesComparableHistoryWithoutPrivateReflection()
     {
-        InvokePrivateStatic<LocationInfo?>(typeof(LoginAttemptAnalysisService), "ParseLocation", (object?)null)
-            .Should().BeNull();
-
-        var city = InvokePrivateStatic<LocationInfo>(typeof(LoginAttemptAnalysisService), "ParseLocation", "US-New York");
-        city.Country.Should().Be("US");
-        city.City.Should().Be("New York");
-
-        var country = InvokePrivateStatic<LocationInfo>(typeof(LoginAttemptAnalysisService), "ParseLocation", "Canada");
-        country.Country.Should().Be("Canada");
-        country.City.Should().BeNull();
+        var histories = new (string? Country, string? Location, string? ExpectedCountry, string? ExpectedCode, string? ExpectedCity)[]
+        {
+            (null, null, null, null, null),
+            (null, "US-New York", "US", "US", "New York"),
+            ("Canada", "Canada", "CANADA", null, null),
+            // A display-only country label is not authoritative structured country data.
+            (null, "Canada", null, null, null)
+        };
+        foreach (var history in histories)
+        {
+            var user = Guid.NewGuid();
+            var now = new DateTime(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc);
+            var previous = new AuthenticationAttempt { UserId = user, IpAddress = "198.51.100.72", UserAgent = "Synthetic history fixture",
+                Country = history.Country, Location = history.Location, AttemptedAt = now.AddMinutes(-10), IsSuccessful = true };
+            var repository = new Mock<IAuthenticationAttemptRepository>();
+            repository.Setup(port => port.GetRecentAttemptsAsync(user, It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AuthenticationAttempt> { previous });
+            repository.Setup(port => port.GetLastSuccessfulAttemptAsync(user, It.IsAny<CancellationToken>())).ReturnsAsync(previous);
+            var threat = new Mock<IThreatDetectionService>();
+            threat.Setup(port => port.DetectImpossibleTravelAsync(user, It.IsAny<LocationInfo>(), It.IsAny<LocationInfo>(), It.IsAny<TimeSpan>()))
+                .ReturnsAsync(false);
+            var service = new LoginAttemptAnalysisService(repository.Object, threat.Object,
+                NullLogger<LoginAttemptAnalysisService>.Instance, EmptyConfiguration(), Mock.Of<ISiemIntegrationService>());
+            var result = await service.AnalyzeLoginAttemptAsync(new AuthenticationAttemptContext
+            {
+                UserId = user, IpAddress = previous.IpAddress, UserAgent = previous.UserAgent!, AttemptedAt = now,
+                Location = new LocationInfo { Country = "United States", CountryCode = "US", City = "New York" }
+            });
+            result.DetectedAnomalies.Should().NotContain(SecurityAlertKinds.ImpossibleTravel);
+            if (history.ExpectedCountry is null)
+            {
+                threat.Verify(port => port.DetectImpossibleTravelAsync(user, It.IsAny<LocationInfo>(), It.IsAny<LocationInfo>(),
+                    It.IsAny<TimeSpan>()), Times.Never());
+            }
+            else
+            {
+                threat.Verify(port => port.DetectImpossibleTravelAsync(user, It.IsAny<LocationInfo>(),
+                    It.Is<LocationInfo>(value => value.Country == history.ExpectedCountry && value.CountryCode == history.ExpectedCode && value.City == history.ExpectedCity),
+                    TimeSpan.FromMinutes(10)), Times.Once());
+            }
+        }
     }
 
     [Fact]
@@ -777,29 +809,14 @@ public sealed class AuthenticationCoverageCompletionTests
     {
         var oauth = new OAuthService(new HttpClient(), EmptyConfiguration(), NullLogger<OAuthService>.Instance);
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            null).Should().Contain("openid%20email%20profile");
+        oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", null)
+            .Result.Should().Contain("openid%20email%20profile");
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            Array.Empty<string>()).Should().Contain("openid%20email%20profile");
+        oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", Array.Empty<string>())
+            .Result.Should().Contain("openid%20email%20profile");
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            new[] { "openid", "email", "calendar.read" }).Should().Contain("calendar.read");
+        oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", new[] { "openid", "email", "calendar.read" })
+            .Result.Should().Contain("calendar.read");
 
         const string secret = "JBSWY3DPEHPK3PXP";
         var totpInstant = DateTimeOffset.UtcNow;

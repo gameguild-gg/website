@@ -41,6 +41,97 @@ public class StripeBillingWebhookServiceTests
     }
 
     [Fact]
+    public async Task ReplayStripeWebhookAsync_Should_Return_AlreadyProcessed_When_Row_Completed()
+    {
+        var repository = new Mock<IBillingWebhookRepository>();
+        var service = CreateService(repository, Mock.Of<ISubscriptionQueryService>(), Mock.Of<ISubscriptionBillingService>(), Mock.Of<ISubscriptionLifecycleService>(), Mock.Of<ISubscriptionExternalIdService>());
+
+        var row = new BillingWebhookEvent
+        {
+            ExternalEventId = "evt_done",
+            Provider = PaymentProviders.Stripe,
+            IsProcessed = true,
+            ProcessedAt = DateTime.UtcNow,
+            IsSignatureVerified = true
+        };
+
+        var result = await service.ReplayStripeWebhookAsync(row, CancellationToken.None);
+
+        result.WasAlreadyProcessed.Should().BeTrue();
+        repository.Verify(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ReplayStripeWebhookAsync_Should_Refuse_Rows_Without_Verification_Proof()
+    {
+        // Fail closed: a legacy row with no retained verification proof must never be
+        // re-routed by the retry pipeline (issue #408).
+        var repository = new Mock<IBillingWebhookRepository>();
+        repository
+            .Setup(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BillingWebhookEvent e, CancellationToken _) => e);
+        var service = CreateService(repository, Mock.Of<ISubscriptionQueryService>(), Mock.Of<ISubscriptionBillingService>(), Mock.Of<ISubscriptionLifecycleService>(), Mock.Of<ISubscriptionExternalIdService>());
+
+        var legacyRow = new BillingWebhookEvent
+        {
+            ExternalEventId = "evt_legacy",
+            Provider = PaymentProviders.Stripe,
+            EventType = "customer.subscription.updated",
+            Payload = "{}"
+        };
+
+        var result = await service.ReplayStripeWebhookAsync(legacyRow, CancellationToken.None);
+
+        result.Processed.Should().BeFalse();
+        result.RequiresRetry.Should().BeFalse();
+        legacyRow.IsProcessed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReplayStripeWebhookAsync_Should_Reroute_The_Stored_Delivery()
+    {
+        // The retry pipeline's execution arm: a verified stored row is replayed through the
+        // same event routing used for live deliveries and marked processed on success.
+        var repository = new Mock<IBillingWebhookRepository>();
+        repository
+            .Setup(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BillingWebhookEvent e, CancellationToken _) => e);
+
+        var subscription = new Subscription(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), BillingCycle.Monthly, new Money(10m, "USD"), DateTime.UtcNow);
+        var queryService = new Mock<ISubscriptionQueryService>();
+        queryService
+            .Setup(q => q.GetByExternalIdAsync("sub_replay", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        var lifecycle = new Mock<ISubscriptionLifecycleService>();
+
+        var service = CreateService(repository, queryService.Object, Mock.Of<ISubscriptionBillingService>(), lifecycle.Object, Mock.Of<ISubscriptionExternalIdService>());
+
+        var row = new BillingWebhookEvent
+        {
+            ExternalEventId = "evt_replay",
+            Provider = PaymentProviders.Stripe,
+            ProviderEnvironment = "test",
+            ProviderAccountId = "platform",
+            WebhookEndpointId = "we_test",
+            ProviderObjectId = "sub_replay",
+            ProviderObjectType = "subscription",
+            ProviderMonetaryLeg = "nonmonetary",
+            EventType = "customer.subscription.updated",
+            Payload = "{\"id\":\"evt_replay\",\"type\":\"customer.subscription.updated\",\"data\":{\"object\":{\"id\":\"sub_replay\",\"status\":\"active\"}}}",
+            IsSignatureVerified = true,
+            SignatureVerifiedAt = DateTime.UtcNow.AddMinutes(-10)
+        };
+
+        var result = await service.ReplayStripeWebhookAsync(row, CancellationToken.None);
+
+        result.Processed.Should().BeTrue();
+        result.WasAlreadyProcessed.Should().BeFalse();
+        row.IsProcessed.Should().BeTrue();
+        lifecycle.Verify(l => l.ActivateAsync(subscription.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task ProcessStripeWebhookAsync_Should_Retry_Failed_Durable_Event_On_Redelivery()
     {
         var failedEvent = new BillingWebhookEvent

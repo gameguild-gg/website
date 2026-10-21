@@ -21,18 +21,120 @@ namespace GameGuild.Identity.Authentication;
 ///     <para>
 ///         <b>SECURITY:</b> every mutation path bumps the tenant security version (cache
 ///         invalidation) and writes a permission audit entry. The invalidation/audit
-///         collaborators are optional so legacy construction sites keep working, but the
-///         composition root always supplies them; when they are absent the mutation still
-///         throws on failure to keep the fail-loud behavior of the Authorization module.
+    ///         collaborators remain optional for read-only construction sites. Every mutation
+    ///         requires authenticated scope authority and configured version/audit services
+    ///         before accessing storage; the composition root supplies these collaborators.
 ///     </para>
 /// </remarks>
-public class PermissionService(
+public partial class PermissionService(
     IApplicationDbContext context,
     ITenantSecurityVersionStore? securityVersionStore = null,
     IPermissionAuditService? auditService = null,
     IActorContextAccessor? actorContextAccessor = null,
-    IHybridPermissionCache? hybridPermissionCache = null) : IPermissionService
+    IHybridPermissionCache? hybridPermissionCache = null) : IPermissionServiceV2
 {
+    private readonly IPermissionReadService _contractReader = new PermissionContractReader(context, actorContextAccessor);
+    private readonly IPermissionUpdateService _contractUpdater = new PermissionContractUpdater(
+        context, securityVersionStore, auditService, actorContextAccessor);
+    private readonly IPermissionLifecycleService _contractLifecycle = new PermissionContractLifecycle(
+        context, securityVersionStore, auditService, actorContextAccessor);
+
+    /// <inheritdoc />
+    public Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query) =>
+        GetTenantPermissionAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<TenantPermission>> GetTenantPermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken) =>
+        _contractReader.GetTenantPermissionAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query) =>
+        GetContentTypePermissionAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> GetContentTypePermissionAsync(PermissionGrantLookup query, CancellationToken cancellationToken) =>
+        _contractReader.GetContentTypePermissionAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        GetResourcePermissionAsync<TPermission, TResource>(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<TPermission>> GetResourcePermissionAsync<TPermission, TResource>(PermissionGrantLookup query, CancellationToken cancellationToken)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase =>
+        _contractReader.GetResourcePermissionAsync<TPermission, TResource>(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<TenantPermission>> UpdateTenantPermissionAsync(PermissionGrantUpdate<string> request) =>
+        UpdateTenantPermissionAsync(request, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<TenantPermission>> UpdateTenantPermissionAsync(
+        PermissionGrantUpdate<string> request, CancellationToken cancellationToken) =>
+        _contractUpdater.UpdateTenantPermissionAsync(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> UpdateContentTypePermissionAsync(PermissionGrantUpdate<PermissionType> request) =>
+        UpdateContentTypePermissionAsync(request, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<ContentTypePermission>> UpdateContentTypePermissionAsync(
+        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken) =>
+        _contractUpdater.UpdateContentTypePermissionAsync(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<TPermission>> UpdateResourcePermissionAsync<TPermission, TResource>(PermissionGrantUpdate<PermissionType> request)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        UpdateResourcePermissionAsync<TPermission, TResource>(request, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<TPermission>> UpdateResourcePermissionAsync<TPermission, TResource>(
+        PermissionGrantUpdate<PermissionType> request, CancellationToken cancellationToken)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase =>
+        _contractUpdater.UpdateResourcePermissionAsync<TPermission, TResource>(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(TenantPermissionListQuery query) =>
+        QueryTenantPermissionsAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<TenantPermission>>> QueryTenantPermissionsAsync(
+        TenantPermissionListQuery query, CancellationToken cancellationToken) =>
+        _contractReader.QueryTenantPermissionsAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<ContentTypePermission>>> QueryContentTypePermissionsAsync(ContentTypePermissionListQuery query) =>
+        QueryContentTypePermissionsAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<ContentTypePermission>>> QueryContentTypePermissionsAsync(
+        ContentTypePermissionListQuery query, CancellationToken cancellationToken) =>
+        _contractReader.QueryContentTypePermissionsAsync(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<TPermission>>> QueryResourcePermissionsAsync<TPermission, TResource>(ResourcePermissionListQuery query)
+        where TPermission : ResourcePermission<TResource> where TResource : EntityBase =>
+        QueryResourcePermissionsAsync<TPermission, TResource>(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<TPermission>>> QueryResourcePermissionsAsync<TPermission, TResource>(
+        ResourcePermissionListQuery query, CancellationToken cancellationToken)
+        where TPermission : ResourcePermission<TResource>
+        where TResource : EntityBase =>
+        _contractReader.QueryResourcePermissionsAsync<TPermission, TResource>(query, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<PermissionAuditLog>>> QueryPermissionHistoryAsync(PermissionAuditHistoryQuery query) =>
+        QueryPermissionHistoryAsync(query, CancellationToken.None);
+
+    /// <inheritdoc />
+    public Task<Result<PagedResult<PermissionAuditLog>>> QueryPermissionHistoryAsync(
+        PermissionAuditHistoryQuery query, CancellationToken cancellationToken) =>
+        _contractReader.QueryPermissionHistoryAsync(query, cancellationToken);
+
     private static readonly Meter BulkPermissionCheckMeter = new("GameGuild.Identity.Authentication.PermissionBulkCheck", "1.0.0");
     private static readonly Counter<long> BulkPermissionCheckBatchCounter = BulkPermissionCheckMeter.CreateCounter<long>(
         "permission_bulk_check_batches",
@@ -57,8 +159,10 @@ public class PermissionService(
     private const int MaximumBulkPermissionCacheVersionRetries = 3;
     private const string BulkPermissionCacheType = "permission";
 
-    public async Task<TenantPermission> GrantTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
+    private async Task<TenantPermission> GrantTenantPermissionCoreAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
     {
+        var actorId = RequireMutationScope(tenantId);
+        ValidateLegacyPayload(userId, permissions);
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
         var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
@@ -67,6 +171,7 @@ public class PermissionService(
             {
                 UserId = userId,
                 TenantId = tenantId,
+                GrantedBy = actorId,
                 GrantedAt = SystemClock.UtcNow
             };
             context.Set<TenantPermission>().Add(grant);
@@ -89,8 +194,12 @@ public class PermissionService(
         return grant;
     }
 
-    public async Task<List<TenantPermission>> BulkGrantTenantPermissionAsync(Guid[] userIds, Guid tenantId, PermissionType[] permissions)
+    private async Task<List<TenantPermission>> BulkGrantTenantPermissionCoreAsync(Guid[] userIds, Guid tenantId, PermissionType[] permissions)
     {
+        RequireMutationScope(tenantId);
+        ArgumentNullException.ThrowIfNull(userIds);
+        ValidateLegacyPayload(null, permissions);
+        if (userIds.Contains(Guid.Empty)) { throw new ArgumentException("Target user identifiers cannot be empty.", nameof(userIds)); }
         var results = new List<TenantPermission>();
         foreach (var userId in userIds.Where(id => id != Guid.Empty).Distinct())
         {
@@ -127,8 +236,10 @@ public class PermissionService(
         await SetTenantGrantAsync(null, tenantId, permissions, "Tenant default permissions").ConfigureAwait(false);
     }
 
-    public async Task RevokeTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
+    private async Task RevokeTenantPermissionCoreAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
     {
+        RequireMutationScope(tenantId);
+        ValidateLegacyPayload(userId, permissions);
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
         var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
@@ -154,8 +265,10 @@ public class PermissionService(
             newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
     }
 
-    public async Task<TenantPermission> JoinTenantAsync(Guid userId, Guid tenantId)
+    private async Task<TenantPermission> JoinTenantCoreAsync(Guid userId, Guid tenantId)
     {
+        RequireMutationScope(tenantId);
+        if (userId == Guid.Empty) { throw new ArgumentException("A target user is required.", nameof(userId)); }
         var defaults = (await GetTenantDefaultPermissionsAsync(tenantId).ConfigureAwait(false)).ToArray();
         if (defaults.Length == 0)
         {
@@ -165,8 +278,10 @@ public class PermissionService(
         return await GrantTenantPermissionAsync(userId, tenantId, defaults).ConfigureAwait(false);
     }
 
-    public async Task LeaveTenantAsync(Guid userId, Guid tenantId)
+    private async Task LeaveTenantCoreAsync(Guid userId, Guid tenantId)
     {
+        RequireMutationScope(tenantId);
+        if (userId == Guid.Empty) { throw new ArgumentException("A target user is required.", nameof(userId)); }
         var directPermissions = (await GetTenantPermissionsAsync(userId, tenantId).ConfigureAwait(false)).ToArray();
         if (directPermissions.Length > 0)
         {
@@ -208,15 +323,17 @@ public class PermissionService(
         return permissions;
     }
 
-    public async Task<ContentTypePermission> GrantContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
+    private async Task<ContentTypePermission> GrantContentTypePermissionCoreAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(contentTypeName);
+        var actorId = RequireMutationScope(tenantId);
+        ValidateLegacyPayload(userId, permissions);
+        ValidateLegacyName(contentTypeName);
 
         var grant = await GetContentTypeGrantAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
         var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
-            grant = new ContentTypePermission(userId, tenantId, contentTypeName);
+            grant = new ContentTypePermission(userId, tenantId, contentTypeName) { GrantedBy = actorId };
             context.Set<ContentTypePermission>().Add(grant);
         }
 
@@ -249,8 +366,11 @@ public class PermissionService(
             : grant.GetPermissionsAsEnum();
     }
 
-    public async Task RevokeContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
+    private async Task RevokeContentTypePermissionCoreAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
     {
+        RequireMutationScope(tenantId);
+        ValidateLegacyPayload(userId, permissions);
+        ValidateLegacyName(contentTypeName);
         var grant = await GetContentTypeGrantAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
         var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
@@ -311,11 +431,18 @@ public class PermissionService(
 
     public Task<TPermission> GrantResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
-        => GrantResourcePermissionCoreAsync<TPermission, TResource>(userId, tenantId, resourceId, permissions, null);
+        => ExecuteCompatibleMutationAsync(tenantId, () => GrantResourcePermissionCoreAsync<TPermission, TResource>(userId, tenantId, resourceId, permissions, null));
 
     private async Task<TPermission> GrantResourcePermissionCoreAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions, DateTime? expiresAt)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
+        var actorId = RequireMutationScope(tenantId);
+        ValidateLegacyPayload(userId, permissions);
+        if (resourceId == Guid.Empty) { throw new ArgumentException("A resource identifier is required.", nameof(resourceId)); }
+        if (expiresAt is { Kind: not DateTimeKind.Utc } || expiresAt <= SystemClock.UtcNow)
+        {
+            throw new ArgumentException("Resource grant expiration must be a future UTC deadline.", nameof(expiresAt));
+        }
         var grant = await GetResourceGrantAsync<TPermission, TResource>(userId, tenantId, resourceId).ConfigureAwait(false);
         var oldValue = grant == null ? null : CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId);
         if (grant == null)
@@ -326,6 +453,7 @@ public class PermissionService(
                 TenantId = tenantId,
                 ResourceId = resourceId,
                 ResourceType = typeof(TResource).Name,
+                GrantedBy = actorId,
                 GrantedAt = SystemClock.UtcNow
             };
             context.Set<TPermission>().Add(grant);
@@ -368,9 +496,13 @@ public class PermissionService(
             : grant.GetPermissionsAsEnum();
     }
 
-    public async Task BulkGrantResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid[] resourceIds, PermissionType[] permissions)
+    private async Task BulkGrantResourcePermissionCoreAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid[] resourceIds, PermissionType[] permissions)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
+        RequireMutationScope(tenantId);
+        ValidateLegacyPayload(userId, permissions);
+        ArgumentNullException.ThrowIfNull(resourceIds);
+        if (resourceIds.Contains(Guid.Empty)) { throw new ArgumentException("Resource identifiers cannot be empty.", nameof(resourceIds)); }
         foreach (var resourceId in resourceIds.Where(id => id != Guid.Empty).Distinct())
         {
             await GrantResourcePermissionAsync<TPermission, TResource>(userId, tenantId, resourceId, permissions).ConfigureAwait(false);
@@ -389,15 +521,17 @@ public class PermissionService(
         return results;
     }
 
-    public async Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt = null)
+    private async Task ShareResourceCoreAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
         await GrantResourcePermissionCoreAsync<TPermission, TResource>(targetUserId, tenantId, resourceId, permissions, expiresAt).ConfigureAwait(false);
     }
 
-    public async Task RevokeResourceAccessAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId)
+    private async Task RevokeResourceAccessCoreAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
+        RequireMutationScope(tenantId);
+        if (userId == Guid.Empty || resourceId == Guid.Empty) { throw new ArgumentException("Target user and resource identifiers are required."); }
         var grant = await GetResourceGrantAsync<TPermission, TResource>(userId, tenantId, resourceId).ConfigureAwait(false);
         var oldValue = grant == null ? null : CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId);
         if (grant == null)
@@ -1334,11 +1468,12 @@ public class PermissionService(
         }
     }
 
-    public async Task CleanupExpiredPermissionsAsync()
+    private async Task CleanupExpiredPermissionsCoreAsync()
     {
+        RequireMutationScope(null, allTenants: true);
         var cutoff = SystemClock.UtcNow;
         var tenantPermissions = await context.Set<TenantPermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
+            .Where(p => p.DeletedAt == null && p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
         var tenantSnapshots = tenantPermissions
@@ -1350,7 +1485,7 @@ public class PermissionService(
         }
 
         var contentPermissions = await context.Set<ContentTypePermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
+            .Where(p => p.DeletedAt == null && p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
         var contentSnapshots = contentPermissions
@@ -1362,7 +1497,7 @@ public class PermissionService(
         }
 
         var resourcePermissions = await context.Set<GenericResourcePermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
+            .Where(p => p.DeletedAt == null && p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
         var resourceSnapshots = resourcePermissions
@@ -1380,7 +1515,7 @@ public class PermissionService(
         var affectedScopes = tenantPermissions.Select(grant => grant.PermissionTenantId)
             .Concat(contentPermissions.Select(grant => grant.PermissionTenantId))
             .Concat(resourcePermissions.Select(grant => grant.PermissionTenantId))
-            .Distinct();
+            .Distinct().OrderBy(tenantId => tenantId ?? Guid.Empty);
         foreach (var tenantId in affectedScopes)
         {
             await InvalidateMutationScopeAsync(tenantId).ConfigureAwait(false);
@@ -1429,8 +1564,10 @@ public class PermissionService(
         }
     }
 
-    private async Task SetTenantGrantAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions, string reason)
+    private async Task SetTenantGrantCoreAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions, string reason)
     {
+        var actorId = RequireMutationScope(tenantId);
+        ValidateLegacyPayload(userId, permissions);
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
         var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
@@ -1440,6 +1577,7 @@ public class PermissionService(
                 UserId = userId,
                 TenantId = tenantId,
                 GrantedAt = SystemClock.UtcNow,
+                GrantedBy = actorId,
                 Reason = reason
             };
             context.Set<TenantPermission>().Add(grant);
@@ -1462,7 +1600,7 @@ public class PermissionService(
 
     private Task<TenantPermission?> GetTenantGrantAsync(Guid? userId, Guid? tenantId)
         => context.Set<TenantPermission>()
-            .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId);
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId && p.DeletedAt == null);
 
     private Task<ContentTypePermission?> GetContentTypeGrantAsync(Guid? userId, Guid? tenantId, string contentTypeName)
         => context.Set<ContentTypePermission>()
@@ -1510,7 +1648,7 @@ public class PermissionService(
 
         if (auditService is not null)
         {
-            await auditService.LogPermissionChangeAsync(
+            var evidence = await auditService.LogPermissionChangeAsync(
                 operation,
                 userId,
                 performedBy,
@@ -1521,6 +1659,10 @@ public class PermissionService(
                 oldValue: oldValue,
                 newValue: newValue,
                 reason: reason ?? $"{operation} via legacy permission facade").ConfigureAwait(false);
+            if (evidence is null || evidence.Id == Guid.Empty)
+            {
+                throw new InvalidOperationException("Permission mutation audit was not persisted.");
+            }
         }
     }
 
@@ -1529,8 +1671,43 @@ public class PermissionService(
         if (securityVersionStore is not null)
         {
             var tenantKey = tenantId?.ToString() ?? Guid.Empty.ToString();
-            await securityVersionStore.IncrementVersionAsync(tenantKey).ConfigureAwait(false);
+            var version = await securityVersionStore.IncrementVersionAsync(tenantKey).ConfigureAwait(false);
+            if (version <= 0) { throw new InvalidOperationException("Permission invalidation did not advance the security version."); }
         }
+    }
+
+    private Guid RequireMutationScope(Guid? tenantId, bool allTenants = false)
+    {
+        var scope = PermissionWriteAuthorization.Resolve(actorContextAccessor, tenantId, globalScope: tenantId is null);
+        if (scope.IsFailure)
+        {
+            if (scope.Error.Type == ErrorType.Validation) { throw new ArgumentException(scope.Error.Description); }
+            throw new UnauthorizedAccessException(scope.Error.Description);
+        }
+        if (allTenants && actorContextAccessor?.ActorContext.IsSystemAdmin != true)
+        {
+            throw new UnauthorizedAccessException("Cross-tenant permission cleanup requires system administration.");
+        }
+        if (securityVersionStore is null || auditService is null)
+        {
+            throw new InvalidOperationException("Permission mutations require configured versioning and audit services.");
+        }
+        return scope.Value.ActorId;
+    }
+
+    private static void ValidateLegacyPayload(Guid? userId, PermissionType[] permissions)
+    {
+        ArgumentNullException.ThrowIfNull(permissions);
+        if (userId == Guid.Empty || permissions.Any(permission => !Enum.IsDefined(permission)))
+        {
+            throw new ArgumentException("Target user identifiers and permission values must be valid.");
+        }
+    }
+
+    private static void ValidateLegacyName(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (name.Length > 256) { throw new ArgumentException("A type binding must contain at most 256 characters.", nameof(name)); }
     }
 
     /// <summary>
@@ -1538,7 +1715,7 @@ public class PermissionService(
     ///     Arbitrary metadata, notes, descriptions and entity navigation properties are
     ///     deliberately excluded; only grant identity and access-control state are recorded.
     /// </summary>
-    private static string CapturePermissionSnapshot(PermissionBase grant, string? resourceType = null, Guid? resourceId = null)
+    internal static string CapturePermissionSnapshot(PermissionBase grant, string? resourceType = null, Guid? resourceId = null)
     {
         var tenantGrant = grant as TenantPermission;
         var contentGrant = grant as ContentTypePermission;

@@ -1,17 +1,25 @@
 using GameGuild.CQRS;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Billing;
 
 /// <summary>
-///     Handler for retrying webhook events
+///     Handler for retrying webhook events (issue #408). The retry EXECUTES the stored
+///     delivery: after claiming the attempt, the row is replayed through its provider's
+///     replay handler (the same routing used for live deliveries). Events that exhaust
+///     the retry ceiling are dead-lettered with their failure evidence retained for
+///     inspection; events without a replay handler surface an explicit non-retryable
+///     failure instead of a silent "queued" success.
 /// </summary>
 public sealed class RetryWebhookEventHandler(
     IBillingWebhookRepository webhookRepository,
+    BillingWebhookReplayDispatcher replayDispatcher,
+    IBillingWebhookDeadLetterService deadLetterService,
+    IOptions<BillingConfiguration> billingConfiguration,
     ILogger<RetryWebhookEventHandler> logger) : ICommandHandler<RetryWebhookEventCommand, WebhookRetryResult>
 {
-    private const int MaxRetryAttempts = 5;
-
+    /// <inheritdoc />
     public async Task<WebhookRetryResult> Handle(RetryWebhookEventCommand command, CancellationToken cancellationToken)
     {
         try
@@ -53,36 +61,87 @@ public sealed class RetryWebhookEventHandler(
                 };
             }
 
+            var maxRetryAttempts = billingConfiguration.Value.Webhook.RetryWorker.MaxRetryAttempts;
+
             // Check max retry attempts
-            if (webhookEvent.ProcessingAttempts >= MaxRetryAttempts)
+            if (webhookEvent.ProcessingAttempts >= maxRetryAttempts)
             {
                 logger.LogWarning("Webhook event {EventId} has exceeded max retry attempts ({MaxAttempts})",
-                    command.EventId, MaxRetryAttempts);
+                    command.EventId, maxRetryAttempts);
+                await deadLetterService.DeadLetterAsync(
+                        webhookEvent,
+                        $"Maximum retry attempts ({maxRetryAttempts}) exceeded",
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 return new WebhookRetryResult
                 {
                     Success = false,
-                    ErrorMessage = $"Maximum retry attempts ({MaxRetryAttempts}) exceeded",
+                    ErrorMessage = $"Maximum retry attempts ({maxRetryAttempts}) exceeded; event dead-lettered",
                     AttemptNumber = webhookEvent.ProcessingAttempts
                 };
             }
 
-            // Increment attempts and reset failed state for retry
+            var replayHandler = replayDispatcher.Resolve(webhookEvent.Provider);
+            if (replayHandler is null)
+            {
+                logger.LogWarning(
+                    "Webhook event {EventId} for provider {Provider} has no replay handler",
+                    command.EventId,
+                    webhookEvent.Provider);
+                return new WebhookRetryResult
+                {
+                    Success = false,
+                    ErrorMessage = $"No replay handler registered for provider '{webhookEvent.Provider}'",
+                    AttemptNumber = webhookEvent.ProcessingAttempts
+                };
+            }
+
+            // Claim this attempt, then execute the replay of the stored delivery.
             webhookEvent.IncrementAttempts();
             webhookEvent.IsFailed = false;
             webhookEvent.ErrorMessage = null;
-
             await webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
 
-            logger.LogInformation("Webhook event {EventId} marked for retry. Attempt {Attempt} of {MaxAttempts}",
-                command.EventId, webhookEvent.ProcessingAttempts, MaxRetryAttempts);
+            logger.LogInformation(
+                "Replaying webhook event {EventId} through the {Provider} handler. Attempt {Attempt} of {MaxAttempts}",
+                command.EventId,
+                webhookEvent.Provider,
+                webhookEvent.ProcessingAttempts,
+                maxRetryAttempts);
 
-            // The actual reprocessing would be done by a background job or 
-            // the caller can trigger reprocessing based on the provider
+            var replayResult = await replayHandler.ReplayAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+
+            if (replayResult.Processed)
+            {
+                return new WebhookRetryResult
+                {
+                    Success = true,
+                    AttemptNumber = webhookEvent.ProcessingAttempts,
+                    Message = replayResult.WasAlreadyProcessed
+                        ? "Event was already processed successfully"
+                        : $"Event replayed successfully (attempt {webhookEvent.ProcessingAttempts})"
+                };
+            }
+
+            if (!replayResult.RequiresRetry || webhookEvent.ProcessingAttempts >= maxRetryAttempts)
+            {
+                // Terminal replay failure (non-retryable cause, or the retry budget is spent):
+                // dead-letter so the failure evidence is preserved and surfaced for operators.
+                await deadLetterService.DeadLetterAsync(
+                        webhookEvent,
+                        replayResult.ErrorMessage ?? "Replay failed",
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             return new WebhookRetryResult
             {
-                Success = true,
+                Success = false,
+                ErrorMessage = replayResult.ErrorMessage,
                 AttemptNumber = webhookEvent.ProcessingAttempts,
-                Message = $"Event queued for retry (attempt {webhookEvent.ProcessingAttempts})"
+                Message = webhookEvent.DeadLetteredAt.HasValue
+                    ? $"Replay failed on attempt {webhookEvent.ProcessingAttempts}; event dead-lettered"
+                    : $"Replay failed on attempt {webhookEvent.ProcessingAttempts}; the retry worker will requeue it after its backoff window"
             };
         }
         catch (Exception ex)

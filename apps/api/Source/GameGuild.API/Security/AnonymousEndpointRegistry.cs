@@ -67,6 +67,7 @@ public static class AnonymousEndpointRegistry
             ["AuthController.GoogleIdTokenSignIn"] = "Exchanges a provider-issued ID token for platform tokens.",
             ["AuthController.GenerateWeb3Challenge"] = "Issues a nonce challenge for wallet-signature sign-in.",
             ["AuthController.VerifyWeb3Signature"] = "Verifies the wallet signature of the issued nonce.",
+            ["GuestSessionController.Issue"] = "Guest session issuance (issue #213); issues a minimal-permission, short-lived guest credential. Strictly per-IP rate limited and audited; grants no tenant or user identity.",
             ["OrchestratedAuthController.Initiate"] = "Sign-in entry point; the identifier + password pair is itself the credential being verified.",
             ["OrchestratedAuthController.ProcessStep"] = "Consumes an expiring flow bound to the server-side subject; the challenge proof (TOTP/backup/WebAuthn) is the credential.",
             ["OrchestratedAuthController.Complete"] = "Issues credentials only after every required challenge of the password-verified flow is satisfied.",

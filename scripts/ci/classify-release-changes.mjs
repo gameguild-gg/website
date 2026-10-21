@@ -22,7 +22,7 @@ const testingLabPathPattern = /(?:testing-?lab|testinglab)/i;
 const migrationPathPattern =
   /(?:^|\/)(?:migrations?|database\/migrations?)(?:\/|$)|\.(?:sql|ddl)$/i;
 const apiContractPathPattern =
-  /(?:^|\/)(?:controllers?|endpoints?|contracts?|dtos?|requests?|responses?|openapi)(?:\/|$)/i;
+  /(?:^|\/)(?:controllers?|endpoints?|contracts?|dtos?|requests?|responses?|openapi)(?:\/|$)|(?:^|\/)[^/]*(?:controller|endpoint|contracts?|dtos?|requests?|responses?)\.cs$/i;
 const testPathPattern =
   /(?:^|\/)(?:tests?|__tests__|e2e)(?:\/|$)|\.(?:test|spec)\.[cm]?[jt]sx?$/i;
 
@@ -83,6 +83,14 @@ export function classifyReleaseChanges(filePaths) {
 
   for (const rawPath of filePaths) {
     const filePath = normalizePath(rawPath);
+    if (
+      [
+        "scripts/ci/verify-openapi-client.sh",
+        "scripts/ci/verify-openapi-surface.sh",
+      ].includes(filePath)
+    ) {
+      classification.openApi = true;
+    }
     // Changes to the gate itself must exercise the complete Economy contract,
     // while remaining CI-only changes must not deploy runtime services.
     if (

@@ -1,0 +1,1038 @@
+{
+  "schemaVersion": 1,
+  "scoreUnit": "hundredth-point",
+  "cases": [
+    {
+      "id": "QG-ITEM-SINGLE-CHOICE-001",
+      "key": "single-choice",
+      "quizEntryType": "SINGLE_CHOICE",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "single-choice",
+        "reason": null
+      },
+      "entry": {
+        "type": "SINGLE_CHOICE",
+        "stem": "Which language uses ownership for memory safety?",
+        "points": 200,
+        "options": [
+          { "id": "rust", "text": "Rust" },
+          { "id": "go", "text": "Go" },
+          { "id": "python", "text": "Python" }
+        ],
+        "correctOptionId": "rust",
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "SINGLE_CHOICE", "optionId": "rust" },
+        "incorrect": { "type": "SINGLE_CHOICE", "optionId": "go" },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-MULTIPLE-CHOICE-001",
+      "key": "multiple-choice",
+      "quizEntryType": "MULTIPLE_CHOICE",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "multiple-choice",
+        "reason": null
+      },
+      "entry": {
+        "type": "MULTIPLE_CHOICE",
+        "stem": "Select the prime numbers.",
+        "points": 200,
+        "options": [
+          { "id": "two", "text": "2" },
+          { "id": "three", "text": "3" },
+          { "id": "four", "text": "4" }
+        ],
+        "correctOptionIds": ["two", "three"],
+        "selectionLimit": 2,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "MULTIPLE_CHOICE", "optionIds": ["two", "three"] },
+        "incorrect": {
+          "type": "MULTIPLE_CHOICE",
+          "optionIds": ["two", "four"]
+        },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-TRUE-FALSE-001",
+      "key": "true-false",
+      "quizEntryType": "TRUE_FALSE",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "true-false",
+        "reason": null
+      },
+      "entry": {
+        "type": "TRUE_FALSE",
+        "stem": "The statement is true.",
+        "points": 200,
+        "correctAnswer": true,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "TRUE_FALSE", "value": true },
+        "incorrect": { "type": "TRUE_FALSE", "value": false },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-FILL-TEXT-001",
+      "key": "fill-text",
+      "quizEntryType": "FILL_IN_THE_BLANK",
+      "fillBlankInputType": "TEXT",
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "fill-text",
+        "reason": null
+      },
+      "entry": {
+        "type": "FILL_IN_THE_BLANK",
+        "stem": "The systems language is ___.",
+        "points": 200,
+        "blanks": [
+          {
+            "id": "blank",
+            "position": 24,
+            "input": {
+              "type": "TEXT",
+              "acceptedAnswers": ["Rust"],
+              "caseSensitive": false
+            }
+          }
+        ],
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "rust" }
+        },
+        "incorrect": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "Go" }
+        },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-FILL-NUMBER-001",
+      "key": "fill-number",
+      "quizEntryType": "FILL_IN_THE_BLANK",
+      "fillBlankInputType": "NUMBER",
+      "baseType": false,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "fill-number",
+        "reason": null
+      },
+      "entry": {
+        "type": "FILL_IN_THE_BLANK",
+        "stem": "Earth gravity is ___ near sea level.",
+        "points": 200,
+        "blanks": [
+          {
+            "id": "blank",
+            "position": 17,
+            "input": {
+              "type": "NUMBER",
+              "correctValue": 9.81,
+              "tolerance": 0.01,
+              "requiredPrecision": 2,
+              "unit": "m/s",
+              "requireUnit": true,
+              "allowNegative": false
+            }
+          }
+        ],
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "9.81 m/s" }
+        },
+        "incorrect": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "9.8 m/s" }
+        },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-FILL-DROPDOWN-001",
+      "key": "fill-dropdown",
+      "quizEntryType": "FILL_IN_THE_BLANK",
+      "fillBlankInputType": "DROPDOWN",
+      "baseType": false,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "fill-dropdown",
+        "reason": null
+      },
+      "entry": {
+        "type": "FILL_IN_THE_BLANK",
+        "stem": "Cargo is the ___ package manager.",
+        "points": 200,
+        "blanks": [
+          {
+            "id": "blank",
+            "position": 13,
+            "input": {
+              "type": "DROPDOWN",
+              "options": ["Rust", "Python", "Java"]
+            }
+          }
+        ],
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "Rust" }
+        },
+        "incorrect": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "Python" }
+        },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-FILL-WORD-BANK-001",
+      "key": "fill-word-bank",
+      "quizEntryType": "FILL_IN_THE_BLANK",
+      "fillBlankInputType": "WORDBANK",
+      "baseType": false,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "fill-word-bank",
+        "reason": null
+      },
+      "entry": {
+        "type": "FILL_IN_THE_BLANK",
+        "stem": "Ownership is a ___ concept.",
+        "points": 200,
+        "blanks": [
+          {
+            "id": "blank",
+            "position": 15,
+            "input": { "type": "WORDBANK", "words": ["Rust", "Java", "Python"] }
+          }
+        ],
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "Rust" }
+        },
+        "incorrect": {
+          "type": "FILL_IN_THE_BLANK",
+          "values": { "blank": "Java" }
+        },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-SHORT-ANSWER-001",
+      "key": "short-answer",
+      "quizEntryType": "SHORT_ANSWER",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "short-answer",
+        "reason": null
+      },
+      "entry": {
+        "type": "SHORT_ANSWER",
+        "stem": "Name the language used by Cargo.",
+        "points": 200,
+        "acceptedAnswers": ["Rust"],
+        "caseSensitive": true,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "SHORT_ANSWER", "value": "Rust" },
+        "incorrect": { "type": "SHORT_ANSWER", "value": "rust" },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-ESSAY-001",
+      "key": "essay",
+      "quizEntryType": "ESSAY",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "instructor-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": { "status": "required", "driver": "essay", "reason": null },
+      "entry": {
+        "type": "ESSAY",
+        "stem": "Explain ownership in two sentences.",
+        "points": 200,
+        "minWordCount": 4,
+        "maxWordCount": 80,
+        "showWordCount": true,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": false
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "ESSAY",
+          "richText": null,
+          "plainText": "Ownership assigns each value to one owner. Borrowing permits controlled access."
+        },
+        "incorrect": null,
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "partial",
+          "itemState": "pending",
+          "score": null
+        },
+        "incorrect": null,
+        "omitted": {
+          "resultState": "partial",
+          "itemState": "pending",
+          "score": null
+        },
+        "partial": null,
+        "instructorScore": 150
+      }
+    },
+    {
+      "id": "QG-ITEM-MATCHING-PARTIAL-001",
+      "key": "matching",
+      "quizEntryType": "MATCHING",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": { "status": "required", "driver": "matching", "reason": null },
+      "entry": {
+        "type": "MATCHING",
+        "stem": "Match each language to its package tool.",
+        "points": 300,
+        "pairs": [
+          { "id": "rust", "left": "Rust", "right": "Cargo" },
+          { "id": "javascript", "left": "JavaScript", "right": "pnpm" },
+          { "id": "dotnet", "left": ".NET", "right": "NuGet" }
+        ],
+        "allowPartialCredit": true,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "MATCHING",
+          "matches": {
+            "rust": "Cargo",
+            "javascript": "pnpm",
+            "dotnet": "NuGet"
+          }
+        },
+        "incorrect": {
+          "type": "MATCHING",
+          "matches": {
+            "rust": "NuGet",
+            "javascript": "Cargo",
+            "dotnet": "pnpm"
+          }
+        },
+        "partial": {
+          "type": "MATCHING",
+          "matches": { "rust": "Cargo", "javascript": "pnpm" }
+        }
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 300
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        }
+      }
+    },
+    {
+      "id": "QG-ITEM-ORDERING-PARTIAL-001",
+      "key": "ordering",
+      "quizEntryType": "ORDERING",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": { "status": "required", "driver": "ordering", "reason": null },
+      "entry": {
+        "type": "ORDERING",
+        "stem": "Order the release steps.",
+        "points": 300,
+        "items": [
+          { "id": "submit", "text": "Submit", "correctPosition": 0 },
+          { "id": "review", "text": "Review", "correctPosition": 1 },
+          { "id": "release", "text": "Release", "correctPosition": 2 }
+        ],
+        "allowPartialCredit": true,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "ORDERING",
+          "itemIds": ["submit", "review", "release"]
+        },
+        "incorrect": {
+          "type": "ORDERING",
+          "itemIds": ["release", "submit", "review"]
+        },
+        "partial": {
+          "type": "ORDERING",
+          "itemIds": ["submit", "release", "review"]
+        }
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 300
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 100
+        }
+      }
+    },
+    {
+      "id": "QG-ITEM-CATEGORIZATION-001",
+      "key": "categorization",
+      "quizEntryType": "CATEGORIZATION",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "categorization",
+        "reason": null
+      },
+      "entry": {
+        "type": "CATEGORIZATION",
+        "stem": "Categorize the technologies.",
+        "points": 200,
+        "categories": [
+          { "id": "language", "name": "Language" },
+          { "id": "database", "name": "Database" }
+        ],
+        "items": [
+          { "id": "rust", "text": "Rust", "correctCategoryIds": ["language"] },
+          {
+            "id": "postgres",
+            "text": "PostgreSQL",
+            "correctCategoryIds": ["database"]
+          }
+        ],
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": {
+          "type": "CATEGORIZATION",
+          "categoryIdsByItem": {
+            "rust": ["language"],
+            "postgres": ["database"]
+          }
+        },
+        "incorrect": {
+          "type": "CATEGORIZATION",
+          "categoryIdsByItem": {
+            "rust": ["database"],
+            "postgres": ["language"]
+          }
+        },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-RATING-KEYED-001",
+      "key": "rating-keyed",
+      "quizEntryType": "RATING",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": { "status": "required", "driver": "rating", "reason": null },
+      "entry": {
+        "type": "RATING",
+        "stem": "Select the target rating.",
+        "points": 200,
+        "scale": {
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "minLabel": "Low",
+          "maxLabel": "High"
+        },
+        "correctRating": 4,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "RATING", "value": 4 },
+        "incorrect": { "type": "RATING", "value": 2 },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-RATING-UNKEYED-001",
+      "key": "rating-unkeyed",
+      "quizEntryType": "RATING",
+      "fillBlankInputType": null,
+      "baseType": false,
+      "officialCapability": "unsupported",
+      "maxSupportedCheckpoint": "test-run-ready",
+      "browser": {
+        "status": "decision-needed",
+        "driver": "rating",
+        "reason": "A rating without a key is answerable but has no approved official grading outcome."
+      },
+      "entry": {
+        "type": "RATING",
+        "stem": "Rate your confidence.",
+        "points": 200,
+        "scale": {
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "minLabel": "Low",
+          "maxLabel": "High"
+        },
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": false
+        }
+      },
+      "answers": {
+        "correct": { "type": "RATING", "value": 3 },
+        "incorrect": null,
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "incorrect": null,
+        "omitted": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-NUMERIC-001",
+      "key": "numeric",
+      "quizEntryType": "NUMERIC",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "unsupported",
+      "maxSupportedCheckpoint": "test-run-ready",
+      "browser": {
+        "status": "partial",
+        "driver": "numeric",
+        "reason": "The player is available, but generated prompt values are not part of the official grading delivery."
+      },
+      "entry": {
+        "type": "NUMERIC",
+        "stem": "Compute x + 2 when x is 1.",
+        "points": 200,
+        "variables": [
+          { "id": "x", "name": "x", "min": 1, "max": 1, "decimals": 0 }
+        ],
+        "formula": "x + 2",
+        "toleranceType": "absolute",
+        "tolerance": 0,
+        "decimalPlaces": 0,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "NUMERIC", "value": "3" },
+        "incorrect": { "type": "NUMERIC", "value": "4" },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "incorrect": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "omitted": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-FORMULA-001",
+      "key": "formula",
+      "quizEntryType": "FORMULA",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "unsupported",
+      "maxSupportedCheckpoint": "test-run-ready",
+      "browser": {
+        "status": "partial",
+        "driver": "formula",
+        "reason": "The player is available, but generated prompt values are not part of the official grading delivery."
+      },
+      "entry": {
+        "type": "FORMULA",
+        "stem": "Write the formula that doubles x.",
+        "points": 200,
+        "variables": [
+          { "id": "x", "name": "x", "min": 1, "max": 1, "decimals": 0 }
+        ],
+        "formula": "x * 2",
+        "toleranceType": "absolute",
+        "tolerance": 0,
+        "decimalPlaces": 0,
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "FORMULA", "expression": "x * 2" },
+        "incorrect": { "type": "FORMULA", "expression": "x + 2" },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "incorrect": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "omitted": {
+          "resultState": "partial",
+          "itemState": "unsupported",
+          "score": null
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-HOTSPOT-001",
+      "key": "hotspot",
+      "quizEntryType": "HOTSPOT",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "test-run-ready",
+      "browser": {
+        "status": "external-blocker",
+        "driver": "hotspot",
+        "reason": "A positive browser case requires a resolvable asset fixture; asset infrastructure is outside this program."
+      },
+      "entry": {
+        "type": "HOTSPOT",
+        "stem": "Select the center of the image.",
+        "points": 200,
+        "imageAssetUri": "asset://7776453f-1123-4f56-8abc-1234567890ab",
+        "imageWidth": 100,
+        "imageHeight": 100,
+        "hotspots": [
+          {
+            "id": "center",
+            "x": 50,
+            "y": 50,
+            "zones": [{ "radius": 10, "label": "Center" }]
+          }
+        ],
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "HOTSPOT", "point": { "x": 50, "y": 50 } },
+        "incorrect": { "type": "HOTSPOT", "point": { "x": 0, "y": 0 } },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    },
+    {
+      "id": "QG-ITEM-HIGHLIGHT-001",
+      "key": "highlight",
+      "quizEntryType": "HIGHLIGHT",
+      "fillBlankInputType": null,
+      "baseType": true,
+      "officialCapability": "automated-review",
+      "maxSupportedCheckpoint": "released",
+      "browser": {
+        "status": "required",
+        "driver": "highlight",
+        "reason": null
+      },
+      "entry": {
+        "type": "HIGHLIGHT",
+        "stem": "Highlight the language name.",
+        "points": 200,
+        "sourceText": "__Rust__ ownership prevents data races",
+        "plainText": "Rust ownership prevents data races",
+        "highlights": [{ "start": 0, "end": 4 }],
+        "settings": {
+          "allowRetry": false,
+          "showFeedback": true,
+          "showCorrectAnswer": true
+        }
+      },
+      "answers": {
+        "correct": { "type": "HIGHLIGHT", "spans": [{ "start": 0, "end": 4 }] },
+        "incorrect": {
+          "type": "HIGHLIGHT",
+          "spans": [{ "start": 5, "end": 14 }]
+        },
+        "partial": null
+      },
+      "expected": {
+        "correct": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 200
+        },
+        "incorrect": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "omitted": {
+          "resultState": "final",
+          "itemState": "graded",
+          "score": 0
+        },
+        "partial": null
+      }
+    }
+  ]
+}

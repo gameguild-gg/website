@@ -44,5 +44,7 @@
                           LogicalName="GameGuild.Grading.Fixtures.quiz-answer-envelope-v1.json" />
         <EmbeddedResource Include="..\..\..\..\packages\features\grading-adapter-quiz\fixtures\quiz-partial-credit-v1.json"
                           LogicalName="GameGuild.Grading.Fixtures.quiz-partial-credit-v1.json" />
+        <EmbeddedResource Include="..\..\..\..\packages\features\grading-adapter-quiz\fixtures\quiz-validation-cases-v1.json"
+                          LogicalName="GameGuild.Grading.Fixtures.quiz-validation-cases-v1.json" />
     </ItemGroup>
 </Project>

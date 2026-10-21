@@ -50,25 +50,21 @@ public class ThreatDetectionService(
         LocationInfo previousLocation,
         TimeSpan timeBetween)
     {
-        if (string.IsNullOrEmpty(currentLocation.Country) || string.IsNullOrEmpty(previousLocation.Country))
+        if (timeBetween <= TimeSpan.Zero || !BehavioralLocationIdentity.TryComparableCountries(currentLocation, previousLocation,
+            out var currentCountry, out var previousCountry))
         {
             return false;
         }
 
-        if (currentLocation.Country == previousLocation.Country && currentLocation.City == previousLocation.City)
-        {
-            return false;
-        }
-
-        var isSuspicious = currentLocation.Country != previousLocation.Country && timeBetween.TotalHours < 1;
+        var isSuspicious = currentCountry != previousCountry && timeBetween.TotalHours < 1;
 
         if (isSuspicious)
         {
             logger.LogWarning(
                 "Impossible travel detected - UserId: {UserId}, From: {PreviousCountry} to {CurrentCountry} in {Hours:F2} hours",
                 userId,
-                previousLocation.Country,
-                currentLocation.Country,
+                previousCountry,
+                currentCountry,
                 timeBetween.TotalHours);
 
             await siemService

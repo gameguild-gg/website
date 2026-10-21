@@ -321,9 +321,11 @@ export class CommercePaymentsModule {
    * Payment success and failed-payment recovery metrics for an inclusive window.
    *
    * Aggregates the recovery analytics that billing administrators need to steer retry and
-   * dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
-   * amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
-   * exhausted). Non-admin actors are scoped to their own tenant.
+   * dunning strategy (issues #403/#415): first-attempt success rate, retry-recovery rate,
+   * recovered amounts grouped by currency, dunning outcome counters (pending retry, due for
+   * retry, exhausted), the failure-code distribution of failed payments and the
+   * creation-to-settlement timing of succeeded payments. Non-admin actors are scoped to
+   * their own tenant.
    */
   async getPaymentsRecoveryMetrics(query?: {
     fromUtc?: string;

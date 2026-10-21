@@ -458,6 +458,21 @@ public enum NotificationType
     /// <summary>Account credits were automatically applied to an invoice payment (issue #410)</summary>
     CreditApplied = 30,
 
+    /// <summary>Payment receipt for a successful charge (issue #415)</summary>
+    PaymentReceipt = 31,
+
+    /// <summary>Refund was completed and the funds are on their way back (issue #419)</summary>
+    RefundCompleted = 32,
+
+    /// <summary>Stored payment method keeps failing; the customer must update it (issue #415)</summary>
+    PaymentMethodUpdateRequired = 33,
+
+    /// <summary>New payment dispute was recorded and needs the team's attention (issue #419)</summary>
+    DisputeCreated = 34,
+
+    /// <summary>Open dispute is approaching its evidence-submission deadline (issue #419)</summary>
+    DisputeDeadlineReminder = 35,
+
     /// <summary>Custom/other notification type</summary>
     Custom = 99
 }

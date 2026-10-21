@@ -1,0 +1,5 @@
+/out/
+/cache/
+/artifacts/
+/dotnet-tests/bin/
+/dotnet-tests/obj/

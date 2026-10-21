@@ -456,7 +456,7 @@ public sealed class EffectivePermissionResolverService(
                 logger.LogError(
                     exception,
                     "External authorization decision provider threw while evaluating permission {Permission} for user {UserId} in tenant {TenantId} - the permission fails closed.",
-                    LogRedaction.Sanitize(permission), context.UserId, context.TenantId);
+                    LogRedaction.Sanitize(permission), LogRedaction.RedactId(context.UserId, "uid"), LogRedaction.RedactId(context.TenantId));
                 denies.Add(permission);
                 continue;
             }
@@ -468,7 +468,7 @@ public sealed class EffectivePermissionResolverService(
 
             logger.LogDebug(
                 "External authorization decision provider denied permission {Permission} for user {UserId} in tenant {TenantId}: {Reasons}",
-                LogRedaction.Sanitize(permission), context.UserId, context.TenantId,
+                LogRedaction.Sanitize(permission), LogRedaction.RedactId(context.UserId, "uid"), LogRedaction.RedactId(context.TenantId),
                 LogRedaction.Sanitize(string.Join("; ", decision.Reasons)));
             denies.Add(permission);
         }

@@ -79,6 +79,34 @@ public class PaymentDispute : EntityBase
     /// <summary>Deadline by which evidence must be submitted to the gateway, when provided.</summary>
     public DateTime? EvidenceDueBy { get; set; }
 
+    /// <summary>
+    ///     Dispute (chargeback) fee charged by the gateway, in major currency units (issue #419).
+    ///     Zero when the gateway reported no fee. Recorded once from the gateway webhook; later
+    ///     gateway values overwrite only while the dispute is unresolved.
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal DisputeFee { get; private set; }
+
+    /// <summary>
+    ///     Records the gateway-reported dispute fee (issue #419). Terminal disputes keep the fee
+    ///     that was recorded at resolution time; unresolved disputes take the latest gateway value.
+    /// </summary>
+    public void RecordDisputeFee(decimal fee)
+    {
+        if (fee < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(fee), "The dispute fee cannot be negative.");
+        }
+
+        if (Status is DisputeStatus.Resolved or DisputeStatus.Won or DisputeStatus.Lost or DisputeStatus.Cancelled)
+        {
+            return;
+        }
+
+        DisputeFee = fee;
+        Touch();
+    }
+
     /// <summary>Navigation property to dispute evidence</summary>
     public virtual ICollection<DisputeEvidence> Evidence { get; } = new List<DisputeEvidence>();
 

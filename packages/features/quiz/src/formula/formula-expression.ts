@@ -26,27 +26,27 @@ interface Token {
   value: string
 }
 
-const FUNCTIONS: Record<string, (args: number[]) => number> = {
-  sqrt: ([a]) => Math.sqrt(a!),
-  abs: ([a]) => Math.abs(a!),
-  sin: ([a]) => Math.sin(a!),
-  cos: ([a]) => Math.cos(a!),
-  tan: ([a]) => Math.tan(a!),
-  log: ([a]) => Math.log10(a!),
-  ln: ([a]) => Math.log(a!),
-  exp: ([a]) => Math.exp(a!),
-  ceil: ([a]) => Math.ceil(a!),
-  floor: ([a]) => Math.floor(a!),
-  round: ([a]) => Math.round(a!),
-  min: (args) => Math.min(...args),
-  max: (args) => Math.max(...args),
-  pow: ([a, b]) => Math.pow(a!, b!),
-}
+const FUNCTIONS = new Map<string, (args: number[]) => number>([
+  ["sqrt", ([a]) => Math.sqrt(a!)],
+  ["abs", ([a]) => Math.abs(a!)],
+  ["sin", ([a]) => Math.sin(a!)],
+  ["cos", ([a]) => Math.cos(a!)],
+  ["tan", ([a]) => Math.tan(a!)],
+  ["log", ([a]) => Math.log10(a!)],
+  ["ln", ([a]) => Math.log(a!)],
+  ["exp", ([a]) => Math.exp(a!)],
+  ["ceil", ([a]) => Math.ceil(a!)],
+  ["floor", ([a]) => Math.floor(a!)],
+  ["round", ([a]) => Math.round(a!)],
+  ["min", (args) => Math.min(...args)],
+  ["max", (args) => Math.max(...args)],
+  ["pow", ([a, b]) => Math.pow(a!, b!)],
+])
 
-const CONSTANTS: Record<string, number> = {
-  pi: Math.PI,
-  e: Math.E,
-}
+const CONSTANTS = new Map<string, number>([
+  ["pi", Math.PI],
+  ["e", Math.E],
+])
 
 function tokenize(expr: string, variables: Record<string, number>): Token[] {
   const tokens: Token[] = []
@@ -84,11 +84,15 @@ function tokenize(expr: string, variables: Record<string, number>): Token[] {
       }
       const lower = name.toLowerCase()
 
-      if (lower in CONSTANTS) {
-        tokens.push({ type: "number", value: CONSTANTS[lower]!.toString() })
-      } else if (name in variables) {
-        tokens.push({ type: "number", value: variables[name]!.toString() })
-      } else if (lower in FUNCTIONS) {
+      if (CONSTANTS.has(lower)) {
+        tokens.push({ type: "number", value: String(CONSTANTS.get(lower)!) })
+      } else if (Object.hasOwn(variables, name)) {
+        const value = variables[name]
+        if (typeof value !== "number" || !Number.isFinite(value)) {
+          throw new Error(`Invalid variable: ${name}`)
+        }
+        tokens.push({ type: "number", value: String(value) })
+      } else if (FUNCTIONS.has(lower)) {
         tokens.push({ type: "function", value: lower })
       } else {
         throw new Error(`Unknown identifier: ${name}`)
@@ -293,7 +297,7 @@ export function evaluateFormula(
       if (ops.length > 0 && ops[ops.length - 1]!.type === "func") {
         const func = ops.pop()!
         const numArgs = argCounts.pop() ?? 1
-        const fn = FUNCTIONS[func.value]
+        const fn = FUNCTIONS.get(func.value)
         if (!fn) throw new Error(`Unknown function: ${func.value}`)
         const args: number[] = []
         for (let j = 0; j < numArgs; j++) {
@@ -340,10 +344,9 @@ export function validateFormula(
   if (!expression.trim()) return "Formula cannot be empty"
   try {
     // Create a test variables map with value 1 for each
-    const testVars: Record<string, number> = {}
-    for (const name of variableNames) {
-      testVars[name] = 1
-    }
+    const testVars: Record<string, number> = Object.fromEntries(
+      variableNames.map((name) => [name, 1]),
+    )
     const result = evaluateFormula(expression, testVars)
     if (!isFinite(result)) return "Formula produces an invalid result (infinity or NaN)"
     return null

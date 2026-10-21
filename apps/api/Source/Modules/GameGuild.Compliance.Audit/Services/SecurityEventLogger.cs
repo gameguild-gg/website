@@ -154,6 +154,49 @@ public sealed class SecurityEventLogger(
         return delivered.Count;
     }
 
+    private async Task PersistEventInScopeAsync(
+        IApplicationDbContext context,
+        CreateAuditLogRequest request,
+        ClassifiedSecurityEvent classification,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        if (context is not DbContext db || !db.Database.IsRelational())
+        {
+            await PersistEventOnceAsync(context, request, classification, eventId, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        // This is the logger's fresh, private scope. Required command capture uses the
+        // caller's transaction in RecordInCommandAsync instead. The execution strategy
+        // owns retries so PostgreSQL advisory locks remain held through the durable save.
+        await db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, cancellationToken).ConfigureAwait(false);
+            // A lost commit acknowledgement must not duplicate the event or its alerts.
+            if (!await context.Set<AuditLog>().AsNoTracking()
+                    .AnyAsync(log => log.Id == eventId, cancellationToken).ConfigureAwait(false))
+            {
+                await PersistEventOnceAsync(context, request, classification, eventId, cancellationToken).ConfigureAwait(false);
+            }
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
+    private async Task PersistEventOnceAsync(
+        IApplicationDbContext context,
+        CreateAuditLogRequest request,
+        ClassifiedSecurityEvent classification,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var auditLog = AuditLogEntryFactory.Create(request, httpContextAccessor.HttpContext, classification, eventId);
+        context.Set<AuditLog>().Add(auditLog);
+        await alertEvaluator.EvaluateAsync(context, auditLog, classification, cancellationToken).ConfigureAwait(false);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     private async Task<SecurityEventCaptureResult> PersistWithRetriesAsync(
         CreateAuditLogRequest request,
         ClassifiedSecurityEvent classification,
@@ -167,11 +210,8 @@ public sealed class SecurityEventLogger(
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-                var auditLog = AuditLogEntryFactory.Create(request, httpContextAccessor.HttpContext, classification, eventId);
-
-                context.Set<AuditLog>().Add(auditLog);
-                await alertEvaluator.EvaluateAsync(context, auditLog, classification, cancellationToken).ConfigureAwait(false);
-                await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await PersistEventInScopeAsync(context, request, classification, eventId, cancellationToken)
+                    .ConfigureAwait(false);
 
                 logger.Log(
                     classification.Severity >= AuditRiskLevel.Critical ? LogLevel.Critical : LogLevel.Warning,

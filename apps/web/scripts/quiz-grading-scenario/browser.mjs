@@ -6,13 +6,8 @@ export async function runBrowserScenario({
   quizKeys = [],
   headed = false,
 }) {
-  const args = [
-    "exec",
-    "playwright",
-    "test",
-    "e2e/learning/quiz-grading-scenario.spec.mjs",
-    "--workers=1",
-  ];
+  const specs = browserSpecsForScenario(scenarioKey);
+  const args = ["exec", "playwright", "test", ...specs, "--workers=1"];
   if (headed) args.push("--headed");
   const child = spawn("pnpm", args, {
     cwd: REPO_ROOT,
@@ -34,4 +29,21 @@ export async function runBrowserScenario({
   });
   if (exitCode !== 0)
     throw new Error(`Playwright failed with exit code ${exitCode}.`);
+}
+
+export function browserSpecsForScenario(scenarioKey) {
+  if (scenarioKey === "question-type-matrix") {
+    return [
+      "e2e/learning/quiz-grading/authoring-roundtrip.spec.mjs",
+      "e2e/learning/quiz-grading/question-types.spec.mjs",
+    ];
+  }
+  if (scenarioKey === "acceptance-lab") {
+    return [
+      "e2e/learning/quiz-grading-scenario.spec.mjs",
+      "e2e/learning/quiz-grading/authoring-roundtrip.spec.mjs",
+      "e2e/learning/quiz-grading/question-types.spec.mjs",
+    ];
+  }
+  return ["e2e/learning/quiz-grading-scenario.spec.mjs"];
 }

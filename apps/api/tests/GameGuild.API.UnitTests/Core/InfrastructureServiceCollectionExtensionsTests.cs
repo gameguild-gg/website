@@ -91,7 +91,7 @@ public sealed class InfrastructureServiceCollectionExtensionsTests
 
         var compression = provider.GetRequiredService<IOptions<FrameworkResponseCompressionOptions>>().Value;
         compression.EnableForHttps.Should().BeTrue();
-        compression.MimeTypes.Should().BeEquivalentTo("text/plain", "application/json").And.HaveCount(2);
+        compression.MimeTypes.Should().BeEquivalentTo("text/plain", "application/json", "application/xml").And.HaveCount(3);
         provider.GetRequiredService<IOptions<ApiBehaviorOptions>>().Value.SuppressModelStateInvalidFilter
             .Should().BeTrue();
 

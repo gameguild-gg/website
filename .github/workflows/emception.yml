@@ -68,7 +68,7 @@ jobs:
               heavy=true
             else
               CHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
-              if grep -Eq '^(\.changeset/|\.github/workflows/(emception|pr-verify)\.yml|scripts/ci/(acquire-emception-release\.py|tests/(acquire_emception_release_test\.py|emception-web-artifacts\.test\.mjs))|apps/web/(Dockerfile|scripts/(sync-emception-cdn|coding-cycle-browser-e2e)\.mjs|src/lib/emception/)|demos/emception-[^/]+/|package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|scripts/devops/(emception-release-policy|publish-emception|version-emception)\.mjs|scripts/sync-emception-cdn\.mjs|tools/emception/)' <<< "$CHANGED"; then
+              if grep -Eq '^(\.changeset/|\.github/workflows/(emception|pr-verify)\.yml|scripts/ci/(acquire-emception-release\.py|tests/(acquire_emception_release_test\.py|emception-web-artifacts\.test\.mjs))|apps/web/(Dockerfile|package\.json|scripts/(sync-emception-cdn|coding-cycle-(browser-e2e|(editor|toolchain)-support(\.test)?))\.mjs|src/lib/emception/)|demos/emception-[^/]+/|package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|scripts/devops/(emception-release-policy|publish-emception|version-emception)\.mjs|scripts/sync-emception-cdn\.mjs|tools/emception/)' <<< "$CHANGED"; then
                 required=true
               fi
               if grep -Eq '^tools/emception/(toolchain/|scripts/(build-|deploy-|generate-|patch-|populate-|setup-|stage-|toolchain/|warmup-)|package\.json)' <<< "$CHANGED"; then
@@ -222,7 +222,7 @@ jobs:
         run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --prepare
 
       - name: Upload verified Toolchain CDN for Web
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ${{ steps.web-release-provenance.outputs.artifact-name }}
           path: |

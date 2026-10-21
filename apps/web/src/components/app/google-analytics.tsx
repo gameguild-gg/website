@@ -53,11 +53,5 @@ export function GoogleAnalytics({ measurementId: rawMeasurementId, consent = fal
 
   if (!enabled) return null;
 
-  return (
-    <Script
-      id="gg-ga4-loader"
-      src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-      strategy="afterInteractive"
-    />
-  );
+  return <Script id="gg-ga4-loader" src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`} strategy="afterInteractive" />;
 }

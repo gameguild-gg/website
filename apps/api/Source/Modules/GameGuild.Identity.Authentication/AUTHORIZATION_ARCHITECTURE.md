@@ -2025,6 +2025,61 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### Policy-selected authentication and the immutable actor
+
+The host authenticates explicit endpoint schemes and static default, named and fallback
+policy schemes before token revocation, tenant membership validation and actor capture.
+This preserves the configured Bearer default and does not enable API keys globally.
+Multiple successful credentials cannot combine owners or scopes.
+
+Tenant-dependent policies are resolved only after tenant context exists. Before evaluating
+authorization requirements, the host rejects a later policy that changes the established
+principal. A database-backed policy requiring a different scheme must also declare that
+scheme at the endpoint or in static configuration so its credential can establish the
+tenant and actor first. Authorization never dispatches an endpoint using an earlier actor
+and a different newly authenticated principal.
+
+Anonymous endpoints retain the optional-token revocation path. The original actor cleanup
+remains responsible for ending the request context. Actual API-key HTTP/PostgreSQL tests
+cover owner identity, tenant claims and membership, scoping, lifecycle and audit; component
+tests separately cover static and deferred policy composition with synthetic credentials.
+
+### Additive permission read and update contracts (issue #340)
+
+The existing three-layer compatibility facade has additive `IPermissionServiceV2`,
+`IPermissionReadService`, `IPermissionUpdateService` and `IPermissionLifecycleService`
+aliases. The actual host
+calls `AddPermissionServiceContracts`; each alias resolves the same scoped
+concrete service. Existing interface members and constructor arguments are retained.
+The Authorization module's focused services and permission evaluation engine stay
+the sources of authorization decisions; returning a stored grant is not an access
+decision. Exact grant retrieval uses one scoped, untracked lookup; inactive or
+expired metadata stays visible to an authorized reader, while soft-deleted,
+foreign-tenant and foreign-subject records remain excluded. Provider failures
+propagate instead of masquerading as NotFound.
+
+New updates require an authenticated tenant administrator or `permissions:manage`,
+SystemAdmin for another tenant, or an explicit global scope with SystemAdmin /
+`system:manage-global-defaults`. Subject, grantor and binding are immutable. A
+positive expected entity version prevents stale replacement. Grant, tenant/global
+security version and required permission audit persist in one relational transaction
+or a caller savepoint. Missing collaborators fail closed. Persistence errors and
+cancellation propagate; cancelled requests do not cancel rollback cleanup.
+
+The host audit buffer and per-entity history bind the verified actor and target
+tenant (including an explicit null global target). On savepoint rollback it restores earlier evidence,
+tracked state and outer operation capture state. Unpersisted caller work is rejected;
+the caller owns its outer transaction and final audit flush. Mutations have no replay
+key, so the standalone wrapper performs no automatic retry after ambiguous commit
+failure. Typed create/delete and grant/revoke batches cover all three families;
+batches retain indexed failures, use one authorized scope/version bump and roll
+back all writes when Applied is false. Compatible production mutations use the
+same transaction boundary; model-only non-relational component tests do not
+establish atomicity. Cross-tenant cleanup requires SystemAdmin and binds the actor
+while preserving each row's own tenant, including global null scope. Source and
+regression definitions have not yet been accepted by matching hosted CI. See
+`docs/issue-audit/issue340-permission-contract-2026-10-19.md` for retained criteria.
+
 ### In-process verification, reset and magic-link token consumption
 
 EmailVerificationService generates opaque 32-character lowercase hexadecimal
@@ -2627,6 +2682,17 @@ The backward-compatible three-layer permission facade bumps the tenant security 
 and writes an audit entry on **every mutation path** (grants, revokes, defaults,
 content-type and resource grants, expired-permission cleanup). Invalidation failures
 propagate — a mutation whose cache invalidation failed is never reported as successful.
+
+### ACL decision expiry during asynchronous work
+
+Both subject-based and legacy user-based cached ACL evaluations recheck the
+source decision's earliest effective grant expiration after reading security
+versions and after an awaited distributed cache write. A decision that expired
+during either await is discarded and evaluated again. The same three-attempt
+budget bounds version instability and repeated expired answers; exhaustion fails
+closed. Cache hits also validate the effective boundary and cache TTLs remain
+clamped to it. This check governs the returned authorization decision and does
+not make a later resource operation atomic with a future grant expiry.
 
 ### Scheduled refresh-token retention
 

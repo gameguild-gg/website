@@ -350,7 +350,9 @@ public sealed class RotateApiKeyHandler : ICommandHandler<RotateApiKeyCommand, R
     {
         var actor = _actorContext.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue)
+        {
             return Result.Failure<RotateApiKeyResponse>(Error.Failure("Auth.Required", "User must be authenticated"));
+        }
 
         var oldKey = await _apiKeyRepository.GetByIdForUserAsync(request.KeyId, actor.SubjectIdAsGuid.Value, cancellationToken).ConfigureAwait(false);
 
