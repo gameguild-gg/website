@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GameGuild.CQRS;
 using GameGuild.Commerce;
 using GameGuild.Notifications;
@@ -122,6 +123,8 @@ public sealed class ProcessPaymentCommandHandler(
             logger.LogWarning(
                 "Payment {PaymentId} held by fraud gate: decision {Decision}, score {Score}, reason {Reason}",
                 payment.Id, assessment.Decision, assessment.Score, assessment.Reason);
+
+            await NotifyFraudHoldAsync(payment, assessment, cancellationToken).ConfigureAwait(false);
 
             return new PaymentResult
             {
@@ -420,6 +423,75 @@ public sealed class ProcessPaymentCommandHandler(
         }
 
         return consumption.Value.AmountApplied;
+    }
+
+    /// <summary>
+    ///     Best-effort admin notice for payments held by the fraud gate (issue #409:
+    ///     notification to admins on blocked transactions). Blocked payments raise an
+    ///     Urgent system-channel notice; review-queue holds raise a High one pointing
+    ///     reviewers at the pending-review queue. Delivery problems never change the
+    ///     payment outcome: the hold is already persisted.
+    /// </summary>
+    private async Task NotifyFraudHoldAsync(
+        Payment payment,
+        FraudAssessment assessment,
+        CancellationToken cancellationToken)
+    {
+        if (notificationService is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var blocked = assessment.Decision == FraudDecision.Block;
+            var result = await notificationService
+                .SendAsync(
+                    recipientId: Guid.Empty, // System-level notice — routed to the admin channel
+                    type: NotificationType.System,
+                    title: blocked ? "Payment blocked by the fraud gate" : "Payment held for fraud review",
+                    message:
+                        $"Payment {payment.Id} ({payment.Amount:0.##} {payment.Currency}) was " +
+                        (blocked
+                            ? $"blocked by the fraud gate (score {assessment.Score}): {assessment.Reason}."
+                            : $"held for manual fraud review (score {assessment.Score}): {assessment.Reason}. Review it in the fraud review queue.") +
+                        " Full signal evidence is stored on the payment's fraud record.",
+                    channel: NotificationChannel.InApp,
+                    tenantId: payment.TenantId,
+                    actionUrl: null,
+                    priority: blocked ? NotificationPriority.Urgent : NotificationPriority.High,
+                    referenceEntityId: payment.Id,
+                    referenceEntityType: nameof(Payment),
+                    metadata: JsonSerializer.Serialize(new
+                    {
+                        paymentId = payment.Id,
+                        tenantId = payment.TenantId,
+                        decision = assessment.Decision.ToString(),
+                        score = assessment.Score,
+                        reason = assessment.Reason,
+                        amount = payment.Amount,
+                        currency = payment.Currency
+                    }),
+                    recipientEmail: null,
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!result.IsSuccess)
+            {
+                logger.LogInformation(
+                    "Fraud-hold admin notice for payment {PaymentId} was not delivered: {Reason}",
+                    payment.Id,
+                    result.Error?.Description ?? "preference decision");
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Notifications are best-effort: delivery problems must never change the fraud decision.
+            logger.LogWarning(
+                exception,
+                "Failed to send the fraud-hold admin notice for payment {PaymentId}",
+                payment.Id);
+        }
     }
 
     private async Task NotifyCreditAppliedAsync(
