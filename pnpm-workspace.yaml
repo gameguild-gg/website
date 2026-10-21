@@ -52,6 +52,7 @@ overrides:
   "undici@7": "7.30.0"
   ws: "8.21.0"
   "katex@<0.18.2": "0.18.7"
+  "launch-editor@<2.14.2": "2.14.2"
   "source-map-js@<1.2.2": "1.2.2"
   "proxy-addr@<2.0.8": "2.0.8"
   "postcss-selector-parser@<7.1.6": "7.1.6"
