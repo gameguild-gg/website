@@ -26,6 +26,9 @@ vi.mock('@/components/google-one-tap', () => ({
 vi.mock('@/components/google-sign-in-button', () => ({
   GoogleSignInButton: () => <div data-testid="google-sign-in-button" />,
 }));
+vi.mock('@/components/wallet-sign-in-buttons', () => ({
+  WalletSignInButtons: () => <div data-testid="wallet-sign-in-buttons" />,
+}));
 vi.mock('@/components/auth/auth-error-notice', () => ({
   AuthErrorNotice: ({ errorCode }: { errorCode?: string }) =>
     errorCode ? <div data-testid="auth-error-notice">{errorCode}</div> : null,
@@ -61,5 +64,13 @@ describe('sign-in page inline auth errors', () => {
 
     expect(screen.queryByTestId('auth-error-notice')).not.toBeInTheDocument();
     expect(screen.getByTestId('sign-in-form')).toBeInTheDocument();
+  });
+
+  it('mounts the SIWE wallet sign-in buttons alongside the other providers', async () => {
+    await renderPage({});
+
+    expect(screen.getByTestId('wallet-sign-in-buttons')).toBeInTheDocument();
+    expect(screen.getByTestId('google-sign-in-button')).toBeInTheDocument();
+    expect(screen.getByTestId('discord-sign-in-button')).toBeInTheDocument();
   });
 });

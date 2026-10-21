@@ -4,28 +4,33 @@ import { useMemo } from "react";
 import { useAuth } from "@game-guild/client/react";
 import {
   Web3Provider,
-  createMetaMaskAdapter,
-  createTorusAdapter,
+  createWalletAdapters,
   shortenAddress,
   useWallet,
+  useWalletAddress,
 } from "@game-guild/web3";
 import type { SiweTransport, WalletAdapter } from "@game-guild/web3";
 
 /**
- * Wallet sign-in button group (issues #16/#38/#39 under umbrella #291).
+ * Wallet sign-in button group (issues #16/#17/#18/#38/#39 under umbrella
+ * #291).
  *
- * Renders one button per available wallet — MetaMask whenever the injected
- * provider is detected, Torus only behind NEXT_PUBLIC_WALLET_TORUS_ENABLED
- * (the adapter additionally fails closed when the Torus SDK is absent).
- * Clicking runs the full SIWE journey against the existing backend
- * endpoints: same-origin /api/auth/web3/challenge proxy → personal_sign →
- * signIn("credentials", …) which the server-side web3 credentials wrapper
- * verifies via /v1/auth/web3:verify.
+ * Renders one button per available wallet from the wallet-adapter registry:
+ * MetaMask whenever the injected provider is detected, Trust Wallet through
+ * EIP-6963/injected detection with a mobile deep-link fallback (#17), and
+ * WalletConnect behind NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID (#18, adapter
+ * additionally fails closed when the SDK is not installed). Torus stays
+ * behind NEXT_PUBLIC_WALLET_TORUS_ENABLED. Clicking runs the full SIWE
+ * journey against the existing backend endpoints: same-origin
+ * /api/auth/web3/challenge proxy → personal_sign → signIn("credentials", …)
+ * which the server-side web3 credentials wrapper verifies via
+ * /v1/auth/web3:verify.
  */
 
 const CHALLENGE_ENDPOINT = "/api/auth/web3/challenge";
 
 const TORUS_ENABLED = process.env.NEXT_PUBLIC_WALLET_TORUS_ENABLED === "true";
+const WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
 export interface WalletSignInLabels {
   continueWithWallet: string;
@@ -57,26 +62,39 @@ const walletIcon = (
   </svg>
 );
 
+/**
+ * Wallet adapters registered for the sign-in buttons: the shared registry
+ * (MetaMask + Trust Wallet by default, WalletConnect/Torus behind their
+ * deployment gates). Exported for tests and host apps that render the same
+ * wallet set elsewhere.
+ */
+export const createSignInWalletAdapters = (): WalletAdapter[] =>
+  createWalletAdapters({
+    ...(TORUS_ENABLED ? { torus: { enabled: true, network: { host: "mainnet" } } } : {}),
+    // Config-gated fail-closed: without a project id the adapter reports
+    // unavailable and the button stays hidden (#18).
+    ...(WALLETCONNECT_PROJECT_ID
+      ? { walletConnect: { enabled: true, projectId: WALLETCONNECT_PROJECT_ID } }
+      : {}),
+  });
+
 export function WalletSignInButtons({
   redirectTo,
   labels,
+  adapters,
 }: {
   redirectTo?: string;
   labels: WalletSignInLabels;
+  /** Overrides the default registry composition (tests, host reuse). */
+  adapters?: readonly WalletAdapter[];
 }) {
-  const adapters = useMemo<WalletAdapter[]>(() => {
-    const registered: WalletAdapter[] = [createMetaMaskAdapter()];
-    if (TORUS_ENABLED) {
-      // Torus loads its embed SDK lazily inside the adapter; when the SDK
-      // cannot be loaded the adapter reports unavailable and the button
-      // stays hidden (fail closed).
-      registered.push(createTorusAdapter({ enabled: true, network: { host: "mainnet" } }));
-    }
-    return registered;
-  }, []);
+  const registered = useMemo<WalletAdapter[]>(
+    () => (adapters ? [...adapters] : createSignInWalletAdapters()),
+    [adapters],
+  );
 
   return (
-    <Web3Provider adapters={adapters}>
+    <Web3Provider adapters={registered}>
       <WalletButtonGroup redirectTo={redirectTo} labels={labels} />
     </Web3Provider>
   );
@@ -98,13 +116,14 @@ function WalletButtonGroup({
     status: string;
     error: { code: string; message: string } | null;
     wallets: readonly { id: string; name: string; available: boolean }[];
-    account: string | null;
     connect: (walletId: string) => Promise<void>;
     disconnect: () => Promise<void>;
     authenticate: (transport: SiweTransport) => Promise<unknown>;
     clearError: () => void;
     isPending: boolean;
   };
+  // The account lives on the full context state, not the wallet snapshot.
+  const account = useWalletAddress() ?? null;
 
   const transport = useMemo<SiweTransport>(
     () => ({
@@ -157,12 +176,12 @@ function WalletButtonGroup({
 
   if (availableWallets.length === 0) return null;
 
-  if (web3.account) {
+  if (account) {
     return (
       <div className="flex flex-col gap-2" data-testid="wallet-connected">
         <div className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 text-sm font-medium text-white">
           {walletIcon}
-          {labels.connected.replace("{address}", shortenAddress(web3.account))}
+          {labels.connected.replace("{address}", shortenAddress(account))}
         </div>
         <button
           type="button"
@@ -178,7 +197,7 @@ function WalletButtonGroup({
   }
 
   return (
-    <div className="contents">
+    <div className="contents" data-testid="wallet-sign-in-buttons">
       {availableWallets.map((wallet) => (
         <button
           key={wallet.id}

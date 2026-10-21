@@ -11,7 +11,12 @@
   "signIn": {
     "continueWithDiscord": "Continue with Discord",
     "magicLink": "Sign in with an email link",
-    "emailCode": "Sign in with an email code"
+    "emailCode": "Sign in with an email code",
+    "continueWithWallet": "Continue with",
+    "walletConnecting": "Connecting…",
+    "walletSigning": "Signing…",
+    "walletConnected": "Connected:",
+    "walletDisconnect": "Disconnect"
   },
   "magicLink": {
     "request": {
