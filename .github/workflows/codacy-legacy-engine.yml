@@ -1,0 +1,174 @@
+name: Codacy legacy engine contracts
+
+on:
+  pull_request:
+    branches: [main, develop, "feature/**"]
+    paths:
+      - ".codacy/legacy-eslint/**"
+      - ".github/workflows/codacy-legacy-engine.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codacy-legacy-engine-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  contracts:
+    name: Original and repaired engine contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ENGINE_IMAGE: codacy/codacy-eslint@sha256:01b7b1444a44d33aba5db47aa0f244c889ab24de35a5960536f8ff2b6ca206f1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Preserve the complete tracked-file manifest
+        run: |
+          mkdir -p engine-evidence
+          git ls-files -z > engine-evidence/tracked-files.nul
+      - name: Pull the pinned public engine release
+        run: docker pull "$ENGINE_IMAGE"
+      - name: Verify the original failures and effective pattern inventory
+        run: |
+          mkdir -p engine-evidence
+          set -o pipefail
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            -e GAMEGUILD_ENGINE_EXPECT_REPAIRED=false \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/src/engine-evidence/tracked-files.nul \
+            -v "$PWD:/src:ro" "$ENGINE_IMAGE" \
+            node --test --test-reporter=tap /src/.codacy/legacy-eslint/engine-contracts.cjs \
+            2>&1 | tee engine-evidence/original.tap
+      - name: Build an isolated repaired engine
+        run: |
+          set -o pipefail
+          docker build --network=none --progress=plain -t gameguild-codacy-engine-contracts \
+            .codacy/legacy-eslint |& tee engine-evidence/repair-build.log
+      - name: Verify repaired rules retain the positive and negative detections
+        run: |
+          set -o pipefail
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            -e GAMEGUILD_ENGINE_EXPECT_REPAIRED=true \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/src/engine-evidence/tracked-files.nul \
+            -v "$PWD:/src:ro" gameguild-codacy-engine-contracts \
+            node --test --test-reporter=tap /src/.codacy/legacy-eslint/engine-contracts.cjs \
+            2>&1 | tee engine-evidence/repaired.tap
+      - name: Export the complete received-pattern configuration candidate
+        run: |
+          set -o pipefail
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/src/engine-evidence/tracked-files.nul \
+            -v "$PWD:/src:ro" gameguild-codacy-engine-contracts \
+            node /src/.codacy/legacy-eslint/project-configuration.cjs \
+            | tee engine-evidence/projected-configuration.json
+      - name: Record source and immutable engine identity
+        if: always()
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p engine-evidence
+          printf '%s\n' "$CANDIDATE_HEAD" > engine-evidence/head.txt
+          git rev-parse HEAD > engine-evidence/checkout.txt
+          git rev-parse 'HEAD^{tree}' > engine-evidence/tree.txt
+          printf '%s\n' "$ENGINE_IMAGE" > engine-evidence/engine-image.txt
+          sha256sum .codacy/legacy-eslint/effective-patterns.json > engine-evidence/profile.sha256
+          sha256sum engine-evidence/tracked-files.nul > engine-evidence/manifest.sha256
+      - name: Upload original and repaired evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-legacy-engine-${{ github.event.pull_request.head.sha }}
+          path: engine-evidence
+          if-no-files-found: error
+
+  analyze-repository:
+    name: Selected-source ESLint (${{ matrix.label }})
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { label: partition-0, partition: 0, count: 8 }
+          - { label: partition-1, partition: 1, count: 8 }
+          - { label: partition-2, partition: 2, count: 8 }
+          - { label: partition-3, partition: 3, count: 8 }
+          - { label: partition-4, partition: 4, count: 8 }
+          - { label: partition-5, partition: 5, count: 8 }
+          - { label: partition-6, partition: 6, count: 8 }
+          - { label: partition-7, partition: 7, count: 8 }
+          - label: diagnostic
+            partition: 0
+            count: 1
+            cases: /src/.codacy/legacy-eslint/crash-cases.json
+    env:
+      ENGINE_IMAGE: codacy/codacy-eslint@sha256:01b7b1444a44d33aba5db47aa0f244c889ab24de35a5960536f8ff2b6ca206f1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/setup-node-workspace
+      - name: Preserve complete selected-source inputs
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p engine-analysis
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false -c core.fsmonitor=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > engine-analysis/source-before.txt
+          git ls-files -z > engine-analysis/tracked-files.nul
+          printf '%s\n' "$CANDIDATE_HEAD" > engine-analysis/head.txt
+          git rev-parse HEAD > engine-analysis/checkout.txt
+          git rev-parse 'HEAD^{tree}' > engine-analysis/tree.txt
+          printf '%s\n' "$ENGINE_IMAGE" > engine-analysis/engine-image.txt
+      - name: Build the same hash-guarded engine
+        run: |
+          docker pull "$ENGINE_IMAGE"
+          docker build --network=none --progress=plain -t gameguild-codacy-engine-analysis .codacy/legacy-eslint
+      - name: Analyze every selected tracked source
+        timeout-minutes: 20
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+          GAMEGUILD_CODACY_PARTITION_INDEX: ${{ matrix.partition }}
+          GAMEGUILD_CODACY_PARTITION_COUNT: ${{ matrix.count }}
+          GAMEGUILD_CODACY_DIAGNOSTIC_CASES: ${{ matrix.cases || '' }}
+        run: |
+          docker_status=0
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --user "$(id -u):$(id -g)" \
+            -e NODE_OPTIONS=--max-old-space-size=6144 \
+            -e TSESTREE_SINGLE_RUN=true \
+            -e GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            -e GAMEGUILD_CODACY_TRACKED_FILES=/evidence/tracked-files.nul \
+            -e GAMEGUILD_CODACY_PARTITION_INDEX \
+            -e GAMEGUILD_CODACY_PARTITION_COUNT \
+            -e GAMEGUILD_CODACY_DIAGNOSTIC_CASES \
+            -v "$PWD:/src:ro" -v "$PWD/engine-analysis:/evidence" \
+            gameguild-codacy-engine-analysis \
+            node /src/.codacy/legacy-eslint/analyze-repository.cjs /evidence \
+            > engine-analysis/disposable-tool-output.log 2>&1 || docker_status=$?
+          source_status=0
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false -c core.fsmonitor=false diff --quiet HEAD -- || source_status=$?
+          if [ "$source_status" -eq 0 ]; then
+            printf '%s\n' tracked-files-match-checkout > engine-analysis/source-after.txt
+          fi
+          evidence_status=0
+          GAMEGUILD_CODACY_SOURCE_HEAD="$CANDIDATE_HEAD" \
+            node .codacy/legacy-eslint/analyze-repository.cjs --finalize "$PWD/engine-analysis" \
+            || evidence_status=$?
+          if [ "$docker_status" -ne 0 ]; then exit "$docker_status"; fi
+          if [ "$source_status" -ne 0 ]; then exit "$source_status"; fi
+          exit "$evidence_status"
+      - name: Upload source coverage and redacted diagnostic metadata
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-legacy-analysis-${{ github.event.pull_request.head.sha }}-${{ matrix.label }}
+          path: |
+            engine-analysis/*.json
+            engine-analysis/*.jsonl
+            engine-analysis/*.txt
+            engine-analysis/*.nul
+          if-no-files-found: error
