@@ -308,7 +308,7 @@ export function FillBlankEditor() {
         }
         break
       }
-      case FillBlankInputType.Dropdown:
+      case FillBlankInputType.Dropdown: {
         // Dropdown needs at least 2 options
         const dropdownOptions = existingValues.length >= 2 ? existingValues : [...existingValues, ""]
         newInput = { 
@@ -316,7 +316,8 @@ export function FillBlankEditor() {
           options: dropdownOptions 
         }
         break
-      case FillBlankInputType.WordBank:
+      }
+      case FillBlankInputType.WordBank: {
         // Word bank needs at least 2 words
         const wordBankWords = existingValues.length >= 2 ? existingValues : [...existingValues, ""]
         newInput = { 
@@ -324,6 +325,7 @@ export function FillBlankEditor() {
           words: wordBankWords 
         }
         break
+      }
     }
     
     setValue(`blanks.${blankIndex}.input`, newInput)

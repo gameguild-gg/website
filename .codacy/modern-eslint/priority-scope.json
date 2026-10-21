@@ -1,0 +1,1621 @@
+{
+  "frozenBaseline": "expanded-241-baseline.json",
+  "baselineSha256": "90747da6e37b30a216ce851bab57f933e3f7b7732fa8d2d43da858e8a786234e",
+  "baselineObservedAt": "2026-10-18T20:08:16.370295+00:00",
+  "scope": "Original IDs retained. Only the204 ESLint entries have source locations in this modern-root coverage scope; other tools require separate qualification. No entry is certified resolved.",
+  "issues": [
+    {
+      "issueId": "c80c128e3c0ee847528d30b02448bd86",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_n_hashbang"
+    },
+    {
+      "issueId": "ff482405b9eef04616fc907b73bb3ac2",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "c44f362af39ad2192dce01a922e2c863",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "b404313379478e40c1545b0fc314fc31",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_flowtype_require-parameter-type"
+    },
+    {
+      "issueId": "e8a410083aa5474973c92837b16dd100",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_playwright_expect-expect"
+    },
+    {
+      "issueId": "138daa26cee71948ec9400d0bd442a0c",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "c2c5a795ce27e4d1fdf3c6e7376f5d9a",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "c79e6636b063aab2f5b7cd1cd6cd1a39",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "2b36bc4285ec62e791bb7c59249c06bd",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_mocha_no-synchronous-tests"
+    },
+    {
+      "issueId": "2b8d111fc59a97b058f7eb05bc264a1c",
+      "category": "ErrorProne",
+      "tool": "Opengrep"
+    },
+    {
+      "issueId": "ff35ccc84cbb0b602b6b921f4d3023b7",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "657e3ca81c93723ecc842e24ee37050",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "8533824dfee2713431eb04807d49d58",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "b55a4b6f1d67a4f8a8592f4a2bca13b1",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "2fcd343cc93f9b40267e3d631b4fbc12",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "6889e5db211f2c8d1e4a1c15609b738f",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "3f5e84e729ca9e67c9c0176ab7abbb86",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "7beef859b7a5693bcac9b0dd3964814",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "fbbd1031157151b549461a535e5cfe24",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "32eee81828a8ac8300fd22907172fa56",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_@lwc_lwc_no-async-await"
+    },
+    {
+      "issueId": "29362c12c7c9596d0f9431946d764826",
+      "category": "ErrorProne",
+      "tool": "Opengrep"
+    },
+    {
+      "issueId": "d60b8ee875ede5cd0db89da907747d1",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "a369116d61fb91569e388fadea5ce499",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_fp_no-nil"
+    },
+    {
+      "issueId": "b312915ddb834a80805bf5b7eee3d1ff",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "164a7b94de394ea4749a2cf9a96e55ee",
+      "category": "ErrorProne",
+      "tool": "Opengrep"
+    },
+    {
+      "issueId": "2f0c14b5b396274d302bcc24fe5937f",
+      "category": "Complexity",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_max-lines-per-function"
+    },
+    {
+      "issueId": "72e44366544730eaf2e84f3cf0235d06",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "b2b90327128316c475e9395e9959d96d",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "a3e33bec8f252561397bc4b086f7452e",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "93140c31967421cf8aa9986cb39768f6",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "943305eb01c0436f101b9f223752c9b4",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_fp_no-nil"
+    },
+    {
+      "issueId": "ca906a3d4393ed155c2612a7a450548c",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "fd6c8a9f6ebf7e627710486219438456",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "cab094fab1c9908c858d3db9fc4afbc0",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_fp_no-nil"
+    },
+    {
+      "issueId": "15642d9fc2c12f2f637639ab17cc2124",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_fp_no-nil"
+    },
+    {
+      "issueId": "c8e92bbd84ac5f766d8e3e1bb41447b1",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "91094d4c2e318cbd2d5e6b6cc117d331",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "d6854d33178dc8588419f90a002129df",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "9b85a730ed21a1938c2c832c11d2f01",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "5a31b0e6cbb334fe103f2cf4ef54ea0a",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "bd304fb2edf9b2a3e1c3b3e1426b89d6",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "f339e93f1f3dd81bc9fc4270c2fd079e",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "a783afd299a01daf348948f0e633d0d3",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_flowtype_require-parameter-type"
+    },
+    {
+      "issueId": "8278cc793f5bc22faa8c8606b728b1d6",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "34f429f97b37bec532cf4dd8500e476b",
+      "category": "UnusedCode",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "5729401c9e56656dd0645780129d6e66",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "420ca0e09c895ccc78a860436b92a758",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "496fcd6eb93e57d906b079307b98a13d",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "b9f3fd3ef277fb5238ff60713b37fc8b",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "edcffcce79f6f97f16f5233d80018c06",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "ad37d141980f6778dfb1aaca8acfa1bb",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "52767a2757d3c578d24458899e6b7b5c",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "953df3e1d8caf012cd7d48d356712a80",
+      "category": "Complexity",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_complexity"
+    },
+    {
+      "issueId": "d2bb7e3d45f19ff5ac7d366565715946",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "34fe9cd0998069556f9ce36e110585b4",
+      "category": "Complexity",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_max-statements"
+    },
+    {
+      "issueId": "1bc896f65b313d0c62d1de8084e885df",
+      "category": "UnusedCode",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "b39abca6d8b5144b51c036c1db320224",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_flowtype_require-parameter-type"
+    },
+    {
+      "issueId": "1b8668e542c3c97bfbb07b18c80ef9f0",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "85faedb089f12c4e96eda6081922a42e",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "605e7f9861b131479fe4e758a6d8a553",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "3bc987ffa98b246aac1b176f3e3436de",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "47ade0f48cf9e00d898c247820cce1a",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "de8de4560de66cc5aa96633359c54c21",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "4ecdc27bee1444edd88bd164fd18fd62",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_@salesforce_aura_ecma-intrinsics"
+    },
+    {
+      "issueId": "60e17f68d48bb24a653a999737bff2bd",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "5b673753208073e40d8b1cb8faf5d8f9",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "61162bd57aa92a42a90f1f87f47a6c30",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "88c85642da0d4859290b513406b1344b",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "4a319179d1e4f4f90ba039d20d688225",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "e4d850abdf7399c619192bd65fd0ae4",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "4a75a971b448c0c5f47fe0b63d81d1eb",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "d82618aef062bcdd52c96989dda4f862",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "a49348b5362c7f0bfca29f4397927b5e",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "d40289f4178e4a108d26c33b40dd40e",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "1726e223c936bbdd1156d4e1e5b80c3d",
+      "category": "ErrorProne",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_flowtype_require-parameter-type"
+    },
+    {
+      "issueId": "e349dea6d9a393e321d72df6ee173d74",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "4ac070710389437122d73fe2a5447a25",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "af6e76cca3d33b800e502fd38c8f00a",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "dc78a8d8c5155bfea83695f1f1731bf1",
+      "category": "ErrorProne",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "8c2129aad47b02646aaac02b26b57e9",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_@lwc_lwc_no-for-of"
+    },
+    {
+      "issueId": "8e1b3e48875866997ddc151e861a5fbe",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "6267b93b183d3691801b5dd3c4b7e2e6",
+      "category": "Performance",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_n_no-sync"
+    },
+    {
+      "issueId": "6b73613075ce38e1cdb6e6a8396a57f7",
+      "category": "ErrorProne",
+      "tool": "Opengrep"
+    },
+    {
+      "issueId": "ab295cc0d331a47be12100dba749d741",
+      "category": "Comprehensibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_spellcheck_spell-checker"
+    },
+    {
+      "issueId": "60a7723c7e3e00422d82993d296596a9",
+      "category": "ErrorProne",
+      "tool": "Opengrep"
+    },
+    {
+      "issueId": "d2998edc7de3a96b97432ca08c3a6892",
+      "category": "UnusedCode",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "6a1e4b583ada6f76a069bc1c5d3987dc",
+      "category": "Performance",
+      "tool": "SonarC#"
+    },
+    {
+      "issueId": "6afc1bb03dc91c7ec8dbee884f782304",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_jsdoc_text-escaping"
+    },
+    {
+      "issueId": "a249c985c205035d4860845c96dcd2de",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "e296e0db4f352aa18d46bad068d80758",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-trailing-commas"
+    },
+    {
+      "issueId": "85bf16b0d967aaaf611dd14fa135c00d",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "a895fc15a7227e3f0ceeeff517030c4c",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "19c9d9864c779fa28effca597d57de3",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "7bf4592aa6a35b6f37156c8a279e7644",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "6a2845a27422a64b79ccaf031cb67ee0",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_n_no-unsupported-features_node-builtins"
+    },
+    {
+      "issueId": "bd7486eee2cf1a022848d12383347de5",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "88c35af26c344569a1edac58e5463a1e",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "98f2be187fad324f820a4436bb08d09b",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-import-meta"
+    },
+    {
+      "issueId": "af74d7ef1157135979b5157d24ffbd",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_jsdoc_require-param"
+    },
+    {
+      "issueId": "ebfd1797dab54fe0540e871a70dd44c7",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "d5adeaa81b6adace9637cb8302d199d0",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "fe328c19e0d75b0e2c8c8ebdd658c016",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "d8ff010c14fc464b3a523c375fd09dec",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_jsdoc_require-example"
+    },
+    {
+      "issueId": "c40e48a815cff92df935861112853e63",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-for-of-loops"
+    },
+    {
+      "issueId": "53ec78267a21d84a706e48073c74139c",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "7da680d5a5f9ddbd6f9b737ea3b310ee",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "4b9b0281542f7593430f1b3be12d251d",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "dac6b7d2c3b471b8e238cecaf0033ba0",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_n_no-unsupported-features_node-builtins"
+    },
+    {
+      "issueId": "504eda5f21d1d5f875e783dfe7caede6",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_es-x_no-arrow-functions"
+    },
+    {
+      "issueId": "746bd951ed1a7c095fbfca385aa40780",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_jsdoc_require-returns"
+    },
+    {
+      "issueId": "80dd6be2f8c056c3f42dac2a1165454c",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "c39eceb03cec88b97c592efe8cf160d",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "5c1e5c1f53691f6cffa108df0fdd5ed3",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-object-entries"
+    },
+    {
+      "issueId": "37c94091898891ec01a67cab361edaf2",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "8a8a070fdd0ca4f3ecc7835e2e88d451",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "5868c238bd4ee439751c7078524a3050",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_jsdoc_require-throws"
+    },
+    {
+      "issueId": "7ab1ee81c3d76a1b8b0322d080f5a376",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-trailing-commas"
+    },
+    {
+      "issueId": "de130dbd7a6ccbccd0af11c4adb7bc8c",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_tsdoc_syntax"
+    },
+    {
+      "issueId": "74ded2822cc79c9a930d8d42feed9d77",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "7fe78bf20c8799453ae07fffccc19a41",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_es-x_no-arrow-functions"
+    },
+    {
+      "issueId": "cae7abfc35713c4ea3e02576a3f79ace",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "f1bd504a5acffabe9d4796d506392092",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "3bc8b3f9cc289b58d5386c5b3e42f6ab",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "4591a0d12f33564b7741fca8f395eb38",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_jsdoc_require-description-complete-sentence"
+    },
+    {
+      "issueId": "49bf9f79d83da998c47473b6f5882930",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-hashbang"
+    },
+    {
+      "issueId": "2fe2dfe1f0b2dc0f145afceedeb7f3f4",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_jsdoc_match-name"
+    },
+    {
+      "issueId": "449276f69676c4080c310d4d0523428f",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "434fef558f95cc5c1a6302efdc38312a",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "f6f0230e809e1c5ba18ec1fe7d51cd16",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_es-x_no-trailing-commas"
+    },
+    {
+      "issueId": "d87effc38762fc9c7fe87867f06048a9",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "1a13c9e567736fd71ec7692f90ac541f",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "3fa4b9bfab3b7c6284328c7b20e99a5b",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-import-meta"
+    },
+    {
+      "issueId": "a09815682ce3d43c6a24d14acf8abefe",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_es-x_no-default-parameters"
+    },
+    {
+      "issueId": "f74831af923264708d7c060aa1bbf95a",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "ad1f222b9a1d68e82ca04aed5e3379",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "c140c5eb0727b5dc8a8bff8d5c847c64",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "c2a4f4ab7e2d08c32ecbba1e5b870753",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "e62b82b9f15328ecd278b95555745723",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "b13b7b3e04a5226aee827352e002b3d8",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "d76167ac8d9bec7233e596043eeb2bc6",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "403cf85a229603e4bb207ed13ffe8905",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-arrow-functions"
+    },
+    {
+      "issueId": "dfe59fb9683a8670394937cc13638cbb",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "2fd5caee942271d3dae200b7b8a69c8c",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "3daa3ecb41ce9c6e16358c9d3fdd0d77",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "4603af1f18d3e18d1ee452075348651b",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "65b15ee0abbe7a1e1e8c0ecd7607d283",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_es-x_no-destructuring"
+    },
+    {
+      "issueId": "84c36fe14f6e3ff8b4bace27a7a6d8dd",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "e02e87d8bdb2970022b4f1cc87e5533a",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_compat_compat"
+    },
+    {
+      "issueId": "c5137194557cc346ae8c821c8db9c458",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "b41dbc2b3f5cdb4a761addc2f3d9dc27",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_jsdoc_text-escaping"
+    },
+    {
+      "issueId": "cef3f01e0ec9f95f55c19babfaffc851",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "feb3db07ac8e7a142f23c8e8761e2eb9",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_es-x_no-trailing-commas"
+    },
+    {
+      "issueId": "45c438986358777531916557afee4f7f",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "19b0eec39065732bcfae3cc047715b06",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_jsdoc_require-throws"
+    },
+    {
+      "issueId": "7e6627f42a4b9ee4bc56221bc8fc2fff",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_jsdoc_require-example"
+    },
+    {
+      "issueId": "a7a682ff05c8f68349db44a18f75e3cb",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "4a0b8119a06ff9661098dd7955c55773",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_jsdoc_match-name"
+    },
+    {
+      "issueId": "5b9834c3f01901ab2a90d3c43f0c2627",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "822fc4abde76d04e852fce7fb366f14d",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "1b20866c46fb3b534186923885486e63",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "d8207b4d2ac2d8c08db562d8c35b14e4",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "79ee3fe8e90eef80492d406a1bb346a",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "92395ec471ca9f77c7781cec38efdd18",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "669678aa80790f1952fe248c12f3eca3",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "ad3580b7daa3d6abb6f87a2b23d532bc",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-trailing-commas"
+    },
+    {
+      "issueId": "ee55df94658a2b3945866e3bb3136540",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "48edc548be869bb132653f1360741275",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "8a5e16a906232be9061511d6557364db",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "50dfd7702d092b4cadbfe9fa5a49b3e0",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "6591a7e5f233324d451ccf82972aa34",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "a247706998d648632302177f88a85bcf",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "b83ced8dbe6bf40e45f8f883d7ac2f85",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-import-meta"
+    },
+    {
+      "issueId": "2de02abc3571c457ebed51cdc070400e",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_es-x_no-object-freeze"
+    },
+    {
+      "issueId": "8ff3b4248132568bc90783dad496062e",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "62c8edb885b23cf4961bd501a4ed4d8",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "616c6a64afb47c4ee6fcdb8d9bf9559e",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_tsdoc_syntax"
+    },
+    {
+      "issueId": "bc6159134f69c7ff6135f4d2d33a0298",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "1d19589b7c4a462aec8860fd95f34959",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "205889833ca27366958dc2a5b658cff1",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "9fa574e733ad9dde86159005d285cf59",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "8ff4e494714e42104d6f8f415c85f7f9",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "9ca23034ab3c1e68aee808337c3a4b23",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_es-x_no-trailing-commas"
+    },
+    {
+      "issueId": "e3ebbb92d44ed679b70406cd22eeeeda",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_tsdoc_syntax"
+    },
+    {
+      "issueId": "c66953c0f379ebeea9d179c4408f76a0",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_jsdoc_require-returns"
+    },
+    {
+      "issueId": "ed28ebe9123e42552256e059e70a75c8",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "8ef365540fef3816e21732c32d22de81",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_es-x_no-arrow-functions"
+    },
+    {
+      "issueId": "d395c8b37c2ed9844360b5302828cc9e",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "45a46b08ab8aab77f2839151a3d677f4",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "c22a97d4aee299a8f0cc3a4dddd11313",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "4dac70cc8cf86861a2b3ee87c9efecd5",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "bc5e113cdd1460a48d98e2f61cd98aba",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_jsdoc_tag-lines"
+    },
+    {
+      "issueId": "b07d5deb8e4bbe33f6905433689feb73",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "aaf4ab9f0f71ca2aec164f4b440194e2",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "98ae48030b3a2b309a602c1b073073b2",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_n_no-unsupported-features_node-builtins"
+    },
+    {
+      "issueId": "24b8d3b2929ea0c1afaef5fb7e9961f8",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "be19e357d1ae3ded30350a081a2fe653",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_jsdoc_tag-lines"
+    },
+    {
+      "issueId": "1bc2df20035debe7da7f6fb41ae8478e",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "37f8ae733b5a0bc8ad6e690d00121c0d",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_jsdoc_text-escaping"
+    },
+    {
+      "issueId": "fdb9f64e0fb47ba1c49f263566bc2baf",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "5d8db72b8fc4ff2dee13ed18d129bf34",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_jsdoc_match-name"
+    },
+    {
+      "issueId": "ab9bb8127410af4244c1b199555568cf",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "4fdb0d09e52eb131ba428d4ffb6497b4",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_jsdoc_text-escaping"
+    },
+    {
+      "issueId": "85bab013b01b249a8edcaf68c1c6522e",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_jsdoc_require-example"
+    },
+    {
+      "issueId": "ac5325dee3ae94e62e85cec83e9b67dc",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "88edbc5a429b2284b5163c420a51e309",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "bd67c9f7994195c05f03e8fc0b552065",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_jsdoc_require-file-overview"
+    },
+    {
+      "issueId": "6a88a01f467298a7744cda3f9aac4a57",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "5370b09895e7b2311e95ba33df2622de",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_jsdoc_text-escaping"
+    },
+    {
+      "issueId": "261330a13bcfc68f877dbc7708743b98",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-destructuring"
+    },
+    {
+      "issueId": "f0a6f6040f2f71d0d248f3fe9a73121",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_tsdoc_syntax"
+    },
+    {
+      "issueId": "3018e212d3535cdc1850bf72f2274fb4",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "32f2a4616b6134629d28f95b731edaa2",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "c4420546c499da5f0e338d72d427141",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "540766efaa6e1057ab9a0b402926f40b",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_es-x_no-rest-spread-properties"
+    },
+    {
+      "issueId": "64af1e8b035e4c779eab564168417eee",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "76954d8c2525b6b0b743f34a2c5d2ae3",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_tsdoc_syntax"
+    },
+    {
+      "issueId": "685426381c8e9d83704e45b7d7a1b48b",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "8559e5c39dd20dfe68f6816e02c78259",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "265f7d80ec3d99acacc8e5906d68f552",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.mjs",
+      "patternId": "ESLint8_jsdoc_require-example"
+    },
+    {
+      "issueId": "56f6bacb23aa7a035983396cdee97f22",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_es-x_no-trailing-commas"
+    },
+    {
+      "issueId": "937335db8000a321bac81c437d40944b",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "842b1bd25fe6cbdb158ceb88264ebbe6",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "2970d3abef24cfa5dd3fceefe51b7dbf",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "11eefce4010ddb65f25713f26a71e4be",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "8968dcff75d429f962448690d9a80e3",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_jsdoc_text-escaping"
+    },
+    {
+      "issueId": "d08dfd162104b4d139227b59b889c5e2",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_tsdoc_syntax"
+    },
+    {
+      "issueId": "aec49962fc69806fd4ded48e71236cb7",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-import-meta"
+    },
+    {
+      "issueId": "67e7db297edc68411174b217a0fd3ec8",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_jsdoc_require-param"
+    },
+    {
+      "issueId": "a6adf22ad3ba406f0370883f0f88cab4",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/sync-javascript-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "a148fbcd9e3efe588bf73a5f7d089215",
+      "category": "Documentation",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/worker-diagnostics.mjs",
+      "patternId": "ESLint8_jsdoc_match-name"
+    },
+    {
+      "issueId": "7545ab30db03edf92bcc27bcf8faaec3",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "apps/web/scripts/pnpm-process.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "43ac18c5e6cbaa5a7fa95b3275f6283c",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "2e89055eb82434b204d8b3564606ae2b",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "800be0efa792cc6eb288e38bd4fc6a12",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/lint-budget.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "3f8e87e7993db6f2ca75dbb38a8762dd",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "c07e6ee18cd24308153bcb6f3b5084ef",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "6e6796b66f05c4639883cfc425230f73",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    },
+    {
+      "issueId": "f19a7e7016790ad46d8710f960267ebb",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "8e2abd5bb8da7d6ca386ef4d1c7e390e",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "scripts/dev-runtime.mjs",
+      "patternId": "ESLint8_es-x_no-block-scoped-variables"
+    },
+    {
+      "issueId": "14c3a64df2397b9d9cf059a4b4d05dc6",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/browser-launch-options.test.mjs",
+      "patternId": "ESLint8_es-x_no-modules"
+    },
+    {
+      "issueId": "c38a36fede33b42fde871fcfb613deb3",
+      "category": "Compatibility",
+      "tool": "ESLint",
+      "file": "tools/emception/grading/build.mjs",
+      "patternId": "ESLint8_import_no-nodejs-modules"
+    }
+  ]
+}

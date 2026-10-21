@@ -243,6 +243,10 @@ public sealed class AuditQueryDslExecutor(
                 }
 
                 break;
+
+            default:
+                // Other predicates do not constrain tenant equality; caller scope is applied separately.
+                break;
         }
     }
 
@@ -394,6 +398,10 @@ public sealed class AuditQueryDslExecutor(
                     }
                 }
 
+                break;
+
+            default:
+                // Only non-negated source equality predicates can narrow the store selection.
                 break;
         }
     }
