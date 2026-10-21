@@ -610,7 +610,7 @@ public sealed class SamlFederationServiceTests : IDisposable
 
         url.Should().StartWith("https://sts.corp.example.test/slo?SAMLRequest=");
         url.Should().Contain($"RelayState={Uri.EscapeDataString("https://gameguild.example.test/bye")}");
-        DeflateDecode(url).Should().Contain("<samlp:LogoutRequest").And.Contain($"<saml:Issuer>{SpEntityId}</saml:Issuer>");
+        DeflateDecode(url!).Should().Contain("<samlp:LogoutRequest").And.Contain($"<saml:Issuer>{SpEntityId}</saml:Issuer>");
     }
 
     // ── Test identity provider (signed SAML response builder) ──────────────────
@@ -714,15 +714,9 @@ public sealed class SamlFederationServiceTests : IDisposable
 
     private static void SignElement(XmlElement element, RSA key, string referenceUri)
     {
-        var signedXml = new SignedXml(element)
-        {
-            SigningKey = key,
-            SignedInfo =
-            {
-                CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl,
-                SignatureMethod = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-            }
-        };
+        var signedXml = new SignedXml(element) { SigningKey = key };
+        signedXml.SignedInfo!.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
+        signedXml.SignedInfo!.SignatureMethod = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
 
         var reference = new Reference(referenceUri) { DigestMethod = "http://www.w3.org/2001/04/xmlenc#sha256" };
         reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
