@@ -5,9 +5,7 @@ import React from 'react';
  * policy page is also available at `/terms-of-service`; keeping this route
  * prevents consent links from becoming published 404s.
  */
-export default async function Page(
-  {}: PageProps<'/[locale]/legal/terms-of-service'>,
-): Promise<React.JSX.Element> {
+export default async function Page(): Promise<React.JSX.Element> {
   return (
     <article>
       <h1>Terms of Service</h1>

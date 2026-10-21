@@ -28,7 +28,7 @@ const plagiarismDefinitions = [
   'Using AI-assisted tools to produce partial answers without citing them.',
 ];
 
-export default async function Page({}: PageProps<'/[locale]/legal/academic-honesty'>): Promise<React.JSX.Element> {
+export default async function Page(): Promise<React.JSX.Element> {
   return (
     <article className="flex flex-col gap-8">
       <div className="space-y-3">

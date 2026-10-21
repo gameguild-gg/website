@@ -76,7 +76,7 @@ describe('static legal and project pages', () => {
   });
 
   it('renders FERPA waiver content with consent and revocation guidance', async () => {
-    render(await FerpaWaiverPage({} as PageProps<'/[locale]/legal/ferpa-waiver'>));
+    render(await FerpaWaiverPage());
 
     expect(screen.getByRole('heading', { name: /ferpa waiver/i })).toBeInTheDocument();
     expect(screen.getAllByText(/education records/i).length).toBeGreaterThan(0);
@@ -85,7 +85,7 @@ describe('static legal and project pages', () => {
   });
 
   it('renders academic honesty policy content', async () => {
-    render(await AcademicHonestyPage({} as PageProps<'/[locale]/legal/academic-honesty'>));
+    render(await AcademicHonestyPage());
 
     expect(screen.getByRole('heading', { name: /academic honesty/i })).toBeInTheDocument();
     expect(screen.getAllByText(/plagiarism/i).length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe('static legal and project pages', () => {
   });
 
   it('renders institutional content on the about page', async () => {
-    render(await AboutPage({} as PageProps<'/[locale]/about'>));
+    render(await AboutPage());
 
     expect(screen.getByRole('heading', { level: 1, name: /the home of game creators/i })).toBeInTheDocument();
     expect(screen.getAllByText(/learn, build, and ship together/i).length).toBeGreaterThan(0);
@@ -109,7 +109,7 @@ describe('static legal and project pages', () => {
   });
 
   it('renders the roadmap with day-zero product tracks', async () => {
-    render(await RoadmapPage({} as PageProps<'/[locale]/about/roadmap'>));
+    render(await RoadmapPage());
 
     expect(screen.getByRole('heading', { name: /development roadmap/i })).toBeInTheDocument();
     expect(screen.getByText(/learning platform/i)).toBeInTheDocument();
@@ -119,7 +119,7 @@ describe('static legal and project pages', () => {
   });
 
   it('renders contributor governance and project ownership content', async () => {
-    render(await ContributorsPage({} as PageProps<'/[locale]/about/contributors'>));
+    render(await ContributorsPage());
 
     expect(screen.getByRole('heading', { level: 1, name: /contributors/i })).toBeInTheDocument();
     expect(screen.getAllByText(/maintainers/i).length).toBeGreaterThan(0);
