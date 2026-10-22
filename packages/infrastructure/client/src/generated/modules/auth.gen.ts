@@ -513,7 +513,7 @@ export class AuthModule {
   /**
    * Discover federation providers for an email domain
    *
-   * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.
+   * Lists the enabled enterprise federation providers — OIDC and SAML — whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists. Each entry carries the protocol it serves.
    */
   async getAuthOidcDiscoverProvider(query?: { email?: string }): Promise<Result<Types.IdentityAuthenticationOidcDiscoverProviderOutput, ApiError>> {
     const url = '/v1/auth/oidc:discover-provider';
@@ -851,6 +851,110 @@ export class AuthModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Handle the posted SAML response (Assertion Consumer Service)
+   *
+   * Validates the posted SAMLResponse (XML-DSig signature against the provider's configured certificates, issuer, audience, destination, clock-skew-bounded lifetimes, InResponseTo correlation, assertion-ID replay protection) and applies the same account matching and auto-link policy as the other providers. Fail closed when unsigned, wrongly signed, expired, replayed, or when the platform MFA policy is not attested by the assertion's AuthnContext.
+   */
+  async postAuthSamlAssertionConsumer(
+    slug: string,
+    body: Types.IdentityAuthenticationSamlCallbackRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = `/v1/auth/saml/${slug}:assertion-consumer`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationSamlCallbackRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolve the provider's front-channel single-logout redirect
+   *
+   * Returns the provider's single-logout redirect (an unsigned LogoutRequest via the HTTP-Redirect binding) when the provider is configured with a single logout service; null keeps logout local. Local refresh-token revocation is unchanged and remains the caller's responsibility.
+   */
+  async getAuthSamlLogoutUrl(
+    slug: string,
+    query?: { postLogoutRedirectUri?: string },
+  ): Promise<Result<Types.IdentityAuthenticationSamlLogoutUrlOutput, ApiError>> {
+    const url = `/v1/auth/saml/${slug}:logout-url`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSamlLogoutUrlOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Serve this service provider's SAML 2.0 metadata document
+   *
+   * Returns this deployment's SAML 2.0 service provider metadata (entity ID and POST-binding assertion consumer service) for the configured provider, to be registered with the enterprise identity provider.
+   */
+  async getAuthSamlMetadata(slug: string): Promise<Result<void, ApiError>> {
+    const url = `/v1/auth/saml/${slug}:metadata`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: false,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Initiate SAML federation provider sign-in
+   *
+   * Issues a SAML AuthnRequest for a configured enterprise identity provider (Authentication:ExternalProviders:Saml:<slug>) and returns the provider's sign-on redirect URL (HTTP-Redirect binding) with a RelayState token for the caller's state cookie.
+   */
+  async postAuthSamlSignInAuthorize(
+    slug: string,
+    body: Types.IdentityAuthenticationSamlAuthorizeRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationSamlSignInOutput, ApiError>> {
+    const url = `/v1/auth/saml/${slug}:sign-in-authorize`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationSamlAuthorizeRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSamlSignInOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
