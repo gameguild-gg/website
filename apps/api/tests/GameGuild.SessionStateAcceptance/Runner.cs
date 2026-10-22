@@ -112,6 +112,29 @@ internal static class Runner
                 var rows = await db.Set<UserSession>().AsNoTracking()
                     .Where(row => row.UserId == account.UserId || row.UserId == account.ForeignUserId).ToListAsync();
                 Assert.Equal(3, rows.Count);
+                Assert.Equal(account.Fingerprint, Assert.Single(rows, row => row.Id == account.SessionId).DeviceFingerprint);
+                var trusted = await db.Set<TrustedDevice>().AsNoTracking()
+                    .Where(row => row.UserId == account.UserId || row.UserId == account.ForeignUserId).ToListAsync();
+                Assert.Equal(2, trusted.Count);
+                var ownTrust = Assert.Single(trusted, row => row.UserId == account.UserId);
+                Assert.Equal(account.TrustedDeviceId, ownTrust.Id);
+                Assert.Equal(account.Fingerprint, ownTrust.DeviceFingerprint);
+                Assert.Equal(string.Empty, ownTrust.DeviceName);
+                Assert.False(ownTrust.IsActive);
+                Assert.True(ownTrust.ExpiresAt > DateTime.UtcNow);
+                var foreignTrust = Assert.Single(trusted, row => row.UserId == account.ForeignUserId);
+                Assert.Equal(account.ForeignTrustedDeviceId, foreignTrust.Id);
+                Assert.Equal(account.Fingerprint, foreignTrust.DeviceFingerprint);
+                Assert.True(foreignTrust.IsActive);
+                Assert.Equal("Foreign browser", foreignTrust.DeviceName);
+                Assert.Equal(account.LastUsedAt, foreignTrust.UpdatedAt);
+                Assert.Equal(account.LastUsedAt, foreignTrust.LastUsedAt);
+                Assert.Equal(account.ExpiresAt, foreignTrust.ExpiresAt);
+                await File.WriteAllTextAsync(Path.Combine(evidence, "trust-persistence.json"),
+                    JsonSerializer.Serialize(new { passed = true, account.SessionId, account.TrustedDeviceId,
+                        account.ForeignTrustedDeviceId, currentSessionFingerprint = account.Fingerprint,
+                        renewedSameIdentity = true, ownTrustRevoked = true, foreignTrustUnchanged = true,
+                        database = "Fresh PostgreSQL context after actual browser server actions" }, JsonOptions));
                 var revoked = Assert.Single(rows, row => row.Id == account.SessionId);
                 Assert.False(revoked.IsActive);
                 Assert.NotNull(revoked.TerminatedAt);
@@ -151,8 +174,11 @@ internal static class Runner
         var tenant = new Tenant { Id = Guid.NewGuid(), Name = "Session-state browser tenant",
             Slug = "browser-" + marker, AdminEmail = owner.Email, IsActive = true };
         db.AddRange(owner, foreign, tenant, new TenantMember { Id = Guid.NewGuid(), UserId = owner.Id,
-            TenantId = tenant.Id, Role = "Member", IsActive = true });
+            TenantId = tenant.Id, Role = "Member", IsActive = true },
+            new TenantMember { Id = Guid.NewGuid(), UserId = foreign.Id,
+                TenantId = tenant.Id, Role = "Member", IsActive = true });
         var now = new DateTime(DateTime.UtcNow.Ticks / 10 * 10, DateTimeKind.Utc);
+        var fingerprint = Guid.NewGuid().ToString("N");
         UserSession Session(Guid userId) => new()
         {
             Id = Guid.NewGuid(), UserId = userId, IsActive = true,
@@ -164,13 +190,31 @@ internal static class Runner
         var current = Session(owner.Id);
         var other = Session(owner.Id);
         var foreignSession = Session(foreign.Id);
-        db.AddRange(current, other, foreignSession);
+        current.DeviceFingerprint = fingerprint;
+        current.IsTrustedDevice = true; // Deliberately stale legacy flag: the real trust record is expired.
+        current.DeviceInfo = JsonSerializer.Serialize(new DeviceInfo { DeviceName = "Current browser", Fingerprint = fingerprint });
+        other.DeviceFingerprint = Guid.NewGuid().ToString("N");
+        other.DeviceInfo = JsonSerializer.Serialize(new DeviceInfo { DeviceName = "Other browser", Fingerprint = other.DeviceFingerprint });
+        foreignSession.DeviceFingerprint = fingerprint;
+        var ownTrust = new TrustedDevice
+        {
+            Id = Guid.NewGuid(), UserId = owner.Id, DeviceFingerprint = fingerprint, DeviceName = "Expired browser",
+            IsActive = true, DeviceInfo = "{}", CreatedAt = current.LastUsedAt, UpdatedAt = current.LastUsedAt,
+            TrustedAt = current.LastUsedAt, LastUsedAt = current.LastUsedAt, ExpiresAt = now.AddMinutes(-1)
+        };
+        var foreignTrust = new TrustedDevice
+        {
+            Id = Guid.NewGuid(), UserId = foreign.Id, DeviceFingerprint = fingerprint, DeviceName = "Foreign browser",
+            IsActive = true, DeviceInfo = "{}", CreatedAt = current.LastUsedAt, UpdatedAt = current.LastUsedAt,
+            TrustedAt = current.LastUsedAt, LastUsedAt = current.LastUsedAt, ExpiresAt = current.ExpiresAt
+        };
+        db.AddRange(current, other, foreignSession, ownTrust, foreignTrust);
         await db.SaveChangesAsync();
         return new(owner.Id, owner.Email, tenant.Id, owner.TokenVersion, current.Id, other.Id,
-            foreign.Id, foreignSession.Id, current.ExpiresAt, current.LastUsedAt);
+            foreign.Id, foreignSession.Id, current.ExpiresAt, current.LastUsedAt, fingerprint, ownTrust.Id, foreignTrust.Id);
     }
 
     private sealed record Account(Guid UserId, string Email, Guid TenantId, int TokenVersion,
         Guid SessionId, Guid OtherSessionId, Guid ForeignUserId, Guid ForeignSessionId,
-        DateTime ExpiresAt, DateTime LastUsedAt);
+        DateTime ExpiresAt, DateTime LastUsedAt, string Fingerprint, Guid TrustedDeviceId, Guid ForeignTrustedDeviceId);
 }

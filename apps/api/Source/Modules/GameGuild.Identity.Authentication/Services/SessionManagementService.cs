@@ -426,7 +426,7 @@ public sealed class SessionManagementService(
             return false;
         }
 
-        if (trustedDevice.ExpiresAt.HasValue && trustedDevice.ExpiresAt.Value < SystemClock.UtcNow)
+        if (trustedDevice.ExpiresAt.HasValue && trustedDevice.ExpiresAt.Value <= SystemClock.UtcNow)
         {
             return false;
         }
@@ -436,6 +436,11 @@ public sealed class SessionManagementService(
 
     public async Task<List<TrustedDevice>> GetTrustedDevicesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        if (!_sessionOptions.EnableDeviceFingerprinting)
+        {
+            return [];
+        }
+
         var devices = await trustedDeviceRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
         var now = SystemClock.UtcNow;
