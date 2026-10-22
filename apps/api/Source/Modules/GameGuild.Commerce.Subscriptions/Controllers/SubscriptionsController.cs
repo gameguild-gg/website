@@ -54,7 +54,10 @@ public sealed class SubscriptionsController(ISender sender, IActorContextAccesso
             body.Amount,
             FulfilledOrderId: body.FulfilledOrderId,
             StartDate: body.StartDate,
-            TrialDays: body.TrialDays), ct).ConfigureAwait(false);
+            TrialDays: body.TrialDays,
+            PromoCodes: body.PromoCodes,
+            PromoCodeIdempotencyKey: body.PromoCodeIdempotencyKey,
+            ProductId: body.ProductId), ct).ConfigureAwait(false);
 
         return CreatedAtAction(nameof(GetSubscriptionById), new { subscriptionId = id }, new { id });
     }
@@ -277,6 +280,9 @@ public sealed class SubscriptionsController(ISender sender, IActorContextAccesso
     /// <param name="FulfilledOrderId">Optional Order ID that triggered this subscription (Economic Model: Order→Subscription causality)</param>
     /// <param name="StartDate">Optional start date</param>
     /// <param name="TrialDays">Optional trial period in days</param>
+    /// <param name="PromoCodes">Optional promo codes applied at creation (issue #418)</param>
+    /// <param name="PromoCodeIdempotencyKey">Optional replay-protection key for the promo application</param>
+    /// <param name="ProductId">Optional product context for product-scoped promo codes</param>
     public sealed record CreateSubscriptionRequest(
         Guid TenantId,
         Guid PlanId,
@@ -286,7 +292,10 @@ public sealed class SubscriptionsController(ISender sender, IActorContextAccesso
         string Currency,
         Guid? FulfilledOrderId = null,
         DateTime? StartDate = null,
-        int? TrialDays = null);
+        int? TrialDays = null,
+        IReadOnlyList<string>? PromoCodes = null,
+        string? PromoCodeIdempotencyKey = null,
+        Guid? ProductId = null);
 
     /// <summary>Request to partially update a subscription</summary>
     public sealed record PatchSubscriptionRequest(

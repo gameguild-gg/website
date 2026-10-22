@@ -44,6 +44,7 @@ public interface IPricingEngineService
     /// <param name="promoCodes">List of promo codes to apply</param>
     /// <param name="productId">Optional product ID for product-specific codes</param>
     /// <param name="userId">Optional user ID for user-specific validation</param>
+    /// <param name="planId">Optional subscription plan ID for plan-scoped codes (issue #418)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Promo code application result</returns>
     Task<PromoCodeApplicationResult> ApplyPromoCodesAsync(
@@ -51,6 +52,7 @@ public interface IPricingEngineService
         IEnumerable<string> promoCodes,
         Guid? productId = null,
         Guid? userId = null,
+        Guid? planId = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -60,6 +62,7 @@ public interface IPricingEngineService
     /// <param name="orderAmount">The order amount</param>
     /// <param name="productId">Optional product ID</param>
     /// <param name="userId">Optional user ID</param>
+    /// <param name="planId">Optional subscription plan ID for plan-scoped codes (issue #418)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Validation result</returns>
     Task<PromoCodeValidationResult> ValidatePromoCodeAsync(
@@ -67,6 +70,7 @@ public interface IPricingEngineService
         decimal orderAmount,
         Guid? productId = null,
         Guid? userId = null,
+        Guid? planId = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

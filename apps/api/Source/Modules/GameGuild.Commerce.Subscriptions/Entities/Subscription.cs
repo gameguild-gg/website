@@ -361,6 +361,74 @@ public class Subscription : StatefulEntity<SubscriptionStatus>, ISubscription
     }
 
     /// <summary>
+    ///     Extends the trial period by the given number of days (issue #418: consumption of
+    ///     promo codes granting <c>FreeTrialExtensionDays</c>). A subscription without a trial
+    ///     transitions <c>PendingActivation → Trialing</c> and starts one; a subscription
+    ///     already trialing has its end date pushed out from the later of (now, current end,
+    ///     start). The next billing date is never left inside the extended trial.
+    /// </summary>
+    /// <param name="additionalDays">Days to add (must be positive).</param>
+    /// <returns>The new trial end date.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when additionalDays is not positive.</exception>
+    /// <exception cref="InvalidOperationException">Thrown for cancelled/expired subscriptions.</exception>
+    public DateTime ExtendTrial(int additionalDays)
+    {
+        if (additionalDays <= 0)
+            throw new ArgumentOutOfRangeException(nameof(additionalDays), "Trial extension days must be positive.");
+
+        if (Status is SubscriptionStatus.Cancelled or SubscriptionStatus.Expired)
+            throw new InvalidOperationException($"Cannot extend the trial of a subscription in status {Status}.");
+
+        var now = SystemClock.UtcNow;
+        var baseDate = TrialEndDate.HasValue && TrialEndDate.Value > now
+            ? TrialEndDate.Value
+            : (StartDate > now ? StartDate : now);
+
+        var newTrialEnd = baseDate.AddDays(additionalDays);
+
+        if (Status == SubscriptionStatus.PendingActivation)
+        {
+            // A trial-extension promo granted a trial the subscription did not have.
+            TransitionTo(SubscriptionStatus.Trialing);
+        }
+
+        TrialEndDate = newTrialEnd;
+
+        // Billing must not charge inside the trial: push the next billing date (and the
+        // matching period end) past the extended trial end when it currently sits inside.
+        if (NextBillingDate < newTrialEnd)
+        {
+            var shift = newTrialEnd - NextBillingDate;
+            NextBillingDate = newTrialEnd;
+            CurrentPeriodEnd = CurrentPeriodEnd.Add(shift);
+        }
+
+        Raise(new TrialExtendedEvent(Id, TenantId ?? Guid.Empty, additionalDays, newTrialEnd));
+        return newTrialEnd;
+    }
+
+    /// <summary>
+    ///     Skips the given number of billing periods by pushing the next billing date (and the
+    ///     matching period end) forward (issue #418: consumption of promo codes granting
+    ///     <c>FreeMonths</c> / <c>DurationMonths</c>).
+    /// </summary>
+    /// <param name="periods">Number of monthly periods to skip (must be positive).</param>
+    /// <returns>The new next billing date.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when periods is not positive.</exception>
+    public DateTime SkipBillingPeriods(int periods)
+    {
+        if (periods <= 0)
+            throw new ArgumentOutOfRangeException(nameof(periods), "Skipped periods must be positive.");
+
+        var newNextBilling = NextBillingDate.AddMonths(periods);
+        CurrentPeriodEnd = CurrentPeriodEnd.AddMonths(periods);
+        NextBillingDate = newNextBilling;
+
+        Raise(new BillingPeriodsSkippedEvent(Id, TenantId ?? Guid.Empty, periods, newNextBilling));
+        return newNextBilling;
+    }
+
+    /// <summary>
     ///     Cancels the subscription (with state machine validation)
     /// </summary>
     public void Cancel(CancellationReason reason, string? note = null, DateTime? effectiveDate = null)

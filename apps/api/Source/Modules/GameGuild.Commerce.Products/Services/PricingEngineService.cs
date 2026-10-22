@@ -77,6 +77,7 @@ public class PricingEngineService(
                 promoCodesList,
                 product.Id,
                 userId,
+                planId: null,
                 cancellationToken).ConfigureAwait(false);
 
             promoDiscount = promoResult.TotalDiscount;
@@ -135,6 +136,7 @@ public class PricingEngineService(
         IEnumerable<string> promoCodes,
         Guid? productId = null,
         Guid? userId = null,
+        Guid? planId = null,
         CancellationToken cancellationToken = default)
     {
         var appliedCodes = new List<AppliedPromoCode>();
@@ -173,6 +175,7 @@ public class PricingEngineService(
                 orderAmount,
                 productId,
                 userId,
+                planId,
                 cancellationToken).ConfigureAwait(false);
 
             if (!validation.IsValid)
@@ -207,11 +210,15 @@ public class PricingEngineService(
         decimal orderAmount,
         Guid? productId = null,
         Guid? userId = null,
+        Guid? planId = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
-            return new PromoCodeValidationResult(false, ErrorMessage: "Promo code is required");
+            return new PromoCodeValidationResult(
+                false,
+                ErrorMessage: "Promo code is required",
+                Outcome: PromoCodeValidationOutcome.Invalid);
         }
 
         var promoCode = await promoCodeRepository.GetByCodeAsync(code, cancellationToken)
@@ -219,31 +226,61 @@ public class PricingEngineService(
 
         if (promoCode == null)
         {
-            return new PromoCodeValidationResult(false, ErrorMessage: "Promo code not found");
+            return new PromoCodeValidationResult(
+                false,
+                ErrorMessage: "Promo code not found",
+                Outcome: PromoCodeValidationOutcome.NotFound);
         }
 
         // Check if active
         if (!promoCode.IsActive)
         {
-            return new PromoCodeValidationResult(false, ErrorMessage: "Promo code is not active");
+            return new PromoCodeValidationResult(
+                false,
+                ErrorMessage: "Promo code is not active",
+                PromoCodeId: promoCode.Id,
+                Outcome: PromoCodeValidationOutcome.Inactive);
         }
 
         // Check validity period
         if (!promoCode.IsCurrentlyValid())
         {
-            return new PromoCodeValidationResult(false, ErrorMessage: "Promo code has expired or is not yet valid");
+            return new PromoCodeValidationResult(
+                false,
+                ErrorMessage: "Promo code has expired or is not yet valid",
+                PromoCodeId: promoCode.Id,
+                Outcome: PromoCodeValidationOutcome.Expired);
         }
 
         // Check product restriction
         if (promoCode.ProductId.HasValue && productId.HasValue && promoCode.ProductId != productId)
         {
-            return new PromoCodeValidationResult(false, ErrorMessage: "Promo code is not valid for this product");
+            return new PromoCodeValidationResult(
+                false,
+                ErrorMessage: "Promo code is not valid for this product",
+                PromoCodeId: promoCode.Id,
+                Outcome: PromoCodeValidationOutcome.ProductNotEligible);
+        }
+
+        // Check plan restriction (issue #418): a plan-scoped code only validates
+        // against the plan it was issued for.
+        if (promoCode.PlanId.HasValue && planId.HasValue && promoCode.PlanId != planId)
+        {
+            return new PromoCodeValidationResult(
+                false,
+                ErrorMessage: "Promo code is not valid for this subscription plan",
+                PromoCodeId: promoCode.Id,
+                Outcome: PromoCodeValidationOutcome.PlanNotEligible);
         }
 
         // Check minimum order amount
         if (promoCode.MinimumOrderAmount.HasValue && orderAmount < promoCode.MinimumOrderAmount.Value)
         {
-            return new PromoCodeValidationResult(false, ErrorMessage: $"Minimum order amount of {promoCode.MinimumOrderAmount.Value:C} required");
+            return new PromoCodeValidationResult(
+                false,
+                ErrorMessage: $"Minimum order amount of {promoCode.MinimumOrderAmount.Value:C} required",
+                PromoCodeId: promoCode.Id,
+                Outcome: PromoCodeValidationOutcome.MinimumOrderAmountNotMet);
         }
 
         // Check usage limits
@@ -253,7 +290,11 @@ public class PricingEngineService(
                 .ConfigureAwait(false);
             if (usageCount >= promoCode.MaxUses.Value)
             {
-                return new PromoCodeValidationResult(false, ErrorMessage: "Promo code has reached maximum uses");
+                return new PromoCodeValidationResult(
+                    false,
+                    ErrorMessage: "Promo code has reached maximum uses",
+                    PromoCodeId: promoCode.Id,
+                    Outcome: PromoCodeValidationOutcome.MaxUsesReached);
             }
         }
 
@@ -264,8 +305,11 @@ public class PricingEngineService(
                 promoCode.Id, userId.Value, cancellationToken).ConfigureAwait(false);
             if (userUsageCount >= promoCode.MaxUsesPerUser.Value)
             {
-                return new PromoCodeValidationResult(false,
-                    ErrorMessage: "You have already used this promo code the maximum number of times");
+                return new PromoCodeValidationResult(
+                    false,
+                    ErrorMessage: "You have already used this promo code the maximum number of times",
+                    PromoCodeId: promoCode.Id,
+                    Outcome: PromoCodeValidationOutcome.MaxUsesPerUserReached);
             }
         }
 
@@ -276,7 +320,11 @@ public class PricingEngineService(
             IsValid: true,
             Code: promoCode.Code,
             DiscountAmount: discountAmount,
-            DiscountPercentage: promoCode.DiscountPercentage
+            DiscountPercentage: promoCode.DiscountPercentage,
+            PromoCodeId: promoCode.Id,
+            Outcome: PromoCodeValidationOutcome.Valid,
+            TrialExtensionDays: promoCode.Type == PromoCodeType.FreeTrialExtension ? promoCode.FreeTrialExtensionDays : null,
+            FreeMonthsGranted: promoCode.Type == PromoCodeType.FreeMonths ? promoCode.DurationMonths : null
         );
     }
 

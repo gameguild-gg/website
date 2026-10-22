@@ -79,6 +79,17 @@ public static class PromoSqliteTestSupport
                 b.HasKey(x => new { x.PromoCodeId, x.UserId });
             });
 
+            modelBuilder.Entity<PromoCodeValidationAttempt>(b =>
+            {
+                b.HasKey(x => x.Id);
+                b.HasIndex(x => x.PromoCodeId);
+                b.HasIndex(x => x.Code);
+                b.HasIndex(x => x.AttemptedAt);
+                b.HasIndex(x => x.UserId);
+                b.Property(x => x.Code).HasMaxLength(50);
+                b.Property(x => x.ErrorMessage).HasMaxLength(300);
+            });
+
             // Product enters the subset model through the PromoCode.ProductId foreign-key
             // pairing; its two bundle collections (BundleItems/IncludedInBundles) are
             // ambiguous by convention, so every Product navigation is ignored to keep the

@@ -26,6 +26,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="StackingPriority">Priority for stacking</param>
 /// <param name="CampaignId">Campaign identifier for tracking</param>
 /// <param name="ProductId">Specific product ID (null = all products)</param>
+/// <param name="PlanId">Specific subscription plan ID (null = not plan-scoped)</param>
 /// <param name="UsageCount">Current usage count</param>
 /// <param name="CreatedAt">Creation timestamp</param>
 /// <param name="UpdatedAt">Last update timestamp</param>
@@ -55,7 +56,8 @@ public sealed record PromoCodeDto(
     Guid? ProductId,
     int UsageCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    Guid? PlanId = null
 );
 
 /// <summary>
@@ -66,12 +68,20 @@ public sealed record PromoCodeDto(
 /// <param name="ErrorMessage">Error message if invalid</param>
 /// <param name="DiscountAmount">Calculated discount amount</param>
 /// <param name="DiscountPercentage">Discount percentage applied</param>
+/// <param name="PromoCodeId">ID of the resolved promo code (null when the code was not found)</param>
+/// <param name="Outcome">Structured outcome used for conversion tracking (null on legacy callers)</param>
+/// <param name="TrialExtensionDays">Trial days granted (FreeTrialExtension codes only)</param>
+/// <param name="FreeMonthsGranted">Billing periods granted (FreeMonths codes only)</param>
 public sealed record PromoCodeValidationResult(
     bool IsValid,
     string? Code = null,
     string? ErrorMessage = null,
     decimal DiscountAmount = 0,
-    decimal? DiscountPercentage = null
+    decimal? DiscountPercentage = null,
+    Guid? PromoCodeId = null,
+    PromoCodeValidationOutcome? Outcome = null,
+    int? TrialExtensionDays = null,
+    int? FreeMonthsGranted = null
 );
 
 /// <summary>
@@ -189,6 +199,8 @@ public sealed record PricingCalculationResult(
 /// <param name="RedemptionRate">Uses divided by total MaxUses capacity (null when no code declares limits)</param>
 /// <param name="TopCodes">Codes ranked by uses within the window</param>
 /// <param name="ExpiringCodes">Campaign codes expiring within the next 30 days</param>
+/// <param name="TotalValidationAttempts">Validation attempts recorded for campaign codes within the window (conversion denominator)</param>
+/// <param name="ConversionRate">Recorded uses divided by validation attempts (null when no attempts were recorded)</param>
 public sealed record CampaignPerformanceDto(
     string CampaignId,
     DateTime? WindowStart,
@@ -201,7 +213,9 @@ public sealed record CampaignPerformanceDto(
     decimal AverageDiscountPerUse,
     decimal? RedemptionRate,
     IReadOnlyList<CampaignTopCodeDto> TopCodes,
-    IReadOnlyList<CampaignExpiringCodeDto> ExpiringCodes
+    IReadOnlyList<CampaignExpiringCodeDto> ExpiringCodes,
+    int TotalValidationAttempts = 0,
+    decimal? ConversionRate = null
 );
 
 /// <summary>

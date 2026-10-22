@@ -13,6 +13,7 @@ namespace GameGuild.Commerce.Products;
 [Index(nameof(ValidFrom))]
 [Index(nameof(ValidUntil))]
 [Index(nameof(CampaignId))]
+[Index(nameof(PlanId))]
 [Index(nameof(IsActive), nameof(ValidUntil))]
 public class PromoCode : EntityBase
 {
@@ -103,6 +104,13 @@ public class PromoCode : EntityBase
     /// <summary>Navigation property to the specific product (if applicable)</summary>
     [ForeignKey(nameof(ProductId))]
     public virtual Product? Product { get; set; }
+
+    /// <summary>
+    /// Specific subscription plan (GameGuild.Commerce.Subscriptions.SubscriptionPlan) this code
+    /// applies to (null = not plan-scoped). Plain reference — no cross-module FK; the plan's
+    /// existence is validated by the create/update command validators (issue #418).
+    /// </summary>
+    public Guid? PlanId { get; set; }
 
     /// <summary>Foreign key to the user who created this promo code</summary>
     [Required]

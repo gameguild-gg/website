@@ -33,6 +33,7 @@ public sealed class ApplyPromoCodesCommandHandler(
             request.PromoCodes,
             request.ProductId,
             request.UserId,
+            request.PlanId,
             cancellationToken).ConfigureAwait(false);
 
         var usageRecorded = false;
@@ -65,6 +66,7 @@ public sealed class ApplyPromoCodesCommandHandler(
                     promoCode.Currency,
                     perCodeKey,
                     request.OrderId,
+                    null,
                     null,
                     cancellationToken).ConfigureAwait(false);
 

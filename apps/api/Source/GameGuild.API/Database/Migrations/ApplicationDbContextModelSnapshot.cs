@@ -4627,6 +4627,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<Guid?>("PlanId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uuid");
 
@@ -4662,6 +4665,8 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("PlanId");
 
                     b.HasIndex("ProductId");
 
@@ -4703,6 +4708,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uuid");
 
@@ -4710,6 +4718,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("PromoCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("TenantId")
@@ -4733,7 +4744,11 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
+                    b.HasIndex("InvoiceId");
+
                     b.HasIndex("PromoCodeId");
+
+                    b.HasIndex("SubscriptionId");
 
                     b.HasIndex("UsedAt");
 
@@ -4766,6 +4781,62 @@ namespace GameGuild.API.Database.Migrations
                     b.HasKey("PromoCodeId", "UserId");
 
                     b.ToTable("promo_code_user_usage_counters");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Products.PromoCodeValidationAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AttemptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("PromoCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttemptedAt");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("PromoCodeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("promo_code_validation_attempts");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PromoStackingRule", b =>

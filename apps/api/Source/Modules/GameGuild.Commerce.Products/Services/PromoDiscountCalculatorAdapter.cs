@@ -21,7 +21,7 @@ public sealed class PromoDiscountCalculatorAdapter(IPricingEngineService pricing
         ArgumentNullException.ThrowIfNull(request);
 
         var result = await _pricingEngineService
-            .ApplyPromoCodesAsync(request.OrderAmount, request.PromoCodes, productId: null, request.UserId, cancellationToken)
+            .ApplyPromoCodesAsync(request.OrderAmount, request.PromoCodes, productId: null, request.UserId, planId: null, cancellationToken)
             .ConfigureAwait(false);
 
         var applied = result.AppliedCodes

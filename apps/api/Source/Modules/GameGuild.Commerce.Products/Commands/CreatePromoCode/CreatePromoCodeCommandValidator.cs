@@ -1,4 +1,5 @@
 using FluentValidation;
+using GameGuild.Commerce.Subscriptions;
 
 namespace GameGuild.Commerce.Products;
 
@@ -6,13 +7,16 @@ namespace GameGuild.Commerce.Products;
 /// Validator for CreatePromoCodeCommand. Codes are validated on their normalized
 /// form (trim + uppercase) so lowercase input is accepted and normalized, while the
 /// stored format must match the pattern <c>^[A-Z0-9-]{3,50}$</c> (no underscores).
+/// A plan-scoped code (issue #418) must reference an existing subscription plan.
 /// </summary>
 public sealed class CreatePromoCodeCommandValidator : AbstractValidator<CreatePromoCodeCommand>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CreatePromoCodeCommandValidator"/> class.
+    /// The plan repository is optional: validators constructed without it (unit tests)
+    /// skip the plan-existence persistence check.
     /// </summary>
-    public CreatePromoCodeCommandValidator()
+    public CreatePromoCodeCommandValidator(ISubscriptionPlanRepository? planRepository = null)
     {
         RuleFor(x => x.Code)
             .NotEmpty()
@@ -120,5 +124,11 @@ public sealed class CreatePromoCodeCommandValidator : AbstractValidator<CreatePr
             .MaximumLength(100)
             .WithMessage("Campaign identifier cannot exceed 100 characters.")
             .When(x => !string.IsNullOrWhiteSpace(x.CampaignId));
+
+        RuleFor(x => x.PlanId)
+            .MustAsync((planId, cancellationToken) =>
+                PromoPlanEligibility.PlanExistsOrNullAsync(planRepository, planId, cancellationToken))
+            .WithMessage("The subscription plan referenced by PlanId does not exist.")
+            .When(x => x.PlanId.HasValue);
     }
 }

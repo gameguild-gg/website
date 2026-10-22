@@ -12,11 +12,13 @@ namespace GameGuild.Commerce.Products;
 /// <param name="UserId">Optional user ID for user-specific validation and usage recording</param>
 /// <param name="IdempotencyKey">Optional replay-protection key; repeated submissions of the same key never count twice</param>
 /// <param name="OrderId">Optional order linkage recorded with the usage</param>
+/// <param name="PlanId">Optional subscription plan ID for plan-scoped codes (issue #418)</param>
 public sealed record ApplyPromoCodesCommand(
     decimal OrderAmount,
     List<string> PromoCodes,
     Guid? ProductId = null,
     Guid? UserId = null,
     string? IdempotencyKey = null,
-    Guid? OrderId = null
+    Guid? OrderId = null,
+    Guid? PlanId = null
 ) : ICommand<PromoCodeApplicationResult>;

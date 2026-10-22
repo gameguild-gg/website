@@ -80,6 +80,7 @@ public sealed class DeactivatePromoCodeHandler(IPromoCodeRepository repository) 
 /// <param name="StackingPriority">Optional stacking priority</param>
 /// <param name="CampaignId">Optional campaign identifier</param>
 /// <param name="ProductId">Optional product ID</param>
+/// <param name="PlanId">Optional subscription plan ID (issue #418)</param>
 public sealed record PatchPromoCodeCommand(
     Guid PromoCodeId,
     string? Name = null,
@@ -101,7 +102,8 @@ public sealed record PatchPromoCodeCommand(
     bool? IsExclusive = null,
     int? StackingPriority = null,
     string? CampaignId = null,
-    Guid? ProductId = null
+    Guid? ProductId = null,
+    Guid? PlanId = null
 ) : ICommand<PromoCodeDto>;
 
 /// <summary>
@@ -198,7 +200,11 @@ public sealed class PatchPromoCodeHandler(IPromoCodeRepository repository) : ICo
         {
             promoCode.ProductId = request.ProductId;
         }
-        
+        if (request.PlanId.HasValue)
+        {
+            promoCode.PlanId = request.PlanId;
+        }
+
         promoCode.Touch();
         
         await repository.UpdateAsync(promoCode, cancellationToken).ConfigureAwait(false);

@@ -105,7 +105,8 @@ public static class ProductMappingExtensions
             promoCode.ProductId,
             usageCount ?? promoCode.CurrentUses,
             promoCode.CreatedAt,
-            promoCode.UpdatedAt
+            promoCode.UpdatedAt,
+            promoCode.PlanId
         );
     }
 

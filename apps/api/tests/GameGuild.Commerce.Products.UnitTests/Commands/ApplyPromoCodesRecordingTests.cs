@@ -56,12 +56,12 @@ public class ApplyPromoCodesRecordingTests
     {
         var promo = Promo("SAVE20");
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("SAVE20", 20m)));
         _promoRepo.Setup(r => r.GetByCodeAsync("SAVE20", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
         var recordedUsage = new PromoCodeUse { Id = Guid.NewGuid(), PromoCodeId = promo.Id };
-        _recorder.Setup(r => r.RecordAsync(promo, It.IsAny<Guid>(), 20m, "USD", It.IsAny<string?>(), null, null, It.IsAny<CancellationToken>()))
+        _recorder.Setup(r => r.RecordAsync(promo, It.IsAny<Guid>(), 20m, "USD", It.IsAny<string?>(), null, null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoUsageRecordingStatus.Recorded, recordedUsage));
 
         var command = new ApplyPromoCodesCommand(100m, ["SAVE20"], UserId: Guid.NewGuid(), IdempotencyKey: "checkout-1");
@@ -77,6 +77,7 @@ public class ApplyPromoCodesRecordingTests
             "checkout-1:code:SAVE20",
             null,
             null,
+            It.IsAny<Guid?>(),
             It.IsAny<CancellationToken>()), Times.Once);
         _audit.Verify(a => a.LogRedemptionAsync(command.UserId!.Value, "SAVE20", 20m, "USD", recordedUsage.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -86,11 +87,11 @@ public class ApplyPromoCodesRecordingTests
     {
         var promo = Promo("SAVE20");
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("SAVE20", 20m)));
         _promoRepo.Setup(r => r.GetByCodeAsync("SAVE20", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
-        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoUsageRecordingStatus.Replay, new PromoCodeUse()));
 
         var command = new ApplyPromoCodesCommand(100m, ["SAVE20"], UserId: Guid.NewGuid(), IdempotencyKey: "checkout-1");
@@ -106,11 +107,11 @@ public class ApplyPromoCodesRecordingTests
     {
         var promo = Promo("SAVED-OUT");
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("SAVED-OUT", 30m)));
         _promoRepo.Setup(r => r.GetByCodeAsync("SAVED-OUT", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
-        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoUsageRecordingStatus.RejectedTotalLimit, (PromoCodeUse?)null));
 
         var command = new ApplyPromoCodesCommand(100m, ["SAVED-OUT"], UserId: Guid.NewGuid(), IdempotencyKey: "checkout-2");
@@ -128,11 +129,11 @@ public class ApplyPromoCodesRecordingTests
     {
         var promo = Promo("ONCEONLY");
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("ONCEONLY", 10m)));
         _promoRepo.Setup(r => r.GetByCodeAsync("ONCEONLY", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
-        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoUsageRecordingStatus.RejectedPerUserLimit, (PromoCodeUse?)null));
 
         var command = new ApplyPromoCodesCommand(100m, ["ONCEONLY"], UserId: Guid.NewGuid(), IdempotencyKey: "checkout-3");
@@ -146,7 +147,7 @@ public class ApplyPromoCodesRecordingTests
     public async Task Handle_WithoutUserId_ComputesOnly_DoesNotRecord()
     {
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, null, It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("ANON", 5m)));
 
         var command = new ApplyPromoCodesCommand(100m, ["ANON"]);
@@ -162,11 +163,11 @@ public class ApplyPromoCodesRecordingTests
     {
         var promo = Promo("NOKEY");
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("NOKEY", 5m)));
         _promoRepo.Setup(r => r.GetByCodeAsync("NOKEY", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
-        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoUsageRecordingStatus.Recorded, new PromoCodeUse()));
 
         var command = new ApplyPromoCodesCommand(100m, ["NOKEY"], UserId: Guid.NewGuid(), OrderId: Guid.NewGuid());
@@ -181,6 +182,7 @@ public class ApplyPromoCodesRecordingTests
             It.Is<string>(key => key.StartsWith("apply:", StringComparison.Ordinal) && key.EndsWith(":code:NOKEY")),
             command.OrderId,
             null,
+            It.IsAny<Guid?>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -189,11 +191,11 @@ public class ApplyPromoCodesRecordingTests
     {
         var promo = Promo("SAVE20");
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("SAVE20", 20m)));
         _promoRepo.Setup(r => r.GetByCodeAsync("SAVE20", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
-        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoUsageRecordingStatus.Recorded, new PromoCodeUse()));
 
         var command = new ApplyPromoCodesCommand(100m, ["SAVE20"], UserId: Guid.NewGuid(), IdempotencyKey: "checkout-9", OrderId: Guid.NewGuid());
@@ -219,7 +221,7 @@ public class ApplyPromoCodesRecordingTests
     public async Task Handle_SkipsLedgerRecording_WhenNoStableCorrelationKeyExists()
     {
         var engine = new Mock<IPricingEngineService>();
-        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EngineResult(("ANON", 5m)));
 
         var command = new ApplyPromoCodesCommand(100m, ["ANON"]);
