@@ -87,6 +87,7 @@ public sealed class EntityChangeAuditSaveEntrypointTests
 
         public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
         {
+            Assert.IsType<ApplicationDbContext>(eventData.Context);
             Sync++;
             return result;
         }
@@ -94,6 +95,7 @@ public sealed class EntityChangeAuditSaveEntrypointTests
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
             DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {
+            Assert.IsType<ApplicationDbContext>(eventData.Context);
             Async++;
             return ValueTask.FromResult(result);
         }

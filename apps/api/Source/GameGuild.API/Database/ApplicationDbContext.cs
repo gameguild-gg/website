@@ -67,10 +67,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         SaveChangesCoreAsync(useAsync: false, acceptAllChangesOnSuccess, CancellationToken.None)
             .GetAwaiter().GetResult();
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+    public Task<int> SaveChangesAsync() => SaveChangesAsync(CancellationToken.None);
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken) =>
         SaveChangesAsync(acceptAllChangesOnSuccess: true, cancellationToken);
 
-    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default) =>
+    public Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess, CancellationToken.None);
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken) =>
         SaveChangesCoreAsync(useAsync: true, acceptAllChangesOnSuccess, cancellationToken);
 
     // Every public persistence overload must run the same audit/outbox/version pipeline.
