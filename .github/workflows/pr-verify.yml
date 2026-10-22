@@ -133,16 +133,36 @@ jobs:
       - name: Generate Web route types
         run: pnpm --filter @game-guild/web exec next typegen
       - name: Lint Web
+        id: web-lint
         env:
           NODE_OPTIONS: --max-old-space-size=12288
-        run: pnpm --filter @game-guild/web lint
+        run: pnpm --filter @game-guild/web lint --format json --output-file "$RUNNER_TEMP/web-lint.json"
+      - name: Preserve Web lint diagnostics
+        if: ${{ failure() && steps.web-lint.outcome == 'failure' }}
+        env:
+          CANDIDATE_HEAD: ${{ needs.classify.outputs.headSha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/web-lint-evidence"
+          cp "$RUNNER_TEMP/web-lint.json" "$RUNNER_TEMP/web-lint-evidence/eslint.json"
+          printf '%s\n' "$CANDIDATE_HEAD" > "$RUNNER_TEMP/web-lint-evidence/head.txt"
+          git -c core.commitGraph=false rev-parse HEAD > "$RUNNER_TEMP/web-lint-evidence/checkout.txt"
+          git -c core.commitGraph=false rev-parse 'HEAD^{tree}' > "$RUNNER_TEMP/web-lint-evidence/tree.txt"
+          sha256sum apps/web/eslint.config.mjs apps/web/eslint-suppressions.json > "$RUNNER_TEMP/web-lint-evidence/config-sha256.txt"
+      - name: Upload Web lint diagnostics
+        if: ${{ failure() && steps.web-lint.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: web-lint-${{ needs.classify.outputs.headSha }}
+          path: ${{ runner.temp }}/web-lint-evidence
+          if-no-files-found: error
       - name: Lint suppression budget ratchet
         run: node scripts/lint-budget.mjs
       - name: Typecheck Web
         run: pnpm --filter @game-guild/web exec tsc --noEmit
       - name: Validate quiz grading audit contracts
         run: |
-          pnpm --filter @game-guild/web test:grading:scenario
+          pnpm --filter @game-guild/web test:grading:validation
+          pnpm --filter @game-guild/grading test
           pnpm --filter @game-guild/grading-adapter-quiz test
       - name: Test Web
         run: pnpm --filter @game-guild/web exec vitest run --maxWorkers=4
@@ -363,7 +383,7 @@ jobs:
         env:
           ECONOMY_GATE_PROFILE: api-bundle
         run: bash scripts/ci/verify-economy.sh
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-api-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/economy-bundles/api
@@ -371,7 +391,7 @@ jobs:
           compression-level: 0
       - name: Upload API producer evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-api-evidence-${{ github.event.pull_request.head.sha }}
           path: |
@@ -392,7 +412,7 @@ jobs:
         env:
           ECONOMY_GATE_PROFILE: client-bundle
         run: bash scripts/ci/verify-economy.sh
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-client-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/economy-bundles/client
@@ -400,7 +420,7 @@ jobs:
           compression-level: 0
       - name: Upload client producer evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-client-evidence-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/economy
@@ -422,7 +442,7 @@ jobs:
         run: bash scripts/ci/verify-economy.sh
       - name: Upload Economy coverage and provider evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-coverage-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/economy
@@ -454,7 +474,7 @@ jobs:
         run: bash scripts/ci/verify-economy.sh
       - name: Upload regression evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: economy-regression-${{ matrix.shard }}-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/economy

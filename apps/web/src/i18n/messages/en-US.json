@@ -16,7 +16,19 @@
     "walletConnecting": "Connecting…",
     "walletSigning": "Signing…",
     "walletConnected": "Connected:",
-    "walletDisconnect": "Disconnect"
+    "walletDisconnect": "Disconnect",
+    "mfa": {
+      "title": "Two-factor authentication",
+      "description": "Confirm your sign-in with your authenticator app. This sign-in challenge expires after five minutes.",
+      "methodLabel": "Verification method",
+      "methodTotp": "Authenticator app",
+      "methodBackupCode": "Recovery code",
+      "codeLabel": "Authentication code",
+      "submit": "Verify and sign in",
+      "startAgain": "Start sign-in again",
+      "noChallenge": "No active two-factor challenge. Start signing in to receive a new code.",
+      "backToSignIn": "Back to sign in"
+    }
   },
   "magicLink": {
     "request": {

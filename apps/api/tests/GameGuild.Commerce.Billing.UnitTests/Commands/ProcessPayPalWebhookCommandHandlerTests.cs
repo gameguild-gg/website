@@ -16,6 +16,7 @@ public class ProcessPayPalWebhookCommandHandlerTests
         {
             ExternalEventId = "tx",
             Provider = PaymentProviders.PayPal,
+            IsProcessed = true,
             ProcessedAt = DateTime.UtcNow.AddMinutes(-1)
         };
 
@@ -47,6 +48,7 @@ public class ProcessPayPalWebhookCommandHandlerTests
         {
             ExternalEventId = "tx",
             Provider = PaymentProviders.PayPal,
+            IsProcessed = true,
             ProcessedAt = DateTime.UtcNow.AddMinutes(-1)
         };
 

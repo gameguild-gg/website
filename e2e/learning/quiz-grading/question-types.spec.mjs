@@ -1,14 +1,14 @@
 import { expect, test } from "playwright/test";
-import { getValidationCase } from "../../../apps/web/scripts/quiz-grading-scenario/capability-catalog.mjs";
+import { getValidationCase } from "../../../apps/web/src/lib/grading-scenarios/adapters/quiz/capability-catalog.mjs";
 import {
   checkpointIndex,
   expectedFinalScore,
   getScenarioDefinition,
   hasInstructorReview,
   selectQuizDefinitions,
-} from "../../../apps/web/scripts/quiz-grading-scenario/definitions.mjs";
-import { readManifest } from "../../../apps/web/scripts/quiz-grading-scenario/manifest.mjs";
-import { answerQuestionTypeCase } from "../../../apps/web/scripts/quiz-grading-scenario/question-type-drivers.mjs";
+} from "../../../apps/web/src/lib/grading-scenarios/adapters/quiz/definitions.mjs";
+import { readManifest } from "../../../apps/web/src/lib/grading-scenarios/adapters/quiz/manifest.server.mjs";
+import { answerQuestionTypeCase } from "./support/question-type-drivers.mjs";
 import {
   advanceScenarioQuiz,
   captureValidationEvidence,
@@ -19,7 +19,7 @@ import {
   signInScenarioPersona,
   startActivity,
   synchronizeScenarioSubmission,
-} from "./browser-support.mjs";
+} from "./support/browser-support.mjs";
 
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 test.skip(!process.env.E2E_RUN, "Set E2E_RUN=1 to execute the local scenario.");

@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - develop
+      - "feature/**"
   workflow_dispatch:
     inputs:
       publish_packages:
@@ -221,7 +222,7 @@ jobs:
         run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --prepare
 
       - name: Upload verified Toolchain CDN for Web
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ${{ steps.web-release-provenance.outputs.artifact-name }}
           path: |

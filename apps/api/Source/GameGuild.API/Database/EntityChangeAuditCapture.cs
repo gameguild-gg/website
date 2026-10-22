@@ -40,7 +40,7 @@ internal static class EntityChangeAuditCapture
     // Auditing the audit stores themselves would recurse; durable transport and data-protection
     // keys are system-internal write-ahead records, not business entities.
     private static readonly ConcurrentDictionary<Type, bool> AuditStoreTypeCache = new();
-    private static readonly ConcurrentDictionary<(Type EntityType, string PropertyName), bool> SensitivePropertyCache = new();
+    private static readonly ConcurrentDictionary<PropertyInfo, bool> SensitivePropertyCache = new();
 
     /// <summary>
     ///     Captures audit records for all tracked entity changes and adds them to the context.
@@ -116,7 +116,7 @@ internal static class EntityChangeAuditCapture
                 continue;
             }
 
-            values[property.Metadata.Name] = IsSensitiveProperty(entry.Metadata.ClrType, property.Metadata.Name)
+            values[property.Metadata.Name] = IsSensitiveProperty(property)
                 ? RedactedValue
                 : (useOriginalValues ? property.OriginalValue : property.CurrentValue);
         }
@@ -124,11 +124,12 @@ internal static class EntityChangeAuditCapture
         return values.Count == 0 ? null : SafeSerialize(values);
     }
 
-    private static bool IsSensitiveProperty(Type entityType, string propertyName) =>
-        SensitivePropertyCache.GetOrAdd((entityType, propertyName), static key =>
-            key.EntityType.GetProperty(key.PropertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                is { } property
-            && property.IsDefined(typeof(AuditSensitiveAttribute), inherit: true));
+    // EF has already resolved hidden/inherited members. Looking the name up again on
+    // the CLR type can be ambiguous and drop the entire entity's audit record.
+    private static bool IsSensitiveProperty(PropertyEntry property) =>
+        property.Metadata.PropertyInfo is { } mappedProperty
+        && SensitivePropertyCache.GetOrAdd(mappedProperty, static member =>
+            Attribute.IsDefined(member, typeof(AuditSensitiveAttribute), inherit: true));
 
     private static string SafeSerialize(Dictionary<string, object?> values)
     {
