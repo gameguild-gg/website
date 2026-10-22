@@ -110,6 +110,7 @@ public class ModuleAndInfrastructureTests
             Mock.Of<IPromoCodeRepository>(),
             Mock.Of<IPromoStackingRuleRepository>(),
             Mock.Of<IPricingRuleRepository>(),
+            Mock.Of<IPricingExperimentService>(),
             new MemoryCache(new MemoryCacheOptions()));
         svc.Should().NotBeNull();
     }
