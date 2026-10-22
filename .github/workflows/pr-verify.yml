@@ -133,9 +133,28 @@ jobs:
       - name: Generate Web route types
         run: pnpm --filter @game-guild/web exec next typegen
       - name: Lint Web
+        id: web-lint
         env:
           NODE_OPTIONS: --max-old-space-size=12288
-        run: pnpm --filter @game-guild/web lint
+        run: pnpm --filter @game-guild/web lint --format json --output-file "$RUNNER_TEMP/web-lint.json"
+      - name: Preserve Web lint diagnostics
+        if: ${{ failure() && steps.web-lint.outcome == 'failure' }}
+        env:
+          CANDIDATE_HEAD: ${{ needs.classify.outputs.headSha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/web-lint-evidence"
+          cp "$RUNNER_TEMP/web-lint.json" "$RUNNER_TEMP/web-lint-evidence/eslint.json"
+          printf '%s\n' "$CANDIDATE_HEAD" > "$RUNNER_TEMP/web-lint-evidence/head.txt"
+          git -c core.commitGraph=false rev-parse HEAD > "$RUNNER_TEMP/web-lint-evidence/checkout.txt"
+          git -c core.commitGraph=false rev-parse 'HEAD^{tree}' > "$RUNNER_TEMP/web-lint-evidence/tree.txt"
+          sha256sum apps/web/eslint.config.mjs apps/web/eslint-suppressions.json > "$RUNNER_TEMP/web-lint-evidence/config-sha256.txt"
+      - name: Upload Web lint diagnostics
+        if: ${{ failure() && steps.web-lint.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: web-lint-${{ needs.classify.outputs.headSha }}
+          path: ${{ runner.temp }}/web-lint-evidence
+          if-no-files-found: error
       - name: Lint suppression budget ratchet
         run: node scripts/lint-budget.mjs
       - name: Typecheck Web

@@ -94,6 +94,20 @@ jobs:
           assert.equal(persistence.sessionId, browser.sessionId);
           assert.equal(persistence.ownSessionTerminated, true);
           assert.equal(persistence.unrelatedSessionsUnchanged, 2);
+          const trust = JSON.parse(readFileSync('artifacts/session-state/trust-browser.json', 'utf8'));
+          const storedTrust = JSON.parse(readFileSync('artifacts/session-state/trust-persistence.json', 'utf8'));
+          assert.equal(trust.passed, true);
+          assert.equal(trust.cases.length, 4);
+          assert.ok(trust.cases.every(test => test.outcome === 'Passed'));
+          assert.equal(trust.mockedAuthenticationOrTransport, false);
+          assert.equal(trust.sessionId, browser.sessionId);
+          assert.equal(storedTrust.passed, true);
+          assert.equal(storedTrust.sessionId, trust.sessionId);
+          assert.equal(storedTrust.trustedDeviceId, trust.trustedDeviceId);
+          assert.equal(storedTrust.foreignTrustedDeviceId, trust.foreignTrustedDeviceId);
+          assert.equal(storedTrust.renewedSameIdentity, true);
+          assert.equal(storedTrust.ownTrustRevoked, true);
+          assert.equal(storedTrust.foreignTrustUnchanged, true);
           NODE
       - name: Retain source-bound acceptance evidence
         if: always()
