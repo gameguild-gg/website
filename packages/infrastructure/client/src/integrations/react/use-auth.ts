@@ -36,6 +36,26 @@ import { assertSafeServiceUrl } from '../../runtime/security/safe-remote-url.js'
 import { SessionContext } from './session-provider.js';
 import { MfaRequiredError } from '../../runtime/auth/errors.js';
 
+const MFA_CHALLENGE_STORAGE_KEY = 'gg.auth.mfaChallenge';
+
+function readStoredMfaChallenge(): UseAuthReturn['mfaChallenge'] {
+  /* v8 ignore start */
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(MFA_CHALLENGE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { mfaToken?: unknown; availableMethods?: unknown };
+    if (typeof parsed.mfaToken !== 'string' || !Array.isArray(parsed.availableMethods)) return null;
+    return {
+      mfaToken: parsed.mfaToken,
+      availableMethods: parsed.availableMethods.filter((m): m is string => typeof m === 'string'),
+    };
+  } catch {
+    return null;
+  }
+  /* v8 ignore stop */
+}
+
 /**
  * Options for client-side authentication actions
  */
@@ -48,7 +68,7 @@ export interface AuthActionOptions {
  * Return type of useAuth
  */
 export interface UseAuthReturn {
-  /** Expiring first-factor challenge held only in this mounted hook. */
+  /** Expiring first-factor challenge, persisted in sessionStorage so it survives route navigation. */
   mfaChallenge: { mfaToken: string; availableMethods: string[] } | null;
   clearMfa: () => void;
   /** Sign in with a provider */
@@ -93,7 +113,7 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [mfaChallenge, setMfaChallenge] = useState<UseAuthReturn['mfaChallenge']>(null);
+  const [mfaChallenge, setMfaChallenge] = useState<UseAuthReturn['mfaChallenge']>(() => readStoredMfaChallenge());
   const csrfTokenRef = useRef<string | null>(null);
   const basePathRef = useRef(basePath);
 
@@ -168,13 +188,20 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
             const availableMethods = Array.isArray(errorData.availableMethods)
               ? errorData.availableMethods.filter((m: unknown): m is string => typeof m === 'string')
               : [];
-            setMfaChallenge({ mfaToken: errorData.mfaToken, availableMethods });
+            const challenge = { mfaToken: errorData.mfaToken, availableMethods };
+            /* v8 ignore start */
+            try { window.sessionStorage.setItem(MFA_CHALLENGE_STORAGE_KEY, JSON.stringify(challenge)); } catch { /* storage unavailable */ }
+            /* v8 ignore stop */
+            setMfaChallenge(challenge);
             throw new MfaRequiredError(undefined, { mfaToken: errorData.mfaToken, availableMethods });
           }
           throw new Error((errorData as Record<string, string>).message || (errorData as Record<string, string>).detail || 'Sign-in failed');
         }
 
         const data = await response.json();
+        /* v8 ignore start */
+        try { window.sessionStorage.removeItem(MFA_CHALLENGE_STORAGE_KEY); } catch { /* storage unavailable */ }
+        /* v8 ignore stop */
         setMfaChallenge(null);
 
         // If the response has a URL (OAuth redirect)
@@ -310,6 +337,9 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
   const clearError = useCallback(() => setError(null), []);
 
   const clearMfa = useCallback(() => {
+    /* v8 ignore start */
+    try { window.sessionStorage.removeItem(MFA_CHALLENGE_STORAGE_KEY); } catch { /* storage unavailable */ }
+    /* v8 ignore stop */
     setMfaChallenge(null);
     setError(null);
   }, []);
