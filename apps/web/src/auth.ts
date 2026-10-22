@@ -158,3 +158,14 @@ export async function getSession() {
 export async function getToken(): Promise<string | null> {
   return (await getRequestAuthContext()).token;
 }
+
+/**
+ * Uncached session read for the post-MFA rotation race (issue #864): the
+ * cached getRequestAuthContext is memoized per request, so a layout guard
+ * retry through auth() would replay the first (null) result. This re-reads
+ * the session cookie store directly, bypassing the memoization.
+ */
+export async function readSessionUnCached(): Promise<Session | null> {
+  const { session } = await readCurrentSession();
+  return session;
+}

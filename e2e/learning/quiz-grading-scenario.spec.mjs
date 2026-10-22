@@ -7,7 +7,7 @@ import {
 import {
   authenticatePersona,
   request,
-} from "../../apps/web/scripts/quiz-grading-scenario/api.mjs";
+} from "../../apps/web/src/lib/grading-scenarios/adapters/quiz/api.server.mjs";
 import {
   checkpointIndex,
   expectedFinalScore,
@@ -16,17 +16,17 @@ import {
   hasPeerReview,
   hasSelfReview,
   selectQuizDefinitions,
-} from "../../apps/web/scripts/quiz-grading-scenario/definitions.mjs";
-import { getValidationCase } from "../../apps/web/scripts/quiz-grading-scenario/capability-catalog.mjs";
+} from "../../apps/web/src/lib/grading-scenarios/adapters/quiz/definitions.mjs";
+import { getValidationCase } from "../../apps/web/src/lib/grading-scenarios/adapters/quiz/capability-catalog.mjs";
 import {
   readManifest,
   recomputeManifestCheckpoint,
   storageStatePath,
   writeManifest,
-} from "../../apps/web/scripts/quiz-grading-scenario/manifest.mjs";
-import { validationEvidenceDirectory } from "../../apps/web/scripts/quiz-grading-scenario/report.mjs";
-import { buildScenarioUrls } from "../../apps/web/scripts/quiz-grading-scenario/urls.mjs";
-import { startActivity } from "./quiz-grading/browser-support.mjs";
+} from "../../apps/web/src/lib/grading-scenarios/adapters/quiz/manifest.server.mjs";
+import { validationEvidenceDirectory } from "../../apps/web/src/lib/grading-scenarios/adapters/quiz/report.server.mjs";
+import { buildScenarioUrls } from "../../apps/web/src/lib/grading-scenarios/adapters/quiz/urls.mjs";
+import { startActivity } from "./quiz-grading/support/browser-support.mjs";
 
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 test.skip(!process.env.E2E_RUN, "Set E2E_RUN=1 to execute the local scenario.");

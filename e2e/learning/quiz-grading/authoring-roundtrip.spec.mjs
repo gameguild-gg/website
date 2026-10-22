@@ -1,14 +1,14 @@
 import { expect, test } from "playwright/test";
-import { getValidationCase } from "../../../apps/web/scripts/quiz-grading-scenario/capability-catalog.mjs";
+import { getValidationCase } from "../../../apps/web/src/lib/grading-scenarios/adapters/quiz/capability-catalog.mjs";
 import {
   getScenarioDefinition,
   selectQuizDefinitions,
-} from "../../../apps/web/scripts/quiz-grading-scenario/definitions.mjs";
-import { readManifest } from "../../../apps/web/scripts/quiz-grading-scenario/manifest.mjs";
+} from "../../../apps/web/src/lib/grading-scenarios/adapters/quiz/definitions.mjs";
+import { readManifest } from "../../../apps/web/src/lib/grading-scenarios/adapters/quiz/manifest.server.mjs";
 import {
   captureValidationEvidence,
   createScenarioPersona,
-} from "./browser-support.mjs";
+} from "./support/browser-support.mjs";
 
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 test.skip(!process.env.E2E_RUN, "Set E2E_RUN=1 to execute the local scenario.");
@@ -34,7 +34,6 @@ if (!scenarioKey) {
     test(`${validationCase.id}: authored projection reopens`, async ({
       browser,
     }) => {
-      test.setTimeout(120_000);
       const manifest = await readManifest(scenarioKey);
       if (!manifest.resources.quizzes[quiz.key]) {
         throw new Error(
@@ -82,6 +81,10 @@ async function expectAuthoredProjection(page, manifest, quiz, validationCase) {
     `[${manifest.marker}] ${quiz.title}`,
     { timeout: 60_000 },
   );
+
+  await expect(
+    page.locator('[data-quiz-collection-editor][data-hydrated="true"]'),
+  ).toBeVisible({ timeout: 180_000 });
 
   await page.getByRole("button", { name: "Edit question 1" }).click();
   const editor = page.getByRole("dialog", { name: "Quiz Builder" });
