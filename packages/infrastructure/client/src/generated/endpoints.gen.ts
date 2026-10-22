@@ -8209,6 +8209,26 @@ export const postDisputesRespondEndpoint = {
 } as const;
 
 /**
+ * Submit the dispute evidence bundle to the gateway: assembles every attached evidence
+ * row into one bundle, delivers it through the gateway and records the submission status
+ * on the dispute and each evidence item. Requires the `payments:admin` permission.
+ *
+ * Assembles every evidence row attached to the dispute into one bundle, submits it to the gateway and records the submission status. Requires the payments:admin permission.
+ */
+export interface PostDisputesSubmitEvidenceInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput;
+}
+export type PostDisputesSubmitEvidenceOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesSubmitEvidenceEndpoint = {
+  operationId: 'postDisputesSubmitEvidence' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:submit-evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * List the evidence attached to a dispute.
  *
  * Lists the evidence files attached to a payment dispute, newest first.
@@ -30448,6 +30468,7 @@ export const endpoints = {
   postDisputesChallenge: postDisputesChallengeEndpoint,
   postDisputesResolve: postDisputesResolveEndpoint,
   postDisputesRespond: postDisputesRespondEndpoint,
+  postDisputesSubmitEvidence: postDisputesSubmitEvidenceEndpoint,
   getDisputesEvidence: getDisputesEvidenceEndpoint,
   postDisputesEvidence: postDisputesEvidenceEndpoint,
   getDisputesStatistics: getDisputesStatisticsEndpoint,

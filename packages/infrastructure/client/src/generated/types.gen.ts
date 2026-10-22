@@ -2553,6 +2553,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   fileSize?: number | null;
   /** File URL */
   fileUrl?: string | null;
+  /** When this evidence row was included in a bundle successfully submitted to the gateway
+(issue #419 evidence submission tracking); null while it has not been submitted. The
+first submission wins so each row keeps the timestamp of when it reached the gateway. */
+  gatewaySubmittedAt?: string | null;
   integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -2677,6 +2681,11 @@ export interface CommercePaymentsDisputesControllerResolveDisputeInput {
 export interface CommercePaymentsDisputesControllerRespondDisputeInput {
   dueDateUtc?: string | null;
   status?: CommercePaymentsDisputeStatus;
+}
+
+/** Request body for submitting the evidence bundle to the gateway. */
+export interface CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput {
+  summary?: string | null;
 }
 
 /** Dispute statistics read model (issue #419). */
@@ -3056,6 +3065,11 @@ gateway values overwrite only while the dispute is unresolved. */
   evidence?: CommercePaymentsDisputeEvidence[] | null;
   /** Deadline by which evidence must be submitted to the gateway, when provided. */
   evidenceDueBy?: string | null;
+  /** When the merchant evidence bundle was submitted to the gateway (issue #419 evidence
+submission tracking). Null while no bundle has been submitted; refreshed by every
+successful submission so the deadline reminder surface can distinguish disputes whose
+evidence already reached the gateway. */
+  evidenceSubmittedAt?: string | null;
   /** Gateway dispute identifier (e.g. the Stripe `dp_...` id) when this dispute was
 reconciled from a gateway webhook (issue #419). Unique per gateway dispute. */
   gatewayDisputeId?: string | null;
@@ -24572,6 +24586,7 @@ export let CommercePaymentsDisputesControllerChallengeDisputeInputSchema: z.ZodT
 export let CommercePaymentsDisputesControllerCreateDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerCreateDisputeInput>;
 export let CommercePaymentsDisputesControllerResolveDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerResolveDisputeInput>;
 export let CommercePaymentsDisputesControllerRespondDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerRespondDisputeInput>;
+export let CommercePaymentsDisputesControllerSubmitDisputeEvidenceInputSchema: z.ZodType<CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput>;
 export let CommercePaymentsDisputeStatisticsSchema: z.ZodType<CommercePaymentsDisputeStatistics>;
 export let CommercePaymentsDisputeStatusSchema: z.ZodType<CommercePaymentsDisputeStatus>;
 export let CommercePaymentsDisputeTypeSchema: z.ZodType<CommercePaymentsDisputeType>;
@@ -28827,6 +28842,7 @@ CommercePaymentsDisputeEvidenceSchema = z.object({
   fileName: z.string().max(255).nullable().optional(),
   fileSize: z.number().int().nullable().optional(),
   fileUrl: z.string().max(1000).nullable().optional(),
+  gatewaySubmittedAt: z.string().datetime().nullable().optional(),
   integrationEvents: z
     .array(z.lazy(() => IDurableIntegrationEventSchema))
     .nullable()
@@ -28923,6 +28939,11 @@ CommercePaymentsDisputesControllerResolveDisputeInputSchema = z.object({
 CommercePaymentsDisputesControllerRespondDisputeInputSchema = z.object({
   dueDateUtc: z.string().datetime().nullable().optional(),
   status: z.lazy(() => CommercePaymentsDisputeStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput. Request body for submitting the evidence bundle to the gateway. */
+CommercePaymentsDisputesControllerSubmitDisputeEvidenceInputSchema = z.object({
+  summary: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsDisputeStatistics. Dispute statistics read model (issue #419). */
@@ -29219,6 +29240,7 @@ CommercePaymentsPaymentDisputeSchema = z.object({
     .nullable()
     .optional(),
   evidenceDueBy: z.string().datetime().nullable().optional(),
+  evidenceSubmittedAt: z.string().datetime().nullable().optional(),
   gatewayDisputeId: z.string().max(255).nullable().optional(),
   gatewayName: z.string().max(50).nullable().optional(),
   integrationEvents: z
