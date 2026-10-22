@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: qodo-ai/pr-agent@main
         env:
+          # NOTE: Actions GITHUB_TOKEN cannot call GET /user, so the log shows
+          # "_resolve_user_login ... Resource not accessible by integration: 403".
+          # Expected: pr-agent falls back to github-actions[bot]. Harmless.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_KEY: ${{ secrets.OMNI_API_KEY }}
           OPENAI__API_BASE: https://omniroute.gameguild.gg/v1
@@ -39,6 +42,13 @@ jobs:
           PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: "true"
           PR_REVIEWER__MAX_NUMBER_OF_CALLS: "100"
           PR_CODE_SUGGESTIONS__MAX_NUMBER_OF_CALLS: "100"
+          # CF free plan kills non-streaming LLM calls at ~120s (524, zone
+          # omniroute.gameguild.gg). pr-agent's litellm workaround: force
+          # streaming for this OpenAI-compatible endpoint — SSE bytes keep
+          # the CF connection alive; pr-agent aggregates the stream itself.
+          # Both keys are required together (provider AND api_base substring).
+          LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: openai
+          LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["omniroute.gameguild.gg"]'
           GITHUB_ACTION_CONFIG__AUTO_REVIEW: "true"
           GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: "true"
           GITHUB_ACTION_CONFIG__AUTO_IMPROVE: "true"
