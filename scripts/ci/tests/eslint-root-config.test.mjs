@@ -66,3 +66,27 @@ test('root config retains and verifies all three pnpm resolver priority limits',
   assert.equal(result.fatalErrorCount, 0);
   assert.deepEqual(result.messages.filter((message) => ['complexity', 'max-statements', 'max-lines-per-function'].includes(message.ruleId)), []);
 });
+
+test('root config recognizes the real shared Jest runtime helpers', async () => {
+  for (const file of ['packages/tooling/jest/src/setup.js', 'packages/tooling/jest/src/test-utils.js']) {
+    const [result] = await eslint.lintText(await readFile(path.join(repositoryRoot, file), 'utf8'), { filePath: file });
+    assert.equal(result.fatalErrorCount, 0);
+    assert.deepEqual(result.messages.filter((message) => message.ruleId === 'no-undef'), []);
+  }
+});
+
+test('root config still reports unknown references inside Jest helpers', async () => {
+  const file = 'packages/tooling/jest/src/root-config-control.js';
+  const resolved = await eslint.calculateConfigForFile(file);
+  assert.equal(resolved.rules['no-undef'][0], 2);
+  const [result] = await eslint.lintText('jest.fn(); beforeAll(() => {}); missingJestHelper();', { filePath: file });
+  assert.equal(result.fatalErrorCount, 0);
+  assert.deepEqual(result.messages.map((message) => message.ruleId), ['no-undef']);
+  assert.match(result.messages[0].message, /missingJestHelper/u);
+});
+
+test('root config does not expose Jest runtime globals to ordinary scripts', async () => {
+  const [result] = await eslint.lintText('jest.fn();', { filePath: 'scripts/ci/ordinary-helper.mjs' });
+  assert.equal(result.fatalErrorCount, 0);
+  assert.deepEqual(result.messages.map((message) => message.ruleId), ['no-undef']);
+});
