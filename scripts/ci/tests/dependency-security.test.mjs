@@ -39,7 +39,7 @@ for (const packageRoot of nextRoots) {
     const nextRequire = createRequire(join(packageRoot, "package.json"));
     assert.equal(nextRequire("./package.json").version, "16.4.1");
     assert.equal(nextRequire("@next/env/package.json").version, "16.4.1");
-    assert.equal(nextRequire("sharp/package.json").version, "0.35.5");
+    assert.equal(nextRequire("sharp").versions.sharp, "0.35.5");
   });
 }
 

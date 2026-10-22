@@ -77,3 +77,18 @@ closed even when unrelated local patches have been verified.
 This follow-up was also prepared without executing dependencies or product tests
 locally. Its own hosted frozen installation, audit, tests and composed session
 acceptance must pass before delivery. Earlier results do not certify this source.
+
+## Installed-consumer check correction
+
+At `3055dd9760d2cfa4547217daf7c9d45fc3bbe04a`, the hosted frozen installation and
+dependency audit completed. The subsequent installed-dependency suite passed 61
+of 63 cases, including the four new TOML/DOMPurify/ip-address cases. The two Next
+consumer cases failed with `ERR_PACKAGE_PATH_NOT_EXPORTED`: Sharp does not expose
+the `sharp/package.json` subpath used by the assertion.
+
+The correction resolves Sharp from each actual Next consumer and reads its public
+[`versions`](https://sharp.pixelplumbing.com/api-utility/#versions) object. The
+assertion still requires Sharp `0.35.5`, alongside Next and `@next/env` `16.4.1`.
+The existing native SVG/librsvg checks remain intact. No version assertion is
+removed or weakened, and no dependency or workflow setting changes in this fix.
+It requires a fresh hosted result; no local product execution was performed.
