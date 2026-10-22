@@ -5,21 +5,36 @@ namespace GameGuild.Identity.Authentication;
 
 /// <summary>
 ///     Handles domain-to-provider discovery for the login page: resolves the configured
-///     federation providers serving the requested email domain.
+///     federation providers — OIDC and SAML — serving the requested email domain.
 /// </summary>
 public sealed class DiscoverOidcProvidersQueryHandler(
     IOidcFederationService oidcFederationService,
-    ILogger<DiscoverOidcProvidersQueryHandler> logger
+    ILogger<DiscoverOidcProvidersQueryHandler> logger,
+    ISamlFederationService? samlFederationService = null
 ) : IQueryHandler<DiscoverOidcProvidersQuery, OidcDiscoverProviderResponse>
 {
     public Task<OidcDiscoverProviderResponse> Handle(DiscoverOidcProvidersQuery request, CancellationToken cancellationToken)
     {
         var domain = ExtractDomain(request.Email);
         var providers = oidcFederationService.FindProvidersForEmailDomain(domain);
+        var samlProviders = samlFederationService?.FindProvidersForEmailDomain(domain) ?? [];
 
-        logger.LogInformation("OIDC provider discovery matched {Count} provider(s)", providers.Count);
+        // With no SAML match the response is exactly the OIDC service's list (same
+        // instance, unsorted) — hosts without SAML providers keep their existing
+        // discovery behavior. Only a mixed result needs the deterministic merge.
+        IReadOnlyList<OidcDiscoveredProvider> allProviders = providers;
+        if (samlProviders.Count > 0)
+        {
+            allProviders = providers
+                .Concat(samlProviders)
+                .OrderBy(provider => provider.Slug, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(provider => provider.Protocol, StringComparer.Ordinal)
+                .ToList();
+        }
 
-        return Task.FromResult(new OidcDiscoverProviderResponse { Providers = providers });
+        logger.LogInformation("OIDC provider discovery matched {Count} provider(s)", allProviders.Count);
+
+        return Task.FromResult(new OidcDiscoverProviderResponse { Providers = allProviders });
     }
 
     private static string ExtractDomain(string email)
