@@ -55,6 +55,7 @@ const clientGateName = 'Test client credentials, MFA, auth factory and generator
 const clientSuites = [
   'tests/auth/providers/credentials.test.ts',
   'tests/next/auth.test.ts',
+  'tests/next/actions-extended.test.ts',
   'tests/generator',
 ];
 
@@ -65,7 +66,7 @@ function assertClientContractGate(source) {
   assert.deepEqual(command[1].trim().split(/\s+/), [
     'pnpm', '--filter', '@game-guild/client', 'exec', 'vitest', 'run',
     ...clientSuites, '--maxWorkers=1',
-  ], 'The client gate must retain all three suites and the single-worker limit');
+  ], 'The client gate must retain all required suites and the single-worker limit');
   assert.doesNotMatch(client, /continue-on-error:|allow-failure| {8}if:/);
 }
 
@@ -161,6 +162,6 @@ test('the client contract rejects a missing suite or worker bound', () => {
     assert.ok(web.includes(requirement));
     const missingRequirement = web.replace(requirement, 'missing-required-client-argument');
     assert.throws(() => assertClientContractGate(missingRequirement),
-      /The client gate must retain all three suites and the single-worker limit/);
+      /The client gate must retain all required suites and the single-worker limit/);
   }
 });
