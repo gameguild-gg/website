@@ -71,7 +71,7 @@ public class CreateSubscriptionPromoTests
         var command = CommandWithPromo(amount: 100m);
         _mockPromoCoordinator
             .Setup(c => c.QuoteForSubscriptionCreationAsync(
-                It.Is<GameGuild.Commerce.SubscriptionPromoQuoteRequest(r =>
+                It.Is<GameGuild.Commerce.SubscriptionPromoQuoteRequest>(r =>
                     r.PlanId == command.PlanId && r.Amount == 100m && r.UserId == command.CreatedByUserId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Quote(100m, 80m, new[]
@@ -90,11 +90,11 @@ public class CreateSubscriptionPromoTests
 
         _mockPromoCoordinator.Verify(
             c => c.RecordSubscriptionUsageAsync(
-                It.Is<GameGuild.Commerce.SubscriptionPromoUsageRecordRequest(r =>
+                It.Is<GameGuild.Commerce.SubscriptionPromoUsageRecordRequest>(r =>
                     r.SubscriptionId == Captured.Id &&
                     r.UserId == command.CreatedByUserId &&
                     r.IdempotencyKey == "checkout-1" &&
-                    r.AppliedCodes.Count == 1)),
+                    r.AppliedCodes.Count == 1),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -119,7 +119,7 @@ public class CreateSubscriptionPromoTests
         // The extension granted a trial the subscription did not have.
         Captured!.Status.Should().Be(SubscriptionStatus.Trialing);
         Captured.TrialEndDate.Should().NotBeNull();
-        Captured.DomainEvents.Should().Contain(e => e is TrialExtendedEvent);
+        Captured.DomainEvents.OfType<TrialExtendedEvent>().Should().NotBeEmpty();
     }
 
     [Fact]
@@ -139,7 +139,8 @@ public class CreateSubscriptionPromoTests
         await _handler.Handle(command, CancellationToken.None);
 
         Captured.Should().NotBeNull();
-        Captured!.DomainEvents.Should().Contain(e => e is BillingPeriodsSkippedEvent skipped && skipped.SkippedPeriods == 2);
+        Captured!.DomainEvents.OfType<BillingPeriodsSkippedEvent>()
+            .Should().ContainSingle().Which.SkippedPeriods.Should().Be(2);
     }
 
     [Fact]

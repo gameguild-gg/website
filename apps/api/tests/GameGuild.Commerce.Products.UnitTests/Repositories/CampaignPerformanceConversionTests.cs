@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.Commerce.Products;
+using GameGuild.Tests.Commerce.Products.Unit.Support;
 using Xunit;
 
 namespace GameGuild.Tests.Commerce.Products.Unit.Repositories;

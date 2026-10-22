@@ -32,7 +32,8 @@ public class SubscriptionTrialExtensionTests
         subscription.Status.Should().Be(SubscriptionStatus.Trialing);
         subscription.TrialEndDate.Should().Be(newEnd);
         newEnd.Should().BeAfter(SystemClock.UtcNow);
-        subscription.DomainEvents.Should().ContainSingle(e => e is TrialExtendedEvent extended && extended.AdditionalDays == 14);
+        subscription.DomainEvents.OfType<TrialExtendedEvent>()
+            .Should().ContainSingle().Which.AdditionalDays.Should().Be(14);
     }
 
     [Fact]
@@ -97,7 +98,8 @@ public class SubscriptionTrialExtensionTests
         newNextBilling.Should().Be(originalNextBilling.AddMonths(2));
         subscription.NextBillingDate.Should().Be(newNextBilling);
         subscription.CurrentPeriodEnd.Should().Be(originalPeriodEnd.AddMonths(2));
-        subscription.DomainEvents.Should().ContainSingle(e => e is BillingPeriodsSkippedEvent skipped && skipped.SkippedPeriods == 2);
+        subscription.DomainEvents.OfType<BillingPeriodsSkippedEvent>()
+            .Should().ContainSingle().Which.SkippedPeriods.Should().Be(2);
     }
 
     [Fact]

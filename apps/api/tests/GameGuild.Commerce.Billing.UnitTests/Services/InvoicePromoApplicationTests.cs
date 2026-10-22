@@ -3,6 +3,7 @@ using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Subscriptions;
 using GameGuild.Identity.Users;
 using GameGuild.Notifications;
+using GameGuild.Notifications.Services;
 using MockQueryable.Moq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
