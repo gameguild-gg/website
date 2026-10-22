@@ -557,6 +557,9 @@ public class PiiRedactionAdminServiceTests : IDisposable
     public void Dispose() => _context.Dispose();
 
     private IPiiRedactionAdminService CreateService() =>
+        CreateService(NullLogger<PiiRedactionAdminService>.Instance);
+
+    private IPiiRedactionAdminService CreateService(ILogger<PiiRedactionAdminService> logger) =>
         new PiiRedactionAdminService(
             _context,
             new SnapshotProvider(),
@@ -567,7 +570,7 @@ public class PiiRedactionAdminServiceTests : IDisposable
                 new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build()),
             _actorAccessor,
             _audit.Object,
-            NullLogger<PiiRedactionAdminService>.Instance);
+            logger);
 
     private void SignInAsTenantAdmin() =>
         _actorAccessor.SetActorContext(new ActorContext
@@ -602,6 +605,79 @@ public class PiiRedactionAdminServiceTests : IDisposable
         Priority = 100,
         IsEnabled = true
     };
+
+    [Theory]
+    [InlineData("standard-rule-name")]
+    [InlineData("operator+private@example.test")]
+    [InlineData("rule\r\noperator+private@example.test")]
+    public async Task RuleMutations_PreserveNamesInStateAndAuditButExcludeThemFromOperationalLogs(string ruleName)
+    {
+        SignInAsTenantAdmin();
+        var logger = new Mock<ILogger<PiiRedactionAdminService>>();
+        logger.Setup(instance => instance.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        var service = CreateService(logger.Object);
+
+        var created = await service.CreateRuleAsync(EmailRuleRequest() with { RuleName = ruleName }, CancellationToken.None);
+        Assert.Equal(ruleName, created.RuleName);
+        Assert.Equal(ruleName, (await _context.Set<PiiRedactionRule>().SingleAsync(rule => rule.Id == created.Id)).RuleName);
+
+        var updatedName = ruleName + " updated";
+        var updated = await service.UpdateRuleAsync(
+            created.Id, created.Revision, EmailRuleRequest() with { RuleName = updatedName }, CancellationToken.None);
+        Assert.Equal(created.Id, updated.Id);
+        Assert.Equal(updatedName, updated.RuleName);
+        Assert.Equal(created.Revision + 1, updated.Revision);
+        Assert.Equal(updatedName, (await _context.Set<PiiRedactionRule>().SingleAsync(rule => rule.Id == created.Id)).RuleName);
+
+        await service.DeleteRuleAsync(created.Id, updated.Revision, CancellationToken.None);
+        Assert.False(await _context.Set<PiiRedactionRule>().AnyAsync(rule => rule.Id == created.Id));
+
+        var entries = logger.Invocations.Where(invocation => invocation.Method.Name == nameof(ILogger.Log)).ToArray();
+        Assert.Equal(3, entries.Length);
+        var expectedMessages = new[]
+        {
+            $"Created PII redaction rule {created.Id} for tenant {Tenant}",
+            $"Updated PII redaction rule {created.Id} to revision {updated.Revision}",
+            $"Deleted PII redaction rule {created.Id}"
+        };
+        var expectedKeys = new[]
+        {
+            new[] { "RuleId", "TenantId", "{OriginalFormat}" },
+            new[] { "RuleId", "Revision", "{OriginalFormat}" },
+            new[] { "RuleId", "{OriginalFormat}" }
+        };
+        for (var index = 0; index < entries.Length; index++)
+        {
+            Assert.Equal(LogLevel.Information, Assert.IsType<LogLevel>(entries[index].Arguments[0]));
+            var state = Assert.IsAssignableFrom<IReadOnlyList<KeyValuePair<string, object?>>>(entries[index].Arguments[2]);
+            Assert.Equal(expectedKeys[index], state.Select(field => field.Key).ToArray());
+            Assert.Equal(created.Id, Assert.IsType<Guid>(state.Single(field => field.Key == "RuleId").Value));
+            Assert.DoesNotContain(state, field => field.Key == "RuleName");
+            Assert.Equal(expectedMessages[index], entries[index].Arguments[2].ToString());
+        }
+        var createState = Assert.IsAssignableFrom<IReadOnlyList<KeyValuePair<string, object?>>>(entries[0].Arguments[2]);
+        Assert.Equal(Tenant, Assert.IsType<Guid>(createState.Single(field => field.Key == "TenantId").Value));
+        var updateState = Assert.IsAssignableFrom<IReadOnlyList<KeyValuePair<string, object?>>>(entries[1].Arguments[2]);
+        Assert.Equal(updated.Revision, Assert.IsType<int>(updateState.Single(field => field.Key == "Revision").Value));
+
+        var audits = _audit.Invocations.Where(invocation => invocation.Method.Name == nameof(IAuditService.LogAsync))
+            .Select(invocation => Assert.IsType<CreateAuditLogRequest>(invocation.Arguments[0])).ToArray();
+        Assert.Equal(new[]
+        {
+            AuditActionTypes.PiiRedactionRuleCreated,
+            AuditActionTypes.PiiRedactionRuleUpdated,
+            AuditActionTypes.PiiRedactionRuleDeleted
+        }, audits.Select(request => request.ActionType).ToArray());
+        var expectedNames = new[] { ruleName, updatedName, updatedName };
+        for (var index = 0; index < audits.Length; index++)
+        {
+            Assert.Equal(Tenant, audits[index].TenantId);
+            Assert.Equal(Admin, audits[index].UserId);
+            Assert.Equal(created.Id.ToString(), audits[index].ResourceId);
+            using var metadata = JsonDocument.Parse(JsonSerializer.Serialize(audits[index].Metadata));
+            Assert.Equal(expectedNames[index], metadata.RootElement.GetProperty("RuleName").GetString());
+        }
+    }
 
     [Fact]
     public async Task CreateRule_NonAdministrator_IsDeniedAndPermissionDenyIsAudited()

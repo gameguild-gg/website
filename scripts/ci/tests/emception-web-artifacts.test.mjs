@@ -14,7 +14,7 @@ function job(source, name) {
   const start = source.indexOf(marker);
   assert.ok(start >= 0, 'Missing job: ' + name);
   const remaining = source.slice(start + marker.length);
-  const next = remaining.search(/^  [a-z][a-z-]*:\n/m);
+  const next = remaining.search(/^ {2}[a-z][a-z-]*:\n/m);
   return next < 0 ? remaining : remaining.slice(0, next);
 }
 
@@ -33,7 +33,7 @@ function pullRequestBranches(source) {
   const remaining = source.slice(start + marker.length);
   const next = remaining.search(/^(?: {2}\S|\S)/m);
   const event = next < 0 ? remaining : remaining.slice(0, next);
-  const branches = event.match(/^    branches:([^\n]*)/m);
+  const branches = event.match(/^ {4}branches:([^\n]*)/m);
   assert.ok(branches, 'The pull_request trigger must declare its branch targets');
   const inline = branches[1].trim();
   if (inline) {
@@ -41,15 +41,35 @@ function pullRequestBranches(source) {
     return inline.slice(1, -1).split(',').map((value) => value.trim().replace(/^['"]|['"]$/g, '')).sort();
   }
   const tail = event.slice(branches.index + branches[0].length);
-  const end = tail.search(/^    \S/m);
+  const end = tail.search(/^ {4}\S/m);
   const list = end < 0 ? tail : tail.slice(0, end);
-  return [...list.matchAll(/^      - (.+)$/gm)]
+  return [...list.matchAll(/^ {6}- (.+)$/gm)]
     .map((match) => match[1].trim().replace(/^['"]|['"]$/g, '')).sort();
 }
 
 const web = job(pr, 'web');
 const producer = job(emception, 'build-test-package');
 const acquire = step(web, 'Acquire verified Toolchain release for Web');
+
+const clientGateName = 'Test client credentials, MFA, auth factory and generator contracts';
+const clientSuites = [
+  'tests/auth/providers/credentials.test.ts',
+  'tests/next/auth.test.ts',
+  'tests/next/actions-extended.test.ts',
+  'tests/gaps/final-gaps.test.ts',
+  'tests/generator',
+];
+
+function assertClientContractGate(source) {
+  const client = step(source, clientGateName);
+  const command = client.match(/^ {8}run: ([^\n]+)$/m);
+  assert.ok(command, 'The client gate must retain an explicit run command');
+  assert.deepEqual(command[1].trim().split(/\s+/), [
+    'pnpm', '--filter', '@game-guild/client', 'exec', 'vitest', 'run',
+    ...clientSuites, '--maxWorkers=1',
+  ], 'The client gate must retain all required suites and the single-worker limit');
+  assert.doesNotMatch(client, /continue-on-error:|allow-failure| {8}if:/);
+}
 
 test('every pull-request consumer branch can start the required Toolchain producer', () => {
   const consumerTargets = pullRequestBranches(pr);
@@ -61,7 +81,7 @@ test('every pull-request consumer branch can start the required Toolchain produc
 test('Web acquires a producer release independently of an optional build cache', () => {
   assert.match(acquire, /id: emception-web-release/);
   assert.ok(acquire.includes('run: SOURCE_TREE_SHA="$(git rev-parse \'HEAD^{tree}\')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800'));
-  assert.doesNotMatch(acquire, /        if:|cache-hit|cache-matched-key|continue-on-error|\|\| true/);
+  assert.doesNotMatch(acquire, / {8}if:|cache-hit|cache-matched-key|continue-on-error|\|\| true/);
   assert.doesNotMatch(web, /Restore verified Toolchain builds for Web|Prepare and verify cached Toolchain release/);
   assert.ok(web.indexOf('Acquire verified Toolchain release for Web') < web.indexOf('Build Web runtime dependencies'));
 });
@@ -70,7 +90,7 @@ test('the consumer uses classified source identity and only Actions read permiss
   assert.ok(acquire.includes('SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}'));
   assert.ok(acquire.includes('CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}'));
   assert.ok(acquire.includes('GH_TOKEN: ${{ github.token }}'));
-  assert.match(web, /permissions:\n      contents: read\n      actions: read/);
+  assert.match(web, /permissions:\n {6}contents: read\n {6}actions: read/);
   assert.doesNotMatch(web, /actions: write|contents: write|--repo |npm pack emception@/);
 });
 
@@ -91,12 +111,12 @@ test('the producer publishes only after release gates and before the independent
   assert.ok(prepare.includes('SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}'));
   assert.match(upload, /actions\/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9/);
   assert.ok(upload.includes('name: ${{ steps.web-release-provenance.outputs.artifact-name }}'));
-  assert.match(upload, /release\/cdn\n            tools\/emception\/artifacts\/toolchain\/release\/provenance\.json/);
+  assert.match(upload, /release\/cdn\n {12}tools\/emception\/artifacts\/toolchain\/release\/provenance\.json/);
   assert.match(upload, /include-hidden-files: true/);
   assert.match(upload, /if-no-files-found: error/);
   assert.ok(producer.indexOf('Verify release gates and npm package contents') < producer.indexOf('Prepare verified Toolchain CDN provenance'));
   assert.ok(producer.indexOf('Upload verified Toolchain CDN for Web') < producer.indexOf('Run instructor and learner coding assessment cycle'));
-  assert.doesNotMatch(upload, /        if:|continue-on-error|overwrite: true/);
+  assert.doesNotMatch(upload, / {8}if:|continue-on-error|overwrite: true/);
 });
 
 test('producer detection covers every source or workflow change that requires delivery', () => {
@@ -110,16 +130,18 @@ test('producer detection covers every source or workflow change that requires de
 });
 
 test('all existing Web credential, lint, type, test and production build gates remain mandatory', () => {
-  const names = ['Build generated client', 'Test credentials and MFA client integration', 'Build Web runtime dependencies', 'Generate Web route types', 'Lint Web', 'Lint suppression budget ratchet', 'Typecheck Web', 'Test Web', 'Build Web'];
+  const names = ['Build generated client', clientGateName, 'Build Web runtime dependencies', 'Generate Web route types', 'Lint Web', 'Lint suppression budget ratchet', 'Typecheck Web', 'Test Web', 'Build Web'];
   let previous = -1;
   for (const name of names) {
     const position = web.indexOf('      - name: ' + name + '\n');
     assert.ok(position > previous, 'Missing or out-of-order gate: ' + name);
-    assert.doesNotMatch(step(web, name), /continue-on-error:|allow-failure|        if:/);
+    assert.doesNotMatch(step(web, name), /continue-on-error:|allow-failure| {8}if:/);
     previous = position;
   }
   assert.match(web, /if: needs\.classify\.outputs\.web == 'true'/);
   assert.match(web, /timeout-minutes: 360/);
+  assertClientContractGate(web);
+  assert.ok(web.indexOf(clientGateName) < web.indexOf('Acquire verified Toolchain release for Web'));
 });
 
 test('the pinned coding-cycle image keeps its bounded pull before actual execution', () => {
@@ -134,4 +156,13 @@ test('classification runs both source-delivery contracts before downstream jobs'
   const classify = job(pr, 'classify');
   assert.match(classify, /node --test [^\n]*scripts\/ci\/tests\/emception-web-artifacts\.test\.mjs/);
   assert.ok(classify.includes("python3 -m unittest discover -s scripts/ci/tests -p 'acquire_emception_release_test.py'"));
+});
+
+test('the client contract rejects a missing suite or worker bound', () => {
+  for (const requirement of [...clientSuites, '--maxWorkers=1']) {
+    assert.ok(web.includes(requirement));
+    const missingRequirement = web.replace(requirement, 'missing-required-client-argument');
+    assert.throws(() => assertClientContractGate(missingRequirement),
+      /The client gate must retain all required suites and the single-worker limit/);
+  }
 });

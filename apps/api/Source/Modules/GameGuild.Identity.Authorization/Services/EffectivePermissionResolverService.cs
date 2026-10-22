@@ -325,7 +325,7 @@ public sealed class EffectivePermissionResolverService(
             {
                 logger.LogWarning(
                     "Attempted to deny static permission {Permission} for user {UserId} - denies cannot override static grants",
-                    denied, context.UserId);
+                    LogRedaction.Sanitize(denied), context.UserId);
                 continue;
             }
 
@@ -335,7 +335,7 @@ public sealed class EffectivePermissionResolverService(
             {
                 logger.LogWarning(
                     "Attempted to deny owner-minted permission {Permission} - the AlwaysAllow owner-override mode makes owner grants non-deniable",
-                    denied);
+                    LogRedaction.Sanitize(denied));
                 continue;
             }
 

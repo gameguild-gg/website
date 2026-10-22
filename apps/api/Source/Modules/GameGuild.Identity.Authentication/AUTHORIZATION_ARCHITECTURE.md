@@ -1,3 +1,19 @@
+# Trusted proxy policy and feature toggles - 2026-10-22
+
+Presentation-layer registration applies the explicit trusted-proxy policy even
+when `PresentationLayer:EnableRateLimiting` is false. That flag controls request
+throttling; it does not opt the host out of transport-security policy.
+
+The existing `RateLimiting:TrustedProxyAddresses` and `TrustedProxyForwardLimit`
+settings remain the transport-policy inputs, including explicitly supplied nested
+presentation options. An empty proxy list disables forwarded headers. Hosting
+settings that enable unrestricted forwarding cannot override this policy.
+
+Proxy addresses and the hop limit are validated independently of throttling
+settings. Disabling throttling does not require otherwise unused rate-limit
+budgets to be valid. Basic authentication continues to require HTTPS, a valid
+password, an eligible account, and no outstanding MFA requirement.
+
 # Passwordless first-factor MFA policy integration — 2026-10-10
 
 Email-code and magic-link consumption apply `ISignInMfaService.BeginAsync` after

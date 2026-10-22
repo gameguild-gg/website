@@ -186,6 +186,69 @@ public class EffectivePermissionResolverOwnerOverrideTests
         result.OwnerOverride!.Mode.Should().Be(OwnerOverrideMode.AlwaysAllow);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("\r")]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\t")]
+    [InlineData("\0")]
+    [InlineData("\u001b")]
+    [InlineData("\u0085")]
+    [InlineData("\u2028")]
+    [InlineData("\u2029")]
+    public async Task ResolveAsync_AlwaysAllow_SanitizesDenyWarningsWithoutChangingPermissions(string separator)
+    {
+        SetupNoData();
+        var permission = $"read{separator}forged";
+        var qualifiedPermission = $"{ResourceType}.{ResourceId}.{permission}";
+        var owner = OwnerRow([permission]);
+        owner.UserId = _userId;
+        SetupOwnerRow(owner);
+        SetupTenantDeny(permission, qualifiedPermission);
+
+        var result = await CreateSut("AlwaysAllow").ResolveAsync(
+            EffectivePermissionContext.ForResource(_userId, _tenantId, ResourceType, ResourceId));
+
+        result.Permissions.Should().BeEquivalentTo(new[] { permission, qualifiedPermission });
+        result.OwnerOverride!.Mode.Should().Be(OwnerOverrideMode.AlwaysAllow);
+        var safePermission = $"read{new string('\u2400', separator.Length)}forged";
+        var safeQualifiedPermission = $"{ResourceType}.{ResourceId}.{safePermission}";
+        var warnings = _logger.Entries
+            .Where(entry => entry.Level == LogLevel.Warning)
+            .Select(entry => entry.Message)
+            .ToArray();
+        warnings.Should().BeEquivalentTo(new[]
+        {
+            $"Attempted to deny owner-minted permission {safePermission} - the AlwaysAllow owner-override mode makes owner grants non-deniable",
+            $"Attempted to deny owner-minted permission {safeQualifiedPermission} - the AlwaysAllow owner-override mode makes owner grants non-deniable"
+        });
+    }
+
+    [Fact]
+    public async Task ResolveAsync_StaticDenyWarning_PreservesWildcardGrantAndOrdinaryDiagnostic()
+    {
+        SetupNoData();
+        _repository
+            .Setup(repository => repository.GetByUserAndTenantAsync(
+                (Guid?)SystemAccountId, (Guid?)_tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission
+            {
+                UserId = SystemAccountId,
+                TenantId = _tenantId,
+                Permissions = [],
+                DenyPermissions = ["*"]
+            });
+
+        var result = await CreateSut("AlwaysAllow").ResolveAsync(
+            EffectivePermissionContext.ForTenant(SystemAccountId, _tenantId));
+
+        result.Permissions.Should().BeEquivalentTo(new[] { "*" });
+        result.Sources["*"].Should().Be(PermissionSource.Static);
+        _logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning
+            && entry.Message == $"Attempted to deny static permission * for user {SystemAccountId} - denies cannot override static grants");
+    }
+
     [Fact]
     public async Task ResolveAsync_UnknownMode_FailsClosedToOff_AndWarns()
     {

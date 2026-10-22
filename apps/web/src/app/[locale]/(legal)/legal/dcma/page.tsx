@@ -7,7 +7,7 @@ const noticeSteps = [
   'Sign the notice (physical or electronic signature of the copyright owner or agent).',
 ];
 
-export default async function Page({}: PageProps<'/[locale]/legal/dcma'>): Promise<React.JSX.Element> {
+export default async function Page(): Promise<React.JSX.Element> {
   return (
     <article className="flex flex-col gap-8">
       <div className="space-y-3">

@@ -196,6 +196,10 @@ public static class PresentationLayerExtensions
             services.SetupRateLimiting(configuration, options.RateLimiting);
             logger.LogInformation("RateLimiting registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
         }
+        else
+        {
+            services.SetupTrustedProxyForwarding(configuration, options.RateLimiting);
+        }
 
         // 13. Model Validation
         if (options.EnableModelValidation)

@@ -4,17 +4,18 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { GameGuildAuth } from '../../src/integrations/next/auth.js';
+import type { AuthCallbacks, CredentialsProviderConfig, GameGuildAuthConfig, ResolvedAuthConfig } from '../../src/runtime/auth/types.js';
 
 // Mock dependencies
 vi.mock('../../src/integrations/next/config.js', () => ({
-  resolveConfig: vi.fn((config: any) => ({
+  resolveConfig: vi.fn((config: GameGuildAuthConfig): ResolvedAuthConfig => ({
     providers: config.providers || [],
     callbacks: {
-      jwt: config.callbacks?.jwt ?? (async ({ token }: any) => token),
-      session: config.callbacks?.session ?? (async ({ session }: any) => session),
+      jwt: config.callbacks?.jwt ?? (async ({ token }) => token),
+      session: config.callbacks?.session ?? (async ({ session }) => session),
       signIn: config.callbacks?.signIn ?? (async () => true),
-      redirect: config.callbacks?.redirect ?? (async ({ url }: any) => url),
-      authorized: config.callbacks?.authorized ?? (async ({ auth }: any) => !!auth),
+      redirect: config.callbacks?.redirect ?? (async ({ url }) => url),
+      authorized: config.callbacks?.authorized ?? (async ({ auth }) => !!auth),
     },
     secret: config.secret || 'test-secret',
     apiUrl: config.apiUrl || 'http://localhost:5000',
@@ -37,7 +38,7 @@ vi.mock('../../src/integrations/next/config.js', () => ({
 }));
 
 vi.mock('../../src/integrations/next/handlers.js', () => ({
-  createHandlers: vi.fn((config: any) => ({
+  createHandlers: vi.fn(() => ({
     GET: vi.fn(async () => new Response('GET')),
     POST: vi.fn(async () => new Response('POST')),
   })),
@@ -45,14 +46,14 @@ vi.mock('../../src/integrations/next/handlers.js', () => ({
 }));
 
 vi.mock('../../src/integrations/next/actions.js', () => ({
-  createAuthFunction: vi.fn((config: any) => {
+  createAuthFunction: vi.fn(() => {
     const fn = vi.fn(async () => null);
     return fn;
   }),
-  createSignInAction: vi.fn((config: any) => vi.fn(async () => {})),
-  createSignUpAction: vi.fn((config: any) => vi.fn(async () => {})),
-  createSignOutAction: vi.fn((config: any) => vi.fn(async () => {})),
-  createUpdateAction: vi.fn((config: any) => vi.fn(async () => null)),
+  createSignInAction: vi.fn(() => vi.fn(async () => {})),
+  createSignUpAction: vi.fn(() => vi.fn(async () => {})),
+  createSignOutAction: vi.fn(() => vi.fn(async () => {})),
+  createUpdateAction: vi.fn(() => vi.fn(async () => null)),
 }));
 
 describe('GameGuildAuth', () => {
@@ -76,7 +77,7 @@ describe('GameGuildAuth', () => {
   });
 
   it('should pass config through resolveConfig', () => {
-    const customJwt = vi.fn(async ({ token }: any) => token);
+    const customJwt = vi.fn(async ({ token }: Parameters<NonNullable<AuthCallbacks['jwt']>>[0]) => token);
 
     const result = GameGuildAuth({
       providers: [],
@@ -96,8 +97,8 @@ describe('GameGuildAuth', () => {
           id: 'credentials',
           name: 'Credentials',
           type: 'credentials',
-          authorize: vi.fn(),
-        } as any,
+          authorize: vi.fn<CredentialsProviderConfig['authorize']>(),
+        },
       ],
       secret: 'test-secret',
       apiUrl: 'http://localhost:5000',

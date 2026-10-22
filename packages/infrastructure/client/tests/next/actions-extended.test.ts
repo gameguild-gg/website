@@ -2,7 +2,7 @@
  * Extended Actions Tests — signIn success paths, signUp success, signOut, update, OAuth
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 import {
   createAuthFunction,
   createSignInAction,
@@ -11,7 +11,9 @@ import {
   createUpdateAction,
   type CookieAdapter,
 } from '../../src/integrations/next/actions.js';
-import type { ResolvedAuthConfig } from '../../src/runtime/auth/types.js';
+import type { CredentialsProviderConfig, JWTPayload, ProviderResult, ResolvedAuthConfig, Session } from '../../src/runtime/auth/types.js';
+import type { OAuthProviderWithMethods } from '../../src/integrations/next/oauth-helpers.js';
+import type { decodeJWT } from '../../src/runtime/auth/jwt.js';
 
 // Track what cookies() returns per-test
 let mockCookieAdapter: CookieAdapter | null = null;
@@ -27,7 +29,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('../../src/runtime/auth/jwt.js', () => ({
-  decodeJWT: vi.fn(async ({ token }: any) => {
+  decodeJWT: vi.fn(async ({ token }: Parameters<typeof decodeJWT>[0]): Promise<JWTPayload | null> => {
     if (token === 'encrypted-session') {
       return {
         user: { id: '1', email: 'test@example.com', name: 'Test', image: null },
@@ -45,7 +47,7 @@ vi.mock('../../src/runtime/auth/jwt.js', () => ({
 }));
 
 vi.mock('../../src/runtime/auth/session.js', () => ({
-  createJWTPayload: vi.fn((result: any) => ({
+  createJWTPayload: vi.fn((result: ProviderResult): JWTPayload => ({
     user: result.user,
     accessToken: result.tokens.accessToken,
     refreshToken: result.tokens.refreshToken,
@@ -83,8 +85,8 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
     return { session: null, token: null, updated: false };
   }),
   encodeSession: vi.fn(async () => 'new-encrypted-token'),
-  refreshAccessToken: vi.fn(async (token: any) => token),
-  toSession: vi.fn((token: any) => ({
+  refreshAccessToken: vi.fn(async (token: JWTPayload) => token),
+  toSession: vi.fn((token: JWTPayload): Session => ({
     user: token.user,
     expires: new Date(Date.now() + 86400000).toISOString(),
   })),
@@ -100,7 +102,7 @@ vi.mock('../../src/integrations/next/handlers.js', async (importOriginal) => ({
     }
     return map;
   }),
-  parseBackendAuthResponse: vi.fn((data: any, email?: string, name?: string) => ({
+  parseBackendAuthResponse: vi.fn((data: Partial<Record<'accessToken' | 'refreshToken' | 'userId', string>>, email?: string, name?: string): ProviderResult => ({
     tokens: { accessToken: data.accessToken || 'at', refreshToken: data.refreshToken || 'rt', tokenType: 'Bearer' },
     user: { id: data.userId || '1', email: email || '', name: name || null, image: null },
   })),
@@ -125,6 +127,27 @@ function createMockAdapter(cookies: Record<string, string> = {}): CookieAdapter 
   };
 }
 
+// Keep the original runtime fixtures without OAuth client credentials.
+function makeIncompleteOAuthProvider(
+  input: Pick<OAuthProviderWithMethods, 'id' | 'name' | 'type'> & Pick<Partial<OAuthProviderWithMethods>, 'exchangeToken'>,
+): OAuthProviderWithMethods {
+  const provider: OAuthProviderWithMethods = {
+    clientId: 'fixture-client',
+    clientSecret: 'fixture-secret',
+    ...input,
+  };
+  Reflect.deleteProperty(provider, 'clientId');
+  Reflect.deleteProperty(provider, 'clientSecret');
+  return provider;
+}
+
+// These boundary cases intentionally retain a name-only user without its required id.
+function makeNameOnlySessionUpdate(name: string): Partial<Session> {
+  const user: Session['user'] = { id: 'fixture-user', name };
+  Reflect.deleteProperty(user, 'id');
+  return { user };
+}
+
 function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig {
   return {
     providers: [
@@ -132,11 +155,11 @@ function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig
         id: 'credentials',
         name: 'Credentials',
         type: 'credentials',
-        authorize: vi.fn(async (creds: any) => ({
+        authorize: vi.fn<CredentialsProviderConfig['authorize']>(async (creds) => ({
           tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
-          user: { id: '1', email: creds.email || 'a@b.com', name: 'Test', image: null },
+          user: { id: '1', email: (typeof creds.email === 'string' && creds.email) || 'a@b.com', name: 'Test', image: null },
         })),
-      } as any,
+      } satisfies CredentialsProviderConfig,
     ],
     callbacks: {
       jwt: async ({ token }) => token,
@@ -210,13 +233,13 @@ describe('createAuthFunction — extended', () => {
     const config = makeConfig();
     const auth = createAuthFunction(config);
 
-    const handler = vi.fn(async (req: Request & { auth: any }) => {
+    const handler = vi.fn(async (req: Request & { auth: Session | null }) => {
       return new Response(JSON.stringify({ auth: req.auth }));
     });
 
     const wrapper = auth(handler);
     const request = new Request('http://localhost:3000/api/data');
-    const response = await wrapper(request);
+    await wrapper(request);
 
     expect(handler).toHaveBeenCalled();
     const call = handler.mock.calls[0][0];
@@ -300,7 +323,7 @@ describe('createSignInAction — extended', () => {
 
     const config = makeConfig({
       providers: [
-        {
+        makeIncompleteOAuthProvider({
           id: 'google',
           name: 'Google',
           type: 'oauth',
@@ -308,11 +331,13 @@ describe('createSignInAction — extended', () => {
             tokens: { accessToken: 'at', refreshToken: 'rt', tokenType: 'Bearer' as const },
             user: { id: '1', email: 'g@g.com', name: 'Google User', image: null },
           })),
-        } as any,
+        }),
       ],
     });
     const signIn = createSignInAction(config);
 
+    expect(config.providers[0]).not.toHaveProperty('clientId');
+    expect(config.providers[0]).not.toHaveProperty('clientSecret');
     await signIn('google', { idToken: 'google-id-token', redirect: false });
 
     expect(adapter.set).toHaveBeenCalled();
@@ -324,21 +349,24 @@ describe('createSignInAction — extended', () => {
 
     const config = makeConfig({
       providers: [
-        {
+        makeIncompleteOAuthProvider({
           id: 'github',
           name: 'GitHub',
           type: 'oauth',
-        } as any,
+        }),
       ],
     });
     const signIn = createSignInAction(config);
 
+    expect(config.providers[0]).not.toHaveProperty('clientId');
+    expect(config.providers[0]).not.toHaveProperty('clientSecret');
+    expect(config.providers[0]).not.toHaveProperty('exchangeToken');
     await expect(signIn('github', { redirect: false })).rejects.toThrow();
   });
 });
 
 describe('createSignUpAction — extended', () => {
-  let fetchSpy: any;
+  let fetchSpy: MockInstance<typeof global.fetch> | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -385,8 +413,13 @@ describe('createSignUpAction — extended', () => {
       { redirect: false },
     );
 
-    const fetchCall = (global.fetch as any).mock.calls[0];
-    const sentBody = JSON.parse(fetchCall[1].body);
+    const requestBody = fetchSpy.mock.calls[0]?.[1]?.body;
+    if (typeof requestBody !== 'string') throw new Error('Expected a JSON request body');
+    const parsedBody: unknown = JSON.parse(requestBody);
+    if (typeof parsedBody !== 'object' || parsedBody === null || Array.isArray(parsedBody)) {
+      throw new Error('Expected a JSON object request body');
+    }
+    const sentBody = parsedBody as Record<string, unknown>;
     expect(sentBody.firstName).toBe('Test');
     expect(sentBody.lastName).toBe('User');
     expect(sentBody.tenantId).toBe('tenant-1');
@@ -420,7 +453,7 @@ describe('createSignUpAction — extended', () => {
 });
 
 describe('createSignOutAction — extended', () => {
-  let fetchSpy: any;
+  let fetchSpy: MockInstance<typeof global.fetch> | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -505,7 +538,9 @@ describe('createUpdateAction — extended', () => {
 
     const config = makeConfig();
     const update = createUpdateAction(config);
-    const result = await update({ user: { name: 'New Name' } } as any);
+    const data = makeNameOnlySessionUpdate('New Name');
+    expect(data).toEqual({ user: { name: 'New Name' } });
+    const result = await update(data);
 
     expect(result).toBeNull();
   });
@@ -536,7 +571,9 @@ describe('createUpdateAction — extended', () => {
 
     const config = makeConfig();
     const update = createUpdateAction(config);
-    const result = await update({ user: { name: 'Updated' } } as any);
+    const data = makeNameOnlySessionUpdate('Updated');
+    expect(data).toEqual({ user: { name: 'Updated' } });
+    const result = await update(data);
 
     expect(result).toBeDefined();
     expect(result?.user).toBeDefined();
@@ -552,7 +589,7 @@ describe('createUpdateAction — extended', () => {
     const config = makeConfig();
     const { refreshAccessToken } = await import('../../src/runtime/auth/session.js');
 
-    await createUpdateAction(config)({ tenantId } as any);
+    await createUpdateAction(config)({ tenantId });
 
     expect(refreshAccessToken).toHaveBeenCalledWith(expect.objectContaining({ tenantId: expectedTenantId }), config);
   });
@@ -563,7 +600,7 @@ describe('createUpdateAction — extended', () => {
     const config = makeConfig();
     const { refreshAccessToken } = await import('../../src/runtime/auth/session.js');
 
-    await createUpdateAction(config)({ tenantId: 'tenant-1' } as any);
+    await createUpdateAction(config)({ tenantId: 'tenant-1' });
 
     expect(refreshAccessToken).not.toHaveBeenCalled();
   });

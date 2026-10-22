@@ -52,7 +52,7 @@ const stack = [
   },
 ];
 
-export default async function Page({}: PageProps<'/[locale]/about'>): Promise<React.JSX.Element> {
+export default async function Page(): Promise<React.JSX.Element> {
   return (
     <main className="bg-slate-950 text-white">
       <section className="border-b border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(14,165,233,0.16),transparent_34%),radial-gradient(circle_at_88%_12%,rgba(168,85,247,0.14),transparent_30%),linear-gradient(180deg,#111827,#020617)]">

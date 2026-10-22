@@ -115,8 +115,8 @@ jobs:
       - uses: ./.github/actions/setup-node-workspace
       - name: Build generated client
         run: pnpm --filter @game-guild/client build
-      - name: Test credentials and MFA client integration
-        run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts --maxWorkers=1
+      - name: Test client credentials, MFA, auth factory and generator contracts
+        run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts tests/next/auth.test.ts tests/next/actions-extended.test.ts tests/gaps/final-gaps.test.ts tests/generator --maxWorkers=1
       - name: Acquire verified Toolchain release for Web
         id: emception-web-release
         env:

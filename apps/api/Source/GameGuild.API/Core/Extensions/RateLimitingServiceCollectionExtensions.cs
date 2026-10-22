@@ -16,23 +16,17 @@ namespace GameGuild.API;
 /// </summary>
 public static class RateLimitingServiceCollectionExtensions
 {
-    public static IServiceCollection SetupRateLimiting(this IServiceCollection services, IConfiguration configuration,
+    /// <summary>
+    ///     Registers explicit proxy trust independently of request throttling.
+    /// </summary>
+    public static IServiceCollection SetupTrustedProxyForwarding(
+        this IServiceCollection services,
+        IConfiguration configuration,
         RateLimitingOptions? options)
     {
         options ??= OptionBuilderUtilities.CreateAndBind(configuration, "RateLimiting",
             RateLimitingOptions.CreateDefault);
-        options.Validate();
-        var accessOptions = configuration.GetSection("RateLimiting:AccessControl").Get<RateLimitAccessOptions>()
-            ?? new RateLimitAccessOptions();
-        accessOptions.Validate();
-        var redisEnabled = configuration.GetValue<bool>("Redis:Enabled");
-        if (redisEnabled)
-        {
-            ValidateRedisWindows(options);
-        }
-
-        services.AddSingleton(options);
-        services.AddSingleton(accessOptions);
+        options.ValidateTrustedProxySettings();
 
         var trustedProxies = options.TrustedProxyAddresses.Select(IPAddress.Parse).Distinct().ToArray();
         services.PostConfigure<ForwardedHeadersOptions>(forwardedHeadersOptions =>
@@ -51,6 +45,29 @@ public static class RateLimitingServiceCollectionExtensions
                 forwardedHeadersOptions.KnownProxies.Add(trustedProxy);
             }
         });
+
+        return services;
+    }
+
+    public static IServiceCollection SetupRateLimiting(this IServiceCollection services, IConfiguration configuration,
+        RateLimitingOptions? options)
+    {
+        options ??= OptionBuilderUtilities.CreateAndBind(configuration, "RateLimiting",
+            RateLimitingOptions.CreateDefault);
+        options.Validate();
+        var accessOptions = configuration.GetSection("RateLimiting:AccessControl").Get<RateLimitAccessOptions>()
+            ?? new RateLimitAccessOptions();
+        accessOptions.Validate();
+        var redisEnabled = configuration.GetValue<bool>("Redis:Enabled");
+        if (redisEnabled)
+        {
+            ValidateRedisWindows(options);
+        }
+
+        services.AddSingleton(options);
+        services.AddSingleton(accessOptions);
+
+        services.SetupTrustedProxyForwarding(configuration, options);
 
         services.AddRateLimiter(rateLimiterOptions =>
             {
