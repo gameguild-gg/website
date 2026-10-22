@@ -39,15 +39,13 @@ jobs:
           # big-context calls through the omniroute proxy (30m here).
           CONFIG__AI_TIMEOUT: "1800"
           # Per-call token budget cap: pr-agent uses min(max_model_tokens,
-          # custom_model_max_tokens). At 900k the whole 723k-token big-PR
-          # diff packed into ONE call (~705s prefill silence → CF 524).
-          # Evidence: 100k → 4 of 7 chunks dropped on CF 524 (39822917061);
-          # 50k → 12/12 chunks retained but 3 transient litellm 524s checked
-          # only by retries (39837196199). 25k → ~24 chunks
-          # (MAX_NUMBER_OF_CALLS=100 covers), per-call TTFT ~15-25s, well
-          # inside the CF window — target 0×524. CUSTOM_MODEL_MAX_TOKENS
-          # stays 900000 (real 1M context of the backend).
-          CONFIG__MAX_MODEL_TOKENS: "25000"
+          # custom_model_max_tokens). 50k = measured optimum: 12/12 chunks
+          # retained (39837196199); 100k dropped 4/7 (39822917061); 25k
+          # dropped 1/26 with 7× 524 (39851172940) — residual transients
+          # are backend-concurrency-bound (shared 6-slot vLLM), not
+          # payload-bound; retry-absorbed. CUSTOM_MODEL_MAX_TOKENS stays
+          # 900000 (real 1M context of the backend).
+          CONFIG__MAX_MODEL_TOKENS: "50000"
           PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: "true"
           PR_REVIEWER__MAX_NUMBER_OF_CALLS: "100"
           PR_CODE_SUGGESTIONS__MAX_NUMBER_OF_CALLS: "100"
