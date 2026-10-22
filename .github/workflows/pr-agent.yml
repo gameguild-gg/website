@@ -38,7 +38,14 @@ jobs:
           # LLM call deadline; default ai_timeout=120s is too short for
           # big-context calls through the omniroute proxy (30m here).
           CONFIG__AI_TIMEOUT: "1800"
-          CONFIG__MAX_MODEL_TOKENS: "900000"
+          # Per-call token budget cap: pr-agent uses min(max_model_tokens,
+          # custom_model_max_tokens); at 900k the whole big-PR diff packed into
+          # ONE call (723k tokens → ~705s prefill silence → CF 524 at 120s,
+          # streaming can't help before first byte). 100k → ~8 chunks →
+          # per-call TTFT ~61-97s < CF window; chunking (enabled below, 100
+          # calls) actually engages. CUSTOM_MODEL_MAX_TOKENS stays 900000 (real
+          # 1M context of the backend).
+          CONFIG__MAX_MODEL_TOKENS: "100000"
           PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: "true"
           PR_REVIEWER__MAX_NUMBER_OF_CALLS: "100"
           PR_CODE_SUGGESTIONS__MAX_NUMBER_OF_CALLS: "100"
