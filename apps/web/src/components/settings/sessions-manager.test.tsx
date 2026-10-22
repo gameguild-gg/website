@@ -93,12 +93,24 @@ function makeData() {
   };
 }
 
+function makeServerFixture() {
+  // Only the closed synthetic fixture is rendered here; this helper accepts no
+  // HTML or external data. Keep the real SSR nodes for React's hydration checks.
+  const data = makeData();
+  const serverDocument = new DOMParser().parseFromString(
+    renderToString(<SessionsManager data={data} locale="en-US" />),
+    'text/html',
+  );
+  const container = document.createElement('div');
+  container.append(...serverDocument.body.childNodes);
+  return { data, container };
+}
+
 describe('SessionsManager', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('keeps every server-rendered session mutation disabled until hydration', () => {
-    const container = document.createElement('div');
-    container.innerHTML = renderToString(<SessionsManager data={makeData()} locale="en-US" />);
+    const { container } = makeServerFixture();
     const buttons = container.querySelectorAll('button');
     expect(buttons.length).toBeGreaterThan(0);
     for (const button of buttons) {
@@ -109,9 +121,7 @@ describe('SessionsManager', () => {
 
   it('enables the hydrated controls and sends the first Trust click exactly once', async () => {
     const user = userEvent.setup();
-    const data = makeData();
-    const container = document.createElement('div');
-    container.innerHTML = renderToString(<SessionsManager data={data} locale="en-US" />);
+    const { data, container } = makeServerFixture();
     document.body.appendChild(container);
     const recoverableError = vi.fn();
     mocks.trustCurrentDevice.mockResolvedValue({ success: true, status: 'success' });

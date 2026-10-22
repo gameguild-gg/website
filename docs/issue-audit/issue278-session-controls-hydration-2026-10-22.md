@@ -32,3 +32,20 @@ and [Playwright's lost-click hydration guidance](https://playwright.dev/docs/nav
 The log also contains unrelated asset-worker handler-reuse errors; those are not
 the terminating assertion and are not attributed to this repair. Full issues #278
 and #166 remain subject to their separate acceptance matrices.
+
+## Static analysis of the hydration fixture
+
+Codacy check `119993680512` on `c1a02d1738c97b94dbdca1e01805208fd425f7e0`
+reported four XSS findings on the two test-only `innerHTML` assignments. Both
+assignments rendered the closed synthetic fixture, with no request or external
+input. A no-argument fixture helper now renders that same data into a separate
+document and transfers its DOM nodes to the test container. The server/client
+data remains identical and every disabled-control, hydration-error and first-click
+assertion remains in place. No production behavior or analyzer setting changes.
+
+[DOMParser](https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString)
+does not sanitize untrusted HTML; the helper must remain restricted to its closed
+fixture. [React hydration](https://react.dev/reference/react-dom/client/hydrateRoot)
+requires the original server-rendered DOM, so replacing it with a client render
+would not prove the regression. Fresh hosted Web tests, session acceptance and
+Codacy remain required; this source change alone is not execution evidence.
