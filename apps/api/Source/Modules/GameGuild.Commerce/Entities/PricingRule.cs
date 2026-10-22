@@ -99,6 +99,30 @@ public class PricingRule : EntityBase
     [MaxLength(100)]
     public string? CustomerSegment { get; set; }
 
+    /// <summary>
+    ///     Usage metric key this rule is gated on (issue #395 usage-based dynamic adjustments).
+    ///     When set, the rule only applies to calculations that report a usage value for this
+    ///     metric inside [<see cref="UsageMinValue"/>, <see cref="UsageMaxValue"/>].
+    /// </summary>
+    [MaxLength(100)]
+    public string? UsageMetricKey { get; set; }
+
+    /// <summary>Inclusive lower bound on the usage metric value (null = unbounded)</summary>
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal? UsageMinValue { get; set; }
+
+    /// <summary>Inclusive upper bound on the usage metric value (null = unbounded)</summary>
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal? UsageMaxValue { get; set; }
+
+    /// <summary>
+    ///     Opt-in to automated scheduling (issue #395): the pricing-rule scheduler keeps
+    ///     <see cref="IsActive"/> in sync with the rule's date window (active inside
+    ///     [StartDate, EndDate), inactive outside it). Never set automatically — an
+    ///     administrator-controlled rule stays exactly as configured.
+    /// </summary>
+    public bool IsScheduled { get; set; }
+
     /// <summary>Navigation property to pricing tiers (for tiered/volume pricing)</summary>
     public virtual ICollection<PricingRuleTier> PricingTiers { get; } = new List<PricingRuleTier>();
 
@@ -134,6 +158,38 @@ public class PricingRule : EntityBase
         return (MinQuantity == null || quantity >= MinQuantity) && (MaxQuantity == null || quantity <= MaxQuantity);
     }
 
+    /// <summary>
+    ///     Checks the usage-metric gate (issue #395 dynamic usage adjustments). A rule without
+    ///     <see cref="UsageMetricKey"/> applies regardless of reported usage. A gated rule applies
+    ///     only when the calculation reported a value for that metric inside the inclusive band.
+    /// </summary>
+    /// <param name="usageMetrics">Usage values reported by the calculation (null = none reported)</param>
+    public bool MatchesUsageMetric(IReadOnlyDictionary<string, decimal>? usageMetrics)
+    {
+        if (string.IsNullOrWhiteSpace(UsageMetricKey))
+        {
+            return true;
+        }
+
+        if (usageMetrics is null ||
+            !usageMetrics.TryGetValue(UsageMetricKey.Trim(), out var value))
+        {
+            return false;
+        }
+
+        if (UsageMinValue.HasValue && value < UsageMinValue.Value)
+        {
+            return false;
+        }
+
+        if (UsageMaxValue.HasValue && value > UsageMaxValue.Value)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     /// <summary>Calculate the price using this rule (for Products-style pricing)</summary>
     public decimal CalculatePrice(decimal basePrice, int quantity)
     {
@@ -146,6 +202,7 @@ public class PricingRule : EntityBase
             PricingRuleType.TimeBased => basePrice * (1 - (DiscountPercentage ?? 0) / 100),
             PricingRuleType.RegionBased => FixedPrice ?? (basePrice * (1 - (DiscountPercentage ?? 0) / 100)),
             PricingRuleType.SegmentBased => basePrice * (1 - (DiscountPercentage ?? 0) / 100),
+            PricingRuleType.UsageBased => basePrice * (1 - (DiscountPercentage ?? 0) / 100),
             _ => basePrice
         };
     }
@@ -216,6 +273,13 @@ public enum PricingRuleType
 
     /// <summary>Dynamic market-based pricing</summary>
     MarketBased = 5,
+
+    /// <summary>
+    ///     Usage-metric-driven dynamic adjustment (issue #395): the rule applies only when the
+    ///     calculation reports a value for the rule's usage metric inside its band; the
+    ///     adjustment itself uses the rule's percentage/fixed-price fields.
+    /// </summary>
+    UsageBased = 6,
 
     // Payments-originated types
     /// <summary>Percentage-based discount</summary>

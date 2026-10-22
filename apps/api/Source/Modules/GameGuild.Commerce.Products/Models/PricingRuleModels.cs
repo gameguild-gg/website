@@ -42,6 +42,10 @@ public sealed record PricingRuleTierDto(
 /// <param name="DaysOfWeek">Days of week the rule applies to (comma-separated 0=Sunday..6=Saturday)</param>
 /// <param name="Region">Geographic region (RegionBased rules)</param>
 /// <param name="CustomerSegment">Customer segment the rule is restricted to</param>
+/// <param name="UsageMetricKey">Usage metric key the rule is gated on (issue #395 usage adjustments)</param>
+/// <param name="UsageMinValue">Inclusive lower bound on the usage metric value</param>
+/// <param name="UsageMaxValue">Inclusive upper bound on the usage metric value</param>
+/// <param name="IsScheduled">Whether automated scheduling keeps the rule aligned with its date window (issue #395)</param>
 /// <param name="Tiers">Volume tiers for tiered/volume rules</param>
 /// <param name="CreatedAt">Creation timestamp (UTC)</param>
 /// <param name="UpdatedAt">Last update timestamp (UTC)</param>
@@ -68,6 +72,10 @@ public sealed record PricingRuleDto(
     string? DaysOfWeek,
     string? Region,
     string? CustomerSegment,
+    string? UsageMetricKey,
+    decimal? UsageMinValue,
+    decimal? UsageMaxValue,
+    bool IsScheduled,
     IReadOnlyList<PricingRuleTierDto> Tiers,
     DateTime CreatedAt,
     DateTime UpdatedAt,
@@ -122,6 +130,10 @@ public static class PricingRuleMappingExtensions
             rule.DaysOfWeek,
             rule.Region,
             rule.CustomerSegment,
+            rule.UsageMetricKey,
+            rule.UsageMinValue,
+            rule.UsageMaxValue,
+            rule.IsScheduled,
             rule.PricingTiers
                 .OrderBy(t => t.MinQuantity ?? 0)
                 .Select(t => new PricingRuleTierDto(t.Id, t.MinQuantity, t.MaxQuantity, t.Price, t.DiscountPercentage))

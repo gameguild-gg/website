@@ -35,6 +35,10 @@ public sealed class UpdatePricingRuleCommandHandler(IPricingRuleRepository prici
         rule.DaysOfWeek = request.DaysOfWeek;
         rule.Region = request.Region;
         rule.CustomerSegment = request.CustomerSegment;
+        rule.UsageMetricKey = request.UsageMetricKey;
+        rule.UsageMinValue = request.UsageMinValue;
+        rule.UsageMaxValue = request.UsageMaxValue;
+        rule.IsScheduled = request.IsScheduled;
 
         if (request.Tiers is not null)
         {

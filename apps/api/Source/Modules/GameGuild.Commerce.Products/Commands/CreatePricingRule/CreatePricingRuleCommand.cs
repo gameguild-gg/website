@@ -29,6 +29,10 @@ namespace GameGuild.Commerce.Products;
 /// <param name="DaysOfWeek">Days of week (comma-separated 0-6)</param>
 /// <param name="Region">Geographic region (RegionBased rules)</param>
 /// <param name="CustomerSegment">Customer segment restriction</param>
+/// <param name="UsageMetricKey">Usage metric key the rule is gated on (issue #395 usage adjustments)</param>
+/// <param name="UsageMinValue">Inclusive lower bound on the usage metric value</param>
+/// <param name="UsageMaxValue">Inclusive upper bound on the usage metric value</param>
+/// <param name="IsScheduled">Opt-in to automated window scheduling (issue #395)</param>
 /// <param name="Tiers">Volume tiers for tiered/volume rules</param>
 [AuthorizeRequest(MonetizationPermission.Keys.Monetize)]
 public sealed record CreatePricingRuleCommand(
@@ -52,5 +56,9 @@ public sealed record CreatePricingRuleCommand(
     string? DaysOfWeek = null,
     string? Region = null,
     string? CustomerSegment = null,
+    string? UsageMetricKey = null,
+    decimal? UsageMinValue = null,
+    decimal? UsageMaxValue = null,
+    bool IsScheduled = false,
     IReadOnlyList<PricingRuleTierRequest>? Tiers = null
 ) : ICommand<PricingRuleDto>, IPricingRuleCommandPayload;

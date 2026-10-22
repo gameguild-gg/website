@@ -14,6 +14,8 @@ public interface IPricingEngineService
     /// <param name="userId">Optional user ID for user-specific discounts</param>
     /// <param name="quantity">Quantity being priced; drives volume-tier pricing rules (issue #395)</param>
     /// <param name="customerSegment">Optional customer segment for segment-scoped rules (issue #395)</param>
+    /// <param name="usageMetrics">Optional usage metric values; gate usage-conditioned rules (issue #395)</param>
+    /// <param name="experimentBucketKey">Optional A/B experiment bucket key (issue #395); enrolls the key in the product's live experiment and applies its variant</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Pricing calculation result</returns>
     Task<PricingCalculationResult> CalculatePriceAsync(
@@ -23,6 +25,8 @@ public interface IPricingEngineService
         Guid? userId = null,
         int quantity = 1,
         string? customerSegment = null,
+        IReadOnlyDictionary<string, decimal>? usageMetrics = null,
+        string? experimentBucketKey = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -35,6 +39,8 @@ public interface IPricingEngineService
         Guid? userId = null,
         int quantity = 1,
         string? customerSegment = null,
+        IReadOnlyDictionary<string, decimal>? usageMetrics = null,
+        string? experimentBucketKey = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

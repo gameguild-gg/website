@@ -64,7 +64,8 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
 
     /// <summary>
     /// Run the pricing engine for a product: base/sale price, the highest-priority applicable
-    /// rule (volume tiers, customer segment), and promo codes.
+    /// rule (volume tiers, customer segment, usage-metric gate), the A/B experiment arm for
+    /// the bucket key, and promo codes.
     /// </summary>
     /// <param name="request">Calculation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -79,9 +80,28 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
             request.Quantity,
             request.CustomerSegment,
             request.PromoCodes,
-            GetUserId());
+            GetUserId(),
+            request.UsageMetrics,
+            request.ExperimentBucketKey);
 
         var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Run one automated pricing scheduling pass immediately (issue #395): opt-in scheduled
+    /// rules are activated/deactivated to match their date window and date-bounded
+    /// experiments start/complete. The background scheduler runs the same pass periodically.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("scheduling:sweep")]
+    [RequirePermission(ProductsPermission.Keys.PricingManage)]
+    public async Task<ActionResult<PricingScheduleSweepResult>> RunSchedulingSweep(
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryActor(out _, out _)) return Forbid();
+
+        var result = await mediator.Send(new RunPricingScheduleSweepCommand(), cancellationToken).ConfigureAwait(false);
         return Ok(result);
     }
 
@@ -119,6 +139,10 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
             request.DaysOfWeek,
             request.Region,
             request.CustomerSegment,
+            request.UsageMetricKey,
+            request.UsageMinValue,
+            request.UsageMaxValue,
+            request.IsScheduled,
             request.Tiers);
 
         var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
@@ -162,6 +186,10 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
             request.DaysOfWeek,
             request.Region,
             request.CustomerSegment,
+            request.UsageMetricKey,
+            request.UsageMinValue,
+            request.UsageMaxValue,
+            request.IsScheduled,
             request.Tiers);
 
         var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
@@ -247,12 +275,21 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
 /// <summary>
 /// Request to calculate a price through the pricing engine.
 /// </summary>
+/// <param name="ProductId">Product to price</param>
+/// <param name="PricingId">Optional specific pricing option</param>
+/// <param name="Quantity">Quantity being priced</param>
+/// <param name="CustomerSegment">Optional customer segment</param>
+/// <param name="PromoCodes">Optional promo codes</param>
+/// <param name="UsageMetrics">Optional usage metric values (issue #395 usage-based adjustments)</param>
+/// <param name="ExperimentBucketKey">Optional A/B experiment bucket key (defaults to the acting user)</param>
 public sealed record CalculatePricingRequest(
     Guid ProductId,
     Guid? PricingId = null,
     int Quantity = 1,
     string? CustomerSegment = null,
-    List<string>? PromoCodes = null
+    List<string>? PromoCodes = null,
+    Dictionary<string, decimal>? UsageMetrics = null,
+    string? ExperimentBucketKey = null
 );
 
 /// <summary>
@@ -279,6 +316,10 @@ public sealed record CreatePricingRuleRequest(
     string? DaysOfWeek = null,
     string? Region = null,
     string? CustomerSegment = null,
+    string? UsageMetricKey = null,
+    decimal? UsageMinValue = null,
+    decimal? UsageMaxValue = null,
+    bool IsScheduled = false,
     IReadOnlyList<PricingRuleTierRequest>? Tiers = null
 );
 
@@ -306,5 +347,9 @@ public sealed record UpdatePricingRuleRequest(
     string? DaysOfWeek = null,
     string? Region = null,
     string? CustomerSegment = null,
+    string? UsageMetricKey = null,
+    decimal? UsageMinValue = null,
+    decimal? UsageMaxValue = null,
+    bool IsScheduled = false,
     IReadOnlyList<PricingRuleTierRequest>? Tiers = null
 );

@@ -24,6 +24,7 @@ public static class ProductsModule
         services.AddScoped<IPromoStackingRuleRepository, PromoStackingRuleRepository>();
         services.AddScoped<IUserProductRepository, UserProductRepository>();
         services.AddScoped<IPricingRuleRepository, PricingRuleRepository>();
+        services.AddScoped<IPricingExperimentRepository, PricingExperimentRepository>();
 
         // Register services
         services.AddScoped<IPricingEngineService, PricingEngineService>();
@@ -38,6 +39,11 @@ public static class ProductsModule
         services.AddScoped<IProductCatalogAuditLogger, ProductCatalogAuditLogger>();
         services.AddScoped<IProductInventoryService, ProductInventoryService>();
         services.AddScoped<IBundleSavingsCalculator, BundleSavingsCalculator>();
+        services.AddScoped<IPricingExperimentService, PricingExperimentService>();
+
+        // Automated pricing scheduling (issue #395): opt-in per rule/experiment date windows.
+        services.AddOptions<PricingSchedulingOptions>();
+        services.AddHostedService<PricingSchedulingBackgroundService>();
 
         // Note: Order-related services are now in GameGuild.Commerce.Orders module
         // CQRS handlers are automatically registered by assembly scanning in ApplicationLayerExtensions
@@ -201,7 +207,11 @@ public static class ProductsModule
             entity.HasIndex(e => e.ProductId);
             entity.HasIndex(e => e.RuleType);
             entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.IsScheduled);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.UsageMetricKey).HasMaxLength(100);
+            entity.Property(e => e.UsageMinValue).HasPrecision(18, 4);
+            entity.Property(e => e.UsageMaxValue).HasPrecision(18, 4);
             entity.HasMany(e => e.PricingTiers)
                 .WithOne(t => t.PricingRule)
                 .HasForeignKey(t => t.PricingRuleId)
@@ -212,6 +222,66 @@ public static class ProductsModule
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.PricingRuleId);
+        });
+
+        // Pricing A/B experiments (issue #395): experiment, arms, sticky assignments, outcomes.
+        modelBuilder.Entity<GameGuild.Commerce.PricingExperiment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ProductId);
+            entity.HasIndex(e => e.Status);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.HasMany(e => e.Variants)
+                .WithOne(v => v.Experiment)
+                .HasForeignKey(v => v.ExperimentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<GameGuild.Commerce.PricingExperimentVariant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ExperimentId);
+            entity.HasIndex(e => e.Name);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.DiscountPercentage).HasPrecision(5, 2);
+            entity.Property(e => e.FixedPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<GameGuild.Commerce.PricingExperimentAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ExperimentId);
+            entity.HasIndex(e => e.VariantId);
+            entity.HasIndex(e => e.BucketKey);
+            entity.HasIndex(e => new { e.ExperimentId, e.BucketKey }).IsUnique();
+            entity.Property(e => e.BucketKey).IsRequired().HasMaxLength(200);
+            entity.HasOne(e => e.Experiment)
+                .WithMany()
+                .HasForeignKey(e => e.ExperimentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Variant)
+                .WithMany()
+                .HasForeignKey(e => e.VariantId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<GameGuild.Commerce.PricingExperimentOutcome>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ExperimentId);
+            entity.HasIndex(e => e.VariantId);
+            entity.HasIndex(e => e.OccurredAt);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.Property(e => e.Currency).IsRequired().HasMaxLength(3);
+            entity.HasOne(e => e.Experiment)
+                .WithMany()
+                .HasForeignKey(e => e.ExperimentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Variant)
+                .WithMany()
+                .HasForeignKey(e => e.VariantId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PricingTier>(entity =>
