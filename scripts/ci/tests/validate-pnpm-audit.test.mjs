@@ -210,6 +210,30 @@ test("a new Next.js advisory fails for every workspace installation", () => {
   }
 });
 
+for (const [module_name, version, github_advisory_id] of [
+  ["toml", "4.2.0", "GHSA-4qx8-w7c3-pj3p"],
+  ["toml", "4.2.0", "GHSA-9j65-hcg3-gc64"],
+  ["toml", "4.2.0", "GHSA-9qmh-m7c6-f92p"],
+  ["dompurify", "3.4.16", "GHSA-cg2g-xh64-v4q7"],
+  ["dompurify", "3.4.16", "GHSA-mrv2-3pqr-j5jr"],
+  ["dompurify", "3.4.16", "GHSA-c6gr-qvv4-5v3f"],
+  ["ip-address", "10.7.2", "GHSA-rxp7-6hxx-x8q5"],
+]) {
+  test(`${github_advisory_id} remains rejected despite unrelated verified patches`, () => {
+    const invalid = patchedReport();
+    invalid.advisories[module_name] = {
+      module_name,
+      github_advisory_id,
+      findings: [{ version }],
+    };
+    invalid.metadata.vulnerabilities.moderate = 1;
+    assert.throws(
+      () => validateAuditReport(invalid, 1, true, true),
+      new RegExp(`Unmitigated.*${github_advisory_id}`),
+    );
+  });
+}
+
 test("each severity rejects non-integer and non-numeric vulnerability counts", () => {
   for (const level of ["info", "low", "moderate", "high", "critical"]) {
     for (const count of [null, false, true, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {

@@ -41,3 +41,39 @@ dependency audit, Web tests/build, session HTTP/PostgreSQL/browser acceptance an
 the remaining current-source checks must pass before merging. Existing results
 from earlier heads are not acceptance of this correction. This PR does not close
 the remaining scope of #166 or #278.
+
+## Subsequent dependency audit on the composed source
+
+The next source, `816126c1dff9a54c39ce83b57cd52c984327496e`, includes the
+independently delivered SAML base and the hydration fixture correction. Codacy and
+the PR agent approved that source. Repository-policy artifact `12450663653`
+(SHA-256 `38c9c231ac19c960a4c6e18acd7ca82080e9b47a21c54c25557c284f781dfbc0`)
+then identified seven additional advisories across three locked packages:
+
+| Package | Previous | Fixed release | Advisory IDs |
+| --- | --- | --- | --- |
+| toml | 4.2.0 | [5.0.1](https://github.com/BinaryMuse/toml-node/releases/tag/v5.0.1) | GHSA-4qx8-w7c3-pj3p, GHSA-9j65-hcg3-gc64, GHSA-9qmh-m7c6-f92p |
+| dompurify | 3.4.16 | [3.4.17](https://github.com/cure53/DOMPurify/releases/tag/3.4.17) | GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr, GHSA-c6gr-qvv4-5v3f |
+| ip-address | 10.7.2 | [10.7.4](https://github.com/beaugunderson/ip-address/security/advisories/GHSA-rxp7-6hxx-x8q5) | GHSA-rxp7-6hxx-x8q5 |
+
+The shared overrides and all matching lock resolutions use these fixed versions,
+with integrity values from each exact npm registry manifest. TOML and ip-address
+add no dependencies and keep their Node requirements. DOMPurify declares
+`@types/trusted-types` in both dependency sections; its optional declaration takes
+precedence, preserving the existing optional `2.0.7` resolution. The two existing
+verified local patches remain independently checked; no new exception is added.
+
+TOML 5 deliberately rejects integers outside JavaScript's safe integer range unless
+the caller opts into BigInt, and always rejects values outside signed 64-bit range.
+The affected connection-profile consumer uses strings, booleans and ordinary
+numeric settings. New hosted checks cover that shape, table arrays, dotted paths,
+the explicit BigInt option and rejected oversized integers. Sanitizer checks cover
+ordinary content, event-attribute removal and template removal; address checks
+cover IPv4, IPv6, zones and malformed long input. These are bounded compatibility
+and regression checks, not timing benchmarks or complete reproductions of every
+upstream exploit. Seven audit-validator cases ensure the advisories still fail
+closed even when unrelated local patches have been verified.
+
+This follow-up was also prepared without executing dependencies or product tests
+locally. Its own hosted frozen installation, audit, tests and composed session
+acceptance must pass before delivery. Earlier results do not certify this source.
