@@ -17,6 +17,9 @@ export class ComplianceAuditSecurityEventsModule {
 
   /**
    * Returns the security alert queue for the current tenant.
+   * Query-operations tier (issue #375): enumerating the alert queue requires the
+   * `queries:list` permission; the service still clamps results to the caller's
+   * tenant (fail-closed).
    */
   async getApiAuditSecurityEventsAlerts(query?: {
     status?: Types.ComplianceAuditSecurityAlertStatus;
@@ -99,6 +102,8 @@ export class ComplianceAuditSecurityEventsModule {
 
   /**
    * Returns the durable delivery status of the security event pipeline for this instance.
+   * Query-operations tier (issue #375): structured pipeline-status querying requires the
+   * `queries:query` permission (fail-closed).
    */
   async getApiAuditSecurityEventsDeliveryStatus(): Promise<Result<Types.ComplianceAuditSecurityEventDeliveryStatusOutput, ApiError>> {
     const url = '/api/audit/security-events/delivery-status';
@@ -215,6 +220,8 @@ export class ComplianceAuditSecurityEventsModule {
 
   /**
    * Returns the complete security event taxonomy used by the security event pipeline.
+   * Query-operations tier (issue #375): enumerating the taxonomy catalog requires the
+   * `queries:list` permission (fail-closed).
    */
   async getApiAuditSecurityEventsTaxonomy(): Promise<Result<Types.ComplianceAuditSecurityEventTaxonomyOutput, ApiError>> {
     const url = '/api/audit/security-events/taxonomy';
@@ -236,6 +243,9 @@ export class ComplianceAuditSecurityEventsModule {
 
   /**
    * Returns the security alert queue for the current tenant.
+   * Query-operations tier (issue #375): enumerating the alert queue requires the
+   * `queries:list` permission; the service still clamps results to the caller's
+   * tenant (fail-closed).
    */
   async getAuditSecurityEventsAlerts(query?: {
     status?: Types.ComplianceAuditSecurityAlertStatus;
@@ -318,6 +328,8 @@ export class ComplianceAuditSecurityEventsModule {
 
   /**
    * Returns the durable delivery status of the security event pipeline for this instance.
+   * Query-operations tier (issue #375): structured pipeline-status querying requires the
+   * `queries:query` permission (fail-closed).
    */
   async getAuditSecurityEventsDeliveryStatus(): Promise<Result<Types.ComplianceAuditSecurityEventDeliveryStatusOutput, ApiError>> {
     const url = '/v1/audit/security-events/delivery-status';
@@ -434,6 +446,8 @@ export class ComplianceAuditSecurityEventsModule {
 
   /**
    * Returns the complete security event taxonomy used by the security event pipeline.
+   * Query-operations tier (issue #375): enumerating the taxonomy catalog requires the
+   * `queries:list` permission (fail-closed).
    */
   async getAuditSecurityEventsTaxonomy(): Promise<Result<Types.ComplianceAuditSecurityEventTaxonomyOutput, ApiError>> {
     const url = '/v1/audit/security-events/taxonomy';

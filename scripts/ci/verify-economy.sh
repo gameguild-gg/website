@@ -924,6 +924,10 @@ if [[ "$gate_profile" == full || "$gate_profile" == release || "$gate_profile" =
   playwright_evidence="$artifact_root/playwright/public-smoke.json"
   standalone_web_root="$repository_root/apps/web/.next/standalone/apps/web"
   mkdir -p "$standalone_web_root/.next"
+  # The standalone output already traces part of public/ (emception CDN), so a
+  # plain `cp -R public dst/public` would nest into public/public and 404 every
+  # other static asset. Replace the traced copy with the full public tree.
+  rm -rf "$standalone_web_root/public"
   cp -R "$repository_root/apps/web/public" "$standalone_web_root/public"
   cp -R "$repository_root/apps/web/.next/static" "$standalone_web_root/.next/static"
   export PORT="$web_port"

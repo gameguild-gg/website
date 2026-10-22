@@ -57,7 +57,9 @@
     ".next-e2e-coding-cycle/types/**/*.ts",
     ".next-e2e-coding-cycle/dev/types/**/*.ts",
     ".next-fast/types/**/*.ts",
-    ".next-fast/dev/types/**/*.ts"
+    ".next-fast/dev/types/**/*.ts",
+    ".next-e2e-grading-turbo/types/**/*.ts",
+    ".next-e2e-grading-turbo/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

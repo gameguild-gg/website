@@ -16,7 +16,7 @@ import {
   VALIDATION_CASES,
   selectValidationCases,
   validateCapabilityCatalog,
-} from "./capability-catalog.mjs";
+} from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/capability-catalog.mjs";
 import {
   CHECKPOINTS,
   assertApplicableCheckpoint,
@@ -27,9 +27,8 @@ import {
   requestHash,
   selectQuizDefinitions,
   targetCheckpointForQuiz,
-} from "./definitions.mjs";
-import { resolveClientBuildTarget } from "./api.mjs";
-import { authenticateResetOwner } from "./cleanup.mjs";
+} from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/definitions.mjs";
+import { authenticateResetOwner } from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/cleanup.server.mjs";
 import {
   assertLocalUrl,
   createManifest,
@@ -37,7 +36,7 @@ import {
   withScenarioLock,
   writeJsonAtomic,
   REPO_ROOT,
-} from "./manifest.mjs";
+} from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/manifest.server.mjs";
 import {
   createValidationReport,
   listValidationEvidence,
@@ -46,14 +45,15 @@ import {
   validationEvidenceDirectory,
   validationRunDirectory,
   writeValidationReport,
-} from "./report.mjs";
+} from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/report.server.mjs";
 import {
   QUESTION_TYPE_DRIVER_KEYS,
   getQuestionTypeDriver,
   validateQuestionTypeDrivers,
 } from "./question-type-drivers.mjs";
-import { browserSpecsForScenario } from "./browser.mjs";
-import { buildScenarioUrls } from "./urls.mjs";
+import { browserSpecsForScenario } from "./spec-selection.mjs";
+import { resolveScenarioTargetKeys } from "./selection.mjs";
+import { buildScenarioUrls } from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/urls.mjs";
 
 test("scenario definitions expose canonical workflows and checkpoint applicability", () => {
   assert.equal(getScenarioDefinition("automated").reviewMethodValue, 4);
@@ -85,6 +85,83 @@ test("scenario definitions expose canonical workflows and checkpoint applicabili
     ),
     "review-ready",
   );
+});
+
+test("stable case IDs select only their adapter targets", () => {
+  assert.deepEqual(
+    resolveScenarioTargetKeys("question-type-matrix", {
+      caseIds: ["QG-ITEM-SINGLE-CHOICE-001"],
+      quizKeys: [],
+    }),
+    ["single-choice"],
+  );
+});
+
+test("validation commands invoke test runners without an operational CLI", async () => {
+  const rootPackage = JSON.parse(
+    await readFile(resolve(REPO_ROOT, "package.json"), "utf8"),
+  );
+  assert.equal(rootPackage.scripts["grading:scenario"], undefined);
+  assert.equal(rootPackage.scripts["grading:validation:catalog"], undefined);
+  assert.match(
+    rootPackage.scripts["grading:validation:contracts"],
+    /--filter @game-guild\/grading test/,
+  );
+  assert.match(
+    rootPackage.scripts["grading:validation:contracts"],
+    /--filter @game-guild\/grading-adapter-quiz test/,
+  );
+  assert.match(
+    rootPackage.scripts["grading:validation:smoke"],
+    /playwright test --config=playwright\.grading\.config\.mjs/,
+  );
+  assert.doesNotMatch(
+    rootPackage.scripts["grading:validation:smoke"],
+    /quiz-grading-scenario|cli\.mjs/,
+  );
+});
+
+test("browser validation boots the lean stack without SDK watchers", async () => {
+  const supervisor = await readFile(
+    resolve(REPO_ROOT, "scripts/e2e-stack.mjs"),
+    "utf8",
+  );
+
+  assert.match(
+    supervisor,
+    /spawn\(process\.execPath, \["scripts\/dev-fast\.mjs"\]/,
+  );
+  assert.doesNotMatch(
+    supervisor,
+    /spawn\("pnpm", \["run", "dev:fast"\]/,
+  );
+  assert.doesNotMatch(supervisor, /spawn\("pnpm", \["run", "dev"\]/);
+  assert.doesNotMatch(supervisor, /generate:watch|build:watch/);
+  assert.match(supervisor, /DEV_FAST_API_WATCH: "0"/);
+  assert.match(supervisor, /DEV_FAST_API_NO_BUILD: "1"/);
+  assert.match(supervisor, /"-m:1"/);
+  assert.match(supervisor, /"-nr:false"/);
+  assert.match(supervisor, /DEV_FAST_WEB_BUNDLER: "turbopack"/);
+  assert.match(supervisor, /DEV_FAST_WEB_MAX_OLD_SPACE_SIZE_MB/);
+  assert.match(supervisor, /GRADING_VALIDATION_E2E: "1"/);
+  assert.match(supervisor, /signalProcess\(dev, "SIGTERM"\)/);
+
+  const devFast = await readFile(
+    resolve(REPO_ROOT, "scripts/dev-fast.mjs"),
+    "utf8",
+  );
+  assert.match(devFast, /web = run\(process\.execPath, webCommand/);
+  assert.doesNotMatch(
+    devFast,
+    /\["--filter", "@game-guild\/web", "run", "dev:fast"\]/,
+  );
+
+  const nextConfig = await readFile(
+    resolve(REPO_ROOT, "apps/web/next.config.ts"),
+    "utf8",
+  );
+  assert.match(nextConfig, /GRADING_VALIDATION_E2E/);
+  assert.match(nextConfig, /\.next-e2e-grading-turbo/);
 });
 
 test("review matrix keeps one isolated two-question quiz per executable workflow", () => {
@@ -357,12 +434,86 @@ test("browser cases remain partial until a browser execution records a pass", ()
     manifest,
     scenarioReport: { checks: [] },
     cases: [validationCase],
-    results: [{ caseId: validationCase.id, status: "pass" }],
+    results: [
+      {
+        caseId: validationCase.id,
+        status: "pass",
+        evidence: ["evidence/result.png"],
+      },
+    ],
     completedAutomations: ["api", "browser"],
   });
   assert.equal(browser.cases[0].status, "pass");
   assert.equal(browser.cases[0].reason, null);
   assert.equal(browser.cases[0].execution.automationCompleted, true);
+});
+
+test("partial browser selection never promotes unexecuted cases", () => {
+  const manifest = fixtureManifest();
+  const [selected, unselected] = selectValidationCases({
+    caseIds: ["QG-ITEM-SINGLE-CHOICE-001", "QG-ITEM-FILL-TEXT-001"],
+  });
+  const report = createValidationReport({
+    manifest,
+    scenarioReport: { checks: [] },
+    cases: [selected, unselected],
+    results: [
+      {
+        caseId: selected.id,
+        status: "pass",
+        evidence: ["evidence/selected.png"],
+      },
+    ],
+    completedAutomations: ["api", "browser"],
+  });
+
+  assert.equal(report.cases[0].status, "pass");
+  assert.equal(report.cases[0].execution.automationCompleted, true);
+  assert.deepEqual(report.cases[0].execution.completedAutomations, [
+    "api",
+    "browser",
+  ]);
+  assert.equal(report.cases[1].status, "partial");
+  assert.equal(report.cases[1].execution.automationCompleted, false);
+  assert.deepEqual(report.cases[1].execution.completedAutomations, ["api"]);
+});
+
+test("cross-cutting verification failures override observed browser passes", () => {
+  const manifest = fixtureManifest();
+  const validationCase = selectValidationCases({
+    caseIds: ["QG-ITEM-SINGLE-CHOICE-001"],
+  })[0];
+  const report = createValidationReport({
+    manifest,
+    scenarioReport: {
+      checks: [
+        {
+          name: "outsider denied learning access",
+          ok: false,
+          detail: "unexpected access",
+        },
+      ],
+    },
+    cases: [validationCase],
+    results: [
+      {
+        caseId: validationCase.id,
+        status: "pass",
+        evidence: ["evidence/result.png"],
+      },
+    ],
+    completedAutomations: ["api", "browser"],
+  });
+
+  assert.equal(report.cases[0].status, "bug");
+  assert.match(report.cases[0].reason, /outsider denied learning access/);
+});
+
+test("question-type filters do not select review workflow keys", () => {
+  assert.throws(
+    () => selectValidationCases({ questionTypes: ["self"] }),
+    /Unknown question type selection/,
+  );
 });
 
 test("evidence sanitizer handles nested secrets and cycles", () => {
@@ -410,24 +561,6 @@ test("local URL guard rejects remote and non-HTTP targets", () => {
   );
   assert.throws(() => assertLocalUrl("https://example.com"), /non-local host/);
   assert.throws(() => assertLocalUrl("file:///tmp/api"), /http or https/);
-});
-
-test("generated client loader supports both regular and dev-fast output", () => {
-  const repoRoot = resolve("/workspace", "gameguild");
-  const standard = resolveClientBuildTarget({
-    repoRoot,
-    fileExists: (path) => path.endsWith("/dist/index.js"),
-  });
-  const fast = resolveClientBuildTarget({
-    repoRoot,
-    fileExists: (path) => path.endsWith("/dist-fast/index.js"),
-  });
-  assert.deepEqual(standard, {
-    label: "dist",
-    specifier: "@game-guild/client",
-  });
-  assert.equal(fast.label, "dist-fast");
-  assert.match(fast.specifier, /dist-fast\/index\.js$/);
 });
 
 test("manifest validation fails closed for unknown versions and ownership", () => {
