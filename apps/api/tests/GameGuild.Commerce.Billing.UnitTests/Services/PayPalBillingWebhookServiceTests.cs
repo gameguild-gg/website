@@ -16,13 +16,102 @@ public class PayPalBillingWebhookServiceTests
         var repository = new Mock<IBillingWebhookRepository>();
         repository
             .Setup(r => r.GetByExternalEventIdAsync("tx", PaymentProviders.PayPal, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BillingWebhookEvent { ExternalEventId = "tx", Provider = PaymentProviders.PayPal, ProcessedAt = DateTime.UtcNow });
+            .ReturnsAsync(new BillingWebhookEvent { ExternalEventId = "tx", Provider = PaymentProviders.PayPal, IsProcessed = true, ProcessedAt = DateTime.UtcNow });
 
         var service = CreateService(repository, Mock.Of<IPayPalSignatureVerificationService>(), Mock.Of<ISubscriptionLifecycleService>(), Mock.Of<ISubscriptionExternalIdService>());
 
         var result = await service.ProcessPayPalWebhookAsync("wh", "{}", "tx", "time", "sig", null, null, CancellationToken.None);
 
         result.WasAlreadyProcessed.Should().BeTrue();
+        repository.Verify(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()), Times.Never,
+            "a completed duplicate is acknowledged without reprocessing");
+    }
+
+    [Fact]
+    public async Task ProcessPayPalWebhookAsync_Should_Reprocess_PreviouslyFailed_Redelivery_Instead_Of_Masking_It_As_Duplicate()
+    {
+        // Regression (issue #408): a redelivery of a previously FAILED transmission used to be
+        // acknowledged as AlreadyProcessed, permanently masking the failure. It must instead be
+        // re-verified and re-routed on the existing inbox row.
+        var failedRow = new BillingWebhookEvent { ExternalEventId = "tx", Provider = PaymentProviders.PayPal, ProcessingAttempts = 1 };
+        failedRow.MarkAsFailed("transient downstream failure");
+
+        var repository = new Mock<IBillingWebhookRepository>();
+        repository
+            .Setup(r => r.GetByExternalEventIdAsync("tx", PaymentProviders.PayPal, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failedRow);
+        repository
+            .Setup(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BillingWebhookEvent e, CancellationToken _) => e);
+
+        var verification = new Mock<IPayPalSignatureVerificationService>();
+        verification
+            .Setup(v => v.VerifySignatureAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PayPalVerificationResult.Success());
+
+        var service = CreateService(repository, verification.Object, Mock.Of<ISubscriptionLifecycleService>(), Mock.Of<ISubscriptionExternalIdService>());
+
+        var payload = "{\"event_type\":\"BILLING.SUBSCRIPTION.UPDATED\",\"resource\":{\"id\":\"sub_1\",\"status\":\"ACTIVE\"}}";
+        var result = await service.ProcessPayPalWebhookAsync("wh", payload, "tx", "time", "sig", null, null, CancellationToken.None);
+
+        result.Processed.Should().BeTrue();
+        result.WasAlreadyProcessed.Should().BeFalse();
+        failedRow.IsProcessed.Should().BeTrue();
+        failedRow.IsSignatureVerified.Should().BeTrue();
+        failedRow.ProcessingAttempts.Should().Be(2,
+            "the redelivery reuses the existing row and counts as its next attempt");
+        repository.Verify(r => r.CreateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()), Times.Never,
+            "no duplicate inbox row may be created for a redelivery");
+    }
+
+    [Fact]
+    public async Task ProcessPayPalWebhookAsync_Should_Not_Flag_SignatureVerified_For_Failed_Verification()
+    {
+        var repository = new Mock<IBillingWebhookRepository>();
+        repository
+            .Setup(r => r.GetByExternalEventIdAsync("tx", PaymentProviders.PayPal, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BillingWebhookEvent?)null);
+        repository
+            .Setup(r => r.CreateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<BillingWebhookEvent, CancellationToken>((e, _) => e.MarkAsFailed("placeholder"))
+            .ReturnsAsync((BillingWebhookEvent e, CancellationToken _) => e);
+        repository
+            .Setup(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BillingWebhookEvent e, CancellationToken _) => e);
+
+        var verification = new Mock<IPayPalSignatureVerificationService>();
+        verification
+            .Setup(v => v.VerifySignatureAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PayPalVerificationResult.Failed("bad"));
+
+        var service = CreateService(repository, verification.Object, Mock.Of<ISubscriptionLifecycleService>(), Mock.Of<ISubscriptionExternalIdService>());
+
+        var result = await service.ProcessPayPalWebhookAsync("wh", "{}", "tx", "time", "sig", null, null, CancellationToken.None);
+
+        result.Processed.Should().BeFalse();
+        result.RequiresRetry.Should().BeFalse("a failed signature is never retried");
+    }
+
+    [Fact]
+    public async Task ReplayPayPalWebhookAsync_Should_Refuse_Unverified_Rows()
+    {
+        // Fail closed: the retry pipeline must never re-route a delivery that has no
+        // retained proof of signature verification (issue #408).
+        var unverifiedRow = new BillingWebhookEvent { ExternalEventId = "tx", Provider = PaymentProviders.PayPal, EventType = "BILLING.SUBSCRIPTION.UPDATED", Payload = "{}" };
+        unverifiedRow.MarkAsFailed("Invalid webhook signature: bad");
+
+        var repository = new Mock<IBillingWebhookRepository>();
+        repository
+            .Setup(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BillingWebhookEvent e, CancellationToken _) => e);
+
+        var service = CreateService(repository, Mock.Of<IPayPalSignatureVerificationService>(), Mock.Of<ISubscriptionLifecycleService>(), Mock.Of<ISubscriptionExternalIdService>());
+
+        var result = await service.ReplayPayPalWebhookAsync(unverifiedRow, CancellationToken.None);
+
+        result.Processed.Should().BeFalse();
+        result.RequiresRetry.Should().BeFalse();
+        unverifiedRow.IsProcessed.Should().BeFalse();
     }
 
     [Fact]

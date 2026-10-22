@@ -82,7 +82,7 @@ jobs:
 
       - name: Initialize full source analysis
         id: init
-        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build_mode }}
@@ -101,7 +101,7 @@ jobs:
           dotnet build packages/infrastructure/wasm/dotnet/dotnet-runtime/RoslynWrapper.csproj -c Release --no-incremental --nologo -m:1 -p:TreatWarningsAsErrors=true -bl:artifacts/codeql-full/roslyn-wrapper.binlog
 
       - name: Analyze the complete checkout
-        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
         with:
           output: artifacts/codeql-full/results
           category: /language:${{ matrix.language }}/full-source/${{ matrix.build_mode }}
@@ -110,7 +110,7 @@ jobs:
 
       - name: Preserve the full SARIF report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: full-codeql-${{ matrix.variant }}-${{ github.sha }}
           path: artifacts/codeql-full

@@ -33,6 +33,14 @@ public class LocalSignInRequest
     /// </summary>
     public bool? RememberMe { get; set; }
 
+    /// <summary>
+    ///     Optional guest bearer token presented by an anonymous visitor signing in
+    ///     (issue #213). Possession upgrades that guest session into this authenticated
+    ///     session (session continuity); an invalid or replayed guest token never blocks
+    ///     the sign-in itself.
+    /// </summary>
+    public string? GuestAccessToken { get; set; }
+
     // Server-only account resolution. These internal properties cannot be bound from JSON or advertised in OpenAPI.
     internal bool CredentialResolutionFailed { get; init; }
     internal Guid? ResolvedUserId { get; init; }

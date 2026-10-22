@@ -30,6 +30,14 @@ personas e dos estados operacionais. Ele amplia o runner por matrizes
 ortogonais, produz evidências e separa bugs, lacunas, decisões de produto e
 falhas do próprio harness antes de novas implementações.
 
+O plano de alinhamento
+[`11-web-only-grading-validation.md`](./11-web-only-grading-validation.md)
+substitui a CLI operacional pela interface web como única superfície humana,
+inverte a dependência entre aplicação e scripts de teste e preserva Playwright
+apenas como runner automatizado. Ele também formaliza o núcleo genérico e os
+adapters específicos para que quiz não seja incorporado ao grading e futuros
+tipos, como code, possam ser registrados sem condicionais na UI.
+
 O documento anterior
 [`quiz-assessment-end-to-end-grading-flow.md`](../quiz-assessment-end-to-end-grading-flow.md)
 permanece como diagnóstico detalhado do estado encontrado. Em caso de conflito,
@@ -275,22 +283,22 @@ Leitura central do fluxo:
 
 ## Documentos
 
-| Documento | Área | Resultado esperado |
-| --- | --- | --- |
-| [00-domain-and-workflows.md](./00-domain-and-workflows.md) | domínio e UX | vocabulário, combinações, precedência e estados fechados |
-| [01-contracts-and-persistence.md](./01-contracts-and-persistence.md) | contratos e dados | schemas versionados, migrations incrementais e auditoria coerente |
-| [02-authoring-and-publication.md](./02-authoring-and-publication.md) | professor | quiz, grading e assessment salvos atomicamente |
-| [03-author-assessment-test-runs.md](./03-author-assessment-test-runs.md) | professor | execução completa do assessment sem efeitos acadêmicos |
-| [04-graders-and-instructor-review.md](./04-graders-and-instructor-review.md) | handlers | cinco reviews, providers e revisão docente final |
-| [05-learner-attempts-and-results.md](./05-learner-attempts-and-results.md) | aluno | tentativa oficial, payload seguro e resultado completo |
-| [06-gradebook-audit-and-operations.md](./06-gradebook-audit-and-operations.md) | consolidação | nota final, pesos, auditoria, filas e notificações |
-| [07-delivery-roadmap-and-tests.md](./07-delivery-roadmap-and-tests.md) | qualidade | estratégia de PRs, gates e matriz E2E |
-| [08-implementation-sequence.md](./08-implementation-sequence.md) | execução | índice, regras globais e passagem entre as quatro partes |
-| [Parte 1](./implementation-sequence/01-foundation-and-authoring.md) | execução | fundação, autoria, segurança e publicação fail-closed |
-| [Parte 2](./implementation-sequence/02-core-grading-e2e.md) | execução | test run e E2E oficial individual e coletivo |
-| [Fechamento da Parte 2](./implementation-sequence/02a-core-grading-e2e-closeout.md) | gate corretivo | somente os pendentes pós-implementação, sem repetir `SEQ-07` a `SEQ-11` |
-| [Parte 3](./implementation-sequence/03-contextual-access-and-personas.md) | execução | personas contextuais, sessões reais e acesso consistente |
-| [Parte 4](./implementation-sequence/04-review-expansion-and-operations.md) | execução | reviews adicionais, operação e auditoria final |
+| Documento                                                                           | Área              | Resultado esperado                                                      |
+| ----------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------- |
+| [00-domain-and-workflows.md](./00-domain-and-workflows.md)                          | domínio e UX      | vocabulário, combinações, precedência e estados fechados                |
+| [01-contracts-and-persistence.md](./01-contracts-and-persistence.md)                | contratos e dados | schemas versionados, migrations incrementais e auditoria coerente       |
+| [02-authoring-and-publication.md](./02-authoring-and-publication.md)                | professor         | quiz, grading e assessment salvos atomicamente                          |
+| [03-author-assessment-test-runs.md](./03-author-assessment-test-runs.md)            | professor         | execução completa do assessment sem efeitos acadêmicos                  |
+| [04-graders-and-instructor-review.md](./04-graders-and-instructor-review.md)        | handlers          | cinco reviews, providers e revisão docente final                        |
+| [05-learner-attempts-and-results.md](./05-learner-attempts-and-results.md)          | aluno             | tentativa oficial, payload seguro e resultado completo                  |
+| [06-gradebook-audit-and-operations.md](./06-gradebook-audit-and-operations.md)      | consolidação      | nota final, pesos, auditoria, filas e notificações                      |
+| [07-delivery-roadmap-and-tests.md](./07-delivery-roadmap-and-tests.md)              | qualidade         | estratégia de PRs, gates e matriz E2E                                   |
+| [08-implementation-sequence.md](./08-implementation-sequence.md)                    | execução          | índice, regras globais e passagem entre as quatro partes                |
+| [Parte 1](./implementation-sequence/01-foundation-and-authoring.md)                 | execução          | fundação, autoria, segurança e publicação fail-closed                   |
+| [Parte 2](./implementation-sequence/02-core-grading-e2e.md)                         | execução          | test run e E2E oficial individual e coletivo                            |
+| [Fechamento da Parte 2](./implementation-sequence/02a-core-grading-e2e-closeout.md) | gate corretivo    | somente os pendentes pós-implementação, sem repetir `SEQ-07` a `SEQ-11` |
+| [Parte 3](./implementation-sequence/03-contextual-access-and-personas.md)           | execução          | personas contextuais, sessões reais e acesso consistente                |
+| [Parte 4](./implementation-sequence/04-review-expansion-and-operations.md)          | execução          | reviews adicionais, operação e auditoria final                          |
 
 Os documentos `00` a `06` são especificações temáticas e sua numeração não é
 uma sequência de codificação. A ordem obrigatória de implementação está no

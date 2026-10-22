@@ -55,6 +55,43 @@ public sealed class FraudAssessmentOptions
     [Range(1, 100)]
     public int MaxSignalScore { get; set; } = 50;
 
+    /// <summary>Amounts at or below this value are treated as micro-amounts for the
+    /// card-testing pattern signal (issue #409: small rapid transactions).</summary>
+    [Range(0, 1000)]
+    public decimal CardTestingAmountThreshold { get; set; } = 5m;
+
+    /// <summary>Prior micro-amount attempts allowed in the window before the card-testing
+    /// pattern signal fires.</summary>
+    [Range(0, 100)]
+    public int CardTestingPriorSmallAttemptsThreshold { get; set; } = 3;
+
+    /// <summary>Score contributed when the card-testing pattern signal fires.</summary>
+    [Range(0, 100)]
+    public int CardTestingWeight { get; set; } = 40;
+
+    /// <summary>Amount at or above which a first-cycle charge counts as high-value for the
+    /// account-age signal (issue #409: new customer + high-value purchase).</summary>
+    [Range(0, 1000000)]
+    public decimal NewCustomerHighValueAmountThreshold { get; set; } = 500m;
+
+    /// <summary>Score contributed when a first-cycle (new-customer) charge is high-value.</summary>
+    [Range(0, 100)]
+    public int NewCustomerHighValueWeight { get; set; } = 30;
+
+    /// <summary>Minimum number of prior successful charges before the behavior-anomaly
+    /// signal compares the current amount against the customer's baseline (issue #409).</summary>
+    [Range(1, 100)]
+    public int BehaviorAnomalyMinHistory { get; set; } = 2;
+
+    /// <summary>Multiplier of the customer's baseline average amount at which the current
+    /// charge is flagged as a behavioral anomaly.</summary>
+    [Range(1.0, 100.0)]
+    public decimal BehaviorAnomalyAmountMultiplier { get; set; } = 5m;
+
+    /// <summary>Score contributed when the behavior-anomaly signal fires.</summary>
+    [Range(0, 100)]
+    public int BehaviorAnomalyWeight { get; set; } = 25;
+
     /// <summary>Aggregate score at or above which the gate decision becomes <see cref="FraudDecision.Review"/>.</summary>
     [Range(1, 100)]
     public int ReviewThreshold { get; set; } = 40;
@@ -92,6 +129,14 @@ public sealed class FraudAssessmentOptions
             NewPaymentMethodWeight = overrideValues.NewPaymentMethodWeight ?? NewPaymentMethodWeight,
             DisputedPaymentWeight = overrideValues.DisputedPaymentWeight ?? DisputedPaymentWeight,
             MaxSignalScore = overrideValues.MaxSignalScore ?? MaxSignalScore,
+            CardTestingAmountThreshold = overrideValues.CardTestingAmountThreshold ?? CardTestingAmountThreshold,
+            CardTestingPriorSmallAttemptsThreshold = overrideValues.CardTestingPriorSmallAttemptsThreshold ?? CardTestingPriorSmallAttemptsThreshold,
+            CardTestingWeight = overrideValues.CardTestingWeight ?? CardTestingWeight,
+            NewCustomerHighValueAmountThreshold = overrideValues.NewCustomerHighValueAmountThreshold ?? NewCustomerHighValueAmountThreshold,
+            NewCustomerHighValueWeight = overrideValues.NewCustomerHighValueWeight ?? NewCustomerHighValueWeight,
+            BehaviorAnomalyMinHistory = overrideValues.BehaviorAnomalyMinHistory ?? BehaviorAnomalyMinHistory,
+            BehaviorAnomalyAmountMultiplier = overrideValues.BehaviorAnomalyAmountMultiplier ?? BehaviorAnomalyAmountMultiplier,
+            BehaviorAnomalyWeight = overrideValues.BehaviorAnomalyWeight ?? BehaviorAnomalyWeight,
             ReviewThreshold = overrideValues.ReviewThreshold ?? ReviewThreshold,
             BlockThreshold = overrideValues.BlockThreshold ?? BlockThreshold
         };
@@ -137,6 +182,38 @@ public sealed class FraudAssessmentOverride
     /// <summary>See <see cref="FraudAssessmentOptions.MaxSignalScore"/>.</summary>
     [Range(1, 100)]
     public int? MaxSignalScore { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.CardTestingAmountThreshold"/>.</summary>
+    [Range(0, 1000)]
+    public decimal? CardTestingAmountThreshold { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.CardTestingPriorSmallAttemptsThreshold"/>.</summary>
+    [Range(0, 100)]
+    public int? CardTestingPriorSmallAttemptsThreshold { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.CardTestingWeight"/>.</summary>
+    [Range(0, 100)]
+    public int? CardTestingWeight { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.NewCustomerHighValueAmountThreshold"/>.</summary>
+    [Range(0, 1000000)]
+    public decimal? NewCustomerHighValueAmountThreshold { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.NewCustomerHighValueWeight"/>.</summary>
+    [Range(0, 100)]
+    public int? NewCustomerHighValueWeight { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.BehaviorAnomalyMinHistory"/>.</summary>
+    [Range(1, 100)]
+    public int? BehaviorAnomalyMinHistory { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.BehaviorAnomalyAmountMultiplier"/>.</summary>
+    [Range(1.0, 100.0)]
+    public decimal? BehaviorAnomalyAmountMultiplier { get; set; }
+
+    /// <summary>See <see cref="FraudAssessmentOptions.BehaviorAnomalyWeight"/>.</summary>
+    [Range(0, 100)]
+    public int? BehaviorAnomalyWeight { get; set; }
 
     /// <summary>See <see cref="FraudAssessmentOptions.ReviewThreshold"/>.</summary>
     [Range(1, 100)]

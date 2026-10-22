@@ -18,12 +18,17 @@ export class CommercePaymentsFraudReviewsModule {
   /**
    * List the pending manual fraud reviews, oldest first.
    *
-   * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+   * Lists payments held by the fraud gate with a pending manual review, oldest first. Supports filtering by minimum score, risk band, charged amount and creation date range. Requires the payments:admin permission.
    */
   async getFraudReviews(query?: {
     tenantId?: string;
     page?: number;
     pageSize?: number;
+    minScore?: number;
+    riskLevel?: Types.CommercePaymentsFraudRiskLevel;
+    minAmount?: number;
+    fromUtc?: string;
+    toUtc?: string;
   }): Promise<Result<Types.CommercePaymentsFraudReviewListItem[], ApiError>> {
     const url = '/api/v1/fraud/reviews';
 
@@ -91,6 +96,64 @@ export class CommercePaymentsFraudReviewsModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.CommercePaymentsFraudReviewResolutionResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Bulk-approve pending fraud reviews, releasing the fraud holds.
+   *
+   * Approves the pending fraud reviews for a batch of held payments (2-100), releasing each fraud hold so the payment can be retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.
+   */
+  async postFraudReviewsBulkApprove(
+    body: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput,
+  ): Promise<Result<Types.CommercePaymentsFraudReviewsBulkResolutionResult, ApiError>> {
+    const url = '/api/v1/fraud/reviews/bulk-approve';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsFraudReviewsBulkResolutionResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Bulk-decline pending fraud reviews, keeping the payments failed and non-retryable.
+   *
+   * Declines the pending fraud reviews for a batch of held payments (2-100); each stays failed and is never retried. Items that are not pending reviews are skipped with a reason. Requires the payments:admin permission.
+   */
+  async postFraudReviewsBulkDeny(
+    body: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput,
+  ): Promise<Result<Types.CommercePaymentsFraudReviewsBulkResolutionResult, ApiError>> {
+    const url = '/api/v1/fraud/reviews/bulk-deny';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsFraudReviewsBulkResolutionResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

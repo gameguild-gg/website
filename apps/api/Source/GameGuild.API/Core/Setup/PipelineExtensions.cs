@@ -11,6 +11,7 @@ using GameGuild.API.Core.OpenApi;
 using GameGuild.Configuration.PresentationLayer;
 using GameGuild.Configuration.PresentationLayer.OpenAPI;
 using GameGuild.API.Core.Middleware;
+using GameGuild.API.Core.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,6 +98,9 @@ public static class PipelineExtensions
         // 14. Authentication (identify user from JWT/cookies)
         // SECURITY: Tenant resolution validates authenticated membership and therefore needs the ClaimsPrincipal first.
         app.UseAuthentication();
+        // Explicit/static policy schemes must identify the same principal used by the
+        // revocation, tenant membership and immutable actor checks below.
+        app.UseMiddleware<PolicyAuthenticationMiddleware>();
         // Reject revoked JWT state before it can establish tenant membership or an actor.
         app.UseTokenRevocation();
 

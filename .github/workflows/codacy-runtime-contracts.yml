@@ -1,0 +1,82 @@
+name: Codacy runtime contracts
+
+on:
+  pull_request:
+    branches: [main, develop, "feature/**"]
+    paths:
+      - ".github/workflows/codacy-runtime-contracts.yml"
+      - ".github/actions/setup-node-workspace/**"
+      - "apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-runner.ts"
+      - "apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-runner.test.ts"
+      - "apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.ts"
+      - "apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.test.ts"
+      - "apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-env-bindings/**"
+      - "apps/web/vitest.config.mts"
+      - "apps/web/src/test/**"
+      - "tools/emception/scripts/run-with-cleanup.mjs"
+      - "tools/emception/scripts/tests/run-with-cleanup.test.mjs"
+      - "package.json"
+      - "apps/web/package.json"
+      - "pnpm-lock.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codacy-runtime-contracts-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  runtime-contracts:
+    name: WAT WASI and cleanup contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        id: checkout
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Preserve exact-source inputs
+        id: inputs
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p runtime-contract-evidence
+          printf '%s\n' "$CANDIDATE_HEAD" > runtime-contract-evidence/head.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse HEAD > runtime-contract-evidence/checkout.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false rev-parse 'HEAD^{tree}' > runtime-contract-evidence/tree.txt
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false ls-files -z > runtime-contract-evidence/tracked-files.nul
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > runtime-contract-evidence/source-before.txt
+          sha256sum package.json pnpm-lock.yaml apps/web/package.json apps/web/vitest.config.mts apps/web/src/test/setup.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-runner.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wat-runner.test.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.ts \
+            apps/web/src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.test.ts \
+            tools/emception/scripts/run-with-cleanup.mjs tools/emception/scripts/tests/run-with-cleanup.test.mjs \
+            > runtime-contract-evidence/source-sha256.txt
+      - uses: ./.github/actions/setup-node-workspace
+      - name: Record installed WASI package identity
+        run: cp apps/web/node_modules/@runno/wasi/package.json runtime-contract-evidence/wasi-package.json
+      - name: Test synchronous cleanup contracts
+        run: node --test --test-reporter=tap tools/emception/scripts/tests/run-with-cleanup.test.mjs > runtime-contract-evidence/cleanup.tap
+      - name: Test WAT and WASI stdin contracts
+        run: >-
+          pnpm --filter @game-guild/web exec vitest run
+          src/components/block-content-editor/extras/code-studio/runners/wat-runner.test.ts
+          src/components/block-content-editor/extras/code-studio/runners/wasi-stdin.test.ts
+          --maxWorkers=1 --reporter=json
+          --outputFile="$GITHUB_WORKSPACE/runtime-contract-evidence/wat-vitest.json"
+      - name: Verify tracked-source identity after checks
+        if: ${{ always() && steps.inputs.outcome == 'success' }}
+        run: |
+          git --no-optional-locks -c gc.auto=0 -c maintenance.auto=false diff --quiet HEAD --
+          printf '%s\n' tracked-files-match-checkout > runtime-contract-evidence/source-after.txt
+      - name: Upload runtime contract evidence
+        if: ${{ always() && steps.inputs.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codacy-runtime-contracts-${{ github.event.pull_request.head.sha }}
+          path: runtime-contract-evidence
+          if-no-files-found: error

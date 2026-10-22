@@ -35,6 +35,10 @@ jobs:
           # LLM call deadline; default ai_timeout=120s is too short for
           # big-context calls through the omniroute proxy (30m here).
           CONFIG__AI_TIMEOUT: "1800"
+          CONFIG__MAX_MODEL_TOKENS: "900000"
+          PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: "true"
+          PR_REVIEWER__MAX_NUMBER_OF_CALLS: "100"
+          PR_CODE_SUGGESTIONS__MAX_NUMBER_OF_CALLS: "100"
           GITHUB_ACTION_CONFIG__AUTO_REVIEW: "true"
           GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: "true"
           GITHUB_ACTION_CONFIG__AUTO_IMPROVE: "true"

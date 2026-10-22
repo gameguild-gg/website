@@ -25,6 +25,26 @@ public sealed class FraudAssessmentOptionsValidator : IValidateOptions<FraudAsse
             failures.Add("Payments:FraudAssessment MaxSignalScore must not exceed BlockThreshold so a single signal can never block a payment on its own.");
         }
 
+        if (options.CardTestingAmountThreshold < 0)
+        {
+            failures.Add("Payments:FraudAssessment CardTestingAmountThreshold must not be negative.");
+        }
+
+        if (options.NewCustomerHighValueAmountThreshold < 0)
+        {
+            failures.Add("Payments:FraudAssessment NewCustomerHighValueAmountThreshold must not be negative.");
+        }
+
+        if (options.BehaviorAnomalyAmountMultiplier < 1.0m)
+        {
+            failures.Add("Payments:FraudAssessment BehaviorAnomalyAmountMultiplier must be at least 1.0.");
+        }
+
+        if (options.BehaviorAnomalyMinHistory < 1)
+        {
+            failures.Add("Payments:FraudAssessment BehaviorAnomalyMinHistory must be at least 1.");
+        }
+
         if (options.TenantOverrides.Count == 0)
         {
             return failures.Count > 0

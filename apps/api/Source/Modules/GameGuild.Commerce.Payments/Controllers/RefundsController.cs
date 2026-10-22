@@ -35,7 +35,7 @@ public sealed class RefundsController(
     /// <param name="ct">Cancellation token.</param>
     [HttpPost]
     [EndpointSummary("Request a refund for a payment")]
-    [EndpointDescription("Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway.")]
+    [EndpointDescription("Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway. Use kind=prorated to refund the unused time of the subscription billing period (subscription-linked payments only).")]
     [ProducesResponseType<RequestRefundResult>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -59,7 +59,8 @@ public sealed class RefundsController(
             body.Amount,
             body.Reason,
             body.ReasonDetails,
-            body.IdempotencyKey), ct).ConfigureAwait(false);
+            body.IdempotencyKey,
+            body.Kind), ct).ConfigureAwait(false);
 
         return result.Success ? Ok(result) : BadRequest(result);
     }
@@ -238,7 +239,8 @@ public sealed class RefundsController(
         decimal? Amount,
         string Reason,
         string? ReasonDetails = null,
-        string? IdempotencyKey = null);
+        string? IdempotencyKey = null,
+        RefundKind Kind = RefundKind.Full);
 
     /// <summary>Request body for approve/reject decisions.</summary>
     public sealed record RefundDecisionRequest(string? Notes = null);

@@ -50,7 +50,7 @@ export class CommercePaymentsRefundsModule {
    * are queued as pending; amounts below it (or all refunds when no threshold is
    * configured) execute immediately.
    *
-   * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway.
+   * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway. Use kind=prorated to refund the unused time of the subscription billing period (subscription-linked payments only).
    */
   async postRefunds(body: Types.CommercePaymentsRefundsControllerRequestRefundHttpInput): Promise<Result<Types.CommercePaymentsRequestRefundResult, ApiError>> {
     const url = '/api/v1/refunds';

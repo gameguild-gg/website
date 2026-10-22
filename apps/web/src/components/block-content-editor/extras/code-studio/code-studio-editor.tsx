@@ -1102,7 +1102,7 @@ export function CodeStudioEditor({
           />
         )
       
-      case "full-editor":
+      case "full-editor": {
         // No preview, usar displayConfig passado; no editor, usar activeDisplay
         const displayToUse = isPreview && displayConfig ? displayConfig : getActiveDisplay()
         const isUniqueInstance = panel.editorInstance === "unique"
@@ -1214,7 +1214,8 @@ export function CodeStudioEditor({
           </div>
         )
       
-      case "focus-editor":
+      }
+      case "focus-editor": {
         // Focus editor: Language selector instead of file tabs.
         // Always rendered in "multiple" mode — it intentionally shares the
         // global active file with sibling editors so the toggle is hidden.
@@ -1299,7 +1300,8 @@ export function CodeStudioEditor({
           </div>
         )
       
-      case "output":
+      }
+      case "output": {
         const mainFile = localData.files.find(f => f.isFile === 'm')
         const testFile = localData.files.find(f => f.isFile === 't')
         
@@ -1319,6 +1321,7 @@ export function CodeStudioEditor({
             hasTestFile={!!testFile}
           />
         )
+      }
     }
   }
 

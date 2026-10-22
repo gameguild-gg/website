@@ -16,6 +16,7 @@ namespace GameGuild.Commerce.Billing;
 public sealed class StripeDisputeEventConsumer(
     IPaymentRepository paymentRepository,
     IPaymentMethodRepository paymentMethodRepository,
+    IDisputeNotificationService disputeNotificationService,
     IApplicationDbContext context,
     ILogger<StripeDisputeEventConsumer> logger) : IStripeVerifiedEventConsumer
 {
@@ -62,6 +63,10 @@ public sealed class StripeDisputeEventConsumer(
         }
         else
         {
+            // Record the fee before applying the status: a terminal gateway status (won/lost)
+            // freezes the fee recorded at resolution time, so a dispute that closes on this
+            // event must capture its fee first (issue #419).
+            existing.RecordDisputeFee(disputePayload.DisputeFee);
             existing.ApplyGatewayStatus(MapStatus(disputePayload.Status), disputePayload.EvidenceDueBy);
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             logger.LogInformation(
@@ -95,6 +100,7 @@ public sealed class StripeDisputeEventConsumer(
             DueDate = payload.EvidenceDueBy
         };
         dispute.BindGatewayIdentity(StripeProvider, payload.DisputeId, payload.EvidenceDueBy);
+        dispute.RecordDisputeFee(payload.DisputeFee);
 
         await context.Set<PaymentDispute>().AddAsync(dispute, cancellationToken).ConfigureAwait(false);
 
@@ -105,6 +111,16 @@ public sealed class StripeDisputeEventConsumer(
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
+        // Automatic evidence collection (issue #419): attach the locally known invoice, receipt
+        // and subscription record as evidence rows so the team starts from the platform's own
+        // data. Failures never block the dispute reconciliation itself.
+        await CollectAutomaticEvidenceAsync(dispute, payment, cancellationToken).ConfigureAwait(false);
+
+        // Team alert (issue #419): notify the configured dispute recipients.
+        await disputeNotificationService
+            .SendDisputeCreatedAlertAsync(dispute, payment, cancellationToken)
+            .ConfigureAwait(false);
+
         logger.LogInformation(
             "Dispute {DisputeId} created from Stripe dispute {GatewayDisputeId} for payment {PaymentId} (payment status {Before} -> {After})",
             dispute.Id,
@@ -112,6 +128,98 @@ public sealed class StripeDisputeEventConsumer(
             payment.Id,
             statusBefore,
             payment.Status);
+    }
+
+    /// <summary>
+    ///     Attaches the platform's own billing data as dispute evidence (issue #419): the invoice
+    ///     reference, the payment receipt and the subscription record, each as its own
+    ///     <see cref="DisputeEvidence"/> row marked as system-collected. Best-effort: an
+    ///     evidence-write failure is logged and skipped, never propagated.
+    /// </summary>
+    private async Task CollectAutomaticEvidenceAsync(
+        PaymentDispute dispute,
+        Payment payment,
+        CancellationToken cancellationToken)
+    {
+        var evidenceRows = new List<DisputeEvidence>();
+
+        if (payment.InvoiceId.HasValue || !string.IsNullOrWhiteSpace(payment.Description))
+        {
+            evidenceRows.Add(new DisputeEvidence
+            {
+                DisputeId = dispute.Id,
+                EvidenceType = EvidenceType.Invoice,
+                Title = payment.InvoiceId.HasValue
+                    ? $"Local invoice {payment.InvoiceId}"
+                    : "Charge description record",
+                Description =
+                    (payment.InvoiceId.HasValue
+                        ? $"Local invoice {payment.InvoiceId} for the disputed payment. "
+                        : string.Empty)
+                    + $"Charged amount {payment.Amount:0.##} {payment.Currency} on {payment.ProcessedAt:u}. "
+                    + $"Payment reference {payment.ExternalPaymentId ?? payment.Id.ToString()}.",
+                SubmittedBy = Guid.Empty, // system-collected evidence
+                IsFromMerchant = true,
+                SubmittedAt = SystemClock.UtcNow
+            });
+        }
+
+        evidenceRows.Add(new DisputeEvidence
+        {
+            DisputeId = dispute.Id,
+            EvidenceType = EvidenceType.Receipt,
+            Title = "Payment receipt record",
+            Description =
+                $"Gateway receipt for payment {payment.Id}: provider {payment.Provider}, "
+                + $"transaction {payment.ExternalTransactionId ?? payment.ExternalPaymentId ?? "n/a"}, "
+                + $"amount {payment.Amount:0.##} {payment.Currency}, processed {payment.ProcessedAt:u}.",
+            SubmittedBy = Guid.Empty, // system-collected evidence
+            IsFromMerchant = true,
+            SubmittedAt = SystemClock.UtcNow
+        });
+
+        if (payment.SubscriptionId.HasValue)
+        {
+            evidenceRows.Add(new DisputeEvidence
+            {
+                DisputeId = dispute.Id,
+                EvidenceType = EvidenceType.SubscriptionRecord,
+                Title = $"Subscription {payment.SubscriptionId} billing record",
+                Description =
+                    $"The disputed charge settled subscription {payment.SubscriptionId} "
+                    + $"(billing identity {payment.IdempotencyKey}). The subscription record "
+                    + "documents the agreed plan, period and renewal schedule.",
+                SubmittedBy = Guid.Empty, // system-collected evidence
+                IsFromMerchant = true,
+                SubmittedAt = SystemClock.UtcNow
+            });
+        }
+
+        foreach (var evidence in evidenceRows)
+        {
+            try
+            {
+                await context.Set<DisputeEvidence>().AddAsync(evidence, cancellationToken).ConfigureAwait(false);
+                await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                logger.LogInformation(
+                    "Automatic {EvidenceType} evidence {EvidenceId} collected for dispute {DisputeId}",
+                    evidence.EvidenceType,
+                    evidence.Id,
+                    dispute.Id);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Automatic {EvidenceType} evidence collection failed for dispute {DisputeId}; skipped",
+                    evidence.EvidenceType,
+                    dispute.Id);
+            }
+        }
     }
 
     private async Task<Payment?> ResolvePaymentAsync(
@@ -211,7 +319,8 @@ public sealed class StripeDisputeEventConsumer(
                 ReadString(disputeObject, "status"),
                 ReadString(disputeObject, "reason"),
                 ReadMoney(disputeObject, "amount"),
-                ReadUnixTimestamp(disputeObject, "evidence_due_by"));
+                ReadUnixTimestamp(disputeObject, "evidence_due_by"),
+                ReadDisputeFee(disputeObject));
         }
         catch (JsonException)
         {
@@ -234,10 +343,35 @@ public sealed class StripeDisputeEventConsumer(
             ? DateTimeOffset.FromUnixTimeSeconds(property.GetInt64()).UtcDateTime
             : null;
 
+    /// <summary>
+    ///     Reads the dispute (chargeback) fee from the dispute's first balance transaction
+    ///     (issue #419), converting Stripe's minor units to major units. Zero when absent.
+    /// </summary>
+    private static decimal ReadDisputeFee(JsonElement disputeObject)
+    {
+        if (!disputeObject.TryGetProperty("balance_transactions", out var transactions)
+            || transactions.ValueKind != JsonValueKind.Array
+            || transactions.GetArrayLength() == 0)
+        {
+            return 0m;
+        }
+
+        var first = transactions[0];
+        if (first.ValueKind != JsonValueKind.Object
+            || !first.TryGetProperty("fee", out var fee)
+            || fee.ValueKind != JsonValueKind.Number)
+        {
+            return 0m;
+        }
+
+        return fee.GetDecimal() / 100m;
+    }
+
     internal sealed record StripeDisputePayload(
         string DisputeId,
         string? Status,
         string? Reason,
         decimal Amount,
-        DateTime? EvidenceDueBy);
+        DateTime? EvidenceDueBy,
+        decimal DisputeFee = 0m);
 }

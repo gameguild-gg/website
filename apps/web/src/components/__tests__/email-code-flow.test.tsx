@@ -12,6 +12,9 @@ let mockAuth: MockUseAuthReturn;
 vi.mock("@game-guild/client/react", () => ({
   useAuth: () => mockAuth,
 }));
+vi.mock("next-intl", () => ({
+  useTranslations: (namespace: string) => (key: string) => `${namespace}.${key}`,
+}));
 vi.mock("@/i18n/navigation", () => ({
   Link: ({
     children,
@@ -22,6 +25,7 @@ vi.mock("@/i18n/navigation", () => ({
       {children}
     </a>
   ),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 vi.mock("@/lib/auth/email-code-request", () => ({
   requestEmailCode: mocks.requestEmailCode,
@@ -73,8 +77,8 @@ describe("EmailCodeFlow", () => {
     rerender(<EmailCodeFlow redirectTo="/workspace" apiUrl="https://api.example.test" messages={messages} />);
     expect(screen.queryByLabelText("Sign-in code")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText("Authentication code"), "654321");
-    await user.click(screen.getByRole("button", { name: "Verify and sign in" }));
+    await user.type(screen.getByLabelText("signIn.mfa.codeLabel"), "654321");
+    await user.click(screen.getByRole("button", { name: "signIn.mfa.submit" }));
     expect(mockAuth.signIn).toHaveBeenLastCalledWith("credentials", {
       mfaToken: "x".repeat(43), method: "Totp", code: "654321", redirectTo: "/workspace",
     });

@@ -20,4 +20,7 @@ public class LocalSignUpCommand : ICommand<SignInResponse>
     public string? FirstName { get; set; }
 
     public string? LastName { get; set; }
+
+    /// <summary>Optional guest token to upgrade into the issued session (issue #213).</summary>
+    public string? GuestAccessToken { get; set; }
 }

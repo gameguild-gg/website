@@ -29,15 +29,16 @@ public sealed class GetPaymentRecoveryMetricsQueryHandler(IApplicationDbContext 
         }
 
         var payments = await query
-            .Select(payment => new
-            {
+            .Select(payment => new PaymentRecoveryRow(
                 payment.Status,
                 payment.RetryCount,
                 payment.MaxRetries,
                 payment.NextRetryAt,
                 payment.Amount,
-                payment.Currency
-            })
+                payment.Currency,
+                payment.ErrorCode,
+                payment.CreatedAt,
+                payment.ProcessedAt))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -89,11 +90,79 @@ public sealed class GetPaymentRecoveryMetricsQueryHandler(IApplicationDbContext 
                 recovered.Count,
                 Percentage(recovered.Count, everFailed.Count),
                 recoveredAmounts),
-            new PaymentDunningOutcomeMetrics(pendingRetry, dueForRetry, exhausted));
+            new PaymentDunningOutcomeMetrics(pendingRetry, dueForRetry, exhausted),
+            ComputeFailureReasonDistribution(everFailed),
+            ComputeRevenueRecognitionTiming(payments));
+    }
+
+    /// <summary>
+    ///     Groups the payments that failed at least once by their recorded gateway error code
+    ///     (issue #415 failure reason distribution). Failures without a code fall under
+    ///     <c>unclassified</c>; buckets are ordered by descending count, ties by code.
+    /// </summary>
+    private static PaymentFailureReasonDistribution ComputeFailureReasonDistribution(
+        IReadOnlyList<PaymentRecoveryRow> everFailed)
+    {
+        const string unclassified = "unclassified";
+        var buckets = everFailed
+            .GroupBy(payment => string.IsNullOrWhiteSpace(payment.ErrorCode) ? unclassified : payment.ErrorCode,
+                StringComparer.Ordinal)
+            .Select(group => new PaymentFailureReasonBucket(
+                group.Key,
+                group.Count(),
+                Percentage(group.Count(), everFailed.Count)))
+            .OrderByDescending(bucket => bucket.Count)
+            .ThenBy(bucket => bucket.FailureCode, StringComparer.Ordinal)
+            .ToList();
+
+        return new PaymentFailureReasonDistribution(everFailed.Count, buckets);
+    }
+
+    /// <summary>
+    ///     Creation-to-settlement timing of the window's succeeded payments (issue #415 revenue
+    ///     recognition timing): the recognition lag asynchronous confirmations and 3DS flows add
+    ///     before a charge becomes settled revenue. Payments still awaiting settlement are not
+    ///     counted.
+    /// </summary>
+    private static PaymentRevenueRecognitionTiming ComputeRevenueRecognitionTiming(
+        IReadOnlyList<PaymentRecoveryRow> payments)
+    {
+        var settlementHours = payments
+            .Where(payment => payment.ProcessedAt.HasValue
+                && (payment.Status == PaymentStatus.Succeeded
+                    || payment.Status == PaymentStatus.Refunded
+                    || payment.Status == PaymentStatus.Disputed))
+            .Select(payment => (payment.ProcessedAt!.Value - payment.CreatedAt).TotalHours)
+            .Where(hours => hours >= 0)
+            .OrderBy(hours => hours)
+            .ToList();
+
+        if (settlementHours.Count == 0)
+        {
+            return new PaymentRevenueRecognitionTiming(0, null, null, null);
+        }
+
+        return new PaymentRevenueRecognitionTiming(
+            settlementHours.Count,
+            Math.Round(settlementHours.Average(), 3, MidpointRounding.AwayFromZero),
+            Math.Round(settlementHours[settlementHours.Count / 2], 3, MidpointRounding.AwayFromZero),
+            Math.Round(settlementHours[^1], 3, MidpointRounding.AwayFromZero));
     }
 
     private static decimal Percentage(int numerator, int denominator)
         => denominator == 0
             ? 0m
             : Math.Round(numerator * 100m / denominator, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Row projection the metrics aggregate over.</summary>
+    private sealed record PaymentRecoveryRow(
+        PaymentStatus Status,
+        int RetryCount,
+        int MaxRetries,
+        DateTime? NextRetryAt,
+        decimal Amount,
+        string Currency,
+        string? ErrorCode,
+        DateTime CreatedAt,
+        DateTime? ProcessedAt);
 }
