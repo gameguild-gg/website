@@ -289,7 +289,7 @@ describe("quiz grading adapter contracts", () => {
       const serialized = JSON.stringify(delivery);
       for (const privateKey of privateAuthoringFields(testCase.entry.type)) {
         expect(serialized, `${testCase.id} leaked ${privateKey}`).not.toContain(
-          `\"${privateKey}\"`,
+          `"${privateKey}"`,
         );
       }
       if (testCase.entry.type === QuizEntryType.Numeric) {

@@ -15,11 +15,14 @@ public static class BillingEventStatusFilter
     /// <summary>Events whose last processing attempt failed.</summary>
     public const string Failed = "failed";
 
+    /// <summary>Events that exhausted their retry budget and were dead-lettered (issue #408).</summary>
+    public const string DeadLettered = "deadlettered";
+
     /// <summary>Accepted events that have neither completed nor failed yet.</summary>
     public const string Pending = "pending";
 
     /// <summary>All accepted filter values, lowercase.</summary>
-    public static readonly IReadOnlyList<string> All = [Processed, Failed, Pending];
+    public static readonly IReadOnlyList<string> All = [Processed, Failed, DeadLettered, Pending];
 
     /// <summary>Normalizes a caller-supplied status filter or returns null when absent.</summary>
     public static string? Normalize(string? status) =>

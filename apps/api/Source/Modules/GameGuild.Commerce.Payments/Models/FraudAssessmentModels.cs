@@ -61,6 +61,10 @@ public sealed record FraudSignal(string SignalType, int Weight, string Details);
 /// <param name="PaymentMethodId">Payment method presented for this attempt.</param>
 /// <param name="Amount">Authoritative amount from the subscription context.</param>
 /// <param name="Currency">Authoritative currency from the subscription context.</param>
+/// <param name="BillingCycleNumber">
+///     Billing cycle this attempt settles (1 = the subscription's first-ever charge). Used
+///     as the customer-tenure proxy for the account-age fraud signal (issue #409).
+/// </param>
 public sealed record FraudSignalContext(
     Guid TenantId,
     Guid PaymentId,
@@ -68,7 +72,8 @@ public sealed record FraudSignalContext(
     string? ExternalCustomerId,
     string? PaymentMethodId,
     decimal Amount,
-    string Currency);
+    string Currency,
+    int BillingCycleNumber = 1);
 
 /// <summary>Aggregate fraud assessment for one payment attempt.</summary>
 /// <param name="TenantId">Tenant the assessment belongs to.</param>

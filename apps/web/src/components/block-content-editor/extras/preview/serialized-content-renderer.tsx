@@ -188,7 +188,7 @@ export function SerializedContentRenderer({
               {children}
             </PreviewLink>
           )
-        case "heading":
+        case "heading": {
           const currentHeadingIndex = headingCounter++
           console.log("[v0] Rendering heading with index:", currentHeadingIndex)
           return (
@@ -196,6 +196,7 @@ export function SerializedContentRenderer({
               {children}
             </PreviewHeading>
           )
+        }
         default:
           return <div key={uniqueKey}>{children}</div>
       }
@@ -209,4 +210,4 @@ export function SerializedContentRenderer({
       {serializedState.root.children.map((node: any, index: number) => renderNode(node, index, "root"))}
     </div>
   )
-} 
+}

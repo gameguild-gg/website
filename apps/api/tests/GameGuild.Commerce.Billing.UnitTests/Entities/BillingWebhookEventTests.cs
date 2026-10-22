@@ -197,4 +197,55 @@ public class BillingWebhookEventEntityTests
         // Assert
         webhookEvent.SubscriptionId.Should().Be(subscriptionId);
     }
+
+    [Fact]
+    public void MarkSignatureVerified_Should_Set_The_Immutable_Verification_Proof()
+    {
+        var webhookEvent = new BillingWebhookEvent();
+        webhookEvent.IsSignatureVerified.Should().BeNull("legacy rows start unverified");
+
+        webhookEvent.MarkSignatureVerified();
+
+        webhookEvent.IsSignatureVerified.Should().BeTrue();
+        webhookEvent.SignatureVerifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+
+        // Verification is immutable once established.
+        var firstVerifiedAt = webhookEvent.SignatureVerifiedAt;
+        webhookEvent.MarkSignatureVerified();
+        webhookEvent.SignatureVerifiedAt.Should().Be(firstVerifiedAt);
+    }
+
+    [Fact]
+    public void MarkAsDeadLettered_Should_Record_The_Terminal_Reason()
+    {
+        var webhookEvent = new BillingWebhookEvent { ProcessingAttempts = 5 };
+
+        webhookEvent.MarkAsDeadLettered("Maximum retry attempts (5) exceeded");
+
+        webhookEvent.DeadLetteredAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        webhookEvent.DeadLetterReason.Should().Be("Maximum retry attempts (5) exceeded");
+        webhookEvent.IsProcessed.Should().BeFalse();
+        webhookEvent.IsFailed.Should().BeFalse("the failure evidence stays on the flags caller set");
+    }
+
+    [Fact]
+    public void MarkAsDeadLettered_Should_Truncate_Overlong_Reasons()
+    {
+        var webhookEvent = new BillingWebhookEvent();
+
+        webhookEvent.MarkAsDeadLettered(new string('x', 2500));
+
+        webhookEvent.DeadLetterReason.Should().NotBeNull();
+        webhookEvent.DeadLetterReason!.Length.Should().Be(1000);
+    }
+
+    [Fact]
+    public void MarkAsDeadLettered_Should_Default_The_Reason_When_Missing()
+    {
+        var webhookEvent = new BillingWebhookEvent();
+
+        webhookEvent.MarkAsDeadLettered("  ");
+
+        webhookEvent.DeadLetterReason.Should().Be("Retry budget exhausted");
+    }
 }

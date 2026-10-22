@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /.next-e2e-coding-cycle/
+/.next-e2e-grading-*/
 /.next-fast/
 /out/
 

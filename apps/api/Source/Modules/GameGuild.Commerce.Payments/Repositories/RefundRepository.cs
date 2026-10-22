@@ -1,6 +1,7 @@
 using GameGuild.Commerce;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -97,6 +98,15 @@ public class RefundRepository(
         {
             await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation,
+                ConstraintName: "ix_refunds_single_open_per_payment"
+            })
+        {
+            Entities.Remove(refund);
+            throw new OpenRefundAlreadyExistsException(refund.PaymentId, exception);
+        }
         catch (DbUpdateException)
         {
             Entities.Remove(refund);
@@ -126,5 +136,54 @@ public class RefundRepository(
         await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return refund;
+    }
+
+    /// <inheritdoc />
+    public async Task<Refund?> GetOpenRefundForPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug("Getting open refund for payment {PaymentId}", paymentId);
+        return await Query
+            .Where(refund => refund.PaymentId == paymentId
+                && (refund.Status == RefundStatus.Pending
+                    || refund.Status == RefundStatus.Approved
+                    || refund.Status == RefundStatus.Processing
+                    || refund.Status == RefundStatus.Failed))
+            .OrderByDescending(refund => refund.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<Refund?> GetByGatewayRefundIdAsync(
+        string gatewayRefundId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayRefundId);
+        logger.LogDebug("Getting refund by gateway refund id {GatewayRefundId}", LogRedaction.Sanitize(gatewayRefundId));
+        return await Query
+            .FirstOrDefaultAsync(refund => refund.GatewayRefundId == gatewayRefundId, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Refund>> ListDueForWorkflowAsync(
+        int maxExecutionAttempts,
+        DateTime failedBeforeUtc,
+        int take = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (take < 1) take = 50;
+
+        logger.LogDebug("Listing refunds due for the automated refund workflow");
+        return await Query
+            .Where(refund => refund.Status == RefundStatus.Approved
+                || (refund.Status == RefundStatus.Failed
+                    && refund.AttemptCount < maxExecutionAttempts
+                    && refund.FailedAt != null
+                    && refund.FailedAt <= failedBeforeUtc))
+            .OrderBy(refund => refund.CreatedAt)
+            .Take(take)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 }

@@ -91,6 +91,7 @@ public static class SecurityEventTaxonomy
         [AuditActionTypes.WebhookReplayDetected] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.Low, false, "Duplicate billing webhook delivery detected by idempotency checks."),
         [AuditActionTypes.WebhookRateLimitExceeded] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.Medium, false, "Billing webhook endpoint rate limit exceeded."),
         [AuditActionTypes.WebhookSourceBlocked] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.High, false, "Billing webhook source temporarily blocked for suspicious activity."),
+        [AuditActionTypes.WebhookDeadLettered] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.Critical, false, "Billing webhook dead-lettered after exhausting its retry budget; repeated delivery failures require operator attention."),
 
         // Tenant isolation
         [AuditActionTypes.TenantIsolationBypassed] = new(SecurityEventKind.TenantIsolation, AuditRiskLevel.Critical, false, "Tenant isolation boundary bypassed."),

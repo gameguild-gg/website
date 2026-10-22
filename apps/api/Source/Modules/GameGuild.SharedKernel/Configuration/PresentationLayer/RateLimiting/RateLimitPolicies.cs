@@ -106,4 +106,15 @@ public static class RateLimitPolicies
     ///     floods before payload signature verification runs.
     /// </summary>
     public const string Webhook = "webhook";
+
+    // ============ Guest Issuance Policy (anonymous guest session endpoint) ============
+
+    /// <summary>
+    ///     Per-IP rate limiting for the anonymous guest-session issuance endpoint (issue #213).
+    ///     Algorithm: Fixed Window, Partitioned by: IP Address.
+    ///     Default: 5 requests per minute, no queuing.
+    ///     Purpose: Guest issuance grants a (minimal) credential to anyone who asks, so it is
+    ///     throttled far below the general authentication budget to prevent farming sessions.
+    /// </summary>
+    public const string GuestIssuance = "guest-issuance";
 }

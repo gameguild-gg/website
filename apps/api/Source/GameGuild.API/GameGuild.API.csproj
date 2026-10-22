@@ -10,6 +10,10 @@
         <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
         <!-- Keep in lockstep with the monorepo release version; bumped by scripts/devops/auto-changeset.mjs (apply mode) -->
         <Version>4.4.0</Version>
+        <!-- HotChocolate 15.1 source generators emit C# interceptors (HotChocolateMiddleware.g.cs)
+             for the explicit request pipeline registered by SetupGraphQL; their namespace must be
+             opted into or the generated code fails with CS9137. -->
+        <InterceptorsNamespaces>$(InterceptorsNamespaces);HotChocolate.Execution.Generated</InterceptorsNamespaces>
     </PropertyGroup>
 
     <ItemGroup>

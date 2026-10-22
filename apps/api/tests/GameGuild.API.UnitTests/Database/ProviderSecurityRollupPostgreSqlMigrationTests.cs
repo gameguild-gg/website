@@ -257,6 +257,18 @@ public sealed class ProviderSecurityRollupPostgreSqlMigrationTests
         // This assertion intentionally runs the current repository against a historical
         // schema from before the universal audit table existed. Production contexts cannot
         // disable capture; only this internal migration harness bypasses the newer concern.
+        // Later migrations added dead-lettering and signature-verification columns to the
+        // entity model; patch them in as nullable so the current model can query the
+        // historical schema (mirroring what the real migration chain would add).
+        await using var patchConnection = new NpgsqlConnection(connectionString);
+        await patchConnection.OpenAsync();
+        await ExecuteAsync(patchConnection, """
+            ALTER TABLE billing_webhook_events
+                ADD COLUMN IF NOT EXISTS "DeadLetterReason" character varying(1000),
+                ADD COLUMN IF NOT EXISTS "DeadLetteredAt" timestamp with time zone,
+                ADD COLUMN IF NOT EXISTS "IsSignatureVerified" boolean,
+                ADD COLUMN IF NOT EXISTS "SignatureVerifiedAt" timestamp with time zone;
+            """);
         await using var firstContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
         await using var secondContext = CreateContext(connectionString, enableEntityChangeAuditCapture: false);
         var firstRepository = new BillingWebhookRepository(

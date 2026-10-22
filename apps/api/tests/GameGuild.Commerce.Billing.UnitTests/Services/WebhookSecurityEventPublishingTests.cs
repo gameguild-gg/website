@@ -122,7 +122,7 @@ public class WebhookSecurityEventPublishingTests
         var repository = new Mock<IBillingWebhookRepository>();
         repository
             .Setup(r => r.GetByExternalEventIdAsync("tx", PaymentProviders.PayPal, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BillingWebhookEvent { ExternalEventId = "tx", ProcessedAt = DateTime.UtcNow });
+            .ReturnsAsync(new BillingWebhookEvent { ExternalEventId = "tx", IsProcessed = true, ProcessedAt = DateTime.UtcNow });
         var securityEvents = new Mock<IWebhookSecurityEventPublisher>();
 
         var service = new PayPalBillingWebhookService(

@@ -1027,7 +1027,7 @@ public class ProcessPayPalWebhookCommandHandlerTests
     {
         var repo = new Mock<IBillingWebhookRepository>();
         repo.Setup(r => r.GetByExternalEventIdAsync("tx-dup", PaymentProviders.PayPal, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BillingWebhookEvent { ExternalEventId = "tx-dup", Provider = PaymentProviders.PayPal, ProcessedAt = DateTime.UtcNow });
+            .ReturnsAsync(new BillingWebhookEvent { ExternalEventId = "tx-dup", Provider = PaymentProviders.PayPal, IsProcessed = true, ProcessedAt = DateTime.UtcNow });
 
         var service = CreatePayPalService(repo, Mock.Of<IPayPalSignatureVerificationService>());
         var handler = new ProcessPayPalWebhookCommandHandler(service, NullLogger<ProcessPayPalWebhookCommandHandler>.Instance);

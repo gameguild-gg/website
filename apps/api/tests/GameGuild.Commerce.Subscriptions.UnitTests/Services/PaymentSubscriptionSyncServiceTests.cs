@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.Commerce.Payments;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -9,6 +10,7 @@ public sealed class PaymentSubscriptionSyncServiceTests
 {
     private readonly Mock<ISubscriptionRepository> _repository = new();
     private readonly Mock<ISubscriptionInvoiceMaterializer> _invoiceMaterializer = new();
+    private readonly Mock<ISubscriptionLifecycleService> _lifecycleService = new();
     private readonly PaymentSubscriptionSyncService _service;
 
     public PaymentSubscriptionSyncServiceTests()
@@ -16,6 +18,7 @@ public sealed class PaymentSubscriptionSyncServiceTests
         _service = new PaymentSubscriptionSyncService(
             _repository.Object,
             _invoiceMaterializer.Object,
+            _lifecycleService.Object,
             Mock.Of<ILogger<PaymentSubscriptionSyncService>>());
     }
 
@@ -302,6 +305,89 @@ public sealed class PaymentSubscriptionSyncServiceTests
             processedAt: DateTime.UtcNow);
 
         await act.Should().NotThrowAsync("payment success must not be rolled back by invoice materialization");
+    }
+
+    [Fact]
+    public async Task GetBillingPeriodAsync_ReturnsNull_WhenPaymentHasNoSubscription()
+    {
+        var context = await _service.GetBillingPeriodAsync(Guid.NewGuid(), subscriptionId: null);
+
+        context.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetBillingPeriodAsync_ReturnsNull_WhenSubscriptionIsMissing()
+    {
+        var subscriptionId = Guid.NewGuid();
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscriptionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Subscription?)null);
+
+        var context = await _service.GetBillingPeriodAsync(Guid.NewGuid(), subscriptionId);
+
+        context.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetBillingPeriodAsync_ReturnsTheCurrentPeriodAndOwner()
+    {
+        var subscription = CreateActiveSubscription(Guid.NewGuid());
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        var context = await _service.GetBillingPeriodAsync(Guid.NewGuid(), subscription.Id);
+
+        context.Should().NotBeNull();
+        context!.PeriodStart.Should().Be(subscription.CurrentPeriodStart);
+        context.PeriodEnd.Should().Be(subscription.CurrentPeriodEnd);
+        context.OwnerUserId.Should().Be(subscription.CreatedByUserId);
+    }
+
+    [Fact]
+    public async Task AdjustForRefundAsync_PartialRefund_LeavesTheSubscriptionRunning()
+    {
+        var subscription = CreateActiveSubscription(Guid.NewGuid());
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.AdjustForRefundAsync(Guid.NewGuid(), subscription.Id, 10m, fullyRefunded: false);
+
+        _lifecycleService.Verify(
+            lifecycle => lifecycle.SuspendAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AdjustForRefundAsync_FullRefund_SuspendsActiveSubscriptionsWithTheRefundReason()
+    {
+        var subscription = CreateActiveSubscription(Guid.NewGuid());
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.AdjustForRefundAsync(Guid.NewGuid(), subscription.Id, 29.99m, fullyRefunded: true);
+
+        _lifecycleService.Verify(
+            lifecycle => lifecycle.SuspendAsync(subscription.Id, PaymentDunningReasons.RefundIssued, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AdjustForRefundAsync_AlreadySuspendedSubscription_IsLeftUntouched()
+    {
+        var subscription = CreateActiveSubscription(Guid.NewGuid());
+        subscription.Suspend("manual hold");
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.AdjustForRefundAsync(Guid.NewGuid(), subscription.Id, 29.99m, fullyRefunded: true);
+
+        _lifecycleService.Verify(
+            lifecycle => lifecycle.SuspendAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private static Subscription CreateActiveSubscription(Guid id)

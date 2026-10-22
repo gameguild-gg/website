@@ -16,6 +16,6 @@
   },
   "dependencies": {
     "@game-guild/ui": "workspace:^",
-    "react": "19.3.0"
+    "react": "19.3.1"
   }
 }
