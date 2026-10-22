@@ -61,7 +61,23 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         _permissionAuditHooks = permissionAuditHooks?.ToArray() ?? [];
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges() => SaveChanges(acceptAllChangesOnSuccess: true);
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        SaveChangesCoreAsync(useAsync: false, acceptAllChangesOnSuccess, CancellationToken.None)
+            .GetAwaiter().GetResult();
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess: true, cancellationToken);
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default) =>
+        SaveChangesCoreAsync(useAsync: true, acceptAllChangesOnSuccess, cancellationToken);
+
+    // Every public persistence overload must run the same audit/outbox/version pipeline.
+    // Keep the actual EF save synchronous for synchronous callers and preserve the caller's
+    // AcceptAllChanges choice. Calling the parameterless base overload would dispatch back
+    // through our bool overload and capture the same changes twice.
+    private async Task<int> SaveChangesCoreAsync(bool useAsync, bool acceptAllChangesOnSuccess, CancellationToken cancellationToken)
     {
         var permissionChanges = CapturePermissionAuditChanges();
         var trackedEventEntities = ChangeTracker.Entries()
@@ -198,7 +214,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             }
         }
 
-        var affectedRows = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        var affectedRows = useAsync
+            ? await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false)
+            : base.SaveChanges(acceptAllChangesOnSuccess);
 
         if (permissionChanges.Count > 0)
         {
