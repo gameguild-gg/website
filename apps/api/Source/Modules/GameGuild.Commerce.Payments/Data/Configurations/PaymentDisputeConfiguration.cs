@@ -33,6 +33,8 @@ public class PaymentDisputeConfiguration : IEntityTypeConfiguration<PaymentDispu
 
         builder.Property(x => x.Amount).HasColumnType("decimal(18,2)").IsRequired();
 
+        builder.Property(x => x.DisputeFee).HasColumnType("decimal(18,2)").IsRequired();
+
         // Configure indexes for performance
         builder.HasIndex(x => x.PaymentId);
         builder.HasIndex(x => x.UserId);

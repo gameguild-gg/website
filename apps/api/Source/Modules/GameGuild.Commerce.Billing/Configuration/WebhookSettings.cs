@@ -74,9 +74,50 @@ public class WebhookRetryWorkerSettings
     /// <summary>
     ///     Hard ceiling on retry attempts honored by the worker, matching the
     ///     manual retry path (RetryWebhookEventHandler). Events at or beyond this
-    ///     count are left for dead-letter inspection instead of being requeued.
+    ///     count are dead-lettered for inspection instead of being requeued.
     /// </summary>
     public int MaxRetryAttempts { get; set; } = 5;
+
+    /// <summary>
+    ///     Exponential backoff schedule honored by the retry worker, in minutes, indexed
+    ///     by the failed row's attempt count (issue #408): a row that failed its Nth
+    ///     attempt is due for requeue <c>RetryScheduleMinutes[N-1]</c> minutes after its
+    ///     last state update. The default matches the issue's schedule of 1, 5, 15, 60
+    ///     and 360 minutes.
+    /// </summary>
+    public int[] RetryScheduleMinutes { get; set; } = [1, 5, 15, 60, 360];
+
+    /// <summary>
+    ///     Terminal cadence, in minutes, applied to attempt counts beyond the end of
+    ///     <see cref="RetryScheduleMinutes"/> (issue #408: 24 hours).
+    /// </summary>
+    public int TerminalRetryScheduleMinutes { get; set; } = 1440;
+}
+
+/// <summary>
+///     Schedule math for the hosted billing webhook retry worker (issue #408).
+/// </summary>
+public static class WebhookRetrySchedule
+{
+    /// <summary>
+    ///     Computes the backoff delay before a failed row's next requeue: a row that
+    ///     failed its Nth attempt waits <c>scheduleMinutes[N-1]</c>; counts beyond the
+    ///     schedule wait the terminal cadence.
+    /// </summary>
+    /// <param name="failedAttemptCount">The row's current processing-attempt count.</param>
+    /// <param name="scheduleMinutes">Backoff schedule in minutes, one entry per attempt.</param>
+    /// <param name="terminalMinutes">Cadence for attempt counts beyond the schedule.</param>
+    /// <returns>Delay before the next requeue attempt.</returns>
+    public static TimeSpan DelayFor(int failedAttemptCount, IReadOnlyList<int> scheduleMinutes, int terminalMinutes)
+    {
+        if (scheduleMinutes.Count == 0 || failedAttemptCount > scheduleMinutes.Count)
+        {
+            return TimeSpan.FromMinutes(Math.Max(0, terminalMinutes));
+        }
+
+        var index = Math.Max(0, failedAttemptCount - 1);
+        return TimeSpan.FromMinutes(Math.Max(0, scheduleMinutes[index]));
+    }
 }
 
 /// <summary>

@@ -13,6 +13,10 @@ namespace GameGuild.Compliance.Audit;
 ///     (authentication attempts, permission audit logs, general audit logs), manage saved
 ///     views with role-based access, and list built-in investigation templates.
 ///     Every action requires the SystemAdmin policy, matching the sibling audit controllers.
+///     Query-operations tier (issue #375): the list/search/query actions additionally carry
+///     <c>RequireDacPermission</c> requirements for <c>queries:list</c>,
+///     <c>queries:search</c> and <c>queries:query</c> (AND-composed with the class-level
+///     policy, fail-closed on missing grants).
 /// </summary>
 [Microsoft.AspNetCore.Http.Tags("compliance/audit/queries")]
 [ApiVersion("1.0")]
@@ -30,8 +34,12 @@ public class AuditQueryController(
     ///     Execute an audit query DSL expression (JSON or light text syntax) and return a
     ///     data-masked, paginated page of matching audit entries plus aggregates over the full
     ///     matched set. Execution is bounded by a row-scan cap and a wall-clock timeout.
+    ///     Query-operations tier (issue #375): structured DSL execution additionally requires
+    ///     the <c>queries:query</c> permission on top of the controller-level audit-read
+    ///     policy (AND composition, fail-closed).
     /// </summary>
     [HttpPost(":execute")]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(AuditQueryDslExecutionResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -63,8 +71,11 @@ public class AuditQueryController(
     /// <summary>
     ///     Paged-results GET variant of the DSL executor for the light text syntax
     ///     (e.g. GET /v1/audit-queries:results?query=actor:alice AND severity:Critical).
+    ///     Query-operations tier (issue #375): free-text/light-syntax discovery additionally
+    ///     requires the <c>queries:search</c> permission (AND composition, fail-closed).
     /// </summary>
     [HttpGet(":results")]
+    [RequireDacPermission(QueryPermission.Keys.Search)]
     [ProducesResponseType(typeof(AuditQueryDslExecutionResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -122,8 +133,10 @@ public class AuditQueryController(
     /// <summary>
     ///     Validate a DSL query without executing it and return its canonical JSON form.
     ///     Saved-view editors use this to fail closed before persisting a query.
+    ///     Query-operations tier (issue #375): requires <c>queries:query</c>.
     /// </summary>
     [HttpPost(":validate")]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(AuditQueryValidationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -145,8 +158,11 @@ public class AuditQueryController(
 
     /// <summary>
     ///     Built-in role-based query templates for common investigation and compliance scenarios.
+    ///     Query-operations tier (issue #375): enumerating the template catalog requires
+    ///     the <c>queries:list</c> permission.
     /// </summary>
     [HttpGet("templates")]
+    [RequireDacPermission(QueryPermission.Keys.List)]
     [ProducesResponseType(typeof(IReadOnlyList<AuditQueryTemplate>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -155,8 +171,12 @@ public class AuditQueryController(
     /// <summary>
     ///     List saved audit query views visible to the acting user: their own private views
     ///     plus every shared view within the caller's tenant.
+    ///     Query-operations tier (issue #375): enumerating saved views requires the
+    ///     <c>queries:list</c> permission; the service layer still filters to own-or-shared
+    ///     within the caller's tenant.
     /// </summary>
     [HttpGet("saved")]
+    [RequireDacPermission(QueryPermission.Keys.List)]
     [ProducesResponseType(typeof(IReadOnlyList<SavedAuditQueryViewResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -301,8 +321,12 @@ public class AuditQueryController(
     /// <summary>
     ///     Execute a saved view by identifier (owner or shared), paging over its canonical query.
     ///     Execution usage and attribution are recorded on the view and in the audit log.
+    ///     Query-operations tier (issue #375): executing a stored structured query requires
+    ///     the <c>queries:query</c> permission; the saved-view service still enforces
+    ///     owner-or-shared visibility inside the caller's tenant.
     /// </summary>
     [HttpPost("saved/{id:guid}:execute")]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(AuditQueryDslExecutionResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

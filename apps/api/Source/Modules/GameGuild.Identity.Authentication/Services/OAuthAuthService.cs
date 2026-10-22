@@ -235,6 +235,92 @@ public class OAuthAuthService(
     }
 
     /// <summary>
+    ///     Completes a Steam OpenID 2.0 sign-in: the callback assertion is verified with
+    ///     Steam and the player summary normalized, then the shared auto-link/JIT policy
+    ///     resolves the platform user. Steam supplies no email claim, so first-time users
+    ///     get an internal unverified identifier (same policy as wallet sign-in) and can
+    ///     never silently take over an existing email-matched account.
+    /// </summary>
+    public Task<SignInResponse> SteamCallbackSignInAsync(SteamCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        CompleteProviderCallbackSignInAsync("steam", "Steam", request.Code, request.State, request.RedirectUri, request.TenantId, request.RememberMe, allowMissingEmail: true, cancellationToken);
+
+    /// <summary>
+    ///     Completes an Epic Games OAuth 2.0 authorization-code sign-in through the
+    ///     shared provider callback path (code exchange, profile normalization,
+    ///     auto-link/JIT policy, granted-scope consent record).
+    /// </summary>
+    public Task<SignInResponse> EpicCallbackSignInAsync(EpicCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        CompleteProviderCallbackSignInAsync("epic", "Epic", request.Code, request.State, request.RedirectUri, request.TenantId, request.RememberMe, allowMissingEmail: false, cancellationToken);
+
+    /// <summary>
+    ///     Completes a Facebook Graph OAuth 2.0 authorization-code sign-in through the
+    ///     shared provider callback path (code exchange, profile normalization,
+    ///     auto-link/JIT policy, granted-scope consent record).
+    /// </summary>
+    public Task<SignInResponse> FacebookCallbackSignInAsync(FacebookCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        CompleteProviderCallbackSignInAsync("facebook", "Facebook", request.Code, request.State, request.RedirectUri, request.TenantId, request.RememberMe, allowMissingEmail: false, cancellationToken);
+
+    /// <summary>
+    ///     Completes a Microsoft OIDC v2 authorization-code sign-in through the shared
+    ///     provider callback path (code exchange, Graph userinfo normalization,
+    ///     auto-link/JIT policy, granted-scope consent record).
+    /// </summary>
+    public Task<SignInResponse> MicrosoftCallbackSignInAsync(MicrosoftCallbackSignInRequest request, CancellationToken cancellationToken = default) =>
+        CompleteProviderCallbackSignInAsync("microsoft", "Microsoft", request.Code, request.State, request.RedirectUri, request.TenantId, request.RememberMe, allowMissingEmail: false, cancellationToken);
+
+    /// <summary>
+    ///     Shared authorization-code callback pipeline for every provider registered in
+    ///     the <see cref="IOAuthProvider" /> registry: provider dispatch stays in
+    ///     <see cref="IOAuthService" />, this method only runs the platform-side
+    ///     sign-in (user resolution, default-tenant provisioning, session issuance).
+    ///     Email-less providers (<paramref name="allowMissingEmail" />) synthesize an
+    ///     internal unverified identifier — provider possession never verifies an email,
+    ///     so the auto-link policy can only create a fresh account.
+    /// </summary>
+    private async Task<SignInResponse> CompleteProviderCallbackSignInAsync(
+        string providerKey,
+        string displayName,
+        string code,
+        string state,
+        string redirectUri,
+        Guid? tenantId,
+        bool? rememberMe,
+        bool allowMissingEmail,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        logger.LogInformation("Processing {Provider} OAuth authorization-code sign-in", displayName);
+
+        var profile = await RunProviderAuthenticationAsync(
+            displayName,
+            stopwatch,
+            () => oauthService.HandleCallbackAsync(providerKey, code, state, redirectUri))
+            .ConfigureAwait(false);
+
+        var email = profile.Email
+            ?? (allowMissingEmail
+                ? $"{profile.ProviderId}@{providerKey}.local"
+                : throw new UnauthorizedAccessException($"Email not available from {displayName} profile"));
+
+        var grantedScopes = oauthService.ResolveAuthorizationScopes(providerKey);
+        var user = await ResolveExternalUserAsync(providerKey, email, profile.ProviderId, profile.Name, profile.EmailVerified, grantedScopes, cancellationToken).ConfigureAwait(false);
+        var userId = user.Id;
+
+        await DefaultTenantMembershipProvisioner.EnsureAsync(sender, userId, cancellationToken).ConfigureAwait(false);
+
+        var tenantAccessContext = await ResolveTenantAccessContextAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
+
+        var httpContext = httpContextAccessor.HttpContext;
+        var ipAddress = authAttemptService.GetClientIpAddress(httpContext);
+        var userAgent = httpContext?.Request.Headers.UserAgent.ToString();
+        var deviceInfo = new DeviceInfo { Fingerprint = Guid.NewGuid().ToString(), IpAddress = ipAddress, UserAgent = userAgent, DeviceName = "OAuth Device", DeviceType = "Web" };
+
+        logger.LogInformation("{Provider} OAuth authorization-code sign-in successful for {Email}", displayName, LogRedaction.MaskEmail(email));
+
+        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, $"{displayName} sign-in successful", displayName, stopwatch, rememberMe == true, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     ///     Completes a generic OIDC federation sign-in: the federation service validates the
     ///     provider ID token (issuer/audience/lifetime/RS256 signature), then the shared
     ///     auto-link/JIT policy resolves the platform user (provider key <c>oidc-&lt;slug&gt;</c>).

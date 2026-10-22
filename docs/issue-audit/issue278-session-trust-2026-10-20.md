@@ -1,0 +1,165 @@
+# Issue 278: trusted devices and session identity
+
+## Original requirements
+
+The original issue retains 32 functional checklist items, 6 technical requirements,
+and the explicit IP reputation, VPN/proxy detection and malicious-IP blocking
+requirements in its prose. Completing a subset does not close the whole issue.
+
+This increment addresses the existing requirements to trust the current device,
+show that trust in the session list, and revoke it without affecting another owner.
+The initial source review found two disconnected boundaries:
+
+- Trust creation hashes the API request's IP/User-Agent, while login persists
+  another fingerprint supplied during authentication or generated for that session.
+  A server action can also have different transport metadata from the browser.
+- Session listing reads a legacy session flag. Trust creation/revocation updates
+  the separate trusted-device records and does not maintain that flag. Expiry and
+  revocation therefore cannot reliably drive the session badge.
+
+## Regression candidate
+
+`TrustedDeviceSessionPostgreSqlHttpTests` defines 18 cases through the actual
+HTTP routes, registered JWT handler/services and migrated PostgreSQL. No
+authentication, command, session or trusted-device collaborator is replaced.
+
+| Required behavior | Cases |
+| --- | --- |
+| Trust uses the signed session's persisted fingerprint; conflicting body/query/header/transport identifiers are ignored | Named and omitted display name |
+| Listing derives current trust from owner-scoped records, even when the legacy flag says the opposite | Active, expired, revoked, foreign owner |
+| Revocation immediately changes the projection, preserving sessions and another owner's same fingerprint | Fresh database and HTTP assertions |
+| Missing session binding cannot invent a device identity | Sessionless bearer |
+| Authentication required | Anonymous caller |
+| Invalid signed session binding denied | Missing, foreign owner, expired, terminated |
+| Empty persisted fingerprint rejected | Bound session without a device identity |
+| Disabled fingerprinting does not create or project trust | Policy-configured real-authentication host |
+| Existing trust renewed instead of creating another identity | Expired and revoked record |
+| Other owner's trust cannot be revoked | Same fingerprint across owners |
+
+This first candidate adds regression definitions while preserving production
+source, to obtain hosted evidence of the current failures before correction.
+It has not been compiled or executed locally. No passing native result,
+implementation acceptance or issue closure is claimed from source inspection.
+
+## Remaining acceptance
+
+After correction, require all current-source CI and these native cases to pass.
+Then exercise the actual security settings page and server action, verifying the
+existing trust control and badge through create/revoke/expiry behavior.
+
+Separate prepared password-revocation and configured MaxMind acceptance cases
+remain outside this first regression candidate. Other issue278 requirements,
+including the explicit reputation/VPN/proxy/blocking scope, remain to be reconciled.
+
+## Hosted diagnosis and repair candidate
+
+The unchanged-production candidate 9c7814a2 completed hosted integration execution:
+688 existing cases passed. Of the 18 new results, one demonstrates a product defect:
+with fingerprinting disabled, the configuration assertion and POST 400 pass, but
+GET sessions still returns the old true trust flag (line 197). The other 17 stop
+at the fixture's duplicate tenant name and do not qualify product behavior.
+The fixture now uses a unique tenant name. Evidence:
+[API job 39451266705/118726620353](https://github.com/gameguild-gg/gameguild/actions/runs/39451266705/job/118726620353).
+The actual tested checkout was e1168d7eeced869e93724514ef80045b2c5eaceb, tree
+126ac10c033e27ef89fea3ee634e6686a4462f4c, with develop 4acb0d44 and source 9c7814a2 parents.
+
+The correction candidate changes the existing command to receive the authenticated
+session ID. Inside its handler, the session must exist, belong to the user, remain
+valid and unterminated, and contain a persisted fingerprint. The session projection
+uses current owner-scoped active/unexpired trusted records and the configured
+fingerprinting policy. Transport metadata and the legacy session flag do not choose
+trust. Public route/request/response shapes remain unchanged; the existing Web
+action sends an empty display name when omitted, matching the API's non-null default.
+
+There are 12 new handler guard cases and 3 server-action payload unit cases. The
+existing hosted browser harness adds 4 trust scenarios through the real security
+page, encrypted cookie, Next server actions, Kestrel and migrated PostgreSQL.
+It seeds expired own trust and active foreign trust with the same fingerprint,
+renews/revokes using the existing controls, checks the session badge and reload,
+and independently reads the final records from a fresh database context. The
+original 7 session-state scenarios remain required. Next runs in development mode;
+this does not assert E2E acceptance of a production build.
+
+This is a correction candidate pending matching-source CI, not an accepted delivery.
+Issue 278 is reopened on the one qualified native defect. The full original scope
+remains pending; no new closure or full recertification is claimed.
+
+## Readiness-triggered CI follow-up
+
+The source at `85e2df20` passed its first complete CI execution. Marking the PR
+ready triggered PR Verify run `39485338624`, which must also pass before delivery.
+Its dependency audit rejected `follow-redirects` 1.16.0 for
+[GHSA-q3jh-wrc6-jgq8](https://github.com/advisories/GHSA-q3jh-wrc6-jgq8).
+The workspace now pins the upstream fix, 1.16.1, with the published registry
+integrity in the lockfile. The audit remains strict. Four CI regression cases use
+the installed dependency and actual loopback HTTP redirects: both object and
+array headers must strip built-in and custom credentials across origins, preserve
+them on the same origin, and retain ordinary headers.
+
+That later run also recorded two API integration timeouts (audit-export request
+entry and PostgreSQL connection during API-key host startup), with 704 other
+integration cases passing. The PR review bot separately exhausted its external
+model calls. These failures are retained as evidence; they are not waived or
+reclassified as successful. The dependency correction requires a new signed
+source commit and a complete, successful hosted execution before merge. No local
+product execution, manual workflow rerun or cancellation is used.
+
+The complete hosted audit for `9030c283` no longer reports the redirect advisory.
+It lists seven additional unmitigated findings: three in `launch-editor` 2.14.1
+and four in `@modelcontextprotocol/sdk` 1.31.0. The follow-up pins upstream
+`launch-editor` 2.14.2 and SDK 1.32.0, retaining the resolved dependency graph
+and the existing security assertions. Registry metadata confirms identical SDK
+dependencies, peers and Node requirements; launch-editor's updated shell-quote
+range is already satisfied by the pinned 1.11.0.
+
+The installed-editor version guard verifies resolution only; it does not claim a
+Windows editor runtime reproduction. The existing SDK issuer-isolation case
+remains required. All seven advisories must disappear from the hosted audit;
+only the existing braces/sprintf local patches retain their independently
+verified exceptions. The security gate has no new exemption.
+
+### Reconciliation with develop on 2026-10-21
+
+Develop advanced to `af91298f` while the above CI was running. PR #927 had
+independently delivered all three patched dependency versions. This merge adopts
+its conditional overrides without duplicate unconditional entries, preserves the
+reviewed registry metadata correction and keeps the redirect/editor regressions.
+The other changes delivered on develop are preserved.
+
+Run 39569225255 on `9030c283` ended with 705 integration passes and one failure:
+`AuditReplayPostgreSqlHttpTests.OpenApiDocumentsRequiredRangeAndSafeReplayResponse`
+was cancelled while reading the Swagger HTTP response after its request timeout.
+All 18 trusted-device cases passed; later supporting suites did not run. The
+available log does not establish the timeout's root cause. No timeout, assertion,
+skip, retry or exception is changed here. This is retained as failed evidence;
+the combined source requires a complete successful hosted CI before merge.
+
+### Fresh remainder after PR #917 was closed
+
+PR #917 was closed without merge on 2026-10-21. This candidate starts directly
+from develop `20ee594790a18b9afe5d9dfb7b67132bb3106f67`, including the independent
+session, guest-access, billing, dependency and quality deliveries. Source review
+of that base still finds the request-derived trust fingerprint and the legacy
+session badge. The reviewed trust correction and its acceptance definitions are
+therefore carried as source changes, without merging the closed PR's history.
+
+The final #917 source `78b04015` passed all 706 integration cases, including the
+18 trust cases, but failed the overall API verification, repository policy and
+generated-client consistency jobs. These failures are not waived:
+
+- The migration test queried current billing entities at the July rollup schema,
+  before `DeadLetterReason` existed. Historical up/down, uniqueness, partial-state
+  and retry assertions remain at their original boundary. The current-repository
+  claim check now has a separate fully migrated PostgreSQL fixture, retains both
+  competing contexts, and independently checks one persisted processing attempt.
+  It uses normal audit capture instead of disabling the newer concern.
+- The installed MCP SDK expectation is aligned with the already delivered 1.32.0
+  pin; dependency auditing and the actual issuer-isolation regression remain.
+- Five generated client files are reconciled to the exact before/after Git blob
+  identities in the hosted OpenAPI diff for checkout `81b155f1`: the List/Search/
+  Query permission enum and query-permission documentation. No generator or API
+  process ran locally. The fresh candidate must pass hosted generation consistency.
+
+These are source corrections pending fresh CI. Earlier passing tests are retained
+as historical evidence only. The full #278 checklist, including the separate
+password/geolocation cases and IP reputation requirements, remains open.

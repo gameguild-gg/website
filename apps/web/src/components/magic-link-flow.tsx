@@ -21,7 +21,7 @@ import {
 } from "@game-guild/ui/components/field";
 import { Input } from "@game-guild/ui/components/input";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { SignInForm } from "./sign-in-form";
+import { MfaChallengeForm } from "./auth/mfa-challenge-form";
 
 export interface MagicLinkMessages {
   request: {
@@ -248,7 +248,7 @@ function MagicLinkConsumer({
   }, [redirectTo, signIn, token]);
 
   if (mfaChallenge) {
-    return <SignInForm redirectTo={redirectTo} />;
+    return <MfaChallengeForm redirectTo={redirectTo} />;
   }
 
   return (

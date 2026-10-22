@@ -74,6 +74,36 @@ public sealed class AuditQueryControllerAuthorizationTests
         directory.Should().NotBeNull("repository root must be discoverable from the test output directory");
         return directory!.FullName;
     }
+
+    [Fact]
+    public void QueryOperationActions_CarryTheIssue375QueryOperationGates()
+    {
+        // Issue #375: the list/search/query actions additionally require the
+        // query-operations permission tier (AND-composed with the controller-level
+        // Audit.Read policy; fail-closed when the key is not granted).
+        var expectedGates = new (string Action, string Permission)[]
+        {
+            (nameof(AuditQueryController.ExecuteQuery), "queries:query"),
+            (nameof(AuditQueryController.GetQueryResults), "queries:search"),
+            (nameof(AuditQueryController.ValidateQuery), "queries:query"),
+            (nameof(AuditQueryController.GetTemplates), "queries:list"),
+            (nameof(AuditQueryController.ListSavedQueries), "queries:list"),
+            (nameof(AuditQueryController.ExecuteSavedQuery), "queries:query")
+        };
+
+        foreach (var (action, permission) in expectedGates)
+        {
+            var method = typeof(AuditQueryController).GetMethod(action);
+            method.Should().NotBeNull($"audit query action {action} must exist");
+
+            var gates = method!.GetCustomAttributes(typeof(RequireDacPermissionAttribute), inherit: false)
+                .OfType<RequireDacPermissionAttribute>()
+                .ToArray();
+            gates.Should().NotBeEmpty($"audit query action {action} must carry a query-operations gate (#375)");
+            gates.Should().Contain(gate => gate.RequiredPermissions.Contains(permission),
+                $"audit query action {action} must require {permission} (#375)");
+        }
+    }
 }
 
 public sealed class AuditQueryTemplateCatalogTests

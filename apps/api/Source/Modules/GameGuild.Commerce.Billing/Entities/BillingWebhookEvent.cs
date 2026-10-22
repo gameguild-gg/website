@@ -115,6 +115,30 @@ public class BillingWebhookEvent : EntityBase
     public DateTime? ProcessedAt { get; set; }
 
     /// <summary>
+    ///     Whether the provider signature was verified for this inbox row (issue #408).
+    ///     Nullable for legacy rows accepted before the flag existed. Rows that failed
+    ///     signature verification never flip this to true and are never replayed.
+    /// </summary>
+    public bool? IsSignatureVerified { get; set; }
+
+    /// <summary>
+    ///     When the provider signature was verified (issue #408).
+    /// </summary>
+    public DateTime? SignatureVerifiedAt { get; set; }
+
+    /// <summary>
+    ///     When the event was dead-lettered after exhausting its retry budget (issue #408).
+    ///     Null while the event is still being retried or was processed successfully.
+    /// </summary>
+    public DateTime? DeadLetteredAt { get; set; }
+
+    /// <summary>
+    ///     Bounded reason recorded when the event was dead-lettered (issue #408).
+    /// </summary>
+    [MaxLength(1000)]
+    public string? DeadLetterReason { get; set; }
+
+    /// <summary>
     ///     Related tenant ID if applicable
     /// </summary>
     public new Guid? TenantId { get; set; }
@@ -132,6 +156,36 @@ public class BillingWebhookEvent : EntityBase
         IsProcessed = true;
         ProcessedAt = SystemClock.UtcNow;
         IsFailed = false;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Records that the provider signature was verified for this delivery (issue #408).
+    ///     Only ever transitions to true; verification is immutable once established.
+    /// </summary>
+    public void MarkSignatureVerified()
+    {
+        if (IsSignatureVerified == true)
+        {
+            return;
+        }
+
+        IsSignatureVerified = true;
+        SignatureVerifiedAt = SystemClock.UtcNow;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Marks the event as dead-lettered after its retry budget was exhausted (issue #408).
+    ///     A dead-lettered row keeps its failure evidence for inspection and is never
+    ///     requeued by the retry worker again.
+    /// </summary>
+    public void MarkAsDeadLettered(string reason)
+    {
+        DeadLetteredAt = SystemClock.UtcNow;
+        DeadLetterReason = string.IsNullOrWhiteSpace(reason)
+            ? "Retry budget exhausted"
+            : (reason.Length <= 1000 ? reason : reason[..1000]);
         Touch();
     }
 

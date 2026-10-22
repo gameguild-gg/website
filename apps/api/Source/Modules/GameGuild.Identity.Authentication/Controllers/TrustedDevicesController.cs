@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -64,12 +62,13 @@ public sealed class TrustedDevicesController(ISessionManagementService sessionSe
     {
         ArgumentNullException.ThrowIfNull(body);
         var userId = GetCurrentUserId();
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+        if (!Guid.TryParse(User.FindFirst("session_id")?.Value, out var sessionId) || sessionId == Guid.Empty)
+        {
+            return BadRequest(new SessionErrorResponse { Error = "Current session device is unavailable" });
+        }
 
-        var deviceFingerprint = GenerateDeviceFingerprint(ipAddress, userAgent);
         var success = await sender.Send(
-            new TrustDeviceCommand(userId, deviceFingerprint, body.DeviceName), ct).ConfigureAwait(false);
+            new TrustDeviceCommand(userId, sessionId, body.DeviceName), ct).ConfigureAwait(false);
 
         if (!success)
         {
@@ -121,14 +120,6 @@ public sealed class TrustedDevicesController(ISessionManagementService sessionSe
         {
             return null;
         }
-    }
-
-    private static string GenerateDeviceFingerprint(string ipAddress, string userAgent)
-    {
-        using var sha256 = SHA256.Create();
-        var input = $"{ipAddress}:{userAgent}";
-        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-        return Convert.ToBase64String(hash);
     }
 
     #endregion

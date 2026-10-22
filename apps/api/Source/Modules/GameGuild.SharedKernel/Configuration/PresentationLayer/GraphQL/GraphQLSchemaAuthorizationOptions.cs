@@ -55,6 +55,27 @@ public sealed class GraphQLSchemaAuthorizationOptions
     public string SchemaAdminPermission { get; set; } = DefaultSchemaAdminPermission;
 
     /// <summary>
+    ///     When true (default), root operations the caller is not authorized to execute are
+    ///     hidden at the operation-planning stage: the request fails with the same bounded
+    ///     error shape HotChocolate produces for a nonexistent field, so the response never
+    ///     reveals that a protected operation exists (no path, no <c>data</c> payload).
+    ///     Runtime-resource decisions (resource-scoped <c>@authorize</c> rules) cannot be
+    ///     decided at planning time and remain enforced during execution, where the
+    ///     authorization error filter strips the denied field's path.
+    /// </summary>
+    public bool HideUnauthorizedOperations { get; set; } = true;
+
+    /// <summary>
+    ///     When true (default false), a protected field whose evaluation denies the caller
+    ///     resolves to <c>null</c> instead of a GraphQL error, unless the field is
+    ///     non-nullable (nullability is static; a non-nullable field still produces the
+    ///     bounded error so the response stays spec-compliant). Per-field
+    ///     <c>maskUnauthorized</c> on the <c>@authorize</c> directive remains the explicit
+    ///     opt-in and composes with this host-level default.
+    /// </summary>
+    public bool MaskUnauthorizedFieldsByDefault { get; set; }
+
+    /// <summary>
     ///     Validates the settings: the schema-admin permission key must be a non-blank,
     ///     whitespace-trimmed value. Unknown permission names are rejected later by
     ///     evaluation (fail closed), not here, to avoid binding this platform options

@@ -32,7 +32,12 @@ public sealed class SessionController(ISessionManagementService sessionService, 
     public async Task<IActionResult> GetSessions(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var sessions = await sessionService.GetUserSessionsAsync(userId).ConfigureAwait(false);
+        var sessions = await sessionService.GetUserSessionsAsync(userId, cancellationToken: ct).ConfigureAwait(false);
+        var trustedDevices = await sessionService.GetTrustedDevicesAsync(userId, ct).ConfigureAwait(false) ?? [];
+        var trustedFingerprints = trustedDevices
+            .Where(device => device.UserId == userId && device.IsValid && !string.IsNullOrWhiteSpace(device.DeviceFingerprint))
+            .Select(device => device.DeviceFingerprint)
+            .ToHashSet(StringComparer.Ordinal);
 
         var response = sessions.Select(s => new SessionResponse
         {
@@ -43,7 +48,7 @@ public sealed class SessionController(ISessionManagementService sessionService, 
             CreatedAt = s.CreatedAt,
             LastUsedAt = s.LastUsedAt,
             ExpiresAt = s.ExpiresAt,
-            IsTrustedDevice = s.IsTrustedDevice,
+            IsTrustedDevice = !string.IsNullOrWhiteSpace(s.DeviceFingerprint) && trustedFingerprints.Contains(s.DeviceFingerprint),
             IsCurrent = IsCurrentSession(s.Id)
         })
             .ToList();

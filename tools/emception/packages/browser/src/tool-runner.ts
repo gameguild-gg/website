@@ -666,7 +666,6 @@ export class ToolRunner {
     if (!buildNinjaData) {
       const msg = `ninja: error: loading '${buildNinjaPath}'.`;
       options.onStderr?.(msg);
-      options.onStderr?.(msg);
       return { exitCode: 1, stdout: '', stderr: msg };
     }
 
@@ -762,7 +761,6 @@ export class ToolRunner {
       });
 
       if (result.exitCode !== 0) {
-        console.error(`${LOG_PREFIX}   [ninja-bypass] ${progress} FAILED (exit ${result.exitCode})`);
         options.onStderr?.(`[ninja-bypass] ${progress} FAILED (exit ${result.exitCode})`);
         return {
           exitCode: result.exitCode,
@@ -1391,7 +1389,7 @@ export class ToolRunner {
             console.log(`${LOG_PREFIX}   [subprocess] Done: exitCode=${subResult.exitCode}`);
             if (subStderr.length > 0) {
               for (const line of subStderr) {
-                options.onStderr?.(`[subprocess] stderr: ${line}`);
+                options.onStderr?.(`${LOG_PREFIX}   [subprocess] stderr: ${line}`);
               }
             }
 
@@ -1408,9 +1406,7 @@ export class ToolRunner {
             return waitStatus;
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            console.error(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
-            options.onStderr?.(`[subprocess] Error: ${msg}`);
-            options.onStderr?.(`[subprocess] Error: ${msg}`);
+            options.onStderr?.(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
             if (instanceRef) {
               instanceRef.FS.writeFile('/tmp/.subprocess_stdout', '');
               instanceRef.FS.writeFile('/tmp/.subprocess_stderr', msg);
@@ -1501,7 +1497,6 @@ export class ToolRunner {
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
             console.error(`${LOG_PREFIX}   [curl] Error: ${msg}`);
-            options.onStderr?.(`[curl] Error: ${msg}`);
             if (instanceRef) {
               instanceRef.FS.writeFile('/tmp/.curl_response', '0\n');
               instanceRef.FS.writeFile('/tmp/.curl_response_body', new Uint8Array(0));
@@ -2159,7 +2154,7 @@ sys.excepthook = _hook
 
         moduleConfig['subprocessDispatch'] = async (): Promise<void> => {
           if (!instanceRef) {
-            options.onStderr?.('[dispatch] No instance ref — cannot dispatch subprocess');
+            console.error(`${LOG_PREFIX}   [dispatch] No instance ref — cannot dispatch subprocess`);
             return;
           }
 
@@ -2168,7 +2163,7 @@ sys.excepthook = _hook
             const requestData = String(instanceRef.FS.readFile('/tmp/.subprocess_request', { encoding: 'utf8' }));
             request = JSON.parse(requestData) as { cmd: string; cwd: string };
           } catch (e) {
-            options.onStderr?.(`[dispatch] Failed to read subprocess request: ${e}`);
+            console.error(`${LOG_PREFIX}   [dispatch] Failed to read subprocess request: ${e}`);
             instanceRef.FS.writeFile('/tmp/__dispatch_subprocess__', '1');
             instanceRef.FS.writeFile('/tmp/.subprocess_stdout', '');
             instanceRef.FS.writeFile('/tmp/.subprocess_stderr', 'Failed to read subprocess request');
@@ -2233,14 +2228,12 @@ sys.excepthook = _hook
             console.log(`${LOG_PREFIX}   [subprocess] Done: exitCode=${effectiveExitCode}`);
             if (subStderr.length > 0) {
               for (const line of subStderr) {
-                options.onStderr?.(`[subprocess] stderr: ${line}`);
+                options.onStderr?.(`${LOG_PREFIX}   [subprocess] stderr: ${line}`);
               }
             }
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
-            console.error(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
-            options.onStderr?.(`[subprocess] Error: ${msg}`);
-            options.onStderr?.(`[subprocess] Error: ${msg}`);
+            options.onStderr?.(`${LOG_PREFIX}   [subprocess] Error: ${msg}`);
             instanceRef.FS.writeFile('/tmp/__dispatch_subprocess__', '1');
             instanceRef.FS.writeFile('/tmp/.subprocess_stdout', '');
             instanceRef.FS.writeFile('/tmp/.subprocess_stderr', msg);

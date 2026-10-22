@@ -105,7 +105,7 @@ export function PreviewButton({ node }: { node: SerializedButtonNode }) {
       case "url":
         window.open(url, "_blank")
         break
-      case "download":
+      case "download": {
         const link = document.createElement("a")
         link.href = url
         link.download = ""
@@ -113,6 +113,7 @@ export function PreviewButton({ node }: { node: SerializedButtonNode }) {
         link.click()
         document.body.removeChild(link)
         break
+      }
       case "copy":
         navigator.clipboard.writeText(url)
         break

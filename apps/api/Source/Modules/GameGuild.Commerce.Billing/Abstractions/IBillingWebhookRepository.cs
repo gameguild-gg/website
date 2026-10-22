@@ -60,6 +60,15 @@ public interface IBillingWebhookRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Get failed webhook events that exhausted their retry attempt ceiling and are
+    ///     not yet dead-lettered (issue #408): the dead-letter queue intake.
+    /// </summary>
+    Task<IEnumerable<BillingWebhookEvent>> GetExhaustedEventsAsync(
+        int maxAttempts,
+        int take,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Search the webhook inbox with the given criteria, newest first, and count the
     ///     total matching rows for pagination.
     /// </summary>

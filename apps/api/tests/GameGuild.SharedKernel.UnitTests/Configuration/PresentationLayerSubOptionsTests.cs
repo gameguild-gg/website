@@ -238,6 +238,73 @@ public class ExternalProviderOptionsTests
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*openid, email, and profile*");
     }
+
+    [Fact]
+    public void Validate_WithEpicAndFacebookProviders_AreSupported()
+    {
+        var options = new ExternalProviderOptions
+        {
+            Providers = new Dictionary<string, OAuthProviderOptions>
+            {
+                ["epic"] = new() { Enabled = true, ClientId = "client-id", ClientSecret = "secret", Scopes = ["basic_profile", "email"] },
+                ["facebook"] = new() { Enabled = true, ClientId = "client-id", ClientSecret = "secret", Scopes = ["email", "public_profile"] }
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_WithEnabledSteamProviderAndApiKey_DoesNotRequireClientCredentials()
+    {
+        // Steam signs in through OpenID 2.0: no client registration exists, the Steam
+        // Web API key is the only credential (issue #246).
+        var options = new ExternalProviderOptions
+        {
+            Providers = new Dictionary<string, OAuthProviderOptions>
+            {
+                ["steam"] = new() { Enabled = true, ApiKey = "steam-web-api-key" }
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_WithEnabledSteamProviderMissingApiKey_FailsClosed()
+    {
+        var options = new ExternalProviderOptions
+        {
+            Providers = new Dictionary<string, OAuthProviderOptions>
+            {
+                ["steam"] = new() { Enabled = true }
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Steam Web API key is required*");
+    }
+
+    [Fact]
+    public void Validate_ApiKeyOnNonSteamProvider_Throws()
+    {
+        var options = new ExternalProviderOptions
+        {
+            Providers = new Dictionary<string, OAuthProviderOptions>
+            {
+                ["github"] = new() { Enabled = true, ClientId = "client-id", ClientSecret = "secret", ApiKey = "not-a-steam-key" }
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*only supported for the Steam OpenID provider*");
+    }
 }
 
 public class OidcProviderOptionsTests

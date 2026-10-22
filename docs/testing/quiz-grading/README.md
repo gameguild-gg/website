@@ -1,9 +1,10 @@
 # Quiz grading validation
 
 This directory is the reviewed reference for the Quiz + Grading validation
-program. The executable source of truth is the capability catalog in
-`apps/web/scripts/quiz-grading-scenario/capability-catalog.mjs`; this directory
-explains how to run it and records the last human-reviewed product snapshot.
+program. The executable source of stable case IDs and expected oracles is
+[`capability-catalog.mjs`](../../../apps/web/src/lib/grading-scenarios/adapters/quiz/capability-catalog.mjs).
+The Markdown files here explain how to run the program and record the last
+human-reviewed product snapshot.
 
 The program separates four dimensions so a failure can be attributed without
 running a Cartesian product:
@@ -13,20 +14,20 @@ running a Cartesian product:
   every quiz discriminant;
 - **lifecycle and access:** publication, Test Run, attempts, weights, and
   contextual authorization;
-- **failure and recovery:** idempotency, concurrency, stale work, and runner
+- **failure and recovery:** idempotency, concurrency, stale work, and harness
   recovery.
 
 ## Sources of truth
 
-| Concern                               | Source                                           |
-| ------------------------------------- | ------------------------------------------------ |
-| Stable case IDs and expected oracles  | `capability-catalog.mjs`                         |
-| All 14 types and four fill variants   | `quiz-validation-cases-v1.json`                  |
-| Scenario definitions and checkpoints  | `definitions.mjs`                                |
-| Browser interactions by question type | `question-type-drivers.mjs`                      |
-| Candidate report format and redaction | `report.mjs`                                     |
-| Reviewed product snapshot             | [`capability-status.md`](./capability-status.md) |
-| Audit procedure                       | [`AGENT_PROTOCOL.md`](./AGENT_PROTOCOL.md)       |
+| Concern                              | Source                                                                          |
+| ------------------------------------ | ------------------------------------------------------------------------------- |
+| Generic web orchestration            | `apps/web/src/lib/grading-scenarios/`                                           |
+| Quiz lifecycle adapter               | `apps/web/src/lib/grading-scenarios/adapters/quiz/`                             |
+| Stable case IDs and expected oracles | `capability-catalog.mjs`                                                        |
+| All 14 types and four fill variants  | `packages/features/grading-adapter-quiz/fixtures/quiz-validation-cases-v1.json` |
+| Browser interactions and lifecycle   | `e2e/learning/quiz-grading/support/`                                            |
+| Reviewed product snapshot            | [`capability-status.md`](./capability-status.md)                                |
+| Audit procedure                      | [`AGENT_PROTOCOL.md`](./AGENT_PROTOCOL.md)                                      |
 
 The Markdown snapshot is not generated automatically. An execution creates a
 candidate report; a person reviews the evidence before changing canonical
@@ -37,52 +38,49 @@ statuses.
 The contract profile does not need the application:
 
 ```bash
-pnpm grading:validation:catalog
 pnpm grading:validation:contracts
 ```
 
-Browser profiles require a healthy local stack in another terminal:
-
-```bash
-pnpm dev:fast
-```
-
-Run the bounded browser smoke or the full executable matrix:
+Browser profiles use Playwright directly. They can start the local stack, or
+reuse a healthy `pnpm dev:fast` process:
 
 ```bash
 pnpm grading:validation:smoke
 pnpm grading:validation:full
 ```
 
-Create a persistent course for human exploration:
+When Playwright owns the stack, it uses the lean `dev:fast` bootstrap with no
+SDK watchers or API hot reload. It builds the API once with one MSBuild worker,
+starts that build without another compilation, uses an isolated
+`.next-e2e-grading-turbo` Turbopack cache, and caps the Next.js heap at 4096 MB.
+This keeps a long validation run from competing with the IDE for unbounded
+memory and prevents interactive or stale bundler artifacts from entering the
+automated run. Override the measured local limit only when necessary with
+`E2E_WEB_MAX_OLD_SPACE_SIZE_MB`.
 
-```bash
-pnpm grading:validation:lab
+For persistent human exploration, sign in to the local application as a
+SystemAdmin and open:
+
+```text
+http://localhost:3000/workspace/learning/grading-validation
 ```
 
-The lab output contains short local credentials and URLs for each persona and
-quiz. It remains available until explicitly reset:
+Select the grading adapter, scenario, targets, and checkpoint. The page lists
+the capability catalog, short local credentials, and links for every persona
+and target. It is the only supported human surface for scenario lifecycle.
+
+Run a single stable case with the standard Playwright runner:
 
 ```bash
-pnpm grading:scenario reset --scenario acceptance-lab
+E2E_RUN=1 \
+QUIZ_GRADING_SCENARIO=question-type-matrix \
+QUIZ_GRADING_CASES=QG-ITEM-MATCHING-PARTIAL-001 \
+pnpm exec playwright test --config=playwright.grading.config.mjs
 ```
 
-The lab respects each quiz's declared capability. Supported items reach the
-requested official checkpoint, while an unsupported item remains available at
-its last valid checkpoint (currently `test-run-ready`) instead of being
-published through a fallback review workflow.
-
-Run a single stable case while diagnosing it:
-
-```bash
-pnpm grading:scenario test \
-  --scenario question-type-matrix \
-  --case QG-ITEM-MATCHING-PARTIAL-001 \
-  --fresh
-```
-
-`--question-type`, `--quiz`, and repeated/comma-separated selections are also
-supported. A failed browser run preserves its owned scenario and evidence.
+Set `QUIZ_GRADING_KEEP_SCENARIO=1` to preserve an automated scenario for local
+inspection. Otherwise teardown verifies browser evidence and resets resources
+owned by its manifest through the web lab.
 
 ## Reports and evidence
 
@@ -112,5 +110,5 @@ remain distinct. A skipped browser case must retain its stable ID, reason, and
 tracking reference; unsupported grading must never be represented as score
 zero.
 
-No command in this program is authorized to add database seeds, bypass
+No command or page in this program is authorized to add database seeds, bypass
 permissions, write through `DbContext`, or modify schemas and migrations.

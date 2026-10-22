@@ -9,9 +9,12 @@ public sealed partial class ExternalProviderOptions
     private static readonly HashSet<string> SupportedProviders = new(StringComparer.OrdinalIgnoreCase)
     {
         "discord",
+        "epic",
+        "facebook",
         "github",
         "google",
-        "microsoft"
+        "microsoft",
+        "steam"
     };
 
     /// <summary>
@@ -100,6 +103,14 @@ public sealed class OAuthProviderOptions
     /// </summary>
     public string Tenant { get; set; } = "common";
 
+    /// <summary>
+    ///     Provider API key for protocols whose credential is not an OAuth client secret.
+    ///     Steam OpenID 2.0 requires a Steam Web API key (from
+    ///     https://steamcommunity.com/dev/apikey) to read player summaries; OpenID
+    ///     redirect sign-in itself needs no client registration.
+    /// </summary>
+    public string? ApiKey { get; set; }
+
     public void Validate(string providerName)
     {
         if (!Enabled)
@@ -107,14 +118,30 @@ public sealed class OAuthProviderOptions
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(ClientId) || ClientId.Any(char.IsControl))
+        var isSteam = providerName.Equals("steam", StringComparison.OrdinalIgnoreCase);
+
+        if (!isSteam)
         {
-            throw new InvalidOperationException($"OAuth client ID is required for enabled provider '{providerName}'.");
+            if (string.IsNullOrWhiteSpace(ClientId) || ClientId.Any(char.IsControl))
+            {
+                throw new InvalidOperationException($"OAuth client ID is required for enabled provider '{providerName}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(ClientSecret) || ClientSecret.Any(char.IsControl))
+            {
+                throw new InvalidOperationException($"OAuth client secret is required for enabled provider '{providerName}'.");
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(ApiKey) || ApiKey.Any(char.IsControl))
+        {
+            // Steam signs in through OpenID 2.0 (no client registration); the Steam Web
+            // API key is the only credential and gates the profile lookup. Fail closed.
+            throw new InvalidOperationException($"Steam Web API key is required for enabled provider '{providerName}'.");
         }
 
-        if (string.IsNullOrWhiteSpace(ClientSecret) || ClientSecret.Any(char.IsControl))
+        if (!string.IsNullOrWhiteSpace(ApiKey) && !isSteam)
         {
-            throw new InvalidOperationException($"OAuth client secret is required for enabled provider '{providerName}'.");
+            throw new InvalidOperationException("A provider API key is only supported for the Steam OpenID provider.");
         }
 
         if (Scopes is null)

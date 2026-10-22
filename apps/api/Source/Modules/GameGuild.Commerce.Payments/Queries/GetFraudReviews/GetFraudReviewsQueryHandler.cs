@@ -5,7 +5,9 @@ namespace GameGuild.Commerce.Payments;
 
 /// <summary>
 ///     Handler for the pending fraud-review queue (issue #409). Matches the partial index
-///     <c>ix_payments_open_fraud_reviews</c> (open Review decisions per tenant).
+///     <c>ix_payments_open_fraud_reviews</c> (open Review decisions per tenant) and applies
+///     the review-dashboard filters: minimum score, risk band, charged-amount floor and
+///     creation date range.
 /// </summary>
 public sealed class GetFraudReviewsQueryHandler(IApplicationDbContext context)
     : IQueryHandler<GetFraudReviewsQuery, IEnumerable<FraudReviewListItem>>
@@ -20,6 +22,45 @@ public sealed class GetFraudReviewsQueryHandler(IApplicationDbContext context)
         if (request.TenantId.HasValue)
         {
             query = query.Where(payment => payment.TenantId == request.TenantId.Value);
+        }
+
+        if (request.MinScore.HasValue)
+        {
+            var minScore = request.MinScore.Value;
+            query = query.Where(payment => (payment.FraudScore ?? 0) >= minScore);
+        }
+
+        if (request.RiskLevel.HasValue)
+        {
+            // Risk band boundaries per FraudAssessment.RiskLevelForScore, expressed as
+            // score ranges so the filter stays translatable to SQL.
+            var (lower, upperExclusive) = request.RiskLevel.Value switch
+            {
+                FraudRiskLevel.Low => (0, 31),
+                FraudRiskLevel.Medium => (31, 61),
+                FraudRiskLevel.High => (61, 86),
+                _ => (86, int.MaxValue)
+            };
+            query = query.Where(payment => (payment.FraudScore ?? 0) >= lower
+                                           && (payment.FraudScore ?? 0) < upperExclusive);
+        }
+
+        if (request.MinAmount.HasValue)
+        {
+            var minAmount = request.MinAmount.Value;
+            query = query.Where(payment => payment.Amount >= minAmount);
+        }
+
+        if (request.FromUtc.HasValue)
+        {
+            var fromUtc = request.FromUtc.Value;
+            query = query.Where(payment => payment.CreatedAt >= fromUtc);
+        }
+
+        if (request.ToUtc.HasValue)
+        {
+            var toUtc = request.ToUtc.Value;
+            query = query.Where(payment => payment.CreatedAt <= toUtc);
         }
 
         var page = Math.Max(1, request.Page);

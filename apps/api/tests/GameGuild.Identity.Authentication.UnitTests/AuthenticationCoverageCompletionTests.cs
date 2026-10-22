@@ -805,33 +805,25 @@ public sealed class AuthenticationCoverageCompletionTests
     }
 
     [Fact]
-    public void OAuthAndTotpPrivateHelpers_CoverRemainingBranches()
+    public async Task OAuthAndTotpPrivateHelpers_CoverRemainingBranches()
     {
-        var oauth = new OAuthService(new HttpClient(), EmptyConfiguration(), NullLogger<OAuthService>.Instance);
+        var oauthConfiguration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OAuth:Google:ClientId"] = "test-client-id",
+                ["OAuth:Google:ClientSecret"] = "test-client-secret",
+            })
+            .Build();
+        var oauth = new OAuthService(new HttpClient(), oauthConfiguration, NullLogger<OAuthService>.Instance);
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            null).Should().Contain("openid%20email%20profile");
+        (await oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", null))
+            .Should().Contain("openid%20email%20profile");
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            Array.Empty<string>()).Should().Contain("openid%20email%20profile");
+        (await oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", Array.Empty<string>()))
+            .Should().Contain("openid%20email%20profile");
 
-        InvokePrivateInstance<string>(
-            oauth,
-            "BuildGoogleAuthUrl",
-            "client",
-            "https://app.example/callback",
-            "state",
-            new[] { "openid", "email", "calendar.read" }).Should().Contain("calendar.read");
+        (await oauth.GetAuthorizationUrlAsync("google", "https://app.example/callback", "state", new[] { "openid", "email", "calendar.read" }))
+            .Should().Contain("calendar.read");
 
         const string secret = "JBSWY3DPEHPK3PXP";
         var totpInstant = DateTimeOffset.UtcNow;

@@ -220,6 +220,9 @@ public static class AuthorizationModuleExtensions
         services.AddScoped<IAuthorizationHandler, PermissionHandler>();
         services.AddScoped<IAuthorizationHandler, EnvironmentHandler>();
         services.AddScoped<IAuthorizationHandler, ResourceAccessHandler>();
+        // Guest access (issue #213): claims-only, fail-closed handler for guest-marked
+        // endpoints; guests never satisfy PermissionHandler (they carry no user id).
+        services.AddScoped<IAuthorizationHandler, GuestAccessHandler>();
 
         // Resource permission authorization filter for controller attributes
         services.AddResourcePermissionAuthorization();
