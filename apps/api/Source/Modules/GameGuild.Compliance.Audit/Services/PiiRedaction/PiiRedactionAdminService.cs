@@ -188,7 +188,7 @@ public sealed class PiiRedactionAdminService(
         ruleProvider.Invalidate(tenant);
 
         await AuditRuleMutationAsync(tenant, user, AuditActionTypes.PiiRedactionRuleCreated, rule).ConfigureAwait(false);
-        logger.LogInformation("Created PII redaction rule {RuleId} ('{RuleName}') for tenant {TenantId}", rule.Id, rule.RuleName, tenant);
+        logger.LogInformation("Created PII redaction rule {RuleId} for tenant {TenantId}", rule.Id, tenant);
         return Map(rule);
     }
 
@@ -221,7 +221,7 @@ public sealed class PiiRedactionAdminService(
         ruleProvider.Invalidate(tenant);
 
         await AuditRuleMutationAsync(tenant, user, AuditActionTypes.PiiRedactionRuleUpdated, rule).ConfigureAwait(false);
-        logger.LogInformation("Updated PII redaction rule {RuleId} ('{RuleName}') to revision {Revision}", rule.Id, rule.RuleName, rule.Revision);
+        logger.LogInformation("Updated PII redaction rule {RuleId} to revision {Revision}", rule.Id, rule.Revision);
         return Map(rule);
     }
 
@@ -251,7 +251,7 @@ public sealed class PiiRedactionAdminService(
             RiskLevel = AuditRiskLevel.High,
             Category = AuditCategory.Admin
         }).ConfigureAwait(false);
-        logger.LogInformation("Deleted PII redaction rule {RuleId} ('{RuleName}')", rule.Id, rule.RuleName);
+        logger.LogInformation("Deleted PII redaction rule {RuleId}", rule.Id);
     }
 
     /// <summary>
