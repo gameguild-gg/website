@@ -1,7 +1,9 @@
 import '@testing-library/jest-dom/vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { hydrateRoot, type Root } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   renameSession: vi.fn(),
@@ -92,6 +94,45 @@ function makeData() {
 }
 
 describe('SessionsManager', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('keeps every server-rendered session mutation disabled until hydration', () => {
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(<SessionsManager data={makeData()} locale="en-US" />);
+    const buttons = container.querySelectorAll('button');
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(button).toBeDisabled();
+    }
+    expect(mocks.trustCurrentDevice).not.toHaveBeenCalled();
+  });
+
+  it('enables the hydrated controls and sends the first Trust click exactly once', async () => {
+    const user = userEvent.setup();
+    const data = makeData();
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(<SessionsManager data={data} locale="en-US" />);
+    document.body.appendChild(container);
+    const recoverableError = vi.fn();
+    mocks.trustCurrentDevice.mockResolvedValue({ success: true, status: 'success' });
+    let root: Root | undefined;
+    try {
+      const trust = within(container).getByRole('button', { name: 'settings.security.trustedDevices.trustCurrentButton' });
+      expect(trust).toBeDisabled();
+      await act(async () => {
+        root = hydrateRoot(container, <SessionsManager data={data} locale="en-US" />, { onRecoverableError: recoverableError });
+      });
+      await waitFor(() => expect(trust).toBeEnabled());
+      await user.click(trust);
+      await waitFor(() => expect(mocks.trustCurrentDevice).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
+      expect(recoverableError).not.toHaveBeenCalled();
+    } finally {
+      if (root) await act(async () => root?.unmount());
+      container.remove();
+    }
+  });
+
   it('renders sessions with device, location, and the current-session badge', () => {
     render(<SessionsManager data={makeData()} locale="en-US" />);
 
