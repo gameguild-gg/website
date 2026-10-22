@@ -3,32 +3,37 @@ import { expect } from "playwright/test";
 import {
   assertSharedAuthCookie,
   trackAppHttpFailures,
-} from "../../../apps/web/scripts/learning-browser-e2e-support.mjs";
+} from "../../../../apps/web/scripts/learning-browser-e2e-support.mjs";
 import {
   authenticatePersona,
   request,
-} from "../../../apps/web/scripts/quiz-grading-scenario/api.mjs";
-import { checkpointIndex } from "../../../apps/web/scripts/quiz-grading-scenario/definitions.mjs";
+} from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/api.server.mjs";
+import { checkpointIndex } from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/definitions.mjs";
 import {
   recomputeManifestCheckpoint,
   storageStatePath,
   writeManifest,
-} from "../../../apps/web/scripts/quiz-grading-scenario/manifest.mjs";
-import { validationEvidenceDirectory } from "../../../apps/web/scripts/quiz-grading-scenario/report.mjs";
-import { buildScenarioUrls } from "../../../apps/web/scripts/quiz-grading-scenario/urls.mjs";
+} from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/manifest.server.mjs";
+import { validationEvidenceDirectory } from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/report.server.mjs";
+import { buildScenarioUrls } from "../../../../apps/web/src/lib/grading-scenarios/adapters/quiz/urls.mjs";
 
 export async function createScenarioPersona(browser, manifest, personaKey) {
   const context = await browser.newContext();
-  const page = await context.newPage();
-  const failures = trackAppHttpFailures(page, [
-    manifest.environment.webBaseUrl,
-    manifest.environment.apiBaseUrl,
-  ]);
-  await signInScenarioPersona(page, manifest, personaKey);
-  const statePath = storageStatePath(manifest.definitionKey, personaKey);
-  await context.storageState({ path: statePath });
-  await chmod(statePath, 0o600).catch(() => {});
-  return { context, page, failures };
+  try {
+    const page = await context.newPage();
+    const failures = trackAppHttpFailures(page, [
+      manifest.environment.webBaseUrl,
+      manifest.environment.apiBaseUrl,
+    ]);
+    await signInScenarioPersona(page, manifest, personaKey);
+    const statePath = storageStatePath(manifest.definitionKey, personaKey);
+    await context.storageState({ path: statePath });
+    await chmod(statePath, 0o600).catch(() => {});
+    return { context, page, failures };
+  } catch (error) {
+    await context.close();
+    throw error;
+  }
 }
 
 export async function signInScenarioPersona(page, manifest, personaKey) {

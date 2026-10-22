@@ -1,6 +1,7 @@
 using GameGuild.Commerce;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -96,6 +97,15 @@ public class RefundRepository(
         try
         {
             await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation,
+                ConstraintName: "ix_refunds_single_open_per_payment"
+            })
+        {
+            Entities.Remove(refund);
+            throw new OpenRefundAlreadyExistsException(refund.PaymentId, exception);
         }
         catch (DbUpdateException)
         {

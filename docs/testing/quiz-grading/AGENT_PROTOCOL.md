@@ -13,15 +13,43 @@ belong in a separate task after the finding is reviewed.
 
 ## 2. Run the cheapest reproducer
 
-Use this order and stop once the failing boundary is established:
+Start with contracts:
 
 ```bash
-pnpm grading:validation:catalog
 pnpm grading:validation:contracts
-pnpm grading:scenario test --scenario <scenario> --case <case-id> --fresh
 ```
 
-For browser execution, first keep `pnpm dev:fast` healthy in another terminal.
+For human inspection, keep `pnpm dev:fast` healthy, sign in locally as a
+SystemAdmin, and use `/workspace/learning/grading-validation`. The page is the
+only supported human lifecycle surface for listing, preparing, refreshing,
+verifying, and resetting scenarios.
+
+For a focused browser case, invoke Playwright directly:
+
+```bash
+E2E_RUN=1 \
+QUIZ_GRADING_SCENARIO=question-type-matrix \
+QUIZ_GRADING_CASES=QG-ITEM-MATCHING-PARTIAL-001 \
+pnpm exec playwright test --config=playwright.grading.config.mjs
+```
+
+The Playwright setup prepares the scenario through the protected web lab. Its
+teardown verifies the recorded browser evidence and resets only resources
+owned by the scenario manifest. Set `QUIZ_GRADING_KEEP_SCENARIO=1` only when a
+failed execution must remain available for local diagnosis.
+
+When API/web are not already healthy, the Playwright supervisor starts the
+lean `dev:fast` stack. It must not start generated-client polling or build
+watchers: browser validation is read-only with respect to source files, and
+those watchers add substantial memory pressure without contributing evidence.
+The E2E-owned stack also builds the API once with one MSBuild worker, runs that
+build without hot reload or a second compilation, gives Turbopack an isolated
+`.next-e2e-grading-turbo` cache, and caps the Next.js heap at 4096 MB by default.
+The isolated cache prevents interactive, stale, or different-bundler artifacts
+from being restored into the validation process. Use
+`E2E_WEB_MAX_OLD_SPACE_SIZE_MB` only when a measured validation run requires a
+different local limit.
+
 Use separate browser contexts for each persona. Never replace learner,
 reviewer, or instructor behavior with SystemAdmin.
 
@@ -50,7 +78,7 @@ infer a requirement for AI, assets, passback, autosave, or another module.
 
 ## 5. Produce a candidate report
 
-Scenario commands write under:
+Validation runs write under:
 
 ```text
 apps/web/test-results/quiz-grading-validation/<run-id>/
