@@ -1306,6 +1306,28 @@ Table "CourseGroupSets" {
   }
 }
 
+Table "currency_configurations" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "CurrencyCode" "character varying(3)" [not null]
+  "IsEnabled" boolean [not null]
+  "IsBaseCurrency" boolean [not null]
+  "DisplaySymbol" "character varying(16)"
+  "DisplayOrder" integer [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_currency_configurations"]
+    CurrencyCode [name: "IX_currency_configurations_CurrencyCode"]
+    IsEnabled [name: "IX_currency_configurations_IsEnabled"]
+    TenantId [unique, name: "ix_currency_configurations_tenant_base"]
+    (TenantId, CurrencyCode) [unique, name: "ix_currency_configurations_tenant_currency"]
+  }
+}
+
 Table "data_subject_requests" {
   "Id" uuid [not null]
   "UserId" uuid [not null]
@@ -2739,6 +2761,69 @@ Table "follows" {
     (FollowedEntityId, FollowedEntityType) [name: "IX_follows_FollowedEntityId_FollowedEntityType"]
     FollowerId [name: "IX_follows_FollowerId"]
     (FollowerId, FollowedEntityId, FollowedEntityType) [unique, name: "IX_follows_FollowerId_FollowedEntityId_FollowedEntityType"]
+  }
+}
+
+Table "fx_rate_snapshots" {
+  "Id" uuid [not null]
+  "BaseCurrency" "character varying(3)" [not null]
+  "QuoteCurrency" "character varying(3)" [not null]
+  "Rate" numeric(28,12) [not null]
+  "EffectiveDateUtc" timestamp [not null]
+  "AsOfUtc" timestamp [not null]
+  "ProviderName" "character varying(50)" [not null]
+  "Source" "character varying(50)" [not null]
+  "SyncRunId" uuid
+  "IsOverride" boolean [not null]
+  "ExpiresAtUtc" timestamp
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Checks {
+    `"BaseCurrency" <> "QuoteCurrency"` [name: 'CK_FxRateSnapshot_Pair_Distinct']
+    `"Rate" > 0` [name: 'CK_FxRateSnapshot_Rate_Positive']
+  }
+
+  Indexes {
+    Id [pk, name: "PK_fx_rate_snapshots"]
+    BaseCurrency [name: "IX_fx_rate_snapshots_BaseCurrency"]
+    EffectiveDateUtc [name: "ix_fx_rate_snapshots_effective_date"]
+    IsOverride [name: "IX_fx_rate_snapshots_IsOverride"]
+    (BaseCurrency, QuoteCurrency, EffectiveDateUtc) [name: "ix_fx_rate_snapshots_pair_date"]
+    (BaseCurrency, QuoteCurrency, EffectiveDateUtc, ProviderName, Source) [unique, name: "ix_fx_rate_snapshots_pair_date_provider"]
+    ProviderName [name: "IX_fx_rate_snapshots_ProviderName"]
+    QuoteCurrency [name: "IX_fx_rate_snapshots_QuoteCurrency"]
+  }
+}
+
+Table "fx_rate_sync_runs" {
+  "Id" uuid [not null]
+  "ProviderName" "character varying(50)" [not null]
+  "PrimaryProviderName" "character varying(50)" [not null]
+  "StartedAtUtc" timestamp [not null]
+  "CompletedAtUtc" timestamp [not null]
+  "Status" integer [not null]
+  "RatesApplied" integer [not null]
+  "RatesChanged" integer [not null]
+  "EffectiveDateUtc" timestamp
+  "ConsecutiveFailureCount" integer [not null]
+  "ErrorMessage" "character varying(4000)"
+  "RawResponse" text [not null]
+  "RawResponseContentType" "character varying(100)" [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_fx_rate_sync_runs"]
+    ProviderName [name: "IX_fx_rate_sync_runs_ProviderName"]
+    StartedAtUtc [name: "ix_fx_rate_sync_runs_started_at"]
+    Status [name: "ix_fx_rate_sync_runs_status"]
   }
 }
 
@@ -7478,6 +7563,7 @@ Table "payment_disputes" {
   "GatewayDisputeId" "character varying(255)"
   "GatewayName" "character varying(50)"
   "EvidenceDueBy" timestamp
+  "DisputeFee" numeric(18,2) [not null]
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
@@ -7525,6 +7611,7 @@ Table "refunds" {
   "TenantId" uuid [not null]
   "PaymentId" uuid [not null]
   "Amount" numeric(18,2) [not null]
+  "Kind" integer [not null]
   "Currency" "character varying(3)" [not null]
   "Reason" "character varying(100)" [not null]
   "ReasonDetails" "character varying(1000)"
