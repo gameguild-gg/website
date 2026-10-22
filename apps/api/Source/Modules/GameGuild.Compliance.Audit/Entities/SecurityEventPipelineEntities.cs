@@ -190,6 +190,14 @@ public sealed class SecurityLogRetentionPolicy : EntityBase
     /// <summary>Optional per-category retention overrides stored as <c>AuditCategory</c> name to days JSON.</summary>
     public string? CategoryOverridesJson { get; private set; }
 
+    /// <summary>
+    ///     Storage-tier archival threshold (issue #193): when set, enforcement moves audit rows older
+    ///     than this many days from the hot <c>AuditLogs</c> table into the archive tier
+    ///     (<see cref="ArchivedSecurityAuditLog"/>) instead of keeping them hot until deletion. Must be
+    ///     strictly shorter than the retention window; null keeps everything hot until deletion.
+    /// </summary>
+    public int? ArchiveAfterDays { get; private set; }
+
     /// <summary>When set to a future instant, retention enforcement is suspended for this tenant.</summary>
     public DateTime? LegalHoldUntilUtc { get; private set; }
 
@@ -205,7 +213,8 @@ public sealed class SecurityLogRetentionPolicy : EntityBase
         string? categoryOverridesJson,
         DateTime? legalHoldUntilUtc,
         Guid updatedByUserId,
-        DateTime configuredAtUtc)
+        DateTime configuredAtUtc,
+        int? archiveAfterDays = null)
     {
         return new SecurityLogRetentionPolicy
         {
@@ -214,6 +223,7 @@ public sealed class SecurityLogRetentionPolicy : EntityBase
             Revision = 1,
             RetentionDays = retentionDays,
             CategoryOverridesJson = categoryOverridesJson,
+            ArchiveAfterDays = archiveAfterDays,
             LegalHoldUntilUtc = legalHoldUntilUtc,
             UpdatedByUserId = updatedByUserId,
             ConfiguredAtUtc = configuredAtUtc,
@@ -227,11 +237,13 @@ public sealed class SecurityLogRetentionPolicy : EntityBase
         string? categoryOverridesJson,
         DateTime? legalHoldUntilUtc,
         Guid updatedByUserId,
-        DateTime configuredAtUtc)
+        DateTime configuredAtUtc,
+        int? archiveAfterDays = null)
     {
         Revision++;
         RetentionDays = retentionDays;
         CategoryOverridesJson = categoryOverridesJson;
+        ArchiveAfterDays = archiveAfterDays;
         LegalHoldUntilUtc = legalHoldUntilUtc;
         UpdatedByUserId = updatedByUserId;
         ConfiguredAtUtc = configuredAtUtc;
@@ -261,6 +273,9 @@ public sealed class SecurityLogRetentionExecution : EntityBase
 
     public int EvaluatedCount { get; private set; }
 
+    /// <summary>Rows moved from the hot audit table into the archive storage tier during this pass (issue #193).</summary>
+    public int ArchivedCount { get; private set; }
+
     private SecurityLogRetentionExecution() { }
 
     public static SecurityLogRetentionExecution Record(
@@ -272,7 +287,8 @@ public sealed class SecurityLogRetentionExecution : EntityBase
         bool legalHoldActive,
         bool dryRun,
         int deletedCount,
-        int evaluatedCount)
+        int evaluatedCount,
+        int archivedCount = 0)
     {
         return new SecurityLogRetentionExecution
         {
@@ -286,8 +302,90 @@ public sealed class SecurityLogRetentionExecution : EntityBase
             DryRun = dryRun,
             DeletedCount = deletedCount,
             EvaluatedCount = evaluatedCount,
+            ArchivedCount = archivedCount,
             CreatedAt = executedAtUtc,
             UpdatedAt = executedAtUtc
+        };
+    }
+}
+
+/// <summary>
+///     Archive storage tier for the security audit log (issue #193): aged rows moved out of the hot
+///     <c>AuditLogs</c> table by retention enforcement. The copy is immutable and retains the original
+///     row verbatim (same <see cref="SourceAuditLogId"/>) plus the archival instant, so archived
+///     evidence stays accessible through the retention archive endpoints while the hot tier stays
+///     small. Rows here are purged only when the applicable retention window fully elapses.
+/// </summary>
+public sealed class ArchivedSecurityAuditLog : EntityBase
+{
+    /// <summary>Identifier of the original <see cref="AuditLog"/> row this copy was made from.</summary>
+    public Guid SourceAuditLogId { get; private set; }
+
+    public string ActionType { get; private set; } = string.Empty;
+
+    public string ResourceType { get; private set; } = string.Empty;
+
+    public string? ResourceId { get; private set; }
+
+    public Guid? UserId { get; private set; }
+
+    public new Guid? TenantId { get; private set; }
+
+    public string? IpAddress { get; private set; }
+
+    public string? UserAgent { get; private set; }
+
+    public Guid? SessionId { get; private set; }
+
+    public string? Description { get; private set; }
+
+    public string? Metadata { get; private set; }
+
+    public bool Success { get; private set; }
+
+    public string? ErrorMessage { get; private set; }
+
+    public AuditRiskLevel RiskLevel { get; private set; }
+
+    public AuditCategory Category { get; private set; }
+
+    public string? CorrelationId { get; private set; }
+
+    /// <summary>Creation instant of the original audit row — the clock for archive retention.</summary>
+    public DateTime OriginalCreatedAt { get; private set; }
+
+    /// <summary>Instant the row was moved into the archive tier.</summary>
+    public DateTime ArchivedAtUtc { get; private set; }
+
+    private ArchivedSecurityAuditLog() { }
+
+    public static ArchivedSecurityAuditLog FromAuditLog(AuditLog source, DateTime archivedAtUtc)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return new ArchivedSecurityAuditLog
+        {
+            Id = Guid.NewGuid(),
+            SourceAuditLogId = source.Id,
+            ActionType = source.ActionType,
+            ResourceType = source.ResourceType,
+            ResourceId = source.ResourceId,
+            UserId = source.UserId,
+            TenantId = source.TenantId,
+            IpAddress = source.IpAddress,
+            UserAgent = source.UserAgent,
+            SessionId = source.SessionId,
+            Description = source.Description,
+            Metadata = source.Metadata,
+            Success = source.Success,
+            ErrorMessage = source.ErrorMessage,
+            RiskLevel = source.RiskLevel,
+            Category = source.Category,
+            CorrelationId = source.CorrelationId,
+            OriginalCreatedAt = source.CreatedAt,
+            ArchivedAtUtc = archivedAtUtc,
+            CreatedAt = archivedAtUtc,
+            UpdatedAt = archivedAtUtc
         };
     }
 }

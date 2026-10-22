@@ -210,6 +210,28 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.HasIndex(execution => new { execution.TenantId, execution.ExecutedAtUtc });
         });
 
+        // Archive storage tier for the security audit log (issue #193): copies of aged rows moved
+        // out of the hot AuditLogs table by retention enforcement.
+        modelBuilder.Entity<ArchivedSecurityAuditLog>(entity =>
+        {
+            entity.ToTable("ArchivedAuditLogs");
+            entity.HasKey(archived => archived.Id);
+            entity.Property(archived => archived.TenantId);
+            entity.Property(archived => archived.ActionType).HasMaxLength(100).IsRequired();
+            entity.Property(archived => archived.ResourceType).HasMaxLength(100).IsRequired();
+            entity.Property(archived => archived.ResourceId).HasMaxLength(100);
+            entity.Property(archived => archived.IpAddress).HasMaxLength(45);
+            entity.Property(archived => archived.UserAgent).HasMaxLength(500);
+            entity.Property(archived => archived.Description).HasMaxLength(1000);
+            entity.Property(archived => archived.ErrorMessage).HasMaxLength(500);
+            entity.Property(archived => archived.CorrelationId).HasMaxLength(100);
+            entity.Property(archived => archived.RiskLevel).HasConversion<int>();
+            entity.Property(archived => archived.Category).HasConversion<int>();
+            // Idempotency for re-archival of the same source row within a tenant.
+            entity.HasIndex(archived => new { archived.TenantId, archived.SourceAuditLogId }).IsUnique();
+            entity.HasIndex(archived => new { archived.TenantId, archived.OriginalCreatedAt });
+        });
+
         modelBuilder.Entity<PiiRedactionRule>(entity =>
         {
             entity.ToTable("PiiRedactionRules");

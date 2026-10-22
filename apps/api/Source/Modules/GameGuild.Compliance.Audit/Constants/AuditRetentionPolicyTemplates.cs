@@ -302,6 +302,33 @@ public static class AuditRetentionPolicyTemplates
             (2190, null, "Highly restricted incident evidence is kept for six years."))
     };
 
+    private static readonly AuditRetentionPolicyTemplate Sox = new()
+    {
+        Id = "sox",
+        DisplayName = "Sarbanes-Oxley (SOX)",
+        Description = "Audit record retention aligned to SOX financial-reporting and audit-workpaper obligations for issuers.",
+        Framework = "SOX",
+        IsBaseline = false,
+        BaseTemplateId = BaselineId,
+        PublishedAtUtc = new DateTime(2026, 10, 21, 0, 0, 0, DateTimeKind.Utc),
+        BaselineScenario = new AuditRetentionScenario
+        {
+            Name = "sox", RetentionDays = 2555, HotDays = 90, WarmUntilDays = 365, ColdUntilDays = 1825
+        },
+        TierPrices = PlatformBaseline.TierPrices,
+        Obligations =
+        [
+            new AuditRetentionObligation { Name = "SOX audit workpapers", Source = "SOX Section 802 (15 U.S.C. 1519): auditors of issuers retain audit or review workpapers for five years", MinimumRetentionDays = 1825 },
+            new AuditRetentionObligation { Name = "SOX financial-reporting controls evidence", Source = "SOX Sections 302/404: certifications and internal-control-over-financial-reporting evidence retained for the investigation and restatement window, preset to seven years", MinimumRetentionDays = 2555 }
+        ],
+        SensitivityRules = CreateSensitivityRules(
+            (90, 730, "Public audit data ages out after two years at most."),
+            (180, 1095, "Internal audit data is kept for at least six months and capped at three years."),
+            (730, 2555, "Confidential financial-reporting evidence is kept for at least two years."),
+            (1825, 2555, "Restricted workpaper evidence is kept for at least five years."),
+            (2555, null, "Highly restricted SOX evidence is kept for seven years."))
+    };
+
     /// <summary>All templates, baseline first, then framework templates in catalog order.</summary>
     public static IReadOnlyList<AuditRetentionPolicyTemplate> All { get; } =
     [
@@ -311,7 +338,8 @@ public static class AuditRetentionPolicyTemplates
         Gdpr,
         Hipaa,
         PciDss,
-        FedRamp
+        FedRamp,
+        Sox
     ];
 
     /// <summary>The platform baseline template every framework template inherits from.</summary>
