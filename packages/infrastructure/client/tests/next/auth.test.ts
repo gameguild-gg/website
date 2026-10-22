@@ -38,7 +38,7 @@ vi.mock('../../src/integrations/next/config.js', () => ({
 }));
 
 vi.mock('../../src/integrations/next/handlers.js', () => ({
-  createHandlers: vi.fn((config: ResolvedAuthConfig) => ({
+  createHandlers: vi.fn(() => ({
     GET: vi.fn(async () => new Response('GET')),
     POST: vi.fn(async () => new Response('POST')),
   })),
@@ -46,14 +46,14 @@ vi.mock('../../src/integrations/next/handlers.js', () => ({
 }));
 
 vi.mock('../../src/integrations/next/actions.js', () => ({
-  createAuthFunction: vi.fn((config: ResolvedAuthConfig) => {
+  createAuthFunction: vi.fn(() => {
     const fn = vi.fn(async () => null);
     return fn;
   }),
-  createSignInAction: vi.fn((config: ResolvedAuthConfig) => vi.fn(async () => {})),
-  createSignUpAction: vi.fn((config: ResolvedAuthConfig) => vi.fn(async () => {})),
-  createSignOutAction: vi.fn((config: ResolvedAuthConfig) => vi.fn(async () => {})),
-  createUpdateAction: vi.fn((config: ResolvedAuthConfig) => vi.fn(async () => null)),
+  createSignInAction: vi.fn(() => vi.fn(async () => {})),
+  createSignUpAction: vi.fn(() => vi.fn(async () => {})),
+  createSignOutAction: vi.fn(() => vi.fn(async () => {})),
+  createUpdateAction: vi.fn(() => vi.fn(async () => null)),
 }));
 
 describe('GameGuildAuth', () => {
