@@ -51,6 +51,24 @@ const web = job(pr, 'web');
 const producer = job(emception, 'build-test-package');
 const acquire = step(web, 'Acquire verified Toolchain release for Web');
 
+const clientGateName = 'Test client credentials, MFA, auth factory and generator contracts';
+const clientSuites = [
+  'tests/auth/providers/credentials.test.ts',
+  'tests/next/auth.test.ts',
+  'tests/generator',
+];
+
+function assertClientContractGate(source) {
+  const client = step(source, clientGateName);
+  const command = client.match(/^        run: ([^\n]+)$/m);
+  assert.ok(command, 'The client gate must retain an explicit run command');
+  assert.deepEqual(command[1].trim().split(/\s+/), [
+    'pnpm', '--filter', '@game-guild/client', 'exec', 'vitest', 'run',
+    ...clientSuites, '--maxWorkers=1',
+  ], 'The client gate must retain all three suites and the single-worker limit');
+  assert.doesNotMatch(client, /continue-on-error:|allow-failure|        if:/);
+}
+
 test('every pull-request consumer branch can start the required Toolchain producer', () => {
   const consumerTargets = pullRequestBranches(pr);
   const producerTargets = pullRequestBranches(emception);
@@ -110,7 +128,7 @@ test('producer detection covers every source or workflow change that requires de
 });
 
 test('all existing Web credential, lint, type, test and production build gates remain mandatory', () => {
-  const names = ['Build generated client', 'Test credentials and MFA client integration', 'Build Web runtime dependencies', 'Generate Web route types', 'Lint Web', 'Lint suppression budget ratchet', 'Typecheck Web', 'Test Web', 'Build Web'];
+  const names = ['Build generated client', clientGateName, 'Build Web runtime dependencies', 'Generate Web route types', 'Lint Web', 'Lint suppression budget ratchet', 'Typecheck Web', 'Test Web', 'Build Web'];
   let previous = -1;
   for (const name of names) {
     const position = web.indexOf('      - name: ' + name + '\n');
@@ -120,6 +138,8 @@ test('all existing Web credential, lint, type, test and production build gates r
   }
   assert.match(web, /if: needs\.classify\.outputs\.web == 'true'/);
   assert.match(web, /timeout-minutes: 360/);
+  assertClientContractGate(web);
+  assert.ok(web.indexOf(clientGateName) < web.indexOf('Acquire verified Toolchain release for Web'));
 });
 
 test('the pinned coding-cycle image keeps its bounded pull before actual execution', () => {
@@ -134,4 +154,13 @@ test('classification runs both source-delivery contracts before downstream jobs'
   const classify = job(pr, 'classify');
   assert.match(classify, /node --test [^\n]*scripts\/ci\/tests\/emception-web-artifacts\.test\.mjs/);
   assert.ok(classify.includes("python3 -m unittest discover -s scripts/ci/tests -p 'acquire_emception_release_test.py'"));
+});
+
+test('the client contract rejects a missing suite or worker bound', () => {
+  for (const requirement of [...clientSuites, '--maxWorkers=1']) {
+    assert.ok(web.includes(requirement));
+    const missingRequirement = web.replace(requirement, 'missing-required-client-argument');
+    assert.throws(() => assertClientContractGate(missingRequirement),
+      /The client gate must retain all three suites and the single-worker limit/);
+  }
 });
