@@ -7,6 +7,7 @@ import { once } from "node:events";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { test } from "node:test";
+import { Worker } from "node:worker_threads";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const virtualStore = join(repositoryRoot, "node_modules/.pnpm");
@@ -27,6 +28,105 @@ function installedConsumers(name) {
   }
   assert.ok(roots.size > 0, `The installed graph must contain ${name}`);
   return roots;
+}
+
+function verifyParserResourceLimits(context, packageName, packageRoot) {
+  const worker = new Worker(new URL("./helpers/parser-resource-limits.mjs", import.meta.url), {
+    workerData: { packageName, packageRoot },
+    resourceLimits: { maxOldGenerationSizeMb: 256 },
+  });
+  context.after(() => worker.terminate());
+  return new Promise((resolveProbe, rejectProbe) => {
+    let settled = false;
+    const deadline = setTimeout(() => {
+      finish(new Error(`${packageName} resource checks exceeded ten seconds`));
+      void worker.terminate();
+    }, 10_000);
+    function finish(error) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      if (error) rejectProbe(error);
+      else resolveProbe();
+    }
+    worker.once("error", finish);
+    worker.once("exit", code => finish(new Error(`${packageName} probe exited before reporting success (${code})`)));
+    worker.once("message", result => {
+      finish(result === packageName ? undefined : new Error("Unexpected parser probe result"));
+    });
+  });
+}
+
+for (const packageRoot of installedConsumers("toml")) {
+  test(`${packageRoot}: TOML preserves ordinary values and rejects integer precision loss`, () => {
+    const toml = require(packageRoot);
+    assert.equal(require(join(packageRoot, "package.json")).version, "5.0.1");
+    const parsed = toml.parse('name = "fixture"\ncount = 60\nenabled = true\nvalues = [1, 2]\ndate = 2026-10-22');
+    assert.equal(parsed.name, "fixture");
+    assert.equal(parsed.count, 60);
+    assert.equal(parsed.enabled, true);
+    assert.deepEqual(parsed.values, [1, 2]);
+    assert.equal(parsed.date, "2026-10-22");
+    assert.throws(() => toml.parse("count = 9007199254740993"), /losslessly/);
+    assert.equal(toml.parse("count = 9007199254740993", { bigint: true }).count, 9007199254740993n);
+    assert.throws(() => toml.parse("count = 9223372036854775808", { bigint: true }), /64-bit/);
+  });
+  test(`${packageRoot}: TOML bounds integer work and scales across table paths`, context =>
+    verifyParserResourceLimits(context, "toml", packageRoot));
+}
+
+for (const packageRoot of installedConsumers("snowflake-sdk")) {
+  test(`${packageRoot}: connection parsing and option normalization retain their shared contract`, () => {
+    const consumerRequire = createRequire(join(packageRoot, "package.json"));
+    const toml = consumerRequire("toml");
+    const { normalizeConnectionOptions } = require(join(packageRoot, "dist/lib/connection/normalize_connection_options.js"));
+    assert.equal(consumerRequire("toml/package.json").version, "5.0.1");
+    const parsed = toml.parse('[default]\naccount = "fixture-account"\nuser = "fixture-user"\nlogin_timeout = 60\nclient_session_keep_alive = true');
+    assert.deepEqual(normalizeConnectionOptions(parsed.default), {
+      account: "fixture-account",
+      username: "fixture-user",
+      loginTimeout: 60,
+      clientSessionKeepAlive: true,
+    });
+  });
+}
+
+for (const packageRoot of installedConsumers("ip-address")) {
+  test(`${packageRoot}: ordinary IPv4, IPv6, subnet and zone behavior remains compatible`, () => {
+    const { Address4, Address6 } = require(packageRoot);
+    assert.equal(require(join(packageRoot, "package.json")).version, "10.7.4");
+    assert.deepEqual(new Address4("192.0.2.42").toArray(), [192, 0, 2, 42]);
+    assert.equal(Address4.fromArpa("42.2.0.192.in-addr.arpa.").correctForm(), "192.0.2.42");
+    const address = new Address6("2001:db8::1/56");
+    assert.equal(address.networkForm(), "2001:db8::/56");
+    assert.equal(Address6.fromByteArray(address.toUnsignedByteArray()).correctForm(), "2001:db8::1");
+    assert.equal(new Address6("fe80::1%eth0").zone, "%eth0");
+  });
+  test(`${packageRoot}: malformed zones and reverse names have bounded parsing work`, context =>
+    verifyParserResourceLimits(context, "ip-address", packageRoot));
+}
+
+for (const packageRoot of installedConsumers("socks")) {
+  test(`${packageRoot}: SOCKS still converts IPv4 and IPv6 addresses to protocol bytes`, () => {
+    const consumerRequire = createRequire(join(packageRoot, "package.json"));
+    const helpers = require(join(packageRoot, "build/common/helpers.js"));
+    assert.equal(consumerRequire("ip-address/package.json").version, "10.7.4");
+    assert.deepEqual([...helpers.ipToBuffer("192.0.2.42")], [192, 0, 2, 42]);
+    assert.equal(helpers.ipToBuffer("2001:db8::1").toString("hex"), "20010db8000000000000000000000001");
+    assert.equal(helpers.int32ToIpv4(helpers.ipv4ToInt32("192.0.2.42")), "192.0.2.42");
+  });
+}
+
+for (const packageRoot of installedConsumers("express-rate-limit")) {
+  test(`${packageRoot}: request-limit keys preserve IPv4 and IPv6 subnet grouping`, () => {
+    const consumerRequire = createRequire(join(packageRoot, "package.json"));
+    const { ipKeyGenerator } = require(packageRoot);
+    assert.equal(consumerRequire("ip-address/package.json").version, "10.7.4");
+    assert.equal(ipKeyGenerator("192.0.2.42"), "192.0.2.42");
+    assert.equal(ipKeyGenerator("::ffff:192.0.2.42"), "192.0.2.42");
+    assert.equal(ipKeyGenerator("2001:db8::1"), "2001:db8::/56");
+    assert.equal(ipKeyGenerator("2001:db8::1", false), "2001:db8::1");
+  });
 }
 
 test("local and CI package managers use the reviewed pnpm security release", () => {
