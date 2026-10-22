@@ -12,6 +12,8 @@ import {
 
 let mockAuth: MockUseAuthReturn;
 
+const mockRouter = { replace: vi.fn(), push: vi.fn() };
+
 vi.mock('@game-guild/client/react', () => ({
   useAuth: () => mockAuth,
 }));
@@ -31,6 +33,7 @@ vi.mock('@/i18n/navigation', () => ({
       {children}
     </a>
   ),
+  useRouter: () => mockRouter,
 }));
 
 // Must import AFTER mocks
@@ -291,41 +294,44 @@ describe('SignInForm', () => {
 describe("SignInForm MFA", () => {
   beforeEach(() => {
     mockAuth = createMockUseAuth();
+    mockRouter.replace.mockClear();
   });
 
-  it("completes the limited challenge without resending a password or tenant", async () => {
-    mockAuth.mfaChallenge = {
-      mfaToken: "x".repeat(43),
-      availableMethods: ["TOTP", "BackupCode"],
-    };
-    const { user } = renderWithUser(<SignInForm redirectTo="/dashboard" />);
-    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText("Authentication code"), "123456");
-    await user.click(
-      screen.getByRole("button", { name: "Verify and sign in" }),
-    );
-    expect(mockAuth.signIn).toHaveBeenCalledWith("credentials", {
-      mfaToken: "x".repeat(43),
-      method: "Totp",
-      code: "123456",
-      redirectTo: "/dashboard",
+  it("navigates to /sign-in/2fa when MFA is required and keeps the credential form mounted", async () => {
+    mockAuth = createMockUseAuth({
+      signIn: vi.fn().mockImplementation(() => {
+        const err = new Error("Multi-factor authentication required") as Error & {
+          type?: string;
+        };
+        err.type = "MfaRequired";
+        throw err;
+      }),
     });
+    const { user } = renderWithUser(<SignInForm redirectTo="/dashboard" />);
+
+    await user.type(screen.getByLabelText("Email"), "test@example.com");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.click(screen.getByRole("button", { name: /sign in$/i }));
+
+    expect(mockRouter.replace).toHaveBeenCalledWith({
+      pathname: "/sign-in/2fa",
+      query: { redirectTo: "/dashboard" },
+    });
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Authentication code")).not.toBeInTheDocument();
   });
 
-  it("gives challenge buttons explicit light-on-dark text (light-mode contrast)", () => {
-    mockAuth.mfaChallenge = {
-      mfaToken: "x".repeat(43),
-      availableMethods: ["TOTP", "BackupCode"],
-    };
-    renderWithUser(<SignInForm />);
+  it("does not navigate on ordinary sign-in failures", async () => {
+    mockAuth = createMockUseAuth({
+      signIn: vi.fn().mockRejectedValue(new Error("Invalid credentials")),
+    });
+    const { user } = renderWithUser(<SignInForm />);
 
-    // Dark card + light-mode variant tokens = white-on-white without these overrides.
-    expect(screen.getByLabelText("Verification method")).toHaveClass(
-      "border-white/10",
-    );
-    expect(
-      screen.getByRole("button", { name: "Start sign-in again" }),
-    ).toHaveClass("text-slate-200");
+    await user.type(screen.getByLabelText("Email"), "test@example.com");
+    await user.type(screen.getByLabelText("Password"), "wrong");
+    await user.click(screen.getByRole("button", { name: /sign in$/i }));
+
+    expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 });
 

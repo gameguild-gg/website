@@ -4,7 +4,7 @@ import {
   isForbidden,
   request,
   unwrap,
-} from "./api.mjs";
+} from "./api.server.mjs";
 import {
   checkpointIndex,
   expectedFinalScore,
@@ -13,7 +13,7 @@ import {
   hasPeerReview,
   nextApplicableCheckpoint,
 } from "./definitions.mjs";
-import { readManifest, selectedManifestQuizzes } from "./manifest.mjs";
+import { readManifest, selectedManifestQuizzes } from "./manifest.server.mjs";
 
 export async function verifyScenario(scenarioKey, { strict = true } = {}) {
   const manifest = await readManifest(scenarioKey);

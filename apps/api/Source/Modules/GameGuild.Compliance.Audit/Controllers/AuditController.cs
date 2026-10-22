@@ -75,6 +75,8 @@ public class AuditController(
     /// </summary>
     [HttpGet]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.List)]
+    [RequireSearchPermission(nameof(AuditLogQueryRequest.SearchText))]
     public async Task<ActionResult<AuditLogResponse>> GetAuditLogs([FromQuery] AuditLogQueryRequest request)
     {
         var adminUserId = GetCurrentUserId();
@@ -128,6 +130,7 @@ public class AuditController(
     /// </remarks>
     [HttpGet("search/by-date-range")]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.Search)]
     [ProducesResponseType(typeof(AuditDateRangeSearchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuditDateRangeSearchResponse>> SearchAuditLogsByDateRange(
@@ -238,6 +241,7 @@ public class AuditController(
     [HttpPost("search-filter")]
     [HttpPost("/api/audit/search-filter")]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(AuditLogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuditLogResponse>> SearchAuditLogsWithConditions([FromBody] AuditConditionSearchRequest request)
@@ -269,6 +273,7 @@ public class AuditController(
     /// <summary>Searches audit events by multiple action types, groups, and taxonomy categories.</summary>
     [HttpGet("search/by-action-type")]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.Search)]
     [ProducesResponseType(typeof(AuditActionTypeSearchResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuditActionTypeSearchResponse>> SearchAuditLogsByActionType(
@@ -316,6 +321,7 @@ public class AuditController(
     /// <summary>Lists the hierarchical action type taxonomy and predefined investigation groups.</summary>
     [HttpGet("search/by-action-type/taxonomy")]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.List)]
     [ProducesResponseType(typeof(AuditActionTypeTaxonomyResponse), StatusCodes.Status200OK)]
     public ActionResult<AuditActionTypeTaxonomyResponse> GetAuditActionTypeTaxonomy() => Ok(AuditActionTypeTaxonomy.GetTaxonomy());
 
@@ -391,6 +397,7 @@ public class AuditController(
     /// </summary>
     [HttpGet("statistics")]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     public async Task<ActionResult<AuditStatisticsResponse>> GetAuditStatistics([FromQuery] AuditStatisticsRequest request)
     {
         var adminUserId = GetCurrentUserId();

@@ -29,6 +29,9 @@ public class AuditReportService(
         var authQuery = context.Set<AuthenticationAttempt>().AsNoTracking()
             .Where(a => a.AttemptedAt >= startDate && a.AttemptedAt <= endDate);
 
+        if (tenantId.HasValue)
+            authQuery = authQuery.Where(a => a.TenantId == tenantId.Value);
+
         var totalLoginAttempts = await authQuery.CountAsync(cancellationToken).ConfigureAwait(false);
         var successfulLogins = await authQuery.CountAsync(a => a.IsSuccessful, cancellationToken);
         var failedLogins = totalLoginAttempts - successfulLogins;

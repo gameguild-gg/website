@@ -1,4 +1,4 @@
-import { auth } from '@/auth';
+import { auth, authConfig, readSessionUnCached } from '@/auth';
 import { GitHubStarPrompt } from '@/components/community/github-star-prompt';
 import { WorkspaceShell } from '@/components/console/workspace-shell';
 import { AccessibilitySyncInitializer } from '@/components/settings/accessibility-sync-initializer';
@@ -9,7 +9,8 @@ import { redirect } from '@/i18n/navigation';
 import { getDashboardNotificationSummary } from '@/lib/dashboard-notifications';
 import { getDashboardContexts } from '@/lib/dashboard-contexts';
 import { getMfaStatus } from '@/lib/user-settings/mfa-actions';
-import { headers } from 'next/headers';
+import { SessionStore, resolveCookieOptions } from '@game-guild/client';
+import { cookies, headers } from 'next/headers';
 import React from 'react';
 
 /**
@@ -44,12 +45,33 @@ async function currentPublicPath(): Promise<string | null> {
 export default async function Layout({ children, params }: LayoutProps<'/[locale]'>): Promise<React.JSX.Element> {
   const { locale } = await params;
 
-  const session = await auth();
+  let session = await auth();
 
   if (!session || typeof session === 'function') {
-    const callbackUrl = (await currentPublicPath()) ?? '/workspace';
-    redirect({ href: { pathname: '/sign-in', query: { callbackUrl } }, locale });
-    throw new Error('Unauthenticated dashboard access');
+    // Session write/rotation race post-MFA (issue #864): the full-page
+    // redirect after MFA verify can land here while the rotated session
+    // cookie is not yet observable through auth(), briefly rendering the
+    // sign-in screen ("sign-in flash"). A present-but-unreadable session
+    // cookie means the browser DID send credentials — retry auth() once
+    // after a short delay before bouncing to /sign-in. No cookie at all
+    // is a genuine anonymous request and redirects immediately.
+    const cookieStore = await cookies();
+    const cookieOptions = resolveCookieOptions(authConfig.cookies, authConfig.cookies.secure);
+    const sessionCookieName = new SessionStore(cookieOptions).getCookieName();
+    const hasSessionCookie = Boolean(cookieStore.get(sessionCookieName)?.value);
+
+    if (hasSessionCookie) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      // auth() is memoized per request (cache()); retry through the
+      // uncached reader so the re-read sees the rotated session cookie.
+      session = await readSessionUnCached();
+    }
+
+    if (!session || typeof session === 'function') {
+      const callbackUrl = (await currentPublicPath()) ?? '/workspace';
+      redirect({ href: { pathname: '/sign-in', query: { callbackUrl } }, locale });
+      throw new Error('Unauthenticated dashboard access');
+    }
   }
 
   const [notifications, dashboardContexts, twoFactorEnabled] = await Promise.all([

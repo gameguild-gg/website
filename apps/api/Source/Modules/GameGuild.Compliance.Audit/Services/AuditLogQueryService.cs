@@ -30,7 +30,7 @@ public class AuditLogQueryService(
         // Fetch from different sources based on SourceType filter
         if (request.SourceType is null or SecurityAuditSourceType.All or SecurityAuditSourceType.Authentication)
         {
-            var authLogs = await GetAuthenticationEntriesAsync(startDate, endDate, request.UserId, request.Success, request.IpAddress, cancellationToken).ConfigureAwait(false);
+            var authLogs = await GetAuthenticationEntriesAsync(startDate, endDate, request.UserId, request.Success, request.IpAddress, cancellationToken, tenantId: request.TenantId).ConfigureAwait(false);
             entries.AddRange(authLogs);
         }
 
@@ -254,10 +254,13 @@ public class AuditLogQueryService(
 
     internal async Task<List<UnifiedSecurityAuditEntry>> GetAuthenticationEntriesAsync(
         DateTime startDate, DateTime endDate, Guid? userId, bool? successOnly, string? ipAddress,
-        CancellationToken cancellationToken, int? limit = null)
+        CancellationToken cancellationToken, int? limit = null, Guid? tenantId = null)
     {
         var query = context.Set<AuthenticationAttempt>().AsNoTracking()
             .Where(a => a.AttemptedAt >= startDate && a.AttemptedAt <= endDate);
+
+        if (tenantId.HasValue)
+            query = query.Where(a => a.TenantId == tenantId.Value);
 
         if (userId.HasValue)
             query = query.Where(a => a.UserId == userId.Value);
@@ -284,7 +287,7 @@ public class AuditLogQueryService(
             ResourceId = a.UserId?.ToString(),
             UserId = a.UserId,
             UserEmail = a.Email,
-            TenantId = null,
+            TenantId = a.TenantId,
             IpAddress = a.IpAddress,
             UserAgent = a.UserAgent,
             Success = a.IsSuccessful,
