@@ -20,6 +20,7 @@ public sealed class AuthFacadeContractTests
         { typeof(IOAuthAuthService), nameof(IAuthService.DiscordSignInAsync) },
         { typeof(IOAuthAuthService), nameof(IAuthService.GitHubCallbackSignInAsync) },
         { typeof(IOAuthAuthService), nameof(IAuthService.OidcSignInAsync) },
+        { typeof(IOAuthAuthService), nameof(IAuthService.SamlSignInAsync) },
         { typeof(IOAuthAuthService), nameof(IAuthService.GetGitHubAuthUrlAsync) },
         { typeof(IOAuthAuthService), nameof(IAuthService.GetGoogleAuthUrlAsync) },
         { typeof(IOAuthAuthService), nameof(IAuthService.SteamCallbackSignInAsync) },
@@ -43,7 +44,7 @@ public sealed class AuthFacadeContractTests
     public void ExplicitOperationMatrix_CoversEverySpecializedContractAndFacadeMethod()
     {
         var expected = Operations.Select(operation => (string)operation[1]).ToArray();
-        expected.Should().HaveCount(24).And.OnlyHaveUniqueItems();
+        expected.Should().HaveCount(25).And.OnlyHaveUniqueItems();
         var contracts = typeof(IAuthService).GetInterfaces().SelectMany(contract => contract.GetMethods());
         contracts.Select(method => method.Name).Should().BeEquivalentTo(expected);
         typeof(AuthService).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
