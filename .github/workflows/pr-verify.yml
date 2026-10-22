@@ -161,7 +161,8 @@ jobs:
         run: pnpm --filter @game-guild/web exec tsc --noEmit
       - name: Validate quiz grading audit contracts
         run: |
-          pnpm --filter @game-guild/web test:grading:scenario
+          pnpm --filter @game-guild/web test:grading:validation
+          pnpm --filter @game-guild/grading test
           pnpm --filter @game-guild/grading-adapter-quiz test
       - name: Test Web
         run: pnpm --filter @game-guild/web exec vitest run --maxWorkers=4

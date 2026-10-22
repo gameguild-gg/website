@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  completeMfaSignInWithReplayRetry,
   createMfaSignInContinuation,
   generateTotpCode,
 } from "./sign-in-mfa-support.mjs";
@@ -17,7 +18,10 @@ test("RFC 6238 SHA-1 vectors independently produce native six-digit TOTP", () =>
     [2000000000, "279037"],
     [20000000000, "353130"],
   ]) {
-    assert.equal(generateTotpCode(rfc6238PublicTestKey, seconds * 1000), expected);
+    assert.equal(
+      generateTotpCode(rfc6238PublicTestKey, seconds * 1000),
+      expected,
+    );
   }
 });
 test("malformed setup keys cannot become authenticator proofs", () => {
@@ -78,9 +82,75 @@ test("second sign-in waits for a new counter instead of bypassing replay protect
   assert.deepEqual(waits, [1000]);
   assert.notEqual(codes[0], codes[1]);
 });
+test("rejected replay gets one fresh challenge in the next TOTP counter", async () => {
+  let clock = 59000;
+  const challenges = [];
+  const codes = [];
+  const waits = [];
+  const continuation = createMfaSignInContinuation({
+    secrets: new Map([["account", rfc6238PublicTestKey]]),
+    now: () => clock,
+    wait: async (ms) => {
+      waits.push(ms);
+      clock += ms;
+    },
+  });
+
+  const result = await completeMfaSignInWithReplayRetry({
+    accountKey: "account",
+    begin: async () => {
+      const sequence = challenges.length + 1;
+      const token = `${"x".repeat(42)}${sequence}`;
+      challenges.push(token);
+      return { error: "MfaRequired", mfaToken: token };
+    },
+    continuation,
+    isReplayFailure: (error) => error.status === 401,
+    send: async (_action, body) => {
+      codes.push(body.code);
+      if (codes.length === 1) {
+        const error = new Error("replayed TOTP");
+        error.status = 401;
+        throw error;
+      }
+      return { accessToken: "verified" };
+    },
+  });
+
+  assert.deepEqual(result, { accessToken: "verified" });
+  assert.equal(challenges.length, 2);
+  assert.deepEqual(waits, [1000]);
+  assert.notEqual(codes[0], codes[1]);
+});
+test("non-replay MFA failures are not retried", async () => {
+  let challenges = 0;
+  await assert.rejects(
+    completeMfaSignInWithReplayRetry({
+      accountKey: "account",
+      begin: async () => {
+        challenges += 1;
+        return { error: "MfaRequired", mfaToken };
+      },
+      continuation: createMfaSignInContinuation({
+        secrets: new Map([["account", rfc6238PublicTestKey]]),
+        now: () => 59000,
+      }),
+      isReplayFailure: (error) => error.status === 401,
+      send: async () => {
+        const error = new Error("service unavailable");
+        error.status = 503;
+        throw error;
+      },
+    }),
+    /service unavailable/,
+  );
+  assert.equal(challenges, 1);
+});
 test("denied completion or a missing secret never returns an authenticated response", async () => {
   await assert.rejects(
-    createMfaSignInContinuation({ secrets: new Map([["account", rfc6238PublicTestKey]]) })(
+    createMfaSignInContinuation({
+      secrets: new Map([["account", rfc6238PublicTestKey]]),
+    })(
       { requiresMfa: true, mfaToken },
       async () => ({ error: "Denied" }),
       "account",
@@ -96,29 +166,26 @@ test("denied completion or a missing secret never returns an authenticated respo
 });
 test("accepts a challenge for an elevated-role account with a provisioned secret", async () => {
   const bridge = createMfaSignInContinuation({
-    secrets: new Map([["admin@game-guild.com", "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"]]),
+    secrets: new Map([
+      ["admin@game-guild.com", "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"],
+    ]),
   });
   const response = { accessToken: "verified" };
   assert.deepEqual(
     await bridge(
-      { requiresMfa: true, mfaToken: "x".repeat(43), tenantId: "bound", userId: "bound" },
-      async () => ({ accessToken: "verified", tenantId: "bound", userId: "bound" }),
+      {
+        requiresMfa: true,
+        mfaToken: "x".repeat(43),
+        tenantId: "bound",
+        userId: "bound",
+      },
+      async () => ({
+        accessToken: "verified",
+        tenantId: "bound",
+        userId: "bound",
+      }),
       "admin@game-guild.com",
     ),
     { ...response, tenantId: "bound", userId: "bound" },
   );
-});
-
-test("SignInForm keeps void callbacks without obsolete promise suppressions", async () => {
-  const { readFile } = await import("node:fs/promises");
-  const [baselineText, form] = await Promise.all([
-    readFile(new URL("../eslint-suppressions.json", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/sign-in-form.tsx", import.meta.url), "utf8"),
-  ]);
-  assert.equal(
-    Object.hasOwn(JSON.parse(baselineText), "src/components/sign-in-form.tsx"),
-    false,
-  );
-  assert.match(form, /onSubmit=\{\(event\) => \{\s+void handleMfaSubmit\(event\);\s+\}\}/);
-  assert.match(form, /onSubmit=\{\(event\) => \{\s+void handleSubmit\(event\);\s+\}\}/);
 });

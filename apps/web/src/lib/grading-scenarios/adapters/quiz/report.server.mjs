@@ -1,17 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
-import { dirname, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { relative, resolve, sep } from "node:path";
 import {
   VALIDATION_RESULT_STATUSES,
   getValidationCase,
 } from "./capability-catalog.mjs";
-import { REPO_ROOT, writeJsonAtomic } from "./manifest.mjs";
+import { REPO_ROOT, WEB_ROOT, writeJsonAtomic } from "./manifest.server.mjs";
 
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 export const VALIDATION_RESULTS_ROOT = resolve(
-  SCRIPT_DIR,
-  "../../test-results/quiz-grading-validation",
+  WEB_ROOT,
+  "test-results/quiz-grading-validation",
 );
 
 const SENSITIVE_KEY =
@@ -52,20 +50,28 @@ export function createValidationReport({
   const normalizedCases = cases.map((candidate) => {
     const observed = resultByCase.get(candidate.id);
     const quizKey = candidate.quizKey ?? candidate.key;
-    const relevantChecks = (scenarioReport?.checks ?? []).filter(
-      (check) =>
-        !quizKey ||
-        check.name.includes(`[${quizKey}]`) ||
-        check.name.startsWith("course ") ||
-        check.name === "assessment group",
-    );
+    const relevantChecks = (scenarioReport?.checks ?? []).filter((check) => {
+      const scopedCheck = check.name.match(/^\[([^\]]+)\]/);
+      return !scopedCheck || !quizKey || scopedCheck[1] === quizKey;
+    });
     const failedChecks = relevantChecks.filter((check) => !check.ok);
-    const automationCompleted = completedAutomations.includes(
+    const automationDeclaredComplete = completedAutomations.includes(
       candidate.automation,
     );
+    const automationCompleted =
+      candidate.automation === "browser"
+        ? automationDeclaredComplete && Boolean(observed)
+        : automationDeclaredComplete;
+    const missingBrowserEvidence =
+      candidate.automation === "browser" &&
+      observed?.status === "pass" &&
+      (observed.evidence?.length ?? 0) === 0;
     const status =
-      observed?.status ??
-      inferStatus(candidate, failedChecks, automationCompleted);
+      failedChecks.length > 0
+        ? "bug"
+        : missingBrowserEvidence
+          ? "harness-gap"
+          : (observed?.status ?? inferStatus(candidate, automationCompleted));
     if (!VALIDATION_RESULT_STATUSES.includes(status)) {
       throw new Error(
         `Validation result ${candidate.id} has unknown status "${status}".`,
@@ -79,15 +85,18 @@ export function createValidationReport({
       automation: candidate.automation,
       status,
       owner: candidate.baseline.owner,
-      reason: observed
-        ? (observed.reason ?? null)
-        : failedChecks.length > 0
+      reason:
+        failedChecks.length > 0
           ? failedChecks
               .map((check) => `${check.name}: ${check.detail ?? "failed"}`)
               .join("; ")
-          : candidate.automation === "browser" && !automationCompleted
-            ? "The API state was verified, but browser automation was not executed by this command."
-            : candidate.baseline.reason,
+          : missingBrowserEvidence
+            ? "Browser automation completed without preserving evidence for this case."
+            : observed
+              ? (observed.reason ?? null)
+              : !automationCompleted
+                ? `The ${candidate.automation} automation required by this case was not executed by this command.`
+                : candidate.baseline.reason,
       tracking: observed
         ? (observed.tracking ?? null)
         : candidate.baseline.tracking,
@@ -95,7 +104,10 @@ export function createValidationReport({
       checks: relevantChecks,
       execution: {
         requiredAutomation: candidate.automation,
-        completedAutomations,
+        completedAutomations: completedAutomations.filter(
+          (automation) =>
+            automation !== candidate.automation || automationCompleted,
+        ),
         automationCompleted,
       },
     };
@@ -224,13 +236,8 @@ export function sanitizeEvidence(value, seen = new WeakSet()) {
   return result;
 }
 
-function inferStatus(candidate, failedChecks, automationCompleted) {
-  if (failedChecks.length > 0) return "bug";
-  if (
-    candidate.baseline.status === "pass" &&
-    candidate.automation === "browser" &&
-    !automationCompleted
-  ) {
+function inferStatus(candidate, automationCompleted) {
+  if (candidate.baseline.status === "pass" && !automationCompleted) {
     return "partial";
   }
   return candidate.baseline.status;
