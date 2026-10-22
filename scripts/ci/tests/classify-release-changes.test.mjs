@@ -32,6 +32,19 @@ test("documentation and CI changes do not deploy runtime services", () => {
   );
 });
 
+for (const file of [
+  "scripts/ci/select-affected-dotnet-tests.mjs",
+  "scripts/ci/run-affected-dotnet-tests.sh",
+  "scripts/ci/tests/select-affected-dotnet-tests.test.mjs",
+]) {
+  test(`affected API test infrastructure ${file} verifies API without scheduling runtime deployment`, () => {
+    const result = classifyReleaseChanges([file]);
+    assert.deepEqual(result, { ...expectedEmptyClassification, api: true });
+    assert.deepEqual(releaseServiceMatrix(result), ["api"]);
+    assert.deepEqual(runtimeReleaseServiceMatrix(result), []);
+  });
+}
+
 test("a Web component change deploys only Web", () => {
   assert.deepEqual(
     classifyReleaseChanges(["apps/web/src/components/ui/button.tsx"]),
