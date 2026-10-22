@@ -67,4 +67,11 @@ public class DisputeEvidence : EntityBase
     /// <summary>Metadata (JSON)</summary>
     [MaxLength(2000)]
     public string? Metadata { get; set; }
+
+    /// <summary>
+    ///     When this evidence row was included in a bundle successfully submitted to the gateway
+    ///     (issue #419 evidence submission tracking); null while it has not been submitted. The
+    ///     first submission wins so each row keeps the timestamp of when it reached the gateway.
+    /// </summary>
+    public DateTime? GatewaySubmittedAt { get; set; }
 }

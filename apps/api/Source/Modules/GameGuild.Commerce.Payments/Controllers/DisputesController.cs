@@ -279,6 +279,32 @@ public sealed class DisputesController(
     }
 
     /// <summary>
+    ///     Submit the dispute evidence bundle to the gateway: assembles every attached evidence
+    ///     row into one bundle, delivers it through the gateway and records the submission status
+    ///     on the dispute and each evidence item. Requires the <c>payments:admin</c> permission.
+    /// </summary>
+    /// <param name="disputeId">Dispute identifier.</param>
+    /// <param name="body">Optional bundle summary prepended to the assembled evidence.</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpPost("{disputeId:guid}:submit-evidence")]
+    [EndpointSummary("Submit the evidence bundle to the gateway")]
+    [EndpointDescription("Assembles every evidence row attached to the dispute into one bundle, submits it to the gateway and records the submission status. Requires the payments:admin permission.")]
+    [ProducesResponseType<DisputeActionResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SubmitEvidence(Guid disputeId, [FromBody] SubmitDisputeEvidenceRequest? body, CancellationToken ct)
+    {
+        var validationError = await ValidateDisputeExistsForTenantAsync(disputeId, "submit dispute evidence", ct).ConfigureAwait(false);
+        if (validationError is NotFoundResult) return NotFound();
+        if (validationError != null) return validationError;
+
+        var result = await sender.Send(new SubmitDisputeEvidenceCommand(disputeId, body?.Summary), ct).ConfigureAwait(false);
+
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
     ///     Cancel a dispute.
     /// </summary>
     /// <param name="disputeId">Dispute identifier.</param>
@@ -394,6 +420,9 @@ public sealed class DisputesController(
 
     /// <summary>Request body for challenging a dispute.</summary>
     public sealed record ChallengeDisputeRequest(string? EvidenceSummary = null);
+
+    /// <summary>Request body for submitting the evidence bundle to the gateway.</summary>
+    public sealed record SubmitDisputeEvidenceRequest(string? Summary = null);
 
     /// <summary>Request body for cancelling a dispute.</summary>
     public sealed record CancelDisputeRequest(string Reason);

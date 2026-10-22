@@ -7478,6 +7478,8 @@ Table "payment_disputes" {
   "GatewayDisputeId" "character varying(255)"
   "GatewayName" "character varying(50)"
   "EvidenceDueBy" timestamp
+  "EvidenceSubmittedAt" timestamp
+  "DisputeFee" numeric(18,2) [not null]
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
@@ -9265,6 +9267,7 @@ Table "dispute_evidence" {
   "SubmittedBy" uuid [not null]
   "IsFromMerchant" boolean [not null]
   "Metadata" "character varying(2000)"
+  "GatewaySubmittedAt" timestamp
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
