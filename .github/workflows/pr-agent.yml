@@ -41,11 +41,12 @@ jobs:
           # Per-call token budget cap: pr-agent uses min(max_model_tokens,
           # custom_model_max_tokens); at 900k the whole big-PR diff packed into
           # ONE call (723k tokens → ~705s prefill silence → CF 524 at 120s,
-          # streaming can't help before first byte). 100k → ~8 chunks →
-          # per-call TTFT ~61-97s < CF window; chunking (enabled below, 100
-          # calls) actually engages. CUSTOM_MODEL_MAX_TOKENS stays 900000 (real
-          # 1M context of the backend).
-          CONFIG__MAX_MODEL_TOKENS: "100000"
+          # streaming can't help before first byte). At 100k 4 of 7 chunks
+          # still hit CF 524 (run 39822917061) — TTFT ~61-97s rides too close
+          # to the window edge. 50k → ~15 chunks → per-call TTFT ~30-50s,
+          # safely inside the CF window. CUSTOM_MODEL_MAX_TOKENS stays 900000
+          # (real 1M context of the backend).
+          CONFIG__MAX_MODEL_TOKENS: "50000"
           PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: "true"
           PR_REVIEWER__MAX_NUMBER_OF_CALLS: "100"
           PR_CODE_SUGGESTIONS__MAX_NUMBER_OF_CALLS: "100"
