@@ -195,7 +195,14 @@ public sealed class SamlFederationServiceTests : IDisposable
         var sut = CreateSut(AuthOptionsWith(ProviderOptions(claimMapping: mapping)));
         var requestId = await IssuePendingRequestIdAsync(sut);
 
-        var identity = await sut.ConsumeAssertionAsync(Slug, BuildResponse(o => o with { InResponseTo = requestId }));
+        // The IdP model emits the attribute names the mapping expects ("mail" and
+        // "displayName"); the service must resolve them onto email/name.
+        var identity = await sut.ConsumeAssertionAsync(Slug, BuildResponse(o => o with
+        {
+            InResponseTo = requestId,
+            EmailAttributeName = "mail",
+            NameAttributeName = "displayName"
+        }));
 
         identity.Email.Should().Be("jane@corp.example.test");
         identity.Name.Should().Be("Jane Corp");
@@ -277,7 +284,7 @@ public sealed class SamlFederationServiceTests : IDisposable
         var sut = CreateSut(AuthOptionsWith(ProviderOptions()));
         var requestId = await IssuePendingRequestIdAsync(sut);
 
-        var samlResponse = BuildResponse(o => o with { InResponseTo = requestId, SignAssertion = false }, referenceUriOverride: "assertion");
+        var samlResponse = BuildResponse(o => o with { InResponseTo = requestId, SignAssertion = false, SignResponse = true }, referenceUriOverride: "assertion");
 
         var act = () => sut.ConsumeAssertionAsync(Slug, samlResponse);
 
@@ -653,7 +660,9 @@ public sealed class SamlFederationServiceTests : IDisposable
         string Destination = AcsUrl,
         string NameId = "jane@corp.example.test",
         string? Email = "jane@corp.example.test",
+        string EmailAttributeName = "email",
         string? Name = "Jane Corp",
+        string NameAttributeName = "name",
         DateTimeOffset? ConditionsNotBefore = null,
         DateTimeOffset? ConditionsNotOnOrAfter = null,
         DateTimeOffset? SubjectNotOnOrAfter = null,
@@ -688,12 +697,12 @@ public sealed class SamlFederationServiceTests : IDisposable
         var attributes = new StringBuilder();
         if (scenario.Email is not null)
         {
-            attributes.Append($"<saml:Attribute Name=\"email\"><saml:AttributeValue>{scenario.Email}</saml:AttributeValue></saml:Attribute>");
+            attributes.Append($"<saml:Attribute Name=\"{scenario.EmailAttributeName}\"><saml:AttributeValue>{scenario.Email}</saml:AttributeValue></saml:Attribute>");
         }
 
         if (scenario.Name is not null)
         {
-            attributes.Append($"<saml:Attribute Name=\"displayName\"><saml:AttributeValue>{scenario.Name}</saml:AttributeValue></saml:Attribute>");
+            attributes.Append($"<saml:Attribute Name=\"{scenario.NameAttributeName}\"><saml:AttributeValue>{scenario.Name}</saml:AttributeValue></saml:Attribute>");
         }
 
         var xml = $"""
@@ -724,7 +733,11 @@ public sealed class SamlFederationServiceTests : IDisposable
 
         if (duplicateAssertion)
         {
-            responseElement.InsertAfter((XmlElement)assertionElement.CloneNode(true), assertionElement);
+            // A distinct ID on the duplicate: XML-DSig signing refuses same-ID elements,
+            // and a real multi-assertion response would never reuse an assertion ID.
+            var duplicate = (XmlElement)assertionElement.CloneNode(true);
+            duplicate.SetAttribute("ID", "_assert-dup" + Guid.NewGuid().ToString("N"));
+            responseElement.InsertAfter(duplicate, assertionElement);
         }
 
         if (scenario.SignAssertion)
@@ -767,16 +780,13 @@ public sealed class SamlFederationServiceTests : IDisposable
 
     private static string DeflateDecode(string redirectUrl)
     {
-        var samlRequest = redirectUrl
+        var query = redirectUrl[(redirectUrl.LastIndexOf('?') + 1)..];
+        var samlRequest = query
             .Split('&')
             .Single(parameter => parameter.StartsWith("SAMLRequest=", StringComparison.Ordinal))
             ["SAMLRequest=".Length..];
-        var encoded = samlRequest.Replace('-', '+').Replace('_', '/');
-        switch (encoded.Length % 4)
-        {
-            case 2: encoded += "=="; break;
-            case 3: encoded += "="; break;
-        }
+        // The redirect binding percent-encodes the standard Base64 deflated payload.
+        var encoded = Uri.UnescapeDataString(samlRequest);
 
         using var compressed = new MemoryStream(Convert.FromBase64String(encoded));
         using var inflater = new DeflateStream(compressed, CompressionMode.Decompress);

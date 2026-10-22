@@ -19,11 +19,18 @@ public sealed class DiscoverOidcProvidersQueryHandler(
         var providers = oidcFederationService.FindProvidersForEmailDomain(domain);
         var samlProviders = samlFederationService?.FindProvidersForEmailDomain(domain) ?? [];
 
-        var allProviders = providers
-            .Concat(samlProviders)
-            .OrderBy(provider => provider.Slug, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(provider => provider.Protocol, StringComparer.Ordinal)
-            .ToList();
+        // With no SAML match the response is exactly the OIDC service's list (same
+        // instance, unsorted) — hosts without SAML providers keep their existing
+        // discovery behavior. Only a mixed result needs the deterministic merge.
+        IReadOnlyList<OidcDiscoveredProvider> allProviders = providers;
+        if (samlProviders.Count > 0)
+        {
+            allProviders = providers
+                .Concat(samlProviders)
+                .OrderBy(provider => provider.Slug, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(provider => provider.Protocol, StringComparer.Ordinal)
+                .ToList();
+        }
 
         logger.LogInformation("OIDC provider discovery matched {Count} provider(s)", allProviders.Count);
 

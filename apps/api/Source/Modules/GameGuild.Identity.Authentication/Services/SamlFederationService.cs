@@ -266,7 +266,7 @@ public sealed class SamlFederationService(
             return [];
         }
 
-        var normalized = emailDomain.Trim().TrimStart('@').ToLowerInvariant();
+        var normalized = NormalizeEmailDomain(emailDomain);
         var providers = authenticationOptions?.ExternalProviders?.Saml;
         if (providers is null)
         {
@@ -288,6 +288,23 @@ public sealed class SamlFederationService(
     }
 
     // ── Provider registry (fail closed) ────────────────────────────────────────
+
+    /// <summary>
+    ///     Accepts either a bare domain or a full email address (the domain after the
+    ///     last <c>@</c>), so both the handler's pre-extracted domain and a raw address
+    ///     resolve to the same case-insensitive comparison key.
+    /// </summary>
+    private static string NormalizeEmailDomain(string emailDomain)
+    {
+        var trimmed = emailDomain.Trim();
+        var atIndex = trimmed.LastIndexOf('@');
+        if (atIndex >= 0 && atIndex < trimmed.Length - 1)
+        {
+            trimmed = trimmed[(atIndex + 1)..];
+        }
+
+        return trimmed.TrimStart('@').ToLowerInvariant();
+    }
 
     private SamlProviderOptions RequireEnabledProvider(string slug)
     {
@@ -509,7 +526,7 @@ public sealed class SamlFederationService(
             }
         }
 
-        throw new UnauthorizedAccessException($"SAML assertion for provider '{slug}' is not addressed to this service provider.");
+        throw new UnauthorizedAccessException($"SAML assertion for provider '{slug}' is not addressed to this service provider (audience mismatch).");
     }
 
     private static string ValidateSubject(XmlDocument document, XmlElement assertion, SamlProviderOptions options, string slug)
