@@ -238,11 +238,11 @@ public class CurrencyConfigurationTests
     }
 
     [Fact]
-    public void UnknownCurrencySubscriptionUsageProbe_ReturnsNull_FailClosed()
+    public async Task UnknownCurrencySubscriptionUsageProbe_ReturnsNull_FailClosed()
     {
         var probe = new UnknownCurrencySubscriptionUsageProbe();
 
-        var result = probe.CountActiveSubscriptionsUsingCurrencyAsync(Guid.NewGuid(), "USD").Result;
+        var result = await probe.CountActiveSubscriptionsUsingCurrencyAsync(Guid.NewGuid(), "USD");
 
         result.Should().BeNull();
     }
@@ -294,7 +294,7 @@ internal sealed class CurrencyFxTestDbContext(DbContextOptions<CurrencyFxTestDbC
 {
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(NoOpTransaction.Instance);
+        return Task.FromResult<IDbContextTransaction>(NoOpTransaction.Instance);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -315,6 +315,10 @@ internal sealed class CurrencyFxTestDbContext(DbContextOptions<CurrencyFxTestDbC
         public void Dispose() { }
 
         public ValueTask DisposeAsync() { return ValueTask.CompletedTask; }
+
+        public void Commit() { }
+
+        public void Rollback() { }
 
         public Task CommitAsync(CancellationToken cancellationToken = default) { return Task.CompletedTask; }
 

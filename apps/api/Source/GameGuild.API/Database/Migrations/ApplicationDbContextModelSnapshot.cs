@@ -2083,6 +2083,64 @@ namespace GameGuild.API.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Payments.CurrencyConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DisplaySymbol")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<bool>("IsBaseCurrency")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyCode");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_currency_configurations_tenant_base")
+                        .HasFilter("\"IsBaseCurrency\" = true");
+
+                    b.HasIndex("TenantId", "CurrencyCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_currency_configurations_tenant_currency");
+
+                    b.ToTable("currency_configurations", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Commerce.Payments.DisputeEvidence", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2160,6 +2218,173 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("SubmittedAt");
 
                     b.ToTable("dispute_evidence");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.FxRateSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AsOfUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("BaseCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EffectiveDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsOverride")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProviderName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("QuoteCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(28,12)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("SyncRunId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaseCurrency");
+
+                    b.HasIndex("EffectiveDateUtc")
+                        .HasDatabaseName("ix_fx_rate_snapshots_effective_date");
+
+                    b.HasIndex("IsOverride");
+
+                    b.HasIndex("ProviderName");
+
+                    b.HasIndex("QuoteCurrency");
+
+                    b.HasIndex("BaseCurrency", "QuoteCurrency", "EffectiveDateUtc")
+                        .HasDatabaseName("ix_fx_rate_snapshots_pair_date");
+
+                    b.HasIndex("BaseCurrency", "QuoteCurrency", "EffectiveDateUtc", "ProviderName", "Source")
+                        .IsUnique()
+                        .HasDatabaseName("ix_fx_rate_snapshots_pair_date_provider");
+
+                    b.ToTable("fx_rate_snapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FxRateSnapshot_Pair_Distinct", "\"BaseCurrency\" <> \"QuoteCurrency\"");
+
+                            t.HasCheckConstraint("CK_FxRateSnapshot_Rate_Positive", "\"Rate\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.FxRateSyncRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ConsecutiveFailureCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveDateUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("PrimaryProviderName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProviderName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("RatesApplied")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RatesChanged")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RawResponse")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RawResponseContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderName");
+
+                    b.HasIndex("StartedAtUtc")
+                        .HasDatabaseName("ix_fx_rate_sync_runs_started_at");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_fx_rate_sync_runs_status");
+
+                    b.ToTable("fx_rate_sync_runs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.GiftSubscription", b =>

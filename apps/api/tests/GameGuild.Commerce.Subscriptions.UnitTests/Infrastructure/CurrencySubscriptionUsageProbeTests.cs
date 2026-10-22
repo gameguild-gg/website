@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameGuild.Commerce.Payments;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Xunit;
 
 namespace GameGuild.Commerce.Subscriptions.UnitTests.Infrastructure;
