@@ -175,7 +175,11 @@ public sealed partial class SamlProviderOptions
 
         ValidateHttpsUrl(AssertionConsumerServiceUrl, "assertion consumer service URL", allowQuery: false);
         ValidateHttpsUrl(IdpSignInServiceUrl, "identity provider sign-in service URL", allowQuery: false);
-        ValidateHttpsUrl(IdpSingleLogoutServiceUrl, "identity provider single logout service URL", allowQuery: false);
+        if (!string.IsNullOrWhiteSpace(IdpSingleLogoutServiceUrl))
+        {
+            // Optional by design: an unset single logout service keeps logout local.
+            ValidateHttpsUrl(IdpSingleLogoutServiceUrl, "identity provider single logout service URL", allowQuery: false);
+        }
 
         if (IdpSigningCertificates is null)
         {
