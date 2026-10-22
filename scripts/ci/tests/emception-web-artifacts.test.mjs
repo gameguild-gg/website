@@ -56,6 +56,7 @@ const clientSuites = [
   'tests/auth/providers/credentials.test.ts',
   'tests/next/auth.test.ts',
   'tests/next/actions-extended.test.ts',
+  'tests/gaps/final-gaps.test.ts',
   'tests/generator',
 ];
 
