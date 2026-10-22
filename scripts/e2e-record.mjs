@@ -1,7 +1,7 @@
 /**
  * Wrap `playwright codegen` with repo defaults.
  *
- * Boots the dev stack (pnpm dev) if the web app isn't already serving,
+ * Boots the lean dev stack (pnpm dev:fast) if the web app isn't already serving,
  * records a session, saves the spec under e2e/, tears the stack down
  * (only if this script started it).
  *
@@ -73,7 +73,7 @@ if (startedStack) {
 const teardown = () => {
   if (!stack || stack.exitCode !== null) return;
   console.log("\n[e2e:record] tearing down stack...");
-  // SIGTERM to the supervisor — it forwards to scripts/dev.mjs, which kills
+  // SIGTERM to the supervisor — it forwards to scripts/dev-fast.mjs, which kills
   // its own tree (its detached reapers finish any stragglers).
   try {
     stack.kill("SIGTERM");

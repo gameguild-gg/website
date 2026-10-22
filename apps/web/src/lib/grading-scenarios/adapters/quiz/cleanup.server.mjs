@@ -1,11 +1,16 @@
-import { authenticatePersona, isMissing, request, unwrap } from "./api.mjs";
+import {
+  authenticatePersona,
+  isMissing,
+  request,
+  unwrap,
+} from "./api.server.mjs";
 import { getScenarioDefinition } from "./definitions.mjs";
 import {
   createManifest,
   readManifestForReset,
   removeScenarioSecrets,
   writeReport,
-} from "./manifest.mjs";
+} from "./manifest.server.mjs";
 
 export async function resetScenario(scenarioKey) {
   const manifest = await readManifestForReset(scenarioKey, { optional: true });

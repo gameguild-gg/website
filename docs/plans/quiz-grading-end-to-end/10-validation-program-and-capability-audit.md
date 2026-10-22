@@ -1,5 +1,11 @@
 # Programa de validação e auditoria de capacidades de Quiz + Grading
 
+> **Atualização arquitetural:** o catálogo, as matrizes e os IDs estáveis deste
+> programa permanecem válidos, mas sua operação seguirá
+> [`11-web-only-grading-validation.md`](./11-web-only-grading-validation.md).
+> A preparação humana será exclusivamente web e as suítes automatizadas não
+> dependerão da CLI de lifecycle de cenários.
+
 Status: implementado em baseline; matrizes browser e fotografia de capacidades
 continuam evoluindo pelos IDs estáveis deste programa.
 
@@ -108,18 +114,18 @@ endpoints.
 Este programa deve reutilizar exclusivamente ferramentas já presentes no
 repositório. A primeira implementação não adiciona dependências de teste.
 
-| Ferramenta existente | Uso neste programa |
-| --- | --- |
-| Vitest | schemas, round-trips, adapters, scoring e contratos dos packages |
-| Testing Library e `user-event` | comportamento dos componentes sem subir a aplicação completa |
-| Playwright | jornadas reais, múltiplas personas, traces, screenshots e inspeção de rede |
-| xUnit | regras e integração do backend |
-| FluentAssertions | assertions legíveis nos testes .NET |
-| Testcontainers.PostgreSql | persistência real, transações, concorrência e idempotência |
-| AutoFixture | dados auxiliares de testes .NET quando não esconder regras acadêmicas |
-| Moq | isolamento de portas externas em unit tests, nunca substituição do fluxo oficial |
-| Coverlet | medição de cobertura como sinal auxiliar, não como prova de correção |
-| NBomber | carga e estabilidade operacional depois da correção determinística estar comprovada |
+| Ferramenta existente           | Uso neste programa                                                                  |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| Vitest                         | schemas, round-trips, adapters, scoring e contratos dos packages                    |
+| Testing Library e `user-event` | comportamento dos componentes sem subir a aplicação completa                        |
+| Playwright                     | jornadas reais, múltiplas personas, traces, screenshots e inspeção de rede          |
+| xUnit                          | regras e integração do backend                                                      |
+| FluentAssertions               | assertions legíveis nos testes .NET                                                 |
+| Testcontainers.PostgreSql      | persistência real, transações, concorrência e idempotência                          |
+| AutoFixture                    | dados auxiliares de testes .NET quando não esconder regras acadêmicas               |
+| Moq                            | isolamento de portas externas em unit tests, nunca substituição do fluxo oficial    |
+| Coverlet                       | medição de cobertura como sinal auxiliar, não como prova de correção                |
+| NBomber                        | carga e estabilidade operacional depois da correção determinística estar comprovada |
 
 Regras de uso:
 
@@ -142,8 +148,10 @@ Regras de uso:
 
 ### O que já existe
 
-- comando `pnpm grading:scenario` com `prepare`, `status`, `verify`, `test`,
-  `reset` e `list`;
+- lab web local com seleção, preparação, atualização, verificação e reset de
+  cenários;
+- comandos `grading:validation:*` limitados a runners convencionais de
+  contrato e Playwright;
 - manifestos, locks, checkpoints e cleanup protegido;
 - personas `instructor`, `learnerA`, `learnerB` e `outsider`;
 - `review-matrix` com sete quizzes no mesmo curso;
@@ -274,26 +282,26 @@ Tipos complexos de questão não devem ser adicionados a essa matriz.
 Criar um curso com quizzes independentes por família de item. Cada teste pode
 selecionar apenas um caso, enquanto o modo manual mantém todos no mesmo curso.
 
-| Caso | Tipo/variante | Expectativa oficial inicial |
-| --- | --- | --- |
-| `single-choice` | `SINGLE_CHOICE` | automated |
-| `multiple-choice` | `MULTIPLE_CHOICE` | automated; conjunto exato e limite |
-| `true-false` | `TRUE_FALSE` | automated |
-| `fill-text` | `FILL_IN_THE_BLANK/TEXT` | automated |
-| `fill-number` | `FILL_IN_THE_BLANK/NUMBER` | automated; unidade, precisão e tolerância |
-| `fill-dropdown` | `FILL_IN_THE_BLANK/DROPDOWN` | automated |
-| `fill-word-bank` | `FILL_IN_THE_BLANK/WORDBANK` | automated |
-| `short-answer` | `SHORT_ANSWER` | automated; case sensitivity |
-| `essay` | `ESSAY` | instructor review |
-| `matching` | `MATCHING` | automated; total e parcial |
-| `ordering` | `ORDERING` | automated; total e parcial |
-| `categorization` | `CATEGORIZATION` | automated |
-| `rating-keyed` | `RATING` com resposta | automated |
-| `rating-unkeyed` | `RATING` sem resposta | unsupported/decision-needed |
-| `numeric` | `NUMERIC` | unsupported no grading oficial atual |
-| `formula` | `FORMULA` | unsupported no grading oficial atual |
-| `hotspot` | `HOTSPOT` | automated quando o asset é resolvível |
-| `highlight` | `HIGHLIGHT` | automated |
+| Caso              | Tipo/variante                | Expectativa oficial inicial               |
+| ----------------- | ---------------------------- | ----------------------------------------- |
+| `single-choice`   | `SINGLE_CHOICE`              | automated                                 |
+| `multiple-choice` | `MULTIPLE_CHOICE`            | automated; conjunto exato e limite        |
+| `true-false`      | `TRUE_FALSE`                 | automated                                 |
+| `fill-text`       | `FILL_IN_THE_BLANK/TEXT`     | automated                                 |
+| `fill-number`     | `FILL_IN_THE_BLANK/NUMBER`   | automated; unidade, precisão e tolerância |
+| `fill-dropdown`   | `FILL_IN_THE_BLANK/DROPDOWN` | automated                                 |
+| `fill-word-bank`  | `FILL_IN_THE_BLANK/WORDBANK` | automated                                 |
+| `short-answer`    | `SHORT_ANSWER`               | automated; case sensitivity               |
+| `essay`           | `ESSAY`                      | instructor review                         |
+| `matching`        | `MATCHING`                   | automated; total e parcial                |
+| `ordering`        | `ORDERING`                   | automated; total e parcial                |
+| `categorization`  | `CATEGORIZATION`             | automated                                 |
+| `rating-keyed`    | `RATING` com resposta        | automated                                 |
+| `rating-unkeyed`  | `RATING` sem resposta        | unsupported/decision-needed               |
+| `numeric`         | `NUMERIC`                    | unsupported no grading oficial atual      |
+| `formula`         | `FORMULA`                    | unsupported no grading oficial atual      |
+| `hotspot`         | `HOTSPOT`                    | automated quando o asset é resolvível     |
+| `highlight`       | `HIGHLIGHT`                  | automated                                 |
 
 Cada caso automatizável deve possuir ao menos:
 
@@ -356,21 +364,21 @@ declara:
 
 ```ts
 interface QuizGradingValidationCase {
-  id: string;
-  suite: "review" | "question-type" | "lifecycle-access" | "failure-recovery";
-  capability: string;
-  personas: readonly string[];
-  preconditions: readonly string[];
-  actions: readonly string[];
-  expected: {
-    ui?: readonly string[];
-    api?: readonly string[];
-    grading?: readonly string[];
-    audit?: readonly string[];
-    learner?: readonly string[];
-  };
-  automation: "contract" | "api" | "browser" | "manual";
-  requirement: "required" | "recommended" | "exploratory";
+    id: string;
+    suite: "review" | "question-type" | "lifecycle-access" | "failure-recovery";
+    capability: string;
+    personas: readonly string[];
+    preconditions: readonly string[];
+    actions: readonly string[];
+    expected: {
+        ui?: readonly string[];
+        api?: readonly string[];
+        grading?: readonly string[];
+        audit?: readonly string[];
+        learner?: readonly string[];
+    };
+    automation: "contract" | "api" | "browser" | "manual";
+    requirement: "required" | "recommended" | "exploratory";
 }
 ```
 
@@ -380,16 +388,16 @@ uma segunda lista manual com casos diferentes.
 
 ## Classificação de resultados
 
-| Status | Significado |
-| --- | --- |
-| `pass` | comportamento esperado comprovado |
-| `bug` | implementação existente viola contrato definido |
-| `partial` | parte da jornada funciona, mas o contrato não fecha integralmente |
-| `missing` | capacidade necessária não possui implementação observável |
-| `decision-needed` | produto ainda não definiu o comportamento correto |
-| `harness-gap` | runner, fixture ou driver impede avaliar o produto |
-| `external-blocker` | provider ou módulo externo indispensável não está disponível |
-| `not-applicable` | caso não se aplica por decisão explícita de domínio |
+| Status             | Significado                                                       |
+| ------------------ | ----------------------------------------------------------------- |
+| `pass`             | comportamento esperado comprovado                                 |
+| `bug`              | implementação existente viola contrato definido                   |
+| `partial`          | parte da jornada funciona, mas o contrato não fecha integralmente |
+| `missing`          | capacidade necessária não possui implementação observável         |
+| `decision-needed`  | produto ainda não definiu o comportamento correto                 |
+| `harness-gap`      | runner, fixture ou driver impede avaliar o produto                |
+| `external-blocker` | provider ou módulo externo indispensável não está disponível      |
+| `not-applicable`   | caso não se aplica por decisão explícita de domínio               |
 
 Um teste não pode usar `skip` ou `fixme` permanente sem ID de caso, status,
 justificativa e issue/decisão associada. Falha de infraestrutura não pode ser
@@ -491,19 +499,24 @@ Para cada ausência, o relatório deve classificar a recomendação como:
 ## Organização proposta
 
 ```text
-apps/web/scripts/quiz-grading-scenario/
-  definitions.mjs                 cenários e fixtures executáveis
-  capability-catalog.mjs          IDs e expectativas de validação
-  question-type-drivers.mjs       respostas browser por tipo
-  report.mjs                      relatório estruturado e Markdown
-  support.test.mjs                contratos do catálogo e runner
+apps/web/src/lib/grading-scenarios/
+  contracts.ts                    contratos genéricos do lab
+  registry.server.ts              composition root de adapters
+  service.server.ts               orquestração genérica
+  adapters/quiz/
+    definitions.mjs               cenários e fixtures executáveis
+    capability-catalog.mjs        IDs e expectativas de validação
+    provision.server.mjs          preparação por APIs oficiais
+    verify.server.mjs             oráculos de estado persistido
+    cleanup.server.mjs            reset protegido por ownership
 
 e2e/learning/quiz-grading/
-  review-workflows.spec.mjs
+  support/
+    question-type-drivers.mjs     respostas browser por tipo
+    lab-lifecycle.mjs             setup/teardown pela interface web
+    validation-reporter.mjs       evidência candidata sanitizada
   question-types.spec.mjs
   authoring-roundtrip.spec.mjs
-  lifecycle-access.spec.mjs
-  failure-recovery.spec.mjs
 
 docs/testing/quiz-grading/
   README.md
@@ -512,8 +525,8 @@ docs/testing/quiz-grading/
   reports/
 ```
 
-O spec atual pode ser movido gradualmente. Não fazer uma renomeação ampla antes
-de o novo catálogo preservar todos os casos existentes.
+O núcleo genérico não conhece quiz. Novos tipos de assessment entram por
+adapters irmãos e reutilizam a mesma UI e o mesmo contrato de lifecycle.
 
 ## Cenários novos
 

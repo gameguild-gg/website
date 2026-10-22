@@ -296,6 +296,48 @@ public class RefundDuplicateAndProrationTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task RequestRefundAsync_FailsClosed_WhenAConcurrentRequestWinsTheSingleOpenRefundGuard()
+    {
+        var payment = SucceededPayment(50m);
+        await using var db = NewDatabase();
+        db.Add(payment);
+        await db.SaveChangesAsync();
+
+        var repository = new Mock<IRefundRepository>();
+        repository
+            .Setup(repo => repo.GetByPaymentAndIdempotencyKeyAsync(payment.Id, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund?)null);
+        repository
+            .Setup(repo => repo.GetOpenRefundForPaymentAsync(payment.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund?)null);
+        repository
+            .Setup(repo => repo.AddAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OpenRefundAlreadyExistsException(payment.Id, new InvalidOperationException("unique violation")));
+
+        var service = new RefundProcessingService(
+            repository.Object,
+            new PaymentRepository((IApplicationDbContext)db, NullLogger<PaymentRepository>.Instance),
+            _gateway.Object,
+            _revenueAudit.Object,
+            _actorAccessor.Object,
+            Options.Create(_options),
+            _notifications.Object,
+            NullLogger<RefundProcessingService>.Instance,
+            _prorationCalculator.Object,
+            _subscriptionSync.Object,
+            _walletService.Object,
+            _paymentMethodRepository.Object);
+
+        var outcome = await service.RequestRefundAsync(new RefundRequestInput(payment.Id, null, "duplicate"), CancellationToken.None);
+
+        outcome.Success.Should().BeFalse();
+        outcome.FailureReason.Should().Contain("open refund");
+        _gateway.Verify(gateway => gateway.ProcessRefundAsync(
+            It.IsAny<GatewayRefundRequest>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private IRefundProcessingService CreateService(
         RefundsTestDbContext db,
         RefundWorkflowOptions? workflowOptions = null) => new RefundProcessingService(
