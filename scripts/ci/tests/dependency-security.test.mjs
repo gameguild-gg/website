@@ -29,6 +29,20 @@ function installedConsumers(name) {
   return roots;
 }
 
+const nextRoots = new Set(installedConsumers("next"));
+for (const workspace of ["apps/web", "demos/emception-ide-next"]) {
+  const consumerRequire = createRequire(join(repositoryRoot, workspace, "package.json"));
+  nextRoots.add(dirname(realpathSync(consumerRequire.resolve("next/package.json"))));
+}
+for (const packageRoot of nextRoots) {
+  test(`${packageRoot}: Next and its resolved image dependency use the reviewed security releases`, () => {
+    const nextRequire = createRequire(join(packageRoot, "package.json"));
+    assert.equal(nextRequire("./package.json").version, "16.4.1");
+    assert.equal(nextRequire("@next/env/package.json").version, "16.4.1");
+    assert.equal(nextRequire("sharp/package.json").version, "0.35.5");
+  });
+}
+
 test("local and CI package managers use the reviewed pnpm security release", () => {
   const manifest = JSON.parse(readFileSync(join(repositoryRoot, "package.json"), "utf8"));
   assert.equal(manifest.packageManager, "pnpm@10.34.6");

@@ -190,6 +190,8 @@ test("a new Next.js advisory fails for every workspace installation", () => {
     "GHSA-f87g-xv8r-7p7x",
     "GHSA-mcj8-r9mp-w47p",
     "GHSA-cjq9-62q9-8jv4",
+    "GHSA-2464-fhr4-w9xw",
+    "GHSA-p3m5-59mp-jv5r",
   ]) {
     const invalid = patchedReport();
     invalid.advisories.next = {
