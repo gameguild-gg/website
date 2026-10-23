@@ -4,6 +4,7 @@
 
 version: "1.0"
 linter: qodana-dotnet
+dotnetSolution: apps/api/GameGuild.sln
 profile:
   name: qodana.recommended
 include:
