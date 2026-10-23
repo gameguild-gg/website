@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Executed only by the hosted .NET harness with a migrated, disposable database.
 import assert from 'node:assert/strict';
+import { verifyMetadataRoutes } from './metadata-route-http-acceptance.mjs';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -152,6 +153,7 @@ try {
   }
   await card.screenshot({ path: path.join(evidence, 'session-state-valid.png') });
   passed('Real account page renders the persisted owner session through Next BFF and API');
+  await verifyMetadataRoutes({ webUrl, page, evidence });
 
   const refresh = page.waitForResponse(isState, { timeout });
   await card.getByRole('button', { name: 'Refresh', exact: true }).click();
