@@ -3,23 +3,65 @@
 Wallet connection context, EIP-1193 adapters and the shared Sign-In with
 Ethereum (SIWE) journey for GameGuild web clients.
 
-Issues: #38 (React context), #39 (MetaMask), #16 (Torus), under the umbrella
-of #291 (Web3 Wallet Authentication System). The backend challenge/verify
-endpoints are owned by #292 (`POST /v1/auth/web3/challenge`,
-`POST /v1/auth/web3:verify`).
+Issues: #38 (React context), #39 (MetaMask), #17 (Trust Wallet), #18
+(WalletConnect), #16 (Torus), under the umbrella of #291 (Web3 Wallet
+Authentication System). The backend challenge/verify endpoints are owned by
+#292 (`POST /v1/auth/web3/challenge`, `POST /v1/auth/web3:verify`).
 
 ## Supported provider scope
 
-| Wallet   | Transport                                                   | Availability                                                            |
-| -------- | ----------------------------------------------------------- | ----------------------------------------------------------------------- |
-| MetaMask | Injected EIP-1193 provider (EIP-6963 discovery, legacy `window.ethereum` fallback incl. multi-wallet `providers[]`) | Button rendered whenever the extension is detected. No SDK dependency.  |
-| Torus    | `@toruslabs/torus-embed` loaded through a lazy dynamic `import()` | Config-gated (`enabled: true`) and fails closed if the SDK is missing. Never part of the main bundle. |
+| Wallet       | Transport                                                   | Availability                                                            |
+| ------------ | ----------------------------------------------------------- | ----------------------------------------------------------------------- |
+| MetaMask     | Injected EIP-1193 provider (EIP-6963 discovery, legacy `window.ethereum` fallback incl. multi-wallet `providers[]`) | Button rendered whenever the extension is detected. No SDK dependency.  |
+| Trust Wallet | Injected EIP-1193 provider (EIP-6963 rdns `com.trustwallet.app`, `window.trustwallet`, flagged `window.ethereum` incl. `providers[]`); mobile external browsers fall back to the universal deep link `https://link.trustwallet.com/open_url?coin_id=60&url=…` which reopens the page in the Trust in-app browser | Button rendered when the extension / in-app provider is detected, or on mobile browsers where the deep link can hand the page to the Trust app. No SDK dependency. |
+| WalletConnect | WalletConnect v2 protocol through `@walletconnect/ethereum-provider` loaded via a lazy dynamic `import()` (pairing modal / `display_uri`) | Config-gated (`enabled: true` + `projectId`) and fails closed if the SDK is missing or the deployment has not opted in. Never part of the main bundle. |
+| Torus        | `@toruslabs/torus-embed` loaded through a lazy dynamic `import()` | Config-gated (`enabled: true`) and fails closed if the SDK is missing. Never part of the main bundle. |
 
-Both adapters speak plain EIP-1193 (`eth_requestAccounts`, `eth_accounts`,
+All adapters speak plain EIP-1193 (`eth_requestAccounts`, `eth_accounts`,
 `eth_chainId`, `personal_sign`, `wallet_switchEthereumChain`,
-`wallet_addEthereumChain`) — no ethers/web3.js dependency. Any future
-EIP-1193 wallet (#17 Trust, #18 WalletConnect) plugs in by implementing the
-same `WalletAdapter` contract and registering it on the provider.
+`wallet_addEthereumChain`) — no ethers/web3.js dependency. Compose them with
+`createWalletAdapters` (the wallet-adapter registry): MetaMask and Trust
+Wallet register by default (detection-driven), WalletConnect and Torus only
+when the deployment passes their config. Any future EIP-1193 wallet plugs in
+by implementing the same `WalletAdapter` contract and registering it on the
+provider; duplicate adapter ids never shadow an earlier registration.
+
+### Trust Wallet environments (#17)
+
+1. Desktop browser with the Trust extension — EIP-6963/injected detection,
+   identical flow to MetaMask.
+2. Trust in-app browser (mobile) — the same injected provider, so pages
+   opened inside Trust behave like environment 1.
+3. Mobile external browser — no provider can be injected; `connect()`
+   navigates to Trust's universal deep link (`connection_failed` error with a
+   hand-off message) and the user reconnects inside the app where
+   environment 2 applies.
+
+Connection failures (`wallet_not_found` without a provider, `user_rejected`
+on prompt dismissal, `connection_failed` when no account is returned) and
+signing failures (raw provider errors, surfaced by the context as
+`sign_failed`/`user_rejected`) are covered by the adapter suite.
+
+### WalletConnect runtime behavior and limits (#18)
+
+- The SDK is **not vendored** by this repository: current
+  `@walletconnect/*` releases ship under the proprietary
+  WalletConnect/Reown Community License (not OSI-approved), which the
+  GameGuild license posture has not accepted. A deployment that has accepted
+  the license installs `@walletconnect/ethereum-provider` itself; the
+  adapter resolves it lazily from the host and fails closed
+  (`wallet_not_found`) when it is absent — mirroring the Torus fail-closed
+  pattern. No part of the SDK ever lands in this repo's lockfile or bundle.
+- `isAvailable()` only checks the config gate (`enabled` + `projectId`, a
+  public WalletConnect Cloud identifier — not a secret). The SDK import and
+  the relay session happen exclusively inside `connect()`.
+- Session lifecycle: pairing runs through `provider.connect()` (built-in QR
+  modal, or the `display_uri` pairing URI via `getPairingUri()` for hosts
+  rendering their own QR); `accountsChanged`/`chainChanged` forward account
+  and network changes; `disconnect`, `session_delete` (wallet/user deleted
+  the session) and `session_expire` (TTL elapsed) all reset the adapter so
+  the next connect pairs a fresh session; `disconnect()` deletes the relay
+  session and notifies the wallet.
 
 Torus runtime behavior and limits:
 
@@ -38,19 +80,18 @@ Torus runtime behavior and limits:
 ## Usage
 
 ```tsx
-import {
-  Web3Provider,
-  createMetaMaskAdapter,
-  createTorusAdapter,
-} from '@game-guild/web3';
+import { Web3Provider, createWalletAdapters } from '@game-guild/web3';
 
 <Web3Provider
-  adapters={[
-    createMetaMaskAdapter(),
-    createTorusAdapter({
+  adapters={createWalletAdapters({
+    walletConnect: {
+      enabled: Boolean(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID),
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+    },
+    torus: {
       enabled: process.env.NEXT_PUBLIC_WALLET_TORUS_ENABLED === 'true',
-    }),
-  ]}
+    },
+  })}
 >
   <SignInButtons />
 </Web3Provider>

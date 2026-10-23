@@ -12,6 +12,11 @@
     "continueWithDiscord": "Continuar com o Discord",
     "magicLink": "Entrar com link por e-mail",
     "emailCode": "Entrar com um código por e-mail",
+    "continueWithWallet": "Continuar com",
+    "walletConnecting": "Conectando…",
+    "walletSigning": "Assinando…",
+    "walletConnected": "Conectado:",
+    "walletDisconnect": "Desconectar",
     "mfa": {
       "title": "Autenticação de dois fatores",
       "description": "Confirme seu acesso com seu app autenticador. Este desafio expira após cinco minutos.",

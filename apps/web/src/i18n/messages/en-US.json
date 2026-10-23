@@ -12,6 +12,11 @@
     "continueWithDiscord": "Continue with Discord",
     "magicLink": "Sign in with an email link",
     "emailCode": "Sign in with an email code",
+    "continueWithWallet": "Continue with",
+    "walletConnecting": "Connecting…",
+    "walletSigning": "Signing…",
+    "walletConnected": "Connected:",
+    "walletDisconnect": "Disconnect",
     "mfa": {
       "title": "Two-factor authentication",
       "description": "Confirm your sign-in with your authenticator app. This sign-in challenge expires after five minutes.",

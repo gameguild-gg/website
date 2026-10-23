@@ -2,7 +2,10 @@
  * @game-guild/web3 — wallet connection context and adapters for GameGuild.
  *
  * React entry point: `Web3Provider` + `useWallet`/`useWalletAddress`/`useChainId`.
- * Adapters: MetaMask (injected/EIP-6963), Torus (lazy-loaded embed).
+ * Adapters: MetaMask (injected/EIP-6963), Trust Wallet (injected/EIP-6963 +
+ * mobile deep-link fallback), WalletConnect (v2 protocol, lazy-loaded SDK,
+ * config-gated), Torus (lazy-loaded embed). Compose them with
+ * `createWalletAdapters` (the wallet-adapter registry).
  * SIWE: `authenticateWithSiwe` / `Web3Provider.authenticate` run the shared
  * challenge → personal_sign → verify journey against the GameGuild backend.
  */
@@ -42,6 +45,33 @@ export {
   type TorusEmbedLike,
   type TorusNetworkOptions,
 } from './adapters/torus';
+export {
+  buildTrustWalletDeepLink,
+  createTrustWalletAdapter,
+  discoverTrustWallet,
+  isMobileBrowser,
+  selectTrustWalletFromProviders,
+  TRUST_WALLET_RDNS,
+  type InjectedTrustWallet,
+  type TrustWalletAdapterOptions,
+  type TrustWalletDeepLinkOptions,
+  type TrustWalletDiscovery,
+  type TrustWalletDiscoveryFn,
+  type TrustWalletDiscoverySource,
+} from './adapters/trust-wallet';
+export {
+  createWalletConnectAdapter,
+  type WalletConnectAdapter,
+  type WalletConnectAdapterOptions,
+  type WalletConnectEthereumProviderLike,
+  type WalletConnectMetadata,
+  type WalletConnectNetworkOptions,
+} from './adapters/walletconnect';
+export {
+  createWalletAdapters,
+  dedupeAdapters,
+  type WalletRegistryConfig,
+} from './adapters/registry';
 export { requestChainSwitch, isUnrecognizedChainError } from './adapters/chain-switch';
 export type {
   ChainInfo,
