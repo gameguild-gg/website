@@ -15,6 +15,26 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
 
   for (const rawPath of filePaths) {
     const filePath = normalizePath(rawPath);
+    // Persistence hooks affect the real host even when no integration test file changes.
+    // Exercise selection/runner changes through the same native host suites as well.
+    if (
+      filePath.startsWith("apps/api/Source/GameGuild.API/Database/") ||
+      [
+        "scripts/ci/select-affected-dotnet-tests.mjs",
+        "scripts/ci/run-affected-dotnet-tests.sh",
+        "scripts/ci/tests/select-affected-dotnet-tests.test.mjs",
+      ].includes(filePath)
+    ) {
+      requiresCoreFallback = true;
+      for (const hostTests of [
+        "GameGuild.API.IntegrationTests",
+        "GameGuild.Identity.Authentication.UnitTests",
+        "GameGuild.Identity.Authorization.UnitTests",
+      ]) {
+        if (availableProjects.includes(hostTests)) selected.add(hostTests);
+      }
+      continue;
+    }
     const moduleMatch = filePath.match(
       /^apps\/api\/Source\/Modules\/(GameGuild\.[^/]+)\//u,
     );

@@ -171,7 +171,8 @@ public sealed class AuthenticationOptions : BaseOptions
 
         if (!EnableAuthentication &&
             (ExternalProviders.Providers.Any(provider => provider.Value.Enabled) ||
-             ExternalProviders.Oidc.Any(provider => provider.Value.Enabled)))
+             ExternalProviders.Oidc.Any(provider => provider.Value.Enabled) ||
+             ExternalProviders.Saml.Any(provider => provider.Value.Enabled)))
         {
             throw new InvalidOperationException("External OAuth providers cannot be enabled when authentication is disabled.");
         }
