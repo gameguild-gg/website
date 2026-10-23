@@ -215,8 +215,54 @@ public sealed class SecurityEventController(
         }
         catch (SecurityLogRetentionValidationException exception)
         {
-            return BadRequest(new ValidationProblemDetails(exception.Errors.ToDictionary(pair => pair.Key, pair => pair.Value))
+            return BadRequest(new ValidationProblemDetails(exception.Errors.ToDictionary(static pair => pair.Key, static pair => pair.Value))
                 { Status = StatusCodes.Status400BadRequest });
+        }
+    }
+
+    /// <summary>
+    ///     Returns aged audit rows that were moved into the archive storage tier (issue #193). Archived
+    ///     evidence stays accessible for investigations and eDiscovery while the hot tier stays small.
+    /// </summary>
+    [HttpGet("retention/archive")]
+    [ProducesResponseType(typeof(ArchivedSecurityLogListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ArchivedSecurityLogListResponse>> GetArchivedAuditLogs(
+        [FromQuery] SecurityLogRetentionExecutionListRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await retentionService.GetArchivedAsync(request.Skip, request.Take, cancellationToken).ConfigureAwait(false));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (SecurityLogRetentionValidationException exception)
+        {
+            return BadRequest(new ValidationProblemDetails(exception.Errors.ToDictionary(static pair => pair.Key, static pair => pair.Value))
+                { Status = StatusCodes.Status400BadRequest });
+        }
+    }
+
+    /// <summary>
+    ///     Returns the storage-tier placement report for the tenant audit data (issue #193): hot and
+    ///     archive row counts plus the configured tier windows, so storage cost placement is
+    ///     observable next to accessibility.
+    /// </summary>
+    [HttpGet("retention/storage-tiers")]
+    [ProducesResponseType(typeof(SecurityLogStorageTierReportResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<SecurityLogStorageTierReportResponse>> GetStorageTierReport(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await retentionService.GetStorageTierReportAsync(cancellationToken).ConfigureAwait(false));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
         }
     }
 }

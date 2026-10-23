@@ -80,6 +80,12 @@ public interface ISecurityLogRetentionService
     Task<SecurityLogRetentionExecutionResponse?> EnforceForTenantAsync(Guid tenantId, Guid? triggeredByUserId, bool dryRun, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<SecurityLogRetentionExecutionResponse>> GetExecutionsAsync(int skip, int take, CancellationToken cancellationToken);
+
+    /// <summary>Returns aged audit rows moved into the archive storage tier for the current tenant (issue #193).</summary>
+    Task<ArchivedSecurityLogListResponse> GetArchivedAsync(int skip, int take, CancellationToken cancellationToken);
+
+    /// <summary>Returns the storage-tier placement report (hot vs archive row counts) for the current tenant (issue #193).</summary>
+    Task<SecurityLogStorageTierReportResponse> GetStorageTierReportAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -124,12 +130,12 @@ public sealed class SecurityLogRetentionService(
         var overridesJson = SerializeOverrides(request.CategoryOverrides);
         if (existing is null)
         {
-            existing = SecurityLogRetentionPolicy.Create(tenant, request.RetentionDays, overridesJson, request.LegalHoldUntilUtc, user, now);
+            existing = SecurityLogRetentionPolicy.Create(tenant, request.RetentionDays, overridesJson, request.LegalHoldUntilUtc, user, now, request.ArchiveAfterDays);
             await repository.SavePolicyAsync(existing, isNew: true, cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            existing.Update(request.RetentionDays, overridesJson, request.LegalHoldUntilUtc, user, now);
+            existing.Update(request.RetentionDays, overridesJson, request.LegalHoldUntilUtc, user, now, request.ArchiveAfterDays);
             await repository.SavePolicyAsync(existing, isNew: false, cancellationToken).ConfigureAwait(false);
         }
 
@@ -173,12 +179,14 @@ public sealed class SecurityLogRetentionService(
 
         int deletedCount;
         int evaluatedCount;
+        int archivedCount;
         if (legalHoldActive)
         {
-            // A legal hold suspends every deletion for the tenant; the pass is still recorded so the
-            // suspension is visible in the retention execution history.
+            // A legal hold suspends every deletion and every archival move for the tenant; the pass
+            // is still recorded so the suspension is visible in the retention execution history.
             evaluatedCount = 0;
             deletedCount = 0;
+            archivedCount = 0;
         }
         else
         {
@@ -205,15 +213,29 @@ public sealed class SecurityLogRetentionService(
             {
                 deletedCount = evaluatedCount;
             }
+
+            // Storage-tier archival (issue #193): rows past the archive threshold but still within
+            // their retention obligation move from the hot audit table into the archive tier. Rows
+            // already past their retention obligation are deleted above, never archived.
+            archivedCount = policy.ArchiveAfterDays is { } archiveAfterDays && archiveAfterDays > 0
+                ? await ArchiveAgedRowsAsync(tenantId, now, archiveAfterDays, candidateIds.ToHashSet(), dryRun, cancellationToken).ConfigureAwait(false)
+                : 0;
+
+            // Archive-tier purge: archived rows whose full retention window has elapsed are removed
+            // permanently, mirroring the hot-tier rules (default window plus category overrides).
+            if (!dryRun)
+            {
+                deletedCount += await PurgeExpiredArchiveRowsAsync(tenantId, now, defaultCutoff, overrides, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         var execution = SecurityLogRetentionExecution.Record(
-            tenantId, now, triggeredByUserId, defaultCutoff, policy.RetentionDays, legalHoldActive, dryRun, deletedCount, evaluatedCount);
+            tenantId, now, triggeredByUserId, defaultCutoff, policy.RetentionDays, legalHoldActive, dryRun, deletedCount, evaluatedCount, archivedCount);
         await repository.AddExecutionAsync(execution, cancellationToken).ConfigureAwait(false);
 
         logger.LogInformation(
-            "Security log retention pass for tenant {TenantId}: dryRun={DryRun}, legalHold={LegalHold}, evaluated={Evaluated}, deleted={Deleted}",
-            tenantId, dryRun, legalHoldActive, evaluatedCount, deletedCount);
+            "Security log retention pass for tenant {TenantId}: dryRun={DryRun}, legalHold={LegalHold}, evaluated={Evaluated}, deleted={Deleted}, archived={Archived}",
+            tenantId, dryRun, legalHoldActive, evaluatedCount, deletedCount, archivedCount);
 
         return MapExecution(execution);
     }
@@ -228,6 +250,79 @@ public sealed class SecurityLogRetentionService(
 
         var executions = await repository.GetExecutionsAsync(tenant, skip, take, cancellationToken).ConfigureAwait(false);
         return executions.Select(MapExecution).ToArray();
+    }
+
+    /// <summary>
+    ///     Serves aged audit rows that were moved into the archive storage tier (issue #193): archived
+    ///     evidence stays accessible for investigations while the hot tier stays small.
+    /// </summary>
+    public async Task<ArchivedSecurityLogListResponse> GetArchivedAsync(int skip, int take, CancellationToken cancellationToken)
+    {
+        var (tenant, _) = await RequireAdministratorAsync().ConfigureAwait(false);
+        if (skip < 0 || take is < 1 or > 100)
+        {
+            throw new SecurityLogRetentionValidationException(new Dictionary<string, string[]> { ["Pagination"] = ["Use skip >= 0 and 1 <= take <= 100."] });
+        }
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var rows = await context.Set<ArchivedSecurityAuditLog>().AsNoTracking()
+            .Where(archived => archived.TenantId == tenant)
+            .OrderByDescending(archived => archived.OriginalCreatedAt)
+            .ThenByDescending(archived => archived.Id)
+            .Skip(skip).Take(take)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var totalCount = await context.Set<ArchivedSecurityAuditLog>().AsNoTracking()
+            .CountAsync(archived => archived.TenantId == tenant, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new ArchivedSecurityLogListResponse(
+            rows.Select(archived => new ArchivedSecurityLogResponse(
+                archived.Id,
+                archived.SourceAuditLogId,
+                archived.ActionType,
+                archived.ResourceType,
+                archived.ResourceId,
+                archived.UserId,
+                archived.TenantId,
+                archived.Description,
+                archived.Success,
+                archived.ErrorMessage,
+                archived.RiskLevel,
+                archived.Category,
+                archived.CorrelationId,
+                archived.OriginalCreatedAt,
+                archived.ArchivedAtUtc)).ToArray(),
+            totalCount);
+    }
+
+    /// <summary>
+    ///     Storage-tier placement report (issue #193): live hot-tier and archive-tier row counts for the
+    ///     tenant plus the configured windows, so cost placement is observable next to accessibility.
+    /// </summary>
+    public async Task<SecurityLogStorageTierReportResponse> GetStorageTierReportAsync(CancellationToken cancellationToken)
+    {
+        var (tenant, _) = await RequireAdministratorAsync().ConfigureAwait(false);
+        var policy = await repository.GetPolicyAsync(tenant, cancellationToken).ConfigureAwait(false);
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var hotRowCount = await context.Set<AuditLog>().AsNoTracking()
+            .CountAsync(log => log.TenantId == tenant, cancellationToken)
+            .ConfigureAwait(false);
+        var archiveRowCount = await context.Set<ArchivedSecurityAuditLog>().AsNoTracking()
+            .CountAsync(archived => archived.TenantId == tenant, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new SecurityLogStorageTierReportResponse(
+            tenant,
+            hotRowCount,
+            archiveRowCount,
+            policy?.ArchiveAfterDays,
+            policy?.RetentionDays ?? 0,
+            policy?.LegalHoldUntilUtc.HasValue == true && policy.LegalHoldUntilUtc.Value > now);
     }
 
     /// <summary>
@@ -259,6 +354,106 @@ public sealed class SecurityLogRetentionService(
         }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Moves hot-tier audit rows older than the archive threshold into the archive tier
+    ///     (issue #193). Rows already past their deletion cutoff are never archived — they belong to
+    ///     the deletion pass. In dry-run mode the move is only counted. Idempotent: the unique
+    ///     (tenant, source row) index makes re-archival of the same row impossible, and rows are
+    ///     removed from the hot table in the same batched save that inserts the archive copy.
+    /// </summary>
+    private async Task<int> ArchiveAgedRowsAsync(
+        Guid tenantId,
+        DateTime nowUtc,
+        int archiveAfterDays,
+        HashSet<Guid> deletionCandidateIds,
+        bool dryRun,
+        CancellationToken cancellationToken)
+    {
+        var archiveCutoff = nowUtc.AddDays(-archiveAfterDays);
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var batchSize = Math.Max(1, pipelineOptions.RetentionBatchSize);
+
+        var candidateIds = await context.Set<AuditLog>().AsNoTracking()
+            .Where(log => log.TenantId == tenantId
+                          && log.CreatedAt < archiveCutoff
+                          && !deletionCandidateIds.Contains(log.Id))
+            .Select(log => log.Id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (dryRun)
+        {
+            return candidateIds.Count;
+        }
+
+        var archivedCount = 0;
+        foreach (var batch in candidateIds.Chunk(batchSize))
+        {
+            var ids = batch.ToHashSet();
+            var rows = await context.Set<AuditLog>().Where(log => ids.Contains(log.Id)).ToListAsync(cancellationToken).ConfigureAwait(false);
+            context.Set<ArchivedSecurityAuditLog>().AddRange(rows.Select(row => ArchivedSecurityAuditLog.FromAuditLog(row, nowUtc)));
+            context.Set<AuditLog>().RemoveRange(rows);
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            archivedCount += rows.Count;
+        }
+
+        return archivedCount;
+    }
+
+    /// <summary>
+    ///     Permanently removes archive-tier rows whose full retention window has elapsed, using the
+    ///     same default-plus-category-override rules as the hot tier (measured from the original row
+    ///     creation instant).
+    /// </summary>
+    private async Task<int> PurgeExpiredArchiveRowsAsync(
+        Guid tenantId,
+        DateTime nowUtc,
+        DateTime defaultCutoff,
+        IReadOnlyDictionary<AuditCategory, int> overrides,
+        CancellationToken cancellationToken)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var overridden = overrides.Keys.ToList();
+
+        var query = context.Set<ArchivedSecurityAuditLog>().AsNoTracking()
+            .Where(archived => archived.TenantId == tenantId
+                               && archived.OriginalCreatedAt < defaultCutoff
+                               && !overridden.Contains(archived.Category))
+            .Select(archived => archived.Id);
+
+        foreach (var (category, days) in overrides)
+        {
+            var categoryCutoff = nowUtc.AddDays(-days);
+            query = query.Union(
+                context.Set<ArchivedSecurityAuditLog>().AsNoTracking()
+                    .Where(archived => archived.TenantId == tenantId
+                                       && archived.Category == category
+                                       && archived.OriginalCreatedAt < categoryCutoff)
+                    .Select(archived => archived.Id));
+        }
+
+        var candidateIds = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        if (candidateIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var batchSize = Math.Max(1, pipelineOptions.RetentionBatchSize);
+        var deletedCount = 0;
+        foreach (var batch in candidateIds.Chunk(batchSize))
+        {
+            var ids = batch.ToHashSet();
+            var rows = await context.Set<ArchivedSecurityAuditLog>().Where(archived => ids.Contains(archived.Id)).ToListAsync(cancellationToken).ConfigureAwait(false);
+            context.Set<ArchivedSecurityAuditLog>().RemoveRange(rows);
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            deletedCount += rows.Count;
+        }
+
+        return deletedCount;
     }
 
     private async Task<(Guid Tenant, Guid User)> RequireAdministratorAsync()
@@ -298,6 +493,20 @@ public sealed class SecurityLogRetentionService(
             }
         }
 
+        // Storage-tier archival must happen strictly before the retention window ends: archiving at
+        // or after the deletion cutoff would be a wasted copy of a row that is about to be purged.
+        if (request.ArchiveAfterDays is { } archiveAfterDays)
+        {
+            if (archiveAfterDays is < 1 or > 3650)
+            {
+                errors["ArchiveAfterDays"] = ["Archive after days must be between 1 and 3650."];
+            }
+            else if (archiveAfterDays >= request.RetentionDays)
+            {
+                errors["ArchiveAfterDays"] = [$"Archive after days ({archiveAfterDays}) must be shorter than the retention window ({request.RetentionDays})."];
+            }
+        }
+
         if (errors.Count > 0)
         {
             throw new SecurityLogRetentionValidationException(errors);
@@ -333,10 +542,12 @@ public sealed class SecurityLogRetentionService(
             policy.LegalHoldUntilUtc,
             policy.UpdatedByUserId,
             policy.ConfiguredAtUtc,
-            policy.LegalHoldUntilUtc.HasValue && policy.LegalHoldUntilUtc.Value > nowUtc);
+            policy.LegalHoldUntilUtc.HasValue && policy.LegalHoldUntilUtc.Value > nowUtc,
+            policy.ArchiveAfterDays);
     }
 
     private static SecurityLogRetentionExecutionResponse MapExecution(SecurityLogRetentionExecution execution) =>
         new(execution.Id, execution.TenantId, execution.ExecutedAtUtc, execution.TriggeredByUserId, execution.CutoffUtc,
-            execution.PolicyRetentionDays, execution.LegalHoldActive, execution.DryRun, execution.DeletedCount, execution.EvaluatedCount);
+            execution.PolicyRetentionDays, execution.LegalHoldActive, execution.DryRun, execution.DeletedCount, execution.EvaluatedCount,
+            execution.ArchivedCount);
 }
