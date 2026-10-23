@@ -17,6 +17,8 @@ export class AccessControlTenantPermissionsModule {
 
   /**
    * Validates a system-wide permission against the global default baseline (issue #307).
+   * Query-operations tier (issue #375): the permission-query APIs are structured query
+   * surfaces themselves and require the `queries:query` permission (fail-closed).
    */
   async getAuthorizationPermissionsGlobalCheck(query?: {
     permission?: string;
@@ -41,6 +43,8 @@ export class AccessControlTenantPermissionsModule {
 
   /**
    * Checks if a user has a specific tenant-level permission.
+   * Query-operations tier (issue #375): who-holds-what checks are structured query
+   * surfaces and require the `queries:query` permission (fail-closed).
    */
   async getAuthorizationTenantsHasPermission(tenantId: string, query?: { permission?: string; userId?: string }): Promise<Result<boolean, ApiError>> {
     const url = `/api/v1/authorization/tenants/${tenantId}/has-permission`;
@@ -57,6 +61,9 @@ export class AccessControlTenantPermissionsModule {
 
   /**
    * Gets all tenant-level permissions for a user (paginated, issue #298/#307).
+   * Query-operations tier (issue #375): enumerating permission collections requires
+   * the `queries:list` permission (fail-closed; the query handler still clamps
+   * to the caller's own tenant).
    */
   async getAuthorizationTenantsPermissions(
     tenantId: string,

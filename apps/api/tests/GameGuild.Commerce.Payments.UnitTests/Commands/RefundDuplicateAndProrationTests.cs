@@ -1,8 +1,8 @@
 using FluentAssertions;
+using GameGuild.Commerce.Payments;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Notifications;
-using GameGuild.Notifications.Services;
-using Microsoft.EntityFrameworkCore;
+using GameGuild.Notifications.Services;using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -42,6 +42,17 @@ public class RefundDuplicateAndProrationTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new RevenueEvent());
         _actorAccessor.SetupGet(accessor => accessor.ActorContext).Returns(AuthenticatedActor());
+        _revenueAudit
+            .Setup(service => service.RecordRevenueEventAsync(
+                It.IsAny<RevenueEventType>(),
+                It.IsAny<decimal>(),
+                It.IsAny<string>(),
+                It.IsAny<RevenueSource>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RevenueEvent { Id = Guid.NewGuid(), EventType = RevenueEventType.RefundProcessed });
         _notifications
             .Setup(service => service.SendAsync(
                 It.IsAny<Guid?>(),
@@ -375,6 +386,48 @@ public class RefundDuplicateAndProrationTests
             outcome.Refund!.Id.ToString(),
             "USD",
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RequestRefundAsync_FailsClosed_WhenAConcurrentRequestWinsTheSingleOpenRefundGuard()
+    {
+        var payment = SucceededPayment(50m);
+        await using var db = NewDatabase();
+        db.Add(payment);
+        await db.SaveChangesAsync();
+
+        var repository = new Mock<IRefundRepository>();
+        repository
+            .Setup(repo => repo.GetByPaymentAndIdempotencyKeyAsync(payment.Id, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund?)null);
+        repository
+            .Setup(repo => repo.GetOpenRefundForPaymentAsync(payment.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund?)null);
+        repository
+            .Setup(repo => repo.AddAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OpenRefundAlreadyExistsException(payment.Id, new InvalidOperationException("unique violation")));
+
+        var service = new RefundProcessingService(
+            repository.Object,
+            new PaymentRepository((IApplicationDbContext)db, NullLogger<PaymentRepository>.Instance),
+            _gateway.Object,
+            _revenueAudit.Object,
+            _actorAccessor.Object,
+            Options.Create(_options),
+            _notifications.Object,
+            NullLogger<RefundProcessingService>.Instance,
+            _prorationCalculator.Object,
+            _subscriptionSync.Object,
+            _walletService.Object,
+            _paymentMethodRepository.Object);
+
+        var outcome = await service.RequestRefundAsync(new RefundRequestInput(payment.Id, null, "duplicate"), CancellationToken.None);
+
+        outcome.Success.Should().BeFalse();
+        outcome.FailureReason.Should().Contain("open refund");
+        _gateway.Verify(gateway => gateway.ProcessRefundAsync(
+            It.IsAny<GatewayRefundRequest>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private IRefundProcessingService CreateService(

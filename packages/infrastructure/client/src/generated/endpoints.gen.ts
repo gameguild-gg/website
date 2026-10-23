@@ -779,6 +779,9 @@ export const postApiAuditSearchFilterEndpoint = {
 
 /**
  * Returns the security alert queue for the current tenant.
+ * Query-operations tier (issue #375): enumerating the alert queue requires the
+ * `queries:list` permission; the service still clamps results to the caller's
+ * tenant (fail-closed).
  */
 export interface GetApiAuditSecurityEventsAlertsInput {
   query?: {
@@ -836,6 +839,8 @@ export const postApiAuditSecurityEventsAlertsAcknowledgeEndpoint = {
 
 /**
  * Returns the durable delivery status of the security event pipeline for this instance.
+ * Query-operations tier (issue #375): structured pipeline-status querying requires the
+ * `queries:query` permission (fail-closed).
  */
 export type GetApiAuditSecurityEventsDeliveryStatusInput = void;
 export type GetApiAuditSecurityEventsDeliveryStatusOutput = Types.ComplianceAuditSecurityEventDeliveryStatusOutput;
@@ -911,6 +916,8 @@ export const putApiAuditSecurityEventsRetentionPolicyEndpoint = {
 
 /**
  * Returns the complete security event taxonomy used by the security event pipeline.
+ * Query-operations tier (issue #375): enumerating the taxonomy catalog requires the
+ * `queries:list` permission (fail-closed).
  */
 export type GetApiAuditSecurityEventsTaxonomyInput = void;
 export type GetApiAuditSecurityEventsTaxonomyOutput = Types.ComplianceAuditSecurityEventTaxonomyOutput;
@@ -6437,6 +6444,8 @@ export const postAuthorizationPermissionsSimulateEndpoint = {
 
 /**
  * Validates a system-wide permission against the global default baseline (issue #307).
+ * Query-operations tier (issue #375): the permission-query APIs are structured query
+ * surfaces themselves and require the `queries:query` permission (fail-closed).
  */
 export interface GetAuthorizationPermissionsGlobalCheckInput {
   query?: {
@@ -6740,6 +6749,8 @@ export const postAuthorizationSyncImportEndpoint = {
 
 /**
  * Checks if a user has a specific tenant-level permission.
+ * Query-operations tier (issue #375): who-holds-what checks are structured query
+ * surfaces and require the `queries:query` permission (fail-closed).
  */
 export interface GetAuthorizationTenantsHasPermissionInput {
   tenantId: string;
@@ -6759,6 +6770,9 @@ export const getAuthorizationTenantsHasPermissionEndpoint = {
 
 /**
  * Gets all tenant-level permissions for a user (paginated, issue #298/#307).
+ * Query-operations tier (issue #375): enumerating permission collections requires
+ * the `queries:list` permission (fail-closed; the query handler still clamps
+ * to the caller's own tenant).
  */
 export interface GetAuthorizationTenantsPermissionsInput {
   tenantId: string;
@@ -14861,6 +14875,9 @@ export const getAssetsSocialMediaEndpoint = {
  * Execute an audit query DSL expression (JSON or light text syntax) and return a
  * data-masked, paginated page of matching audit entries plus aggregates over the full
  * matched set. Execution is bounded by a row-scan cap and a wall-clock timeout.
+ * Query-operations tier (issue #375): structured DSL execution additionally requires
+ * the `queries:query` permission on top of the controller-level audit-read
+ * policy (AND composition, fail-closed).
  */
 export interface PostAuditQueriesExecuteInput {
   body?: Types.ComplianceAuditAuditQueryExecuteApiInput;
@@ -14877,6 +14894,8 @@ export const postAuditQueriesExecuteEndpoint = {
 /**
  * Paged-results GET variant of the DSL executor for the light text syntax
  * (e.g. GET /v1/audit-queries:results?query=actor:alice AND severity:Critical).
+ * Query-operations tier (issue #375): free-text/light-syntax discovery additionally
+ * requires the `queries:search` permission (AND composition, fail-closed).
  */
 export interface GetAuditQueriesResultsInput {
   query?: {
@@ -14897,6 +14916,7 @@ export const getAuditQueriesResultsEndpoint = {
 /**
  * Validate a DSL query without executing it and return its canonical JSON form.
  * Saved-view editors use this to fail closed before persisting a query.
+ * Query-operations tier (issue #375): requires `queries:query`.
  */
 export interface PostAuditQueriesValidateInput {
   body?: Types.ComplianceAuditAuditQueryValidateApiInput;
@@ -14913,6 +14933,9 @@ export const postAuditQueriesValidateEndpoint = {
 /**
  * List saved audit query views visible to the acting user: their own private views
  * plus every shared view within the caller's tenant.
+ * Query-operations tier (issue #375): enumerating saved views requires the
+ * `queries:list` permission; the service layer still filters to own-or-shared
+ * within the caller's tenant.
  */
 export type GetAuditQueriesSavedForGetAuditQueriesSavedInput = void;
 export type GetAuditQueriesSavedForGetAuditQueriesSavedOutput = Types.ComplianceAuditSavedAuditQueryViewOutput[];
@@ -14989,6 +15012,9 @@ export const deleteAuditQueriesSavedEndpoint = {
 /**
  * Execute a saved view by identifier (owner or shared), paging over its canonical query.
  * Execution usage and attribution are recorded on the view and in the audit log.
+ * Query-operations tier (issue #375): executing a stored structured query requires
+ * the `queries:query` permission; the saved-view service still enforces
+ * owner-or-shared visibility inside the caller's tenant.
  */
 export interface PostAuditQueriesSavedExecuteInput {
   id: string;
@@ -15021,6 +15047,8 @@ export const getAuditQueriesSavedRevisionsEndpoint = {
 
 /**
  * Built-in role-based query templates for common investigation and compliance scenarios.
+ * Query-operations tier (issue #375): enumerating the template catalog requires
+ * the `queries:list` permission.
  */
 export type GetAuditQueriesTemplatesInput = void;
 export type GetAuditQueriesTemplatesOutput = Types.ComplianceAuditAuditQueryTemplate[];
@@ -15455,6 +15483,9 @@ export const getAuditRetentionSimulationTemplatesEndpoint = {
 
 /**
  * Returns the security alert queue for the current tenant.
+ * Query-operations tier (issue #375): enumerating the alert queue requires the
+ * `queries:list` permission; the service still clamps results to the caller's
+ * tenant (fail-closed).
  */
 export interface GetAuditSecurityEventsAlertsInput {
   query?: {
@@ -15512,6 +15543,8 @@ export const postAuditSecurityEventsAlertsAcknowledgeEndpoint = {
 
 /**
  * Returns the durable delivery status of the security event pipeline for this instance.
+ * Query-operations tier (issue #375): structured pipeline-status querying requires the
+ * `queries:query` permission (fail-closed).
  */
 export type GetAuditSecurityEventsDeliveryStatusInput = void;
 export type GetAuditSecurityEventsDeliveryStatusOutput = Types.ComplianceAuditSecurityEventDeliveryStatusOutput;
@@ -15587,6 +15620,8 @@ export const putAuditSecurityEventsRetentionPolicyEndpoint = {
 
 /**
  * Returns the complete security event taxonomy used by the security event pipeline.
+ * Query-operations tier (issue #375): enumerating the taxonomy catalog requires the
+ * `queries:list` permission (fail-closed).
  */
 export type GetAuditSecurityEventsTaxonomyInput = void;
 export type GetAuditSecurityEventsTaxonomyOutput = Types.ComplianceAuditSecurityEventTaxonomyOutput;

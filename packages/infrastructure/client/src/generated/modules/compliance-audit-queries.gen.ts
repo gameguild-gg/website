@@ -19,6 +19,9 @@ export class ComplianceAuditQueriesModule {
    * Execute an audit query DSL expression (JSON or light text syntax) and return a
    * data-masked, paginated page of matching audit entries plus aggregates over the full
    * matched set. Execution is bounded by a row-scan cap and a wall-clock timeout.
+   * Query-operations tier (issue #375): structured DSL execution additionally requires
+   * the `queries:query` permission on top of the controller-level audit-read
+   * policy (AND composition, fail-closed).
    */
   async postAuditQueriesExecute(
     body: Types.ComplianceAuditAuditQueryExecuteApiInput,
@@ -47,6 +50,8 @@ export class ComplianceAuditQueriesModule {
   /**
    * Paged-results GET variant of the DSL executor for the light text syntax
    * (e.g. GET /v1/audit-queries:results?query=actor:alice AND severity:Critical).
+   * Query-operations tier (issue #375): free-text/light-syntax discovery additionally
+   * requires the `queries:search` permission (AND composition, fail-closed).
    */
   async getAuditQueriesResults(query?: {
     query?: string;
@@ -74,6 +79,7 @@ export class ComplianceAuditQueriesModule {
   /**
    * Validate a DSL query without executing it and return its canonical JSON form.
    * Saved-view editors use this to fail closed before persisting a query.
+   * Query-operations tier (issue #375): requires `queries:query`.
    */
   async postAuditQueriesValidate(
     body: Types.ComplianceAuditAuditQueryValidateApiInput,
@@ -102,6 +108,9 @@ export class ComplianceAuditQueriesModule {
   /**
    * List saved audit query views visible to the acting user: their own private views
    * plus every shared view within the caller's tenant.
+   * Query-operations tier (issue #375): enumerating saved views requires the
+   * `queries:list` permission; the service layer still filters to own-or-shared
+   * within the caller's tenant.
    */
   async getAuditQueriesSavedForGetAuditQueriesSaved(): Promise<Result<Types.ComplianceAuditSavedAuditQueryViewOutput[], ApiError>> {
     const url = '/v1/audit-queries/saved';
@@ -210,6 +219,9 @@ export class ComplianceAuditQueriesModule {
   /**
    * Execute a saved view by identifier (owner or shared), paging over its canonical query.
    * Execution usage and attribution are recorded on the view and in the audit log.
+   * Query-operations tier (issue #375): executing a stored structured query requires
+   * the `queries:query` permission; the saved-view service still enforces
+   * owner-or-shared visibility inside the caller's tenant.
    */
   async postAuditQueriesSavedExecute(
     id: string,
@@ -254,6 +266,8 @@ export class ComplianceAuditQueriesModule {
 
   /**
    * Built-in role-based query templates for common investigation and compliance scenarios.
+   * Query-operations tier (issue #375): enumerating the template catalog requires
+   * the `queries:list` permission.
    */
   async getAuditQueriesTemplates(): Promise<Result<Types.ComplianceAuditAuditQueryTemplate[], ApiError>> {
     const url = '/v1/audit-queries/templates';

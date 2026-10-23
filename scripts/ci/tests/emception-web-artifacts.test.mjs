@@ -89,7 +89,7 @@ test('the producer publishes only after release gates and before the independent
   assert.match(prepare, /python3 scripts\/ci\/acquire-emception-release\.py --prepare/);
   assert.ok(prepare.includes('SOURCE_TREE_SHA="$(git rev-parse \'HEAD^{tree}\')"'));
   assert.ok(prepare.includes('SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}'));
-  assert.match(upload, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
+  assert.match(upload, /actions\/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9/);
   assert.ok(upload.includes('name: ${{ steps.web-release-provenance.outputs.artifact-name }}'));
   assert.match(upload, /release\/cdn\n            tools\/emception\/artifacts\/toolchain\/release\/provenance\.json/);
   assert.match(upload, /include-hidden-files: true/);

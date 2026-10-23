@@ -137,7 +137,7 @@ export async function terminateAllSessionsAction(): Promise<SessionActionResult>
 export async function trustCurrentDeviceAction(deviceName?: string): Promise<SessionActionResult> {
   const trustedDevicesModule = new GeneratedApi.AuthTrustedDevicesModule(getApiClient());
   const result = await trustedDevicesModule.postAuthTrustedDevices({
-    deviceName: deviceName ?? null,
+    deviceName: deviceName ?? '',
   });
   revalidatePath(SETTINGS_SECURITY_PATH);
   return resultFrom(result.ok, result.ok ? undefined : result.error);

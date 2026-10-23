@@ -66,6 +66,7 @@ export function QuizCollectionEditor({
   readOnly = false,
   onDragStateChange,
 }: QuizCollectionEditorProps) {
+  const editorRootRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState<EditingQuestion | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const scrollToIndexRef = useRef<number | null>(null);
@@ -86,6 +87,10 @@ export function QuizCollectionEditor({
     onDragStateChange,
     scrollToIndexRef,
   });
+
+  useEffect(() => {
+    editorRootRef.current?.setAttribute("data-hydrated", "true");
+  }, []);
 
   const startInsert = (insertIndex: number) => {
     setEditing({
@@ -149,7 +154,12 @@ export function QuizCollectionEditor({
   }
 
   return (
-    <div className="space-y-0">
+    <div
+      ref={editorRootRef}
+      className="space-y-0"
+      data-quiz-collection-editor=""
+      data-hydrated="false"
+    >
       {items.length === 0 && !readOnly && (
         <div className="flex flex-col items-center justify-center py-20">
           <button

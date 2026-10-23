@@ -44,6 +44,8 @@ public class SecurityAuditController(
     /// <returns>Paginated list of unified security audit events.</returns>
     [HttpGet]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.List)]
+    [RequireSearchPermission(nameof(UnifiedSecurityAuditRequest.SearchText))]
     [ProducesResponseType(typeof(UnifiedSecurityAuditResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -109,6 +111,7 @@ public class SecurityAuditController(
     /// </summary>
     [HttpGet("permissions")]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.List)]
     [ProducesResponseType(typeof(PermissionAuditResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<PermissionAuditResponse>> GetPermissionLogs(
         [FromQuery] PermissionAuditRequest request,
@@ -137,6 +140,7 @@ public class SecurityAuditController(
     /// </summary>
     [HttpGet("dashboard")]
     [Authorize(Policy = Policies.AuditRead)]
+    [RequireDacPermission(QueryPermission.Keys.Query)]
     [ProducesResponseType(typeof(SecurityAuditDashboard), StatusCodes.Status200OK)]
     public async Task<ActionResult<SecurityAuditDashboard>> GetSecurityDashboard(
         [FromQuery] DateTime? startDate = null,

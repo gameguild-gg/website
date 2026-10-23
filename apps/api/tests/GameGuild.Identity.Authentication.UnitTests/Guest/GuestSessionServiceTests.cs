@@ -100,6 +100,9 @@ public sealed class GuestSessionServiceTests
         principal.Should().NotBeNull();
         var guest = principal!;
         guest.IsGuest().Should().BeTrue();
+        guest.IsInRole(GuestIdentity.RoleName).Should().BeTrue();
+        guest.FindFirst(ClaimNames.Role)!.Value.Should().Be(GuestIdentity.RoleName);
+        guest.FindFirst(ClaimTypes.Role).Should().BeNull();
         guest.TryGetGuestId(out var guestId).Should().BeTrue();
         guestId.Should().Be(issued.GuestSessionId);
         // Identity namespace isolation: no user id, no email, no tenant.
@@ -109,6 +112,36 @@ public sealed class GuestSessionServiceTests
         guest.FindFirst(ClaimNames.Email).Should().BeNull();
         guest.FindFirst(ClaimNames.TenantId).Should().BeNull();
         guest.FindFirst(ClaimNames.TenantIdAlt).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(ClaimNames.Subject)]
+    [InlineData(ClaimNames.UserId)]
+    [InlineData(ClaimNames.NameIdentifier)]
+    public void Validate_RejectsGuestTokensContainingUserIdentityClaims(string userClaimType)
+    {
+        var fixture = new Fixture();
+        var now = DateTime.UtcNow;
+        var key = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(TestJwtOptions.SecretKey)) { KeyId = "GameGuild-jwt-key" };
+        var claims = new List<Claim>
+        {
+            new(ClaimNames.GuestId, Guid.NewGuid().ToString()),
+            new(ClaimNames.Role, GuestIdentity.RoleName)
+        };
+        string Encode() => new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            TestJwtOptions.Issuer,
+            GuestAccessDefaults.Audience,
+            claims,
+            now.AddSeconds(-1),
+            now.AddMinutes(5),
+            new Microsoft.IdentityModel.Tokens.SigningCredentials(
+                key, Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256)));
+
+        fixture.TokenService.Validate(Encode()).Should().NotBeNull();
+        claims.Add(new Claim(userClaimType, Guid.NewGuid().ToString()));
+
+        fixture.TokenService.Validate(Encode()).Should().BeNull();
     }
 
     [Fact]

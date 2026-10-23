@@ -202,7 +202,6 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
         /* v8 ignore start */
         try { window.sessionStorage.removeItem(MFA_CHALLENGE_STORAGE_KEY); } catch { /* storage unavailable */ }
         /* v8 ignore stop */
-        setMfaChallenge(null);
 
         // If the response has a URL (OAuth redirect)
         if (data.url) {
@@ -215,10 +214,15 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
           await sessionContext.update();
         }
 
-        // Handle redirect
+        // Null the challenge only AFTER assigning location: a state update
+        // paints the no-challenge notice before the browser commits the
+        // navigation (the /sign-in/2fa "blink").
         if (redirect && redirectTo) {
           window.location.href = redirectTo;
+          return;
         }
+
+        setMfaChallenge(null);
       } catch (err) {
         const authError = err instanceof Error ? err : new Error('Sign-in failed');
         setError(authError);

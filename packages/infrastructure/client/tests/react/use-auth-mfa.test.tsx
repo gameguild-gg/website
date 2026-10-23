@@ -47,7 +47,10 @@ describe('browser MFA state', () => {
     await act(async () => {
       await result.current.signIn('credentials', { mfaToken: token, method: 'Totp', code: '123456', redirectTo: '/dashboard' });
     });
-    expect(result.current.mfaChallenge).toBeNull();
+    // Storage is cleared, but the mounted challenge survives until the
+    // navigation unmounts the page — nulling it first paints the
+    // no-challenge notice before the browser commits the navigation.
+    expect(result.current.mfaChallenge).not.toBeNull();
     expect(sessionStorage.getItem('gg.auth.mfaChallenge')).toBeNull();
     expect(location.href).toBe('/dashboard');
     unmount();

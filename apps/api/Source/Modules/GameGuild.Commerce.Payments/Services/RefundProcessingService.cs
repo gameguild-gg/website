@@ -240,7 +240,17 @@ public sealed class RefundProcessingService(
             idempotencyKey,
             input.DisputeId,
             kind);
-        refund = await refundRepository.AddAsync(refund, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            refund = await refundRepository.AddAsync(refund, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OpenRefundAlreadyExistsException)
+        {
+            // A concurrent request won the storage-level single-open-refund guard.
+            return Failure(
+                $"Payment {payment.Id} already has an open refund; " +
+                "retry or cancel it before requesting another refund");
+        }
 
         if (refund.IsTerminal || refund.Status != RefundStatus.Pending)
         {
