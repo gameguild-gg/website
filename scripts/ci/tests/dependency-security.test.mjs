@@ -37,8 +37,8 @@ for (const workspace of ["apps/web", "demos/emception-ide-next"]) {
 for (const packageRoot of nextRoots) {
   test(`${packageRoot}: Next and its resolved image dependency use the reviewed security releases`, () => {
     const nextRequire = createRequire(join(packageRoot, "package.json"));
-    assert.equal(nextRequire("./package.json").version, "16.4.1");
-    assert.equal(nextRequire("@next/env/package.json").version, "16.4.1");
+    assert.equal(nextRequire("./package.json").version, "16.4.2");
+    assert.equal(nextRequire("@next/env/package.json").version, "16.4.2");
     assert.equal(nextRequire("sharp").versions.sharp, "0.35.5");
   });
 }
