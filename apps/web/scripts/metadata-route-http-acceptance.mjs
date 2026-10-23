@@ -1,6 +1,7 @@
 // Hosted acceptance source; not executed locally.
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
+import { get } from 'node:http';
 import path from 'node:path';
 
 export async function verifyMetadataRoutes({ webUrl, page, evidence }) {
@@ -8,20 +9,40 @@ export async function verifyMetadataRoutes({ webUrl, page, evidence }) {
   const origin = new URL(webUrl);
   assert.equal(origin.protocol, 'http:');
   assert.equal(origin.hostname, '127.0.0.1');
-  assert.ok(Number(origin.port) > 0);
+  const port = Number(origin.port);
+  assert.ok(Number.isInteger(port) && port > 0 && port <= 65535);
   const cases = [];
   const responses = [];
   const passed = name => cases.push({ name, outcome: 'Passed' });
+  const allowedPaths = new Set(['/manifest.webmanifest', '/favicon.svg', '/robots.txt', '/sitemap.xml']);
   const readRoute = async (pathname, mediaType) => {
-    const url = new URL(pathname, origin);
-    assert.equal(url.origin, origin.origin);
-    const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(120_000) });
+    assert.ok(allowedPaths.has(pathname), 'Only generated metadata routes may be requested.');
+    // The transport destination is fixed, independent of the caller's URL. Native
+    // HTTP does not follow redirects; no cookies, authorization or proxy is used.
+    const response = await new Promise((resolve, reject) => {
+      const request = get({ hostname: '127.0.0.1', port, path: pathname, agent: false, signal: AbortSignal.timeout(120_000) }, incoming => {
+        const chunks = [];
+        let size = 0;
+        incoming.on('data', chunk => {
+          size += chunk.length;
+          if (size >= 1_000_000) {
+            request.destroy(new Error('Metadata response is unexpectedly large.'));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        incoming.on('error', reject);
+        incoming.on('end', () => resolve({
+          status: incoming.statusCode, contentType: incoming.headers['content-type'],
+          text: Buffer.concat(chunks).toString('utf8'),
+        }));
+      });
+      request.on('error', reject);
+    });
     assert.equal(response.status, 200, pathname);
-    assert.match(response.headers.get('content-type') ?? '', mediaType);
-    const text = await response.text();
-    assert.ok(Buffer.byteLength(text) < 1_000_000, 'Metadata response is unexpectedly large.');
-    responses.push({ pathname, status: response.status, contentType: response.headers.get('content-type') });
-    return text;
+    assert.match(response.contentType ?? '', mediaType);
+    responses.push({ pathname, status: response.status, contentType: response.contentType });
+    return response.text;
   };
   try {
     const links = await page.locator('link[rel="manifest"]').evaluateAll(nodes => nodes.map(node => node.href));

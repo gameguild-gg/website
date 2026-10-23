@@ -43,3 +43,15 @@ providers, absent blog index, invalid cursors and later-page failure. Four exist
 sitemap composition cases remain. These are controlled-provider cases; actual
 HTTP route acceptance is a separate four-case hosted receipt. None were executed
 locally. No issue state or acceptance is changed by preparing this source.
+
+## Hosted transport review
+
+Codacy check 120391868152 on PR #974 identified the URL passed to the metadata
+HTTP client. The original helper verified the loopback host and protocol before
+requesting its four fixed metadata routes. The revised helper makes the network
+destination literal in the native HTTP connection options: host 127.0.0.1,
+validated numeric port and an explicit four-path allowlist. It sends no credentials,
+does not follow redirects, retains the absolute 120-second timeout and enforces
+the one-megabyte response limit while reading. Browser-origin assertions and all
+four metadata cases remain unchanged. Fresh hosted acceptance and static analysis
+are required; no local product execution or scanner exemption is used.
