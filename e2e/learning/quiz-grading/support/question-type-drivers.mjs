@@ -88,7 +88,7 @@ async function answerFillBlank(page, { answer, entry }) {
     const value = answer.values[blank.id];
     if (value == null) continue;
     if (blank.input.type === "DROPDOWN") {
-      await page.getByRole("combobox").click();
+      await page.getByTestId(`fill-blank-select-${blank.id}`).click();
       await page.getByRole("option", { name: value, exact: true }).click();
       continue;
     }
@@ -104,11 +104,7 @@ async function answerFillBlank(page, { answer, entry }) {
       });
       continue;
     }
-    const placeholder = blank.input.type === "TEXT" ? "..." : undefined;
-    const input = placeholder
-      ? page.getByPlaceholder(placeholder).first()
-      : page.locator('input:not([type="hidden"])').last();
-    await input.fill(value);
+    await page.getByTestId(`fill-blank-input-${blank.id}`).fill(value);
   }
 }
 
