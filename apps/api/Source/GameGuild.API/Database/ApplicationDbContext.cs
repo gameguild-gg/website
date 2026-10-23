@@ -68,7 +68,28 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             : null;
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges() => SaveChanges(acceptAllChangesOnSuccess: true);
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        SaveChangesCoreAsync(useAsync: false, acceptAllChangesOnSuccess, CancellationToken.None)
+            .GetAwaiter().GetResult();
+
+    public Task<int> SaveChangesAsync() => SaveChangesAsync(CancellationToken.None);
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess: true, cancellationToken);
+
+    public Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess, CancellationToken.None);
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken) =>
+        SaveChangesCoreAsync(useAsync: true, acceptAllChangesOnSuccess, cancellationToken);
+
+    // Every public persistence overload must run the same audit/outbox/version pipeline.
+    // Keep the actual EF save synchronous for synchronous callers and preserve the caller's
+    // AcceptAllChanges choice. Calling the parameterless base overload would dispatch back
+    // through our bool overload and capture the same changes twice.
+    private async Task<int> SaveChangesCoreAsync(bool useAsync, bool acceptAllChangesOnSuccess, CancellationToken cancellationToken)
     {
         var permissionChanges = CapturePermissionAuditChanges();
         var trackedEventEntities = ChangeTracker.Entries()
@@ -205,7 +226,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             }
         }
 
-        var affectedRows = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        var affectedRows = useAsync
+            ? await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false)
+            : base.SaveChanges(acceptAllChangesOnSuccess);
 
         if (permissionChanges.Count > 0)
         {

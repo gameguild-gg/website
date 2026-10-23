@@ -5,12 +5,13 @@ const BASE_URL = vi.hoisted(() => {
   return process.env.NEXT_PUBLIC_APP_URL;
 });
 
-const getPublishedProjects = vi.hoisted(() => vi.fn());
+const getPublishedProjectsPage = vi.hoisted(() => vi.fn());
 const getPublicCourseCatalog = vi.hoisted(() => vi.fn());
 const getBlogIndex = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/projects/public-projects', () => ({
-  getPublishedProjects: (...args: unknown[]) => getPublishedProjects(...args),
+  PUBLIC_PROJECT_PAGE_SIZE: 24,
+  getPublishedProjectsPage: (...args: unknown[]) => getPublishedProjectsPage(...args),
 }));
 vi.mock('@/lib/courses/services/course.service', () => ({
   getPublicCourseCatalog: (...args: unknown[]) => getPublicCourseCatalog(...args),
@@ -32,7 +33,7 @@ function urlsOf(entries: Awaited<ReturnType<typeof sitemap>>): string[] {
 }
 
 function mockHealthySources(): void {
-  getPublishedProjects.mockResolvedValue([{ slug: 'proj-one' }]);
+  getPublishedProjectsPage.mockResolvedValue([{ slug: 'proj-one' }]);
   getPublicCourseCatalog.mockResolvedValue({
     success: true,
     data: [{ slug: 'course-one' }, { slug: '' }, {}],
@@ -88,7 +89,7 @@ describe('app sitemap', () => {
   });
 
   it('omits dynamic entries and still serves the sitemap when every data source rejects', async () => {
-    getPublishedProjects.mockRejectedValue(new Error('projects down'));
+    getPublishedProjectsPage.mockRejectedValue(new Error('projects down'));
     getPublicCourseCatalog.mockRejectedValue(new Error('catalog down'));
     getBlogIndex.mockRejectedValue(new Error('blog index down'));
 
@@ -108,7 +109,7 @@ describe('app sitemap', () => {
   });
 
   it('omits course entries when the catalog service reports a failure result', async () => {
-    getPublishedProjects.mockResolvedValue([]);
+    getPublishedProjectsPage.mockResolvedValue([]);
     getPublicCourseCatalog.mockResolvedValue({ success: false, data: [], error: 'API 503' });
     getBlogIndex.mockResolvedValue(null);
 

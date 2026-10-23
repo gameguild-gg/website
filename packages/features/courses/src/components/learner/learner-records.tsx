@@ -680,7 +680,10 @@ export function LearnerGradebook({
                     {course.title}
                   </p>
                 </div>
-                <strong className="text-lg">
+                <strong
+                  data-testid={`learner-assessment-result-${slugify(assessment.title || "untitled assessment")}`}
+                  className="text-lg"
+                >
                   {submissionResultLabel(submission, assessment)}
                 </strong>
               </div>

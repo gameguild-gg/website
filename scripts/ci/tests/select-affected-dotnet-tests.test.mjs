@@ -226,3 +226,46 @@ test("full-host test selection only emits available projects", () => {
     "apps/api/tests/GameGuild.API.IntegrationTests/ExampleTests.cs",
   ], ["GameGuild.API.IntegrationTests"]), ["GameGuild.API.IntegrationTests"]);
 });
+
+for (const file of ["ApplicationDbContext.cs", "EntityChangeAuditCapture.cs", "EntityChangeAuditModelConfiguration.cs"]) {
+  test(`host persistence source ${file} selects native and security suites without a test-file change`, () => {
+    assert.deepEqual(selectAffectedDotnetTestNames([
+      `apps/api/Source/GameGuild.API/Database/${file}`,
+    ], hostIntegrationProjects), hostIntegrationExpected);
+  });
+}
+
+for (const file of [
+  "scripts/ci/select-affected-dotnet-tests.mjs",
+  "scripts/ci/run-affected-dotnet-tests.sh",
+  "scripts/ci/tests/select-affected-dotnet-tests.test.mjs",
+]) {
+  test(`affected-test infrastructure ${file} selects native host qualification`, () => {
+    assert.deepEqual(selectAffectedDotnetTestNames([file], hostIntegrationProjects), hostIntegrationExpected);
+  });
+}
+
+test("Windows host persistence paths select the native suite", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    ".\\apps\\api\\Source\\GameGuild.API\\Database\\ApplicationDbContext.cs",
+  ], hostIntegrationProjects), hostIntegrationExpected);
+});
+
+test("persistence source and native test changes deduplicate every mandatory project", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/Source/GameGuild.API/Database/ApplicationDbContext.cs",
+    "apps/api/tests/GameGuild.API.IntegrationTests/EntityChangeAuditSaveEntrypointPostgreSqlTests.cs",
+  ], hostIntegrationProjects), hostIntegrationExpected);
+});
+
+test("a similar directory name does not select persistence-specific native tests", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/Source/GameGuild.API/DatabaseTools/Example.cs",
+  ], hostIntegrationProjects), ["GameGuild.API.UnitTests", "GameGuild.SharedKernel.UnitTests"]);
+});
+
+test("persistence selection emits only projects present in the inventory", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/Source/GameGuild.API/Database/ApplicationDbContext.cs",
+  ], ["GameGuild.API.IntegrationTests"]), ["GameGuild.API.IntegrationTests"]);
+});

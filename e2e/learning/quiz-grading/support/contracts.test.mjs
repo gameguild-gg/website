@@ -385,7 +385,7 @@ test("validation reports redact credentials and private answer material", async 
   assert.match(renderValidationReport(report), /QG-REVIEW-AUTOMATED-001/);
   assert.match(
     validationRunDirectory(manifest.runId),
-    /test-results\/quiz-grading-validation/,
+    /test-results[\\/]quiz-grading-validation/,
   );
 
   const artifacts = await writeValidationReport(report);
