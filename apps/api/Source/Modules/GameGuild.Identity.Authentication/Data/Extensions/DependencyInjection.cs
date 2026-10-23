@@ -216,6 +216,8 @@ public static class DataDependencyInjection
         services.AddScoped<IStepUpChallengeStore, PostgreSqlStepUpChallengeStore>();
         services.AddScoped<IStepUpReceiptService, StepUpReceiptService>();
         services.AddScoped<IMfaRecoveryRequestStore, PostgreSqlMfaRecoveryRequestStore>();
+        // Delegated account recovery with trusted contacts / passkeys (issue #209)
+        RegisterAccountRecoveryServices(services, configuration);
         services.TryAddSingleton(TimeProvider.System);
 
         // Session management
@@ -272,6 +274,18 @@ public static class DataDependencyInjection
 
         // Facade preserves original IWebAuthnService contract for backward compatibility
         services.AddScoped<IWebAuthnService, WebAuthnService>();
+    }
+
+    /// <summary>
+    ///     Register services for delegated account recovery (issue #209): trusted-contact
+    ///     storage, recovery request/approval storage, and the K-of-N threshold evaluator.
+    /// </summary>
+    private static void RegisterAccountRecoveryServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<AccountRecoveryOptions>(configuration.GetSection(AccountRecoveryOptions.SectionName));
+        services.AddScoped<ITrustedContactStore, PostgreSqlTrustedContactStore>();
+        services.AddScoped<IAccountRecoveryStore, PostgreSqlAccountRecoveryStore>();
+        services.AddScoped<IAccountRecoveryThresholdEvaluator, AccountRecoveryThresholdEvaluator>();
     }
 
     /// <summary>
@@ -423,6 +437,15 @@ public static class DataDependencyInjection
         services.AddScoped<FluentValidation.IValidator<ContinueMfaRecoveryCommand>, ContinueMfaRecoveryCommandValidator>();
         services.AddScoped<FluentValidation.IValidator<ConfirmMfaRecoveryCommand>, ConfirmMfaRecoveryCommandValidator>();
         services.AddScoped<FluentValidation.IValidator<AdminResetUserMfaCommand>, AdminResetUserMfaCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<AddTrustedContactCommand>, AddTrustedContactCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<RemoveTrustedContactCommand>, RemoveTrustedContactCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<ConfirmTrustedContactCommand>, ConfirmTrustedContactCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<RequestAccountRecoveryCommand>, RequestAccountRecoveryCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<CancelAccountRecoveryCommand>, CancelAccountRecoveryCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<ApproveAccountRecoveryCommand>, ApproveAccountRecoveryCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<BeginPasskeyRecoveryApprovalCommand>, BeginPasskeyRecoveryApprovalCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<ApproveAccountRecoveryWithPasskeyCommand>, ApproveAccountRecoveryWithPasskeyCommandValidator>();
+        services.AddScoped<FluentValidation.IValidator<CompleteAccountRecoveryResetCommand>, CompleteAccountRecoveryResetCommandValidator>();
     }
 
     /// <summary>
@@ -450,6 +473,15 @@ public static class DataDependencyInjection
         services.AddScoped<IRequestHandler<ContinueMfaRecoveryCommand, MfaRecoveryContinueResult>, ContinueMfaRecoveryCommandHandler>();
         services.AddScoped<IRequestHandler<ConfirmMfaRecoveryCommand, MfaRecoveryConfirmResult>, ConfirmMfaRecoveryCommandHandler>();
         services.AddScoped<IRequestHandler<AdminResetUserMfaCommand, AdminResetUserMfaResult>, AdminResetUserMfaCommandHandler>();
+        services.AddScoped<IRequestHandler<AddTrustedContactCommand, TrustedContactActionResult>, AddTrustedContactCommandHandler>();
+        services.AddScoped<IRequestHandler<RemoveTrustedContactCommand, TrustedContactActionResult>, RemoveTrustedContactCommandHandler>();
+        services.AddScoped<IRequestHandler<ConfirmTrustedContactCommand, TrustedContactConfirmResult>, ConfirmTrustedContactCommandHandler>();
+        services.AddScoped<IRequestHandler<RequestAccountRecoveryCommand, AccountRecoveryRequestResult>, RequestAccountRecoveryCommandHandler>();
+        services.AddScoped<IRequestHandler<CancelAccountRecoveryCommand, AccountRecoveryCancelResult>, CancelAccountRecoveryCommandHandler>();
+        services.AddScoped<IRequestHandler<ApproveAccountRecoveryCommand, AccountRecoveryApprovalResult>, ApproveAccountRecoveryCommandHandler>();
+        services.AddScoped<IRequestHandler<BeginPasskeyRecoveryApprovalCommand, WebAuthnAuthenticationOptionsResult>, BeginPasskeyRecoveryApprovalCommandHandler>();
+        services.AddScoped<IRequestHandler<ApproveAccountRecoveryWithPasskeyCommand, AccountRecoveryApprovalResult>, ApproveAccountRecoveryWithPasskeyCommandHandler>();
+        services.AddScoped<IRequestHandler<CompleteAccountRecoveryResetCommand, AccountRecoveryResetResult>, CompleteAccountRecoveryResetCommandHandler>();
         
         // Logout handler with immediate token revocation
         services.AddScoped<IRequestHandler<LogoutCommand, LogoutResponse>, LogoutHandler>();
