@@ -202,6 +202,45 @@ public static class AuditModule
         services.AddScoped<ISavedAuditQueryRepository, SavedAuditQueryRepository>();
         services.AddScoped<ISavedAuditQueryService, SavedAuditQueryService>();
 
+        // Mutation value snapshots (issue #176): staging options, the searchable history surface,
+        // change impact / value trend analysis, configurable retention with deduplication and an
+        // archive tier, and plan-based rollback for critical data recovery.
+        services.AddOptions<ValueSnapshotOptions>()
+            .Configure<IConfiguration>((snapshotOptions, configuration) =>
+            {
+                var section = configuration.GetSection(ValueSnapshotOptions.ConfigurationSection);
+                if (bool.TryParse(section["StagingEnabled"], out var stagingEnabled))
+                {
+                    snapshotOptions.StagingEnabled = stagingEnabled;
+                }
+
+                if (int.TryParse(section["MaxPayloadBytes"], out var maxPayloadBytes) && maxPayloadBytes > 0)
+                {
+                    snapshotOptions.MaxPayloadBytes = maxPayloadBytes;
+                }
+
+                if (int.TryParse(section["MaxValueBytes"], out var maxValueBytes) && maxValueBytes > 0)
+                {
+                    snapshotOptions.MaxValueBytes = maxValueBytes;
+                }
+            });
+        services.AddSingleton<MutationValueSnapshotFactory>(provider =>
+            new MutationValueSnapshotFactory(provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ValueSnapshotOptions>>().Value));
+        services.AddScoped<IValueSnapshotQueryService, ValueSnapshotQueryService>();
+        services.AddScoped<IValueSnapshotAnalysisService, ValueSnapshotAnalysisService>();
+        services.AddScoped<IValueSnapshotRetentionService, ValueSnapshotRetentionService>();
+        services.AddScoped<IValueSnapshotRollbackService, ValueSnapshotRollbackService>();
+
+        // Chain of custody for forensics (issue #177): custodian authorization (fail closed),
+        // evidence preservation with integrity hashing, isolation-enforced access logging,
+        // challenge-verified ECDSA transfer proofs, legal holds with automated preservation and
+        // stakeholder notification, and court-admissible packaging with expert certification.
+        services.AddScoped<IEvidenceCustodianService, EvidenceCustodianService>();
+        services.AddScoped<IChainOfCustodyService, ChainOfCustodyService>();
+        services.AddScoped<IEvidenceTransferService, EvidenceTransferService>();
+        services.AddScoped<ILegalHoldService, LegalHoldService>();
+        services.AddScoped<ICourtAdmissiblePackagingService, CourtAdmissiblePackagingService>();
+
         return services;
     }
 }

@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     private readonly IAuditService? _auditService;
     private readonly ILogger<ApplicationDbContext>? _logger;
     private readonly bool _entityChangeAuditCaptureEnabled = true;
+    private readonly MutationValueSnapshotFactory? _valueSnapshotFactory;
     private readonly PermissionAuditOptions _permissionAuditOptions = new();
     private readonly IReadOnlyList<IPermissionAuditHook> _permissionAuditHooks = [];
     private readonly List<PermissionAuditChange> _pendingPermissionAuditChanges = [];
@@ -52,13 +53,19 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         IAuditService? auditService = null,
         ILogger<ApplicationDbContext>? logger = null,
         IOptions<PermissionAuditOptions>? permissionAuditOptions = null,
-        IEnumerable<IPermissionAuditHook>? permissionAuditHooks = null) : this(options, publisher)
+        IEnumerable<IPermissionAuditHook>? permissionAuditHooks = null,
+        IOptions<ValueSnapshotOptions>? valueSnapshotOptions = null) : this(options, publisher)
     {
         _useCaseOperationContextAccessor = useCaseOperationContextAccessor;
         _auditService = auditService;
         _logger = logger;
         _permissionAuditOptions = permissionAuditOptions?.Value ?? new PermissionAuditOptions();
         _permissionAuditHooks = permissionAuditHooks?.ToArray() ?? [];
+        // Value snapshot staging (issue #176) defaults to enabled; the options master switch is
+        // the only way to disable it and staging itself never blocks an authorized mutation.
+        _valueSnapshotFactory = valueSnapshotOptions is null || valueSnapshotOptions.Value.StagingEnabled
+            ? new MutationValueSnapshotFactory(valueSnapshotOptions?.Value)
+            : null;
     }
 
     public override int SaveChanges() => SaveChanges(acceptAllChangesOnSuccess: true);
@@ -206,7 +213,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         var capturedAuditRecordCount = _entityChangeAuditCaptureEnabled
             ? EntityChangeAuditCapture.Capture(this, operationContext, _logger,
                 _permissionMutationAuditScope?.ActorId, _permissionMutationAuditScope?.TenantId,
-                _permissionMutationAuditScope?.UseEntityTenantScope ?? false)
+                _permissionMutationAuditScope?.UseEntityTenantScope ?? false, _valueSnapshotFactory)
             : 0;
 
         foreach (var entry in ChangeTracker.Entries())
