@@ -68,6 +68,12 @@ public sealed record OidcDiscoveredProvider
     public required string Slug { get; init; }
 
     public required string DisplayName { get; init; }
+
+    /// <summary>
+    ///     The federation protocol this provider serves — <c>oidc</c> or <c>saml</c> — so the
+    ///     login page knows which authorize entry point to route the browser to.
+    /// </summary>
+    public string Protocol { get; init; } = "oidc";
 }
 
 /// <summary>

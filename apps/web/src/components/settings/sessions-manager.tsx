@@ -49,6 +49,8 @@ const RISK_TONE: Record<string, 'default' | 'secondary' | 'destructive'> = {
   critical: 'destructive',
 };
 
+const subscribeToHydration = () => () => undefined;
+
 function formatTimestamp(iso: string | null | undefined, locale: string): string {
   if (!iso) {
     return '—';
@@ -89,6 +91,10 @@ function riskTone(riskLevel: string | null | undefined) {
 export function SessionsManager({ data, locale }: { data: SessionsPageData; locale: string }) {
   const t = useTranslations('settings.security');
   const [isPending, startTransition] = React.useTransition();
+  // Server HTML is visible before React installs the action handlers. Keep these
+  // controls disabled until hydration so an early click cannot silently disappear.
+  const isHydrated = React.useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  const isUnavailable = isPending || !isHydrated;
   const [renamingId, setRenamingId] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState('');
   const [confirmTerminateAll, setConfirmTerminateAll] = React.useState(false);
@@ -207,13 +213,13 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
                             }
                           }}
                           maxLength={64}
-                          disabled={isPending}
+                          disabled={isUnavailable}
                           className="h-8 w-40 rounded-md border bg-transparent px-2 text-sm"
                           data-testid={`rename-input-${session.id}`}
                         />
                         <Button
                           size="sm"
-                          disabled={isPending}
+                          disabled={isUnavailable}
                           onClick={() => submitRename(session.id!)}
                           data-testid={`rename-save-${session.id}`}
                         >
@@ -222,7 +228,7 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
                         <Button
                           size="sm"
                           variant="ghost"
-                          disabled={isPending}
+                          disabled={isUnavailable}
                           onClick={() => setRenamingId(null)}
                         >
                           {t('rename.cancel')}
@@ -232,7 +238,7 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={isPending}
+                        disabled={isUnavailable}
                         onClick={() => {
                           setRenamingId(session.id!);
                           setRenameValue(session.deviceInfo?.deviceName ?? '');
@@ -246,7 +252,7 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
                       <Button
                         size="sm"
                         variant="destructive"
-                        disabled={isPending}
+                        disabled={isUnavailable}
                         onClick={() => run(() => terminateSessionAction(session.id!), t('sessions.terminated'))}
                         aria-label={t('sessions.terminateAria', { name })}
                       >
@@ -261,14 +267,14 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
           <div className="flex flex-wrap gap-2 border-t pt-4">
             <Button
               variant="outline"
-              disabled={isPending || data.sessions.length <= 1}
+              disabled={isUnavailable || data.sessions.length <= 1}
               onClick={() => run(() => terminateOtherSessionsAction(), t('sessions.othersTerminated'))}
             >
               {t('sessions.terminateOthers')}
             </Button>
             <Button
               variant="destructive"
-              disabled={isPending}
+              disabled={isUnavailable}
               onClick={() => setConfirmTerminateAll(true)}
             >
               {t('sessions.terminateAll')}
@@ -312,7 +318,7 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={isPending}
+                  disabled={isUnavailable}
                   onClick={() => run(() => revokeTrustedDeviceAction(device.id!), t('trustedDevices.revoked'))}
                 >
                   {t('trustedDevices.revoke')}
@@ -329,7 +335,7 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
               <Button
                 size="sm"
                 variant="outline"
-                disabled={isPending}
+                disabled={isUnavailable}
                 onClick={() => run(() => trustCurrentDeviceAction(), t('trustedDevices.trustedCurrent'))}
               >
                 {t('trustedDevices.trustCurrentButton')}
@@ -346,9 +352,9 @@ export function SessionsManager({ data, locale }: { data: SessionsPageData; loca
             <AlertDialogDescription>{t('sessions.confirmTerminateAllDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>{t('sessions.confirmCancel')}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isUnavailable}>{t('sessions.confirmCancel')}</AlertDialogCancel>
             <AlertDialogAction
-              disabled={isPending}
+              disabled={isUnavailable}
               onClick={() => run(() => terminateAllSessionsAction(), t('sessions.allTerminated'))}
             >
               {t('sessions.confirmTerminateAll')}

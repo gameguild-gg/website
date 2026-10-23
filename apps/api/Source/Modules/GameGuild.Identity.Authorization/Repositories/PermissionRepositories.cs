@@ -1,3 +1,4 @@
+using GameGuild.CQRS.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GameGuild.Identity.Authorization;
@@ -199,7 +200,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         return await AuditLogs
             .AsNoTracking()
-            .Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value)
+            .Where(l => l.TenantId == new TenantId(tenantId.Value))
             .OrderByDescending(l => l.Timestamp)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -216,7 +217,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         if (tenantId.HasValue)
         {
-            query = query.Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value);
+            query = query.Where(l => l.TenantId == new TenantId(tenantId.Value));
         }
 
         return await query
@@ -237,7 +238,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         if (tenantId.HasValue)
         {
-            query = query.Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value);
+            query = query.Where(l => l.TenantId == new TenantId(tenantId.Value));
         }
 
         return await query
@@ -257,7 +258,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         if (tenantId.HasValue)
         {
-            query = query.Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value);
+            query = query.Where(l => l.TenantId == new TenantId(tenantId.Value));
         }
 
         return await query
@@ -278,7 +279,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         if (tenantId.HasValue)
         {
-            query = query.Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value);
+            query = query.Where(l => l.TenantId == new TenantId(tenantId.Value));
         }
 
         return await query
@@ -300,7 +301,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         if (tenantId.HasValue)
         {
-            query = query.Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value);
+            query = query.Where(l => l.TenantId == new TenantId(tenantId.Value));
         }
 
         return await query
@@ -322,7 +323,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         if (tenantId.HasValue)
         {
-            query = query.Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value);
+            query = query.Where(l => l.TenantId == new TenantId(tenantId.Value));
         }
 
         return await query
@@ -344,7 +345,7 @@ public class PermissionAuditLogRepository(IApplicationDbContext context) : IPerm
 
         if (tenantId.HasValue)
         {
-            query = query.Where(l => l.TenantId != null && l.TenantId.Value.Value == tenantId.Value);
+            query = query.Where(l => l.TenantId == new TenantId(tenantId.Value));
         }
 
         return await query

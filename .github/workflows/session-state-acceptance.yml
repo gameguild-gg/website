@@ -84,6 +84,12 @@ jobs:
           node --max-old-space-size=128 --input-type=module - <<'NODE'
           import { readFileSync } from 'node:fs';
           import assert from 'node:assert/strict';
+          const metadata = JSON.parse(readFileSync('artifacts/session-state/metadata-routes.json', 'utf8'));
+          assert.equal(metadata.passed, true);
+          assert.equal(metadata.mockedTransport, false);
+          assert.equal(metadata.cases.length, 4);
+          assert.equal(new Set(metadata.cases.map(test => test.name)).size, 4);
+          assert.ok(metadata.cases.every(test => test.outcome === 'Passed'));
           const browser = JSON.parse(readFileSync('artifacts/session-state/browser.json', 'utf8'));
           const persistence = JSON.parse(readFileSync('artifacts/session-state/persistence.json', 'utf8'));
           assert.equal(browser.passed, true);
@@ -94,6 +100,20 @@ jobs:
           assert.equal(persistence.sessionId, browser.sessionId);
           assert.equal(persistence.ownSessionTerminated, true);
           assert.equal(persistence.unrelatedSessionsUnchanged, 2);
+          const trust = JSON.parse(readFileSync('artifacts/session-state/trust-browser.json', 'utf8'));
+          const storedTrust = JSON.parse(readFileSync('artifacts/session-state/trust-persistence.json', 'utf8'));
+          assert.equal(trust.passed, true);
+          assert.equal(trust.cases.length, 4);
+          assert.ok(trust.cases.every(test => test.outcome === 'Passed'));
+          assert.equal(trust.mockedAuthenticationOrTransport, false);
+          assert.equal(trust.sessionId, browser.sessionId);
+          assert.equal(storedTrust.passed, true);
+          assert.equal(storedTrust.sessionId, trust.sessionId);
+          assert.equal(storedTrust.trustedDeviceId, trust.trustedDeviceId);
+          assert.equal(storedTrust.foreignTrustedDeviceId, trust.foreignTrustedDeviceId);
+          assert.equal(storedTrust.renewedSameIdentity, true);
+          assert.equal(storedTrust.ownTrustRevoked, true);
+          assert.equal(storedTrust.foreignTrustUnchanged, true);
           NODE
       - name: Retain source-bound acceptance evidence
         if: always()
