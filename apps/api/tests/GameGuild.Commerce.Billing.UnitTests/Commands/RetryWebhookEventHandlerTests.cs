@@ -115,11 +115,21 @@ public class RetryWebhookEventHandlerTests
         _repository
             .Setup(r => r.UpdateAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((BillingWebhookEvent e, CancellationToken _) => e);
+        _deadLetterService
+            .Setup(service => service.DeadLetterAsync(webhookEvent, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<BillingWebhookEvent, string, CancellationToken>((row, reason, _) => row.MarkAsDeadLettered(reason));
 
         var result = await CreateHandler().Handle(new RetryWebhookEventCommand(Guid.NewGuid().ToString()), CancellationToken.None);
 
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("No replay handler registered");
+        result.ErrorMessage.Should().Contain("dead-lettered");
+        webhookEvent.DeadLetteredAt.Should().NotBeNull();
+        _deadLetterService.Verify(service => service.DeadLetterAsync(
+            webhookEvent,
+            It.Is<string>(reason => reason.Contains("No replay handler registered for provider 'unsupported-provider'")),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _replayHandler.Verify(handler => handler.ReplayAsync(It.IsAny<BillingWebhookEvent>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

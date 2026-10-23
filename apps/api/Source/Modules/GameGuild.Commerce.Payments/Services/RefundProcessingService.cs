@@ -553,7 +553,7 @@ public sealed class RefundProcessingService(
     {
         await SendRefundConfirmationAsync(payment, refund, cancellationToken).ConfigureAwait(false);
 
-        if (executeAtGateway && _workflowOptions.CreditWalletOnPartialRefund && refund.Kind == RefundKind.Partial)
+        if (_workflowOptions.CreditWalletOnPartialRefund && refund.Kind is RefundKind.Partial or RefundKind.Prorated)
         {
             await CreditWalletForPartialRefundAsync(payment, refund, cancellationToken).ConfigureAwait(false);
         }

@@ -238,6 +238,9 @@ public sealed class StripePaymentLifecycleEventConsumer(
     ///     <c>refund.updated</c>) and only reconciles when those were missed: exactly one
     ///     in-flight local refund for the payment is completed with a derived gateway refund id.
     ///     Ambiguous or external refunds (no in-flight local row) are logged and skipped.
+    ///     Infrastructure failures from the completion core propagate to the caller (the
+    ///     verified-event inbox routing) so the failed delivery is redelivered by the inbox
+    ///     retry machinery instead of leaving the refund stuck in Processing.
     /// </summary>
     private async Task<bool> HandleChargeRefundedEventAsync(
         VerifiedStripeWebhookEvent verifiedEvent,
@@ -276,44 +279,31 @@ public sealed class StripePaymentLifecycleEventConsumer(
             return true;
         }
 
-        try
+        // Infrastructure failures (e.g. transient DB outages) propagate so the verified-event
+        // inbox marks the delivery failed and redelivers; a swallowed exception would leave
+        // the refund stuck in Processing forever. Business refusals arrive as failure results,
+        // handled by the warning branch above.
+        var completion = await refundProcessingService
+            .CompleteFromGatewayAsync(
+                openRefund,
+                $"charge_refund_{verifiedEvent.ProviderObjectId}",
+                StripeProvider,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (completion.Success)
         {
-            var completion = await refundProcessingService
-                .CompleteFromGatewayAsync(
-                    openRefund,
-                    $"charge_refund_{verifiedEvent.ProviderObjectId}",
-                    StripeProvider,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            if (completion.Success)
-            {
-                logger.LogInformation(
-                    "Refund {RefundId} completed from Stripe charge.refunded event {EventId}",
-                    openRefund.Id,
-                    verifiedEvent.EventId);
-            }
-            else
-            {
-                logger.LogWarning(
-                    "Stripe charge.refunded event {EventId} could not complete refund {RefundId}: {Reason}",
-                    verifiedEvent.EventId,
-                    openRefund.Id,
-                    completion.FailureReason);
-            }
+            logger.LogInformation(
+                "Refund {RefundId} completed from Stripe charge.refunded event {EventId}",
+                openRefund.Id,
+                verifiedEvent.EventId);
         }
-        catch (OperationCanceledException)
+        else
         {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            // The payment aggregate refused the transition (e.g. cumulative refunds would
-            // exceed the charged amount): keep the webhook processed and the local state.
             logger.LogWarning(
-                exception,
-                "Stripe charge.refunded event {EventId} reconciliation for payment {PaymentId} failed; local state kept",
+                "Stripe charge.refunded event {EventId} could not complete refund {RefundId}: {Reason}",
                 verifiedEvent.EventId,
-                payment.Id);
+                openRefund.Id,
+                completion.FailureReason);
         }
 
         return true;
