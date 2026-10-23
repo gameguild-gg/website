@@ -221,6 +221,38 @@ export class CommercePaymentsDisputesModule {
   }
 
   /**
+   * Submit the dispute evidence bundle to the gateway: assembles every attached evidence
+   * row into one bundle, delivers it through the gateway and records the submission status
+   * on the dispute and each evidence item. Requires the `payments:admin` permission.
+   *
+   * Assembles every evidence row attached to the dispute into one bundle, submits it to the gateway and records the submission status. Requires the payments:admin permission.
+   */
+  async postDisputesSubmitEvidence(
+    disputeId: string,
+    body: Types.CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput,
+  ): Promise<Result<Types.CommercePaymentsDisputeActionResult, ApiError>> {
+    const url = `/api/v1/disputes/${disputeId}:submit-evidence`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommercePaymentsDisputesControllerSubmitDisputeEvidenceInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsDisputeActionResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * List the evidence attached to a dispute.
    *
    * Lists the evidence files attached to a payment dispute, newest first.

@@ -2117,6 +2117,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<DateTime?>("GatewaySubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsFromMerchant")
                         .HasColumnType("boolean");
 
@@ -2516,6 +2519,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("EvidenceDueBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EvidenceSubmittedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("GatewayDisputeId")

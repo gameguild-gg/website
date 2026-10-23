@@ -80,6 +80,14 @@ public class PaymentDispute : EntityBase
     public DateTime? EvidenceDueBy { get; set; }
 
     /// <summary>
+    ///     When the merchant evidence bundle was submitted to the gateway (issue #419 evidence
+    ///     submission tracking). Null while no bundle has been submitted; refreshed by every
+    ///     successful submission so the deadline reminder surface can distinguish disputes whose
+    ///     evidence already reached the gateway.
+    /// </summary>
+    public DateTime? EvidenceSubmittedAt { get; set; }
+
+    /// <summary>
     ///     Dispute (chargeback) fee charged by the gateway, in major currency units (issue #419).
     ///     Zero when the gateway reported no fee. Recorded once from the gateway webhook; later
     ///     gateway values overwrite only while the dispute is unresolved.
@@ -104,6 +112,22 @@ public class PaymentDispute : EntityBase
         }
 
         DisputeFee = fee;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Records that the evidence bundle was submitted to the gateway (issue #419 evidence
+    ///     submission tracking). Terminal disputes reject the transition: their submission state
+    ///     is frozen at resolution time.
+    /// </summary>
+    public void MarkEvidenceSubmitted(DateTime submittedAtUtc)
+    {
+        if (Status is DisputeStatus.Resolved or DisputeStatus.Won or DisputeStatus.Lost or DisputeStatus.Cancelled)
+        {
+            throw new InvalidOperationException("Evidence cannot be submitted for a resolved dispute.");
+        }
+
+        EvidenceSubmittedAt = submittedAtUtc;
         Touch();
     }
 
