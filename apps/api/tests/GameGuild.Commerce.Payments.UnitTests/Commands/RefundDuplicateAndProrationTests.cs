@@ -1,8 +1,8 @@
 using FluentAssertions;
+using GameGuild.Commerce.Payments;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Notifications;
-using GameGuild.Notifications.Services;
-using Microsoft.EntityFrameworkCore;
+using GameGuild.Notifications.Services;using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -30,6 +30,17 @@ public class RefundDuplicateAndProrationTests
     public RefundDuplicateAndProrationTests()
     {
         _gateway.SetupGet(gateway => gateway.ProviderId).Returns("stripe");
+        _revenueAudit
+            .Setup(audit => audit.RecordRevenueEventAsync(
+                It.IsAny<RevenueEventType>(),
+                It.IsAny<decimal>(),
+                It.IsAny<string>(),
+                It.IsAny<RevenueSource>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RevenueEvent());
         _actorAccessor.SetupGet(accessor => accessor.ActorContext).Returns(AuthenticatedActor());
         _revenueAudit
             .Setup(service => service.RecordRevenueEventAsync(
@@ -293,6 +304,87 @@ public class RefundDuplicateAndProrationTests
             payment.SubscriptionId!.Value,
             50m,
             It.IsAny<bool>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task WebhookCompletedPartialRefund_CreditsTheWalletWhenEnabled()
+    {
+        var ownerId = Guid.NewGuid();
+        var payment = SucceededPayment(50m, paymentMethodId: "pm_wallet_w1");
+        _paymentMethodRepository
+            .Setup(repository => repository.GetByGatewayIdAsync(payment.TenantId, "stripe", "pm_wallet_w1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentMethod(payment.TenantId, ownerId, "stripe", "pm_wallet_w1", PaymentMethodType.Card, isDefault: false));
+        await using var db = NewDatabase();
+        db.Add(payment);
+        await db.SaveChangesAsync();
+        var refund = Refund.Create(
+            payment.TenantId,
+            payment.Id,
+            20m,
+            "USD",
+            "goodwill",
+            null,
+            Guid.NewGuid(),
+            requiresApproval: false,
+            $"idem-webhook-{Guid.NewGuid():N}",
+            kind: RefundKind.Partial);
+        db.Add(refund);
+        await db.SaveChangesAsync();
+        var service = CreateService(db, workflowOptions: new RefundWorkflowOptions { CreditWalletOnPartialRefund = true });
+
+        var outcome = await service.CompleteFromGatewayAsync(refund, "re_webhook_1", "stripe");
+
+        outcome.Success.Should().BeTrue();
+        _walletService.Verify(wallet => wallet.AddFundsAsync(
+            ownerId,
+            20m,
+            It.IsAny<string>(),
+            refund.Id.ToString(),
+            "USD",
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProratedRefund_CreditsTheWalletWhenEnabled()
+    {
+        var ownerId = Guid.NewGuid();
+        var payment = SucceededPayment(100m, subscriptionId: Guid.NewGuid(), paymentMethodId: "pm_wallet_p1");
+        _paymentMethodRepository
+            .Setup(repository => repository.GetByGatewayIdAsync(payment.TenantId, "stripe", "pm_wallet_p1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentMethod(payment.TenantId, ownerId, "stripe", "pm_wallet_p1", PaymentMethodType.Card, isDefault: false));
+        await using var db = NewDatabase();
+        db.Add(payment);
+        await db.SaveChangesAsync();
+        var service = CreateService(db, workflowOptions: new RefundWorkflowOptions { CreditWalletOnPartialRefund = true });
+        SetupGatewayRefundSuccess();
+        _subscriptionSync
+            .Setup(sync => sync.GetBillingPeriodAsync(payment.Id, payment.SubscriptionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubscriptionBillingPeriodContext(
+                SystemClock.UtcNow.AddDays(-10),
+                SystemClock.UtcNow.AddDays(20),
+                OwnerUserId: ownerId));
+        _prorationCalculator
+            .Setup(calculator => calculator.CalculateProrationAsync(It.IsAny<PlanProrationInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlanProrationResult(
+                CreditForUnused: 66.67m,
+                ChargeForNew: 0m,
+                NetAdjustment: -66.67m,
+                EffectiveDate: SystemClock.UtcNow,
+                TotalDays: 30,
+                DaysRemaining: 20));
+
+        var outcome = await service.RequestRefundAsync(
+            new RefundRequestInput(payment.Id, Amount: null, Reason: "subscription_cancellation", Kind: RefundKind.Prorated),
+            CancellationToken.None);
+
+        outcome.Success.Should().BeTrue();
+        _walletService.Verify(wallet => wallet.AddFundsAsync(
+            ownerId,
+            66.67m,
+            It.IsAny<string>(),
+            outcome.Refund!.Id.ToString(),
+            "USD",
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

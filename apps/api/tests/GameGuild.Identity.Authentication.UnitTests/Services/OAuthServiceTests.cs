@@ -233,6 +233,74 @@ public class OAuthServiceTests
     }
 
     [Fact]
+    public async Task GetUserProfileAsync_WithGitHubPublicProfileEmail_IsNotVerified()
+    {
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"id\":123,\"login\":\"test-user\",\"email\":\"attacker@example.com\"}")
+            });
+
+        var profile = await _oauthService.GetUserProfileAsync("github", "access-token");
+
+        profile.Email.Should().Be("attacker@example.com");
+        profile.EmailVerified.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetUserProfileAsync_WithGitHubVerifiedPrimaryEmail_IsVerified()
+    {
+        _httpMessageHandlerMock.Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"id\":123,\"login\":\"test-user\"}")
+            })
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    "[{\"email\":\"other@example.com\",\"primary\":false,\"verified\":true,\"visibility\":\"public\"}," +
+                    "{\"email\":\"real@example.com\",\"primary\":true,\"verified\":true,\"visibility\":\"private\"}]")
+            });
+
+        var profile = await _oauthService.GetUserProfileAsync("github", "access-token");
+
+        profile.Email.Should().Be("real@example.com");
+        profile.EmailVerified.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetUserProfileAsync_WithGitHubUnverifiedPrimaryEmailOnly_IsNotVerified()
+    {
+        _httpMessageHandlerMock.Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"id\":123,\"login\":\"test-user\"}")
+            })
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    "[{\"email\":\"unverified@example.com\",\"primary\":true,\"verified\":false,\"visibility\":null}]")
+            });
+
+        var profile = await _oauthService.GetUserProfileAsync("github", "access-token");
+
+        profile.Email.Should().Be("unverified@example.com");
+        profile.EmailVerified.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task HandleCallbackAsync_WithMicrosoft_ExchangesCodeAndDoesNotAssumeEmailIsVerified()
     {
         _httpMessageHandlerMock.Protected()

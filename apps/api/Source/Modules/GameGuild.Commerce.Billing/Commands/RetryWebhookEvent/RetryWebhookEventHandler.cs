@@ -84,14 +84,22 @@ public sealed class RetryWebhookEventHandler(
             var replayHandler = replayDispatcher.Resolve(webhookEvent.Provider);
             if (replayHandler is null)
             {
+                // Terminal, non-retryable: without a replay handler the event can never be
+                // executed, so re-selecting it every poll cycle would loop forever. Dead-letter
+                // it once (mirroring the max-attempts branch) so the failure is surfaced.
                 logger.LogWarning(
-                    "Webhook event {EventId} for provider {Provider} has no replay handler",
+                    "Webhook event {EventId} for provider {Provider} has no replay handler; dead-lettering",
                     command.EventId,
                     webhookEvent.Provider);
+                await deadLetterService.DeadLetterAsync(
+                        webhookEvent,
+                        $"No replay handler registered for provider '{webhookEvent.Provider}'",
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 return new WebhookRetryResult
                 {
                     Success = false,
-                    ErrorMessage = $"No replay handler registered for provider '{webhookEvent.Provider}'",
+                    ErrorMessage = $"No replay handler registered for provider '{webhookEvent.Provider}'; event dead-lettered",
                     AttemptNumber = webhookEvent.ProcessingAttempts
                 };
             }
