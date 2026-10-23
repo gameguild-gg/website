@@ -33,7 +33,7 @@
 
 import { useCallback, useState, useRef, useContext, useEffect } from 'react';
 import { assertSafeServiceUrl } from '../../runtime/security/safe-remote-url.js';
-import { SessionContext } from './session-provider.js';
+import { AuthFlowContext, SessionContext, type PendingMfaChallenge } from './session-provider.js';
 import { MfaRequiredError } from '../../runtime/auth/errors.js';
 
 /**
@@ -48,8 +48,8 @@ export interface AuthActionOptions {
  * Return type of useAuth
  */
 export interface UseAuthReturn {
-  /** Expiring first-factor challenge held only in this mounted hook. */
-  mfaChallenge: { mfaToken: string; availableMethods: string[] } | null;
+  /** Expiring first-factor challenge held only in the mounted provider tree. */
+  mfaChallenge: PendingMfaChallenge | null;
   clearMfa: () => void;
   /** Sign in with a provider */
   signIn: (
@@ -93,7 +93,7 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [mfaChallenge, setMfaChallenge] = useState<UseAuthReturn['mfaChallenge']>(null);
+  const [localMfaChallenge, setLocalMfaChallenge] = useState<PendingMfaChallenge | null>(null);
   const csrfTokenRef = useRef<string | null>(null);
   const basePathRef = useRef(basePath);
 
@@ -103,6 +103,9 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
 
   // Access session context for updating state after auth actions
   const sessionContext = useContext(SessionContext);
+  const authFlowContext = useContext(AuthFlowContext);
+  const mfaChallenge = authFlowContext ? authFlowContext.mfaChallenge : localMfaChallenge;
+  const setMfaChallenge = authFlowContext?.setMfaChallenge ?? setLocalMfaChallenge;
 
   /**
    * Fetch a CSRF token
@@ -200,7 +203,7 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
         setIsLoading(false);
       }
     },
-    [getCSRFToken, sessionContext],
+    [getCSRFToken, sessionContext, setMfaChallenge],
   );
 
   /**
@@ -285,6 +288,8 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
           throw new Error('Sign-out failed');
         }
 
+        setMfaChallenge(null);
+
         // Broadcast sign-out to other tabs
         // (SessionProvider will handle this via the BroadcastChannel)
 
@@ -304,7 +309,7 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
         setIsLoading(false);
       }
     },
-    [getCSRFToken, sessionContext],
+    [getCSRFToken, sessionContext, setMfaChallenge],
   );
 
   const clearError = useCallback(() => setError(null), []);
@@ -312,7 +317,7 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
   const clearMfa = useCallback(() => {
     setMfaChallenge(null);
     setError(null);
-  }, []);
+  }, [setMfaChallenge]);
 
   return {
     mfaChallenge,

@@ -36,6 +36,38 @@ Use `pnpm run dev:fast` for regular frontend work and functional testing across
 the application. Use `pnpm run dev` when validating Webpack-specific behavior,
 or continuous OpenAPI regeneration and SDK rebuilding.
 
+## Local Administrator Authentication
+
+The seeded local administrator uses:
+
+```text
+Email: admin@game-guild.com
+Password: Admin123!
+```
+
+Administrator roles require MFA in development just as they do in other
+environments. Add this development-only account to an RFC 6238 compatible
+authenticator (for example, Google Authenticator, Authy, or 1Password):
+
+```text
+Issuer: GameGuild
+Account: admin@game-guild.com
+Setup key: G2ZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ
+Algorithm: SHA-1
+Digits: 6
+Period: 30 seconds
+```
+
+After submitting the email and password, enter the current six-digit code from
+the authenticator on `/sign-in/2fa`. Both development orchestrators seed this
+same public test factor through `appsettings.Development.json`; the grading and
+browser validation suites use it as well. Restart the API after pulling a
+configuration change so an existing local database is reconciled.
+
+This key is intentionally restricted to local development. Deployed
+environments must provide their own administrator credentials and MFA
+provisioning through secret-managed configuration.
+
 When an API contract changes during a fast-mode session, regenerate the client
 and its runtime bundle explicitly:
 

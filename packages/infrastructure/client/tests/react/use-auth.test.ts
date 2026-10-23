@@ -21,6 +21,7 @@ vi.mock('react', () => ({
 
 // Mock session-provider to avoid circular deps
 vi.mock('../../src/integrations/react/session-provider.js', () => ({
+  AuthFlowContext: {},
   SessionContext: {},
 }));
 

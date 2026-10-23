@@ -79,7 +79,7 @@ export function SignInForm({
       });
     } catch (err) {
       // The MFA challenge lives on the dedicated /sign-in/2fa route; the
-      // app-wide useAuth state (mfaChallenge) survives the navigation.
+      // SessionProvider keeps it in memory across this client navigation.
       // redirectTo rides along so the challenge returns to the caller's
       // original target (issue #864 callbackUrl flow).
       if (

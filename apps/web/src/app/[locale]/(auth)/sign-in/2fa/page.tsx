@@ -4,7 +4,7 @@ import { resolveAllowedAuthRedirect } from '@/lib/auth/cross-domain-auth';
 
 /**
  * Dedicated MFA challenge route. The pending challenge (mfaToken,
- * availableMethods) lives in the app-wide AuthProvider client context, so
+ * availableMethods) lives in the app-wide SessionProvider client context, so
  * the form itself decides between the challenge and a no-challenge notice;
  * the (auth) layout bounces authenticated users away.
  */
