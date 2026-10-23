@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using GameGuild.API.Core.Security;
+using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
@@ -113,6 +114,19 @@ public sealed class PolicyAuthenticationHttpTests
     }
 
     [Fact]
+    public async Task UnknownPolicyNameFailsLoudlyInsteadOfDegradingToAuthenticatedUser()
+    {
+        await using var app = await CreateApp("unknown-policy");
+        using var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Test-Bearer", "owner-a");
+        // The test server rethrows the unhandled middleware exception; in production this
+        // surfaces as a 500 instead of silently authorizing any authenticated user.
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => client.GetAsync("/protected"));
+        Assert.Contains("NoSuchPolicy", error.Message);
+    }
+
+    [Fact]
     public async Task AnonymousRecoveryRetainsNoActorAfterOptionalCredentialIsRejected()
     {
         await using var app = await CreateApp("public");
@@ -175,8 +189,10 @@ public sealed class PolicyAuthenticationHttpTests
             case "explicit": endpoint.RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = "ApiKey" }); break;
             case "cookie": endpoint.RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = "Cookies" }); break;
             case "embedded": endpoint.RequireAuthorization(BuildPolicy(["ApiKey"])); break;
-            case "database": endpoint.RequireAuthorization("DatabaseApiKey"); break;
-            case "database-bearer": endpoint.RequireAuthorization("DatabaseBearer"); break;
+            case "database": endpoint.RequireAuthorization(Policies.UsersAdmin); break;
+            case "database-bearer": endpoint.RequireAuthorization(Policies.UsersReadSelf); break;
+            case "unknown-policy": endpoint.RequireAuthorization("NoSuchPolicy"); break;
+
             case "public": endpoint.AllowAnonymous(); break;
             case "fallback": break;
             default: endpoint.RequireAuthorization(); break;
@@ -194,7 +210,7 @@ public sealed class PolicyAuthenticationHttpTests
         public int ResolvedAfterContext { get; private set; }
         public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
         {
-            if (policyName is not ("DatabaseApiKey" or "DatabaseBearer"))
+            if (policyName is not (Policies.UsersAdmin or Policies.UsersReadSelf))
             {
                 return base.GetPolicyAsync(policyName);
             }
@@ -203,7 +219,7 @@ public sealed class PolicyAuthenticationHttpTests
                 throw new InvalidOperationException("Tenant-dependent policy resolved before context.");
             }
             ResolvedAfterContext++;
-            return Task.FromResult<AuthorizationPolicy?>(BuildPolicy([policyName == "DatabaseApiKey" ? "ApiKey" : "Bearer"]));
+            return Task.FromResult<AuthorizationPolicy?>(BuildPolicy([policyName == Policies.UsersAdmin ? "ApiKey" : "Bearer"]));
         }
     }
 

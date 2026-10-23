@@ -24,9 +24,9 @@ const subscribeToHydration = () => () => undefined;
 
 /**
  * MFA challenge form for the dedicated /sign-in/2fa route. The challenge
- * (mfaToken, availableMethods) lives in the app-wide AuthProvider context
- * (useAuth) and survives the in-app navigation from /sign-in; without one
- * (direct visit or post-expiry refresh) a back-to-sign-in notice renders.
+ * (mfaToken, availableMethods) is persisted by useAuth in sessionStorage so
+ * it survives the navigation from /sign-in; without one (direct visit or
+ * post-expiry refresh) a back-to-sign-in notice renders.
  */
 export function MfaChallengeForm({
   className,
