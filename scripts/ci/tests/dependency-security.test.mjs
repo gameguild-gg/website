@@ -29,6 +29,77 @@ function installedConsumers(name) {
   return roots;
 }
 
+const nextRoots = new Set(installedConsumers("next"));
+for (const workspace of ["apps/web", "demos/emception-ide-next"]) {
+  const consumerRequire = createRequire(join(repositoryRoot, workspace, "package.json"));
+  nextRoots.add(dirname(realpathSync(consumerRequire.resolve("next/package.json"))));
+}
+for (const packageRoot of nextRoots) {
+  test(`${packageRoot}: Next and its resolved image dependency use the reviewed security releases`, () => {
+    const nextRequire = createRequire(join(packageRoot, "package.json"));
+    assert.equal(nextRequire("./package.json").version, "16.4.1");
+    assert.equal(nextRequire("@next/env/package.json").version, "16.4.1");
+    assert.equal(nextRequire("sharp").versions.sharp, "0.35.5");
+  });
+}
+
+for (const packageRoot of installedConsumers("toml")) {
+  const toml = require(packageRoot);
+  test(`${packageRoot}: reviewed TOML release preserves ordinary connection profiles and tables`, () => {
+    assert.equal(require(join(packageRoot, "package.json")).version, "5.0.1");
+    const profile = toml.parse('[connections.fixture]\naccount = "fixture"\nport = 443\nkeep_alive = true\n');
+    assert.equal(profile.connections.fixture.account, "fixture");
+    assert.equal(profile.connections.fixture.port, 443);
+    assert.equal(profile.connections.fixture.keep_alive, true);
+    const tables = toml.parse(Array.from({ length: 250 }, (_, index) => `[[rows]]\nindex = ${index}\n`).join(""));
+    assert.equal(tables.rows.length, 250);
+    assert.equal(tables.rows[249].index, 249);
+    const keys = Array.from({ length: 64 }, (_, index) => `key${index}`);
+    const nested = toml.parse(`${keys.join(".")} = 42\n`);
+    assert.equal(keys.reduce((value, key) => value[key], nested), 42);
+  });
+  test(`${packageRoot}: TOML rejects lossy or out-of-range integers`, () => {
+    assert.throws(() => toml.parse("value = 9007199254740992"), /losslessly/);
+    assert.equal(toml.parse("value = 9007199254740992", { bigint: true }).value, 9007199254740992n);
+    assert.throws(() => toml.parse("value = 9223372036854775808", { bigint: true }), /64-bit/);
+    assert.throws(() => toml.parse(`value = ${"9".repeat(4096)}`));
+  });
+}
+
+const webRequire = createRequire(join(repositoryRoot, "apps/web/package.json"));
+const { JSDOM } = webRequire("jsdom");
+for (const packageRoot of installedConsumers("dompurify")) {
+  test(`${packageRoot}: reviewed sanitizer retains ordinary content and removes executable attributes`, context => {
+    assert.equal(require(join(packageRoot, "package.json")).version, "3.4.17");
+    // Default jsdom settings do not execute scripts or load external resources.
+    const dom = new JSDOM("");
+    context.after(() => dom.window.close());
+    const purify = require(packageRoot)(dom.window);
+    const fragment = purify.sanitize('<p><strong>Retained</strong><img src="fixture.png" onerror="alert(1)"></p>', {
+      RETURN_DOM_FRAGMENT: true,
+    });
+    assert.equal(fragment.querySelector("strong").textContent, "Retained");
+    assert.equal(fragment.querySelector("img").getAttribute("src"), "fixture.png");
+    assert.equal(fragment.querySelector("img").hasAttribute("onerror"), false);
+    const template = purify.sanitize("<p>{{ fixture }}</p>", { SAFE_FOR_TEMPLATES: true, RETURN_DOM_FRAGMENT: true });
+    assert.equal(template.textContent.includes("{{"), false);
+  });
+}
+
+for (const packageRoot of installedConsumers("ip-address")) {
+  test(`${packageRoot}: reviewed address parser preserves IPv4, IPv6 and zones and rejects malformed long inputs`, () => {
+    assert.equal(require(join(packageRoot, "package.json")).version, "10.7.4");
+    const { Address4, Address6 } = require(packageRoot);
+    assert.equal(new Address4("192.0.2.1").correctForm(), "192.0.2.1");
+    assert.equal(new Address6("2001:db8::1").correctForm(), "2001:db8::1");
+    const zoned = new Address6("fe80::1%eth0");
+    assert.equal(zoned.correctForm(), "fe80::1");
+    assert.equal(zoned.zone, "%eth0");
+    assert.equal(Address6.isValid(`${"%".repeat(4096)}\n`), false);
+    assert.equal(Address6.isValid("f".repeat(4096)), false);
+  });
+}
+
 test("local and CI package managers use the reviewed pnpm security release", () => {
   const manifest = JSON.parse(readFileSync(join(repositoryRoot, "package.json"), "utf8"));
   assert.equal(manifest.packageManager, "pnpm@10.34.6");
