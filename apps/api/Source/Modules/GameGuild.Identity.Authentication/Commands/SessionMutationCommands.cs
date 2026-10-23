@@ -8,7 +8,7 @@ public sealed record TerminateUserSessionsCommand(
     SessionTerminationReason Reason,
     Guid? ExceptSessionId = null) : ICommand<int>;
 public sealed record RefreshUserSessionCommand(Guid SessionId) : ICommand<bool>;
-public sealed record TrustDeviceCommand(Guid UserId, string DeviceFingerprint, string DeviceName) : ICommand<bool>;
+public sealed record TrustDeviceCommand(Guid UserId, Guid SessionId, string DeviceName) : ICommand<bool>;
 public sealed record RevokeTrustedDeviceCommand(Guid UserId, Guid DeviceId) : ICommand<bool>;
 /// <summary>
 ///     Names or renames one of the acting user's own active sessions. The acting user is bound
@@ -37,12 +37,28 @@ public sealed class SessionMutationCommandHandler(ISessionManagementService sess
     public Task<bool> Handle(RefreshUserSessionCommand command, CancellationToken cancellationToken) =>
         sessionService.RefreshSessionAsync(command.SessionId, cancellationToken);
 
-    public Task<bool> Handle(TrustDeviceCommand command, CancellationToken cancellationToken) =>
-        sessionService.TrustDeviceAsync(
+    public async Task<bool> Handle(TrustDeviceCommand command, CancellationToken cancellationToken)
+    {
+        if (command.UserId == Guid.Empty || command.SessionId == Guid.Empty)
+        {
+            return false;
+        }
+
+        // Resolve the signed session inside the command transaction. Transport metadata
+        // and client-selected fingerprints cannot identify the device being trusted.
+        var session = await sessionService.GetSessionAsync(command.SessionId, cancellationToken).ConfigureAwait(false);
+        if (session is null || session.Id != command.SessionId || session.UserId != command.UserId ||
+            !session.IsValid || session.TerminatedAt.HasValue || string.IsNullOrWhiteSpace(session.DeviceFingerprint))
+        {
+            return false;
+        }
+
+        return await sessionService.TrustDeviceAsync(
             command.UserId,
-            command.DeviceFingerprint,
-            command.DeviceName,
-            cancellationToken);
+            session.DeviceFingerprint,
+            command.DeviceName ?? string.Empty,
+            cancellationToken).ConfigureAwait(false);
+    }
 
     public Task<bool> Handle(RevokeTrustedDeviceCommand command, CancellationToken cancellationToken) =>
         sessionService.RevokeTrustedDeviceAsync(command.UserId, command.DeviceId, cancellationToken);

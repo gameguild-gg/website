@@ -58,6 +58,9 @@ public class AuthService(
     public Task<SignInResponse> OidcSignInAsync(OidcSignInRequest request, CancellationToken cancellationToken = default) =>
         oauthAuthService.OidcSignInAsync(request, cancellationToken);
 
+    public Task<SignInResponse> SamlSignInAsync(SamlSignInRequest request, CancellationToken cancellationToken = default) =>
+        oauthAuthService.SamlSignInAsync(request, cancellationToken);
+
     public Task<string> GetGitHubAuthUrlAsync(string redirectUri) =>
         oauthAuthService.GetGitHubAuthUrlAsync(redirectUri);
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Executed only by the hosted .NET harness with a migrated, disposable database.
 import assert from 'node:assert/strict';
+import { verifyMetadataRoutes } from './metadata-route-http-acceptance.mjs';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -67,6 +68,8 @@ for (const stream of [next.stdout, next.stderr])
   stream.on('data', chunk => { serverLog = (serverLog + chunk.toString()).slice(-2_000_000); });
 let browser;
 const cases = [];
+const trustCases = [];
+const trustPassed = name => { trustCases.push({ name, outcome: 'Passed' }); console.log('PASS: ' + name); };
 const passed = name => { cases.push({ name, outcome: 'Passed' }); console.log('PASS: ' + name); };
 const timeout = 120_000;
 const utc = value => new Date(value).toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
@@ -150,6 +153,7 @@ try {
   }
   await card.screenshot({ path: path.join(evidence, 'session-state-valid.png') });
   passed('Real account page renders the persisted owner session through Next BFF and API');
+  await verifyMetadataRoutes({ webUrl, page, evidence });
 
   const refresh = page.waitForResponse(isState, { timeout });
   await card.getByRole('button', { name: 'Refresh', exact: true }).click();
@@ -164,6 +168,83 @@ try {
   assert.equal(foreign.status(), 200);
   assertState(await foreign.json());
   passed('Foreign identity parameters cannot change the authenticated projection');
+
+  // Exercise the existing page and real server actions before the session-state
+  // scenarios revoke the token. The owner has expired trust; another owner has
+  // active trust for exactly the same fingerprint.
+  await page.goto(webUrl + '/workspace/settings/security', { waitUntil: 'domcontentloaded', timeout });
+  const currentRow = page.getByTestId('session-row-' + account.sessionId);
+  const otherRow = page.getByTestId('session-row-' + account.otherSessionId);
+  const trustButton = page.getByRole('button', { name: 'Trust', exact: true });
+  const trustedRow = page.getByTestId('trusted-device-row-' + account.trustedDeviceId);
+  const trustedBadge = currentRow.getByText('Trusted', { exact: true });
+  await currentRow.waitFor({ state: 'visible', timeout });
+  await otherRow.waitFor({ state: 'visible', timeout });
+  await trustButton.waitFor({ state: 'visible', timeout });
+  assert.equal(await page.locator('[data-testid^="session-row-"]').count(), 2);
+  assert.equal(await page.getByTestId('session-row-' + account.foreignSessionId).count(), 0);
+  assert.equal(await page.getByTestId('trusted-device-row-' + account.foreignTrustedDeviceId).count(), 0);
+  assert.equal(await trustedRow.count(), 0);
+  assert.equal(await trustedBadge.count(), 0);
+  assert.equal(await otherRow.getByText('Trusted', { exact: true }).count(), 0);
+  trustPassed('Expired own trust and active foreign trust do not mark the current session trusted');
+
+  const isSecurityAction = response => response.request().method() === 'POST' &&
+    new URL(response.url()).pathname.endsWith('/workspace/settings/security') &&
+    Boolean(response.request().headers()['next-action']);
+  const trustAction = page.waitForResponse(isSecurityAction, { timeout });
+  await trustButton.click();
+  assert.equal((await trustAction).status(), 200);
+  await trustedBadge.waitFor({ state: 'visible', timeout });
+  await trustedRow.waitFor({ state: 'visible', timeout });
+  await trustButton.waitFor({ state: 'hidden', timeout });
+  assert.equal(await page.locator('[data-testid^="trusted-device-row-"]').count(), 1);
+  assert.equal(await otherRow.getByText('Trusted', { exact: true }).count(), 0);
+  const trustedResponse = await fetch(apiUrl + '/v1/auth/trusted-devices', {
+    headers: { authorization: 'Bearer ' + accessToken, 'X-Tenant-Id': account.tenantId },
+    redirect: 'error', signal: AbortSignal.timeout(30000),
+  });
+  assert.equal(trustedResponse.status, 200);
+  const trustedDevices = await trustedResponse.json();
+  assert.equal(trustedDevices.length, 1);
+  assert.equal(trustedDevices[0].id, account.trustedDeviceId);
+  assert.equal(trustedDevices[0].deviceName, '');
+  assert.ok(new Date(trustedDevices[0].expiresAt).getTime() > Date.now());
+  await currentRow.screenshot({ path: path.join(evidence, 'session-trust-active.png') });
+  trustPassed('The real Trust server action renews the same device and updates the current session badge');
+
+  const revokeAction = page.waitForResponse(isSecurityAction, { timeout });
+  await trustedRow.getByRole('button', { name: 'Revoke', exact: true }).click();
+  assert.equal((await revokeAction).status(), 200);
+  await trustedRow.waitFor({ state: 'hidden', timeout });
+  await trustedBadge.waitFor({ state: 'hidden', timeout });
+  await trustButton.waitFor({ state: 'visible', timeout });
+  const stillValid = await authenticated.request.get(webUrl + '/api/auth/session-state');
+  assert.equal(stillValid.status(), 200);
+  assertState(await stillValid.json());
+  await currentRow.screenshot({ path: path.join(evidence, 'session-trust-revoked.png') });
+  trustPassed('The real Revoke action removes trust without terminating or changing the current session');
+
+  await page.reload({ waitUntil: 'domcontentloaded', timeout });
+  await currentRow.waitFor({ state: 'visible', timeout });
+  await trustButton.waitFor({ state: 'visible', timeout });
+  assert.equal(await trustedBadge.count(), 0);
+  assert.equal(await page.locator('[data-testid^="trusted-device-row-"]').count(), 0);
+  assert.equal(await page.locator('[data-testid^="session-row-"]').count(), 2);
+  trustPassed('A fresh security page preserves revoked trust and owner isolation');
+  assert.equal(trustCases.length, 4);
+  await writeFile(path.join(evidence, 'trust-browser.json'), JSON.stringify({
+    passed: true, userId: account.userId, sessionId: account.sessionId,
+    trustedDeviceId: account.trustedDeviceId, foreignTrustedDeviceId: account.foreignTrustedDeviceId,
+    cases: trustCases, mockedAuthenticationOrTransport: false,
+    mode: 'Actual Next development server actions, encrypted cookie, Chromium, Kestrel and PostgreSQL',
+    productionBuildAcceptance: false,
+  }, null, 2));
+  // Resume the original seven session-state scenarios on their actual account page.
+  const returned = page.waitForResponse(isState, { timeout });
+  await page.goto(webUrl + '/workspace/settings/account', { waitUntil: 'domcontentloaded', timeout });
+  assert.equal((await returned).status(), 200);
+  await fields.waitFor({ state: 'visible', timeout });
 
   const revoke = await fetch(apiUrl + '/v1/auth/sessions/' + account.sessionId, {
     method: 'DELETE',
@@ -190,6 +271,9 @@ try {
     mockedAuthenticationOrTransport: false,
   }, null, 2));
 } catch (error) {
+  await writeFile(path.join(evidence, 'trust-browser.json'), JSON.stringify({
+    passed: false, sessionId: account.sessionId, cases: trustCases, failure: redact(error.stack ?? error),
+  }, null, 2));
   await writeFile(path.join(evidence, 'browser.json'), JSON.stringify({
     passed: false, sessionId: account.sessionId, cases, failure: redact(error.stack ?? error),
   }, null, 2));

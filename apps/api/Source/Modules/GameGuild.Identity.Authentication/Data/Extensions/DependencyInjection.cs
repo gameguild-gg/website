@@ -169,6 +169,12 @@ public static class DataDependencyInjection
         // validation, config-gated per Authentication:ExternalProviders:Oidc:<slug> (fail closed).
         services.AddHttpClient(OidcFederationService.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(10));
         services.AddScoped<IOidcFederationService, OidcFederationService>();
+        // SAML 2.0 federation (enterprise IdPs, issue #268) — config-supplied IdP certificates,
+        // SP metadata + Assertion Consumer Service validation with single-use InResponseTo
+        // correlation and assertion-ID replay protection in IDistributedCache; config-gated per
+        // Authentication:ExternalProviders:Saml:<slug> (fail closed).
+        services.AddScoped<ISamlProtocolStateStore, DistributedCacheSamlProtocolStateStore>();
+        services.AddScoped<ISamlFederationService, SamlFederationService>();
         services.AddScoped<IWeb3Service, Web3Service>();
         services.AddScoped<IServiceAccountService, ServiceAccountService>();
 
