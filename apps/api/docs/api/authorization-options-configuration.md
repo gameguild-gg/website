@@ -80,9 +80,49 @@ Enterprise identity providers federate through the config-gated generic OIDC sur
 - MFA policy is enforced fail-closed: when the platform requires MFA for the resolved user, the provider must attest it (`amr` containing `mfa`), otherwise sign-in is refused. The attested `amr`/`acr` values are surfaced on the sign-in response for the step-up/conditional-policy surface.
 - Logout forwarding: `GET /v1/auth/oidc/{slug}:end-session-url` returns the provider's `end_session_endpoint` (with `post_logout_redirect_uri`) when the discovery document advertises one; local refresh-token revocation is unchanged.
 
-## SAML 2.0 — explicitly deferred
+## Federated enterprise SSO (SAML 2.0)
 
-SAML 2.0 federation is intentionally not implemented. A safe default does not exist yet because it requires a product decision on the .NET SAML library (Sustainsys.Saml2 vs ITfoxtec.Identity.Saml2 — differing posture on metadata refresh, EncryptedAssertion key handling, and logout bindings) and on tenant-held X.509 certificate lifecycle (rotation, revocation lists). Enterprise IdPs that support OIDC can be connected today through the generic OIDC federation above. Reopen with the library and certificate-handling decisions to implement the SAML profile. (Trigger note: PR Verify synchronize events for this PR head were dropped by the platform on 2026-10-10; this comment is unchanged in substance.)
+Enterprise identity providers that only speak SAML 2.0 federate through the config-gated service-provider surface under `Authentication:ExternalProviders:Saml:<slug>`. Every provider defaults to disabled and fails closed (unknown or disabled slugs are refused; misconfigured entries are rejected at host startup). The identity provider is described statically by configuration — no IdP metadata is fetched over the network, so the trust base is exactly what the deployment supplies:
+
+```json
+{
+  "Authentication": {
+    "ExternalProviders": {
+      "Saml": {
+        "corp-idp": {
+          "Enabled": true,
+          "DisplayName": "Corp SSO",
+          "SpEntityId": "https://gameguild.example.com/auth/saml",
+          "AssertionConsumerServiceUrl": "https://gameguild.example.com/auth/saml/corp-idp/callback",
+          "IdpEntityId": "https://sts.corp.example.com",
+          "IdpSigningCertificates": ["<base64 DER certificate>"],
+          "IdpSignInServiceUrl": "https://sts.corp.example.com/sso/redirect",
+          "IdpSingleLogoutServiceUrl": "https://sts.corp.example.com/slo/redirect",
+          "NameIdFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+          "ClaimMapping": { "email": "email", "name": "displayName" },
+          "TrustIdpEmailVerification": false,
+          "MfaAuthnContextClassRefs": ["urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken"],
+          "AllowedClockSkewSeconds": 90,
+          "AllowIdpInitiated": false,
+          "EmailDomains": ["corp.example.com"],
+          "TenantIds": ["00000000-0000-0000-0000-000000000001"]
+        }
+      }
+    }
+  }
+}
+```
+
+- `IdpSigningCertificates` is a list of Base64 DER certificates (more than one supports rotation overlap). Every response must be signed (at the assertion or response level, XML-DSig) and verify against at least one currently-valid configured certificate; expired-only or unknown certificates are rejected. Unsigned responses are always refused. Encrypted assertions are rejected with an explicit error (not supported).
+- Response validation fails closed on every Web SSO obligation: issuer must equal `IdpEntityId`, `Destination` must be present and equal `AssertionConsumerServiceUrl`, exactly one assertion per response (signature-wrapping posture), audience restriction must contain `SpEntityId`, `NotOnOrAfter` is required and clock-skew-bounded (`AllowedClockSkewSeconds`, default 90, max 600), the bearer subject confirmation's `Recipient`/`NotOnOrAfter` are enforced, and assertion IDs are single-use (IDistributedCache-backed replay protection) for as long as the assertion could be valid.
+- Correlation: `POST /v1/auth/saml/{slug}:sign-in-authorize` issues an AuthnRequest whose ID is stored server-side (10-minute window); a posted response must carry a matching, unconsumed `InResponseTo`. Responses without `InResponseTo` (IdP-initiated SSO) are refused unless the provider is explicitly configured with `AllowIdpInitiated: true`.
+- `ClaimMapping` maps the logical claims `email` and `name` onto the provider's attribute names (the subject is always the assertion `NameID`). `TrustIdpEmailVerification` (default false) decides whether the provider's email assertion counts as verified for the auto-link policy — by default SAML emails are unverified, so an account is never linked by address alone (provider-key linking and JIT creation still work), keyed `saml-<slug>`.
+- MFA policy is enforced fail-closed: when the platform requires MFA for the resolved user, the assertion's `AuthnContextClassRef` must be one of the provider's configured `MfaAuthnContextClassRefs` (defaults: the standard smartcard and one-time-password context classes), otherwise sign-in is refused. The resolved class ref and the provider MFA verdict are surfaced on the sign-in response.
+- Tenant isolation: a non-empty `TenantIds` allowlist binds the provider — both a requested tenant and the session's resolved tenant must be inside it, or sign-in is refused.
+- `EmailDomains` (optional) restricts sign-in to the listed domains and joins domain-to-provider discovery: `GET /v1/auth/oidc:discover-provider` lists SAML providers alongside OIDC ones, each entry carrying the `protocol` it serves (`oidc` or `saml`) so the login page can route to `/v1/auth/saml/{slug}:sign-in-authorize`.
+- Endpoints: `GET /v1/auth/saml/{slug}:metadata` (SP metadata XML for IdP registration), `POST /v1/auth/saml/{slug}:sign-in-authorize`, `POST /v1/auth/saml/{slug}:assertion-consumer` (the API side of the ACS: the web app forwards the posted Base64 `SAMLResponse` and `RelayState`).
+- Logout: `GET /v1/auth/saml/{slug}:logout-url` returns the provider's single-logout redirect (an unsigned `LogoutRequest` via the redirect binding, with the post-logout return carried as `RelayState`) when `IdpSingleLogoutServiceUrl` is configured; null keeps logout local. Local refresh-token/session revocation always stays with the existing logout endpoints. Limitations by design: the `LogoutRequest` is unsigned (IdPs requiring signed SLO will reject it, and logout then stays local), and IdP-initiated single logout (a `LogoutRequest` inbound to this service) is not implemented.
+- Scope note: this surface implements the SP-initiated Web SSO profile (redirect binding out, POST binding in) as a minimal audited in-repo subset on the in-box `System.Security.Cryptography.Xml` verifier — no new package dependency. Assertion-consumed authorization statements are not decision inputs (see `apps/api/Source/Modules/GameGuild.Identity.Authorization/Abstractions/ExternalAuthorizationOptions.cs`); roles continue to come from tenant memberships.
 
 ## Migration
 

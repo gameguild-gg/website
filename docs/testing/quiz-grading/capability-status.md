@@ -100,3 +100,27 @@ browser case has not yet been promoted by a successful recorded execution.
    official grading adapter today.
 5. `HOTSPOT` browser validation remains outside this program until quiz/assets
    provide an official resolvable fixture.
+
+## Revival note (2026-10-22)
+
+The validation program originally proposed in PR #902 (closed 2026-10-21 as
+stale against the develop merge waves) re-landed on `develop` through the
+`feature/grading` integration and is byte-identical to that branch tip except
+for newer develop-side baselines (dependency bumps, secret-scanner-safe test
+fixture password, fill-blank `case` block scoping, and the expanded
+`pr-verify.yml` grading-contract step). The review findings from #902:
+
+- Resolved on develop by the web-interface restructure: the partial-run false
+  `pass` (per-case `automationCompleted` derivation in
+  `report.server.mjs`), cross-cutting check filtering (unscoped checks are
+  retained), review-key leakage through `questionTypes` selection (now throws),
+  and the browser-context leak in `createScenarioPersona` (try/close/rethrow).
+- Hardened by the revival branch: fill-blank browser drivers now address each
+  blank through stable per-blank `data-testid` locators instead of
+  positional/global locators, and the released-result assertion uses the
+  `learner-assessment-result-*` testid instead of an `xpath=ancestor::article`
+  walk.
+- Dispositions: legacy `"word|index"` word-bank values stay unnormalized on
+  read while grading is pre-release (per review advisory); `prepare` still
+  rewrites the candidate report for its run, but partial automations are now
+  reported honestly as `partial` with an explicit reason.

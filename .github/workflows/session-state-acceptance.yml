@@ -84,6 +84,12 @@ jobs:
           node --max-old-space-size=128 --input-type=module - <<'NODE'
           import { readFileSync } from 'node:fs';
           import assert from 'node:assert/strict';
+          const metadata = JSON.parse(readFileSync('artifacts/session-state/metadata-routes.json', 'utf8'));
+          assert.equal(metadata.passed, true);
+          assert.equal(metadata.mockedTransport, false);
+          assert.equal(metadata.cases.length, 4);
+          assert.equal(new Set(metadata.cases.map(test => test.name)).size, 4);
+          assert.ok(metadata.cases.every(test => test.outcome === 'Passed'));
           const browser = JSON.parse(readFileSync('artifacts/session-state/browser.json', 'utf8'));
           const persistence = JSON.parse(readFileSync('artifacts/session-state/persistence.json', 'utf8'));
           assert.equal(browser.passed, true);
