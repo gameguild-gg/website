@@ -20,6 +20,7 @@ public class PromoCodeUsageRecorder(IPromoCodeRepository promoCodeRepository)
         string? idempotencyKey,
         Guid? orderId = null,
         Guid? orderLineItemId = null,
+        Guid? subscriptionId = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(promoCode);
@@ -72,6 +73,7 @@ public class PromoCodeUsageRecorder(IPromoCodeRepository promoCodeRepository)
                 Currency = string.IsNullOrWhiteSpace(currency) ? "USD" : currency.ToUpperInvariant(),
                 OrderId = orderId,
                 OrderLineItemId = orderLineItemId,
+                SubscriptionId = subscriptionId,
                 IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey.Trim()
             };
 

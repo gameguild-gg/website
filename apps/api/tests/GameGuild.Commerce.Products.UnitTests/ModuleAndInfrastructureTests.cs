@@ -211,7 +211,10 @@ public class ModuleAndInfrastructureTests
     [Fact]
     public void ValidatePromoCodeCommandHandler_Ctor()
     {
-        var h = new ValidatePromoCodeCommandHandler(Mock.Of<IPricingEngineService>());
+        var h = new ValidatePromoCodeCommandHandler(
+            Mock.Of<IPricingEngineService>(),
+            Mock.Of<IPromoCodeRepository>(),
+            NullLogger<ValidatePromoCodeCommandHandler>.Instance);
         h.Should().NotBeNull();
     }
 

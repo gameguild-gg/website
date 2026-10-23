@@ -77,7 +77,10 @@ public sealed class BillingSubscriptionsController(ISender sender, IActorContext
                 body.Amount,
                 body.FulfilledOrderId,
                 body.StartDate,
-                body.TrialDays),
+                body.TrialDays,
+                body.PromoCodes,
+                body.PromoCodeIdempotencyKey,
+                body.ProductId),
             ct).ConfigureAwait(false);
 
         return CreatedAtAction(nameof(GetBillingSubscriptionById), new { subscriptionId = id }, new { id });
@@ -139,7 +142,10 @@ public sealed class BillingSubscriptionsController(ISender sender, IActorContext
         decimal Amount,
         Guid? FulfilledOrderId = null,
         DateTime? StartDate = null,
-        int? TrialDays = null);
+        int? TrialDays = null,
+        IReadOnlyList<string>? PromoCodes = null,
+        string? PromoCodeIdempotencyKey = null,
+        Guid? ProductId = null);
 
     public sealed record CancelBillingSubscriptionRequest(CancellationReason Reason, string? Note = null, DateTime? EffectiveDate = null);
 }

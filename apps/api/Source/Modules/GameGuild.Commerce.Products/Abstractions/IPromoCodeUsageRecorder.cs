@@ -34,6 +34,7 @@ public interface IPromoCodeUsageRecorder
     /// <param name="idempotencyKey">Caller-supplied replay-protection key</param>
     /// <param name="orderId">Optional order linkage</param>
     /// <param name="orderLineItemId">Optional order line item linkage</param>
+    /// <param name="subscriptionId">Optional subscription linkage (issue #418)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Recording status plus the persisted (or replayed) usage row when available</returns>
     Task<(PromoUsageRecordingStatus Status, PromoCodeUse? Usage)> RecordAsync(
@@ -44,5 +45,6 @@ public interface IPromoCodeUsageRecorder
         string? idempotencyKey,
         Guid? orderId = null,
         Guid? orderLineItemId = null,
+        Guid? subscriptionId = null,
         CancellationToken cancellationToken = default);
 }

@@ -27,6 +27,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="ApplyToRenewal">Whether the discount also applies to renewals</param>
 /// <param name="CampaignId">Campaign identifier for tracking (null = none)</param>
 /// <param name="ProductId">Specific product ID (null = all products)</param>
+/// <param name="PlanId">Specific subscription plan ID (null = not plan-scoped; issue #418)</param>
 /// <param name="CreatedBy">User ID of the creator</param>
 [RequiresQuota(ResourceUsageType.PromoCodes, 1, Source = "CreatePromoCode")]
 public sealed record CreatePromoCodeCommand(
@@ -51,5 +52,6 @@ public sealed record CreatePromoCodeCommand(
     int StackingPriority = 0,
     string? CampaignId = null,
     Guid? ProductId = null,
-    Guid? CreatedBy = null
+    Guid? CreatedBy = null,
+    Guid? PlanId = null
 ) : ICommand<PromoCodeDto>;

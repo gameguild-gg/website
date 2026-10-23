@@ -261,6 +261,32 @@ public class Invoice : EntityBase
     }
 
     /// <summary>
+    ///     Applies a promo discount that was already netted out of the paid amount
+    ///     (issue #418 invoice application). The constructor received the post-discount
+    ///     charge, so the gross subtotal is reconstructed by adding the discount back;
+    ///     the total due stays exactly the confirmed paid amount.
+    ///     Only allowed while invoice is in Draft status.
+    /// </summary>
+    public void ApplyPromoDiscount(decimal discountAmount)
+    {
+        EnsureMutable();
+        if (discountAmount < 0)
+        {
+            throw new ArgumentException("Promo discount amount cannot be negative", nameof(discountAmount));
+        }
+
+        if (discountAmount == 0)
+        {
+            return;
+        }
+
+        Subtotal += discountAmount;
+        DiscountAmount = discountAmount;
+        RecalculateTotal();
+        Touch();
+    }
+
+    /// <summary>
     ///     Sets the tax amount for the invoice.
     ///     Only allowed while invoice is in Draft status.
     /// </summary>

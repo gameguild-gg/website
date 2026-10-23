@@ -121,6 +121,11 @@ public sealed class UpdatePromoCodeCommandHandler(IPromoCodeRepository promoCode
             promoCode.ProductId = request.ProductId.Value;
         }
 
+        if (request.PlanId.HasValue)
+        {
+            promoCode.PlanId = request.PlanId.Value;
+        }
+
         promoCode.Touch();
 
         // Update in repository

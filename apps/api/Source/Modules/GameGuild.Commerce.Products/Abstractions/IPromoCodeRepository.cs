@@ -107,6 +107,40 @@ public interface IPromoCodeRepository
     Task RecordUsageAsync(PromoCodeUse usage, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Persist a validation attempt (issue #418 conversion tracking). The caller supplies
+    /// the resolved <paramref name="promoCodeId"/> when the submitted code matched one.
+    /// </summary>
+    Task RecordValidationAttemptAsync(
+        string code,
+        Guid? promoCodeId,
+        Guid? userId,
+        PromoCodeValidationOutcome outcome,
+        string? errorMessage,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Load promo codes by identifiers (issue #418 subscription application).
+    /// </summary>
+    Task<List<PromoCode>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Promo usages linked to a subscription that no invoice has consumed yet
+    /// (issue #418 invoice application).
+    /// </summary>
+    Task<IReadOnlyList<PromoCodeUse>> GetUninvoicedUsesForSubscriptionAsync(
+        Guid subscriptionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Stamp promo usage rows as settled on an invoice (idempotent: rows already
+    /// invoiced are skipped). Returns the number of rows stamped.
+    /// </summary>
+    Task<int> MarkUsesInvoicedAsync(
+        IReadOnlyList<Guid> usageIds,
+        Guid invoiceId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Check if a promo code exists
     /// </summary>
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);

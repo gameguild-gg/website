@@ -32,6 +32,7 @@ public static class ProductsModule
         services.AddScoped<IProductPricingService, ProductPricingService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IPromoCodeUsageRecorder, PromoCodeUsageRecorder>();
+        services.AddScoped<GameGuild.Commerce.ISubscriptionPromoCoordinator, SubscriptionPromoCoordinator>();
         services.AddScoped<IPromoCodeAuditLogger, PromoCodeAuditLogger>();
         services.AddScoped<IUserProductService, UserProductService>();
         services.AddScoped<IEntitlementService, EntitlementService>();
@@ -161,6 +162,7 @@ public static class ProductsModule
             entity.HasIndex(e => e.Type);
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.CampaignId);
+            entity.HasIndex(e => e.PlanId);
             entity.HasIndex(e => new { e.IsActive, e.ValidUntil });
             entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
@@ -178,11 +180,26 @@ public static class ProductsModule
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => new { e.PromoCodeId, e.UserId });
             entity.HasIndex(e => e.UsedAt);
+            entity.HasIndex(e => e.SubscriptionId);
+            entity.HasIndex(e => e.InvoiceId);
             // Unique nullable index: a repeated idempotency key is a replay, never a second use.
             entity.HasIndex(e => e.IdempotencyKey).IsUnique();
             entity.Property(e => e.DiscountApplied).HasPrecision(10, 2);
             entity.Property(e => e.Currency).HasMaxLength(3).HasDefaultValue("USD");
             entity.Property(e => e.IdempotencyKey).HasMaxLength(200);
+        });
+
+        // Conversion tracking (issue #418): one row per :validate call, the denominator
+        // of the campaign conversion metric.
+        modelBuilder.Entity<PromoCodeValidationAttempt>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.PromoCodeId);
+            entity.HasIndex(e => e.Code);
+            entity.HasIndex(e => e.AttemptedAt);
+            entity.HasIndex(e => e.UserId);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.ErrorMessage).HasMaxLength(300);
         });
 
         modelBuilder.Entity<PromoCodeUserUsageCounter>(entity =>

@@ -37,7 +37,8 @@ public sealed class InvoiceGenerationService(
     IUserRepository userRepository,
     INotificationService notificationService,
     GameGuild.Commerce.Payments.IReferralService referralService,
-    ILogger<InvoiceGenerationService> logger) : IInvoiceGenerationService
+    ILogger<InvoiceGenerationService> logger,
+    GameGuild.Commerce.ISubscriptionPromoCoordinator? promoCoordinator = null) : IInvoiceGenerationService
 {
     private static readonly JsonSerializerOptions MetadataOptions = new(JsonSerializerDefaults.Web);
 
@@ -120,12 +121,39 @@ public sealed class InvoiceGenerationService(
 
         invoice.SetBillingPeriod(subscription.CurrentPeriodStart, subscription.CurrentPeriodEnd);
         invoice.SetDescription($"Subscription billing cycle {request.BillingCycleNumber}");
+
+        // Issue #418 invoice application: promo usages linked to this subscription that no
+        // invoice has consumed yet are the discount context for this cycle. The confirmed
+        // amount is already net of the discount, so the invoice grosses the subtotal back up
+        // and records the promo discount — Total stays exactly the paid amount.
+        GameGuild.Commerce.SubscriptionPromoInvoiceContext? promoContext = null;
+        if (promoCoordinator is not null)
+        {
+            promoContext = await promoCoordinator
+                .GetUninvoicedPromoContextAsync(request.SubscriptionId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (promoContext is { TotalDiscount: > 0 })
+            {
+                invoice.ApplyPromoDiscount(promoContext.TotalDiscount);
+                logger.LogInformation(
+                    "Invoice for subscription {SubscriptionId} cycle {Cycle} carries promo discount {Discount} {Currency} from {CodeCount} code(s)",
+                    request.SubscriptionId,
+                    request.BillingCycleNumber,
+                    promoContext.TotalDiscount,
+                    request.Currency,
+                    promoContext.Codes.Count);
+            }
+        }
+
         invoice.SetMetadata(JsonSerializer.Serialize(new
         {
             subscriptionId = request.SubscriptionId,
             billingCycleNumber = request.BillingCycleNumber,
             generatedAtUtc = SystemClock.UtcNow,
-            source = request.PaymentId.HasValue ? "first-party-payment" : "provider-billing"
+            source = request.PaymentId.HasValue ? "first-party-payment" : "provider-billing",
+            promoDiscountAmount = promoContext?.TotalDiscount ?? 0,
+            promoCodes = promoContext?.Codes.Select(c => c.Code).ToList() ?? []
         }, MetadataOptions));
 
         if (!string.IsNullOrWhiteSpace(request.ProviderInvoiceId))
@@ -169,6 +197,29 @@ public sealed class InvoiceGenerationService(
             request.BillingCycleNumber,
             request.Amount,
             request.Currency);
+
+        // Issue #418: stamp the promo usage rows this invoice settled. Guarded update —
+        // a replay of the same cycle finds every row already stamped and no-ops.
+        if (promoCoordinator is not null && promoContext is { UsageIds.Count: > 0 })
+        {
+            try
+            {
+                var stamped = await promoCoordinator
+                    .MarkPromoUsesInvoicedAsync(promoContext.UsageIds, invoice.Id, cancellationToken)
+                    .ConfigureAwait(false);
+                logger.LogInformation(
+                    "Stamped {Stamped} promo usage row(s) as settled by invoice {InvoiceId}",
+                    stamped,
+                    invoice.Id);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(
+                    exception,
+                    "Failed to stamp promo usage rows for invoice {InvoiceId}; the invoice itself is persisted",
+                    invoice.Id);
+            }
+        }
 
         await DispatchInvoiceIssuedEmailAsync(invoice, subscription, request, cancellationToken).ConfigureAwait(false);
 

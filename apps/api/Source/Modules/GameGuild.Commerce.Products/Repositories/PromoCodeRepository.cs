@@ -11,6 +11,7 @@ public class PromoCodeRepository(IApplicationDbContext context)
 {
     private DbSet<PromoCodeUse> PromoCodeUses => Context.Set<PromoCodeUse>();
     private DbSet<PromoCodeUserUsageCounter> UserUsageCounters => Context.Set<PromoCodeUserUsageCounter>();
+    private DbSet<PromoCodeValidationAttempt> ValidationAttempts => Context.Set<PromoCodeValidationAttempt>();
 
     /// <inheritdoc />
     public new async Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -280,6 +281,83 @@ public class PromoCodeRepository(IApplicationDbContext context)
     }
 
     /// <inheritdoc />
+    public async Task RecordValidationAttemptAsync(
+        string code,
+        Guid? promoCodeId,
+        Guid? userId,
+        PromoCodeValidationOutcome outcome,
+        string? errorMessage,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = PromoCodeNormalizer.Normalize(code) ?? code.Trim().ToUpperInvariant();
+        var attempt = new PromoCodeValidationAttempt
+        {
+            Id = Guid.NewGuid(),
+            Code = normalized.Length > 50 ? normalized[..50] : normalized,
+            PromoCodeId = promoCodeId,
+            UserId = userId,
+            Outcome = outcome,
+            ErrorMessage = errorMessage is { Length: > 300 } ? errorMessage[..300] : errorMessage,
+            AttemptedAt = SystemClock.UtcNow
+        };
+
+        await ValidationAttempts.AddAsync(attempt, cancellationToken).ConfigureAwait(false);
+        await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<PromoCode>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return new List<PromoCode>();
+        }
+
+        return await Entities
+            .Where(p => ids.Contains(p.Id))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<PromoCodeUse>> GetUninvoicedUsesForSubscriptionAsync(
+        Guid subscriptionId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PromoCodeUses
+            .AsNoTracking()
+            .Where(u => u.SubscriptionId == subscriptionId && u.InvoiceId == null)
+            .OrderBy(u => u.UsedAt)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> MarkUsesInvoicedAsync(
+        IReadOnlyList<Guid> usageIds,
+        Guid invoiceId,
+        CancellationToken cancellationToken = default)
+    {
+        if (usageIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var now = SystemClock.UtcNow;
+
+        // Guarded update: only rows not yet stamped with an invoice are touched, so
+        // replaying the materialization flow is a no-op.
+        return await PromoCodeUses
+            .Where(u => usageIds.Contains(u.Id) && u.InvoiceId == null)
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(u => u.InvoiceId, invoiceId)
+                    .SetProperty(u => u.UpdatedAt, now),
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await Entities.AnyAsync(p => p.Id == id, cancellationToken).ConfigureAwait(false);
@@ -397,6 +475,28 @@ public class PromoCodeRepository(IApplicationDbContext context)
             ? Math.Round((decimal)totalUses / limitedCapacity, 4, MidpointRounding.AwayFromZero)
             : null;
 
+        // Conversion tracking (issue #418): validation attempts are the denominator,
+        // recorded uses the numerator. Attempts resolve to the campaign through the
+        // promo code they matched, within the same window as the usage query.
+        var attemptsQuery = ValidationAttempts.Where(a => a.PromoCodeId != null && codeIds.Contains(a.PromoCodeId!.Value));
+        if (from.HasValue)
+        {
+            attemptsQuery = attemptsQuery.Where(a => a.AttemptedAt >= from.Value);
+        }
+
+        if (to.HasValue)
+        {
+            attemptsQuery = attemptsQuery.Where(a => a.AttemptedAt < to.Value);
+        }
+
+        var totalValidationAttempts = await attemptsQuery
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        decimal? conversionRate = totalValidationAttempts > 0
+            ? Math.Round((decimal)totalUses / totalValidationAttempts, 4, MidpointRounding.AwayFromZero)
+            : null;
+
         var topCodes = usages
             .GroupBy(u => u.PromoCodeId)
             .Select(g => new CampaignTopCodeDto(
@@ -428,7 +528,9 @@ public class PromoCodeRepository(IApplicationDbContext context)
             averageDiscount,
             redemptionRate,
             topCodes,
-            expiringCodes
+            expiringCodes,
+            totalValidationAttempts,
+            conversionRate
         );
     }
 

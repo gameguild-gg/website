@@ -13,13 +13,19 @@ namespace GameGuild.Commerce.Subscriptions;
 /// <param name="FulfilledOrderId">Optional Order ID that triggered this subscription (Economic Model: Order→Subscription causality)</param>
 /// <param name="StartDate">Optional start date</param>
 /// <param name="TrialDays">Optional trial period in days</param>
+/// <param name="PromoCodes">Optional promo codes applied at creation (issue #418)</param>
+/// <param name="PromoCodeIdempotencyKey">Optional replay-protection key for the promo application</param>
+/// <param name="ProductId">Optional product context for product-scoped promo codes</param>
 public sealed record CreateSubscriptionRequest(
-    Guid TenantId, 
-    Guid PlanId, 
-    Guid CreatedByUserId, 
-    BillingCycle BillingCycle, 
-    decimal Amount, 
-    string Currency, 
+    Guid TenantId,
+    Guid PlanId,
+    Guid CreatedByUserId,
+    BillingCycle BillingCycle,
+    decimal Amount,
+    string Currency,
     Guid? FulfilledOrderId = null,
-    DateTime? StartDate = null, 
-    int? TrialDays = null);
+    DateTime? StartDate = null,
+    int? TrialDays = null,
+    IReadOnlyList<string>? PromoCodes = null,
+    string? PromoCodeIdempotencyKey = null,
+    Guid? ProductId = null);

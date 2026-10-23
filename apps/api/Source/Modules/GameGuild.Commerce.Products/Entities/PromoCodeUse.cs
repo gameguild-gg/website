@@ -11,6 +11,8 @@ namespace GameGuild.Commerce.Products;
 [Index(nameof(UserId))]
 [Index(nameof(PromoCodeId), nameof(UserId))]
 [Index(nameof(UsedAt))]
+[Index(nameof(SubscriptionId))]
+[Index(nameof(InvoiceId))]
 [Index(nameof(IdempotencyKey), IsUnique = true)]
 public class PromoCodeUse : EntityBase
 {
@@ -53,6 +55,18 @@ public class PromoCodeUse : EntityBase
 
     /// <summary>Optional order line item the code was applied to</summary>
     public Guid? OrderLineItemId { get; set; }
+
+    /// <summary>
+    /// Optional subscription the code was applied to (issue #418). Plain reference — no
+    /// cross-module FK; populated by the subscription promo application path.
+    /// </summary>
+    public Guid? SubscriptionId { get; set; }
+
+    /// <summary>
+    /// Optional invoice the discount was settled on (issue #418). Plain reference — no
+    /// cross-module FK; stamped by invoice materialization when the usage is consumed.
+    /// </summary>
+    public Guid? InvoiceId { get; set; }
 
     /// <summary>
     /// Idempotency key supplied by the redemption flow. A repeated submission of the same
