@@ -460,6 +460,7 @@ public class TrustedDevicesControllerCovTests
     private readonly Mock<ISessionManagementService> _sessionService = new();
     private readonly TrustedDevicesController _controller;
     private readonly Guid _userId = Guid.NewGuid();
+    private readonly Guid _sessionId = Guid.NewGuid();
 
     public TrustedDevicesControllerCovTests()
     {
@@ -470,10 +471,17 @@ public class TrustedDevicesControllerCovTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.NameIdentifier, _userId.ToString())
+                    new Claim(ClaimTypes.NameIdentifier, _userId.ToString()),
+                    new Claim("session_id", _sessionId.ToString())
                 }, "Test"))
             }
         };
+        _sessionService.Setup(service => service.GetSessionAsync(_sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSession
+            {
+                Id = _sessionId, UserId = _userId, IsActive = true,
+                ExpiresAt = DateTime.UtcNow.AddHours(1), DeviceFingerprint = "existing-session-fingerprint"
+            });
     }
 
     [Fact]

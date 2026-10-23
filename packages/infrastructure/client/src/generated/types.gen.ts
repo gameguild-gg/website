@@ -10823,6 +10823,9 @@ export interface IdentityAuthenticationOidcCallbackRequestDto {
 /** A discovered federation provider serving one email domain. */
 export interface IdentityAuthenticationOidcDiscoveredProvider {
   displayName: string | null;
+  /** The federation protocol this provider serves — `oidc` or `saml` — so the
+login page knows which authorize entry point to route the browser to. */
+  protocol?: string | null;
   slug: string | null;
 }
 
@@ -11083,6 +11086,43 @@ export interface IdentityAuthenticationRotateApiKeyOutput {
 export interface IdentityAuthenticationRotateKeyInput {
   reason?: string | null;
   validityDays?: number | null;
+}
+
+/** Request to initiate a SAML federation provider sign-in */
+export interface IdentityAuthenticationSamlAuthorizeRequestDto {
+  /** Optional RelayState the provider echoes on callback (defaults to a generated token) */
+  relayState?: string | null;
+}
+
+/** Request body for the SAML federation Assertion Consumer Service endpoint */
+export interface IdentityAuthenticationSamlCallbackRequestDto {
+  /** The RelayState echoed by the provider (correlation is enforced server-side
+through the response's InResponseTo, not this value) */
+  relayState?: string | null;
+  /** Whether the caller asked for a persistent ("remember me") refresh-token lifetime */
+  rememberMe?: boolean | null;
+  /** The Base64-encoded SAMLResponse XML posted by the federation provider */
+  samlResponse: string;
+  /** Optional tenant context */
+  tenantId?: string | null;
+}
+
+/** Response for SAML logout forwarding */
+export interface IdentityAuthenticationSamlLogoutUrlOutput {
+  /** The provider's single-logout redirect URL (an unsigned LogoutRequest via the
+redirect binding); null when the provider has no configured single logout
+service and logout stays local. */
+  logoutUrl?: string | null;
+}
+
+/** Response for SAML federation sign-in initiation. */
+export interface IdentityAuthenticationSamlSignInOutput {
+  /** The identity provider's sign-on URL carrying the deflated AuthnRequest
+(HTTP-Redirect binding) with the RelayState applied. */
+  redirectUrl: string | null;
+  /** The RelayState token embedded in the redirect URL (returned separately so the
+caller can stash it in its state cookie, mirroring the OIDC flow). */
+  relayState: string | null;
 }
 
 /** Response when secret is rotated. */
@@ -25270,6 +25310,10 @@ export let IdentityAuthenticationRiskLevelSchema: z.ZodType<IdentityAuthenticati
 export let IdentityAuthenticationRotateApiKeyInputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyInput>;
 export let IdentityAuthenticationRotateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyOutput>;
 export let IdentityAuthenticationRotateKeyInputSchema: z.ZodType<IdentityAuthenticationRotateKeyInput>;
+export let IdentityAuthenticationSamlAuthorizeRequestDtoSchema: z.ZodType<IdentityAuthenticationSamlAuthorizeRequestDto>;
+export let IdentityAuthenticationSamlCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationSamlCallbackRequestDto>;
+export let IdentityAuthenticationSamlLogoutUrlOutputSchema: z.ZodType<IdentityAuthenticationSamlLogoutUrlOutput>;
+export let IdentityAuthenticationSamlSignInOutputSchema: z.ZodType<IdentityAuthenticationSamlSignInOutput>;
 export let IdentityAuthenticationSecretRotationOutputSchema: z.ZodType<IdentityAuthenticationSecretRotationOutput>;
 export let IdentityAuthenticationSendEmailVerificationInputSchema: z.ZodType<IdentityAuthenticationSendEmailVerificationInput>;
 export let IdentityAuthenticationServiceAccountAuditEntrySchema: z.ZodType<IdentityAuthenticationServiceAccountAuditEntry>;
@@ -36475,6 +36519,7 @@ IdentityAuthenticationOidcCallbackRequestDtoSchema = z.object({
 /** Zod schema for IdentityAuthenticationOidcDiscoveredProvider. A discovered federation provider serving one email domain. */
 IdentityAuthenticationOidcDiscoveredProviderSchema = z.object({
   displayName: z.string().nullable(),
+  protocol: z.string().nullable().optional(),
   slug: z.string().nullable(),
 });
 
@@ -36680,6 +36725,30 @@ IdentityAuthenticationRotateApiKeyOutputSchema = z.object({
 IdentityAuthenticationRotateKeyInputSchema = z.object({
   reason: z.string().nullable().optional(),
   validityDays: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlAuthorizeRequestDto. Request to initiate a SAML federation provider sign-in */
+IdentityAuthenticationSamlAuthorizeRequestDtoSchema = z.object({
+  relayState: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlCallbackRequestDto. Request body for the SAML federation Assertion Consumer Service endpoint */
+IdentityAuthenticationSamlCallbackRequestDtoSchema = z.object({
+  relayState: z.string().nullable().optional(),
+  rememberMe: z.boolean().nullable().optional(),
+  samlResponse: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlLogoutUrlOutput. Response for SAML logout forwarding */
+IdentityAuthenticationSamlLogoutUrlOutputSchema = z.object({
+  logoutUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlSignInOutput. Response for SAML federation sign-in initiation. */
+IdentityAuthenticationSamlSignInOutputSchema = z.object({
+  redirectUrl: z.string().nullable(),
+  relayState: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationSecretRotationOutput. Response when secret is rotated. */
@@ -48993,6 +49062,10 @@ export type IdentityAuthenticationOidcCallbackRequest = IdentityAuthenticationOi
 export { IdentityAuthenticationOidcCallbackRequestDtoSchema as IdentityAuthenticationOidcCallbackRequestSchema };
 export type IdentityAuthenticationProcessOrchestratedAuthenticationStepRequest = IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
 export { IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema as IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestSchema };
+export type IdentityAuthenticationSamlAuthorizeRequest = IdentityAuthenticationSamlAuthorizeRequestDto;
+export { IdentityAuthenticationSamlAuthorizeRequestDtoSchema as IdentityAuthenticationSamlAuthorizeRequestSchema };
+export type IdentityAuthenticationSamlCallbackRequest = IdentityAuthenticationSamlCallbackRequestDto;
+export { IdentityAuthenticationSamlCallbackRequestDtoSchema as IdentityAuthenticationSamlCallbackRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
 export type IdentityAuthorizationContentTypePermissionGrant = IdentityAuthorizationContentTypePermissionGrantDto;
