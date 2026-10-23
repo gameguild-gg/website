@@ -12,7 +12,7 @@ namespace GameGuild.API.Database;
 
 /// <summary>
 ///     Universal automatic entity-change audit capture. Runs inside
-///     <see cref="ApplicationDbContext.SaveChangesAsync"/> before the version bump and
+///     <see cref="ApplicationDbContext.SaveChangesAsync(CancellationToken)"/> before the version bump and
 ///     commit: it detects every Added/Modified/Deleted ChangeTracker entry and stages
 ///     insert-only <see cref="EntityChangeAuditRecord"/> rows in the same SaveChanges
 ///     call, so a failed or rolled-back transaction leaves no audit rows and bulk

@@ -194,6 +194,14 @@ async function releaseResult(page, manifest, quiz) {
   });
 }
 
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 async function verifyReleasedResult(page, manifest, quiz, validationCase) {
   await page.goto(manifest.urls.learnerGrades, {
     waitUntil: "domcontentloaded",
@@ -203,14 +211,13 @@ async function verifyReleasedResult(page, manifest, quiz, validationCase) {
     exact: true,
   });
   await expect(heading).toBeVisible({ timeout: 60_000 });
-  await expect(
-    heading
-      .locator("xpath=ancestor::article")
-      .getByText(
-        `${expectedFinalScore(quiz) / 100} / ${quiz.expected.maxScore / 100}`,
-        { exact: true },
-      ),
-  ).toBeVisible();
+  const releasedScore = page.getByTestId(
+    `learner-assessment-result-${slugify(`[${manifest.marker}] ${quiz.title}`)}`,
+  );
+  await expect(releasedScore).toBeVisible({ timeout: 60_000 });
+  await expect(releasedScore).toHaveText(
+    `${expectedFinalScore(quiz) / 100} / ${quiz.expected.maxScore / 100}`,
+  );
 
   await page.goto(manifest.urls.quizzes[quiz.key].learnerActivity, {
     waitUntil: "domcontentloaded",
