@@ -50,6 +50,33 @@ registers `DisabledBlockchainCertificateService`, which persists and publishes n
   no revocation anchor referencing it exists and the stored canonical payload still hashes to the
   anchored digest.
 
+## On-chain verification of anchored digests
+
+`ICertificateAnchoring.VerifyAnchoringAsync` (implemented by `BlockchainCertificateAnchoringAdapter`,
+mirroring the anchoring call path) queries the anchoring backend to **prove an anchor**:
+
+1. Recomputes the canonical SHA-256 digest exactly as the anchoring path did (same canonicalizer,
+   same payload version, same issuer).
+2. Loads the user's anchors (`GetUserCertificatesAsync`) and looks for a `learning-certificate`
+   anchor whose `CertificateHash` equals the recomputed digest.
+3. Confirms the chain record with the platform's `VerifyCertificateAsync(digest, transactionHash)`
+   — payload integrity, latest revocation state and anchor validity.
+
+The result is fail-closed and reported as one of:
+
+| Status | Meaning |
+| --- | --- |
+| `Verified` | Digest matches an anchor and the chain record corroborates it (network, transaction hash, block number and anchor time returned as evidence). |
+| `DigestMismatch` | An anchor claims this certificate but its recorded digest differs from the recomputed one (or the chain record failed to corroborate it). |
+| `Revoked` | An anchor exists but a revocation record invalidates it. |
+| `NotAnchored` | No anchor exists for the recomputed digest (e.g. anchoring was disabled at issuance — `NoOpCertificateAnchoring` always reports this). |
+| `Unreachable` | The anchoring backend could not be queried. Never reported as verified. |
+
+Public endpoint: `GET /api/certificates/verify/{certificateNumber}/anchor` (anonymous, registered
+in `AnonymousEndpointRegistry`). The response carries only PII-free evidence — digests,
+transaction/network identifiers, block number and anchor timestamp; recipient names and revocation
+reasons are never included.
+
 ## Wiring
 
 - Learning.Certificates (domain module) exposes the port `ICertificateAnchoring` with a default
@@ -147,8 +174,9 @@ evidence; configuration alone does not establish deployment or acceptance. Remai
    registry, authorized issuer/signer and pinned runtime-code digest. No mainnet deployment is implied.
 2. **Key custody and funding** — supply a separate testnet signer environment reference, fund its
    address and approve explicit spending caps. Secret values do not belong in issues or source files.
-3. **Authenticated status and fresh proof** — expose owner/tenant-scoped asynchronous state and
-   canonical chain proof without leaking endpoints, keys or raw transactions.
+3. **Authenticated status and fresh proof** — the public digest-verification surface above covers
+   the legacy/local providers; owner/tenant-scoped asynchronous EVM state and canonical chain proof
+   (without leaking endpoints, keys or raw transactions) remain open.
 4. **Operator recovery** — accept original-profile availability, quarantined nonce gaps and discovery
    after journal loss without inventing a new original identity or receipt.
 5. **External evidence** — record actual anchor/revoke transactions and finalized block/state proof.

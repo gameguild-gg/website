@@ -299,6 +299,11 @@ public sealed class CertificateEvmOutboxPostgreSqlTests(CertificateEvmOutboxPost
             ArgumentNullException.ThrowIfNull(certificate); ArgumentException.ThrowIfNullOrWhiteSpace(reason); cancellationToken.ThrowIfCancellationRequested();
             throw new EvmCertificateRpcException(EvmCertificateRpcFailure.Timeout);
         }
+        public Task<CertificateAnchorVerification> VerifyAnchoringAsync(Certificate certificate, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(certificate); cancellationToken.ThrowIfCancellationRequested();
+            throw new EvmCertificateRpcException(EvmCertificateRpcFailure.Timeout);
+        }
     }
 }
 

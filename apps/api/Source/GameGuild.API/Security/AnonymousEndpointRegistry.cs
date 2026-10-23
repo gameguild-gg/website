@@ -116,6 +116,7 @@ public static class AnonymousEndpointRegistry
             ["TestingEventsController.GetPublicEvent"] = "Public game-testing event detail.",
             ["TestingSessionsController.GetPublicTestingSessions"] = "Public testing-session listing.",
             ["CertificatesController.VerifyCertificate"] = "Public certificate verification by verification code.",
+            ["CertificatesController.VerifyCertificateAnchor"] = "Public on-chain anchor verification by certificate number; returns only PII-free digests and chain identifiers, fail-closed on backend errors.",
             ["ProjectsController.GetProjects"] = "Public project catalog with status/visibility filters applied server-side.",
             ["ProjectsController.GetProject"] = "Public project detail; unpublished projects are hidden from anonymous callers.",
             ["ProjectsController.GetProjectBySlug"] = "Public project detail by slug; published projects only.",

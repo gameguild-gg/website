@@ -22,4 +22,12 @@ public sealed class NoOpCertificateAnchoring : ICertificateAnchoring
     {
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public Task<CertificateAnchorVerification> VerifyAnchoringAsync(Certificate certificate, CancellationToken cancellationToken = default)
+    {
+        // Nothing was ever anchored through this implementation, so there is no on-chain record
+        // to prove. Honest absence of proof — not an error, and never a confirmation.
+        return Task.FromResult(CertificateAnchorVerification.NotAnchored(certificate.Id.ToString()));
+    }
 }

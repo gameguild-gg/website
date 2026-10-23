@@ -85,6 +85,30 @@ public class CertificatesController : BaseApiController
     }
 
     /// <summary>
+    /// Verify the blockchain anchor of a certificate by its number: recomputes the canonical
+    /// SHA-256 digest, queries the anchoring backend for the on-chain record, and reports
+    /// whether the chain corroborates the certificate (public endpoint).
+    /// </summary>
+    /// <remarks>
+    ///     Fail-closed: backend errors report <c>Unreachable</c>, never <c>Verified</c>. The
+    ///     response contains only PII-free evidence (digests, transaction/network identifiers,
+    ///     block number, anchor timestamp).
+    /// </remarks>
+    [HttpGet("verify/{certificateNumber}/anchor")]
+    [AllowAnonymous]
+    public async Task<ActionResult<CertificateAnchorVerificationDto>> VerifyCertificateAnchor(string certificateNumber)
+    {
+        var result = await _certificateService.VerifyCertificateAnchoringAsync(certificateNumber).ConfigureAwait(false);
+
+        if (!result.IsSuccess)
+        {
+            return result.Error.Type == ErrorType.NotFound ? NotFound(result.Error) : BadRequest(result.Error);
+        }
+
+        return Ok(CertificateAnchorVerificationDto.FromVerification(result.Value));
+    }
+
+    /// <summary>
     /// Issue a certificate for an enrollment
     /// </summary>
     [HttpPost("issue")]
@@ -279,6 +303,34 @@ public sealed record CertificateDto(
         c.IssuedAt,
         c.ExpiresAt,
         c.Status);
+}
+
+/// <summary>
+/// DTO for on-chain certificate anchor verification results: PII-free digests and chain
+/// identifiers only. Status is one of <c>Verified</c>, <c>DigestMismatch</c>, <c>Revoked</c>,
+/// <c>NotAnchored</c> or <c>Unreachable</c> (fail-closed on backend errors).
+/// </summary>
+public sealed record CertificateAnchorVerificationDto(
+    string Status,
+    string CertificateId,
+    string? Digest,
+    string? AnchoredDigest,
+    string? TransactionHash,
+    string? Network,
+    long? BlockNumber,
+    DateTime? AnchoredAt,
+    string? Detail)
+{
+    public static CertificateAnchorVerificationDto FromVerification(CertificateAnchorVerification verification) => new(
+        verification.Status.ToString(),
+        verification.CertificateId,
+        verification.Digest,
+        verification.AnchoredDigest,
+        verification.TransactionHash,
+        verification.Network,
+        verification.BlockNumber,
+        verification.AnchoredAt,
+        verification.Detail);
 }
 
 /// <summary>
