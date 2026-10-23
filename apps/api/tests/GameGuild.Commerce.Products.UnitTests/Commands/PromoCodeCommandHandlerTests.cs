@@ -12,12 +12,17 @@ namespace GameGuild.Tests.Commerce.Products.Unit.Commands;
 public class ValidatePromoCodeCommandHandlerTests
 {
     private readonly Mock<IPricingEngineService> _mockPricingEngine;
+    private readonly Mock<IPromoCodeRepository> _mockPromoRepository;
     private readonly ValidatePromoCodeCommandHandler _handler;
 
     public ValidatePromoCodeCommandHandlerTests()
     {
         _mockPricingEngine = new Mock<IPricingEngineService>();
-        _handler = new ValidatePromoCodeCommandHandler(_mockPricingEngine.Object);
+        _mockPromoRepository = new Mock<IPromoCodeRepository>();
+        _handler = new ValidatePromoCodeCommandHandler(
+            _mockPricingEngine.Object,
+            _mockPromoRepository.Object,
+            NullLogger<ValidatePromoCodeCommandHandler>.Instance);
     }
 
     [Fact]
@@ -31,12 +36,15 @@ public class ValidatePromoCodeCommandHandlerTests
             UserId: Guid.NewGuid()
         );
 
+        var promoCodeId = Guid.NewGuid();
         var expectedResult = new PromoCodeValidationResult(
             IsValid: true,
             Code: "DISCOUNT20",
             ErrorMessage: null,
             DiscountAmount: 20m,
-            DiscountPercentage: 20
+            DiscountPercentage: 20,
+            PromoCodeId: promoCodeId,
+            Outcome: PromoCodeValidationOutcome.Valid
         );
 
         _mockPricingEngine
@@ -45,6 +53,7 @@ public class ValidatePromoCodeCommandHandlerTests
                 command.OrderAmount,
                 command.ProductId,
                 command.UserId,
+                It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
@@ -55,10 +64,21 @@ public class ValidatePromoCodeCommandHandlerTests
         result.Should().NotBeNull();
         result.IsValid.Should().BeTrue();
         result.DiscountAmount.Should().Be(20m);
+
+        // Issue #418: the successful attempt is persisted as the conversion denominator.
+        _mockPromoRepository.Verify(
+            r => r.RecordValidationAttemptAsync(
+                "DISCOUNT20",
+                promoCodeId,
+                command.UserId,
+                PromoCodeValidationOutcome.Valid,
+                null,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task Handle_InvalidPromoCode_ReturnsInvalidResult()
+    public async Task Handle_InvalidPromoCode_ReturnsInvalidResult_AndRecordsAttempt()
     {
         // Arrange
         var command = new ValidatePromoCodeCommand(
@@ -71,7 +91,9 @@ public class ValidatePromoCodeCommandHandlerTests
             Code: "INVALID",
             ErrorMessage: "Promo code not found",
             DiscountAmount: 0m,
-            DiscountPercentage: 0
+            DiscountPercentage: 0,
+            PromoCodeId: null,
+            Outcome: PromoCodeValidationOutcome.NotFound
         );
 
         _mockPricingEngine
@@ -80,6 +102,7 @@ public class ValidatePromoCodeCommandHandlerTests
                 command.OrderAmount,
                 command.ProductId,
                 command.UserId,
+                It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
@@ -90,6 +113,48 @@ public class ValidatePromoCodeCommandHandlerTests
         result.Should().NotBeNull();
         result.IsValid.Should().BeFalse();
         result.ErrorMessage.Should().Be("Promo code not found");
+
+        // Unknown code strings are still recorded (PromoCodeId null) so code farming
+        // stays observable (issue #418).
+        _mockPromoRepository.Verify(
+            r => r.RecordValidationAttemptAsync(
+                "INVALID",
+                null,
+                command.UserId,
+                PromoCodeValidationOutcome.NotFound,
+                "Promo code not found",
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAttemptPersistenceFails_ResultIsUnaffected()
+    {
+        // Arrange
+        var command = new ValidatePromoCodeCommand(Code: "SAVE10", OrderAmount: 100m);
+
+        _mockPricingEngine
+            .Setup(p => p.ValidatePromoCodeAsync(
+                It.IsAny<string>(),
+                It.IsAny<decimal>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PromoCodeValidationResult(true, "SAVE10", null, 10m, 10, Outcome: PromoCodeValidationOutcome.Valid));
+
+        _mockPromoRepository
+            .Setup(r => r.RecordValidationAttemptAsync(
+                It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(),
+                It.IsAny<PromoCodeValidationOutcome>(), It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("database unavailable"));
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert: tracking is best effort; the validation result still flows through.
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -108,11 +173,13 @@ public class ValidatePromoCodeCommandHandlerTests
         // Arrange
         var productId = Guid.NewGuid();
         var userId = Guid.NewGuid();
+        var planId = Guid.NewGuid();
         var command = new ValidatePromoCodeCommand(
             Code: "SUMMER2024",
             OrderAmount: 150m,
             ProductId: productId,
-            UserId: userId
+            UserId: userId,
+            PlanId: planId
         );
         var cancellationToken = new CancellationToken();
 
@@ -120,6 +187,7 @@ public class ValidatePromoCodeCommandHandlerTests
             .Setup(p => p.ValidatePromoCodeAsync(
                 It.IsAny<string>(),
                 It.IsAny<decimal>(),
+                It.IsAny<Guid?>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
@@ -135,6 +203,7 @@ public class ValidatePromoCodeCommandHandlerTests
                 150m,
                 productId,
                 userId,
+                planId,
                 cancellationToken),
             Times.Once);
     }
@@ -156,6 +225,7 @@ public class ValidatePromoCodeCommandHandlerTests
                 It.IsAny<decimal>(),
                 null,
                 null,
+                It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PromoCodeValidationResult(true, "BASIC10", null, 5m, 10));
 
@@ -167,6 +237,7 @@ public class ValidatePromoCodeCommandHandlerTests
             p => p.ValidatePromoCodeAsync(
                 "BASIC10",
                 50m,
+                null,
                 null,
                 null,
                 It.IsAny<CancellationToken>()),
@@ -192,6 +263,7 @@ public class ValidatePromoCodeCommandHandlerTests
                 orderAmount,
                 It.IsAny<Guid?>(),
                 It.IsAny<Guid?>(),
+                It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PromoCodeValidationResult(true, "TEST", null, 0m, 0));
 
@@ -203,6 +275,7 @@ public class ValidatePromoCodeCommandHandlerTests
             p => p.ValidatePromoCodeAsync(
                 "TEST",
                 orderAmount,
+                null,
                 null,
                 null,
                 It.IsAny<CancellationToken>()),
@@ -260,6 +333,7 @@ public class ApplyPromoCodesCommandHandlerTests
                 command.PromoCodes,
                 command.ProductId,
                 command.UserId,
+                It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
@@ -279,7 +353,7 @@ public class ApplyPromoCodesCommandHandlerTests
             .Setup(r => r.GetByCodeAsync("SAVE10", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
         _mockRecorder
-            .Setup(r => r.RecordAsync(promo, command.UserId!.Value, 10m, "USD", It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.RecordAsync(promo, command.UserId!.Value, 10m, "USD", It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoUsageRecordingStatus.Recorded, new PromoCodeUse { Id = Guid.NewGuid(), PromoCodeId = promo.Id }));
 
         // Act
@@ -319,6 +393,7 @@ public class ApplyPromoCodesCommandHandlerTests
                 command.PromoCodes,
                 command.ProductId,
                 command.UserId,
+                It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
@@ -360,6 +435,7 @@ public class ApplyPromoCodesCommandHandlerTests
                 command.PromoCodes,
                 command.ProductId,
                 command.UserId,
+                It.IsAny<Guid?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 

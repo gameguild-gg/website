@@ -192,6 +192,7 @@ public sealed class AddProductToOrderCommandHandler(
                     idempotencyKey,
                     order.Id,
                     lineItem.Id,
+                    subscriptionId: null,
                     cancellationToken)
                 .ConfigureAwait(false);
 

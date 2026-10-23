@@ -110,6 +110,42 @@ public class DisputeService(
         // ledger write must never roll back the recorded resolution.
         if (dispute.DisputeFee > 0 && revenueAuditService is not null)
         {
+            // The fee is charged by the gateway in the payment's currency — resolve it from the
+            // parent payment rather than assuming USD. Best-effort fallback keeps the resolution.
+            var feeCurrency = "USD";
+            try
+            {
+                var payment = await context.Set<Payment>()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == dispute.PaymentId, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(payment?.Currency))
+                {
+                    feeCurrency = payment.Currency;
+                }
+                else
+                {
+                    logger.LogWarning(
+                        "Payment {PaymentId} for dispute {DisputeId} has no usable currency; falling back to {Currency} for the dispute-fee ledger entry",
+                        dispute.PaymentId,
+                        dispute.Id,
+                        feeCurrency);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Could not load payment {PaymentId} for dispute {DisputeId}; falling back to {Currency} for the dispute-fee ledger entry",
+                    dispute.PaymentId,
+                    dispute.Id,
+                    feeCurrency);
+            }
+
             try
             {
                 await revenueAuditService.CreateLedgerEntryAsync(
@@ -117,7 +153,7 @@ public class DisputeService(
                     debitAccount: LedgerAccount.RefundsAndChargebacks.ToAccountCode(),
                     creditAccount: LedgerAccount.Cash.ToAccountCode(),
                     amount: dispute.DisputeFee,
-                    currency: "USD",
+                    currency: feeCurrency,
                     description: $"Dispute fee for dispute {dispute.Id} (payment {dispute.PaymentId}, outcome {resolution})",
                     referenceNumber: dispute.GatewayDisputeId,
                     cancellationToken: cancellationToken).ConfigureAwait(false);

@@ -35,7 +35,11 @@ public sealed class CreatePricingRuleCommandHandler(IPricingRuleRepository prici
             TimeEnd = request.TimeEnd,
             DaysOfWeek = request.DaysOfWeek,
             Region = request.Region,
-            CustomerSegment = request.CustomerSegment
+            CustomerSegment = request.CustomerSegment,
+            UsageMetricKey = request.UsageMetricKey,
+            UsageMinValue = request.UsageMinValue,
+            UsageMaxValue = request.UsageMaxValue,
+            IsScheduled = request.IsScheduled
         };
 
         PricingRuleMutationHelpers.ApplyTiers(rule, request.Tiers);

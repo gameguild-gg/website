@@ -61,7 +61,9 @@ public sealed class PolicyAuthenticationMiddleware(RequestDelegate next)
             Task.FromResult<AuthorizationPolicy?>(
                 Policies.IsValid(policyName) || ApiKeyScopePolicies.TryGetScope(policyName, out _)
                     ? Deferred
-                    : options.GetPolicy(policyName) ?? Deferred);
+                    // Unknown policy names return null so AuthorizationPolicy.CombineAsync fails loudly
+                    // instead of silently degrading to "any authenticated user" (fail-closed, AGENTS.md rule 6).
+                    : options.GetPolicy(policyName));
 
         public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => Task.FromResult(options.DefaultPolicy);
         public Task<AuthorizationPolicy?> GetFallbackPolicyAsync() => Task.FromResult(options.FallbackPolicy);

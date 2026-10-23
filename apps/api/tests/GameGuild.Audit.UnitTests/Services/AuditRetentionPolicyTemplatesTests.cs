@@ -41,6 +41,11 @@ public sealed class AuditRetentionPolicyTemplatesTests
         Assert.Contains("HIPAA", frameworks);
         Assert.Contains("PCI DSS", frameworks);
         Assert.Contains("FedRAMP", frameworks);
+        // Issue #193: SOX joins GDPR and HIPAA as the common regulatory retention templates.
+        Assert.Contains("SOX", frameworks);
+        var sox = Assert.Single(all, template => template.Framework == "SOX");
+        Assert.Equal(AuditRetentionPolicyTemplates.BaselineId, sox.BaseTemplateId);
+        Assert.Contains(sox.Obligations, obligation => obligation.MinimumRetentionDays >= 1825);
     }
 
     [Fact]

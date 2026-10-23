@@ -1,16 +1,20 @@
 using FluentValidation;
+using GameGuild.Commerce.Subscriptions;
 
 namespace GameGuild.Commerce.Products;
 
 /// <summary>
-/// Validator for UpdatePromoCodeCommand
+/// Validator for UpdatePromoCodeCommand. A plan-scoped code (issue #418) must reference
+/// an existing subscription plan.
 /// </summary>
 public sealed class UpdatePromoCodeCommandValidator : AbstractValidator<UpdatePromoCodeCommand>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdatePromoCodeCommandValidator"/> class.
+    /// The plan repository is optional: validators constructed without it (unit tests)
+    /// skip the plan-existence persistence check.
     /// </summary>
-    public UpdatePromoCodeCommandValidator()
+    public UpdatePromoCodeCommandValidator(ISubscriptionPlanRepository? planRepository = null)
     {
         RuleFor(x => x.Id)
             .NotEmpty()
@@ -85,5 +89,11 @@ public sealed class UpdatePromoCodeCommandValidator : AbstractValidator<UpdatePr
             .MaximumLength(100)
             .WithMessage("Campaign identifier cannot exceed 100 characters.")
             .When(x => !string.IsNullOrWhiteSpace(x.CampaignId));
+
+        RuleFor(x => x.PlanId)
+            .MustAsync((planId, cancellationToken) =>
+                PromoPlanEligibility.PlanExistsOrNullAsync(planRepository, planId, cancellationToken))
+            .WithMessage("The subscription plan referenced by PlanId does not exist.")
+            .When(x => x.PlanId.HasValue);
     }
 }

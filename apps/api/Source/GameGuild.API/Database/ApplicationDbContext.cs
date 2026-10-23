@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     private readonly IAuditService? _auditService;
     private readonly ILogger<ApplicationDbContext>? _logger;
     private readonly bool _entityChangeAuditCaptureEnabled = true;
+    private readonly MutationValueSnapshotFactory? _valueSnapshotFactory;
     private readonly PermissionAuditOptions _permissionAuditOptions = new();
     private readonly IReadOnlyList<IPermissionAuditHook> _permissionAuditHooks = [];
     private readonly List<PermissionAuditChange> _pendingPermissionAuditChanges = [];
@@ -52,16 +53,43 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         IAuditService? auditService = null,
         ILogger<ApplicationDbContext>? logger = null,
         IOptions<PermissionAuditOptions>? permissionAuditOptions = null,
-        IEnumerable<IPermissionAuditHook>? permissionAuditHooks = null) : this(options, publisher)
+        IEnumerable<IPermissionAuditHook>? permissionAuditHooks = null,
+        IOptions<ValueSnapshotOptions>? valueSnapshotOptions = null) : this(options, publisher)
     {
         _useCaseOperationContextAccessor = useCaseOperationContextAccessor;
         _auditService = auditService;
         _logger = logger;
         _permissionAuditOptions = permissionAuditOptions?.Value ?? new PermissionAuditOptions();
         _permissionAuditHooks = permissionAuditHooks?.ToArray() ?? [];
+        // Value snapshot staging (issue #176) defaults to enabled; the options master switch is
+        // the only way to disable it and staging itself never blocks an authorized mutation.
+        _valueSnapshotFactory = valueSnapshotOptions is null || valueSnapshotOptions.Value.StagingEnabled
+            ? new MutationValueSnapshotFactory(valueSnapshotOptions?.Value)
+            : null;
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges() => SaveChanges(acceptAllChangesOnSuccess: true);
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        SaveChangesCoreAsync(useAsync: false, acceptAllChangesOnSuccess, CancellationToken.None)
+            .GetAwaiter().GetResult();
+
+    public Task<int> SaveChangesAsync() => SaveChangesAsync(CancellationToken.None);
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess: true, cancellationToken);
+
+    public Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess, CancellationToken.None);
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken) =>
+        SaveChangesCoreAsync(useAsync: true, acceptAllChangesOnSuccess, cancellationToken);
+
+    // Every public persistence overload must run the same audit/outbox/version pipeline.
+    // Keep the actual EF save synchronous for synchronous callers and preserve the caller's
+    // AcceptAllChanges choice. Calling the parameterless base overload would dispatch back
+    // through our bool overload and capture the same changes twice.
+    private async Task<int> SaveChangesCoreAsync(bool useAsync, bool acceptAllChangesOnSuccess, CancellationToken cancellationToken)
     {
         var permissionChanges = CapturePermissionAuditChanges();
         var trackedEventEntities = ChangeTracker.Entries()
@@ -185,7 +213,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         var capturedAuditRecordCount = _entityChangeAuditCaptureEnabled
             ? EntityChangeAuditCapture.Capture(this, operationContext, _logger,
                 _permissionMutationAuditScope?.ActorId, _permissionMutationAuditScope?.TenantId,
-                _permissionMutationAuditScope?.UseEntityTenantScope ?? false)
+                _permissionMutationAuditScope?.UseEntityTenantScope ?? false, _valueSnapshotFactory)
             : 0;
 
         foreach (var entry in ChangeTracker.Entries())
@@ -198,7 +226,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
             }
         }
 
-        var affectedRows = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        var affectedRows = useAsync
+            ? await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false)
+            : base.SaveChanges(acceptAllChangesOnSuccess);
 
         if (permissionChanges.Count > 0)
         {

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Identity.Authentication;
 using GameGuild.Learning.Certificates;
@@ -83,5 +84,156 @@ public sealed class BlockchainCertificateAnchoringAdapter(
             certificate.IssuedAt,
             options.Issuer,
             PayloadVersion);
+    }
+
+    /// <inheritdoc />
+    public async Task<CertificateAnchorVerification> VerifyAnchoringAsync(Certificate certificate, CancellationToken cancellationToken = default)
+    {
+        // Deterministic digest recomputation: identical to the anchoring path, so the anchor being
+        // looked for is exactly the one AnchorIssuedCertificateAsync published.
+        var payload = BuildCanonicalPayload(certificate);
+        var digest = BlockchainCertificateCanonicalizer.ComputeSha256Hex(payload);
+
+        List<BlockchainCertificateAnchor> userAnchors;
+        try
+        {
+            userAnchors = await blockchainCertificates
+                .GetUserCertificatesAsync(certificate.UserId)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Certificate {CertificateNumber} anchor verification could not query the anchoring backend (fail closed)",
+                certificate.CertificateNumber);
+
+            return CertificateAnchorVerification.BackendUnreachable(
+                certificate.Id.ToString(),
+                digest,
+                "The anchoring backend could not be queried; on-chain verification is unavailable.");
+        }
+
+        var anchor = userAnchors.FirstOrDefault(candidate =>
+            string.Equals(candidate.CertificateType, CertificateType, StringComparison.Ordinal)
+            && string.Equals(candidate.CertificateHash, digest, StringComparison.OrdinalIgnoreCase));
+
+        if (anchor is null)
+        {
+            // No anchor for the current digest. If an anchor exists that claims this certificate
+            // (by canonical payload id) but carries a different digest, the certificate no longer
+            // matches what was anchored — report the mismatch instead of a silent absence.
+            var staleAnchor = userAnchors.FirstOrDefault(candidate =>
+                string.Equals(candidate.CertificateType, CertificateType, StringComparison.Ordinal)
+                && TryGetCanonicalPayloadCertificateId(candidate, out var anchoredCertificateId)
+                && anchoredCertificateId == certificate.Id.ToString());
+
+            if (staleAnchor is not null)
+            {
+                logger.LogWarning(
+                    "Certificate {CertificateNumber} anchor digest mismatch: anchored {AnchoredDigest}, recomputed {RecomputedDigest}",
+                    certificate.CertificateNumber, staleAnchor.CertificateHash, digest);
+
+                return CertificateAnchorVerification.Mismatch(
+                    certificate.Id.ToString(),
+                    digest,
+                    staleAnchor.CertificateHash,
+                    staleAnchor.TransactionHash);
+            }
+
+            return CertificateAnchorVerification.NotAnchored(certificate.Id.ToString(), digest);
+        }
+
+        // Confirmations: the platform verification resolves the chain record for this digest and
+        // transaction — payload integrity, latest revocation state and anchor validity.
+        bool confirmed;
+        try
+        {
+            confirmed = await blockchainCertificates
+                .VerifyCertificateAsync(digest, anchor.TransactionHash)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Certificate {CertificateNumber} anchor verification failed while confirming the chain record (fail closed)",
+                certificate.CertificateNumber);
+
+            return CertificateAnchorVerification.BackendUnreachable(
+                certificate.Id.ToString(),
+                digest,
+                "The anchoring backend could not confirm the chain record; on-chain verification is unavailable.");
+        }
+
+        if (confirmed)
+        {
+            logger.LogInformation(
+                "Certificate {CertificateNumber} anchor verified on network {Network} (tx {TransactionHash}, block {BlockNumber})",
+                certificate.CertificateNumber, anchor.BlockchainNetwork, anchor.TransactionHash, anchor.BlockNumber);
+
+            return CertificateAnchorVerification.VerifiedAnchor(
+                certificate.Id.ToString(),
+                digest,
+                anchor.CertificateHash,
+                anchor.TransactionHash,
+                anchor.BlockchainNetwork,
+                anchor.BlockNumber,
+                anchor.AnchoredAt);
+        }
+
+        if (anchor.IsRevoked)
+        {
+            return CertificateAnchorVerification.RevokedAnchor(
+                certificate.Id.ToString(),
+                digest,
+                anchor.CertificateHash,
+                anchor.TransactionHash);
+        }
+
+        logger.LogWarning(
+            "Certificate {CertificateNumber} chain record did not corroborate the recomputed digest {Digest} (tx {TransactionHash})",
+            certificate.CertificateNumber, digest, anchor.TransactionHash);
+
+        return CertificateAnchorVerification.Mismatch(
+            certificate.Id.ToString(),
+            digest,
+            anchor.CertificateHash,
+            anchor.TransactionHash,
+            "The chain record did not corroborate the certificate's recomputed canonical digest.");
+    }
+
+    private static bool TryGetCanonicalPayloadCertificateId(BlockchainCertificateAnchor anchor, out string certificateId)
+    {
+        certificateId = string.Empty;
+
+        try
+        {
+            using var document = JsonDocument.Parse(anchor.CertificateData);
+
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            if (document.RootElement.TryGetProperty(BlockchainCertificateCanonicalizer.IdKey, out var idValue)
+                && idValue.ValueKind == JsonValueKind.String)
+            {
+                var value = idValue.GetString();
+
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    certificateId = value;
+
+                    return true;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Non-canonical stored payloads cannot be tied to a certificate id; treat as no match.
+        }
+
+        return false;
     }
 }

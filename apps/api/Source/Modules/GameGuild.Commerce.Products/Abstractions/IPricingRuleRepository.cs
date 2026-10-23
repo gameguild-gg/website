@@ -39,6 +39,13 @@ public interface IPricingRuleRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets every non-deleted rule opted into automated scheduling
+    /// (<see cref="PricingRule.IsScheduled"/> = true), including tiers, so the
+    /// scheduler can align <see cref="PricingRule.IsActive"/> with each rule's date window.
+    /// </summary>
+    Task<IReadOnlyList<PricingRule>> GetScheduledRulesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Adds a new pricing rule. Callers must call <see cref="SaveChangesAsync"/> to persist.
     /// </summary>
     Task AddAsync(PricingRule rule, CancellationToken cancellationToken = default);

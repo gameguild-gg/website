@@ -29,6 +29,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="StackingPriority">Stacking priority</param>
 /// <param name="CampaignId">Campaign identifier stamped on every generated code</param>
 /// <param name="ProductId">Product restriction</param>
+/// <param name="PlanId">Subscription plan restriction (issue #418)</param>
 /// <param name="CreatedBy">Creating user</param>
 [RequiresQuota(ResourceUsageType.PromoCodes, 1, Source = "GenerateBulkPromoCodes")]
 public sealed record GenerateBulkPromoCodesCommand(
@@ -52,7 +53,8 @@ public sealed record GenerateBulkPromoCodesCommand(
     int StackingPriority = 0,
     string? CampaignId = null,
     Guid? ProductId = null,
-    Guid? CreatedBy = null
+    Guid? CreatedBy = null,
+    Guid? PlanId = null
 ) : ICommand<IReadOnlyList<PromoCodeDto>>;
 
 /// <summary>
@@ -120,6 +122,7 @@ public sealed class GenerateBulkPromoCodesCommandHandler(
             StackingPriority = request.StackingPriority,
             CampaignId = request.CampaignId,
             ProductId = request.ProductId,
+            PlanId = request.PlanId,
             CreatedBy = request.CreatedBy ?? Guid.Empty
         }).ToList();
 

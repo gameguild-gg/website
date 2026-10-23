@@ -231,6 +231,9 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("OccurredAtUtc")
                         .HasDatabaseName("ix_entity_change_audit_time");
 
+                    b.HasIndex("TenantId", "OccurredAtUtc")
+                        .HasDatabaseName("ix_entity_change_audit_tenant_time");
+
                     b.HasIndex("EntityName", "KeyId", "OccurredAtUtc")
                         .HasDatabaseName("ix_entity_change_audit_entity");
 
@@ -2175,6 +2178,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<DateTime?>("GatewaySubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsFromMerchant")
                         .HasColumnType("boolean");
 
@@ -2741,6 +2747,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("EvidenceDueBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EvidenceSubmittedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("GatewayDisputeId")
@@ -4049,6 +4058,228 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("pricing_decision_ledger", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperiment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TrafficPercentage")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndDate");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("StartDate");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("pricing_experiments");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperimentAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("BucketKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ExperimentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("VariantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BucketKey");
+
+                    b.HasIndex("ExperimentId");
+
+                    b.HasIndex("VariantId");
+
+                    b.HasIndex("ExperimentId", "BucketKey")
+                        .IsUnique();
+
+                    b.ToTable("pricing_experiment_assignments");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperimentOutcome", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("AssignmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ExperimentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("VariantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExperimentId");
+
+                    b.HasIndex("OccurredAt");
+
+                    b.HasIndex("VariantId");
+
+                    b.ToTable("pricing_experiment_outcomes");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperimentVariant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AllocationPercentage")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("ExperimentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("FixedPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsControl")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExperimentId");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("pricing_experiment_variants");
+                });
+
             modelBuilder.Entity("GameGuild.Commerce.PricingRule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4094,6 +4325,9 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsScheduled")
+                        .HasColumnType("boolean");
+
                     b.Property<int?>("MaxQuantity")
                         .HasColumnType("integer");
 
@@ -4135,6 +4369,18 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("UsageMaxValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("UsageMetricKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("UsageMinValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
@@ -4144,6 +4390,8 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("EndDate");
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("IsScheduled");
 
                     b.HasIndex("Priority");
 
@@ -4852,6 +5100,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<Guid?>("PlanId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uuid");
 
@@ -4887,6 +5138,8 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("PlanId");
 
                     b.HasIndex("ProductId");
 
@@ -4928,6 +5181,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uuid");
 
@@ -4935,6 +5191,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("PromoCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("TenantId")
@@ -4958,7 +5217,11 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
+                    b.HasIndex("InvoiceId");
+
                     b.HasIndex("PromoCodeId");
+
+                    b.HasIndex("SubscriptionId");
 
                     b.HasIndex("UsedAt");
 
@@ -4991,6 +5254,62 @@ namespace GameGuild.API.Database.Migrations
                     b.HasKey("PromoCodeId", "UserId");
 
                     b.ToTable("promo_code_user_usage_counters");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Products.PromoCodeValidationAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AttemptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("PromoCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttemptedAt");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("PromoCodeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("promo_code_validation_attempts");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PromoStackingRule", b =>
@@ -5690,6 +6009,99 @@ namespace GameGuild.API.Database.Migrations
                         .HasDatabaseName("ix_subscription_plan_interval_prices_plan_interval");
 
                     b.ToTable("SubscriptionPlanIntervalPrices", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Compliance.Audit.ArchivedSecurityAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ArchivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OriginalCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResourceId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("RiskLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SourceAuditLogId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "OriginalCreatedAt");
+
+                    b.HasIndex("TenantId", "SourceAuditLogId")
+                        .IsUnique();
+
+                    b.ToTable("ArchivedAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Audit.AuditDataAccessObservation", b =>
@@ -6756,6 +7168,9 @@ namespace GameGuild.API.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("ArchivedCount")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -6808,6 +7223,9 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("ArchiveAfterDays")
+                        .HasColumnType("integer");
 
                     b.Property<string>("CategoryOverridesJson")
                         .HasColumnType("text");
@@ -15792,6 +16210,88 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("game_jam_submissions", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.AccountRecoveryRequest", b =>
+                {
+                    b.Property<DateTimeOffset>("ApprovalWindowEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approval_window_ends_at");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<DateTimeOffset>("CooldownEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cooldown_ends_at");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<int>("RequiredApprovals")
+                        .HasColumnType("integer")
+                        .HasColumnName("required_approvals");
+
+                    b.Property<DateTimeOffset?>("ResetTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reset_token_expires_at");
+
+                    b.Property<string>("ResetTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("reset_token_hash");
+
+                    b.Property<DateTimeOffset?>("ResetUnlockedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reset_unlocked_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_account_recovery_requests_active_owner")
+                        .HasFilter("status IN ('PendingApprovals', 'ResetUnlocked')");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_account_recovery_requests_tenant_status");
+
+                    b.ToTable("account_recovery_requests", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_account_recovery_cooldown", "cooldown_ends_at >= requested_at");
+
+                            t.HasCheckConstraint("ck_account_recovery_required_approvals", "required_approvals >= 1");
+
+                            t.HasCheckConstraint("ck_account_recovery_reset_token", "(reset_token_hash IS NULL OR reset_token_hash ~ '^[a-f0-9]{64}$')");
+
+                            t.HasCheckConstraint("ck_account_recovery_status", "status IN ('PendingApprovals', 'ResetUnlocked', 'Completed', 'Cancelled', 'Expired')");
+
+                            t.HasCheckConstraint("ck_account_recovery_window", "approval_window_ends_at >= cooldown_ends_at");
+                        });
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.AdaptiveBehaviorBaseline", b =>
                 {
                     b.Property<Guid>("Id")
@@ -16711,6 +17211,88 @@ namespace GameGuild.API.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.RecoveryApproval", b =>
+                {
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<string>("ApprovalCodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("approval_code_hash");
+
+                    b.Property<string>("ApproverIpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("approver_ip_address");
+
+                    b.Property<string>("ApproverUserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("approver_user_agent");
+
+                    b.Property<string>("Factor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("factor");
+
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("issued_at");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<Guid>("RecoveryRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recovery_request_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<Guid?>("TrustedContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trusted_contact_id");
+
+                    b.Property<Guid?>("WebAuthnCredentialId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("webauthn_credential_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecoveryRequestId")
+                        .HasDatabaseName("ix_recovery_approvals_request");
+
+                    b.HasIndex("RecoveryRequestId", "TrustedContactId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_recovery_approvals_request_contact")
+                        .HasFilter("trusted_contact_id IS NOT NULL");
+
+                    b.HasIndex("RecoveryRequestId", "WebAuthnCredentialId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_recovery_approvals_request_credential")
+                        .HasFilter("webauthn_credential_id IS NOT NULL");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_recovery_approvals_tenant");
+
+                    b.ToTable("recovery_approvals", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_recovery_approvals_factor", "factor IN ('TrustedContact', 'Passkey')");
+
+                            t.HasCheckConstraint("ck_recovery_approvals_factor_target", "(factor = 'Passkey' AND webauthn_credential_id IS NOT NULL AND approval_code_hash IS NULL AND trusted_contact_id IS NULL)\nOR (factor = 'TrustedContact' AND trusted_contact_id IS NOT NULL AND approval_code_hash IS NOT NULL AND webauthn_credential_id IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -17268,6 +17850,80 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("totp_replay_state", "gameguild.authentication", t =>
                         {
                             t.HasCheckConstraint("ck_totp_replay_state_nonnegative_step", "last_accepted_step >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.TrustedContact", b =>
+                {
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("InviteTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invite_token_expires_at");
+
+                    b.Property<string>("InviteTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("invite_token_hash");
+
+                    b.Property<DateTimeOffset>("InvitedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invited_at");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("Relation")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("relation");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "Email")
+                        .IsUnique()
+                        .HasDatabaseName("ux_trusted_contacts_active_owner_email")
+                        .HasFilter("status IN ('Invited', 'Confirmed')");
+
+                    b.HasIndex("OwnerUserId", "Status")
+                        .HasDatabaseName("ix_trusted_contacts_owner_status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_trusted_contacts_tenant");
+
+                    b.ToTable("trusted_contacts", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_trusted_contacts_invite_token", "(invite_token_hash IS NULL OR invite_token_hash ~ '^[a-f0-9]{64}$')");
+
+                            t.HasCheckConstraint("ck_trusted_contacts_status", "status IN ('Invited', 'Confirmed', 'Revoked')");
                         });
                 });
 
@@ -34212,6 +34868,55 @@ namespace GameGuild.API.Database.Migrations
                     b.Navigation("Wallet");
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperimentAssignment", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.PricingExperiment", "Experiment")
+                        .WithMany()
+                        .HasForeignKey("ExperimentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Commerce.PricingExperimentVariant", "Variant")
+                        .WithMany()
+                        .HasForeignKey("VariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Experiment");
+
+                    b.Navigation("Variant");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperimentOutcome", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.PricingExperiment", "Experiment")
+                        .WithMany()
+                        .HasForeignKey("ExperimentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Commerce.PricingExperimentVariant", "Variant")
+                        .WithMany()
+                        .HasForeignKey("VariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Experiment");
+
+                    b.Navigation("Variant");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperimentVariant", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.PricingExperiment", "Experiment")
+                        .WithMany("Variants")
+                        .HasForeignKey("ExperimentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Experiment");
+                });
+
             modelBuilder.Entity("GameGuild.Commerce.PricingRuleTier", b =>
                 {
                     b.HasOne("GameGuild.Commerce.PricingRule", "PricingRule")
@@ -37311,6 +38016,11 @@ namespace GameGuild.API.Database.Migrations
             modelBuilder.Entity("GameGuild.Commerce.Payments.UserWallet", b =>
                 {
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.PricingExperiment", b =>
+                {
+                    b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.PricingRule", b =>

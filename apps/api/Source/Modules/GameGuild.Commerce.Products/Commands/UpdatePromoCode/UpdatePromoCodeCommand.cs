@@ -26,6 +26,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="ApplyToRenewal">Whether the discount also applies to renewals</param>
 /// <param name="CampaignId">Campaign identifier for tracking</param>
 /// <param name="ProductId">Specific product ID</param>
+/// <param name="PlanId">Specific subscription plan ID (null = not plan-scoped; issue #418)</param>
 public sealed record UpdatePromoCodeCommand(
     Guid Id,
     string? Name = null,
@@ -47,5 +48,6 @@ public sealed record UpdatePromoCodeCommand(
     bool? IsExclusive = null,
     int? StackingPriority = null,
     string? CampaignId = null,
-    Guid? ProductId = null
+    Guid? ProductId = null,
+    Guid? PlanId = null
 ) : ICommand<PromoCodeDto>;

@@ -93,6 +93,11 @@ export class TTYBridge implements IOProvider {
     });
   }
 
+  /** Subscribe to raw terminal input after the bridge's own byte routing. */
+  onData(listener: (data: string) => void): ReturnType<Terminal['onData']> {
+    return this.terminal.onData(listener);
+  }
+
   writeLine(text: string): void {
     this.terminal.writeln(text);
   }

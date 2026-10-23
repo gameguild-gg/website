@@ -6,6 +6,20 @@ import {
 } from "@/lib/feed/queries";
 import { notFound } from "next/navigation";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}) {
+  const { handle } = await params;
+  const profile = await loadSocialProfileByHandle(handle).catch(() => null);
+
+  return {
+    title: profile ? `${profile.displayName} (@${profile.handle}) | GameGuild` : "Profile not found | GameGuild",
+    description: profile?.headline || profile?.bio || undefined,
+  };
+}
+
 export default async function SocialProfilePage({
   params,
 }: {
@@ -17,11 +31,11 @@ export default async function SocialProfilePage({
   const currentUserId = session && typeof session !== "function" ? session.user?.id ?? null : null;
   let posts: Awaited<ReturnType<typeof loadSocialProfileCollections>>["posts"] = [];
   let projects: Awaited<ReturnType<typeof loadSocialProfileCollections>>["projects"] = [];
-  let collectionsError: string | null = null;
+  let collectionsFailed = false;
   try {
     ({ posts, projects } = await loadSocialProfileCollections(profile.userId));
   } catch {
-    collectionsError = "Public work could not be loaded. Refresh to retry.";
+    collectionsFailed = true;
   }
   return (
     <SocialProfileView
@@ -29,7 +43,7 @@ export default async function SocialProfilePage({
       currentUserId={currentUserId}
       posts={posts}
       projects={projects}
-      collectionsError={collectionsError}
+      collectionsFailed={collectionsFailed}
     />
   );
 }

@@ -8209,6 +8209,26 @@ export const postDisputesRespondEndpoint = {
 } as const;
 
 /**
+ * Submit the dispute evidence bundle to the gateway: assembles every attached evidence
+ * row into one bundle, delivers it through the gateway and records the submission status
+ * on the dispute and each evidence item. Requires the `payments:admin` permission.
+ *
+ * Assembles every evidence row attached to the dispute into one bundle, submits it to the gateway and records the submission status. Requires the payments:admin permission.
+ */
+export interface PostDisputesSubmitEvidenceInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput;
+}
+export type PostDisputesSubmitEvidenceOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesSubmitEvidenceEndpoint = {
+  operationId: 'postDisputesSubmitEvidence' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:submit-evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * List the evidence attached to a dispute.
  *
  * Lists the evidence files attached to a payment dispute, newest first.
@@ -16335,7 +16355,7 @@ export const postAuthMfaVerifyEndpoint = {
 /**
  * Discover federation providers for an email domain
  *
- * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.
+ * Lists the enabled enterprise federation providers — OIDC and SAML — whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists. Each entry carries the protocol it serves.
  */
 export interface GetAuthOidcDiscoverProviderInput {
   query?: {
@@ -16557,6 +16577,79 @@ export const postAuthPolymorphicEndpoint = {
   operationId: 'postAuthPolymorphic' as const,
   method: 'POST' as const,
   path: '/v1/auth/polymorphic' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Handle the posted SAML response (Assertion Consumer Service)
+ *
+ * Validates the posted SAMLResponse (XML-DSig signature against the provider's configured certificates, issuer, audience, destination, clock-skew-bounded lifetimes, InResponseTo correlation, assertion-ID replay protection) and applies the same account matching and auto-link policy as the other providers. Fail closed when unsigned, wrongly signed, expired, replayed, or when the platform MFA policy is not attested by the assertion's AuthnContext.
+ */
+export interface PostAuthSamlAssertionConsumerInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationSamlCallbackRequestDto;
+}
+export type PostAuthSamlAssertionConsumerOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthSamlAssertionConsumerEndpoint = {
+  operationId: 'postAuthSamlAssertionConsumer' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/saml/{slug}:assertion-consumer' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Resolve the provider's front-channel single-logout redirect
+ *
+ * Returns the provider's single-logout redirect (an unsigned LogoutRequest via the HTTP-Redirect binding) when the provider is configured with a single logout service; null keeps logout local. Local refresh-token revocation is unchanged and remains the caller's responsibility.
+ */
+export interface GetAuthSamlLogoutUrlInput {
+  slug: string;
+  query?: {
+    postLogoutRedirectUri?: string;
+  };
+}
+export type GetAuthSamlLogoutUrlOutput = Types.IdentityAuthenticationSamlLogoutUrlOutput;
+export const getAuthSamlLogoutUrlEndpoint = {
+  operationId: 'getAuthSamlLogoutUrl' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/saml/{slug}:logout-url' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Serve this service provider's SAML 2.0 metadata document
+ *
+ * Returns this deployment's SAML 2.0 service provider metadata (entity ID and POST-binding assertion consumer service) for the configured provider, to be registered with the enterprise identity provider.
+ */
+export interface GetAuthSamlMetadataInput {
+  slug: string;
+}
+export type GetAuthSamlMetadataOutput = void;
+export const getAuthSamlMetadataEndpoint = {
+  operationId: 'getAuthSamlMetadata' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/saml/{slug}:metadata' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Initiate SAML federation provider sign-in
+ *
+ * Issues a SAML AuthnRequest for a configured enterprise identity provider (Authentication:ExternalProviders:Saml:<slug>) and returns the provider's sign-on redirect URL (HTTP-Redirect binding) with a RelayState token for the caller's state cookie.
+ */
+export interface PostAuthSamlSignInAuthorizeInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationSamlAuthorizeRequestDto;
+}
+export type PostAuthSamlSignInAuthorizeOutput = Types.IdentityAuthenticationSamlSignInOutput;
+export const postAuthSamlSignInAuthorizeEndpoint = {
+  operationId: 'postAuthSamlSignInAuthorize' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/saml/{slug}:sign-in-authorize' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
 } as const;
@@ -30375,6 +30468,7 @@ export const endpoints = {
   postDisputesChallenge: postDisputesChallengeEndpoint,
   postDisputesResolve: postDisputesResolveEndpoint,
   postDisputesRespond: postDisputesRespondEndpoint,
+  postDisputesSubmitEvidence: postDisputesSubmitEvidenceEndpoint,
   getDisputesEvidence: getDisputesEvidenceEndpoint,
   postDisputesEvidence: postDisputesEvidenceEndpoint,
   getDisputesStatistics: getDisputesStatisticsEndpoint,
@@ -30879,6 +30973,10 @@ export const endpoints = {
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,
   postAuthPolymorphic: postAuthPolymorphicEndpoint,
+  postAuthSamlAssertionConsumer: postAuthSamlAssertionConsumerEndpoint,
+  getAuthSamlLogoutUrl: getAuthSamlLogoutUrlEndpoint,
+  getAuthSamlMetadata: getAuthSamlMetadataEndpoint,
+  postAuthSamlSignInAuthorize: postAuthSamlSignInAuthorizeEndpoint,
   getAuthScimProvisioningTokens: getAuthScimProvisioningTokensEndpoint,
   postAuthScimProvisioningTokens: postAuthScimProvisioningTokensEndpoint,
   postAuthScimProvisioningTokensRevoke: postAuthScimProvisioningTokensRevokeEndpoint,

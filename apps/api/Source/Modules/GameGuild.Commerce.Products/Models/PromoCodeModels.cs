@@ -26,6 +26,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="StackingPriority">Priority for stacking</param>
 /// <param name="CampaignId">Campaign identifier for tracking</param>
 /// <param name="ProductId">Specific product ID (null = all products)</param>
+/// <param name="PlanId">Specific subscription plan ID (null = not plan-scoped)</param>
 /// <param name="UsageCount">Current usage count</param>
 /// <param name="CreatedAt">Creation timestamp</param>
 /// <param name="UpdatedAt">Last update timestamp</param>
@@ -55,7 +56,8 @@ public sealed record PromoCodeDto(
     Guid? ProductId,
     int UsageCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    Guid? PlanId = null
 );
 
 /// <summary>
@@ -66,12 +68,20 @@ public sealed record PromoCodeDto(
 /// <param name="ErrorMessage">Error message if invalid</param>
 /// <param name="DiscountAmount">Calculated discount amount</param>
 /// <param name="DiscountPercentage">Discount percentage applied</param>
+/// <param name="PromoCodeId">ID of the resolved promo code (null when the code was not found)</param>
+/// <param name="Outcome">Structured outcome used for conversion tracking (null on legacy callers)</param>
+/// <param name="TrialExtensionDays">Trial days granted (FreeTrialExtension codes only)</param>
+/// <param name="FreeMonthsGranted">Billing periods granted (FreeMonths codes only)</param>
 public sealed record PromoCodeValidationResult(
     bool IsValid,
     string? Code = null,
     string? ErrorMessage = null,
     decimal DiscountAmount = 0,
-    decimal? DiscountPercentage = null
+    decimal? DiscountPercentage = null,
+    Guid? PromoCodeId = null,
+    PromoCodeValidationOutcome? Outcome = null,
+    int? TrialExtensionDays = null,
+    int? FreeMonthsGranted = null
 );
 
 /// <summary>
@@ -161,6 +171,9 @@ public sealed record PromoStackingRuleDto(
 /// <param name="RuleDiscount">Per-unit discount produced by the winning pricing rule (issue #395)</param>
 /// <param name="AppliedRuleId">ID of the winning pricing rule, if any (issue #395)</param>
 /// <param name="AppliedRuleName">Name of the winning pricing rule, if any (issue #395)</param>
+/// <param name="AppliedExperimentId">ID of the live A/B experiment applied to this calculation, if any (issue #395)</param>
+/// <param name="AppliedVariantName">Name of the experiment arm applied to this calculation (issue #395)</param>
+/// <param name="ExperimentDiscount">Per-unit discount produced by the experiment arm (issue #395)</param>
 public sealed record PricingCalculationResult(
     decimal BasePrice,
     decimal? SalePrice,
@@ -171,7 +184,10 @@ public sealed record PricingCalculationResult(
     List<string> AppliedPromoCodes,
     decimal RuleDiscount = 0,
     Guid? AppliedRuleId = null,
-    string? AppliedRuleName = null
+    string? AppliedRuleName = null,
+    Guid? AppliedExperimentId = null,
+    string? AppliedVariantName = null,
+    decimal ExperimentDiscount = 0
 );
 
 /// <summary>
@@ -189,6 +205,8 @@ public sealed record PricingCalculationResult(
 /// <param name="RedemptionRate">Uses divided by total MaxUses capacity (null when no code declares limits)</param>
 /// <param name="TopCodes">Codes ranked by uses within the window</param>
 /// <param name="ExpiringCodes">Campaign codes expiring within the next 30 days</param>
+/// <param name="TotalValidationAttempts">Validation attempts recorded for campaign codes within the window (conversion denominator)</param>
+/// <param name="ConversionRate">Recorded uses divided by validation attempts (null when no attempts were recorded)</param>
 public sealed record CampaignPerformanceDto(
     string CampaignId,
     DateTime? WindowStart,
@@ -201,7 +219,9 @@ public sealed record CampaignPerformanceDto(
     decimal AverageDiscountPerUse,
     decimal? RedemptionRate,
     IReadOnlyList<CampaignTopCodeDto> TopCodes,
-    IReadOnlyList<CampaignExpiringCodeDto> ExpiringCodes
+    IReadOnlyList<CampaignExpiringCodeDto> ExpiringCodes,
+    int TotalValidationAttempts = 0,
+    decimal? ConversionRate = null
 );
 
 /// <summary>

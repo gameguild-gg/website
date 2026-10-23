@@ -168,6 +168,7 @@ export function FillBlankRenderer({
         return (
           <input
             type="text"
+            data-testid={`fill-blank-input-${blank.id}`}
             className="inline-block w-40 mx-2 px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors"
             placeholder="..."
             value={currentValue}
@@ -182,6 +183,7 @@ export function FillBlankRenderer({
             <input
               type={input.requireUnit ? "text" : "number"}
               step="any"
+              data-testid={`fill-blank-input-${blank.id}`}
               className="inline-block w-40 px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder={input.requiredPrecision ? `0.${"0".repeat(input.requiredPrecision)}` : "0"}
               value={currentValue}
@@ -202,7 +204,10 @@ export function FillBlankRenderer({
             onValueChange={(value) => handleInputChange(blank.id, value ?? "")}
             disabled={disabled || showFeedback}
           >
-            <SelectTrigger className="inline-flex w-40 mx-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600">
+            <SelectTrigger
+              data-testid={`fill-blank-select-${blank.id}`}
+              className="inline-flex w-40 mx-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600"
+            >
               <SelectValue placeholder="Select..." />
             </SelectTrigger>
             <SelectContent>

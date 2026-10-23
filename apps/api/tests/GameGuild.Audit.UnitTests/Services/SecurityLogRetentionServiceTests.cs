@@ -69,12 +69,13 @@ public sealed class SecurityLogRetentionServiceTests : IDisposable
     private async Task<SecurityLogRetentionPolicy> SeedPolicyAsync(
         int retentionDays = 400,
         Dictionary<string, int>? overrides = null,
-        DateTime? legalHoldUntilUtc = null)
+        DateTime? legalHoldUntilUtc = null,
+        int? archiveAfterDays = null)
     {
         var policy = SecurityLogRetentionPolicy.Create(
             _tenant, retentionDays,
             overrides is null ? null : System.Text.Json.JsonSerializer.Serialize(overrides),
-            legalHoldUntilUtc, _admin, Now);
+            legalHoldUntilUtc, _admin, Now, archiveAfterDays);
         _context.Set<SecurityLogRetentionPolicy>().Add(policy);
         await _context.SaveChangesAsync();
         return policy;
@@ -92,6 +93,9 @@ public sealed class SecurityLogRetentionServiceTests : IDisposable
             RiskLevel = AuditRiskLevel.Low,
             CreatedAt = createdAtUtc
         };
+
+    private ArchivedSecurityAuditLog SeedArchivedLog(AuditLog source) =>
+        ArchivedSecurityAuditLog.FromAuditLog(source, Now);
 
     [Fact]
     public async Task ConfigureAsync_CreatesFirstRevision_AndRecordsConfigurationSecurityEvent()
@@ -263,6 +267,270 @@ public sealed class SecurityLogRetentionServiceTests : IDisposable
         history.Should().HaveCount(2);
         history.Select(execution => execution.TriggeredByUserId)
             .Should().BeEquivalentTo(new Guid?[] { null, _admin });
+    }
+
+    [Fact]
+    public async Task ConfigureAsync_PersistsArchiveAfterDays_AndEchoesItInTheResponse()
+    {
+        var service = CreateService();
+
+        var response = await service.ConfigureAsync(new ConfigureSecurityLogRetentionRequest
+        {
+            ExpectedRevision = 0,
+            RetentionDays = 400,
+            ArchiveAfterDays = 60
+        }, CancellationToken.None);
+
+        response.ArchiveAfterDays.Should().Be(60);
+        var stored = await _context.Set<SecurityLogRetentionPolicy>().SingleAsync();
+        stored.ArchiveAfterDays.Should().Be(60);
+    }
+
+    [Fact]
+    public async Task ConfigureAsync_RejectsArchiveThresholdNotShorterThanRetentionWindow()
+    {
+        var service = CreateService();
+
+        var equal = () => service.ConfigureAsync(new ConfigureSecurityLogRetentionRequest
+        {
+            RetentionDays = 90,
+            ArchiveAfterDays = 90
+        }, CancellationToken.None);
+        var longer = () => service.ConfigureAsync(new ConfigureSecurityLogRetentionRequest
+        {
+            RetentionDays = 90,
+            ArchiveAfterDays = 91
+        }, CancellationToken.None);
+
+        (await equal.Should().ThrowAsync<SecurityLogRetentionValidationException>())
+            .Which.Errors.Should().ContainKey("ArchiveAfterDays");
+        (await longer.Should().ThrowAsync<SecurityLogRetentionValidationException>())
+            .Which.Errors.Should().ContainKey("ArchiveAfterDays");
+    }
+
+    [Fact]
+    public async Task ConfigureAsync_RejectsOutOfRangeArchiveThresholds()
+    {
+        var service = CreateService();
+
+        var zero = () => service.ConfigureAsync(new ConfigureSecurityLogRetentionRequest
+        {
+            RetentionDays = 400,
+            ArchiveAfterDays = 0
+        }, CancellationToken.None);
+        var tooLarge = () => service.ConfigureAsync(new ConfigureSecurityLogRetentionRequest
+        {
+            RetentionDays = 4000,
+            ArchiveAfterDays = 3651
+        }, CancellationToken.None);
+
+        (await zero.Should().ThrowAsync<SecurityLogRetentionValidationException>())
+            .Which.Errors.Should().ContainKey("ArchiveAfterDays");
+        (await tooLarge.Should().ThrowAsync<SecurityLogRetentionValidationException>())
+            .Which.Errors.Should().ContainKey("ArchiveAfterDays");
+    }
+
+    [Fact]
+    public async Task EnforceForTenantAsync_ArchivesAgedRowsIntoTheArchiveTier()
+    {
+        await SeedPolicyAsync(retentionDays: 400, archiveAfterDays: 30);
+        var aged = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-100));
+        var fresh = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-10));
+        _context.Set<AuditLog>().AddRange(aged, fresh);
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var execution = await service.EnforceForTenantAsync(_tenant, triggeredByUserId: null, dryRun: false, CancellationToken.None);
+
+        execution!.ArchivedCount.Should().Be(1);
+        execution.DeletedCount.Should().Be(0);
+        var hotRows = await _context.Set<AuditLog>().ToListAsync();
+        hotRows.Select(log => log.Id).Should().BeEquivalentTo([fresh.Id]);
+        var archivedRows = await _context.Set<ArchivedSecurityAuditLog>().ToListAsync();
+        archivedRows.Should().ContainSingle();
+        var archived = archivedRows[0];
+        archived.SourceAuditLogId.Should().Be(aged.Id);
+        archived.ActionType.Should().Be("Login");
+        archived.OriginalCreatedAt.Should().Be(aged.CreatedAt);
+        archived.TenantId.Should().Be(_tenant);
+        archived.ArchivedAtUtc.Should().Be(Now);
+        var history = await _context.Set<SecurityLogRetentionExecution>().AsNoTracking().SingleAsync();
+        history.ArchivedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task EnforceForTenantAsync_DryRun_CountsArchivalWithoutMovingRows()
+    {
+        await SeedPolicyAsync(retentionDays: 400, archiveAfterDays: 30);
+        var aged = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-100));
+        _context.Set<AuditLog>().Add(aged);
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var execution = await service.EnforceForTenantAsync(_tenant, triggeredByUserId: null, dryRun: true, CancellationToken.None);
+
+        execution!.ArchivedCount.Should().Be(1);
+        (await _context.Set<AuditLog>().CountAsync()).Should().Be(1);
+        (await _context.Set<ArchivedSecurityAuditLog>().CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnforceForTenantAsync_NeverArchivesRowsPastTheirRetentionWindow()
+    {
+        await SeedPolicyAsync(retentionDays: 30, archiveAfterDays: 5);
+        var expired = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-40));
+        _context.Set<AuditLog>().Add(expired);
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var execution = await service.EnforceForTenantAsync(_tenant, triggeredByUserId: null, dryRun: false, CancellationToken.None);
+
+        execution!.DeletedCount.Should().Be(1);
+        execution.ArchivedCount.Should().Be(0);
+        (await _context.Set<AuditLog>().CountAsync()).Should().Be(0);
+        (await _context.Set<ArchivedSecurityAuditLog>().CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnforceForTenantAsync_WithoutArchiveThreshold_KeepsEverythingHot()
+    {
+        await SeedPolicyAsync(retentionDays: 400);
+        var aged = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-100));
+        _context.Set<AuditLog>().Add(aged);
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var execution = await service.EnforceForTenantAsync(_tenant, triggeredByUserId: null, dryRun: false, CancellationToken.None);
+
+        execution!.ArchivedCount.Should().Be(0);
+        (await _context.Set<AuditLog>().CountAsync()).Should().Be(1);
+        (await _context.Set<ArchivedSecurityAuditLog>().CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnforceForTenantAsync_ActiveLegalHold_SuspendsArchivalToo()
+    {
+        await SeedPolicyAsync(retentionDays: 400, legalHoldUntilUtc: Now.AddDays(5), archiveAfterDays: 30);
+        var aged = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-100));
+        _context.Set<AuditLog>().Add(aged);
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var execution = await service.EnforceForTenantAsync(_tenant, triggeredByUserId: null, dryRun: false, CancellationToken.None);
+
+        execution!.LegalHoldActive.Should().BeTrue();
+        execution.ArchivedCount.Should().Be(0);
+        (await _context.Set<AuditLog>().CountAsync()).Should().Be(1);
+        (await _context.Set<ArchivedSecurityAuditLog>().CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EnforceForTenantAsync_PurgesArchiveRowsPastTheirRetentionWindow()
+    {
+        await SeedPolicyAsync(retentionDays: 30);
+        var expiredSource = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-40));
+        var keptSource = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-20));
+        _context.Set<ArchivedSecurityAuditLog>().AddRange(SeedArchivedLog(expiredSource), SeedArchivedLog(keptSource));
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var execution = await service.EnforceForTenantAsync(_tenant, triggeredByUserId: null, dryRun: false, CancellationToken.None);
+
+        execution!.DeletedCount.Should().Be(1);
+        var remainingArchived = await _context.Set<ArchivedSecurityAuditLog>().ToListAsync();
+        remainingArchived.Select(row => row.SourceAuditLogId).Should().BeEquivalentTo([keptSource.Id]);
+    }
+
+    [Fact]
+    public async Task EnforceForTenantAsync_ArchivePurgeHonorsCategoryOverrides()
+    {
+        await SeedPolicyAsync(
+            retentionDays: 400,
+            overrides: new Dictionary<string, int> { [nameof(AuditCategory.Authentication)] = 30 });
+        var expiredAuth = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-40));
+        var keptGeneral = SeedAuditLog("DataTouched", AuditCategory.General, Now.AddDays(-100));
+        _context.Set<ArchivedSecurityAuditLog>().AddRange(SeedArchivedLog(expiredAuth), SeedArchivedLog(keptGeneral));
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var execution = await service.EnforceForTenantAsync(_tenant, triggeredByUserId: null, dryRun: false, CancellationToken.None);
+
+        execution!.DeletedCount.Should().Be(1);
+        var remainingArchived = await _context.Set<ArchivedSecurityAuditLog>().ToListAsync();
+        remainingArchived.Select(row => row.SourceAuditLogId).Should().BeEquivalentTo([keptGeneral.Id]);
+    }
+
+    [Fact]
+    public async Task GetArchivedAsync_ReturnsTenantScopedArchiveRowsNewestFirst()
+    {
+        await SeedPolicyAsync();
+        var older = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-100));
+        var newer = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-50));
+        var otherTenant = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-60), tenantId: Guid.NewGuid());
+        _context.Set<ArchivedSecurityAuditLog>().AddRange(SeedArchivedLog(older), SeedArchivedLog(newer), SeedArchivedLog(otherTenant));
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var page = await service.GetArchivedAsync(0, 10, CancellationToken.None);
+
+        page.TotalCount.Should().Be(2);
+        page.Rows.Select(row => row.SourceAuditLogId).Should().BeEquivalentTo([newer.Id, older.Id], options => options.WithStrictOrdering());
+        page.Rows.All(row => row.TenantId == _tenant).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetArchivedAsync_RequiresTenantAdministrator()
+    {
+        var service = CreateService();
+        SetAdminActor(role: "Member");
+
+        var act = () => service.GetArchivedAsync(0, 10, CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task GetArchivedAsync_RejectsInvalidPagination()
+    {
+        var service = CreateService();
+
+        var act = () => service.GetArchivedAsync(-1, 10, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<SecurityLogRetentionValidationException>())
+            .Which.Errors.Should().ContainKey("Pagination");
+    }
+
+    [Fact]
+    public async Task GetStorageTierReportAsync_ReportsHotAndArchivePlacement()
+    {
+        await SeedPolicyAsync(retentionDays: 400, archiveAfterDays: 30);
+        var hot = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-10));
+        var archivedSource = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-100));
+        var otherTenantHot = SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-10), tenantId: Guid.NewGuid());
+        _context.Set<AuditLog>().AddRange(hot, otherTenantHot);
+        _context.Set<ArchivedSecurityAuditLog>().AddRange(SeedArchivedLog(archivedSource), SeedArchivedLog(SeedAuditLog("Login", AuditCategory.Authentication, Now.AddDays(-90), tenantId: Guid.NewGuid())));
+        await _context.SaveChangesAsync();
+        var service = CreateService();
+
+        var report = await service.GetStorageTierReportAsync(CancellationToken.None);
+
+        report.TenantId.Should().Be(_tenant);
+        report.HotRowCount.Should().Be(1);
+        report.ArchiveRowCount.Should().Be(1);
+        report.ArchiveAfterDays.Should().Be(30);
+        report.RetentionDays.Should().Be(400);
+        report.LegalHoldActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetStorageTierReportAsync_RequiresTenantAdministrator()
+    {
+        var service = CreateService();
+        SetAdminActor(authenticated: false);
+
+        var act = () => service.GetStorageTierReportAsync(CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
     }
 
     private sealed class FrozenTimeProvider(DateTime utcNow) : TimeProvider

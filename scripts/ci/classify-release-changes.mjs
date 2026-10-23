@@ -83,6 +83,16 @@ export function classifyReleaseChanges(filePaths) {
 
   for (const rawPath of filePaths) {
     const filePath = normalizePath(rawPath);
+    // Verification infrastructure must run its selected API suites without deploying the API.
+    if (
+      [
+        "scripts/ci/select-affected-dotnet-tests.mjs",
+        "scripts/ci/run-affected-dotnet-tests.sh",
+        "scripts/ci/tests/select-affected-dotnet-tests.test.mjs",
+      ].includes(filePath)
+    ) {
+      classification.api = true;
+    }
     if (
       [
         "scripts/ci/verify-openapi-client.sh",

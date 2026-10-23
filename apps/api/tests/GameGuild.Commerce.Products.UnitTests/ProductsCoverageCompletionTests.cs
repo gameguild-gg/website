@@ -422,6 +422,7 @@ public class ProductsCoverageCompletionTests
             Mock.Of<IPromoCodeRepository>(),
             Mock.Of<IPromoStackingRuleRepository>(),
             Mock.Of<IPricingRuleRepository>(),
+            Mock.Of<IPricingExperimentService>(),
             new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
 
         service.IsSaleActive(ProductPricing.CreateWithVersion(Guid.NewGuid(), "NoSale", 100m).Pricing).Should().BeFalse();

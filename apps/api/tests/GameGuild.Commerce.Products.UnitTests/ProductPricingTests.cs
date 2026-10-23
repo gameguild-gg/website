@@ -175,6 +175,7 @@ public class ProductPricingTests
             _promoCodeRepository.Object,
             stackingRules.Object,
             Mock.Of<IPricingRuleRepository>(),
+            Mock.Of<IPricingExperimentService>(),
             new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
     }
 

@@ -12,6 +12,11 @@
     "continueWithDiscord": "Continue with Discord",
     "magicLink": "Sign in with an email link",
     "emailCode": "Sign in with an email code",
+    "continueWithWallet": "Continue with",
+    "walletConnecting": "Connecting…",
+    "walletSigning": "Signing…",
+    "walletConnected": "Connected:",
+    "walletDisconnect": "Disconnect",
     "mfa": {
       "title": "Two-factor authentication",
       "description": "Confirm your sign-in with your authenticator app. This sign-in challenge expires after five minutes.",
@@ -106,8 +111,40 @@
       "saving": "Saving...",
       "saved": "Profile saved.",
       "saveFailed": "We could not save your profile.",
+      "bioCount": "{current}/{limit} characters",
+      "viewPublicProfile": "View public profile",
+      "sections": {
+        "account": "Account",
+        "accountDescription": "Your account identity is managed by your sign-in provider.",
+        "community": "Community presence",
+        "communityDescription": "How you appear across feeds, profiles, and community spaces.",
+        "details": "Links and details",
+        "detailsDescription": "Optional details shown on your public profile.",
+        "images": "Profile images",
+        "imagesDescription": "Link an avatar and banner image for your public profile."
+      },
+      "avatarUrl": "Avatar image URL",
+      "avatarUrlDescription": "Square image, at least 200×200px.",
+      "bannerUrl": "Banner image URL",
+      "bannerUrlDescription": "Wide image, at least 1200×360px.",
+      "visibility": {
+        "title": "Profile visibility",
+        "description": "Control who can see your public community profile.",
+        "label": "Who can view your profile",
+        "placeholder": "Select visibility",
+        "public": "Public — anyone on GameGuild",
+        "members": "Members only — signed-in members",
+        "private": "Private — only you",
+        "hint": "Private profiles return not-found for other members.",
+        "requiresProfile": "Save your profile once to unlock visibility controls.",
+        "saved": "Profile visibility saved.",
+        "saveFailed": "We could not save your profile visibility."
+      },
       "errors": {
-        "tooLong": "Use at most {limit} characters."
+        "tooLong": "Use at most {limit} characters.",
+        "required": "This field is required.",
+        "handleRequired": "Use at least 3 characters.",
+        "url": "Enter a valid http(s) URL."
       }
     },
     "appearance": {
@@ -861,6 +898,36 @@
       "requeued": "Notification requeued.",
       "error": "Action failed. Please try again.",
       "unauthorized": "Your session expired. Please sign in again."
+    }
+  },
+  "socialProfile": {
+    "backToFeed": "Back to feed",
+    "share": "Share",
+    "linkCopied": "Profile link copied to clipboard.",
+    "linkCopyFailed": "Could not copy the profile link.",
+    "follow": "Follow",
+    "following": "Following",
+    "followName": "Follow {name}",
+    "unfollowName": "Unfollow {name}",
+    "followFailed": "Follow could not be updated.",
+    "editProfile": "Edit profile",
+    "verified": "Verified",
+    "avatarAlt": "{name} avatar",
+    "website": "Website",
+    "collectionsError": "Public work could not be loaded. Refresh to retry.",
+    "tabsLabel": "Profile work",
+    "openPost": "Open post",
+    "emptyProjects": "No public projects yet.",
+    "emptyPosts": "No public posts yet.",
+    "stats": {
+      "posts": "Posts",
+      "projects": "Projects",
+      "followers": "Followers",
+      "following": "Following"
+    },
+    "tabs": {
+      "projects": "Projects",
+      "posts": "Posts"
     }
   }
 }

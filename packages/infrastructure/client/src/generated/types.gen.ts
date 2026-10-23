@@ -2553,6 +2553,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   fileSize?: number | null;
   /** File URL */
   fileUrl?: string | null;
+  /** When this evidence row was included in a bundle successfully submitted to the gateway
+(issue #419 evidence submission tracking); null while it has not been submitted. The
+first submission wins so each row keeps the timestamp of when it reached the gateway. */
+  gatewaySubmittedAt?: string | null;
   integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -2677,6 +2681,11 @@ export interface CommercePaymentsDisputesControllerResolveDisputeInput {
 export interface CommercePaymentsDisputesControllerRespondDisputeInput {
   dueDateUtc?: string | null;
   status?: CommercePaymentsDisputeStatus;
+}
+
+/** Request body for submitting the evidence bundle to the gateway. */
+export interface CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput {
+  summary?: string | null;
 }
 
 /** Dispute statistics read model (issue #419). */
@@ -3056,6 +3065,11 @@ gateway values overwrite only while the dispute is unresolved. */
   evidence?: CommercePaymentsDisputeEvidence[] | null;
   /** Deadline by which evidence must be submitted to the gateway, when provided. */
   evidenceDueBy?: string | null;
+  /** When the merchant evidence bundle was submitted to the gateway (issue #419 evidence
+submission tracking). Null while no bundle has been submitted; refreshed by every
+successful submission so the deadline reminder surface can distinguish disputes whose
+evidence already reached the gateway. */
+  evidenceSubmittedAt?: string | null;
   /** Gateway dispute identifier (e.g. the Stripe `dp_...` id) when this dispute was
 reconciled from a gateway webhook (issue #419). Unique per gateway dispute. */
   gatewayDisputeId?: string | null;
@@ -10823,6 +10837,9 @@ export interface IdentityAuthenticationOidcCallbackRequestDto {
 /** A discovered federation provider serving one email domain. */
 export interface IdentityAuthenticationOidcDiscoveredProvider {
   displayName: string | null;
+  /** The federation protocol this provider serves — `oidc` or `saml` — so the
+login page knows which authorize entry point to route the browser to. */
+  protocol?: string | null;
   slug: string | null;
 }
 
@@ -11083,6 +11100,43 @@ export interface IdentityAuthenticationRotateApiKeyOutput {
 export interface IdentityAuthenticationRotateKeyInput {
   reason?: string | null;
   validityDays?: number | null;
+}
+
+/** Request to initiate a SAML federation provider sign-in */
+export interface IdentityAuthenticationSamlAuthorizeRequestDto {
+  /** Optional RelayState the provider echoes on callback (defaults to a generated token) */
+  relayState?: string | null;
+}
+
+/** Request body for the SAML federation Assertion Consumer Service endpoint */
+export interface IdentityAuthenticationSamlCallbackRequestDto {
+  /** The RelayState echoed by the provider (correlation is enforced server-side
+through the response's InResponseTo, not this value) */
+  relayState?: string | null;
+  /** Whether the caller asked for a persistent ("remember me") refresh-token lifetime */
+  rememberMe?: boolean | null;
+  /** The Base64-encoded SAMLResponse XML posted by the federation provider */
+  samlResponse: string;
+  /** Optional tenant context */
+  tenantId?: string | null;
+}
+
+/** Response for SAML logout forwarding */
+export interface IdentityAuthenticationSamlLogoutUrlOutput {
+  /** The provider's single-logout redirect URL (an unsigned LogoutRequest via the
+redirect binding); null when the provider has no configured single logout
+service and logout stays local. */
+  logoutUrl?: string | null;
+}
+
+/** Response for SAML federation sign-in initiation. */
+export interface IdentityAuthenticationSamlSignInOutput {
+  /** The identity provider's sign-on URL carrying the deflated AuthnRequest
+(HTTP-Redirect binding) with the RelayState applied. */
+  redirectUrl: string | null;
+  /** The RelayState token embedded in the redirect URL (returned separately so the
+caller can stash it in its state cookie, mirroring the OIDC flow). */
+  relayState: string | null;
 }
 
 /** Response when secret is rotated. */
@@ -24532,6 +24586,7 @@ export let CommercePaymentsDisputesControllerChallengeDisputeInputSchema: z.ZodT
 export let CommercePaymentsDisputesControllerCreateDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerCreateDisputeInput>;
 export let CommercePaymentsDisputesControllerResolveDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerResolveDisputeInput>;
 export let CommercePaymentsDisputesControllerRespondDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerRespondDisputeInput>;
+export let CommercePaymentsDisputesControllerSubmitDisputeEvidenceInputSchema: z.ZodType<CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput>;
 export let CommercePaymentsDisputeStatisticsSchema: z.ZodType<CommercePaymentsDisputeStatistics>;
 export let CommercePaymentsDisputeStatusSchema: z.ZodType<CommercePaymentsDisputeStatus>;
 export let CommercePaymentsDisputeTypeSchema: z.ZodType<CommercePaymentsDisputeType>;
@@ -25270,6 +25325,10 @@ export let IdentityAuthenticationRiskLevelSchema: z.ZodType<IdentityAuthenticati
 export let IdentityAuthenticationRotateApiKeyInputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyInput>;
 export let IdentityAuthenticationRotateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyOutput>;
 export let IdentityAuthenticationRotateKeyInputSchema: z.ZodType<IdentityAuthenticationRotateKeyInput>;
+export let IdentityAuthenticationSamlAuthorizeRequestDtoSchema: z.ZodType<IdentityAuthenticationSamlAuthorizeRequestDto>;
+export let IdentityAuthenticationSamlCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationSamlCallbackRequestDto>;
+export let IdentityAuthenticationSamlLogoutUrlOutputSchema: z.ZodType<IdentityAuthenticationSamlLogoutUrlOutput>;
+export let IdentityAuthenticationSamlSignInOutputSchema: z.ZodType<IdentityAuthenticationSamlSignInOutput>;
 export let IdentityAuthenticationSecretRotationOutputSchema: z.ZodType<IdentityAuthenticationSecretRotationOutput>;
 export let IdentityAuthenticationSendEmailVerificationInputSchema: z.ZodType<IdentityAuthenticationSendEmailVerificationInput>;
 export let IdentityAuthenticationServiceAccountAuditEntrySchema: z.ZodType<IdentityAuthenticationServiceAccountAuditEntry>;
@@ -28783,6 +28842,7 @@ CommercePaymentsDisputeEvidenceSchema = z.object({
   fileName: z.string().max(255).nullable().optional(),
   fileSize: z.number().int().nullable().optional(),
   fileUrl: z.string().max(1000).nullable().optional(),
+  gatewaySubmittedAt: z.string().datetime().nullable().optional(),
   integrationEvents: z
     .array(z.lazy(() => IDurableIntegrationEventSchema))
     .nullable()
@@ -28879,6 +28939,11 @@ CommercePaymentsDisputesControllerResolveDisputeInputSchema = z.object({
 CommercePaymentsDisputesControllerRespondDisputeInputSchema = z.object({
   dueDateUtc: z.string().datetime().nullable().optional(),
   status: z.lazy(() => CommercePaymentsDisputeStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerSubmitDisputeEvidenceInput. Request body for submitting the evidence bundle to the gateway. */
+CommercePaymentsDisputesControllerSubmitDisputeEvidenceInputSchema = z.object({
+  summary: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsDisputeStatistics. Dispute statistics read model (issue #419). */
@@ -29175,6 +29240,7 @@ CommercePaymentsPaymentDisputeSchema = z.object({
     .nullable()
     .optional(),
   evidenceDueBy: z.string().datetime().nullable().optional(),
+  evidenceSubmittedAt: z.string().datetime().nullable().optional(),
   gatewayDisputeId: z.string().max(255).nullable().optional(),
   gatewayName: z.string().max(50).nullable().optional(),
   integrationEvents: z
@@ -36475,6 +36541,7 @@ IdentityAuthenticationOidcCallbackRequestDtoSchema = z.object({
 /** Zod schema for IdentityAuthenticationOidcDiscoveredProvider. A discovered federation provider serving one email domain. */
 IdentityAuthenticationOidcDiscoveredProviderSchema = z.object({
   displayName: z.string().nullable(),
+  protocol: z.string().nullable().optional(),
   slug: z.string().nullable(),
 });
 
@@ -36680,6 +36747,30 @@ IdentityAuthenticationRotateApiKeyOutputSchema = z.object({
 IdentityAuthenticationRotateKeyInputSchema = z.object({
   reason: z.string().nullable().optional(),
   validityDays: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlAuthorizeRequestDto. Request to initiate a SAML federation provider sign-in */
+IdentityAuthenticationSamlAuthorizeRequestDtoSchema = z.object({
+  relayState: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlCallbackRequestDto. Request body for the SAML federation Assertion Consumer Service endpoint */
+IdentityAuthenticationSamlCallbackRequestDtoSchema = z.object({
+  relayState: z.string().nullable().optional(),
+  rememberMe: z.boolean().nullable().optional(),
+  samlResponse: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlLogoutUrlOutput. Response for SAML logout forwarding */
+IdentityAuthenticationSamlLogoutUrlOutputSchema = z.object({
+  logoutUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationSamlSignInOutput. Response for SAML federation sign-in initiation. */
+IdentityAuthenticationSamlSignInOutputSchema = z.object({
+  redirectUrl: z.string().nullable(),
+  relayState: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationSecretRotationOutput. Response when secret is rotated. */
@@ -48993,6 +49084,10 @@ export type IdentityAuthenticationOidcCallbackRequest = IdentityAuthenticationOi
 export { IdentityAuthenticationOidcCallbackRequestDtoSchema as IdentityAuthenticationOidcCallbackRequestSchema };
 export type IdentityAuthenticationProcessOrchestratedAuthenticationStepRequest = IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
 export { IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema as IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestSchema };
+export type IdentityAuthenticationSamlAuthorizeRequest = IdentityAuthenticationSamlAuthorizeRequestDto;
+export { IdentityAuthenticationSamlAuthorizeRequestDtoSchema as IdentityAuthenticationSamlAuthorizeRequestSchema };
+export type IdentityAuthenticationSamlCallbackRequest = IdentityAuthenticationSamlCallbackRequestDto;
+export { IdentityAuthenticationSamlCallbackRequestDtoSchema as IdentityAuthenticationSamlCallbackRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
 export type IdentityAuthorizationContentTypePermissionGrant = IdentityAuthorizationContentTypePermissionGrantDto;

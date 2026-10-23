@@ -11,7 +11,7 @@ vi.mock('./api-client', () => ({
   getUserSettingsApiClient: mocks.getUserSettingsApiClient,
 }));
 
-import { getGeneralPreferences, getLocalizationPreference } from './queries';
+import { getCommunityProfile, getGeneralPreferences, getLocalizationPreference } from './queries';
 
 describe('user settings queries', () => {
   beforeEach(() => {
@@ -43,5 +43,50 @@ describe('user settings queries', () => {
 
     mocks.request.mockResolvedValue({ ok: false, error: { status: 500, message: 'Unavailable' } });
     await expect(getGeneralPreferences()).rejects.toThrow('Unable to load general preferences (500): Unavailable');
+  });
+
+  it('normalizes the community profile with its visibility setting', async () => {
+    mocks.request.mockResolvedValue({
+      ok: true,
+      data: {
+        id: 'sp-1',
+        userId: 'user-1',
+        handle: 'ari-games',
+        displayName: 'Ari',
+        avatarUrl: 'https://cdn.example.com/a.png',
+        bannerUrl: null,
+        visibility: 'Connections',
+        showActivity: true,
+        showPortfolio: false,
+        showSkills: true,
+      },
+    });
+
+    await expect(getCommunityProfile()).resolves.toEqual({
+      handle: 'ari-games',
+      displayName: 'Ari',
+      avatarUrl: 'https://cdn.example.com/a.png',
+      bannerUrl: null,
+      visibility: 'members',
+    });
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: 'GET',
+      path: '/api/social/profiles/users/user-1',
+      requiresAuth: true,
+    });
+  });
+
+  it('treats a missing community profile as null and unknown visibility as public', async () => {
+    mocks.request.mockResolvedValue({ ok: false, error: { status: 404, message: 'Not found' } });
+    await expect(getCommunityProfile()).resolves.toEqual(null);
+
+    mocks.request.mockResolvedValue({ ok: true, data: { handle: 'ari', visibility: 'SomethingElse' } });
+    await expect(getCommunityProfile()).resolves.toEqual({
+      handle: 'ari',
+      displayName: null,
+      avatarUrl: null,
+      bannerUrl: null,
+      visibility: 'public',
+    });
   });
 });

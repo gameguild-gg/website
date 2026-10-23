@@ -10,6 +10,41 @@ vi.mock("next/image", () => ({
     createElement("img", { ...props, alt: typeof alt === "string" ? alt : "" }),
 }));
 vi.mock("@/i18n/navigation", () => ({ Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a> }));
+vi.mock("next-intl", () => ({
+  useLocale: () => "en-US",
+  useTranslations: () => (key: string, values?: Record<string, unknown>) => {
+    let message = {
+      backToFeed: "Back to feed",
+      share: "Share",
+      linkCopied: "Profile link copied to clipboard.",
+      linkCopyFailed: "Could not copy the profile link.",
+      follow: "Follow",
+      following: "Following",
+      followName: "Follow {name}",
+      unfollowName: "Unfollow {name}",
+      followFailed: "Follow could not be updated.",
+      editProfile: "Edit profile",
+      verified: "Verified",
+      avatarAlt: "{name} avatar",
+      website: "Website",
+      collectionsError: "Public work could not be loaded. Refresh to retry.",
+      tabsLabel: "Profile work",
+      openPost: "Open post",
+      emptyProjects: "No public projects yet.",
+      emptyPosts: "No public posts yet.",
+      "stats.posts": "Posts",
+      "stats.projects": "Projects",
+      "stats.followers": "Followers",
+      "stats.following": "Following",
+      "tabs.projects": "Projects",
+      "tabs.posts": "Posts",
+    }[key] ?? key;
+    for (const [name, value] of Object.entries(values ?? {})) {
+      message = message.replace(`{${name}}`, String(value));
+    }
+    return message;
+  },
+}));
 
 import { SocialProfileView } from "./social-profile";
 import type { SocialProfile, SocialProfilePost, SocialProfileProject } from "@/lib/feed/contracts";
@@ -63,39 +98,53 @@ describe("SocialProfileView", () => {
     mocks.followCreator.mockResolvedValue({ userId: "user-2", isFollowing: true });
     render(<SocialProfileView profile={profile} currentUserId="user-1" posts={posts} projects={projects} />);
 
-    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getAllByText("42").length).toBeGreaterThan(0);
     expect(screen.getByText("Building thoughtful games.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Follow Lin Creator" }));
 
     await waitFor(() => expect(mocks.followCreator).toHaveBeenCalledWith("user-2", true));
     expect(screen.getByRole("button", { name: "Unfollow Lin Creator" })).toBeInTheDocument();
-    expect(screen.getByText("43")).toBeInTheDocument();
+    expect(screen.getAllByText("43").length).toBeGreaterThan(0);
   });
 
-  it("does not render a self-follow action", () => {
+  it("does not render a self-follow action and links owners to editing", () => {
     render(<SocialProfileView profile={profile} currentUserId="user-2" posts={posts} projects={projects} />);
     expect(screen.queryByRole("button", { name: /follow lin creator/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /edit profile/i })).toHaveAttribute(
+      "href",
+      "/workspace/settings/profile",
+    );
   });
 
   it("renders persisted posts and projects with real locale-aware routes", () => {
     render(<SocialProfileView profile={profile} currentUserId="user-1" posts={posts} projects={projects} />);
 
-    expect(screen.getByText("A persisted launch update")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /skybound/i })).toHaveAttribute(
       "href",
       "/projects/skybound",
     );
+    // Posts live behind the second tab; activate it before asserting its content.
+    fireEvent.click(screen.getByRole("tab", { name: /posts/i }));
+    expect(screen.getByText("A persisted launch update")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open post/i })).toHaveAttribute(
       "href",
       "/social/posts/post-1",
     );
   });
 
+  it("organizes work behind tabs with real counts", () => {
+    render(<SocialProfileView profile={profile} currentUserId="user-1" posts={posts} projects={projects} />);
+
+    expect(screen.getByRole("tab", { name: /projects/i })).toHaveTextContent("1");
+    expect(screen.getByRole("tab", { name: /posts/i })).toHaveTextContent("1");
+  });
+
   it("renders truthful collection empty states", () => {
     render(<SocialProfileView profile={profile} currentUserId="user-1" posts={[]} projects={[]} />);
 
-    expect(screen.getByText("No public posts yet.")).toBeInTheDocument();
     expect(screen.getByText("No public projects yet.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /posts/i }));
+    expect(screen.getByText("No public posts yet.")).toBeInTheDocument();
   });
 
   it("renders a recoverable collection error without fake cards", () => {
@@ -105,12 +154,24 @@ describe("SocialProfileView", () => {
         currentUserId="user-1"
         posts={[]}
         projects={[]}
-        collectionsError="Public work could not be loaded."
+        collectionsFailed
       />,
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Public work could not be loaded.");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Public work could not be loaded. Refresh to retry.",
+    );
     expect(screen.queryByText("Demo project")).not.toBeInTheDocument();
+  });
+
+  it("copies the profile link to the clipboard on share", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    render(<SocialProfileView profile={profile} currentUserId="user-1" posts={[]} projects={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: /share/i }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(window.location.href));
   });
 
   it("reconciles follow state with the authoritative response and rolls back failures", async () => {
@@ -124,7 +185,7 @@ describe("SocialProfileView", () => {
         "false",
       ),
     );
-    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getAllByText("42").length).toBeGreaterThan(0);
 
     mocks.followCreator.mockRejectedValueOnce(new Error("Follow unavailable"));
     fireEvent.click(screen.getByRole("button", { name: "Follow Lin Creator" }));
@@ -134,6 +195,6 @@ describe("SocialProfileView", () => {
         "false",
       ),
     );
-    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getAllByText("42").length).toBeGreaterThan(0);
   });
 });

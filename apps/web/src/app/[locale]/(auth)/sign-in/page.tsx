@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { SignInForm } from '@/components/sign-in-form';
 import { GoogleOneTap } from '@/components/google-one-tap';
 import { GoogleSignInButton } from '@/components/google-sign-in-button';
+import { WalletSignInButtons } from '@/components/wallet-sign-in-buttons';
 import { resolveAllowedAuthRedirect } from '@/lib/auth/cross-domain-auth';
 import { auth } from '@/auth';
 import { AuthErrorNotice } from '@/components/auth/auth-error-notice';
@@ -48,6 +49,18 @@ export default async function Page({
               </svg>
               {t('continueWithDiscord')}
             </a>
+            {/* SIWE wallet sign-in (issues #16/#17/#18 under umbrella #291):
+                buttons render per available adapter from the registry. */}
+            <WalletSignInButtons
+              redirectTo={redirectTo}
+              labels={{
+                continueWithWallet: `${t('continueWithWallet')} {wallet}`,
+                connecting: t('walletConnecting'),
+                signing: t('walletSigning'),
+                connected: `${t('walletConnected')} {address}`,
+                disconnect: t('walletDisconnect'),
+              }}
+            />
           </div>
         }
         redirectTo={redirectTo}

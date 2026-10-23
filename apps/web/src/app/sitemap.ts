@@ -1,8 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { PUBLIC_PROGRAM_PACKAGES } from '@/lib/courses/public-programs';
 import { getPublicCourseCatalog } from '@/lib/courses/services/course.service';
-import { getPublishedProjects } from '@/lib/projects/public-projects';
-import { getBlogIndex } from '@/lib/blogs/queries';
+import { getAllBlogPostsForSitemap, getAllPublishedProjectsForSitemap } from '@/lib/sitemap/public-entries';
 import { buildBlogAbsoluteCanonicalUrl, BLOG_SITE_BASE_URL } from '@/lib/blogs/seo';
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gameguild.gg';
@@ -35,10 +34,10 @@ const staticRoutes = [
 // what robots.ts advertises. sitemap.test.ts guards this coupling.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const [projects, catalog, blogIndex] = await Promise.all([
-    getPublishedProjects().catch(() => []),
+  const [projects, catalog, blogPosts] = await Promise.all([
+    getAllPublishedProjectsForSitemap().catch(() => []),
     getPublicCourseCatalog().catch(() => null),
-    getBlogIndex().catch(() => null),
+    getAllBlogPostsForSitemap().catch(() => []),
   ]);
   const courseRoutes = catalog?.success
     ? catalog.data
@@ -72,7 +71,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     })),
     ...courseRoutes,
-    ...(blogIndex?.items ?? [])
+    ...blogPosts
       .filter((post) => post.slug && post.primaryAuthorHandle)
       .map((post) => ({
         url: buildBlogAbsoluteCanonicalUrl(BLOG_SITE_BASE_URL, post.primaryAuthorHandle ?? '', post.slug ?? ''),

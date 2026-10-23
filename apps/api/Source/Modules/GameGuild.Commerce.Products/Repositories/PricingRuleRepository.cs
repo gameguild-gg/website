@@ -109,6 +109,17 @@ public class PricingRuleRepository(IApplicationDbContext context)
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<PricingRule>> GetScheduledRulesAsync(CancellationToken cancellationToken = default)
+    {
+        return await Query
+            .Include(r => r.PricingTiers)
+            .Where(r => r.IsScheduled)
+            .OrderByDescending(r => r.UpdatedAt)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task AddAsync(PricingRule rule, CancellationToken cancellationToken = default)
     {
         await Entities.AddAsync(rule, cancellationToken).ConfigureAwait(false);

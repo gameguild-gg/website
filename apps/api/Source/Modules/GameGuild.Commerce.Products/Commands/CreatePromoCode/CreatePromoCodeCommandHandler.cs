@@ -43,6 +43,7 @@ public sealed class CreatePromoCodeCommandHandler(IPromoCodeRepository promoCode
             StackingPriority = request.StackingPriority,
             CampaignId = request.CampaignId,
             ProductId = request.ProductId,
+            PlanId = request.PlanId,
             CreatedBy = request.CreatedBy ?? Guid.Empty
         };
 

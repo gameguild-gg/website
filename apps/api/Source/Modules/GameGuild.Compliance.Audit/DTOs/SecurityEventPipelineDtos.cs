@@ -84,6 +84,13 @@ public sealed record ConfigureSecurityLogRetentionRequest
     /// <summary>Per-category overrides. Keys are <c>AuditCategory</c> names; values are days (30..3650).</summary>
     [MaxLength(20)] public Dictionary<string, int>? CategoryOverrides { get; init; }
 
+    /// <summary>
+    ///     Storage-tier archival threshold (issue #193): audit rows older than this many days are moved
+    ///     into the archive tier instead of staying hot. Null disables archival; must be at least 1 and
+    ///     strictly shorter than <see cref="RetentionDays"/>.
+    /// </summary>
+    [Range(1, 3650)] public int? ArchiveAfterDays { get; init; }
+
     /// <summary>When set to a future instant, retention enforcement is suspended until then.</summary>
     public DateTime? LegalHoldUntilUtc { get; init; }
 }
@@ -97,7 +104,8 @@ public sealed record SecurityLogRetentionPolicyResponse(
     DateTime? LegalHoldUntilUtc,
     Guid UpdatedByUserId,
     DateTime ConfiguredAtUtc,
-    bool LegalHoldActive);
+    bool LegalHoldActive,
+    int? ArchiveAfterDays = null);
 
 public sealed record EnforceSecurityLogRetentionRequest
 {
@@ -115,7 +123,44 @@ public sealed record SecurityLogRetentionExecutionResponse(
     bool LegalHoldActive,
     bool DryRun,
     int DeletedCount,
-    int EvaluatedCount);
+    int EvaluatedCount,
+    int ArchivedCount = 0);
+
+/// <summary>One archived audit row served from the archive storage tier.</summary>
+public sealed record ArchivedSecurityLogResponse(
+    Guid Id,
+    Guid SourceAuditLogId,
+    string ActionType,
+    string ResourceType,
+    string? ResourceId,
+    Guid? UserId,
+    Guid? TenantId,
+    string? Description,
+    bool Success,
+    string? ErrorMessage,
+    AuditRiskLevel RiskLevel,
+    AuditCategory Category,
+    string? CorrelationId,
+    DateTime OriginalCreatedAt,
+    DateTime ArchivedAtUtc);
+
+/// <summary>One page of archived audit rows plus the total archived count.</summary>
+public sealed record ArchivedSecurityLogListResponse(
+    IReadOnlyList<ArchivedSecurityLogResponse> Rows,
+    int TotalCount);
+
+/// <summary>
+///     Storage-tier report for the tenant audit data (issue #193): row counts per real data-placement
+///     tier plus the configured tier windows, so administrators can see cost placement while
+///     accessibility is preserved by the archive endpoints.
+/// </summary>
+public sealed record SecurityLogStorageTierReportResponse(
+    Guid TenantId,
+    int HotRowCount,
+    int ArchiveRowCount,
+    int? ArchiveAfterDays,
+    int RetentionDays,
+    bool LegalHoldActive);
 
 public sealed record SecurityLogRetentionExecutionListRequest
 {
