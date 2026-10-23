@@ -161,6 +161,9 @@ public sealed record PromoStackingRuleDto(
 /// <param name="RuleDiscount">Per-unit discount produced by the winning pricing rule (issue #395)</param>
 /// <param name="AppliedRuleId">ID of the winning pricing rule, if any (issue #395)</param>
 /// <param name="AppliedRuleName">Name of the winning pricing rule, if any (issue #395)</param>
+/// <param name="AppliedExperimentId">ID of the live A/B experiment applied to this calculation, if any (issue #395)</param>
+/// <param name="AppliedVariantName">Name of the experiment arm applied to this calculation (issue #395)</param>
+/// <param name="ExperimentDiscount">Per-unit discount produced by the experiment arm (issue #395)</param>
 public sealed record PricingCalculationResult(
     decimal BasePrice,
     decimal? SalePrice,
@@ -171,7 +174,10 @@ public sealed record PricingCalculationResult(
     List<string> AppliedPromoCodes,
     decimal RuleDiscount = 0,
     Guid? AppliedRuleId = null,
-    string? AppliedRuleName = null
+    string? AppliedRuleName = null,
+    Guid? AppliedExperimentId = null,
+    string? AppliedVariantName = null,
+    decimal ExperimentDiscount = 0
 );
 
 /// <summary>

@@ -234,6 +234,7 @@ public sealed class PricingEngineServicePricingRuleTests
             Mock.Of<IPromoCodeRepository>(),
             Mock.Of<IPromoStackingRuleRepository>(),
             counting,
+            Mock.Of<IPricingExperimentService>(),
             cache);
 
         var first = await engine.CalculatePriceAsync(CreateProduct(productId), quantity: 1);
@@ -277,6 +278,9 @@ public sealed class PricingEngineServicePricingRuleTests
 
         public Task<string> GetChangeStampAsync(Guid productId, CancellationToken cancellationToken = default)
             => _inner.GetChangeStampAsync(productId, cancellationToken);
+
+        public Task<IReadOnlyList<GameGuild.Commerce.PricingRule>> GetScheduledRulesAsync(CancellationToken cancellationToken = default)
+            => _inner.GetScheduledRulesAsync(cancellationToken);
 
         public Task<(IReadOnlyList<GameGuild.Commerce.PricingRule> Items, int TotalCount)> GetPagedAsync(
             bool? isActive = null,
@@ -332,6 +336,7 @@ public sealed class PricingEngineServicePricingRuleTests
             promoRepository.Object,
             Mock.Of<IPromoStackingRuleRepository>(),
             new PricingRuleRepository(db),
+            Mock.Of<IPricingExperimentService>(),
             new MemoryCache(new MemoryCacheOptions()));
 
         var result = await engine.CalculatePriceAsync(
@@ -421,6 +426,7 @@ public sealed class PricingEngineServicePricingRuleTests
             Mock.Of<IPromoCodeRepository>(),
             Mock.Of<IPromoStackingRuleRepository>(),
             new PricingRuleRepository(db),
+            Mock.Of<IPricingExperimentService>(),
             cache ?? new MemoryCache(new MemoryCacheOptions()));
     }
 

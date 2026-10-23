@@ -5,13 +5,14 @@ namespace GameGuild.Commerce.Products;
 
 /// <summary>
 /// Service for calculating prices with dynamic pricing rules (issue #395), discounts, sales,
-/// and promo codes.
+/// usage-metric adjustments, A/B experiment arms, and promo codes.
 /// </summary>
 public class PricingEngineService(
     IProductRepository productRepository,
     IPromoCodeRepository promoCodeRepository,
     IPromoStackingRuleRepository stackingRuleRepository,
     IPricingRuleRepository pricingRuleRepository,
+    IPricingExperimentService pricingExperimentService,
     IMemoryCache cache) : IPricingEngineService
 {
     private const string RulesCacheKeyPrefix = "PricingEngine:Rules:";
@@ -26,6 +27,8 @@ public class PricingEngineService(
         Guid? userId = null,
         int quantity = 1,
         string? customerSegment = null,
+        IReadOnlyDictionary<string, decimal>? usageMetrics = null,
+        string? experimentBucketKey = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(product);
@@ -55,17 +58,41 @@ public class PricingEngineService(
             : basePrice;
 
         // Resolve the highest-priority applicable pricing rule (time window, quantity window,
-        // customer segment) and compute its per-unit discount on top of the base/sale price.
+        // customer segment, usage-metric gate) and compute its per-unit discount on top of the
+        // base/sale price.
         var (appliedRule, ruleUnitDiscount) = await ResolvePricingRuleAsync(
             product.Id,
             effectivePrice,
             effectiveQuantity,
             customerSegment,
+            usageMetrics,
             cancellationToken).ConfigureAwait(false);
 
         var ruleAdjustedPrice = Math.Max(0, effectivePrice - ruleUnitDiscount);
 
-        // Apply promo codes (after the rule) on the rule-adjusted unit price
+        // A/B experiment arm (issue #395): when a bucket key is supplied and a live experiment
+        // owns the product, the key is enrolled (sticky) and its variant adjusts the unit price
+        // after the rule, before promo codes — the control arm leaves the price untouched.
+        PricingExperimentVariant? appliedVariant = null;
+        Guid? appliedExperimentId = null;
+        var experimentUnitDiscount = 0m;
+        var variantAdjustedPrice = ruleAdjustedPrice;
+
+        if (!string.IsNullOrWhiteSpace(experimentBucketKey))
+        {
+            appliedVariant = await pricingExperimentService
+                .ResolveVariantForProductAsync(product.Id, experimentBucketKey, userId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (appliedVariant is not null)
+            {
+                variantAdjustedPrice = PricingExperimentAllocator.ApplyVariant(appliedVariant, ruleAdjustedPrice);
+                experimentUnitDiscount = Math.Max(0, ruleAdjustedPrice - variantAdjustedPrice);
+                appliedExperimentId = appliedVariant.ExperimentId;
+            }
+        }
+
+        // Apply promo codes (after the rule and experiment arm) on the adjusted unit price
         var promoDiscount = 0m;
         var appliedCodes = new List<string>();
         var promoCodesList = promoCodes?.ToList();
@@ -73,7 +100,7 @@ public class PricingEngineService(
         if (promoCodesList is { Count: > 0 })
         {
             var promoResult = await ApplyPromoCodesAsync(
-                ruleAdjustedPrice,
+                variantAdjustedPrice,
                 promoCodesList,
                 product.Id,
                 userId,
@@ -83,7 +110,7 @@ public class PricingEngineService(
             appliedCodes = promoResult.AppliedCodes.Select(c => c.Code).ToList();
         }
 
-        var finalPrice = Math.Max(0, ruleAdjustedPrice - promoDiscount);
+        var finalPrice = Math.Max(0, variantAdjustedPrice - promoDiscount);
 
         return new PricingCalculationResult(
             BasePrice: basePrice,
@@ -95,7 +122,10 @@ public class PricingEngineService(
             AppliedPromoCodes: appliedCodes,
             RuleDiscount: ruleUnitDiscount,
             AppliedRuleId: appliedRule?.Id,
-            AppliedRuleName: appliedRule?.Name
+            AppliedRuleName: appliedRule?.Name,
+            AppliedExperimentId: appliedExperimentId,
+            AppliedVariantName: appliedVariant?.Name,
+            ExperimentDiscount: experimentUnitDiscount
         );
     }
 
@@ -107,6 +137,8 @@ public class PricingEngineService(
         Guid? userId = null,
         int quantity = 1,
         string? customerSegment = null,
+        IReadOnlyDictionary<string, decimal>? usageMetrics = null,
+        string? experimentBucketKey = null,
         CancellationToken cancellationToken = default)
     {
         var product = await productRepository.GetByIdAsync(
@@ -125,8 +157,16 @@ public class PricingEngineService(
             pricing = product.Pricing.FirstOrDefault(p => p.Id == pricingId.Value);
         }
 
-        return await CalculatePriceAsync(product, pricing, promoCodes, userId, quantity, customerSegment, cancellationToken)
-            .ConfigureAwait(false);
+        return await CalculatePriceAsync(
+            product,
+            pricing,
+            promoCodes,
+            userId,
+            quantity,
+            customerSegment,
+            usageMetrics,
+            experimentBucketKey,
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -327,17 +367,18 @@ public class PricingEngineService(
     }
 
     /// <summary>
-    /// Resolves the highest-priority applicable pricing rule for the product and computes its
-    /// per-unit discount on the effective (base or sale) unit price. Rules are cached per
-    /// product; the cache key embeds a change stamp (rule count + max version + max updated
-    /// ticks), so any create/update/activate/deactivate/delete of a product-scoped or global
-    /// rule immediately produces a fresh key and invalidates the cached set.
+    ///     Resolves the highest-priority applicable pricing rule for the product and computes its
+    ///     per-unit discount on the effective (base or sale) unit price. Rules are cached per
+    ///     product; the cache key embeds a change stamp (rule count + max version + max updated
+    ///     ticks), so any create/update/activate/deactivate/delete of a product-scoped or global
+    ///     rule immediately produces a fresh key and invalidates the cached set.
     /// </summary>
     private async Task<(PricingRule? Rule, decimal UnitDiscount)> ResolvePricingRuleAsync(
         Guid productId,
         decimal effectiveUnitPrice,
         int quantity,
         string? customerSegment,
+        IReadOnlyDictionary<string, decimal>? usageMetrics,
         CancellationToken cancellationToken)
     {
         var rules = await GetApplicableRulesCachedAsync(productId, cancellationToken).ConfigureAwait(false);
@@ -368,6 +409,11 @@ public class PricingEngineService(
             if (!MatchesTimeWindow(rule, now))
             {
                 continue; // TimeBased rule outside its daily window / days of week
+            }
+
+            if (!rule.MatchesUsageMetric(usageMetrics))
+            {
+                continue; // usage-conditioned rule and the metric is unreported or outside band
             }
 
             var unitPrice = GetRuleUnitPrice(rule, effectiveUnitPrice, quantity);

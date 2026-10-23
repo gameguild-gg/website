@@ -94,6 +94,22 @@ internal static class PricingRuleCommandValidationRules
             .WithMessage("Region cannot exceed 100 characters.")
             .When(x => !string.IsNullOrWhiteSpace(x.Region));
 
+        validator.RuleFor(x => x.UsageMetricKey)
+            .MaximumLength(100)
+            .WithMessage("Usage metric key cannot exceed 100 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.UsageMetricKey));
+
+        validator.RuleFor(x => x.UsageMaxValue)
+            .GreaterThanOrEqualTo(x => x.UsageMinValue)
+            .WithMessage("Usage max value cannot be lower than usage min value.")
+            .When(x => x.UsageMinValue.HasValue && x.UsageMaxValue.HasValue);
+
+        validator.RuleFor(x => x)
+            .Must(command => !command.IsScheduled ||
+                             command.StartDate.HasValue ||
+                             command.EndDate.HasValue)
+            .WithMessage("A scheduled rule needs at least a start or end date to schedule against.");
+
         validator.RuleFor(x => x.TimeStart)
             .Matches(@"^([01]\d|2[0-3]):[0-5]\d$")
             .WithMessage("Time start must be in HH:MM format.")
@@ -200,6 +216,18 @@ internal interface IPricingRuleCommandPayload
 
     /// <summary>Customer segment restriction</summary>
     string? CustomerSegment { get; }
+
+    /// <summary>Usage metric key the rule is gated on (issue #395 usage adjustments)</summary>
+    string? UsageMetricKey { get; }
+
+    /// <summary>Inclusive lower bound on the usage metric value</summary>
+    decimal? UsageMinValue { get; }
+
+    /// <summary>Inclusive upper bound on the usage metric value</summary>
+    decimal? UsageMaxValue { get; }
+
+    /// <summary>Opt-in to automated window scheduling (issue #395)</summary>
+    bool IsScheduled { get; }
 
     /// <summary>Volume tiers</summary>
     IReadOnlyList<PricingRuleTierRequest>? Tiers { get; }
