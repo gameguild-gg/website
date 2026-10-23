@@ -1,8 +1,7 @@
 import { auth } from '@/auth';
 import { ProfileForm } from '@/components/settings/profile-form';
-import { getProfile } from '@/lib/user-settings/queries';
+import { getCommunityProfile, getProfile } from '@/lib/user-settings/queries';
 import { getTranslations } from 'next-intl/server';
-import { loadSocialProfile } from '@/lib/feed/queries';
 import React from 'react';
 
 export default async function ProfileSettingsPage({
@@ -11,10 +10,11 @@ export default async function ProfileSettingsPage({
   params: Promise<{ locale: string }>;
 }): Promise<React.JSX.Element> {
   const { locale } = await params;
-  const [t, session, profile] = await Promise.all([
+  const [t, session, profile, socialProfile] = await Promise.all([
     getTranslations({ locale, namespace: 'settings.profile' }),
     auth(),
     getProfile(),
+    getCommunityProfile().catch(() => null),
   ]);
   const accountName = session && typeof session !== 'function'
     ? session.user.name?.trim() || session.user.email?.split('@')[0] || t('fallbackName')
@@ -23,9 +23,6 @@ export default async function ProfileSettingsPage({
     ? session.user.email ?? t('fallbackEmail')
     : t('fallbackEmail');
   const currentUserId = session && typeof session !== 'function' ? session.user.id : null;
-  const socialProfile = currentUserId
-    ? await loadSocialProfile(currentUserId).catch(() => null)
-    : null;
   const fallbackHandle = `${accountEmail.split('@')[0] ?? 'creator'}-${currentUserId?.slice(0, 6) ?? 'profile'}`
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '-');
@@ -41,13 +38,18 @@ export default async function ProfileSettingsPage({
         accountEmail={accountEmail}
         defaultValues={{
           handle: socialProfile?.handle ?? fallbackHandle,
-          displayName: profile?.displayName ?? accountName,
+          displayName: profile?.displayName ?? socialProfile?.displayName ?? accountName,
           bio: profile?.bio ?? '',
           location: profile?.location ?? '',
           website: profile?.website ?? '',
           jobTitle: profile?.jobTitle ?? '',
           company: profile?.company ?? '',
+          avatarUrl: socialProfile?.avatarUrl ?? '',
+          bannerUrl: socialProfile?.bannerUrl ?? '',
         }}
+        defaultVisibility={socialProfile ? socialProfile.visibility : null}
+        hasCommunityProfile={socialProfile !== null}
+        publicProfilePath={`/social/profiles/${socialProfile?.handle ?? fallbackHandle}`}
       />
     </div>
   );
