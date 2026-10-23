@@ -8,7 +8,7 @@ import { Link } from '@/i18n/navigation';
 import type { Program } from '@/lib/api/generated';
 import { getCourseCategoryName, getCourseLevelConfig } from '@/lib/courses/services/course.service';
 import { PUBLIC_PROGRAM_PACKAGES, getCourseShowcase, getProgramForCourse } from '@/lib/courses/public-programs';
-import { ArrowRight, Clock, Layers3, Search } from 'lucide-react';
+import { ArrowRight, Clock, Layers3, RotateCcw, Search } from 'lucide-react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
@@ -179,6 +179,14 @@ export function PublicCourseCatalog({ initialCourses }: PublicCourseCatalogProps
     });
   }, [activeCategory, activeProgram, initialCourses, query]);
 
+  const hasActiveFilters = query.trim() !== '' || activeProgram !== 'all' || activeCategory !== 'all';
+
+  const resetFilters = () => {
+    setQuery('');
+    setActiveProgram('all');
+    setActiveCategory('all');
+  };
+
   return (
     <div className="container mx-auto flex flex-col gap-8 px-4 py-14">
       <div className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
@@ -191,31 +199,34 @@ export function PublicCourseCatalog({ initialCourses }: PublicCourseCatalogProps
 
         <div className="flex flex-col gap-3">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
             <Input
+              type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search courses, tools, or outcomes..."
+              aria-label="Search courses by title, tool, or outcome"
               className="h-12 rounded-2xl border-white/10 bg-white/[0.04] pl-11 text-white placeholder:text-slate-500"
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant={activeProgram === 'all' ? 'default' : 'outline'} onClick={() => setActiveProgram('all')} className={activeProgram === 'all' ? 'bg-white text-slate-950 hover:bg-slate-200' : 'border-white/10 bg-transparent text-slate-200 hover:bg-white/10 hover:text-white'}>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter courses by package">
+            <Button size="sm" aria-pressed={activeProgram === 'all'} variant={activeProgram === 'all' ? 'default' : 'outline'} onClick={() => setActiveProgram('all')} className={activeProgram === 'all' ? 'bg-white text-slate-950 hover:bg-slate-200' : 'border-white/10 bg-transparent text-slate-200 hover:bg-white/10 hover:text-white'}>
               All packages
             </Button>
             {PUBLIC_PROGRAM_PACKAGES.map((program) => (
-              <Button key={program.slug} size="sm" variant={activeProgram === program.slug ? 'default' : 'outline'} onClick={() => setActiveProgram(program.slug)} className={activeProgram === program.slug ? 'bg-white text-slate-950 hover:bg-slate-200' : 'border-white/10 bg-transparent text-slate-200 hover:bg-white/10 hover:text-white'}>
+              <Button key={program.slug} size="sm" aria-pressed={activeProgram === program.slug} variant={activeProgram === program.slug ? 'default' : 'outline'} onClick={() => setActiveProgram(program.slug)} className={activeProgram === program.slug ? 'bg-white text-slate-950 hover:bg-slate-200' : 'border-white/10 bg-transparent text-slate-200 hover:bg-white/10 hover:text-white'}>
                 {program.shortTitle}
               </Button>
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter courses by discipline">
             {categories.map((category) => (
               <Button
                 key={category}
                 size="sm"
+                aria-pressed={activeCategory === category}
                 variant={activeCategory === category ? 'secondary' : 'ghost'}
                 onClick={() => setActiveCategory(category)}
                 className={activeCategory === category ? 'bg-slate-200 text-slate-950 hover:bg-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'}
@@ -228,17 +239,36 @@ export function PublicCourseCatalog({ initialCourses }: PublicCourseCatalogProps
       </div>
 
       <div className="flex items-center justify-between gap-4 border-y border-white/10 py-4 text-sm text-slate-400">
-        <span>{visibleCourses.length} matching courses</span>
-        <Link href="/courses" className="inline-flex items-center gap-2 font-medium text-slate-200 underline-offset-4 hover:text-white hover:underline">
-          Compare packages
-          <Layers3 className="size-4" />
-        </Link>
+        <span aria-live="polite">
+          {visibleCourses.length} matching {visibleCourses.length === 1 ? 'course' : 'courses'}
+        </span>
+        {hasActiveFilters ? (
+          <Button size="sm" variant="ghost" onClick={resetFilters} className="text-slate-300 hover:bg-white/10 hover:text-white">
+            Reset filters
+            <RotateCcw className="size-4" />
+          </Button>
+        ) : (
+          <Link href="/learn/courses" className="inline-flex items-center gap-2 font-medium text-slate-200 underline-offset-4 hover:text-white hover:underline">
+            My enrolled courses
+            <Layers3 className="size-4" />
+          </Link>
+        )}
       </div>
 
-      {visibleCourses.length === 0 ? (
+      {initialCourses.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.035] p-10 text-center text-slate-300">
+          <p className="text-lg font-semibold text-white">No courses are published yet.</p>
+          <p className="mt-2 text-sm">
+            Published courses appear here as soon as they are listed. Come back soon or explore the learning programs.
+          </p>
+        </div>
+      ) : visibleCourses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.035] p-10 text-center text-slate-300">
           <p className="text-lg font-semibold text-white">No courses matched this view.</p>
           <p className="mt-2 text-sm">Clear filters or search for another discipline.</p>
+          <Button size="sm" variant="outline" onClick={resetFilters} className="mt-5 border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white">
+            Clear filters
+          </Button>
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-2">

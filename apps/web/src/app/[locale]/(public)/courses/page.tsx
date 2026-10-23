@@ -5,10 +5,15 @@ import { buttonVariants } from '@game-guild/ui/components/button';
 import { Link } from '@/i18n/navigation';
 import { getPublicPlaytests } from '@/lib/community/public-community-queries';
 import { getPublicCourseCatalog } from '@/lib/courses/services/course.service';
-import { ArrowRight, FlaskConical, Layers3 } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BookOpen, FlaskConical } from 'lucide-react';
 
 export default async function CoursesPage() {
   const [catalog, playtests] = await Promise.all([getPublicCourseCatalog(), getPublicPlaytests(1)]);
+
+  if (!catalog.success) {
+    return <CatalogUnavailableState error={catalog.error} />;
+  }
+
   const courses = catalog.data;
   const courseCount = courses.length;
   const openEnrollmentCount = courses.filter((course) => course.isEnrollmentOpen).length;
@@ -45,7 +50,7 @@ export default async function CoursesPage() {
                 <ArrowRight />
               </Link>
               <Link
-                href="/courses"
+                href="/learn/courses"
                 className={cn(
                   buttonVariants({
                     size: "lg",
@@ -55,25 +60,28 @@ export default async function CoursesPage() {
                   }),
                 )}
               >
-                View programs
-                <Layers3 />
+                Continue learning
+                <BookOpen />
               </Link>
             </div>
 
-            <div className="grid max-w-2xl grid-cols-3 gap-3">
+            <dl className="grid max-w-2xl grid-cols-3 gap-3">
               <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
-                <p className="text-3xl font-semibold">{courseCount}</p>
+                <dt className="sr-only">Courses</dt>
+                <dd className="text-3xl font-semibold">{courseCount}</dd>
                 <p className="mt-1 text-sm text-slate-400">Courses</p>
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
-                <p className="text-3xl font-semibold">{openEnrollmentCount}</p>
-                <p className="mt-1 text-sm text-slate-400">Open seats</p>
+                <dt className="sr-only">Courses with open enrollment</dt>
+                <dd className="text-3xl font-semibold">{openEnrollmentCount}</dd>
+                <p className="mt-1 text-sm text-slate-400">Open enrollment</p>
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 backdrop-blur">
-                <p className="text-3xl font-semibold">{totalEstimatedHours}h</p>
+                <dt className="sr-only">Total study time in hours</dt>
+                <dd className="text-3xl font-semibold">{totalEstimatedHours}h</dd>
                 <p className="mt-1 text-sm text-slate-400">Study time</p>
               </div>
-            </div>
+            </dl>
 
           </div>
 
@@ -120,6 +128,51 @@ export default async function CoursesPage() {
           </div>
         </div>
       </section>
+    </main>
+  );
+}
+
+function CatalogUnavailableState({ error }: { readonly error?: string }) {
+  return (
+    <main className="min-h-screen bg-[#070a12] px-4 py-16 text-white">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-amber-500/40 bg-white/[0.035] p-8 shadow-lg shadow-black/30">
+        <div className="flex items-start gap-4">
+          <div className="rounded-full bg-amber-500/10 p-3 text-amber-300">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h1 className="text-2xl font-semibold">The course catalog is temporarily unavailable</h1>
+              <p className="text-slate-300">
+                The storefront could not reach the learning API, so no courses can be listed right now. This is not an
+                empty catalog — please try again in a few moments.
+              </p>
+            </div>
+            {error ? <p className="text-sm text-amber-300">Latest error: {error}</p> : null}
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/courses"
+                className={cn(
+                  buttonVariants({ className: 'bg-white text-slate-950 hover:bg-slate-200' }),
+                )}
+              >
+                Try again
+              </Link>
+              <Link
+                href="/learn/courses"
+                className={cn(
+                  buttonVariants({
+                    variant: 'outline',
+                    className: 'border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white',
+                  }),
+                )}
+              >
+                Go to my courses
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
