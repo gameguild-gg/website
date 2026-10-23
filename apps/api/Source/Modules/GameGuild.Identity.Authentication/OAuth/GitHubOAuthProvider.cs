@@ -83,20 +83,28 @@ internal sealed class GitHubOAuthProvider(
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var user = JsonSerializer.Deserialize<GitHubUserDto>(content, _jsonOptions) ?? throw new InvalidOperationException("Failed to parse GitHub user");
 
-        // Get email if not public
-        if (string.IsNullOrEmpty(user.Email))
-        {
-            var primaryEmail = await GetGitHubPrimaryEmailAsync(accessToken).ConfigureAwait(false);
+        string? email = user.Email;
+        var emailVerified = false;
 
-            if (!string.IsNullOrEmpty(primaryEmail)) { user.Email = primaryEmail; }
+        // Get email if not public; only /user/emails entries with verified=true are attested by GitHub.
+        if (string.IsNullOrEmpty(email))
+        {
+            var (primaryEmail, primaryEmailVerified) = await GetGitHubPrimaryEmailAsync(accessToken).ConfigureAwait(false);
+
+            if (!string.IsNullOrEmpty(primaryEmail))
+            {
+                email = primaryEmail;
+                emailVerified = primaryEmailVerified;
+            }
         }
 
         return new OAuthUserProfile
         {
             ProviderId = user.Id.ToString(CultureInfo.InvariantCulture),
             Provider = DisplayName,
-            Email = user.Email,
-            EmailVerified = !string.IsNullOrEmpty(user.Email), // GitHub doesn't provide verification status
+            Email = email,
+            // The public profile email is user-set arbitrary text — never treat it as attested.
+            EmailVerified = emailVerified,
             Name = user.Name,
             Username = user.Login,
             AvatarUrl = user.AvatarUrl,
@@ -104,7 +112,8 @@ internal sealed class GitHubOAuthProvider(
         };
     }
 
-    private async Task<string?> GetGitHubPrimaryEmailAsync(string accessToken)
+    /// <returns>The email and whether GitHub attests it (<c>verified=true</c>); null email when none qualifies.</returns>
+    private async Task<(string? Email, bool Verified)> GetGitHubPrimaryEmailAsync(string accessToken)
     {
         try
         {
@@ -115,7 +124,7 @@ internal sealed class GitHubOAuthProvider(
                 // Never send a GitHub access token to api.github.com when a custom user endpoint is configured.
                 if (!string.IsNullOrWhiteSpace(settings?.UserInformationEndpoint))
                 {
-                    return null;
+                    return (null, false);
                 }
 
                 emailEndpoint = GitHubEmailUrl;
@@ -130,9 +139,18 @@ internal sealed class GitHubOAuthProvider(
 
             if (emails != null)
             {
-                var primaryEmail = emails.Where(e => e.GetProperty("primary").GetBoolean()).Select(e => e.GetProperty("email").GetString()).FirstOrDefault();
+                // Prefer the primary email GitHub attests (primary && verified); fall back to the
+                // primary entry so an unverified primary surfaces with Verified=false.
+                var primary = emails.FirstOrDefault(e => e.GetProperty("primary").GetBoolean());
+                var verifiedPrimary = emails.FirstOrDefault(e => e.GetProperty("primary").GetBoolean() && e.GetProperty("verified").GetBoolean());
+                var selected = verifiedPrimary.ValueKind != JsonValueKind.Undefined ? verifiedPrimary : primary;
 
-                return primaryEmail;
+                if (selected.ValueKind != JsonValueKind.Undefined && selected.GetProperty("email").GetString() is { } selectedEmail)
+                {
+                    return (selectedEmail, verifiedPrimary.ValueKind != JsonValueKind.Undefined);
+                }
+
+                return (null, false);
             }
         }
         catch (Exception ex)
@@ -141,6 +159,6 @@ internal sealed class GitHubOAuthProvider(
             throw;
         }
 
-        return null;
+        return (null, false);
     }
 }

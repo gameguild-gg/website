@@ -243,6 +243,43 @@ public class StripePaymentLifecycleWebhookTests
         reconciledRefunds.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task TryConsumeAsync_ChargeRefunded_InfrastructureFailure_PropagatesForInboxRedelivery()
+    {
+        var paymentRepository = new Mock<IPaymentRepository>();
+        var refundRepository = new Mock<IRefundRepository>();
+        var payment = SucceededPayment();
+        var refund = ProcessingRefund(payment.Id);
+        paymentRepository
+            .Setup(repo => repo.GetByProviderMappingAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(payment);
+        refundRepository
+            .Setup(repo => repo.GetOpenRefundForPaymentAsync(payment.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refund);
+        var refundCore = new Mock<IRefundProcessingService>();
+        refundCore
+            .Setup(core => core.CompleteFromGatewayAsync(refund, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("transient database failure"));
+        var consumer = new StripePaymentLifecycleEventConsumer(
+            paymentRepository.Object,
+            refundRepository.Object,
+            refundCore.Object,
+            new Mock<IPaymentRetryPolicyResolver>().Object,
+            Options.Create(new PaymentRetryOptions()),
+            NullLogger<StripePaymentLifecycleEventConsumer>.Instance);
+
+        var act = async () =>
+        {
+            _ = await consumer.TryConsumeAsync(
+                VerifiedEvent("charge.refunded", "pi_ok", status: "partially_refunded", objectKind: "charge"),
+                CancellationToken.None);
+        };
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("transient database failure");
+        refund.Status.Should().Be(RefundStatus.Processing);
+    }
+
     private static StripePaymentLifecycleEventConsumer CreateConsumer(
         out Mock<IPaymentRepository> paymentRepository,
         out Mock<IRefundRepository> refundRepository,

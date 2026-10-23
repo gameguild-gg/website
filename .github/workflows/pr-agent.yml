@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: qodo-ai/pr-agent@main
         env:
+          # NOTE: Actions GITHUB_TOKEN cannot call GET /user, so the log shows
+          # "_resolve_user_login ... Resource not accessible by integration: 403".
+          # Expected: pr-agent falls back to github-actions[bot]. Harmless.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_KEY: ${{ secrets.OMNI_API_KEY }}
           OPENAI__API_BASE: https://omniroute.gameguild.gg/v1
@@ -35,10 +38,24 @@ jobs:
           # LLM call deadline; default ai_timeout=120s is too short for
           # big-context calls through the omniroute proxy (30m here).
           CONFIG__AI_TIMEOUT: "1800"
-          CONFIG__MAX_MODEL_TOKENS: "900000"
+          # Per-call token budget cap: pr-agent uses min(max_model_tokens,
+          # custom_model_max_tokens). 50k = measured optimum: 12/12 chunks
+          # retained (39837196199); 100k dropped 4/7 (39822917061); 25k
+          # dropped 1/26 with 7× 524 (39851172940) — residual transients
+          # are backend-concurrency-bound (shared 6-slot vLLM), not
+          # payload-bound; retry-absorbed. CUSTOM_MODEL_MAX_TOKENS stays
+          # 900000 (real 1M context of the backend).
+          CONFIG__MAX_MODEL_TOKENS: "50000"
           PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: "true"
           PR_REVIEWER__MAX_NUMBER_OF_CALLS: "100"
           PR_CODE_SUGGESTIONS__MAX_NUMBER_OF_CALLS: "100"
+          # CF free plan kills non-streaming LLM calls at ~120s (524, zone
+          # omniroute.gameguild.gg). pr-agent's litellm workaround: force
+          # streaming for this OpenAI-compatible endpoint — SSE bytes keep
+          # the CF connection alive; pr-agent aggregates the stream itself.
+          # Both keys are required together (provider AND api_base substring).
+          LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: openai
+          LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["omniroute.gameguild.gg"]'
           GITHUB_ACTION_CONFIG__AUTO_REVIEW: "true"
           GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: "true"
           GITHUB_ACTION_CONFIG__AUTO_IMPROVE: "true"
