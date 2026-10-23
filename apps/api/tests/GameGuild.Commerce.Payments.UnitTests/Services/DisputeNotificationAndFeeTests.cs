@@ -18,6 +18,7 @@ namespace GameGuild.Commerce.Payments.UnitTests.Services;
 public class DisputeNotificationAndFeeTests
 {
     private readonly Mock<INotificationService> _notifications = new();
+    private readonly Mock<IRevenueAuditService> _revenueAudit = new();
 
     private static async Task<PaymentsPersistenceTestDbContext> CreateContextAsync()
     {
@@ -192,6 +193,59 @@ public class DisputeNotificationAndFeeTests
     {
         ((int)EvidenceType.Invoice).Should().Be(9);
         ((int)EvidenceType.SubscriptionRecord).Should().Be(10);
+    }
+
+    [Fact]
+    public async Task ResolveDisputeAsync_BooksTheFeeInThePaymentCurrency()
+    {
+        await using var context = await CreateContextAsync();
+        var payment = Payment.Create(Guid.NewGuid(), 100m, "EUR", $"idem-{Guid.NewGuid():N}");
+        payment.MarkAsProcessing();
+        payment.MarkAsSucceeded("pi_1", "ch_1");
+        context.Set<Payment>().Add(payment);
+        var dispute = OpenDispute();
+        dispute.PaymentId = payment.Id;
+        dispute.RecordDisputeFee(15m);
+        context.Set<PaymentDispute>().Add(dispute);
+        await context.SaveChangesAsync();
+        var service = new DisputeService(context, NullLogger<DisputeService>.Instance, _revenueAudit.Object);
+
+        await service.ResolveDisputeAsync(dispute.Id, DisputeResolution.Lost, "merchant evidence");
+
+        _revenueAudit.Verify(audit => audit.CreateLedgerEntryAsync(
+            LedgerEntryType.Fee,
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            15m,
+            "EUR",
+            It.IsAny<string>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResolveDisputeAsync_MissingPayment_FallsBackToUsdWithTheFeeStillBooked()
+    {
+        await using var context = await CreateContextAsync();
+        var dispute = OpenDispute();
+        dispute.RecordDisputeFee(15m);
+        context.Set<PaymentDispute>().Add(dispute);
+        await context.SaveChangesAsync();
+        var service = new DisputeService(context, NullLogger<DisputeService>.Instance, _revenueAudit.Object);
+
+        await service.ResolveDisputeAsync(dispute.Id, DisputeResolution.Lost, "merchant evidence");
+
+        _revenueAudit.Verify(audit => audit.CreateLedgerEntryAsync(
+            LedgerEntryType.Fee,
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            15m,
+            "USD",
+            It.IsAny<string>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private DisputeNotificationService CreateService(
