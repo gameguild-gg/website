@@ -73,6 +73,11 @@ const URL_FIELDS = ['website', 'avatarUrl', 'bannerUrl'] as const;
 
 const VISIBILITY_VALUES = ['public', 'members', 'private'] as const;
 
+function formText(formData: FormData, field: FieldName): string {
+  const value = formData.get(field);
+  return typeof value === 'string' ? value : '';
+}
+
 function isHttpUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -117,15 +122,15 @@ export function ProfileForm({
 
     const formData = new FormData(event.currentTarget);
     const input: ProfileFormInput = {
-      handle: String(formData.get('handle') ?? ''),
-      displayName: String(formData.get('displayName') ?? ''),
-      bio: String(formData.get('bio') ?? ''),
-      location: String(formData.get('location') ?? ''),
-      website: String(formData.get('website') ?? ''),
-      jobTitle: String(formData.get('jobTitle') ?? ''),
-      company: String(formData.get('company') ?? ''),
-      avatarUrl: String(formData.get('avatarUrl') ?? ''),
-      bannerUrl: String(formData.get('bannerUrl') ?? ''),
+      handle: formText(formData, 'handle'),
+      displayName: formText(formData, 'displayName'),
+      bio: formText(formData, 'bio'),
+      location: formText(formData, 'location'),
+      website: formText(formData, 'website'),
+      jobTitle: formText(formData, 'jobTitle'),
+      company: formText(formData, 'company'),
+      avatarUrl: formText(formData, 'avatarUrl'),
+      bannerUrl: formText(formData, 'bannerUrl'),
     };
 
     const errors: FieldErrors = {};
@@ -431,7 +436,7 @@ export function ProfileForm({
                 value={visibility ?? undefined}
                 onValueChange={(value) => {
                   if (value !== null && (VISIBILITY_VALUES as readonly string[]).includes(value)) {
-                    handleVisibilityChange(value as ProfileVisibilitySetting);
+                    handleVisibilityChange(value);
                   }
                 }}
                 disabled={!hasCommunityProfile || isVisibilityPending || visibility === null}
