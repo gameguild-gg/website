@@ -73,6 +73,7 @@ public sealed class PermissionSoftDeletePostgreSqlTests(ApiPostgreSqlFixture fix
         Assert.NotSame(grant, loaded);
         Assert.True(loaded.IsDeleted);
         AssertAccess(loaded, false);
+        Assert.Equal(subject, loaded.UserId);
         Assert.Equal(tenant, loaded.PermissionTenantId);
         Assert.Equal(grantor, loaded.CreatedBy);
         Assert.Contains(PermissionType.Read, loaded.GetGrantedPermissionTypes());
@@ -85,6 +86,7 @@ public sealed class PermissionSoftDeletePostgreSqlTests(ApiPostgreSqlFixture fix
         Assert.NotSame(loaded, restored);
         Assert.False(restored.IsDeleted);
         AssertAccess(restored, limitation == 0);
+        Assert.Equal(subject, restored.UserId);
         Assert.Equal(loaded.ExpiresAt, restored.ExpiresAt);
         if (restored is ResourceUserPermission directRestored && limitation == 2)
         {
@@ -96,6 +98,39 @@ public sealed class PermissionSoftDeletePostgreSqlTests(ApiPostgreSqlFixture fix
         {
             Assert.False(restored.IsActive);
         }
+    }
+
+    [Fact]
+    public async Task DirectResourceSubjectWrittenThroughTheBaseContractPersistsWithoutAShadowSubject()
+    {
+        await using var scope = fixture.Factory.Services.CreateAsyncScope();
+        var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var originalSubject = Guid.NewGuid();
+        var updatedSubject = Guid.NewGuid();
+        var grant = new ResourceUserPermission
+        {
+            UserId = originalSubject,
+            TenantId = new TenantId(Guid.NewGuid()),
+            ResourceType = "Document",
+            ResourceId = Guid.NewGuid().ToString("D"),
+            Permissions = ["Read"],
+            GrantedByUserId = Guid.NewGuid()
+        };
+        database.Add(grant);
+        await database.SaveChangesAsync();
+        database.ChangeTracker.Clear();
+
+        PermissionBase loaded = await database.Set<ResourceUserPermission>().SingleAsync(row => row.Id == grant.Id);
+        Assert.Equal(originalSubject, loaded.UserId);
+        loaded.UserId = updatedSubject;
+        await database.SaveChangesAsync();
+        database.ChangeTracker.Clear();
+
+        var updated = await database.Set<ResourceUserPermission>().SingleAsync(row => row.Id == grant.Id);
+        Assert.Equal(updatedSubject, updated.UserId);
+        Assert.Equal(updatedSubject, ((PermissionBase)updated).UserId);
+        Assert.Equal(updatedSubject, ((IDacAttribute)updated).Owner);
+        Assert.Single(database.Model.FindEntityType(typeof(ResourceUserPermission))!.GetProperties(), property => property.Name == "UserId");
     }
 
     private static void AssertAccess(PermissionBase grant, bool expected)

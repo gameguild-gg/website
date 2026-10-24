@@ -6,6 +6,39 @@ namespace GameGuild.Identity.Authorization.UnitTests.Entities;
 
 public sealed class PermissionSoftDeleteTests
 {
+    [Fact]
+    public void DirectResourceSubjectIsConsistentAcrossTheSharedAndConcreteContracts()
+    {
+        var direct = Assert.IsType<ResourceUserPermission>(Create("direct-resource"));
+        PermissionBase shared = direct;
+        Assert.NotEqual(Guid.Empty, direct.UserId);
+        Assert.Equal(direct.UserId, shared.UserId);
+
+        var replacement = Guid.NewGuid();
+        shared.UserId = replacement;
+        Assert.Equal(replacement, direct.UserId);
+        Assert.Equal(replacement, ((IDacAttribute)direct).Owner);
+
+        replacement = Guid.NewGuid();
+        direct.UserId = replacement;
+        Assert.Equal(replacement, shared.UserId);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ClearingTheSharedResourceSubjectCannotLeaveAValidConcreteGrant(bool useEmptyId)
+    {
+        var direct = Assert.IsType<ResourceUserPermission>(Create("direct-resource"));
+        PermissionBase shared = direct;
+
+        shared.UserId = useEmptyId ? Guid.Empty : null;
+
+        Assert.Equal(Guid.Empty, direct.UserId);
+        Assert.False(shared.IsValid());
+        Assert.False(direct.IsValid());
+    }
+
     [Theory]
     [InlineData("tenant", false)]
     [InlineData("tenant", true)]

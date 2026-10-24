@@ -25,9 +25,13 @@ public class ResourceUserPermission : PermissionBase, IDacAttribute
 
     /// <summary>
     ///     Gets or sets the ID of the user who has these permissions.
-    ///     Hides the optional base property with a required (non-nullable) equivalent.
+    ///     Keeps the required concrete view and the shared nullable view on the same subject.
     /// </summary>
-    public new required Guid UserId { get; set; }
+    public new required Guid UserId
+    {
+        get => base.UserId ?? Guid.Empty;
+        set => base.UserId = value;
+    }
 
     /// <summary>
     ///     Gets or sets the type of resource.

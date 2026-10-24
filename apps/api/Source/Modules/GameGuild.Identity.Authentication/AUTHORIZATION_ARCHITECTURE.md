@@ -2039,9 +2039,16 @@ Deleting a grant preserves its payload and grant metadata. Restoring it only
 clears deletion: an expired, inactive or revoked grant remains ineffective.
 Payload enumeration remains available for authorized historical inspection;
 authorization must use an effective-grant check or the permission engine.
-The persisted columns and mappings are unchanged. Regression coverage includes
+The persisted columns are unchanged. Regression coverage includes
 polymorphic calls and native PostgreSQL materialization/restoration across all
 five concrete grant families.
+
+Direct resource grants retain their required `Guid UserId` API while sharing its
+value with `PermissionBase.UserId`. Reads and writes through either contract refer
+to the same subject, including the DAC owner view. EF materializes this property
+through its accessor into the existing single, required `UserId` column. Clearing
+the shared subject leaves an invalid grant, and PostgreSQL regression coverage
+verifies subject preservation and updates after reloading the entity.
 
 ### Policy-selected authentication and the immutable actor
 

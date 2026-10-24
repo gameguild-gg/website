@@ -28,6 +28,7 @@ public class ResourceUserPermissionConfiguration : IEntityTypeConfiguration<Reso
             .IsRequired();
 
         builder.Property(e => e.UserId)
+            .UsePropertyAccessMode(PropertyAccessMode.Property)
             .IsRequired();
 
         builder.Property(e => e.ResourceType)
