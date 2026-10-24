@@ -18,7 +18,11 @@ const evidence = path.resolve(process.argv[3]);
 await mkdir(evidence, { recursive: true });
 const require = createRequire(import.meta.url);
 const git = (...args) => execFileSync('git', ['-c', 'core.commitGraph=false', ...args], { encoding: 'utf8' }).trim();
-const source = { checkout: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}'), parents: git('show', '-s', '--format=%P', 'HEAD').split(' ') };
+// Shallow checkout hides parents from git show; the raw commit object retains them.
+const commitHeaders = git('cat-file', '-p', 'HEAD').split(/\r?\n\r?\n/, 1)[0].split(/\r?\n/);
+const source = { checkout: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}'),
+  parents: commitHeaders.filter(line => line.startsWith('parent ')).map(line => line.slice(7)) };
+assert.ok(source.parents.length > 0, 'Retain the actual commit parents in the source evidence.');
 const reservation = createServer();
 await new Promise((resolve, reject) => reservation.once('error', reject).listen(0, '127.0.0.1', resolve));
 const port = reservation.address().port;

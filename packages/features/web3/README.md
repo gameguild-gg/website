@@ -47,11 +47,15 @@ signing failures (raw provider errors, surfaced by the context as
 - The SDK is **not vendored** by this repository: current
   `@walletconnect/*` releases ship under the proprietary
   WalletConnect/Reown Community License (not OSI-approved), which the
-  GameGuild license posture has not accepted. A deployment that has accepted
-  the license installs `@walletconnect/ethereum-provider` itself; the
-  adapter resolves it lazily from the host and fails closed
-  (`wallet_not_found`) when it is absent — mirroring the Torus fail-closed
-  pattern. No part of the SDK ever lands in this repo's lockfile or bundle.
+  GameGuild license posture has not accepted. A deployment enabling it must
+  supply an SDK-backed `loadProvider`, or browser ESM resolution (such as an
+  import map) for the default native import. Installing the package on the
+  Node host alone does not make a bare module specifier resolvable by browsers.
+  The import explicitly opts out of Vite, Webpack and Turbopack bundling so an
+  absent optional SDK cannot prevent ordinary sign-in from compiling. Runtime
+  load failures remain `wallet_not_found`. No SDK is included in this repo's
+  lockfile or bundle; the GameGuild app's real provider delivery and pairing
+  acceptance remain pending in #18.
 - `isAvailable()` only checks the config gate (`enabled` + `projectId`, a
   public WalletConnect Cloud identifier — not a secret). The SDK import and
   the relay session happen exclusively inside `connect()`.
