@@ -50,7 +50,6 @@ public class StripeAmountConverterTests
     [InlineData(100, "MGA", 100L)]
     [InlineData(100, "PYG", 100L)]
     [InlineData(100, "RWF", 100L)]
-    [InlineData(100, "UGX", 100L)]
     [InlineData(100, "VUV", 100L)]
     [InlineData(100, "XAF", 100L)]
     [InlineData(100, "XOF", 100L)]
@@ -86,6 +85,61 @@ public class StripeAmountConverterTests
         var lower = StripeAmountConverter.ToStripeAmount(100, "jpy");
         var upper = StripeAmountConverter.ToStripeAmount(100, "JPY");
         lower.Should().Be(upper);
+    }
+
+    // Stripe's API representation differs from the ISO exponent for these currencies.
+    // https://docs.stripe.com/currencies#special-cases and #zero-decimal
+    [Theory]
+    [InlineData(5, "ISK", 500L)]
+    [InlineData(5, "isk", 500L)]
+    [InlineData(5, "UGX", 500L)]
+    [InlineData(100, "UGX", 10000L)]
+    [InlineData(5, "ugx", 500L)]
+    [InlineData(500, "MGA", 500L)]
+    [InlineData(500, "mga", 500L)]
+    public void ToStripeAmount_ProviderException_UsesStripeRepresentation(decimal amount, string currency, long expected)
+    {
+        StripeAmountConverter.ToStripeAmount(amount, currency).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(500L, "ISK", 5)]
+    [InlineData(500L, "isk", 5)]
+    [InlineData(500L, "UGX", 5)]
+    [InlineData(500L, "ugx", 5)]
+    [InlineData(500L, "MGA", 500)]
+    [InlineData(500L, "mga", 500)]
+    public void FromStripeAmount_ProviderException_UsesStripeRepresentation(long amount, string currency, decimal expected)
+    {
+        StripeAmountConverter.FromStripeAmount(amount, currency).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("ISK")]
+    [InlineData("UGX")]
+    [InlineData("MGA")]
+    public void ToStripeAmount_WholeUnitException_RejectsFractionalCharges(string currency)
+    {
+        var convert = () => StripeAmountConverter.ToStripeAmount(5.5m, currency);
+        convert.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("amount");
+    }
+
+    [Theory]
+    [InlineData("ISK")]
+    [InlineData("UGX")]
+    public void FromStripeAmount_WholeUnitException_RejectsFractionalRepresentation(string currency)
+    {
+        var convert = () => StripeAmountConverter.FromStripeAmount(550L, currency);
+        convert.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("amount");
+    }
+
+    [Theory]
+    [InlineData("HUF")]
+    [InlineData("TWD")]
+    public void StripeChargeConversion_PreservesTwoDecimalsDespitePayoutRules(string currency)
+    {
+        StripeAmountConverter.ToStripeAmount(10.45m, currency).Should().Be(1045L);
+        StripeAmountConverter.FromStripeAmount(1045L, currency).Should().Be(10.45m);
     }
 }
 

@@ -9,26 +9,51 @@ internal static class StripeAmountConverter
 {
     /// <summary>
     ///     Converts a decimal amount to Stripe's integer format (smallest currency unit).
-    ///     The scale factor is driven by the ISO 4217 catalog's minor-unit exponent, so
-    ///     zero-decimal currencies (JPY, KRW, ...) pass through unchanged while three-decimal
-    ///     currencies (KWD, BHD, OMR, JOD, TND, IQD, LYD) scale by 1000 — the historical
-    ///     hard-coded x100 mis-scaled those by a factor of ten.
+    ///     Uses the catalog scale with Stripe's API exceptions: ISK and UGX retain a
+    ///     two-decimal representation for whole-unit charges, while MGA uses whole units.
+    ///     See https://docs.stripe.com/currencies#special-cases.
     /// </summary>
     public static long ToStripeAmount(decimal amount, string currency)
     {
-        var exponent = Iso4217CurrencyCatalog.GetMinorUnitExponent(currency);
+        if (RequiresWholeUnitAmount(currency) && amount != decimal.Truncate(amount))
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "Stripe requires a whole-unit amount for this currency.");
+        }
+
+        var exponent = GetStripeMinorUnitExponent(currency);
         var scaled = exponent == 0 ? amount : amount * MinorUnitScale(exponent);
         return (long)decimal.Round(scaled, 0, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>
-    ///     Converts a Stripe integer amount back to decimal using the catalog minor-unit exponent.
+    ///     Converts a Stripe integer amount back to decimal using its API representation.
     /// </summary>
     public static decimal FromStripeAmount(long amount, string currency)
     {
-        var exponent = Iso4217CurrencyCatalog.GetMinorUnitExponent(currency);
-        return exponent == 0 ? amount : amount / MinorUnitScale(exponent);
+        var exponent = GetStripeMinorUnitExponent(currency);
+        var converted = exponent == 0 ? amount : amount / MinorUnitScale(exponent);
+        if (RequiresWholeUnitAmount(currency) && converted != decimal.Truncate(converted))
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "Stripe's amount must represent whole units for this currency.");
+        }
+
+        return converted;
     }
+
+    private static int GetStripeMinorUnitExponent(string currency)
+    {
+        if (string.Equals(currency, "ISK", StringComparison.OrdinalIgnoreCase) || string.Equals(currency, "UGX", StringComparison.OrdinalIgnoreCase))
+        {
+            return 2;
+        }
+
+        return string.Equals(currency, "MGA", StringComparison.OrdinalIgnoreCase) ? 0 : Iso4217CurrencyCatalog.GetMinorUnitExponent(currency);
+    }
+
+    private static bool RequiresWholeUnitAmount(string currency) =>
+        string.Equals(currency, "ISK", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(currency, "UGX", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(currency, "MGA", StringComparison.OrdinalIgnoreCase);
 
     private static decimal MinorUnitScale(int exponent) { return decimal.Parse("1".PadRight(exponent + 1, '0'), System.Globalization.CultureInfo.InvariantCulture); }
 }
