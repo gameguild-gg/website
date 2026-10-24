@@ -218,6 +218,14 @@ for (const packageRoot of installedConsumers("happy-dom")) {
   });
 }
 
+function assertConfiguredTokenEndpoint(actual, expected) {
+  const url = new URL(actual);
+  assert.deepEqual([...url.searchParams.keys()], ["client-request-id"]);
+  assert.match(url.searchParams.get("client-request-id"), /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i);
+  url.search = "";
+  assert.equal(url.href, expected);
+}
+
 for (const packageRoot of installedConsumers("@azure/msal-node")) {
   test(`${packageRoot}: authorization response metadata cannot redirect credential-bearing requests`, { timeout: 10000 }, async () => {
     const consumerRequire = createRequire(join(packageRoot, "package.json"));
@@ -241,7 +249,7 @@ for (const packageRoot of installedConsumers("@azure/msal-node")) {
       { code: "untrusted-response-code", cloud_instance_host_name: "other.example.invalid" }));
     assert.equal(requests.length, 1);
     assert.equal(requests[0].method, "POST");
-    assert.equal(requests[0].url, endpoint);
+    assertConfiguredTokenEndpoint(requests[0].url, endpoint);
     assert.equal(new URLSearchParams(requests[0].body).get("code"), "disposable-code");
   });
 }
@@ -272,7 +280,7 @@ for (const packageRoot of installedConsumers("@azure/identity")) {
     assert.equal(result.token, token);
     const posts = requests.filter(request => request.method === "POST");
     assert.equal(posts.length, 1);
-    assert.equal(posts[0].url, `${authority}/oauth2/v2.0/token`);
+    assertConfiguredTokenEndpoint(posts[0].url, `${authority}/oauth2/v2.0/token`);
     assert.equal(new URLSearchParams(posts[0].body).get("grant_type"), "client_credentials");
   });
 }
