@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { randomBytes } from "node:crypto";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
+import { deflateSync, gzipSync } from "node:zlib";
 import { once } from "node:events";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -189,6 +190,75 @@ for (const packageRoot of installedConsumers("follow-redirects")) {
       });
     }
   }
+}
+
+// GHSA-27r3-jxmh-p828: the decoder must be detached after its frame completes,
+// while the remaining HTTP body is still consumed. Exercise the installed graph.
+for (const packageRoot of installedConsumers("body-parser")) {
+  const consumerRequire = createRequire(join(packageRoot, "package.json"));
+  const bodyParser = consumerRequire("./index.js");
+  for (const encoding of ["identity", "gzip"]) {
+    test(`${packageRoot}: patched body parser preserves ordinary ${encoding} JSON requests`, async context => {
+      assert.equal(consumerRequire("./package.json").version, "2.4.0");
+      assert.equal(consumerRequire("qs/package.json").version, "6.16.1");
+      const parser = bodyParser.json();
+      const origin = await startHeaderServer(context, (request, response) => {
+        parser(request, response, error => {
+          response.statusCode = error ? 400 : 200;
+          response.end(JSON.stringify(error ? { rejected: true } : request.body));
+        });
+      });
+      const payload = Buffer.from(JSON.stringify({ message: "ordinary compressed JSON", count: 3 }));
+      const response = await fetch(origin, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Content-Encoding": encoding },
+        body: encoding === "gzip" ? gzipSync(payload) : payload,
+        signal: AbortSignal.timeout(5000),
+      });
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { message: "ordinary compressed JSON", count: 3 });
+    });
+  }
+
+  test(`${packageRoot}: trailing compressed-body bytes finish without an uncaught decoder error`, { timeout: 10000 }, async context => {
+    const parser = bodyParser.json();
+    const payload = { message: "late request bytes" };
+    const first = Buffer.concat([deflateSync(JSON.stringify(payload)), Buffer.from([0])]);
+    const trailing = Buffer.alloc(1024);
+    let client;
+    context.after(() => client?.destroy());
+    const origin = await startHeaderServer(context, (request, response) => {
+      parser(request, response, error => {
+        if (error) {
+          response.statusCode = 400;
+          response.end("rejected");
+          client.end(trailing);
+          return;
+        }
+        // Deliver the rest only after parsing has finished, then require the HTTP
+        // request to finish too. Sending one combined buffer misses this lifecycle.
+        request.once("end", () => response.end(JSON.stringify(request.body)));
+        client.end(trailing);
+      });
+    });
+    const result = await new Promise((resolveResponse, rejectResponse) => {
+      client = httpRequest(origin, {
+        method: "POST", agent: false,
+        headers: { "Content-Type": "application/json", "Content-Encoding": "deflate",
+          "Content-Length": first.length + trailing.length },
+      }, response => {
+        const chunks = [];
+        response.on("data", chunk => chunks.push(chunk));
+        response.on("error", rejectResponse);
+        response.on("end", () => resolveResponse({ status: response.statusCode, body: Buffer.concat(chunks).toString("utf8") }));
+      });
+      client.on("error", rejectResponse);
+      client.setTimeout(5000, () => client.destroy(new Error("Compressed request did not finish")));
+      client.write(first);
+    });
+    assert.equal(result.status, 200);
+    assert.deepEqual(JSON.parse(result.body), payload);
+  });
 }
 
 for (const packageRoot of installedConsumers("sharp")) {
