@@ -238,6 +238,9 @@ for (const file of ["ApplicationDbContext.cs", "EntityChangeAuditCapture.cs", "E
 for (const file of [
   "scripts/ci/select-affected-dotnet-tests.mjs",
   "scripts/ci/run-affected-dotnet-tests.sh",
+  "scripts/ci/api-integration-filter.mjs",
+  "scripts/ci/economy-integration-shards.json",
+  "scripts/ci/tests/api-integration-filter.test.mjs",
   "scripts/ci/tests/select-affected-dotnet-tests.test.mjs",
 ]) {
   test(`affected-test infrastructure ${file} selects native host qualification`, () => {

@@ -140,9 +140,28 @@ for project in "${projects[@]}"; do
       prepare_economy_template
     fi
   fi
-  "${test_environment[@]}" dotnet test "$project" -c Release --nologo \
-    --blame-hang-timeout 5m \
-    --logger "trx;LogFileName=$test_name.trx" --results-directory "$results" \
-    2>&1 | redact_disposable_postgres_output
-  [[ -f "$results/$test_name.trx" ]] || { printf 'Missing test evidence: %s\n' "$project" >&2; exit 1; }
+  partitions=(all)
+  if [[ "$test_name" == 'GameGuild.API.IntegrationTests' ]]; then
+    # The monolithic hosted run reached 14 GiB RSS and paged during HTTP
+    # cancellation. Use the same exhaustive partition as the regression gate,
+    # releasing each testhost before starting the next. No cases are excluded.
+    partitions=(api-integration-1 api-integration-2 api-integration-3 api-integration-4)
+    cp "$script_dir/economy-integration-shards.json" "$results/integration-partition.json"
+  fi
+  for partition in "${partitions[@]}"; do
+    partition_results="$results"
+    test_filter=()
+    if [[ "$partition" != all ]]; then
+      partition_results="$results/$partition"
+      mkdir -p "$partition_results"
+      integration_filter="$(node "$script_dir/api-integration-filter.mjs" "$partition")"
+      test_filter=(--filter "$integration_filter")
+      printf '%s\n' "$integration_filter" > "$partition_results/test-filter.txt"
+    fi
+    "${test_environment[@]}" dotnet test "$project" -c Release --nologo \
+      --blame-hang-timeout 5m "${test_filter[@]}" \
+      --logger "trx;LogFileName=$test_name.trx" --results-directory "$partition_results" \
+      2>&1 | redact_disposable_postgres_output
+    [[ -f "$partition_results/$test_name.trx" ]] || { printf 'Missing test evidence: %s %s\n' "$project" "$partition" >&2; exit 1; }
+  done
 done
