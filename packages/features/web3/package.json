@@ -18,11 +18,15 @@
   "dependencies": {},
   "peerDependencies": {
     "@toruslabs/torus-embed": "*",
+    "@walletconnect/ethereum-provider": "*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "peerDependenciesMeta": {
     "@toruslabs/torus-embed": {
+      "optional": true
+    },
+    "@walletconnect/ethereum-provider": {
       "optional": true
     },
     "react-dom": {

@@ -111,7 +111,6 @@ export type WalletConnectAdapter = WalletAdapter & {
  * that installed the SDK. Its rejection is handled by the fail-closed
  * `loadProvider` path (mapped to `wallet_not_found`).
  */
-const ETHEREUM_PROVIDER_MODULE: string = '@walletconnect/ethereum-provider';
 
 /**
  * `EthereumProvider.init` options accepted by the default loader — the
@@ -174,11 +173,12 @@ export const createWalletConnectAdapter = (
   const loadProvider =
     options.loadProvider ??
     (async (): Promise<WalletConnectEthereumProviderLike> => {
-      // Dynamic specifier + @vite-ignore: the import is only ever resolved
-      // at runtime, in deployments that installed the SDK. Everywhere else
-      // the rejection lands in the fail-closed catch below.
+      // Static specifier (like the Torus adapter): bundlers resolve the SDK
+      // from the workspace dependency graph and ship it with the deployment.
+      // When a deployment opts out of the optional peer the rejection still
+      // lands in the fail-closed catch below.
       const module = (await import(
-        /* @vite-ignore */ ETHEREUM_PROVIDER_MODULE
+        '@walletconnect/ethereum-provider'
       )) as WalletConnectEthereumProviderModule;
       return module.default.init({
         projectId: projectId as string,
