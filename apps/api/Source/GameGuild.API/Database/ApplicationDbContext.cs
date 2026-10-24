@@ -62,7 +62,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
         _permissionAuditOptions = permissionAuditOptions?.Value ?? new PermissionAuditOptions();
         _permissionAuditHooks = permissionAuditHooks?.ToArray() ?? [];
         // Value snapshot staging (issue #176) defaults to enabled; the options master switch is
-        // the only way to disable it and staging itself never blocks an authorized mutation.
+        // the only way to disable it. Serialization failures are isolated by the capture pass;
+        // persistence is transactional and requires the audit-store migrations to be applied.
         _valueSnapshotFactory = valueSnapshotOptions is null || valueSnapshotOptions.Value.StagingEnabled
             ? new MutationValueSnapshotFactory(valueSnapshotOptions?.Value)
             : null;
