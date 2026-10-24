@@ -57,8 +57,9 @@ public sealed class CurrencyFxAdministrationPostgreSqlHttpTests(ApiPostgreSqlFix
         Assert.Equal(HttpStatusCode.NoContent, configured.StatusCode);
 
         using var member = fixture.CreateAuthenticatedClient(Guid.NewGuid(), tenant);
-        var currencies = await member.GetFromJsonAsync<List<TenantCurrencyDto>>("/api/v1/currencies");
-        Assert.True(currencies!.Single(row => row.CurrencyCode == "USD").IsBaseCurrency);
+        var currencies = await member.GetFromJsonAsync<List<TenantCurrencyDto>>("/api/v1/currencies")
+            ?? throw new InvalidOperationException("Currency listing must return a JSON array.");
+        Assert.True(currencies.Single(row => row.CurrencyCode == "USD").IsBaseCurrency);
         Assert.False(currencies.Single(row => row.CurrencyCode == "EUR").IsEnabled);
 
         await using var scope = fixture.Factory.Services.CreateAsyncScope();
