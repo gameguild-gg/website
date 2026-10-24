@@ -162,5 +162,14 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
         modelBuilder.ApplyConfiguration(new AccountCreditInvoiceSettlementConfiguration());
         modelBuilder.ApplyConfiguration(new GiftSubscriptionConfiguration());
         modelBuilder.ApplyConfiguration(new ReferralConfiguration());
+
+        // Currency configuration and FX rate sync (issue #412 specs A/B): per-tenant currency
+        // enablement/display preferences (one row per tenant+currency, at most one base row)
+        // plus the persisted FX rate snapshots and sync-run audit records backing the
+        // scheduled provider sync and the manual rate-override command.
+        modelBuilder.ApplyConfiguration(new CurrencyConfigurationConfiguration());
+        modelBuilder.ApplyConfiguration(new FxRateSnapshotConfiguration());
+        modelBuilder.ApplyConfiguration(new FxRateSyncRunConfiguration());
+        modelBuilder.ApplyConfiguration(new AuditTrailConfiguration());
     }
 }

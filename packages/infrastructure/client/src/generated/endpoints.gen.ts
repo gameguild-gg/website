@@ -8763,6 +8763,78 @@ export const postBillingWebhooksWebhookEventsRetryEndpoint = {
 } as const;
 
 /**
+ * Lists every catalog currency annotated with the tenant's enablement, base and display
+ * preferences plus catalog metadata (symbol, English name, minor-unit exponent) for
+ * selector UIs. Enabled currencies come first.
+ *
+ * Returns all ISO 4217 catalog currencies with the tenant's enablement, base-currency marker and display preferences.
+ */
+export type GetCurrenciesInput = void;
+export type GetCurrenciesOutput = Types.CommercePaymentsTenantCurrencyDto[];
+export const getCurrenciesEndpoint = {
+  operationId: 'getCurrencies' as const,
+  method: 'GET' as const,
+  path: '/api/v1/currencies' as const,
+  tags: ['CommercePaymentsCurrencies'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Disables a currency. Rejects the base currency outright; a currency still held by
+ * active subscriptions requires `confirmActiveSubscriptionImpact=true`.
+ *
+ * Disables an ISO 4217 currency for the tenant. The base currency is always rejected; currencies held by active subscriptions need explicit confirmation.
+ */
+export interface PostCurrenciesDisableInput {
+  currencyCode: string;
+  body?: Types.CommercePaymentsDisableCurrencyInput;
+}
+export type PostCurrenciesDisableOutput = void;
+export const postCurrenciesDisableEndpoint = {
+  operationId: 'postCurrenciesDisable' as const,
+  method: 'POST' as const,
+  path: '/api/v1/currencies/{currencyCode}/disable' as const,
+  tags: ['CommercePaymentsCurrencies'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Enables a currency for the tenant (creates the configuration row on first use).
+ *
+ * Enables an ISO 4217 currency for the tenant. Idempotent. Audit-logged.
+ */
+export interface PostCurrenciesEnableInput {
+  currencyCode: string;
+  body?: Types.CommercePaymentsCurrencyDisplayPreferencesInput;
+}
+export type PostCurrenciesEnableOutput = void;
+export const postCurrenciesEnableEndpoint = {
+  operationId: 'postCurrenciesEnable' as const,
+  method: 'POST' as const,
+  path: '/api/v1/currencies/{currencyCode}/enable' as const,
+  tags: ['CommercePaymentsCurrencies'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Sets the tenant's base (calculation/reporting) currency; enables it if needed and
+ * clears the previous base marker.
+ *
+ * Makes the currency the tenant's base currency for calculation and reporting, clearing the previous marker. Audit-logged.
+ */
+export interface PostCurrenciesSetBaseInput {
+  currencyCode: string;
+}
+export type PostCurrenciesSetBaseOutput = void;
+export const postCurrenciesSetBaseEndpoint = {
+  operationId: 'postCurrenciesSetBase' as const,
+  method: 'POST' as const,
+  path: '/api/v1/currencies/{currencyCode}/set-base' as const,
+  tags: ['CommercePaymentsCurrencies'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * List disputes with optional filters, newest first.
  *
  * Lists payment disputes with optional status, payment and user filters, newest first. Non-admin actors only see their own tenant's disputes.
@@ -9576,6 +9648,84 @@ export const postFraudReviewsBulkDenyEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/fraud/reviews/bulk-deny' as const,
   tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists persisted FX quotations (market snapshots and overrides) with optional pair and
+ * effective-date-window filters for historical lookup.
+ *
+ * Persisted FX quotations with pair and effective-date filters, newest effective date first.
+ */
+export interface GetFxRatesInput {
+  query?: {
+    baseCurrency?: string;
+    quoteCurrency?: string;
+    fromEffectiveDateUtc?: string;
+    toEffectiveDateUtc?: string;
+    limit?: number;
+  };
+}
+export type GetFxRatesOutput = Types.CommercePaymentsFxRateDto[];
+export const getFxRatesEndpoint = {
+  operationId: 'getFxRates' as const,
+  method: 'GET' as const,
+  path: '/api/v1/fx-rates' as const,
+  tags: ['CommercePaymentsFxRates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Sets or replaces an operator manual FX rate override for an exact direction
+ * (audit-logged with reason; effective immediately).
+ *
+ * Persists an audited manual override for one exact currency pair direction; overrides win over synced market rates until replaced or expired.
+ */
+export interface PostFxRatesOverridesInput {
+  body?: Types.CommercePaymentsSetManualFxRateOverrideInput;
+}
+export type PostFxRatesOverridesOutput = void;
+export const postFxRatesOverridesEndpoint = {
+  operationId: 'postFxRatesOverrides' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fx-rates/overrides' as const,
+  tags: ['CommercePaymentsFxRates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Triggers one FX rate sync pass immediately (same code path as the scheduled worker).
+ * Rejected while no provider is configured.
+ *
+ * Runs one FX sync pass now through the primary (or fallback) provider and persists the rate snapshot.
+ */
+export type PostFxRatesSyncInput = void;
+export type PostFxRatesSyncOutput = Types.CommercePaymentsFxRateSyncResult;
+export const postFxRatesSyncEndpoint = {
+  operationId: 'postFxRatesSync' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fx-rates/sync' as const,
+  tags: ['CommercePaymentsFxRates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * FX sync status: recent runs, consecutive failures, staleness assessment and active
+ * grid/override counts.
+ *
+ * Recent FX sync runs with the consecutive-failure counter and the staleness assessment of the newest persisted rates.
+ */
+export interface GetFxRatesSyncStatusInput {
+  query?: {
+    runLimit?: number;
+  };
+}
+export type GetFxRatesSyncStatusOutput = Types.CommercePaymentsFxSyncStatusDto;
+export const getFxRatesSyncStatusEndpoint = {
+  operationId: 'getFxRatesSyncStatus' as const,
+  method: 'GET' as const,
+  path: '/api/v1/fx-rates/sync-status' as const,
+  tags: ['CommercePaymentsFxRates'] as const,
   requiresAuth: true,
 } as const;
 
@@ -31898,6 +32048,10 @@ export const endpoints = {
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
   postBillingWebhooksWebhookEventsRetry: postBillingWebhooksWebhookEventsRetryEndpoint,
+  getCurrencies: getCurrenciesEndpoint,
+  postCurrenciesDisable: postCurrenciesDisableEndpoint,
+  postCurrenciesEnable: postCurrenciesEnableEndpoint,
+  postCurrenciesSetBase: postCurrenciesSetBaseEndpoint,
   getDisputes: getDisputesEndpoint,
   postDisputes: postDisputesEndpoint,
   getDisputeById: getDisputeByIdEndpoint,
@@ -31949,6 +32103,10 @@ export const endpoints = {
   postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
   postFraudReviewsBulkApprove: postFraudReviewsBulkApproveEndpoint,
   postFraudReviewsBulkDeny: postFraudReviewsBulkDenyEndpoint,
+  getFxRates: getFxRatesEndpoint,
+  postFxRatesOverrides: postFxRatesOverridesEndpoint,
+  postFxRatesSync: postFxRatesSyncEndpoint,
+  getFxRatesSyncStatus: getFxRatesSyncStatusEndpoint,
   postGifts: postGiftsEndpoint,
   getGifts: getGiftsEndpoint,
   postGiftsRedeem: postGiftsRedeemEndpoint,

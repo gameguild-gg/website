@@ -73,6 +73,7 @@ jobs:
         run: |
           node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs scripts/ci/tests/emception-web-artifacts.test.mjs apps/web/scripts/coding-cycle-editor-support.test.mjs apps/web/scripts/coding-cycle-toolchain-support.test.mjs
           node --test scripts/ci/tests/dotnet-cache-policy.test.mjs
+          node --test scripts/ci/tests/api-integration-filter.test.mjs
           python3 -m unittest discover -s scripts/ci/tests -p 'acquire_emception_release_test.py'
       - name: Test docker build-context invariants
         run: node --test scripts/ci/tests/dockerignore-pnpm-patches.test.mjs scripts/ci/tests/dockerignore-api-analyzer-config.test.mjs
@@ -345,7 +346,9 @@ jobs:
     runs-on: ubuntu-latest
     # Reuse the same-run API/client outputs. Coverage and regression remain
     # required independent jobs; this lane verifies OpenAPI/web/browser surfaces.
-    timeout-minutes: 20
+    # Chromium system dependencies plus the release checks can consume 20 minutes
+    # before artifact upload and cleanup complete. Keep time for both phases.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

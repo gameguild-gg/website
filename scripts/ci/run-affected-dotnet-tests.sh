@@ -22,10 +22,15 @@ mkdir -p "$artifact_root"
 printf '%s\n' "${projects[@]}" > "$artifact_root/projects.txt"
 
 postgres_id=''
+resource_monitor_pid=''
 template_database='economy_tests_template'
 cleanup() {
   local status=$?
   trap - EXIT INT TERM
+  if [[ -n "$resource_monitor_pid" ]]; then
+    kill "$resource_monitor_pid" 2>/dev/null || true
+    wait "$resource_monitor_pid" 2>/dev/null || true
+  fi
   if [[ -n "$postgres_id" ]]; then
     docker logs "$postgres_id" > "$artifact_root/postgres-server.log" 2>&1 || true
     docker inspect --format '{{json .State}}' "$postgres_id" \
@@ -41,6 +46,26 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+record_hosted_resources() {
+  # A cancelled cold HTTP request does not identify whether routing, GC or host
+  # pressure consumed its deadline. Preserve resource evidence without changing
+  # test timeouts, request behavior or assertions. Never record process arguments.
+  while true; do
+    date --utc +%FT%TZ
+    awk '/^(MemTotal|MemAvailable|SwapTotal|SwapFree):/ { print }' /proc/meminfo
+    if [[ -r /proc/pressure/memory ]]; then
+      cat /proc/pressure/memory
+    fi
+    ps -eo pid,comm,rss --sort=-rss | awk 'NR == 1 || (NR <= 16 && /dotnet|testhost|postgres/)'
+    sleep 15
+  done
+}
+
+if [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_OS:-}" == Linux ]]; then
+  record_hosted_resources > "$artifact_root/hosted-resources.log" 2>&1 &
+  resource_monitor_pid=$!
+fi
 
 prepare_economy_template() {
   local container_name="gameguild-affected-api-$$-$RANDOM"
@@ -115,9 +140,28 @@ for project in "${projects[@]}"; do
       prepare_economy_template
     fi
   fi
-  "${test_environment[@]}" dotnet test "$project" -c Release --nologo \
-    --blame-hang-timeout 5m \
-    --logger "trx;LogFileName=$test_name.trx" --results-directory "$results" \
-    2>&1 | redact_disposable_postgres_output
-  [[ -f "$results/$test_name.trx" ]] || { printf 'Missing test evidence: %s\n' "$project" >&2; exit 1; }
+  partitions=(all)
+  if [[ "$test_name" == 'GameGuild.API.IntegrationTests' ]]; then
+    # The monolithic hosted run reached 14 GiB RSS and paged during HTTP
+    # cancellation. Use the same exhaustive partition as the regression gate,
+    # releasing each testhost before starting the next. No cases are excluded.
+    partitions=(api-integration-1 api-integration-2 api-integration-3 api-integration-4)
+    cp "$script_dir/economy-integration-shards.json" "$results/integration-partition.json"
+  fi
+  for partition in "${partitions[@]}"; do
+    partition_results="$results"
+    test_filter=()
+    if [[ "$partition" != all ]]; then
+      partition_results="$results/$partition"
+      mkdir -p "$partition_results"
+      integration_filter="$(node "$script_dir/api-integration-filter.mjs" "$partition")"
+      test_filter=(--filter "$integration_filter")
+      printf '%s\n' "$integration_filter" > "$partition_results/test-filter.txt"
+    fi
+    "${test_environment[@]}" dotnet test "$project" -c Release --nologo \
+      --blame-hang-timeout 5m "${test_filter[@]}" \
+      --logger "trx;LogFileName=$test_name.trx" --results-directory "$partition_results" \
+      2>&1 | redact_disposable_postgres_output
+    [[ -f "$partition_results/$test_name.trx" ]] || { printf 'Missing test evidence: %s %s\n' "$project" "$partition" >&2; exit 1; }
+  done
 done

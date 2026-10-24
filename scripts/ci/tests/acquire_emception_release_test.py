@@ -28,6 +28,10 @@ class FakeGitHub:
         self.steps_passed = steps_passed
         self.artifacts = []
         self.calls = []
+        self.omit_listed_steps = False
+        self.omit_detail_steps = False
+        self.detail_head = HEAD
+        self.failed_step = False
 
     def json(self, endpoint):
         self.calls.append(endpoint)
@@ -36,11 +40,22 @@ class FakeGitHub:
                       "path": ".github/workflows/emception.yml", "status": self.run_status}]}]
         if "/artifacts?" in endpoint:
             return [{"artifacts": self.artifacts}]
-        if "/jobs?" in endpoint:
+        if "/jobs?" in endpoint or endpoint == "actions/jobs/8":
             names = ["Verify release gates and npm package contents",
                      "Prepare verified Toolchain CDN provenance", "Upload verified Toolchain CDN for Web"]
-            return [{"jobs": [{"steps": [{"name": name,
-                     "conclusion": "success" if self.steps_passed else None} for name in names]}]}]
+            job = {"id": 8, "run_id": 5, "head_sha": HEAD, "name": "Build, test, and package Emception",
+                   "steps": [{"name": name, "conclusion": "success" if self.steps_passed else None}
+                             for name in names]}
+            if self.failed_step:
+                job["steps"][0]["conclusion"] = "failure"
+            if endpoint == "actions/jobs/8":
+                job["head_sha"] = self.detail_head
+                if self.omit_detail_steps:
+                    job["steps"] = []
+                return [job]
+            if self.omit_listed_steps:
+                job["steps"] = []
+            return [{"jobs": [job]}]
         raise AssertionError("Unexpected endpoint: " + endpoint)
 
 
@@ -181,6 +196,63 @@ class ArtifactContractTests(unittest.TestCase):
         api.run_status = "completed"
         with self.assertRaisesRegex(ValueError, "completed without"):
             release.choose_artifact(api, HEAD, TREE)
+
+    def test_completed_run_with_sparse_jobs_uses_verified_individual_job_steps(self):
+        _, artifact = self.bundle()
+        api = FakeGitHub(run_status="completed")
+        api.artifacts = [artifact]
+        api.omit_listed_steps = True
+        self.assertEqual(release.choose_artifact(api, HEAD, TREE)["id"], 7)
+        self.assertIn("actions/jobs/8", api.calls)
+
+    def test_sparse_job_detail_cannot_verify_a_different_source(self):
+        _, artifact = self.bundle()
+        api = FakeGitHub(run_status="completed")
+        api.artifacts = [artifact]
+        api.omit_listed_steps = True
+        api.detail_head = "c" * 40
+        with self.assertRaisesRegex(ValueError, "job detail identity"):
+            release.choose_artifact(api, HEAD, TREE)
+
+    def test_failed_required_step_is_not_treated_as_delayed_metadata(self):
+        _, artifact = self.bundle()
+        api = FakeGitHub(run_status="completed")
+        api.artifacts = [artifact]
+        api.omit_listed_steps = True
+        api.failed_step = True
+        with self.assertRaisesRegex(ValueError, "completed without"):
+            release.choose_artifact(api, HEAD, TREE)
+
+    def test_completed_run_waits_for_step_projection_without_accepting_job_status_alone(self):
+        _, artifact = self.bundle()
+        api = FakeGitHub(run_status="completed")
+        api.artifacts = [artifact]
+        api.omit_listed_steps = api.omit_detail_steps = True
+        clock = [0]
+
+        def sleep(seconds):
+            clock[0] += seconds
+            api.omit_detail_steps = False
+
+        result = release.wait_for_artifact(api, HEAD, TREE, 300, lambda: clock[0], sleep)
+        self.assertEqual(result["id"], 7)
+        self.assertEqual(clock[0], 30)
+
+    def test_missing_completed_step_evidence_fails_within_reconciliation_and_overall_budgets(self):
+        _, artifact = self.bundle()
+        for budget, expected in [(300, 120), (60, 60)]:
+            with self.subTest(budget=budget):
+                api = FakeGitHub(run_status="completed")
+                api.artifacts = [artifact]
+                api.omit_listed_steps = api.omit_detail_steps = True
+                clock = [0]
+
+                def sleep(seconds):
+                    clock[0] += seconds
+
+                with self.assertRaisesRegex(TimeoutError, "step evidence"):
+                    release.wait_for_artifact(api, HEAD, TREE, budget, lambda: clock[0], sleep)
+                self.assertEqual(clock[0], expected)
 
     def test_bounded_wait_repolls_the_same_source_after_a_transient_timeout(self):
         _, artifact = self.bundle()

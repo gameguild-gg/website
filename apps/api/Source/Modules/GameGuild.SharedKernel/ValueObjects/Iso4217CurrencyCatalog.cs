@@ -99,7 +99,10 @@ public static class Iso4217CurrencyCatalog
     {
         // Whitelisted billing currencies first (CurrencyCodes.Supported in Commerce.Billing),
         // then the broader active-currency set the platform is growing into. Exponents follow
-        // ISO 4217 table "List one: Currency and funds code list".
+        // ISO 4217 "List One: Currency and funds code list", published 2026-09-17:
+        // https://www.six-group.com/dam/download/financial-information/data-center/iso-currrency/lists/list-one.xml
+        // Retired codes are excluded from new currency configuration. Money preserves its
+        // existing two-decimal fallback for historical values with retired/unknown codes.
         Add(seed, "USD", "840", 2, "$", "US Dollar");
         Add(seed, "EUR", "978", 2, "€", "Euro");
         Add(seed, "GBP", "826", 2, "£", "Pound Sterling");
@@ -130,9 +133,8 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "ISK", "352", 0, "kr", "Iceland Krona");
         Add(seed, "PLN", "985", 2, "zł", "Zloty");
         Add(seed, "CZK", "203", 2, "Kč", "Czech Koruna");
-        Add(seed, "HUF", "348", 0, "Ft", "Forint");
+        Add(seed, "HUF", "348", 2, "Ft", "Forint");
         Add(seed, "RON", "946", 2, "lei", "Romanian Leu");
-        Add(seed, "BGN", "975", 2, "лв", "Bulgarian Lev");
         Add(seed, "UAH", "980", 2, "₴", "Hryvnia");
         Add(seed, "RUB", "643", 2, "₽", "Russian Ruble");
         Add(seed, "TRY", "949", 2, "₺", "Turkish Lira");
@@ -177,14 +179,118 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "BDT", "050", 2, "৳", "Taka");
         Add(seed, "LKR", "144", 2, "Rs", "Sri Lanka Rupee");
         Add(seed, "NPR", "524", 2, "₨", "Nepalese Rupee");
-        Add(seed, "MMK", "104", 0, "K", "Kyat");
-        Add(seed, "KHR", "116", 0, "៛", "Riel");
-        Add(seed, "LAK", "418", 0, "₭", "Lao Kip");
+        Add(seed, "MMK", "104", 2, "K", "Kyat");
+        Add(seed, "KHR", "116", 2, "៛", "Riel");
+        Add(seed, "LAK", "418", 2, "₭", "Lao Kip");
         Add(seed, "TWD", "901", 2, "NT$", "New Taiwan Dollar");
         Add(seed, "MOP", "446", 2, "MOP$", "Pataca");
         Add(seed, "BND", "096", 2, "B$", "Brunei Dollar");
         Add(seed, "FJD", "242", 2, "FJ$", "Fiji Dollar");
+        Add(seed, "VUV", "548", 0, "VT", "Vatu");
         Add(seed, "XPF", "953", 0, "CFPF", "CFP Franc");
+
+        // Remaining active ISO 4217 currencies (issue #412: full-catalog coverage for the
+        // multi-currency foundation). Exponents follow the ISO 4217 "List One" table.
+        // Africa
+        Add(seed, "AOA", "973", 2, "Kz", "Kwanza");
+        Add(seed, "BIF", "108", 0, "FBu", "Burundi Franc");
+        Add(seed, "BWP", "072", 2, "P", "Pula");
+        Add(seed, "CDF", "976", 2, "FC", "Congolese Franc");
+        Add(seed, "CVE", "132", 2, "$", "Cabo Verde Escudo");
+        Add(seed, "DJF", "262", 0, "Fdj", "Djibouti Franc");
+        Add(seed, "ERN", "232", 2, "Nfk", "Nakfa");
+        Add(seed, "ETB", "230", 2, "Br", "Ethiopian Birr");
+        Add(seed, "GMD", "270", 2, "D", "Dalasi");
+        Add(seed, "GNF", "324", 0, "FG", "Guinean Franc");
+        Add(seed, "KMF", "174", 0, "CF", "Comorian Franc");
+        Add(seed, "LRD", "430", 2, "L$", "Liberian Dollar");
+        Add(seed, "LSL", "426", 2, "L", "Loti");
+        Add(seed, "MGA", "969", 2, "Ar", "Malagasy Ariary");
+        Add(seed, "MRU", "929", 2, "UM", "Ouguiya");
+        Add(seed, "MUR", "480", 2, "₨", "Mauritius Rupee");
+        Add(seed, "MVR", "462", 2, "Rf", "Rufiyaa");
+        Add(seed, "MWK", "454", 2, "MK", "Malawi Kwacha");
+        Add(seed, "MZN", "943", 2, "MT", "Mozambique Metical");
+        Add(seed, "NAD", "516", 2, "N$", "Namibia Dollar");
+        Add(seed, "RWF", "646", 0, "FRw", "Rwanda Franc");
+        Add(seed, "SCR", "690", 2, "₨", "Seychelles Rupee");
+        Add(seed, "SDG", "938", 2, "ج.س.", "Sudanese Pound");
+        Add(seed, "SLE", "925", 2, "Le", "Leone");
+        Add(seed, "SOS", "706", 2, "Sh", "Somali Shilling");
+        Add(seed, "SSP", "728", 2, "£", "South Sudanese Pound");
+        Add(seed, "STN", "930", 2, "Db", "Dobra");
+        Add(seed, "SZL", "748", 2, "E", "Lilangeni");
+        Add(seed, "ZMW", "967", 2, "ZK", "Zambian Kwacha");
+        Add(seed, "ZWG", "924", 2, "ZiG$", "Zimbabwe Gold");
+
+        // Americas
+        Add(seed, "XCG", "532", 2, "XCG", "Caribbean Guilder");
+        Add(seed, "BBD", "052", 2, "Bds$", "Barbados Dollar");
+        Add(seed, "BSD", "044", 2, "B$", "Bahamian Dollar");
+        Add(seed, "BZD", "084", 2, "BZ$", "Belize Dollar");
+        Add(seed, "CUP", "192", 2, "$MN", "Cuban Peso");
+        Add(seed, "GYD", "328", 2, "G$", "Guyana Dollar");
+        Add(seed, "HTG", "332", 2, "G", "Gourde");
+        Add(seed, "JMD", "388", 2, "J$", "Jamaican Dollar");
+        Add(seed, "KYD", "136", 2, "$", "Cayman Islands Dollar");
+        Add(seed, "PAB", "590", 2, "B/.", "Balboa");
+        Add(seed, "SRD", "968", 2, "$", "Surinam Dollar");
+        Add(seed, "SVC", "222", 2, "$", "El Salvador Colon");
+        Add(seed, "TTD", "780", 2, "TT$", "Trinidad and Tobago Dollar");
+        Add(seed, "XCD", "951", 2, "EC$", "East Caribbean Dollar");
+
+        // Asia
+        Add(seed, "AMD", "051", 2, "֏", "Armenian Dram");
+        Add(seed, "AZN", "944", 2, "₼", "Azerbaijan Manat");
+        Add(seed, "BTN", "064", 2, "Nu.", "Ngultrum");
+        Add(seed, "IRR", "364", 2, "﷼", "Iranian Rial");
+        Add(seed, "KGS", "417", 2, "с", "Som");
+        Add(seed, "KPW", "408", 2, "₩", "North Korean Won");
+        Add(seed, "KZT", "398", 2, "₸", "Tenge");
+        Add(seed, "LBP", "422", 2, "ل.ل", "Lebanese Pound");
+        Add(seed, "MNT", "496", 2, "₮", "Tugrik");
+        Add(seed, "PGK", "598", 2, "K", "Kina");
+        Add(seed, "SBD", "090", 2, "SI$", "Solomon Islands Dollar");
+        Add(seed, "TJS", "972", 2, "SM", "Somoni");
+        Add(seed, "TMT", "934", 2, "T", "Turkmenistan New Manat");
+        Add(seed, "TOP", "776", 2, "T$", "Pa’anga");
+        Add(seed, "UZS", "860", 2, "сўм", "Uzbekistan Sum");
+        Add(seed, "WST", "882", 2, "WS$", "Tala");
+        Add(seed, "YER", "886", 2, "﷼", "Yemeni Rial");
+
+        // Europe and Central Asia
+        Add(seed, "ALL", "008", 2, "L", "Lek");
+        Add(seed, "BAM", "977", 2, "KM", "Convertible Mark");
+        Add(seed, "BYN", "933", 2, "Br", "Belarusian Ruble");
+        Add(seed, "GEL", "981", 2, "₾", "Lari");
+        Add(seed, "GIP", "292", 2, "£", "Gibraltar Pound");
+        Add(seed, "MDL", "498", 2, "L", "Moldovan Leu");
+        Add(seed, "MKD", "807", 2, "ден", "Denar");
+        Add(seed, "RSD", "941", 2, "дин", "Serbian Dinar");
+
+        // Others
+        Add(seed, "AWG", "533", 2, "Afl.", "Aruban Florin");
+        Add(seed, "HNL", "340", 2, "L", "Lempira");
+        Add(seed, "NIO", "558", 2, "C$", "Cordoba Oro");
+        Add(seed, "SYP", "760", 2, "£", "Syrian Pound");
+        Add(seed, "VES", "928", 2, "Bs.S", "Bolívar Soberano");
+
+        // Other current currencies and funds with defined decimal precision. Use the
+        // ISO code as an unambiguous display hint when no localized symbol is supplied.
+        Add(seed, "AFN", "971", 2, "AFN", "Afghani");
+        Add(seed, "BMD", "060", 2, "BMD", "Bermudian Dollar");
+        Add(seed, "BOV", "984", 2, "BOV", "Mvdol");
+        Add(seed, "CHE", "947", 2, "CHE", "WIR Euro");
+        Add(seed, "CHW", "948", 2, "CHW", "WIR Franc");
+        Add(seed, "COU", "970", 2, "COU", "Unidad de Valor Real");
+        Add(seed, "FKP", "238", 2, "FKP", "Falkland Islands Pound");
+        Add(seed, "MXV", "979", 2, "MXV", "Mexican Unidad de Inversion (UDI)");
+        Add(seed, "SHP", "654", 2, "SHP", "Saint Helena Pound");
+        Add(seed, "USN", "997", 2, "USN", "US Dollar (Next day)");
+        Add(seed, "UYI", "940", 0, "UYI", "Uruguay Peso en Unidades Indexadas (UI)");
+        Add(seed, "UYW", "927", 4, "UYW", "Unidad Previsional");
+        Add(seed, "VED", "926", 2, "VED", "Bolívar Soberano");
+        Add(seed, "XAD", "396", 2, "XAD", "Arab Accounting Dinar");
 
         return seed;
     }

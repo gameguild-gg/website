@@ -7,24 +7,55 @@ namespace GameGuild.Commerce.Payments;
 /// </summary>
 internal static class StripeAmountConverter
 {
-    private static readonly HashSet<string> ZeroDecimalCurrencies =
-        new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>
+    ///     Converts a decimal amount to Stripe's integer format (smallest currency unit).
+    ///     Uses the catalog scale with Stripe's API exceptions: ISK and UGX retain a
+    ///     two-decimal representation for whole-unit charges, while MGA uses whole units.
+    ///     See https://docs.stripe.com/currencies#special-cases.
+    /// </summary>
+    public static long ToStripeAmount(decimal amount, string currency)
+    {
+        if (RequiresWholeUnitAmount(currency) && amount != decimal.Truncate(amount))
         {
-            "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF",
-            "UGX", "VND", "VUV", "XAF", "XOF", "XPF"
-        };
+            throw new ArgumentOutOfRangeException(nameof(amount), "Stripe requires a whole-unit amount for this currency.");
+        }
+
+        var exponent = GetStripeMinorUnitExponent(currency);
+        var scaled = exponent == 0 ? amount : amount * MinorUnitScale(exponent);
+        return (long)decimal.Round(scaled, 0, MidpointRounding.AwayFromZero);
+    }
 
     /// <summary>
-    ///     Converts a decimal amount to Stripe's integer format (cents / smallest currency unit).
+    ///     Converts a Stripe integer amount back to decimal using its API representation.
     /// </summary>
-    public static long ToStripeAmount(decimal amount, string currency) =>
-        ZeroDecimalCurrencies.Contains(currency) ? (long)amount : (long)(amount * 100);
+    public static decimal FromStripeAmount(long amount, string currency)
+    {
+        var exponent = GetStripeMinorUnitExponent(currency);
+        var converted = exponent == 0 ? amount : amount / MinorUnitScale(exponent);
+        if (RequiresWholeUnitAmount(currency) && converted != decimal.Truncate(converted))
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "Stripe's amount must represent whole units for this currency.");
+        }
 
-    /// <summary>
-    ///     Converts a Stripe integer amount back to decimal.
-    /// </summary>
-    public static decimal FromStripeAmount(long amount, string currency) =>
-        ZeroDecimalCurrencies.Contains(currency) ? amount : amount / 100m;
+        return converted;
+    }
+
+    private static int GetStripeMinorUnitExponent(string currency)
+    {
+        if (string.Equals(currency, "ISK", StringComparison.OrdinalIgnoreCase) || string.Equals(currency, "UGX", StringComparison.OrdinalIgnoreCase))
+        {
+            return 2;
+        }
+
+        return string.Equals(currency, "MGA", StringComparison.OrdinalIgnoreCase) ? 0 : Iso4217CurrencyCatalog.GetMinorUnitExponent(currency);
+    }
+
+    private static bool RequiresWholeUnitAmount(string currency) =>
+        string.Equals(currency, "ISK", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(currency, "UGX", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(currency, "MGA", StringComparison.OrdinalIgnoreCase);
+
+    private static decimal MinorUnitScale(int exponent) { return decimal.Parse("1".PadRight(exponent + 1, '0'), System.Globalization.CultureInfo.InvariantCulture); }
 }
 
 /// <summary>

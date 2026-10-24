@@ -210,6 +210,10 @@ class GitHub:
         raise ValueError("Too many artifact redirects")
 
 
+class ProducerEvidencePending(RuntimeError):
+    """The exact artifact exists, but Actions has not published its job steps yet."""
+
+
 def choose_artifact(api, head, tree):
     name = artifact_name(head, tree)
     pages = api.json(f"actions/workflows/emception.yml/runs?head_sha={head}&per_page=100")
@@ -217,6 +221,7 @@ def choose_artifact(api, head, tree):
         [run for page in pages for run in page["workflow_runs"] if run["head_sha"] == head],
         key=lambda run: (run["id"], run.get("run_attempt", 1)), reverse=True,
     )
+    pending_steps = False
     for run in runs:
         if run.get("path") != ".github/workflows/emception.yml":
             raise ValueError("Unexpected producer workflow")
@@ -235,10 +240,31 @@ def choose_artifact(api, head, tree):
                 "Prepare verified Toolchain CDN provenance",
                 "Upload verified Toolchain CDN for Web",
             }
-            if any(required_steps.issubset({step["name"] for step in job["steps"] if step["conclusion"] == "success"})
-                   for job in jobs):
-                return artifact
+            for job in jobs:
+                if job.get("name") != "Build, test, and package Emception":
+                    continue
+                if job.get("run_id") != run["id"] or job.get("head_sha") != head:
+                    raise ValueError("Producer job identity mismatch")
+                # The run/jobs listing can temporarily omit steps, even after
+                # the run changes to completed. Read the individual job before
+                # deciding that the producer failed to verify its artifact.
+                if not job.get("steps"):
+                    details = api.json(f"actions/jobs/{job['id']}")
+                    if (len(details) != 1 or details[0].get("id") != job["id"] or
+                            details[0].get("run_id") != run["id"] or details[0].get("head_sha") != head or
+                            details[0].get("name") != job["name"]):
+                        raise ValueError("Producer job detail identity mismatch")
+                    job = details[0]
+                steps = {step["name"]: step.get("conclusion") for step in (job.get("steps") or [])}
+                if required_steps.issubset({name for name, result in steps.items() if result == "success"}):
+                    return artifact
+                failed_steps = any(steps.get(name) not in {None, "success"} for name in required_steps)
+                if not failed_steps and (
+                        not required_steps.issubset(steps) or any(steps[name] is None for name in required_steps)):
+                    pending_steps = True
     if runs and all(run["status"] == "completed" for run in runs):
+        if pending_steps:
+            raise ProducerEvidencePending("Exact-source artifact exists; producer step evidence is still pending")
         raise ValueError("Producer completed without a verified artifact for this source tree")
     return None
 
@@ -247,10 +273,20 @@ def wait_for_artifact(api, head, tree, wait_seconds, clock=time.monotonic, sleep
     if not 0 < wait_seconds <= 19_800:
         raise ValueError("Artifact wait must be bounded to at most 330 minutes")
     deadline = clock() + wait_seconds
+    evidence_deadline = None
     while True:
         try:
             artifact = choose_artifact(api, head, tree)
         except (TimeoutError, http.client.HTTPException):
+            artifact = None
+        except ProducerEvidencePending as error:
+            # Completion and step metadata are separate Actions API projections.
+            # Allow only a short reconciliation window, never accept job status
+            # alone or extend the caller's overall wait budget.
+            if evidence_deadline is None:
+                evidence_deadline = min(deadline, clock() + 120)
+            if clock() >= evidence_deadline:
+                raise TimeoutError("Producer step evidence did not become available") from error
             artifact = None
         except GitHubHTTPError as error:
             if not error.retryable:
@@ -258,7 +294,7 @@ def wait_for_artifact(api, head, tree, wait_seconds, clock=time.monotonic, sleep
             artifact = None
         if artifact is not None:
             return artifact
-        remaining = deadline - clock()
+        remaining = min(deadline, evidence_deadline or deadline) - clock()
         if remaining <= 0:
             raise TimeoutError("Verified producer release is still unavailable")
         print("Waiting for the exact-source verified Toolchain release", flush=True)

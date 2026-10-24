@@ -88,6 +88,9 @@ export function classifyReleaseChanges(filePaths) {
       [
         "scripts/ci/select-affected-dotnet-tests.mjs",
         "scripts/ci/run-affected-dotnet-tests.sh",
+        "scripts/ci/api-integration-filter.mjs",
+        "scripts/ci/economy-integration-shards.json",
+        "scripts/ci/tests/api-integration-filter.test.mjs",
         "scripts/ci/tests/select-affected-dotnet-tests.test.mjs",
       ].includes(filePath)
     ) {
@@ -111,6 +114,8 @@ export function classifyReleaseChanges(filePaths) {
         "scripts/ci/economy-projects.json",
         "scripts/ci/economy-artifacts.sh",
         "scripts/ci/economy-integration-shards.json",
+        "scripts/ci/api-integration-filter.mjs",
+        "scripts/ci/tests/api-integration-filter.test.mjs",
         "scripts/ci/classify-release-changes.mjs",
         "scripts/ci/tests/verify-economy.sh",
         "scripts/ci/tests/classify-release-changes.test.mjs",

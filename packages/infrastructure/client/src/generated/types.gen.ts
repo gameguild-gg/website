@@ -2508,8 +2508,19 @@ export interface CommercePaymentsCreditMetrics {
   usageRate?: number | null;
 }
 
+/** Optional display preferences supplied when enabling a currency. */
+export interface CommercePaymentsCurrencyDisplayPreferencesInput {
+  displayOrder?: number | null;
+  displaySymbol?: string | null;
+}
+
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
+
+/** Confirmation payload for disabling a currency in active use. */
+export interface CommercePaymentsDisableCurrencyInput {
+  confirmActiveSubscriptionImpact?: boolean;
+}
 
 /** Discount type enumeration for applied discounts in the unified pricing engine.
 Consolidated (issue #417): the Payments and Subscriptions module duplicates are
@@ -2823,6 +2834,97 @@ export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | '
 
 /** Risk band derived from the aggregate fraud score. */
 export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
+/** One persisted FX quotation as exposed by the admin surface. */
+export interface CommercePaymentsFxRateDto {
+  /** Moment the provider quoted it. */
+  asOfUtc?: string;
+  /** Code the rate converts from. */
+  baseCurrency?: string | null;
+  /** Effective (data) date of the quotation. */
+  effectiveDateUtc?: string;
+  /** Override expiry, if any. */
+  expiresAtUtc?: string | null;
+  /** Whether it is an operator override. */
+  isOverride?: boolean;
+  /** Producing provider. */
+  providerName?: string | null;
+  /** Code the rate converts to. */
+  quoteCurrency?: string | null;
+  /** Quote units per one base unit. */
+  rate?: number;
+  /** Provenance label. */
+  source?: string | null;
+}
+
+/** Outcome of one FX rate sync pass. */
+export interface CommercePaymentsFxRateSyncResult {
+  /** Trailing failed-run count after this pass. */
+  consecutiveFailures?: number;
+  /** Effective date of the persisted grid (null on failure). */
+  effectiveDateUtc?: string | null;
+  /** Failure reason on GameGuild.Commerce.Payments.FxRateSyncRunStatus.Failed. */
+  errorMessage?: string | null;
+  /** Newest persisted snapshot effective date after the pass. */
+  newestSnapshotDateUtc?: string | null;
+  /** Provider whose grid was persisted (null on total failure). */
+  providerName?: string | null;
+  /** Quotations inserted or updated. */
+  ratesApplied?: number;
+  /** Quotations whose value changed. */
+  ratesChanged?: number;
+  status?: CommercePaymentsFxRateSyncRunStatus;
+}
+
+/** Recent sync runs with the failure counter (admin observability). */
+export interface CommercePaymentsFxRateSyncRunDto {
+  /** Run completion. */
+  completedAtUtc?: string;
+  /** Trailing failed-run count after the run. */
+  consecutiveFailureCount?: number;
+  /** Grid effective date. */
+  effectiveDateUtc?: string | null;
+  /** Failure reason. */
+  errorMessage?: string | null;
+  /** Configured primary provider. */
+  primaryProviderName?: string | null;
+  /** Provider that produced the persisted grid. */
+  providerName?: string | null;
+  /** Quotations persisted. */
+  ratesApplied?: number;
+  /** Quotations whose value changed. */
+  ratesChanged?: number;
+  /** Run start. */
+  startedAtUtc?: string;
+  status?: CommercePaymentsFxRateSyncRunStatus;
+}
+
+/** Outcome values for an FX sync run. */
+export type CommercePaymentsFxRateSyncRunStatus = 'Succeeded' | 'Failed' | 'SucceededStale';
+
+/** Result of GameGuild.Commerce.Payments.GetFxSyncStatusQuery. */
+export interface CommercePaymentsFxSyncStatusDto {
+  /** Non-expired overrides. */
+  activeOverrideCount?: number;
+  /** Configured fallback provider. */
+  configuredFallback?: string | null;
+  /** Configured primary provider. */
+  configuredProvider?: string | null;
+  /** Trailing failed-run count. */
+  consecutiveFailures?: number;
+  /** Newest snapshot older than the configured staleness threshold. */
+  isStale?: boolean;
+  /** Newest persisted snapshot effective date (null when none). */
+  newestSnapshotEffectiveDateUtc?: string | null;
+  /** Most recent runs, newest first. */
+  recentRuns?: CommercePaymentsFxRateSyncRunDto[] | null;
+  /** Total persisted quotations. */
+  snapshotCount?: number;
+  /** Configured threshold. */
+  stalenessThresholdDays?: number;
+  /** Whether the scheduled worker runs. */
+  workerEnabled?: boolean;
+}
 
 /** Health snapshot of one gateway circuit (issue #413). */
 export interface CommercePaymentsGatewayCircuitSnapshot {
@@ -4210,6 +4312,15 @@ export interface CommercePaymentsRevenueTrendReport {
   toUtc?: string;
 }
 
+/** Request payload for the manual FX rate override command. */
+export interface CommercePaymentsSetManualFxRateOverrideInput {
+  baseCurrency?: string | null;
+  expiresAtUtc?: string | null;
+  quoteCurrency?: string | null;
+  rate?: number;
+  reason?: string | null;
+}
+
 /** Individual tax breakdown (for compound/multiple taxes) */
 export interface CommercePaymentsTaxBreakdown {
   description?: string | null;
@@ -4437,6 +4548,28 @@ export type CommercePaymentsTaxRuleType = 'Standard' | 'Reduced' | 'ZeroRated' |
 
 /** Tax types */
 export type CommercePaymentsTaxType = 'VAT' | 'GST' | 'SalesTax' | 'ServiceTax' | 'WithholdingTax' | 'ExciseTax' | 'CustomsDuty' | 'Other';
+
+/** One currency as configured (or available) for the tenant, joined with catalog metadata. */
+export interface CommercePaymentsTenantCurrencyDto {
+  /** Catalog symbol (selector-UI data). */
+  catalogSymbol?: string | null;
+  /** ISO 4217 code (upper-case). */
+  currencyCode?: string | null;
+  /** Selector ordering hint. */
+  displayOrder?: number;
+  /** Effective display symbol (preference override or catalog default). */
+  displaySymbol?: string | null;
+  /** Official English name (selector-UI data). */
+  englishName?: string | null;
+  /** Whether it is the tenant's base currency. */
+  isBaseCurrency?: boolean;
+  /** Whether the tenant enabled the currency. */
+  isEnabled?: boolean;
+  /** Minor-unit digits (formatting helper data). */
+  minorUnitExponent?: number;
+  /** ISO numeric code. */
+  numericCode?: string | null;
+}
 
 /** Transaction status */
 export type CommercePaymentsTransactionStatus = 'Pending' | 'Processing' | 'Completed' | 'Failed' | 'Cancelled' | 'Reversed';
@@ -25416,7 +25549,9 @@ export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCr
 export let CommercePaymentsCreditApplicationResultSchema: z.ZodType<CommercePaymentsCreditApplicationResult>;
 export let CommercePaymentsCreditCurrencyMetricsSchema: z.ZodType<CommercePaymentsCreditCurrencyMetrics>;
 export let CommercePaymentsCreditMetricsSchema: z.ZodType<CommercePaymentsCreditMetrics>;
+export let CommercePaymentsCurrencyDisplayPreferencesInputSchema: z.ZodType<CommercePaymentsCurrencyDisplayPreferencesInput>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsDisableCurrencyInputSchema: z.ZodType<CommercePaymentsDisableCurrencyInput>;
 export let CommercePaymentsDiscountTypeSchema: z.ZodType<CommercePaymentsDiscountType>;
 export let CommercePaymentsDisputeActionResultSchema: z.ZodType<CommercePaymentsDisputeActionResult>;
 export let CommercePaymentsDisputeEvidenceSchema: z.ZodType<CommercePaymentsDisputeEvidence>;
@@ -25443,6 +25578,11 @@ export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: 
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewsBulkInput>;
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
+export let CommercePaymentsFxRateDtoSchema: z.ZodType<CommercePaymentsFxRateDto>;
+export let CommercePaymentsFxRateSyncResultSchema: z.ZodType<CommercePaymentsFxRateSyncResult>;
+export let CommercePaymentsFxRateSyncRunDtoSchema: z.ZodType<CommercePaymentsFxRateSyncRunDto>;
+export let CommercePaymentsFxRateSyncRunStatusSchema: z.ZodType<CommercePaymentsFxRateSyncRunStatus>;
+export let CommercePaymentsFxSyncStatusDtoSchema: z.ZodType<CommercePaymentsFxSyncStatusDto>;
 export let CommercePaymentsGatewayCircuitSnapshotSchema: z.ZodType<CommercePaymentsGatewayCircuitSnapshot>;
 export let CommercePaymentsGatewayCircuitStateSchema: z.ZodType<CommercePaymentsGatewayCircuitState>;
 export let CommercePaymentsGatewayMetricsReportSchema: z.ZodType<CommercePaymentsGatewayMetricsReport>;
@@ -25535,6 +25675,7 @@ export let CommercePaymentsRevenueReconciliationStatusSchema: z.ZodType<Commerce
 export let CommercePaymentsRevenueTrendCurrencyTotalSchema: z.ZodType<CommercePaymentsRevenueTrendCurrencyTotal>;
 export let CommercePaymentsRevenueTrendPointSchema: z.ZodType<CommercePaymentsRevenueTrendPoint>;
 export let CommercePaymentsRevenueTrendReportSchema: z.ZodType<CommercePaymentsRevenueTrendReport>;
+export let CommercePaymentsSetManualFxRateOverrideInputSchema: z.ZodType<CommercePaymentsSetManualFxRateOverrideInput>;
 export let CommercePaymentsTaxBreakdownSchema: z.ZodType<CommercePaymentsTaxBreakdown>;
 export let CommercePaymentsTaxCalculationResultSchema: z.ZodType<CommercePaymentsTaxCalculationResult>;
 export let CommercePaymentsTaxExemptionValidationResultSchema: z.ZodType<CommercePaymentsTaxExemptionValidationResult>;
@@ -25546,6 +25687,7 @@ export let CommercePaymentsTaxRuleSchema: z.ZodType<CommercePaymentsTaxRule>;
 export let CommercePaymentsTaxRuleDtoSchema: z.ZodType<CommercePaymentsTaxRuleDto>;
 export let CommercePaymentsTaxRuleTypeSchema: z.ZodType<CommercePaymentsTaxRuleType>;
 export let CommercePaymentsTaxTypeSchema: z.ZodType<CommercePaymentsTaxType>;
+export let CommercePaymentsTenantCurrencyDtoSchema: z.ZodType<CommercePaymentsTenantCurrencyDto>;
 export let CommercePaymentsTransactionStatusSchema: z.ZodType<CommercePaymentsTransactionStatus>;
 export let CommercePaymentsUserWalletSchema: z.ZodType<CommercePaymentsUserWallet>;
 export let CommercePaymentsValidateTaxExemptionInputSchema: z.ZodType<CommercePaymentsValidateTaxExemptionInput>;
@@ -29724,8 +29866,19 @@ CommercePaymentsCreditMetricsSchema = z.object({
   usageRate: z.number().nullable().optional(),
 });
 
+/** Zod schema for CommercePaymentsCurrencyDisplayPreferencesInput. Optional display preferences supplied when enabling a currency. */
+CommercePaymentsCurrencyDisplayPreferencesInputSchema = z.object({
+  displayOrder: z.number().int().nullable().optional(),
+  displaySymbol: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
+
+/** Zod schema for CommercePaymentsDisableCurrencyInput. Confirmation payload for disabling a currency in active use. */
+CommercePaymentsDisableCurrencyInputSchema = z.object({
+  confirmActiveSubscriptionImpact: z.boolean().optional(),
+});
 
 /** Zod schema for CommercePaymentsDiscountType. Discount type enumeration for applied discounts in the unified pricing engine.
 Consolidated (issue #417): the Payments and Subscriptions module duplicates are
@@ -29981,6 +30134,65 @@ CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', '
 
 /** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
 CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for CommercePaymentsFxRateDto. One persisted FX quotation as exposed by the admin surface. */
+CommercePaymentsFxRateDtoSchema = z.object({
+  asOfUtc: z.string().datetime().optional(),
+  baseCurrency: z.string().nullable().optional(),
+  effectiveDateUtc: z.string().datetime().optional(),
+  expiresAtUtc: z.string().datetime().nullable().optional(),
+  isOverride: z.boolean().optional(),
+  providerName: z.string().nullable().optional(),
+  quoteCurrency: z.string().nullable().optional(),
+  rate: z.number().optional(),
+  source: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsFxRateSyncResult. Outcome of one FX rate sync pass. */
+CommercePaymentsFxRateSyncResultSchema = z.object({
+  consecutiveFailures: z.number().int().optional(),
+  effectiveDateUtc: z.string().datetime().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  newestSnapshotDateUtc: z.string().datetime().nullable().optional(),
+  providerName: z.string().nullable().optional(),
+  ratesApplied: z.number().int().optional(),
+  ratesChanged: z.number().int().optional(),
+  status: z.lazy(() => CommercePaymentsFxRateSyncRunStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsFxRateSyncRunDto. Recent sync runs with the failure counter (admin observability). */
+CommercePaymentsFxRateSyncRunDtoSchema = z.object({
+  completedAtUtc: z.string().datetime().optional(),
+  consecutiveFailureCount: z.number().int().optional(),
+  effectiveDateUtc: z.string().datetime().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  primaryProviderName: z.string().nullable().optional(),
+  providerName: z.string().nullable().optional(),
+  ratesApplied: z.number().int().optional(),
+  ratesChanged: z.number().int().optional(),
+  startedAtUtc: z.string().datetime().optional(),
+  status: z.lazy(() => CommercePaymentsFxRateSyncRunStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsFxRateSyncRunStatus. Outcome values for an FX sync run. */
+CommercePaymentsFxRateSyncRunStatusSchema = z.enum(['Succeeded', 'Failed', 'SucceededStale']);
+
+/** Zod schema for CommercePaymentsFxSyncStatusDto. Result of GameGuild.Commerce.Payments.GetFxSyncStatusQuery. */
+CommercePaymentsFxSyncStatusDtoSchema = z.object({
+  activeOverrideCount: z.number().int().optional(),
+  configuredFallback: z.string().nullable().optional(),
+  configuredProvider: z.string().nullable().optional(),
+  consecutiveFailures: z.number().int().optional(),
+  isStale: z.boolean().optional(),
+  newestSnapshotEffectiveDateUtc: z.string().datetime().nullable().optional(),
+  recentRuns: z
+    .array(z.lazy(() => CommercePaymentsFxRateSyncRunDtoSchema))
+    .nullable()
+    .optional(),
+  snapshotCount: z.number().int().optional(),
+  stalenessThresholdDays: z.number().int().optional(),
+  workerEnabled: z.boolean().optional(),
+});
 
 /** Zod schema for CommercePaymentsGatewayCircuitSnapshot. Health snapshot of one gateway circuit (issue #413). */
 CommercePaymentsGatewayCircuitSnapshotSchema = z.object({
@@ -31064,6 +31276,15 @@ CommercePaymentsRevenueTrendReportSchema = z.object({
   toUtc: z.string().datetime().optional(),
 });
 
+/** Zod schema for CommercePaymentsSetManualFxRateOverrideInput. Request payload for the manual FX rate override command. */
+CommercePaymentsSetManualFxRateOverrideInputSchema = z.object({
+  baseCurrency: z.string().nullable().optional(),
+  expiresAtUtc: z.string().datetime().nullable().optional(),
+  quoteCurrency: z.string().nullable().optional(),
+  rate: z.number().optional(),
+  reason: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsTaxBreakdown. Individual tax breakdown (for compound/multiple taxes) */
 CommercePaymentsTaxBreakdownSchema = z.object({
   description: z.string().nullable().optional(),
@@ -31245,6 +31466,19 @@ CommercePaymentsTaxRuleTypeSchema = z.enum(['Standard', 'Reduced', 'ZeroRated', 
 
 /** Zod schema for CommercePaymentsTaxType. Tax types */
 CommercePaymentsTaxTypeSchema = z.enum(['VAT', 'GST', 'SalesTax', 'ServiceTax', 'WithholdingTax', 'ExciseTax', 'CustomsDuty', 'Other']);
+
+/** Zod schema for CommercePaymentsTenantCurrencyDto. One currency as configured (or available) for the tenant, joined with catalog metadata. */
+CommercePaymentsTenantCurrencyDtoSchema = z.object({
+  catalogSymbol: z.string().nullable().optional(),
+  currencyCode: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  displaySymbol: z.string().nullable().optional(),
+  englishName: z.string().nullable().optional(),
+  isBaseCurrency: z.boolean().optional(),
+  isEnabled: z.boolean().optional(),
+  minorUnitExponent: z.number().int().optional(),
+  numericCode: z.string().nullable().optional(),
+});
 
 /** Zod schema for CommercePaymentsTransactionStatus. Transaction status */
 CommercePaymentsTransactionStatusSchema = z.enum(['Pending', 'Processing', 'Completed', 'Failed', 'Cancelled', 'Reversed']);
@@ -50636,10 +50870,18 @@ export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
 export type CommerceOrdersProductRecommendations = CommerceOrdersProductRecommendationsDto;
 export { CommerceOrdersProductRecommendationsDtoSchema as CommerceOrdersProductRecommendationsSchema };
+export type CommercePaymentsFxRate = CommercePaymentsFxRateDto;
+export { CommercePaymentsFxRateDtoSchema as CommercePaymentsFxRateSchema };
+export type CommercePaymentsFxRateSyncRun = CommercePaymentsFxRateSyncRunDto;
+export { CommercePaymentsFxRateSyncRunDtoSchema as CommercePaymentsFxRateSyncRunSchema };
+export type CommercePaymentsFxSyncStatus = CommercePaymentsFxSyncStatusDto;
+export { CommercePaymentsFxSyncStatusDtoSchema as CommercePaymentsFxSyncStatusSchema };
 export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
 export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
 export type CommercePaymentsPaymentRetryAttempt = CommercePaymentsPaymentRetryAttemptDto;
 export { CommercePaymentsPaymentRetryAttemptDtoSchema as CommercePaymentsPaymentRetryAttemptSchema };
+export type CommercePaymentsTenantCurrency = CommercePaymentsTenantCurrencyDto;
+export { CommercePaymentsTenantCurrencyDtoSchema as CommercePaymentsTenantCurrencySchema };
 export type CommerceProductsCampaignExpiringCode = CommerceProductsCampaignExpiringCodeDto;
 export { CommerceProductsCampaignExpiringCodeDtoSchema as CommerceProductsCampaignExpiringCodeSchema };
 export type CommerceProductsCampaignPerformance = CommerceProductsCampaignPerformanceDto;

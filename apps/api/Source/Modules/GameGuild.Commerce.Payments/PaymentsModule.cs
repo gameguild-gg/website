@@ -132,11 +132,19 @@ public static class PaymentsModule
         // implemented by the Subscriptions and Products modules respectively.
         services.AddScoped<IPricingEngine, PricingEngine>();
 
-        // Fail-closed FX default (issue #417): no quotations configured, so cross-currency
-        // conversions throw instead of guessing — same-currency requests stay exact identity.
-        // Host configuration can Replace this with operator-entered or pinned rates.
-        services.AddManualExchangeRates([]);
+        // FX foundation (issue #412 specs A/B): config-gated rate providers (none by default),
+        // persisted rate snapshots with scheduled sync, TTL-cached lookups and operator
+        // overrides wired into the SharedKernel fail-closed conversion seam. Replaces the
+        // previous hard-coded empty manual rate set: cross-currency conversion still fails
+        // closed until FxRates:Provider selects a real provider or overrides are entered,
+        // but that posture is now operator configuration, not a code constant.
+        services.AddFxRateSync(configuration);
         services.AddCurrencyConversion();
+
+        // Currency configuration (issue #412 spec A): the Subscriptions module registers its
+        // data-backed usage probe before this module runs; TryAdd keeps that implementation
+        // and falls back to the fail-closed "usage unknown" probe in hosts without it.
+        services.TryAddScoped<ICurrencySubscriptionUsageProbe, UnknownCurrencySubscriptionUsageProbe>();
         services.AddScoped<IWalletService, WalletService>();
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentProcessor, OrderPaymentService>());
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentAuthority, OrderPaymentService>());
