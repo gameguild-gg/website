@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -10,8 +11,8 @@ namespace GameGuild.Commerce.Payments;
 ///     latest provider rate grid plus the operator override quotations (SharedKernel/Fx manual
 ///     + fixed-override semantics, integrated rather than duplicated: overrides always win,
 ///     then the provider grid, then null). Seeds itself lazily from <see cref="FxRateSnapshot"/>
-///     rows on first use and is refreshed in place by the sync worker and the admin override
-///     command, so conversions never hit the database on the hot path.
+///     rows on first use and refreshes after the configured cache TTL so changes from other
+///     processes become visible. The sync worker and admin command also update local state.
 /// </summary>
 /// <remarks>
 ///     Derivation decision record (spec B): within a SINGLE provider grid snapshot, cross rates
@@ -29,28 +30,33 @@ public sealed class FxRuntimeRateSource
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<FxRuntimeRateSource> _logger;
     private readonly SemaphoreSlim _seedLock = new(1, 1);
+    private readonly object _stateLock = new();
+    private readonly IOptions<FxSyncOptions> _options;
     private volatile bool _seeded;
+    private long _refreshAtUtcTicks;
+    private long _stateRevision;
 
     private volatile FxRateSet? _providerSet;
-    private volatile IReadOnlyDictionary<(string Base, string Quote), ExchangeRate> _overrides =
-        new Dictionary<(string, string), ExchangeRate>();
+    private volatile IReadOnlyDictionary<(string Base, string Quote), OverrideQuotation> _overrides =
+        new Dictionary<(string, string), OverrideQuotation>();
 
     /// <param name="scopeFactory">Scope factory used for the lazy database seed.</param>
     /// <param name="logger">Logger.</param>
-    public FxRuntimeRateSource(IServiceScopeFactory scopeFactory, ILogger<FxRuntimeRateSource> logger)
+    /// <param name="options">Refresh interval shared with the quotation cache.</param>
+    public FxRuntimeRateSource(IServiceScopeFactory scopeFactory, ILogger<FxRuntimeRateSource> logger, IOptions<FxSyncOptions>? options = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _options = options ?? Options.Create(new FxSyncOptions());
     }
 
     /// <summary>
-    ///     Seeds the grid and overrides from persisted snapshots exactly once. Failures are
-    ///     logged and leave the source empty — fail-closed is the correct posture for FX — the
-    ///     next sync pass repopulates it.
+    ///     Loads persisted quotations on first use and at the configured TTL. Failed loads
+    ///     are retried on the next lookup; cancellation propagates to the caller.
     /// </summary>
     public async Task EnsureSeededAsync(CancellationToken cancellationToken = default)
     {
-        if (_seeded)
+        if (IsSeedFresh())
         {
             return;
         }
@@ -58,7 +64,7 @@ public sealed class FxRuntimeRateSource
         await _seedLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_seeded)
+            if (IsSeedFresh())
             {
                 return;
             }
@@ -66,39 +72,35 @@ public sealed class FxRuntimeRateSource
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             var now = SystemClock.UtcNow;
+            var revision = Interlocked.Read(ref _stateRevision);
 
             var providerSet = await BuildLatestProviderSetAsync(context, cancellationToken).ConfigureAwait(false);
-            if (providerSet is not null)
-            {
-                _providerSet = providerSet;
-            }
-
             var overrides = await context.Set<FxRateSnapshot>()
                 .AsNoTracking()
                 .Where(snapshot => snapshot.IsOverride)
-                .Where(snapshot => snapshot.ExpiresAtUtc == null || snapshot.ExpiresAtUtc > now)
-                .OrderByDescending(snapshot => snapshot.EffectiveDateUtc)
+                .OrderByDescending(snapshot => snapshot.AsOfUtc)
                 .ThenByDescending(snapshot => snapshot.CreatedAt)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            var overrideMap = new Dictionary<(string Base, string Quote), ExchangeRate>();
+            var overrideMap = new Dictionary<(string Base, string Quote), OverrideQuotation>();
+            var seen = new HashSet<(string Base, string Quote)>();
             foreach (var row in overrides)
             {
                 var key = (row.BaseCurrency, row.QuoteCurrency);
-                if (overrideMap.ContainsKey(key))
+                if (!seen.Add(key) || row.ExpiresAtUtc <= now)
                 {
-                    continue; // newest first: keep the latest override per pair
+                    continue; // An expired latest override must not resurrect an older one.
                 }
 
                 try
                 {
-                    overrideMap[key] = new ExchangeRate(
+                    overrideMap[key] = new OverrideQuotation(new ExchangeRate(
                         row.BaseCurrency,
                         row.QuoteCurrency,
                         row.Rate,
                         new DateTimeOffset(row.AsOfUtc, TimeSpan.Zero),
-                        "manual-override");
+                        "manual-override"), row.ExpiresAtUtc);
                 }
                 catch (ArgumentException exception)
                 {
@@ -106,8 +108,18 @@ public sealed class FxRuntimeRateSource
                 }
             }
 
-            _overrides = overrideMap;
-            _seeded = true;
+            lock (_stateLock)
+            {
+                if (_stateRevision != revision)
+                {
+                    return; // A concurrent local mutation wins; refresh again on the next miss.
+                }
+
+                _providerSet = providerSet;
+                _overrides = overrideMap;
+                Interlocked.Exchange(ref _refreshAtUtcTicks, RefreshAtUtcTicks());
+                _seeded = true;
+            }
             _logger.LogInformation(
                 "FX runtime rate source seeded: {Provider} grid ({Base}, {Count} quotes, effective {Effective:yyyy-MM-dd}) + {Overrides} overrides.",
                 providerSet?.ProviderName ?? "none",
@@ -116,12 +128,15 @@ public sealed class FxRuntimeRateSource
                 providerSet?.EffectiveDateUtc ?? DateTime.MinValue,
                 overrideMap.Count);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             // Seed failure must never crash callers: an unseeded source serves no cross rates,
             // which is exactly the fail-closed posture.
-            _logger.LogWarning(exception, "FX runtime rate source seed failed; serving overrides only until the next sync pass.");
-            _seeded = true;
+            _logger.LogWarning(exception, "FX runtime rate source refresh failed; retrying on the next lookup.");
         }
         finally
         {
@@ -133,23 +148,36 @@ public sealed class FxRuntimeRateSource
     public void ApplyProviderSet(FxRateSet set)
     {
         ArgumentNullException.ThrowIfNull(set);
-        _providerSet = set;
-        _seeded = true;
+        lock (_stateLock)
+        {
+            _providerSet = set;
+            MarkLocalMutation();
+        }
     }
 
     /// <summary>Upserts an operator override for an exact direction (admin command path).</summary>
-    public void ApplyOverride(ExchangeRate rate)
+    public void ApplyOverride(ExchangeRate rate, DateTime? expiresAtUtc = null)
     {
         ArgumentNullException.ThrowIfNull(rate);
 
-        var current = _overrides;
-        var updated = new Dictionary<(string Base, string Quote), ExchangeRate>(current)
+        lock (_stateLock)
         {
-            [(rate.BaseCurrency, rate.QuoteCurrency)] = rate,
-        };
+            _overrides = new Dictionary<(string Base, string Quote), OverrideQuotation>(_overrides)
+            {
+                [(rate.BaseCurrency, rate.QuoteCurrency)] = new(rate, expiresAtUtc),
+            };
 
-        _overrides = updated;
-        _seeded = true;
+            MarkLocalMutation();
+        }
+    }
+
+    /// <summary>Returns an exact manual quotation only while its persisted expiry allows it.</summary>
+    public ExchangeRate? TryGetOverride(string from, string to, DateTime utcNow)
+    {
+        var key = (from.Trim().ToUpperInvariant(), to.Trim().ToUpperInvariant());
+        return _overrides.TryGetValue(key, out var value)
+            && (value.ExpiresAtUtc is null || value.ExpiresAtUtc > utcNow)
+            ? value.Rate : null;
     }
 
     /// <summary>
@@ -167,7 +195,8 @@ public sealed class FxRuntimeRateSource
             return null;
         }
 
-        if (_overrides.TryGetValue((normalizedFrom, normalizedTo), out var overridden))
+        var overridden = TryGetOverride(normalizedFrom, normalizedTo, utcNow);
+        if (overridden is not null)
         {
             return overridden;
         }
@@ -213,10 +242,30 @@ public sealed class FxRuntimeRateSource
     }
 
     /// <summary>Currently active override quotations (read-only view for status queries).</summary>
-    public IReadOnlyCollection<ExchangeRate> CurrentOverrides { get => _overrides.Values.ToArray(); }
+    public IReadOnlyCollection<ExchangeRate> CurrentOverrides
+    {
+        get => _overrides.Values.Where(value => value.ExpiresAtUtc is null || value.ExpiresAtUtc > SystemClock.UtcNow)
+            .Select(value => value.Rate).ToArray();
+    }
 
     /// <summary>Currently active provider grid, if any (read-only view for status queries).</summary>
     public FxRateSet? CurrentProviderSet { get => _providerSet; }
+
+    private bool IsSeedFresh() => _seeded && SystemClock.UtcNow.Ticks < Interlocked.Read(ref _refreshAtUtcTicks);
+
+    private long RefreshAtUtcTicks() => SystemClock.UtcNow.AddMinutes(Math.Max(0, _options.Value.CacheTtlMinutes)).Ticks;
+
+    private void MarkLocalMutation()
+    {
+        _stateRevision++;
+        if (!_seeded)
+        {
+            Interlocked.Exchange(ref _refreshAtUtcTicks, RefreshAtUtcTicks());
+            _seeded = true;
+        }
+    }
+
+    private sealed record OverrideQuotation(ExchangeRate Rate, DateTime? ExpiresAtUtc);
 
     private static async Task<FxRateSet?> BuildLatestProviderSetAsync(IApplicationDbContext context, CancellationToken cancellationToken)
     {

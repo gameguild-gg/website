@@ -89,13 +89,19 @@ public sealed class SetManualFxRateOverrideCommandHandler(
             "manual-override");
 
         var now = SystemClock.UtcNow;
+        if (request.ExpiresAtUtc is { } expiry && (expiry.Kind != DateTimeKind.Utc || expiry <= now))
+        {
+            throw new BusinessRuleViolationException("InvalidFxOverrideExpiry", "An override expiry must be a future UTC instant.");
+        }
+
         var existing = await context.Set<FxRateSnapshot>()
-            .FirstOrDefaultAsync(snapshot =>
+            .Where(snapshot =>
                 snapshot.IsOverride
                 && snapshot.BaseCurrency == baseCurrency
-                && snapshot.QuoteCurrency == quoteCurrency
-                && snapshot.ExpiresAtUtc == null,
-                cancellationToken)
+                && snapshot.QuoteCurrency == quoteCurrency)
+            .OrderByDescending(snapshot => snapshot.AsOfUtc)
+            .ThenByDescending(snapshot => snapshot.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
 
         string? before = null;
@@ -150,7 +156,8 @@ public sealed class SetManualFxRateOverrideCommandHandler(
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         // Make the override effective immediately on the conversion path.
-        runtimeSource.ApplyOverride(rate);
+        await runtimeSource.EnsureSeededAsync(cancellationToken).ConfigureAwait(false);
+        runtimeSource.ApplyOverride(rate, request.ExpiresAtUtc);
         await rateCache.InvalidateAsync(baseCurrency, quoteCurrency, cancellationToken).ConfigureAwait(false);
 
         return overrideId;

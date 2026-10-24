@@ -277,6 +277,7 @@ public sealed class FxRateSyncService(
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         // Keep the conversion path current and assess staleness of the newest data.
+        await runtimeSource.EnsureSeededAsync(cancellationToken).ConfigureAwait(false);
         runtimeSource.ApplyProviderSet(rateSet);
 
         var newestSnapshotDate = await GetNewestSnapshotDateAsync(context, cancellationToken).ConfigureAwait(false)

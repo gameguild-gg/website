@@ -26,13 +26,21 @@ public sealed class PersistedFxRateProvider(IFxRateCache cache, FxRuntimeRateSou
             return null;
         }
 
+        await runtimeSource.EnsureSeededAsync(cancellationToken).ConfigureAwait(false);
+
+        // Overrides carry their own expiry and are deliberately never placed in the TTL
+        // quotation cache. Check them first so cached market rates cannot hide a local edit.
+        var overridden = runtimeSource.TryGetOverride(normalizedBase, normalizedQuote, SystemClock.UtcNow);
+        if (overridden is not null)
+        {
+            return overridden;
+        }
+
         var cached = await cache.GetAsync(normalizedBase, normalizedQuote, cancellationToken).ConfigureAwait(false);
-        if (cached is not null)
+        if (cached is not null && cached.Source != "manual-override")
         {
             return cached;
         }
-
-        await runtimeSource.EnsureSeededAsync(cancellationToken).ConfigureAwait(false);
 
         var rate = runtimeSource.TryGetRate(normalizedBase, normalizedQuote, SystemClock.UtcNow);
         if (rate is null)
@@ -40,7 +48,10 @@ public sealed class PersistedFxRateProvider(IFxRateCache cache, FxRuntimeRateSou
             return null; // misses are deliberately not cached: a fresh sync must become visible
         }
 
-        await cache.SetAsync(rate, cancellationToken).ConfigureAwait(false);
+        if (rate.Source != "manual-override")
+        {
+            await cache.SetAsync(rate, cancellationToken).ConfigureAwait(false);
+        }
         return rate;
     }
 }
