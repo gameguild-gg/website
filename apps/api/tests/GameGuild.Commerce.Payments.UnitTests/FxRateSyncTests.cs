@@ -54,6 +54,8 @@ public class FxRateSyncTests
 
         var run = db.Set<FxRateSyncRun>().Single();
         run.Status.Should().Be(FxRateSyncRunStatus.Succeeded);
+        run.RatesApplied.Should().Be(2);
+        run.RatesChanged.Should().Be(0);
         run.RawResponse.Should().Contain("raw-openexchangerates");
         run.RawResponseContentType.Should().Be("application/json");
         snapshots.Should().OnlyContain(row => row.SyncRunId == run.Id);
@@ -93,6 +95,9 @@ public class FxRateSyncTests
         result.RatesChanged.Should().Be(1);
         db.Set<FxRateSnapshot>().Should().HaveCount(1);
         db.Set<FxRateSnapshot>().Single().Rate.Should().Be(0.95m);
+        var run = db.Set<FxRateSyncRun>().Single();
+        run.RatesApplied.Should().Be(1);
+        run.RatesChanged.Should().Be(1);
 
         var changeAudit = db.Set<AuditTrail>().Single(audit =>
             audit.EntityType == nameof(FxRateSnapshot) && audit.Action == AuditAction.Updated);

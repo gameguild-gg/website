@@ -8,9 +8,9 @@ namespace GameGuild.Tests.SharedKernel.Unit.ValueObjects;
 public class Iso4217CurrencyCatalogTests
 {
     [Fact]
-    public void Count_Should_Exceed_Sixty_Currencies_For_Growth()
+    public void Count_Should_Cover_At_Least_150_Current_Currencies()
     {
-        Iso4217CurrencyCatalog.Count.Should().BeGreaterThanOrEqualTo(60);
+        Iso4217CurrencyCatalog.Count.Should().BeGreaterThanOrEqualTo(150);
         Iso4217CurrencyCatalog.All.Should().HaveCount(Iso4217CurrencyCatalog.Count);
     }
 
@@ -21,6 +21,31 @@ public class Iso4217CurrencyCatalogTests
         {
             Iso4217CurrencyCatalog.Exists(code).Should().BeTrue($"whitelisted billing currency {code} must be cataloged");
         }
+    }
+
+    [Theory]
+    [InlineData("AFN", "971", 2)]
+    [InlineData("BMD", "060", 2)]
+    [InlineData("BOV", "984", 2)]
+    [InlineData("CHE", "947", 2)]
+    [InlineData("CHW", "948", 2)]
+    [InlineData("COU", "970", 2)]
+    [InlineData("FKP", "238", 2)]
+    [InlineData("MXV", "979", 2)]
+    [InlineData("SHP", "654", 2)]
+    [InlineData("USN", "997", 2)]
+    [InlineData("UYI", "940", 0)]
+    [InlineData("UYW", "927", 4)]
+    [InlineData("VED", "926", 2)]
+    [InlineData("XAD", "396", 2)]
+    [InlineData("XCG", "532", 2)]
+    public void TryGet_WithCurrentCurrencyOrFund_Should_Match_Official_Reference(
+        string code, string expectedNumeric, int expectedExponent)
+    {
+        var currency = Iso4217CurrencyCatalog.Get(code);
+
+        currency.NumericCode.Should().Be(expectedNumeric);
+        currency.MinorUnitExponent.Should().Be(expectedExponent);
     }
 
     [Theory]
@@ -94,11 +119,26 @@ public class Iso4217CurrencyCatalogTests
     [InlineData("USDX")]
     [InlineData("ZZZ")]
     [InlineData("123")]
+    [InlineData("BGN")]
+    [InlineData("ANG")]
     public void TryGet_WithUnknownOrMalformedCode_Should_Return_False(string? code)
     {
         Iso4217CurrencyCatalog.TryGet(code, out var currency).Should().BeFalse();
         currency.Should().BeNull();
         Iso4217CurrencyCatalog.Exists(code).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("BGN")]
+    [InlineData("ANG")]
+    public void Money_WithRetiredCurrency_Should_Preserve_Historical_Amounts(string code)
+    {
+        var amount = new Money(123.45m, code);
+
+        amount.Currency.Should().Be(code);
+        amount.Amount.Should().Be(123.45m);
+        amount.MinorUnits.Should().Be(12345L);
+        Money.FromMinorUnits(12345L, code).Should().Be(amount);
     }
 
     [Theory]

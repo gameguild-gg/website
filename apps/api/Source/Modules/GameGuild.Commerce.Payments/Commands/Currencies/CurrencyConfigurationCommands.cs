@@ -251,7 +251,9 @@ public sealed class SetBaseCurrencyCommandHandler(
         var (tenantId, actorId) = ResolveActor(actorContextAccessor);
         var code = NormalizeOrThrow(request.CurrencyCode);
 
-        await using var transaction = await context.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        // The HTTP command pipeline already owns its transaction. Direct callers still
+        // need one for the two saves, but must never commit or dispose a caller's transaction.
+        await using var transaction = await context.BeginAuditedMutationTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         var previousBase = await context.Set<CurrencyConfiguration>()
             .FirstOrDefaultAsync(item => item.TenantId == tenantId && item.IsBaseCurrency, cancellationToken)
@@ -315,7 +317,7 @@ public sealed class SetBaseCurrencyCommandHandler(
         });
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAuditedMutationAsync(cancellationToken).ConfigureAwait(false);
         return Unit.Value;
     }
 }

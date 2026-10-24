@@ -99,7 +99,10 @@ public static class Iso4217CurrencyCatalog
     {
         // Whitelisted billing currencies first (CurrencyCodes.Supported in Commerce.Billing),
         // then the broader active-currency set the platform is growing into. Exponents follow
-        // ISO 4217 table "List one: Currency and funds code list".
+        // ISO 4217 "List One: Currency and funds code list", published 2026-09-17:
+        // https://www.six-group.com/dam/download/financial-information/data-center/iso-currrency/lists/list-one.xml
+        // Retired codes are excluded from new currency configuration. Money preserves its
+        // existing two-decimal fallback for historical values with retired/unknown codes.
         Add(seed, "USD", "840", 2, "$", "US Dollar");
         Add(seed, "EUR", "978", 2, "€", "Euro");
         Add(seed, "GBP", "826", 2, "£", "Pound Sterling");
@@ -132,7 +135,6 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "CZK", "203", 2, "Kč", "Czech Koruna");
         Add(seed, "HUF", "348", 2, "Ft", "Forint");
         Add(seed, "RON", "946", 2, "lei", "Romanian Leu");
-        Add(seed, "BGN", "975", 2, "лв", "Bulgarian Lev");
         Add(seed, "UAH", "980", 2, "₴", "Hryvnia");
         Add(seed, "RUB", "643", 2, "₽", "Russian Ruble");
         Add(seed, "TRY", "949", 2, "₺", "Turkish Lira");
@@ -222,7 +224,7 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "ZWG", "924", 2, "ZiG$", "Zimbabwe Gold");
 
         // Americas
-        Add(seed, "ANG", "532", 2, "ƒ", "Netherlands Antillean Guilder");
+        Add(seed, "XCG", "532", 2, "XCG", "Caribbean Guilder");
         Add(seed, "BBD", "052", 2, "Bds$", "Barbados Dollar");
         Add(seed, "BSD", "044", 2, "B$", "Bahamian Dollar");
         Add(seed, "BZD", "084", 2, "BZ$", "Belize Dollar");
@@ -272,6 +274,23 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "NIO", "558", 2, "C$", "Cordoba Oro");
         Add(seed, "SYP", "760", 2, "£", "Syrian Pound");
         Add(seed, "VES", "928", 2, "Bs.S", "Bolívar Soberano");
+
+        // Other current currencies and funds with defined decimal precision. Use the
+        // ISO code as an unambiguous display hint when no localized symbol is supplied.
+        Add(seed, "AFN", "971", 2, "AFN", "Afghani");
+        Add(seed, "BMD", "060", 2, "BMD", "Bermudian Dollar");
+        Add(seed, "BOV", "984", 2, "BOV", "Mvdol");
+        Add(seed, "CHE", "947", 2, "CHE", "WIR Euro");
+        Add(seed, "CHW", "948", 2, "CHW", "WIR Franc");
+        Add(seed, "COU", "970", 2, "COU", "Unidad de Valor Real");
+        Add(seed, "FKP", "238", 2, "FKP", "Falkland Islands Pound");
+        Add(seed, "MXV", "979", 2, "MXV", "Mexican Unidad de Inversion (UDI)");
+        Add(seed, "SHP", "654", 2, "SHP", "Saint Helena Pound");
+        Add(seed, "USN", "997", 2, "USN", "US Dollar (Next day)");
+        Add(seed, "UYI", "940", 0, "UYI", "Uruguay Peso en Unidades Indexadas (UI)");
+        Add(seed, "UYW", "927", 4, "UYW", "Unidad Previsional");
+        Add(seed, "VED", "926", 2, "VED", "Bolívar Soberano");
+        Add(seed, "XAD", "396", 2, "XAD", "Arab Accounting Dinar");
 
         return seed;
     }

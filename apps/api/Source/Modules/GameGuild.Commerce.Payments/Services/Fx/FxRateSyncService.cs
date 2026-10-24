@@ -252,6 +252,9 @@ public sealed class FxRateSyncService(
             applied++;
         }
 
+        run.RatesApplied = applied;
+        run.RatesChanged = changed;
+
         // Rate-change audit log (spec B): one entry per changed quotation plus the run summary.
         foreach (var (quote, oldRate, newRate) in changes)
         {
