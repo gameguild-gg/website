@@ -59,8 +59,8 @@ public abstract class PermissionBase : EntityBase<Guid>
     public DateTime? ExpiresAt { get; set; }
 
     /// <summary>
-    ///     Whether the grant is currently active. <see cref="ResourceUserPermission"/> hides this
-    ///     with a computed equivalent derived from its revocation state.
+    ///     Whether the grant is currently active. <see cref="ResourceUserPermission"/> overrides
+    ///     this with its revocation lifecycle and rejects reactivation of an ineffective grant.
     /// </summary>
     public virtual bool IsActive { get; set; } = true;
 

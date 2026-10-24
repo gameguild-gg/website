@@ -93,9 +93,27 @@ public class ResourceUserPermission : PermissionBase, IDacAttribute
 
     /// <summary>
     ///     Gets whether these permissions are currently active.
-    ///     Computed from deletion, revocation and expiration; hides the optional stored base property.
+    ///     Computed from deletion, revocation and expiration through both the concrete and
+    ///     shared contracts. Deactivation uses the existing revocation lifecycle; activation
+    ///     cannot undo revocation, deletion or expiration.
     /// </summary>
-    public new bool IsActive => !IsDeleted && RevokedAt == null && !IsExpired;
+    public override bool IsActive
+    {
+        get => !IsDeleted && RevokedAt == null && !IsExpired;
+        set
+        {
+            if (!value)
+            {
+                Expire();
+                return;
+            }
+
+            if (!IsActive)
+            {
+                throw new InvalidOperationException("A revoked, deleted or expired resource permission cannot be reactivated through IsActive.");
+            }
+        }
+    }
 
     /// <summary>
     ///     Gets whether these permissions have expired.
@@ -153,8 +171,7 @@ public class ResourceUserPermission : PermissionBase, IDacAttribute
 
     /// <summary>
     ///     Effective-activity contract override: because this entity computes activity from
-    ///     its revocation state (hiding the optional stored base property), the shared base
-    ///     logic must observe the computed value, not the hidden storage.
+    ///     its revocation state, both shared and concrete access checks observe that state.
     /// </summary>
     public override bool IsEffective() { return IsActive && !IsExpired; }
 

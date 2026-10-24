@@ -7,6 +7,90 @@ namespace GameGuild.Identity.Authorization.UnitTests.Entities;
 public sealed class PermissionSoftDeleteTests
 {
     [Fact]
+    public void SharedDeactivationRevokesDirectResourceAccessWithoutChangingTheGrantPayload()
+    {
+        var direct = Assert.IsType<ResourceUserPermission>(Create("direct-resource"));
+        PermissionBase shared = direct;
+        var grantor = shared.CreatedBy;
+        var expiration = DateTime.UtcNow.AddDays(1);
+        shared.ExpiresAt = expiration;
+        shared.UpdatedAt = DateTime.UtcNow.AddDays(-1);
+        var previousUpdate = shared.UpdatedAt;
+
+        shared.IsActive = false;
+
+        Assert.False(shared.IsActive);
+        AssertAccess(shared, false);
+        Assert.NotNull(direct.RevokedAt);
+        Assert.True(shared.UpdatedAt > previousUpdate);
+        Assert.Equal(expiration, shared.ExpiresAt);
+        Assert.Equal(grantor, shared.CreatedBy);
+        Assert.Equal(["Read"], direct.Permissions);
+    }
+
+    [Theory]
+    [InlineData("revoked")]
+    [InlineData("deleted")]
+    [InlineData("expired")]
+    public void SharedActivityCannotReactivateAnIneffectiveResourceGrant(string limitation)
+    {
+        var direct = Assert.IsType<ResourceUserPermission>(Create("direct-resource"));
+        if (limitation == "revoked") { direct.Revoke(Guid.NewGuid(), "Access withdrawn"); }
+        else if (limitation == "deleted") { direct.SoftDelete(); }
+        else { direct.ExpiresAt = DateTime.UtcNow.AddDays(-1); }
+        PermissionBase shared = direct;
+        var revokedAt = direct.RevokedAt;
+        var revokedBy = direct.RevokedByUserId;
+        var reason = direct.RevocationReason;
+        var deletedAt = shared.DeletedAt;
+        var expiresAt = shared.ExpiresAt;
+
+        Assert.False(shared.IsActive);
+        Assert.Throws<InvalidOperationException>(() => shared.IsActive = true);
+
+        AssertAccess(shared, false);
+        Assert.Equal(revokedAt, direct.RevokedAt);
+        Assert.Equal(revokedBy, direct.RevokedByUserId);
+        Assert.Equal(reason, direct.RevocationReason);
+        Assert.Equal(deletedAt, shared.DeletedAt);
+        Assert.Equal(expiresAt, shared.ExpiresAt);
+    }
+
+    [Fact]
+    public void SettingAnAlreadyActiveResourceGrantActiveDoesNotChangeItsHistory()
+    {
+        var direct = Assert.IsType<ResourceUserPermission>(Create("direct-resource"));
+        PermissionBase shared = direct;
+        var updatedAt = shared.UpdatedAt;
+
+        shared.IsActive = true;
+
+        Assert.True(shared.IsActive);
+        AssertAccess(shared, true);
+        Assert.Null(direct.RevokedAt);
+        Assert.Equal(updatedAt, shared.UpdatedAt);
+    }
+
+    [Fact]
+    public void SharedDeactivationPreservesExistingRevocationAuditMetadata()
+    {
+        var direct = Assert.IsType<ResourceUserPermission>(Create("direct-resource"));
+        var actor = Guid.NewGuid();
+        direct.Revoke(actor, "Access withdrawn");
+        var revokedAt = direct.RevokedAt;
+        var updatedAt = direct.UpdatedAt;
+        PermissionBase shared = direct;
+
+        shared.IsActive = false;
+
+        AssertAccess(shared, false);
+        Assert.Equal(revokedAt, direct.RevokedAt);
+        Assert.Equal(actor, direct.RevokedByUserId);
+        Assert.Equal("Access withdrawn", direct.RevocationReason);
+        Assert.Equal(updatedAt, direct.UpdatedAt);
+    }
+
+    [Fact]
     public void DirectResourceSubjectIsConsistentAcrossTheSharedAndConcreteContracts()
     {
         var direct = Assert.IsType<ResourceUserPermission>(Create("direct-resource"));
@@ -107,6 +191,7 @@ public sealed class PermissionSoftDeleteTests
     [InlineData("content-grant")]
     [InlineData("legacy-content")]
     [InlineData("resource")]
+    [InlineData("direct-resource")]
     public void RestoreCannotReactivateAnInactiveGrant(string family)
     {
         var grant = Create(family);
@@ -173,6 +258,7 @@ public sealed class PermissionSoftDeleteTests
         }
         if (grant is ResourceUserPermission direct)
         {
+            Assert.Equal(expected, grant.IsActive);
             Assert.Equal(expected, direct.IsActive);
             Assert.Equal(expected, direct.CanAccess);
             Assert.Equal(expected, direct.HasPermission("READ"));

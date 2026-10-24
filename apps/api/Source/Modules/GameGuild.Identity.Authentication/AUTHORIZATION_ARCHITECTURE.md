@@ -2050,6 +2050,15 @@ through its accessor into the existing single, required `UserId` column. Clearin
 the shared subject leaves an invalid grant, and PostgreSQL regression coverage
 verifies subject preservation and updates after reloading the entity.
 
+Direct resource `IsActive` overrides the common writable property. Its computed
+getter retains the existing deletion, revocation and expiry rules through both
+views. Setting it to `false` uses `Expire()` and persists the existing revocation
+column; repeated deactivation preserves prior revocation timestamps, actor and
+reason. Setting an already active grant to `true` is a no-op. Setting an
+ineffective grant to `true` throws instead of clearing revocation, deletion or
+expiry history. Re-granting access must use the guarded grant lifecycle. The
+computed activity property remains unmapped, with no additional database column.
+
 ### Policy-selected authentication and the immutable actor
 
 The host authenticates explicit endpoint schemes and static default, named and fallback

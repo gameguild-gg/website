@@ -12,6 +12,61 @@ namespace GameGuild.API.IntegrationTests;
 public sealed class PermissionSoftDeletePostgreSqlTests(ApiPostgreSqlFixture fixture)
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SharedResourceDeactivationPersistsAndCannotEraseExistingRevocation(bool alreadyRevoked)
+    {
+        await using var scope = fixture.Factory.Services.CreateAsyncScope();
+        var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var actor = Guid.NewGuid();
+        var grant = new ResourceUserPermission
+        {
+            UserId = Guid.NewGuid(),
+            TenantId = new TenantId(Guid.NewGuid()),
+            ResourceType = "Document",
+            ResourceId = Guid.NewGuid().ToString("D"),
+            Permissions = ["Read"],
+            GrantedByUserId = Guid.NewGuid(),
+            ExpiresAt = DateTime.UtcNow.AddDays(1)
+        };
+        if (alreadyRevoked) { grant.Revoke(actor, "Retain revocation history"); }
+        database.Add(grant);
+        await database.SaveChangesAsync();
+        database.ChangeTracker.Clear();
+
+        PermissionBase loaded = await database.Set<ResourceUserPermission>().SingleAsync(row => row.Id == grant.Id);
+        var previousRevocation = ((ResourceUserPermission)loaded).RevokedAt;
+        var expiresAt = loaded.ExpiresAt;
+        loaded.IsActive = false;
+        await database.SaveChangesAsync();
+        database.ChangeTracker.Clear();
+
+        var updated = await database.Set<ResourceUserPermission>().SingleAsync(row => row.Id == grant.Id);
+        Assert.False(((PermissionBase)updated).IsActive);
+        AssertAccess(updated, false);
+        Assert.NotNull(updated.RevokedAt);
+        Assert.Equal(expiresAt, updated.ExpiresAt);
+        Assert.Equal(grant.GrantedByUserId, updated.CreatedBy);
+        Assert.Equal(["Read"], updated.Permissions);
+        Assert.Null(database.Model.FindEntityType(typeof(ResourceUserPermission))!.FindProperty(nameof(PermissionBase.IsActive)));
+        if (alreadyRevoked)
+        {
+            Assert.Equal(previousRevocation, updated.RevokedAt);
+            Assert.Equal(actor, updated.RevokedByUserId);
+            Assert.Equal("Retain revocation history", updated.RevocationReason);
+        }
+
+        Assert.Throws<InvalidOperationException>(() => ((PermissionBase)updated).IsActive = true);
+        var persistedRevocation = updated.RevokedAt;
+        await database.SaveChangesAsync();
+        database.ChangeTracker.Clear();
+        var retained = await database.Set<ResourceUserPermission>().SingleAsync(row => row.Id == grant.Id);
+        Assert.False(((PermissionBase)retained).IsActive);
+        AssertAccess(retained, false);
+        Assert.Equal(persistedRevocation, retained.RevokedAt);
+    }
+
+    [Theory]
     [InlineData("tenant", 0)]
     [InlineData("tenant", 1)]
     [InlineData("tenant", 2)]
@@ -147,6 +202,7 @@ public sealed class PermissionSoftDeletePostgreSqlTests(ApiPostgreSqlFixture fix
         }
         if (grant is ResourceUserPermission direct)
         {
+            Assert.Equal(expected, grant.IsActive);
             Assert.Equal(expected, direct.IsActive);
             Assert.Equal(expected, direct.CanAccess);
             Assert.Equal(expected, direct.HasPermission("Read"));
