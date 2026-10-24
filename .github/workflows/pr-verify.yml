@@ -189,6 +189,14 @@ jobs:
         run: >-
           dotnet build apps/api/Source/GameGuild.API/GameGuild.API.csproj
           -c Release --nologo -p:TreatWarningsAsErrors=true
+      - name: Verify audit schema and authentication before full API regression
+        # Keep exact model-drift operations in TRX before running every HTTP case.
+        run: >-
+          dotnet test apps/api/tests/GameGuild.API.IntegrationTests/GameGuild.API.IntegrationTests.csproj
+          -c Release --nologo -p:TreatWarningsAsErrors=true
+          --filter "FullyQualifiedName~AuditSnapshotMigrationPostgreSqlTests|FullyQualifiedName~MfaSignInPolicyPostgreSqlTests|FullyQualifiedName~AuditExportPostgreSqlHttpTests.Concurrent_alias_and_versioned_exports_share_the_user_rate_limit"
+          --logger "trx;LogFileName=audit-schema.trx"
+          --results-directory artifacts/test-results/affected-api/audit-schema
       - name: Run affected API tests
         shell: bash
         run: >-

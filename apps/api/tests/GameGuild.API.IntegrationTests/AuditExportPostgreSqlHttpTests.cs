@@ -341,13 +341,24 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
             });
         });
         using var client = factory.CreateClient();
-        client.Timeout = TimeSpan.FromSeconds(15);
+        // The first request intentionally remains open while we wait up to 30 seconds
+        // for the barrier and 10 seconds for the competing request. Its own timeout
+        // must cover that orchestration rather than cancelling the request mid-test.
+        client.Timeout = TimeSpan.FromSeconds(60);
         Assert.Equal(1, factory.Services.GetRequiredService<RateLimitingOptions>().MaxConcurrentRequests);
         Authenticate(client, Guid.NewGuid(), Guid.NewGuid());
         var first = client.PostAsJsonAsync("/api/audit/export/" + format, new AuditExportRequest());
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            var firstSignal = await Task.WhenAny(entered.Task, first).WaitAsync(TimeSpan.FromSeconds(30));
+            if (firstSignal == first && !entered.Task.IsCompleted)
+            {
+                // Surface an actual early HTTP failure/cancellation instead of hiding
+                // it behind a later timeout waiting for a barrier that cannot be reached.
+                using var early = await first;
+                Assert.Fail($"Initial export completed before the concurrency barrier: HTTP {(int)early.StatusCode}");
+            }
+            await entered.Task;
             using var rejected = await client.PostAsJsonAsync("/v1/admin/audit-logs/export/" + format, new AuditExportRequest())
                 .WaitAsync(TimeSpan.FromSeconds(10));
             Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);

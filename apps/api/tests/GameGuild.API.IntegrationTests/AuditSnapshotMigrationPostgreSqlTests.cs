@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -115,6 +116,44 @@ public sealed class AuditSnapshotMigrationPostgreSqlTests(ApiPostgreSqlFixture f
         using var scope = fixture.Factory.Services.CreateScope();
         await AssertStoresReadableAsync(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
     }
+
+    [Fact]
+    public void FullNativeModelMatchesCommittedSnapshot()
+    {
+        using var scope = fixture.Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var snapshot = db.GetService<IMigrationsAssembly>().ModelSnapshot!.Model;
+        var initialized = db.GetService<IModelRuntimeInitializer>().Initialize(snapshot, designTime: true);
+        var current = db.GetService<IDesignTimeModel>().Model;
+        var differences = db.GetService<IMigrationsModelDiffer>()
+            .GetDifferences(initialized.GetRelationalModel(), current.GetRelationalModel());
+        // Preserve the failing operations in TRX instead of reporting only a boolean. This
+        // diagnoses the full host model while the audit-specific test checks the new stores.
+        var diagnostic = System.Text.Json.JsonSerializer.Serialize(differences.Select(DescribeOperation),
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        Assert.True(differences.Count == 0, "Native model differs from the committed snapshot:\n" + diagnostic);
+    }
+
+    private static object DescribeOperation(MigrationOperation operation) => new
+    {
+        Operation = operation.GetType().Name,
+        Properties = operation.GetType().GetProperties()
+            .Where(property => property.CanRead && property.GetIndexParameters().Length == 0)
+            .ToDictionary(property => property.Name, property => DescribeValue(property.GetValue(operation))),
+        Annotations = operation.GetAnnotations().ToDictionary(annotation => annotation.Name,
+            annotation => DescribeValue(annotation.Value))
+    };
+
+    private static object? DescribeValue(object? value) => value switch
+    {
+        null => null,
+        Type type => type.FullName,
+        MigrationOperation operation => DescribeOperation(operation),
+        IEnumerable<MigrationOperation> operations => operations.Select(DescribeOperation).ToArray(),
+        IEnumerable<string> names => names.ToArray(),
+        string or bool or int or long or decimal or double => value,
+        _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)
+    };
 
     [Fact]
     public void CommittedSnapshotMatchesNativeAuditStorePropertiesAndIndexes()
