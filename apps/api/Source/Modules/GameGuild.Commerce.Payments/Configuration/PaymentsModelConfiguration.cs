@@ -170,5 +170,6 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
         modelBuilder.ApplyConfiguration(new CurrencyConfigurationConfiguration());
         modelBuilder.ApplyConfiguration(new FxRateSnapshotConfiguration());
         modelBuilder.ApplyConfiguration(new FxRateSyncRunConfiguration());
+        modelBuilder.ApplyConfiguration(new AuditTrailConfiguration());
     }
 }

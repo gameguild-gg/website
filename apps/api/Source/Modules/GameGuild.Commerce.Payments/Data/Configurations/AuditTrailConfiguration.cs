@@ -11,10 +11,10 @@ public class AuditTrailConfiguration : IEntityTypeConfiguration<AuditTrail>
     public void Configure(EntityTypeBuilder<AuditTrail> builder)
     {
         // Configure table with constraints for EF Core 9.0
-        builder.ToTable(tb =>
+        builder.ToTable("audit_trails", tb =>
             {
-                tb.HasCheckConstraint("CK_AuditTrail_EntityType_NotEmpty", "LENGTH(entity_type) > 0");
-                tb.HasCheckConstraint("CK_AuditTrail_EntityId_NotEmpty", "entity_id != '00000000-0000-0000-0000-000000000000'");
+                tb.HasCheckConstraint("CK_AuditTrail_EntityType_NotEmpty", "LENGTH(\"EntityType\") > 0");
+                tb.HasCheckConstraint("CK_AuditTrail_EntityId_NotEmpty", "\"EntityId\" != '00000000-0000-0000-0000-000000000000'");
             }
         );
 

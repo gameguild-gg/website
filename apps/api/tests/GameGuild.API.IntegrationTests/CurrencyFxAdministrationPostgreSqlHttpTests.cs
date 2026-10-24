@@ -65,10 +65,17 @@ public sealed class CurrencyFxAdministrationPostgreSqlHttpTests(ApiPostgreSqlFix
         await using var scope = fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.Contains("20261022132706_AddCurrencyConfigurationAndFxRateSync", await db.Database.GetAppliedMigrationsAsync());
+        Assert.Contains("20261024160000_AddPaymentRevenueAuditStore", await db.Database.GetAppliedMigrationsAsync());
         var own = await db.Set<CurrencyConfiguration>().SingleAsync(row => row.TenantId == tenant);
         Assert.Equal("USD", own.CurrencyCode);
         Assert.Equal("foreign", (await db.Set<CurrencyConfiguration>().SingleAsync(row => row.TenantId == foreignTenant)).DisplaySymbol);
-        Assert.Contains(await db.Set<AuditTrail>().Where(row => row.EntityId == own.Id).ToListAsync(), row => row.ChangedBy == user);
+        var audit = await db.Set<AuditTrail>().Where(row => row.EntityId == own.Id).ToListAsync();
+        Assert.NotEmpty(audit);
+        Assert.All(audit, row =>
+        {
+            Assert.Equal(user, row.ChangedBy);
+            Assert.Equal(tenant, row.TenantId);
+        });
     }
 
     [Fact]
@@ -87,7 +94,9 @@ public sealed class CurrencyFxAdministrationPostgreSqlHttpTests(ApiPostgreSqlFix
         var row = await db.Set<FxRateSnapshot>().SingleAsync(item => item.IsOverride && item.BaseCurrency == "XCD" && item.QuoteCurrency == "XOF");
         Assert.Null(row.TenantId);
         Assert.Equal(205.75m, row.Rate);
-        Assert.Contains(await db.Set<AuditTrail>().Where(entry => entry.EntityId == row.Id).ToListAsync(), entry => entry.ChangedBy == user);
+        var audit = Assert.Single(await db.Set<AuditTrail>().Where(entry => entry.EntityId == row.Id).ToListAsync());
+        Assert.Equal(user, audit.ChangedBy);
+        Assert.Null(audit.TenantId);
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/v1/fx-rates")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/v1/fx-rates/sync-status")).StatusCode);
     }
@@ -120,7 +129,12 @@ public sealed class CurrencyFxAdministrationPostgreSqlHttpTests(ApiPostgreSqlFix
         Assert.Equal(2, result.RatesApplied);
         Assert.Equal(2, transport.Calls);
         Assert.False(await db.Set<FxRateSnapshot>().AnyAsync(row => row.BaseCurrency == row.QuoteCurrency));
-        Assert.Contains(await db.Set<FxRateSyncRun>().Where(row => row.RawResponse == payload).ToListAsync(), row => row.RatesApplied == 2);
+        var run = Assert.Single(await db.Set<FxRateSyncRun>().Where(row => row.RawResponse == payload).ToListAsync());
+        Assert.Equal(2, run.RatesApplied);
+        var audit = Assert.Single(await db.Set<AuditTrail>().Where(row => row.EntityId == run.Id).ToListAsync());
+        Assert.Equal(nameof(FxRateSyncRun), audit.EntityType);
+        Assert.Equal(Guid.Empty, audit.ChangedBy);
+        Assert.Null(audit.TenantId);
     }
 
     [Theory]

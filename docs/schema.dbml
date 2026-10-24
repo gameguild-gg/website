@@ -13686,3 +13686,32 @@ Table "auth"."UserWebAuthnCredentials" {
     (UserId, IsActive) [name: "IX_UserWebAuthnCredentials_UserId_IsActive"]
   }
 }
+
+Table "public"."audit_trails" {
+  "Id" uuid [not null]
+  "Action" text [not null]
+  "ChangedAt" timestamp [not null]
+  "ChangedBy" uuid [not null]
+  "CreatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "EntityId" uuid [not null]
+  "EntityType" "character varying(100)" [not null]
+  "IpAddress" "character varying(45)"
+  "Metadata" "character varying(2000)"
+  "NewValue" "character varying(4000)"
+  "OldValue" "character varying(4000)"
+  "Reason" "character varying(500)"
+  "TenantId" uuid
+  "UpdatedAt" timestamp [not null]
+  "UserAgent" "character varying(500)"
+  "Version" integer [not null]
+
+  Indexes {
+    Id [pk, name: "PK_audit_trails"]
+    Action [name: "IX_audit_trails_Action"]
+    ChangedAt [name: "IX_audit_trails_ChangedAt"]
+    ChangedBy [name: "IX_audit_trails_ChangedBy"]
+    EntityId [name: "IX_audit_trails_EntityId"]
+    EntityType [name: "IX_audit_trails_EntityType"]
+  }
+}

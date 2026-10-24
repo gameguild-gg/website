@@ -96,6 +96,7 @@ public sealed class EnableCurrencyCommandHandler(
 
         context.Set<AuditTrail>().Add(new AuditTrail
         {
+            TenantId = tenantId,
             EntityType = nameof(CurrencyConfiguration),
             EntityId = configuration.Id,
             Action = AuditAction.ConfigurationChanged,
@@ -193,6 +194,7 @@ public sealed class DisableCurrencyCommandHandler(
 
         context.Set<AuditTrail>().Add(new AuditTrail
         {
+            TenantId = tenantId,
             EntityType = nameof(CurrencyConfiguration),
             EntityId = configuration.Id,
             Action = AuditAction.ConfigurationChanged,
@@ -262,6 +264,7 @@ public sealed class SetBaseCurrencyCommandHandler(
             previousBase.Touch();
             context.Set<AuditTrail>().Add(new AuditTrail
             {
+                TenantId = tenantId,
                 EntityType = nameof(CurrencyConfiguration),
                 EntityId = previousBase.Id,
                 Action = AuditAction.ConfigurationChanged,
@@ -300,6 +303,7 @@ public sealed class SetBaseCurrencyCommandHandler(
 
         context.Set<AuditTrail>().Add(new AuditTrail
         {
+            TenantId = tenantId,
             EntityType = nameof(CurrencyConfiguration),
             EntityId = target.Id,
             Action = AuditAction.ConfigurationChanged,
