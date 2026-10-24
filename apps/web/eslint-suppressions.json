@@ -3110,9 +3110,6 @@
     }
   },
   "src/components/settings/profile-form.tsx": {
-    "@typescript-eslint/no-base-to-string": {
-      "count": 7
-    },
     "@typescript-eslint/no-misused-promises": {
       "count": 1
     },
