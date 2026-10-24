@@ -31,7 +31,7 @@ namespace GameGuild.Identity.Authorization;
 ///     </para>
 ///     <para>
 ///         <b>Fail-closed.</b> Undefined permission values are never guessed, expired or
-///         inactive grants never convey permissions, and tenant-scope mismatches are rejected.
+///         inactive or soft-deleted grants never convey permissions, and tenant-scope mismatches are rejected.
 ///     </para>
 /// </remarks>
 public abstract class PermissionBase : EntityBase<Guid>
@@ -95,13 +95,13 @@ public abstract class PermissionBase : EntityBase<Guid>
     public virtual bool IsExpired() { return ExpiresAt.HasValue && ExpiresAt.Value <= SystemClock.UtcNow; }
 
     /// <summary>
-    ///     Check if the grant is currently effective (active and not expired).
+    ///     Check if the grant is currently effective (not deleted, active and not expired).
     /// </summary>
-    public virtual bool IsEffective() { return IsActive && !IsExpired(); }
+    public virtual bool IsEffective() { return !IsDeleted && IsActive && !IsExpired(); }
 
     /// <summary>
     ///     Check whether this grant currently conveys the given permission (fail closed:
-    ///     inactive, expired, undefined or unmapped values never grant anything).
+    ///     deleted, inactive, expired, undefined or unmapped values never grant anything).
     /// </summary>
     /// <param name="permission">Permission to check.</param>
     /// <returns>True when the grant is effective and its payload includes the permission.</returns>

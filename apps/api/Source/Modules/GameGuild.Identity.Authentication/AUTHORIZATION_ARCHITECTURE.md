@@ -2025,6 +2025,24 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### Permission grant deletion and restoration (#352)
+
+`PermissionBase.IsEffective` and `Grants` reject soft-deleted grants even when a
+historical row is loaded with query filters disabled. This applies to tenant
+grants, content-type grants, legacy content permissions and generic resource
+permissions. Direct resource grants additionally include deletion in their
+computed `IsActive`, so `CanAccess`, string permission checks and permission
+updates reject a deleted row. Tenant and content-type `HasEffectivePermission`
+use the same lifecycle gate before evaluating allow/deny entries.
+
+Deleting a grant preserves its payload and grant metadata. Restoring it only
+clears deletion: an expired, inactive or revoked grant remains ineffective.
+Payload enumeration remains available for authorized historical inspection;
+authorization must use an effective-grant check or the permission engine.
+The persisted columns and mappings are unchanged. Regression coverage includes
+polymorphic calls and native PostgreSQL materialization/restoration across all
+five concrete grant families.
+
 ### Policy-selected authentication and the immutable actor
 
 The host authenticates explicit endpoint schemes and static default, named and fallback

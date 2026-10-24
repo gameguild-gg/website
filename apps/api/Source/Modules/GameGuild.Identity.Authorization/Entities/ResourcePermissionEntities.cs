@@ -89,9 +89,9 @@ public class ResourceUserPermission : PermissionBase, IDacAttribute
 
     /// <summary>
     ///     Gets whether these permissions are currently active.
-    ///     Computed from the revocation state; hides the optional stored base property.
+    ///     Computed from deletion, revocation and expiration; hides the optional stored base property.
     /// </summary>
-    public new bool IsActive => RevokedAt == null && !IsExpired;
+    public new bool IsActive => !IsDeleted && RevokedAt == null && !IsExpired;
 
     /// <summary>
     ///     Gets whether these permissions have expired.
