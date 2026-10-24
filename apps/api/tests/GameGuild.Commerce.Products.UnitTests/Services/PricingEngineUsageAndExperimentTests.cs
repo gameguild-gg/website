@@ -148,14 +148,23 @@ public sealed class PricingEngineUsageAndExperimentTests
     {
         var productId = Guid.NewGuid();
         await using var db = CreateContext();
-        await AddRunningExperimentWithKeysAsync(db, productId, trafficPercentage: 0);
+        var (experiment, treatmentKey, controlKey) = await AddRunningExperimentWithKeysAsync(db, productId);
+        experiment.TrafficPercentage = 0;
+        await db.SaveChangesAsync();
 
-        // With zero traffic every key is held out: the engine must price at the base amount.
+        // Find both arms before disabling traffic; neither key can be allocated once held out.
         var engine = CreateEngine(db);
-        var result = await engine.CalculatePriceAsync(CreateProduct(productId), experimentBucketKey: "user-1");
+        foreach (var key in new[] { treatmentKey, controlKey })
+        {
+            var result = await engine.CalculatePriceAsync(CreateProduct(productId), experimentBucketKey: key);
 
-        result.AppliedExperimentId.Should().BeNull();
-        result.FinalPrice.Should().Be(100m);
+            result.AppliedExperimentId.Should().BeNull();
+            result.AppliedVariantName.Should().BeNull();
+            result.ExperimentDiscount.Should().Be(0m);
+            result.FinalPrice.Should().Be(100m);
+        }
+
+        (await db.PricingExperimentAssignments.ToListAsync()).Should().BeEmpty();
     }
 
     private static async Task<PricingCalculationResult> CalculateAsync(
@@ -213,8 +222,7 @@ public sealed class PricingEngineUsageAndExperimentTests
     /// </summary>
     private static async Task<(PricingExperiment Experiment, string TreatmentKey, string ControlKey)> AddRunningExperimentWithKeysAsync(
         TestPricingExperimentEngineDbContext db,
-        Guid productId,
-        int trafficPercentage = 100)
+        Guid productId)
     {
         var experiment = new PricingExperiment
         {
@@ -222,7 +230,7 @@ public sealed class PricingEngineUsageAndExperimentTests
             ProductId = productId,
             Name = "price-test",
             Status = PricingExperimentStatus.Running,
-            TrafficPercentage = trafficPercentage
+            TrafficPercentage = 100
         };
 
         var control = new PricingExperimentVariant

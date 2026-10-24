@@ -14,24 +14,24 @@ namespace GameGuild.Tests.Audit.Unit.Services;
 ///     Searchable value history, value trend analysis, and change impact analysis over the
 ///     mutation value snapshot store (issue #176).
 /// </summary>
-public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
+public abstract class ValueSnapshotServiceTestBase : IDisposable
 {
     private readonly DbContextOptions<ApplicationDbContext> _contextOptions;
-    private readonly TestApplicationDbContext _context;
-    private readonly Mock<IActorContextAccessor> _actors = new();
+    protected readonly TestApplicationDbContext Context;
+    protected readonly Mock<IActorContextAccessor> Actors = new();
     private readonly Guid _tenant = Guid.NewGuid();
     private readonly Guid _admin = Guid.NewGuid();
 
-    public ValueSnapshotQueryAnalysisTests()
+    protected ValueSnapshotServiceTestBase()
     {
         _contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"ValueSnapshots_{Guid.NewGuid()}", new InMemoryDatabaseRoot())
             .Options;
-        _context = new TestApplicationDbContext(_contextOptions);
-        _actors.SetupGet(accessor => accessor.ActorContext).Returns(AdminActor());
+        Context = new TestApplicationDbContext(_contextOptions);
+        Actors.SetupGet(accessor => accessor.ActorContext).Returns(AdminActor());
     }
 
-    public void Dispose() => _context.Dispose();
+    public void Dispose() => Context.Dispose();
 
     private ActorContext AdminActor() => new()
     {
@@ -43,13 +43,13 @@ public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
         Permissions = new HashSet<string>()
     };
 
-    private ValueSnapshotQueryService CreateQueryService() => new(
-        _actors.Object, _context, NullLogger<ValueSnapshotQueryService>.Instance);
+    protected ValueSnapshotQueryService CreateQueryService() => new(
+        Actors.Object, Context, NullLogger<ValueSnapshotQueryService>.Instance);
 
-    private ValueSnapshotAnalysisService CreateAnalysisService() => new(
-        _actors.Object, _context, NullLogger<ValueSnapshotAnalysisService>.Instance);
+    protected ValueSnapshotAnalysisService CreateAnalysisService() => new(
+        Actors.Object, Context, NullLogger<ValueSnapshotAnalysisService>.Instance);
 
-    private MutationValueSnapshot SeedSnapshot(
+    protected MutationValueSnapshot SeedSnapshot(
         string entityName,
         string keyId,
         string changeKind,
@@ -60,11 +60,14 @@ public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
         Guid? actorId = null)
     {
         var snapshot = new MutationValueSnapshotFactory().Create(entityName, keyId, changeKind, before, after, _tenant, actorId, correlationId, occurredAt);
-        _context.Set<MutationValueSnapshot>().Add(snapshot!);
-        _context.SaveChanges();
+        Context.Set<MutationValueSnapshot>().Add(snapshot!);
+        Context.SaveChanges();
         return snapshot!;
     }
+}
 
+public sealed class ValueSnapshotQueryServiceTests : ValueSnapshotServiceTestBase
+{
     [Fact]
     public async Task Search_FiltersByEntityFieldAndValuePattern()
     {
@@ -88,7 +91,7 @@ public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
     [Fact]
     public async Task Search_DeniesNonAdministrators()
     {
-        _actors.SetupGet(accessor => accessor.ActorContext).Returns(new ActorContext
+        Actors.SetupGet(accessor => accessor.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = Guid.NewGuid().ToString(),
@@ -121,6 +124,43 @@ public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
     }
 
     [Fact]
+    public async Task GetStorageOverview_ReportsDeltaFullTruncatedAndDeduplicationFigures()
+    {
+        SeedSnapshot("A", "k1", "Added", null, """{"Title":"Alpha"}""", DateTimeOffset.UtcNow);
+        SeedSnapshot("A", "k2", "Modified", """{"Title":"x"}""", """{"Title":"y"}""", DateTimeOffset.UtcNow);
+        Context.Set<MutationValuePayloadChunk>().Add(new MutationValuePayloadChunk
+        {
+            Id = Guid.NewGuid(),
+            TenantId = Actors.Object.ActorContext.TenantId,
+            ContentSha256 = new string('a', 64),
+            Content = new string('a', 1_000),
+            LengthBytes = 1_000,
+            RefCount = 4
+        });
+        Context.SaveChanges();
+
+        var overview = await CreateQueryService().GetStorageOverviewAsync(CancellationToken.None);
+
+        overview.TotalSnapshots.Should().Be(2);
+        overview.DeltaSnapshots.Should().Be(1);
+        overview.FullSnapshots.Should().Be(1);
+        overview.ChunkCount.Should().Be(1);
+        overview.ChunkReferences.Should().Be(4);
+        overview.DeduplicatedBytesSaved.Should().Be(3_000);
+    }
+
+    [Fact]
+    public async Task Search_RejectsInvalidPaging()
+    {
+        var act = () => CreateQueryService().SearchAsync(new ValueSnapshotSearchRequest { Take = 0 }, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValueSnapshotValidationException>();
+    }
+}
+
+public sealed class ValueSnapshotAnalysisServiceTests : ValueSnapshotServiceTestBase
+{
+    [Fact]
     public async Task GetTrend_ComputesStatisticsOverTheChangeSeries()
     {
         var t0 = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
@@ -145,6 +185,7 @@ public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
     {
         var t0 = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
         var correlation = Guid.NewGuid().ToString();
+        var earlier = SeedSnapshot("Order", "o1", "Added", null, """{"Total":1}""", t0.AddDays(-1), "earlier-operation");
         var anchor = SeedSnapshot("Order", "o1", "Modified", """{"Total":1}""", """{"Total":2}""", t0, correlation);
         SeedSnapshot("Ledger", "l1", "Added", null, """{"Amount":2}""", t0.AddSeconds(1), correlation);
         SeedSnapshot("Order", "o1", "Modified", """{"Total":2}""", """{"Total":3}""", t0.AddDays(1), correlation);
@@ -155,40 +196,8 @@ public sealed class ValueSnapshotQueryAnalysisTests : IDisposable
         impact.EntitiesTouched.Should().Be(2);
         impact.EntityHistoryChangeCount.Should().Be(3, "the entity lineage includes every recorded change for the key");
         impact.SameOperationChanges.Should().ContainSingle(c => c.IsAnchor && c.EntityName == "Order");
+        impact.SameOperationChanges.Should().NotContain(c => c.SnapshotId == earlier.Id);
+        impact.EntityHistory.Should().ContainSingle(c => c.SnapshotId == earlier.Id);
         impact.EntityHistory.Should().OnlyContain(c => c.EntityName == "Order" && c.KeyId == "o1");
-    }
-
-    [Fact]
-    public async Task GetStorageOverview_ReportsDeltaFullTruncatedAndDeduplicationFigures()
-    {
-        SeedSnapshot("A", "k1", "Added", null, """{"Title":"Alpha"}""", DateTimeOffset.UtcNow);
-        SeedSnapshot("A", "k2", "Modified", """{"Title":"x"}""", """{"Title":"y"}""", DateTimeOffset.UtcNow);
-        _context.Set<MutationValuePayloadChunk>().Add(new MutationValuePayloadChunk
-        {
-            Id = Guid.NewGuid(),
-            TenantId = _tenant,
-            ContentSha256 = new string('a', 64),
-            Content = new string('a', 1_000),
-            LengthBytes = 1_000,
-            RefCount = 4
-        });
-        _context.SaveChanges();
-
-        var overview = await CreateQueryService().GetStorageOverviewAsync(CancellationToken.None);
-
-        overview.TotalSnapshots.Should().Be(2);
-        overview.DeltaSnapshots.Should().Be(1);
-        overview.FullSnapshots.Should().Be(1);
-        overview.ChunkCount.Should().Be(1);
-        overview.ChunkReferences.Should().Be(4);
-        overview.DeduplicatedBytesSaved.Should().Be(3_000);
-    }
-
-    [Fact]
-    public async Task Search_RejectsInvalidPaging()
-    {
-        var act = () => CreateQueryService().SearchAsync(new ValueSnapshotSearchRequest { Take = 0 }, CancellationToken.None);
-
-        await act.Should().ThrowAsync<ValueSnapshotValidationException>();
     }
 }

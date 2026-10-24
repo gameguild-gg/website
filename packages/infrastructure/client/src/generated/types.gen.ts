@@ -4642,6 +4642,9 @@ export interface CommercePaymentsWalletTransactionTypeVolume {
   type?: string | null;
 }
 
+/** Lifecycle statuses for a pricing experiment (issue #395). */
+export type CommercePricingExperimentStatus = 'Draft' | 'Running' | 'Paused' | 'Completed';
+
 /** Types of pricing rules - consolidated from Products and Payments modules */
 export type CommercePricingRuleType =
   | 'VolumeDiscount'
@@ -4650,6 +4653,7 @@ export type CommercePricingRuleType =
   | 'RegionBased'
   | 'SegmentBased'
   | 'MarketBased'
+  | 'UsageBased'
   | 'Percentage'
   | 'FixedAmount'
   | 'BuyXGetY'
@@ -4682,13 +4686,20 @@ export interface CommerceProductsAppliedPromoCode {
   type?: CommerceProductsPromoCodeType;
 }
 
-/** Request to apply promo codes */
+/** Request to apply promo codes to an order */
 export interface CommerceProductsApplyPromoCodesInput {
   idempotencyKey?: string | null;
   orderAmount?: number;
   orderId?: string | null;
+  planId?: string | null;
   productId?: string | null;
   promoCodes?: string[] | null;
+}
+
+/** Request to resolve the arm of a bucket key. */
+export interface CommerceProductsAssignExperimentInput {
+  /** Stable bucketing key (e.g. user id or anonymous session id) */
+  bucketKey?: string | null;
 }
 
 /** Data model for Commerce Products Assign Support Ticket Request. */
@@ -4736,11 +4747,20 @@ export interface CommerceProductsBundleSavingsHint {
 
 /** Request to calculate a price through the pricing engine. */
 export interface CommerceProductsCalculatePricingInput {
+  /** Optional customer segment */
   customerSegment?: string | null;
+  /** Optional A/B experiment bucket key (defaults to the acting user) */
+  experimentBucketKey?: string | null;
+  /** Optional specific pricing option */
   pricingId?: string | null;
+  /** Product to price */
   productId?: string;
+  /** Optional promo codes */
   promoCodes?: string[] | null;
+  /** Quantity being priced */
   quantity?: number;
+  /** Optional usage metric values (issue #395 usage-based adjustments) */
+  usageMetrics?: Record<string, number> | null;
 }
 
 /** A campaign code approaching expiry */
@@ -4761,6 +4781,8 @@ export interface CommerceProductsCampaignPerformanceDto {
   averageDiscountPerUse?: number;
   /** Campaign identifier */
   campaignId?: string | null;
+  /** Recorded uses divided by validation attempts (null when no attempts were recorded) */
+  conversionRate?: number | null;
   /** Campaign codes expiring within the next 30 days */
   expiringCodes?: CommerceProductsCampaignExpiringCodeDto[] | null;
   /** Uses divided by total MaxUses capacity (null when no code declares limits) */
@@ -4773,6 +4795,8 @@ export interface CommerceProductsCampaignPerformanceDto {
   totalDiscountGiven?: number;
   /** Recorded uses within the window */
   totalUses?: number;
+  /** Validation attempts recorded for campaign codes within the window (conversion denominator) */
+  totalValidationAttempts?: number;
   /** Distinct users within the window */
   uniqueUsers?: number;
   /** Window end (null = unbounded) */
@@ -4819,6 +4843,24 @@ export interface CommerceProductsCreateMySupportTicketInput {
   subject?: string | null;
 }
 
+/** Write model for creating a pricing experiment. */
+export interface CommerceProductsCreatePricingExperimentInput {
+  /** Optional hypothesis description */
+  description?: string | null;
+  /** Optional enrollment end (UTC) */
+  endDate?: string | null;
+  /** Experiment name */
+  name?: string | null;
+  /** Product the experiment applies to (null = global) */
+  productId?: string | null;
+  /** Optional enrollment start (UTC) */
+  startDate?: string | null;
+  /** Percentage of bucket-key traffic enrolled */
+  trafficPercentage?: number;
+  /** Experiment arms (exactly one must be the control) */
+  variants?: CommerceProductsPricingExperimentVariantInput[] | null;
+}
+
 /** Request to create a pricing rule. */
 export interface CommerceProductsCreatePricingRuleInput {
   buyQuantity?: number | null;
@@ -4831,6 +4873,7 @@ export interface CommerceProductsCreatePricingRuleInput {
   fixedPrice?: number | null;
   getQuantity?: number | null;
   isActive?: boolean;
+  isScheduled?: boolean;
   maxQuantity?: number | null;
   minQuantity?: number | null;
   name?: string | null;
@@ -4842,6 +4885,9 @@ export interface CommerceProductsCreatePricingRuleInput {
   tiers?: CommerceProductsPricingRuleTierInput[] | null;
   timeEnd?: string | null;
   timeStart?: string | null;
+  usageMaxValue?: number | null;
+  usageMetricKey?: string | null;
+  usageMinValue?: number | null;
 }
 
 /** Request model for creating a product category. */
@@ -4893,6 +4939,7 @@ export interface CommerceProductsCreatePromoCodeInput {
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
   name?: string | null;
+  planId?: string | null;
   productId?: string | null;
   stackingPriority?: number;
   type?: CommerceProductsPromoCodeType;
@@ -4958,6 +5005,7 @@ export interface CommerceProductsGenerateBulkPromoCodesInput {
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
   name?: string | null;
+  planId?: string | null;
   prefix?: string | null;
   productId?: string | null;
   stackingPriority?: number;
@@ -5009,6 +5057,7 @@ export interface CommerceProductsPatchPromoCodeInput {
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
   name?: string | null;
+  planId?: string | null;
   productId?: string | null;
   stackingPriority?: number | null;
   type?: CommerceProductsPromoCodeType;
@@ -5018,16 +5067,22 @@ export interface CommerceProductsPatchPromoCodeInput {
 
 /** Result of pricing calculation */
 export interface CommerceProductsPricingCalculationResult {
+  /** ID of the live A/B experiment applied to this calculation, if any (issue #395) */
+  appliedExperimentId?: string | null;
   /** List of applied promo codes */
   appliedPromoCodes?: string[] | null;
   /** ID of the winning pricing rule, if any (issue #395) */
   appliedRuleId?: string | null;
   /** Name of the winning pricing rule, if any (issue #395) */
   appliedRuleName?: string | null;
+  /** Name of the experiment arm applied to this calculation (issue #395) */
+  appliedVariantName?: string | null;
   /** Original base price */
   basePrice?: number;
   /** Currency code */
   currency?: string | null;
+  /** Per-unit discount produced by the experiment arm (issue #395) */
+  experimentDiscount?: number;
   /** Final calculated price */
   finalPrice?: number;
   /** Whether sale is active */
@@ -5038,6 +5093,120 @@ export interface CommerceProductsPricingCalculationResult {
   ruleDiscount?: number;
   /** Sale price if active */
   salePrice?: number | null;
+}
+
+/** Revenue-impact analytics for one experiment over a window (issue #395). */
+export interface CommerceProductsPricingExperimentAnalytics {
+  /** Currency the revenue figures are reported in (first outcome wins; USD when no outcomes) */
+  currency?: string | null;
+  /** Experiment id */
+  experimentId?: string;
+  /** Experiment name */
+  experimentName?: string | null;
+  status?: CommercePricingExperimentStatus;
+  /** Conversions across arms in the window */
+  totalConversions?: number;
+  /** Revenue across arms in the window */
+  totalRevenue?: number;
+  /** Per-variant analytics, control first */
+  variants?: CommerceProductsPricingExperimentVariantAnalytics[] | null;
+  /** Window start (null = unbounded) */
+  windowFromUtc?: string | null;
+  /** Window end (null = unbounded) */
+  windowToUtc?: string | null;
+}
+
+/** Outcome of resolving (or creating) the sticky assignment of a bucket key. */
+export interface CommerceProductsPricingExperimentAssignmentResult {
+  /** When the key was enrolled (UTC) */
+  assignedAt?: string;
+  /** Durable assignment id (null when held out) */
+  assignmentId?: string | null;
+  /** Bucket key that was resolved */
+  bucketKey?: string | null;
+  /** Experiment id */
+  experimentId?: string;
+  variant?: CommerceProductsPricingExperimentVariantDto;
+}
+
+/** Read model for a pricing experiment with its arms. */
+export interface CommerceProductsPricingExperimentDto {
+  /** Experiment id */
+  id?: string;
+  /** Creation timestamp (UTC) */
+  createdAt?: string;
+  /** Optional hypothesis description */
+  description?: string | null;
+  /** Optional enrollment end (UTC) */
+  endDate?: string | null;
+  /** Experiment name */
+  name?: string | null;
+  /** Product the experiment applies to (null = global) */
+  productId?: string | null;
+  /** Optional enrollment start (UTC) */
+  startDate?: string | null;
+  status?: CommercePricingExperimentStatus;
+  /** Percentage of bucket-key traffic enrolled */
+  trafficPercentage?: number;
+  /** Last update timestamp (UTC) */
+  updatedAt?: string;
+  /** Experiment arms */
+  variants?: CommerceProductsPricingExperimentVariantDto[] | null;
+}
+
+/** Per-variant analytics row for an experiment window. */
+export interface CommerceProductsPricingExperimentVariantAnalytics {
+  /** Durable assignments in this arm */
+  assignments?: number;
+  /** Revenue ÷ conversions (null when no conversions) */
+  averageOrderValue?: number | null;
+  /** Conversions ÷ assignments (null when no assignments) */
+  conversionRate?: number | null;
+  /** Monetized outcomes in the window */
+  conversions?: number;
+  /** Whether this row is the control arm */
+  isControl?: boolean;
+  /** Sum of outcome amounts in the window */
+  revenue?: number;
+  /** Revenue-per-assignment lift vs the control arm in percent (null when the control or
+this arm has no assignments, or when the control's baseline is zero). */
+  revenueLiftPercentage?: number | null;
+  /** Revenue ÷ assignments (null when no assignments) */
+  revenuePerAssignment?: number | null;
+  /** Variant id */
+  variantId?: string;
+  /** Variant name */
+  variantName?: string | null;
+}
+
+/** Read model for one arm of a pricing experiment. */
+export interface CommerceProductsPricingExperimentVariantDto {
+  /** Variant id */
+  id?: string;
+  /** Relative allocation weight (normalized when bucketing) */
+  allocationPercentage?: number;
+  /** Discount percentage applied by this arm */
+  discountPercentage?: number | null;
+  /** Fixed per-unit price pinned by this arm */
+  fixedPrice?: number | null;
+  /** Whether this is the control (baseline) arm */
+  isControl?: boolean;
+  /** Variant name */
+  name?: string | null;
+}
+
+/** Write model for one arm when creating an experiment. */
+export interface CommerceProductsPricingExperimentVariantInput {
+  /** Relative allocation weight */
+  allocationPercentage?: number;
+  /** Discount percentage applied by the arm */
+  discountPercentage?: number | null;
+  /** Fixed per-unit price pinned by the arm */
+  fixedPrice?: number | null;
+  /** Whether this is the control arm */
+  isControl?: boolean;
+  /** Variant name */
+  name?: string | null;
 }
 
 /** Read model for a pricing rule (issue #395 dynamic & tiered pricing engine). */
@@ -5066,6 +5235,8 @@ export interface CommerceProductsPricingRuleDto {
   getQuantity?: number | null;
   /** Whether the rule is active */
   isActive?: boolean;
+  /** Whether automated scheduling keeps the rule aligned with its date window (issue #395) */
+  isScheduled?: boolean;
   /** Maximum quantity for the rule to apply */
   maxQuantity?: number | null;
   /** Minimum quantity for the rule to apply */
@@ -5089,6 +5260,12 @@ export interface CommerceProductsPricingRuleDto {
   timeStart?: string | null;
   /** Last update timestamp (UTC) */
   updatedAt?: string;
+  /** Inclusive upper bound on the usage metric value */
+  usageMaxValue?: number | null;
+  /** Usage metric key the rule is gated on (issue #395 usage adjustments) */
+  usageMetricKey?: string | null;
+  /** Inclusive lower bound on the usage metric value */
+  usageMinValue?: number | null;
   /** Optimistic concurrency version */
   version?: number;
 }
@@ -5117,6 +5294,20 @@ export interface CommerceProductsPricingRuleTierInput {
   minQuantity?: number | null;
   /** Fixed per-unit price for the tier */
   price?: number | null;
+}
+
+/** Result of one automated pricing-rule/experiment scheduling pass (issue #395). */
+export interface CommerceProductsPricingScheduleSweepResult {
+  /** Experiments transitioned Running → Completed (end reached) */
+  experimentsCompleted?: number;
+  /** Experiments transitioned Draft → Running (start reached) */
+  experimentsStarted?: number;
+  /** When the pass ran (UTC) */
+  ranAt?: string;
+  /** Rules the scheduler activated (window opened) */
+  rulesActivated?: number;
+  /** Rules the scheduler deactivated (window closed) */
+  rulesDeactivated?: number;
 }
 
 /** Represents how a user acquired access to a product */
@@ -5326,6 +5517,8 @@ export interface CommerceProductsPromoCodeDto {
   minimumOrderAmount?: number | null;
   /** Display name */
   name?: string | null;
+  /** Specific subscription plan ID (null = not plan-scoped) */
+  planId?: string | null;
   /** Specific product ID (null = all products) */
   productId?: string | null;
   /** Priority for stacking */
@@ -5369,6 +5562,22 @@ export interface CommerceProductsPromoCodeUsageDto {
   uniqueUsers?: number;
 }
 
+/** Outcome of a promo code validation attempt (issue #418 conversion tracking).
+The numerator of the campaign conversion metric is recorded usage
+(GameGuild.Commerce.Products.PromoCodeUse); this entity is the denominator — every code
+string submitted to the `:validate` endpoint, whether it succeeded or not. */
+export type CommerceProductsPromoCodeValidationOutcome =
+  | 'Valid'
+  | 'NotFound'
+  | 'Inactive'
+  | 'Expired'
+  | 'ProductNotEligible'
+  | 'PlanNotEligible'
+  | 'MinimumOrderAmountNotMet'
+  | 'MaxUsesReached'
+  | 'MaxUsesPerUserReached'
+  | 'Invalid';
+
 /** Result of validating a promo code */
 export interface CommerceProductsPromoCodeValidationResult {
   /** The promo code if valid */
@@ -5379,8 +5588,15 @@ export interface CommerceProductsPromoCodeValidationResult {
   discountPercentage?: number | null;
   /** Error message if invalid */
   errorMessage?: string | null;
+  /** Billing periods granted (FreeMonths codes only) */
+  freeMonthsGranted?: number | null;
   /** Whether the code is valid */
   isValid?: boolean;
+  outcome?: CommerceProductsPromoCodeValidationOutcome;
+  /** ID of the resolved promo code (null when the code was not found) */
+  promoCodeId?: string | null;
+  /** Trial days granted (FreeTrialExtension codes only) */
+  trialExtensionDays?: number | null;
 }
 
 /** Promo stacking rule DTO */
@@ -5404,6 +5620,18 @@ export interface CommerceProductsPromoStackingRuleDto {
   name?: string | null;
   /** Priority level */
   priority?: number;
+}
+
+/** Request to record a conversion outcome under an experiment arm. */
+export interface CommerceProductsRecordExperimentOutcomeInput {
+  /** Final monetized amount */
+  amount?: number;
+  /** Bucket key that converted */
+  bucketKey?: string | null;
+  /** ISO 4217 currency (default USD) */
+  currency?: string | null;
+  /** Optional order correlation */
+  orderId?: string | null;
 }
 
 /** Details of a rejected promo code */
@@ -5524,6 +5752,7 @@ export interface CommerceProductsUpdatePricingRuleInput {
   fixedPrice?: number | null;
   getQuantity?: number | null;
   isActive?: boolean;
+  isScheduled?: boolean;
   maxQuantity?: number | null;
   minQuantity?: number | null;
   name?: string | null;
@@ -5535,6 +5764,9 @@ export interface CommerceProductsUpdatePricingRuleInput {
   tiers?: CommerceProductsPricingRuleTierInput[] | null;
   timeEnd?: string | null;
   timeStart?: string | null;
+  usageMaxValue?: number | null;
+  usageMetricKey?: string | null;
+  usageMinValue?: number | null;
 }
 
 /** Request model for updating a product category. */
@@ -5590,6 +5822,7 @@ export interface CommerceProductsUpdatePromoCodeInput {
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
   name?: string | null;
+  planId?: string | null;
   productId?: string | null;
   stackingPriority?: number | null;
   type?: CommerceProductsPromoCodeType;
@@ -5613,6 +5846,7 @@ export interface CommerceProductsUpdatePromoStackingRuleInput {
 export interface CommerceProductsValidatePromoCodeInput {
   code?: string | null;
   orderAmount?: number;
+  planId?: string | null;
   productId?: string | null;
 }
 
@@ -5643,6 +5877,9 @@ export interface CommerceSubscriptionsBillingSubscriptionsControllerCreateBillin
   createdByUserId?: string;
   fulfilledOrderId?: string | null;
   planId?: string;
+  productId?: string | null;
+  promoCodeIdempotencyKey?: string | null;
+  promoCodes?: string[] | null;
   startDate?: string | null;
   tenantId?: string;
   trialDays?: number | null;
@@ -6055,6 +6292,12 @@ export interface CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionI
   fulfilledOrderId?: string | null;
   /** The subscription plan ID */
   planId?: string;
+  /** Optional product context for product-scoped promo codes */
+  productId?: string | null;
+  /** Optional replay-protection key for the promo application */
+  promoCodeIdempotencyKey?: string | null;
+  /** Optional promo codes applied at creation (issue #418) */
+  promoCodes?: string[] | null;
   /** Optional start date */
   startDate?: string | null;
   /** The tenant ID */
@@ -6110,6 +6353,36 @@ export interface CommerceSubscriptionsSubscriptionUsageDto {
 /** Data model for Compliance Audit Acknowledge Security Alert Request. */
 export interface ComplianceAuditAcknowledgeSecurityAlertInput {
   notes?: string | null;
+}
+
+/** Data model for Compliance Audit Acknowledge Transfer Request. */
+export interface ComplianceAuditAcknowledgeTransferInput {
+  notes?: string | null;
+}
+
+/** One page of archived audit rows plus the total archived count. */
+export interface ComplianceAuditArchivedSecurityLogListOutput {
+  rows?: ComplianceAuditArchivedSecurityLogOutput[] | null;
+  totalCount?: number;
+}
+
+/** One archived audit row served from the archive storage tier. */
+export interface ComplianceAuditArchivedSecurityLogOutput {
+  id?: string;
+  actionType?: string | null;
+  archivedAtUtc?: string;
+  category?: ComplianceAuditAuditCategory;
+  correlationId?: string | null;
+  description?: string | null;
+  errorMessage?: string | null;
+  originalCreatedAt?: string;
+  resourceId?: string | null;
+  resourceType?: string | null;
+  riskLevel?: ComplianceAuditAuditRiskLevel;
+  sourceAuditLogId?: string;
+  success?: boolean;
+  tenantId?: string | null;
+  userId?: string | null;
 }
 
 /** Data model for Compliance Audit Audit Access Age Bucket. */
@@ -6819,10 +7092,52 @@ export interface ComplianceAuditAuthenticationAuditOutput {
   uniqueIpAddresses?: number;
 }
 
+/** Data model for Compliance Audit Break Seal Request. */
+export interface ComplianceAuditBreakSealInput {
+  purpose: string | null;
+}
+
+/** Data model for Compliance Audit Build Custody Package Request. */
+export interface ComplianceAuditBuildCustodyPackageInput {
+  certificationStatement?: string | null;
+  /** Evidence item to package (exactly one of EvidenceId / LegalHoldId). */
+  evidenceId?: string | null;
+  /** Legal hold whose preserved evidence set should be packaged. */
+  legalHoldId?: string | null;
+}
+
 /** Data model for Compliance Audit Capture Audit Replay Request. */
 export interface ComplianceAuditCaptureAuditReplayInput {
   end: string;
   start: string;
+}
+
+/** Cascading-effect analysis of one mutation across its operation and entity lineage (issue #176). */
+export interface ComplianceAuditChangeImpactChange {
+  actorId?: string | null;
+  changeKind?: string | null;
+  diffCount?: number;
+  entityName?: string | null;
+  isAnchor?: boolean;
+  keyId?: string | null;
+  occurredAtUtc?: string;
+  snapshotId?: string;
+}
+
+/** Data model for Compliance Audit Change Impact Response. */
+export interface ComplianceAuditChangeImpactOutput {
+  anchorFieldDiffs?: ComplianceAuditValueSnapshotFieldDiffOutput[] | null;
+  anchorSnapshotId?: string;
+  cascadeEndedAtUtc?: string | null;
+  cascadeStartedAtUtc?: string | null;
+  correlationId?: string | null;
+  entitiesTouched?: number;
+  entityHistory?: ComplianceAuditChangeImpactChange[] | null;
+  entityHistoryChangeCount?: number;
+  entityName?: string | null;
+  keyId?: string | null;
+  sameOperationChangeCount?: number;
+  sameOperationChanges?: ComplianceAuditChangeImpactChange[] | null;
 }
 
 /** Data model for Compliance Audit Compliance Artifact Entry. */
@@ -6994,6 +7309,10 @@ export interface ComplianceAuditConfigureAuditRetentionInput {
 
 /** Configures the retention policy applied to a tenant's security audit log. */
 export interface ComplianceAuditConfigureSecurityLogRetentionInput {
+  /** Storage-tier archival threshold (issue #193): audit rows older than this many days are moved
+into the archive tier instead of staying hot. Null disables archival; must be at least 1 and
+strictly shorter than GameGuild.Compliance.Audit.ConfigureSecurityLogRetentionRequest.RetentionDays. */
+  archiveAfterDays?: number | null;
   /** Per-category overrides. Keys are `AuditCategory` names; values are days (30..3650). */
   categoryOverrides?: Record<string, number> | null;
   /** Revision the caller observed; rejected on mismatch to avoid lost updates. */
@@ -7001,6 +7320,29 @@ export interface ComplianceAuditConfigureSecurityLogRetentionInput {
   /** When set to a future instant, retention enforcement is suspended until then. */
   legalHoldUntilUtc?: string | null;
   retentionDays?: number;
+}
+
+/** Data model for Compliance Audit Configure Value Snapshot Retention Request. */
+export interface ComplianceAuditConfigureValueSnapshotRetentionInput {
+  archiveAfterDays?: number;
+  entityOverrides?: Record<string, number> | null;
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
+}
+
+/** Data model for Compliance Audit Court Admissible Package Response. */
+export interface ComplianceAuditCourtAdmissiblePackageOutput {
+  certificationStatement?: string | null;
+  evidenceIds?: string[] | null;
+  manifestJson?: string | null;
+  manifestSha256?: string | null;
+  packageId?: string;
+  preparedAtUtc?: string;
+  preparedByUserId?: string;
+  signature?: string | null;
+  signingKeyId?: string | null;
+  tenantId?: string;
+  verification?: ComplianceAuditCustodyPackageVerification;
 }
 
 /** Data model for Compliance Audit Create Compliance Package Request. */
@@ -7011,6 +7353,14 @@ export interface ComplianceAuditCreateCompliancePackageInput {
   periodEndUtc?: string;
   periodStartUtc?: string;
   templateId: string;
+}
+
+/** Data model for Compliance Audit Create Legal Hold Request. */
+export interface ComplianceAuditCreateLegalHoldInput {
+  caseNumber: string | null;
+  description?: string | null;
+  notificationTargets?: ComplianceAuditNotificationTarget[] | null;
+  preservationTargets?: ComplianceAuditPreservationTarget[] | null;
 }
 
 /** Data model for Compliance Audit Create Scheduled Audit Export Request. */
@@ -7033,6 +7383,55 @@ export interface ComplianceAuditCreateScheduledAuditExportInput {
   userId?: string | null;
 }
 
+/** Data model for Compliance Audit Create Value Snapshot Rollback Plan Request. */
+export interface ComplianceAuditCreateValueSnapshotRollbackPlanInput {
+  asOfUtc?: string;
+  entityName: string | null;
+  keyId: string | null;
+}
+
+/** Data model for Compliance Audit Custody Event Response. */
+export interface ComplianceAuditCustodyEventOutput {
+  id?: string;
+  actorUserId?: string;
+  eventType?: string | null;
+  fromCustodianId?: string | null;
+  occurredAtUtc?: string;
+  proofJson?: string | null;
+  purpose?: string | null;
+  sequenceNumber?: number;
+  toCustodianId?: string | null;
+  transferId?: string | null;
+}
+
+/** Data model for Compliance Audit Custody Evidence Response. */
+export interface ComplianceAuditCustodyEvidenceOutput {
+  id?: string;
+  collectedAtUtc?: string;
+  collectedByUserId?: string;
+  contentLength?: number;
+  contentSha256?: string | null;
+  contentType?: string | null;
+  currentCustodianId?: string;
+  custodyState?: string | null;
+  integrityVerified?: boolean;
+  isolated?: boolean;
+  legalHoldId?: string | null;
+  sealBrokenAtUtc?: string | null;
+  sourceId?: string | null;
+  sourceKind?: string | null;
+  timeline?: ComplianceAuditCustodyEventOutput[] | null;
+}
+
+/** Data model for Compliance Audit Custody Package Verification. */
+export interface ComplianceAuditCustodyPackageVerification {
+  chainSequenceGapless?: boolean;
+  contentHashVerified?: boolean;
+  transferCount?: number;
+  transferProofsVerified?: boolean;
+  verifiedTransferCount?: number;
+}
+
 /** Data model for Compliance Audit Daily Activity Trend. */
 export interface ComplianceAuditDailyActivityTrend {
   authenticationEvents?: number;
@@ -7048,6 +7447,54 @@ export interface ComplianceAuditEnforceSecurityLogRetentionInput {
   dryRun?: boolean;
 }
 
+/** Data model for Compliance Audit Enforce Value Snapshot Retention Request. */
+export interface ComplianceAuditEnforceValueSnapshotRetentionInput {
+  dryRun?: boolean;
+  includeCompaction?: boolean;
+}
+
+/** Data model for Compliance Audit Evidence Custodian Response. */
+export interface ComplianceAuditEvidenceCustodianOutput {
+  id?: string;
+  authorizedAtUtc?: string;
+  authorizedByUserId?: string;
+  displayName?: string | null;
+  isActive?: boolean;
+  revocationReason?: string | null;
+  revokedAtUtc?: string | null;
+  scopes?: string[] | null;
+  userId?: string;
+}
+
+/** Data model for Compliance Audit Evidence Integrity Response. */
+export interface ComplianceAuditEvidenceIntegrityOutput {
+  verified?: boolean;
+}
+
+/** Data model for Compliance Audit Evidence Transfer Response. */
+export interface ComplianceAuditEvidenceTransferOutput {
+  id?: string;
+  acknowledgedAtUtc?: string | null;
+  acknowledgedByUserId?: string | null;
+  evidenceHash?: string | null;
+  evidenceId?: string;
+  fromCustodianId?: string;
+  initiatedAtUtc?: string;
+  proofJson?: string | null;
+  proofVerified?: boolean;
+  purpose?: string | null;
+  signature?: string | null;
+  signingKeyId?: string | null;
+  state?: string | null;
+  toCustodianId?: string;
+}
+
+/** Data model for Compliance Audit Execute Value Snapshot Rollback Request. */
+export interface ComplianceAuditExecuteValueSnapshotRollbackInput {
+  /** Explicitly accept reverting changes recorded after the basis snapshot. Fail-closed default: false. */
+  acceptNewerChanges?: boolean;
+}
+
 /** OpenAPI schema for Compliance Audit Export Format. */
 export type ComplianceAuditExportFormat = 'Json' | 'Csv' | 'Xml' | 'Parquet';
 
@@ -7058,6 +7505,49 @@ export type ComplianceAuditExportStatus = 'Pending' | 'InProgress' | 'Completed'
 export interface ComplianceAuditFailureReasonCount {
   count?: number;
   reason?: string | null;
+}
+
+/** Data model for Compliance Audit Initiate Transfer Request. */
+export interface ComplianceAuditInitiateTransferInput {
+  evidenceId?: string;
+  purpose?: string | null;
+  toCustodianId?: string;
+}
+
+/** Data model for Compliance Audit Legal Hold Notification Response. */
+export interface ComplianceAuditLegalHoldNotificationOutput {
+  id?: string;
+  createdAtUtc?: string;
+  dispatchedAtUtc?: string | null;
+  failureReason?: string | null;
+  legalHoldId?: string;
+  status?: string | null;
+  target?: string | null;
+  targetKind?: string | null;
+}
+
+/** Data model for Compliance Audit Legal Hold Response. */
+export interface ComplianceAuditLegalHoldOutput {
+  id?: string;
+  caseNumber?: string | null;
+  createdAtUtc?: string;
+  createdByUserId?: string;
+  description?: string | null;
+  notifications?: ComplianceAuditLegalHoldNotificationOutput[] | null;
+  notificationTargets?: ComplianceAuditNotificationTarget[] | null;
+  preservationTargets?: ComplianceAuditPreservationTarget[] | null;
+  preservedEvidenceIds?: string[] | null;
+  releasedAtUtc?: string | null;
+  releasedByUserId?: string | null;
+  releaseReason?: string | null;
+  status?: string | null;
+}
+
+/** Data model for Compliance Audit Notification Target. */
+export interface ComplianceAuditNotificationTarget {
+  /** Custodian (user id string) or Stakeholder (free-form address). */
+  kind: string | null;
+  target: string | null;
 }
 
 /** Permission audit entry. */
@@ -7168,10 +7658,49 @@ export interface ComplianceAuditPiiTokenResolutionOutput {
   value?: string | null;
 }
 
+/** Data model for Compliance Audit Preservation Target. */
+export interface ComplianceAuditPreservationTarget {
+  contentType?: string | null;
+  rawContent?: string | null;
+  sourceId: string | null;
+  sourceKind: string | null;
+}
+
+/** Data model for Compliance Audit Preserve Evidence Request. */
+export interface ComplianceAuditPreserveEvidenceInput {
+  contentType?: string | null;
+  /** Legal hold to link the preserved evidence to (used by the automated preservation workflow). */
+  legalHoldId?: string | null;
+  purpose?: string | null;
+  /** Raw content to preserve (required for RawContent, ignored for record sources). */
+  rawContent?: string | null;
+  /** Identifier of the source record ("inline" for RawContent). */
+  sourceId: string | null;
+  /** Source system kind: AuditLog, SecurityEvent, TamperEvidentAuditLog, MutationValueSnapshot, ComplianceSealedPackage, or RawContent. */
+  sourceKind: string | null;
+}
+
 /** Client-held snapshot plus the digest it was captured with (issue #169). */
 export interface ComplianceAuditReconstructAuditReplayInput {
   document?: ComplianceAuditAuditReplaySnapshotDocument;
   sha256?: string | null;
+}
+
+/** Data model for Compliance Audit Register Custodian Request. */
+export interface ComplianceAuditRegisterCustodianInput {
+  displayName: string | null;
+  scopes?: string[] | null;
+  userId?: string;
+}
+
+/** Data model for Compliance Audit Release Evidence Request. */
+export interface ComplianceAuditReleaseEvidenceInput {
+  reason: string | null;
+}
+
+/** Data model for Compliance Audit Release Hold Request. */
+export interface ComplianceAuditReleaseHoldInput {
+  reason: string | null;
 }
 
 /** Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
@@ -7185,6 +7714,11 @@ export interface ComplianceAuditReviewComplianceDocumentInput {
   decision?: ComplianceAuditComplianceDocumentReview;
   expectedRevision?: number;
   notes: string;
+}
+
+/** Data model for Compliance Audit Revoke Custodian Request. */
+export interface ComplianceAuditRevokeCustodianInput {
+  reason: string | null;
 }
 
 /** Data model for Compliance Audit Run Audit Retention Simulation Request. */
@@ -7360,6 +7894,7 @@ export interface ComplianceAuditSecurityEventTaxonomyOutput {
 /** Data model for Compliance Audit Security Log Retention Execution Response. */
 export interface ComplianceAuditSecurityLogRetentionExecutionOutput {
   id?: string;
+  archivedCount?: number;
   cutoffUtc?: string;
   deletedCount?: number;
   dryRun?: boolean;
@@ -7374,6 +7909,7 @@ export interface ComplianceAuditSecurityLogRetentionExecutionOutput {
 /** Data model for Compliance Audit Security Log Retention Policy Response. */
 export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
   id?: string;
+  archiveAfterDays?: number | null;
   categoryOverrides?: Record<string, number> | null;
   configuredAtUtc?: string;
   legalHoldActive?: boolean;
@@ -7382,6 +7918,18 @@ export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
   revision?: number;
   tenantId?: string;
   updatedByUserId?: string;
+}
+
+/** Storage-tier report for the tenant audit data (issue #193): row counts per real data-placement
+tier plus the configured tier windows, so administrators can see cost placement while
+accessibility is preserved by the archive endpoints. */
+export interface ComplianceAuditSecurityLogStorageTierReportOutput {
+  archiveAfterDays?: number | null;
+  archiveRowCount?: number;
+  hotRowCount?: number;
+  legalHoldActive?: boolean;
+  retentionDays?: number;
+  tenantId?: string;
 }
 
 /** Defines sensitivity levels for data access auditing */
@@ -7511,6 +8059,152 @@ export interface ComplianceAuditUpsertPiiRedactionRuleInput {
   ruleName?: string | null;
   scope?: ComplianceAuditPiiRuleScope;
   targetFields?: string[] | null;
+}
+
+/** Point-in-time value history entry for one entity field. */
+export interface ComplianceAuditValueHistoryEntry {
+  actorId?: string | null;
+  changeKind?: string | null;
+  occurredAtUtc?: string;
+  snapshotId?: string;
+  truncated?: boolean;
+  value?: string | null;
+}
+
+/** Data model for Compliance Audit Value History Response. */
+export interface ComplianceAuditValueHistoryOutput {
+  entityName?: string | null;
+  entries?: ComplianceAuditValueHistoryEntry[] | null;
+  field?: string | null;
+  keyId?: string | null;
+}
+
+/** Data model for Compliance Audit Value Snapshot Field Diff Response. */
+export interface ComplianceAuditValueSnapshotFieldDiffOutput {
+  after?: string | null;
+  afterTruncated?: boolean;
+  before?: string | null;
+  beforeTruncated?: boolean;
+  changeKind?: string | null;
+  field?: string | null;
+  numericDelta?: number | null;
+}
+
+/** Data model for Compliance Audit Value Snapshot Response. */
+export interface ComplianceAuditValueSnapshotOutput {
+  id?: string;
+  actorId?: string | null;
+  afterBytes?: number;
+  afterIntegritySha256?: string | null;
+  afterPayload?: string | null;
+  afterPayloadTruncated?: boolean;
+  archivedAtUtc?: string | null;
+  beforeBytes?: number;
+  beforeIntegritySha256?: string | null;
+  beforePayload?: string | null;
+  beforePayloadTruncated?: boolean;
+  changeKind?: string | null;
+  correlationId?: string | null;
+  diffCount?: number;
+  entityName?: string | null;
+  fieldDiffs?: ComplianceAuditValueSnapshotFieldDiffOutput[] | null;
+  keyId?: string | null;
+  occurredAtUtc?: string;
+  storageMode?: string | null;
+}
+
+/** Data model for Compliance Audit Value Snapshot Retention Execution Response. */
+export interface ComplianceAuditValueSnapshotRetentionExecutionOutput {
+  id?: string;
+  archivedCount?: number;
+  bytesReclaimed?: number;
+  compactedCount?: number;
+  deletedCount?: number;
+  dryRun?: boolean;
+  executedAtUtc?: string;
+  legalHoldActive?: boolean;
+  triggeredByUserId?: string;
+}
+
+/** Data model for Compliance Audit Value Snapshot Retention Policy Response. */
+export interface ComplianceAuditValueSnapshotRetentionPolicyOutput {
+  id?: string;
+  archiveAfterDays?: number;
+  configuredAtUtc?: string;
+  entityOverrides?: Record<string, number> | null;
+  legalHoldActive?: boolean;
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
+  revision?: number;
+  updatedByUserId?: string;
+}
+
+/** Data model for Compliance Audit Value Snapshot Rollback Plan Response. */
+export interface ComplianceAuditValueSnapshotRollbackPlanOutput {
+  id?: string;
+  asOfUtc?: string;
+  basisSnapshotId?: string;
+  basisStateJson?: string | null;
+  basisStateSha256?: string | null;
+  createdAtUtc?: string;
+  createdByUserId?: string;
+  executedAtUtc?: string | null;
+  executedByUserId?: string | null;
+  failureReason?: string | null;
+  planJson?: string | null;
+  resultJson?: string | null;
+  status?: string | null;
+  targetEntityName?: string | null;
+  targetKeyId?: string | null;
+}
+
+/** Data model for Compliance Audit Value Snapshot Search Result. */
+export interface ComplianceAuditValueSnapshotSearchResult {
+  items?: ComplianceAuditValueSnapshotOutput[] | null;
+  totalCount?: number;
+}
+
+/** Data model for Compliance Audit Value Snapshot Storage Overview. */
+export interface ComplianceAuditValueSnapshotStorageOverview {
+  archivedSnapshots?: number;
+  chunkBytes?: number;
+  chunkCount?: number;
+  chunkReferences?: number;
+  deduplicatedBytesSaved?: number;
+  deltaSnapshots?: number;
+  executedRollbackPlans?: number;
+  fullSnapshots?: number;
+  inlinePayloadBytes?: number;
+  rollbackPlans?: number;
+  totalSnapshots?: number;
+  truncatedPayloads?: number;
+}
+
+/** Data model for Compliance Audit Value Trend Response. */
+export interface ComplianceAuditValueTrendOutput {
+  entityName?: string | null;
+  field?: string | null;
+  fromUtc?: string;
+  keyId?: string | null;
+  series?: ComplianceAuditValueHistoryEntry[] | null;
+  statistics?: ComplianceAuditValueTrendStatistics;
+  toUtc?: string;
+}
+
+/** Statistical summary of how one field changed over a time window (issue #176). */
+export interface ComplianceAuditValueTrendStatistics {
+  averageNumeric?: number | null;
+  changeCount?: number;
+  changesPerDay?: number;
+  distinctValues?: number;
+  firstObservedAtUtc?: string;
+  firstValue?: string | null;
+  lastObservedAtUtc?: string;
+  lastValue?: string | null;
+  longestStableDays?: number;
+  maxNumeric?: number | null;
+  minNumeric?: number | null;
+  netChange?: number | null;
 }
 
 /** Data model for Compliance Consent Consent Policy Dto. */
@@ -10097,6 +10791,58 @@ export interface GameJamsSubmitJamEntryInput {
   userId?: string;
 }
 
+/** Data model for Identity Authentication Account Recovery Approval Response. */
+export interface IdentityAuthenticationAccountRecoveryApprovalOutput {
+  message: string | null;
+  /** True when this approval reached the K-of-N threshold and unlocked the forced reset. */
+  resetUnlocked?: boolean;
+  /** Seconds remaining in the cooling-off window when the request is too early. */
+  retryAfterSeconds?: number | null;
+  success: boolean;
+}
+
+/** Outcome of one approval attempt; a denial never distinguishes code or request state. */
+export interface IdentityAuthenticationAccountRecoveryApprovalResult {
+  message?: string | null;
+  /** True when this approval reached the K-of-N threshold and unlocked the forced reset. */
+  resetUnlocked?: boolean;
+  /** Seconds remaining in the cooling-off window; only set when the proof is valid but too early. */
+  retryAfterSeconds?: number | null;
+  success?: boolean;
+}
+
+/** Outcome of the owner's cancellation. */
+export interface IdentityAuthenticationAccountRecoveryCancelResult {
+  message?: string | null;
+  success?: boolean;
+}
+
+/** Data model for Identity Authentication Account Recovery Request Request. */
+export interface IdentityAuthenticationAccountRecoveryRequestInput {
+  /** Email of the account to recover. */
+  email: string | null;
+}
+
+/** Enumeration-safe acknowledgement; identical for known and unknown emails. */
+export interface IdentityAuthenticationAccountRecoveryRequestResult {
+  message?: string | null;
+  success?: boolean;
+}
+
+/** Outcome of the forced reset; a denial never distinguishes token state. */
+export interface IdentityAuthenticationAccountRecoveryResetResult {
+  message?: string | null;
+  success?: boolean;
+}
+
+/** Data model for Identity Authentication Add Trusted Contact Request. */
+export interface IdentityAuthenticationAddTrustedContactInput {
+  /** Email of the contact to designate. */
+  email: string | null;
+  /** Optional free-form relation to the owner. */
+  relation?: string | null;
+}
+
 /** Data model for Identity Authentication Admin Reset User Mfa Response. */
 export interface IdentityAuthenticationAdminResetUserMfaOutput {
   /** Whether a live (Pending/AwaitingConfirmation) recovery request was cancelled. */
@@ -10122,6 +10868,12 @@ export interface IdentityAuthenticationApiKeyDto {
   rotationGraceEndsAt?: string | null;
   scopes?: string[] | null;
   usageCount?: number;
+}
+
+/** Data model for Identity Authentication Approve Account Recovery Request. */
+export interface IdentityAuthenticationApproveAccountRecoveryInput {
+  /** Single-use recovery code from the contact's email. */
+  approvalCode: string | null;
 }
 
 /** Request DTO for assigning a role to a user */
@@ -10170,6 +10922,12 @@ export interface IdentityAuthenticationBackupCodesStatusOutput {
   totalCount: number;
   /** Number used when known; otherwise zero is a lower bound, not historical proof */
   usedCount: number;
+}
+
+/** Data model for Identity Authentication Begin Passkey Approval Request. */
+export interface IdentityAuthenticationBeginPasskeyApprovalInput {
+  /** Optional account email used to scope allowed credentials. */
+  email?: string | null;
 }
 
 /** Request to begin WebAuthn authentication. */
@@ -10238,6 +10996,16 @@ export interface IdentityAuthenticationClientCredentialsTokenOutput {
   tokenType?: string | null;
 }
 
+/** Data model for Identity Authentication Complete Account Recovery Reset Request. */
+export interface IdentityAuthenticationCompleteAccountRecoveryResetInput {
+  /** Confirmation of the new password. */
+  confirmPassword: string | null;
+  /** The new password. */
+  newPassword: string | null;
+  /** Single-use reset token from the threshold email. */
+  resetToken: string | null;
+}
+
 /** Request to complete MFA setup */
 export interface IdentityAuthenticationCompleteMfaSetupInput {
   code: string;
@@ -10250,6 +11018,12 @@ export interface IdentityAuthenticationCompleteMfaSignInInput {
   deviceFingerprint?: string | null;
   method?: IdentityAuthenticationMfaMethod;
   mfaToken: string;
+}
+
+/** Data model for Identity Authentication Complete Passkey Approval Request. */
+export interface IdentityAuthenticationCompletePasskeyApprovalInput {
+  /** The browser assertion response for the passkey ceremony. */
+  assertionResponse: string | null;
 }
 
 /** Request to complete password reset */
@@ -10278,6 +11052,12 @@ export interface IdentityAuthenticationCompleteWebAuthnRegistrationInput {
   friendlyName?: string | null;
   /** Whether this credential can be used for passwordless authentication. */
   isPasswordless?: boolean;
+}
+
+/** Data model for Identity Authentication Confirm Trusted Contact Request. */
+export interface IdentityAuthenticationConfirmTrustedContactInput {
+  /** Invite token received by email. */
+  inviteToken: string | null;
 }
 
 /** Request to consume a one-time email sign-in code. */
@@ -11353,6 +12133,32 @@ export interface IdentityAuthenticationStepUpReceiptOutput {
 export interface IdentityAuthenticationTrustDeviceInput {
   deviceName?: string | null;
 }
+
+/** Outcome of a trusted-contact mutation by the owner. */
+export interface IdentityAuthenticationTrustedContactActionResult {
+  contact?: IdentityAuthenticationTrustedContactDto;
+  message?: string | null;
+  success?: boolean;
+}
+
+/** Outcome of an invite redemption; a denial never distinguishes token states. */
+export interface IdentityAuthenticationTrustedContactConfirmResult {
+  message?: string | null;
+  success?: boolean;
+}
+
+/** Owner-facing view of a trusted contact; never carries token material. */
+export interface IdentityAuthenticationTrustedContactDto {
+  id?: string;
+  confirmedAt?: string | null;
+  email?: string | null;
+  invitedAt?: string;
+  relation?: string | null;
+  status?: IdentityAuthenticationTrustedContactStatus;
+}
+
+/** Lifecycle of a delegated trusted contact (issue #209). */
+export type IdentityAuthenticationTrustedContactStatus = 'Invited' | 'Confirmed' | 'Revoked';
 
 /** Trusted device response */
 export interface IdentityAuthenticationTrustedDeviceOutput {
@@ -16819,6 +17625,21 @@ export interface LearningAssessmentsUpdateAssessmentInput {
   title?: string | null;
 }
 
+/** DTO for on-chain certificate anchor verification results: PII-free digests and chain
+identifiers only. Status is one of `Verified`, `DigestMismatch`, `Revoked`,
+`NotAnchored` or `Unreachable` (fail-closed on backend errors). */
+export interface LearningCertificatesCertificateAnchorVerificationDto {
+  anchoredAt?: string | null;
+  anchoredDigest?: string | null;
+  blockNumber?: number | null;
+  certificateId?: string | null;
+  detail?: string | null;
+  digest?: string | null;
+  network?: string | null;
+  status?: string | null;
+  transactionHash?: string | null;
+}
+
 /** DTO for certificate display */
 export interface LearningCertificatesCertificateDto {
   id?: string;
@@ -19497,6 +20318,29 @@ export interface PagedResultPricingDecisionLedgerEntryDto {
   hasPreviousPage?: boolean;
   /** The items in the current page. */
   items?: CommerceBillingPricingDecisionLedgerEntryDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultPricingExperimentDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceProductsPricingExperimentDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -24713,11 +25557,13 @@ export let CommercePaymentsWalletReconciliationReportOutputSchema: z.ZodType<Com
 export let CommercePaymentsWalletTransactionSchema: z.ZodType<CommercePaymentsWalletTransaction>;
 export let CommercePaymentsWalletTransactionTypeSchema: z.ZodType<CommercePaymentsWalletTransactionType>;
 export let CommercePaymentsWalletTransactionTypeVolumeSchema: z.ZodType<CommercePaymentsWalletTransactionTypeVolume>;
+export let CommercePricingExperimentStatusSchema: z.ZodType<CommercePricingExperimentStatus>;
 export let CommercePricingRuleTypeSchema: z.ZodType<CommercePricingRuleType>;
 export let CommerceProductsAddMySupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddMySupportTicketMessageInput>;
 export let CommerceProductsAddSupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddSupportTicketMessageInput>;
 export let CommerceProductsAppliedPromoCodeSchema: z.ZodType<CommerceProductsAppliedPromoCode>;
 export let CommerceProductsApplyPromoCodesInputSchema: z.ZodType<CommerceProductsApplyPromoCodesInput>;
+export let CommerceProductsAssignExperimentInputSchema: z.ZodType<CommerceProductsAssignExperimentInput>;
 export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommerceProductsAssignSupportTicketInput>;
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
@@ -24731,6 +25577,7 @@ export let CommerceProductsCheckMultipleAccessInputSchema: z.ZodType<CommercePro
 export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProductsCloseSupportTicketInput>;
 export let CommerceProductsConflictResolutionStrategySchema: z.ZodType<CommerceProductsConflictResolutionStrategy>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
+export let CommerceProductsCreatePricingExperimentInputSchema: z.ZodType<CommerceProductsCreatePricingExperimentInput>;
 export let CommerceProductsCreatePricingRuleInputSchema: z.ZodType<CommerceProductsCreatePricingRuleInput>;
 export let CommerceProductsCreateProductCategoryInputSchema: z.ZodType<CommerceProductsCreateProductCategoryInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
@@ -24744,9 +25591,16 @@ export let CommerceProductsGrantEntitlementInputSchema: z.ZodType<CommerceProduc
 export let CommerceProductsPatchProductInputSchema: z.ZodType<CommerceProductsPatchProductInput>;
 export let CommerceProductsPatchPromoCodeInputSchema: z.ZodType<CommerceProductsPatchPromoCodeInput>;
 export let CommerceProductsPricingCalculationResultSchema: z.ZodType<CommerceProductsPricingCalculationResult>;
+export let CommerceProductsPricingExperimentAnalyticsSchema: z.ZodType<CommerceProductsPricingExperimentAnalytics>;
+export let CommerceProductsPricingExperimentAssignmentResultSchema: z.ZodType<CommerceProductsPricingExperimentAssignmentResult>;
+export let CommerceProductsPricingExperimentDtoSchema: z.ZodType<CommerceProductsPricingExperimentDto>;
+export let CommerceProductsPricingExperimentVariantAnalyticsSchema: z.ZodType<CommerceProductsPricingExperimentVariantAnalytics>;
+export let CommerceProductsPricingExperimentVariantDtoSchema: z.ZodType<CommerceProductsPricingExperimentVariantDto>;
+export let CommerceProductsPricingExperimentVariantInputSchema: z.ZodType<CommerceProductsPricingExperimentVariantInput>;
 export let CommerceProductsPricingRuleDtoSchema: z.ZodType<CommerceProductsPricingRuleDto>;
 export let CommerceProductsPricingRuleTierDtoSchema: z.ZodType<CommerceProductsPricingRuleTierDto>;
 export let CommerceProductsPricingRuleTierInputSchema: z.ZodType<CommerceProductsPricingRuleTierInput>;
+export let CommerceProductsPricingScheduleSweepResultSchema: z.ZodType<CommerceProductsPricingScheduleSweepResult>;
 export let CommerceProductsProductAcquisitionTypeSchema: z.ZodType<CommerceProductsProductAcquisitionType>;
 export let CommerceProductsProductAvailabilityDtoSchema: z.ZodType<CommerceProductsProductAvailabilityDto>;
 export let CommerceProductsProductCategoryDtoSchema: z.ZodType<CommerceProductsProductCategoryDto>;
@@ -24758,8 +25612,10 @@ export let CommerceProductsPromoCodeApplicationResultSchema: z.ZodType<CommerceP
 export let CommerceProductsPromoCodeDtoSchema: z.ZodType<CommerceProductsPromoCodeDto>;
 export let CommerceProductsPromoCodeTypeSchema: z.ZodType<CommerceProductsPromoCodeType>;
 export let CommerceProductsPromoCodeUsageDtoSchema: z.ZodType<CommerceProductsPromoCodeUsageDto>;
+export let CommerceProductsPromoCodeValidationOutcomeSchema: z.ZodType<CommerceProductsPromoCodeValidationOutcome>;
 export let CommerceProductsPromoCodeValidationResultSchema: z.ZodType<CommerceProductsPromoCodeValidationResult>;
 export let CommerceProductsPromoStackingRuleDtoSchema: z.ZodType<CommerceProductsPromoStackingRuleDto>;
+export let CommerceProductsRecordExperimentOutcomeInputSchema: z.ZodType<CommerceProductsRecordExperimentOutcomeInput>;
 export let CommerceProductsRejectedPromoCodeSchema: z.ZodType<CommerceProductsRejectedPromoCode>;
 export let CommerceProductsResolveSupportTicketInputSchema: z.ZodType<CommerceProductsResolveSupportTicketInput>;
 export let CommerceProductsRevokeEntitlementInputSchema: z.ZodType<CommerceProductsRevokeEntitlementInput>;
@@ -24819,6 +25675,9 @@ export let CommerceSubscriptionsSubscriptionStatusSchema: z.ZodType<CommerceSubs
 export let CommerceSubscriptionsSubscriptionUpgradeResultSchema: z.ZodType<CommerceSubscriptionsSubscriptionUpgradeResult>;
 export let CommerceSubscriptionsSubscriptionUsageDtoSchema: z.ZodType<CommerceSubscriptionsSubscriptionUsageDto>;
 export let ComplianceAuditAcknowledgeSecurityAlertInputSchema: z.ZodType<ComplianceAuditAcknowledgeSecurityAlertInput>;
+export let ComplianceAuditAcknowledgeTransferInputSchema: z.ZodType<ComplianceAuditAcknowledgeTransferInput>;
+export let ComplianceAuditArchivedSecurityLogListOutputSchema: z.ZodType<ComplianceAuditArchivedSecurityLogListOutput>;
+export let ComplianceAuditArchivedSecurityLogOutputSchema: z.ZodType<ComplianceAuditArchivedSecurityLogOutput>;
 export let ComplianceAuditAuditAccessAgeBucketSchema: z.ZodType<ComplianceAuditAuditAccessAgeBucket>;
 export let ComplianceAuditAuditActionTypeDescriptorSchema: z.ZodType<ComplianceAuditAuditActionTypeDescriptor>;
 export let ComplianceAuditAuditActionTypeFrequencySchema: z.ZodType<ComplianceAuditAuditActionTypeFrequency>;
@@ -24892,7 +25751,11 @@ export let ComplianceAuditAuditStorageTierSchema: z.ZodType<ComplianceAuditAudit
 export let ComplianceAuditAuditStorageTierPriceSchema: z.ZodType<ComplianceAuditAuditStorageTierPrice>;
 export let ComplianceAuditAuthenticationAuditEntrySchema: z.ZodType<ComplianceAuditAuthenticationAuditEntry>;
 export let ComplianceAuditAuthenticationAuditOutputSchema: z.ZodType<ComplianceAuditAuthenticationAuditOutput>;
+export let ComplianceAuditBreakSealInputSchema: z.ZodType<ComplianceAuditBreakSealInput>;
+export let ComplianceAuditBuildCustodyPackageInputSchema: z.ZodType<ComplianceAuditBuildCustodyPackageInput>;
 export let ComplianceAuditCaptureAuditReplayInputSchema: z.ZodType<ComplianceAuditCaptureAuditReplayInput>;
+export let ComplianceAuditChangeImpactChangeSchema: z.ZodType<ComplianceAuditChangeImpactChange>;
+export let ComplianceAuditChangeImpactOutputSchema: z.ZodType<ComplianceAuditChangeImpactOutput>;
 export let ComplianceAuditComplianceArtifactEntrySchema: z.ZodType<ComplianceAuditComplianceArtifactEntry>;
 export let ComplianceAuditComplianceArtifactManifestSchema: z.ZodType<ComplianceAuditComplianceArtifactManifest>;
 export let ComplianceAuditComplianceArtifactSealSchema: z.ZodType<ComplianceAuditComplianceArtifactSeal>;
@@ -24913,13 +25776,29 @@ export let ComplianceAuditCompliancePackageValidationReportSchema: z.ZodType<Com
 export let ComplianceAuditComplianceScopeExclusionSchema: z.ZodType<ComplianceAuditComplianceScopeExclusion>;
 export let ComplianceAuditConfigureAuditRetentionInputSchema: z.ZodType<ComplianceAuditConfigureAuditRetentionInput>;
 export let ComplianceAuditConfigureSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditConfigureSecurityLogRetentionInput>;
+export let ComplianceAuditConfigureValueSnapshotRetentionInputSchema: z.ZodType<ComplianceAuditConfigureValueSnapshotRetentionInput>;
+export let ComplianceAuditCourtAdmissiblePackageOutputSchema: z.ZodType<ComplianceAuditCourtAdmissiblePackageOutput>;
 export let ComplianceAuditCreateCompliancePackageInputSchema: z.ZodType<ComplianceAuditCreateCompliancePackageInput>;
+export let ComplianceAuditCreateLegalHoldInputSchema: z.ZodType<ComplianceAuditCreateLegalHoldInput>;
 export let ComplianceAuditCreateScheduledAuditExportInputSchema: z.ZodType<ComplianceAuditCreateScheduledAuditExportInput>;
+export let ComplianceAuditCreateValueSnapshotRollbackPlanInputSchema: z.ZodType<ComplianceAuditCreateValueSnapshotRollbackPlanInput>;
+export let ComplianceAuditCustodyEventOutputSchema: z.ZodType<ComplianceAuditCustodyEventOutput>;
+export let ComplianceAuditCustodyEvidenceOutputSchema: z.ZodType<ComplianceAuditCustodyEvidenceOutput>;
+export let ComplianceAuditCustodyPackageVerificationSchema: z.ZodType<ComplianceAuditCustodyPackageVerification>;
 export let ComplianceAuditDailyActivityTrendSchema: z.ZodType<ComplianceAuditDailyActivityTrend>;
 export let ComplianceAuditEnforceSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditEnforceSecurityLogRetentionInput>;
+export let ComplianceAuditEnforceValueSnapshotRetentionInputSchema: z.ZodType<ComplianceAuditEnforceValueSnapshotRetentionInput>;
+export let ComplianceAuditEvidenceCustodianOutputSchema: z.ZodType<ComplianceAuditEvidenceCustodianOutput>;
+export let ComplianceAuditEvidenceIntegrityOutputSchema: z.ZodType<ComplianceAuditEvidenceIntegrityOutput>;
+export let ComplianceAuditEvidenceTransferOutputSchema: z.ZodType<ComplianceAuditEvidenceTransferOutput>;
+export let ComplianceAuditExecuteValueSnapshotRollbackInputSchema: z.ZodType<ComplianceAuditExecuteValueSnapshotRollbackInput>;
 export let ComplianceAuditExportFormatSchema: z.ZodType<ComplianceAuditExportFormat>;
 export let ComplianceAuditExportStatusSchema: z.ZodType<ComplianceAuditExportStatus>;
 export let ComplianceAuditFailureReasonCountSchema: z.ZodType<ComplianceAuditFailureReasonCount>;
+export let ComplianceAuditInitiateTransferInputSchema: z.ZodType<ComplianceAuditInitiateTransferInput>;
+export let ComplianceAuditLegalHoldNotificationOutputSchema: z.ZodType<ComplianceAuditLegalHoldNotificationOutput>;
+export let ComplianceAuditLegalHoldOutputSchema: z.ZodType<ComplianceAuditLegalHoldOutput>;
+export let ComplianceAuditNotificationTargetSchema: z.ZodType<ComplianceAuditNotificationTarget>;
 export let ComplianceAuditPermissionAuditEntrySchema: z.ZodType<ComplianceAuditPermissionAuditEntry>;
 export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAuditPermissionAuditOutput>;
 export let ComplianceAuditPiiPresetPatternSchema: z.ZodType<ComplianceAuditPiiPresetPattern>;
@@ -24932,9 +25811,15 @@ export let ComplianceAuditPiiRuleActionSchema: z.ZodType<ComplianceAuditPiiRuleA
 export let ComplianceAuditPiiRulePatternTypeSchema: z.ZodType<ComplianceAuditPiiRulePatternType>;
 export let ComplianceAuditPiiRuleScopeSchema: z.ZodType<ComplianceAuditPiiRuleScope>;
 export let ComplianceAuditPiiTokenResolutionOutputSchema: z.ZodType<ComplianceAuditPiiTokenResolutionOutput>;
+export let ComplianceAuditPreservationTargetSchema: z.ZodType<ComplianceAuditPreservationTarget>;
+export let ComplianceAuditPreserveEvidenceInputSchema: z.ZodType<ComplianceAuditPreserveEvidenceInput>;
 export let ComplianceAuditReconstructAuditReplayInputSchema: z.ZodType<ComplianceAuditReconstructAuditReplayInput>;
+export let ComplianceAuditRegisterCustodianInputSchema: z.ZodType<ComplianceAuditRegisterCustodianInput>;
+export let ComplianceAuditReleaseEvidenceInputSchema: z.ZodType<ComplianceAuditReleaseEvidenceInput>;
+export let ComplianceAuditReleaseHoldInputSchema: z.ZodType<ComplianceAuditReleaseHoldInput>;
 export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
+export let ComplianceAuditRevokeCustodianInputSchema: z.ZodType<ComplianceAuditRevokeCustodianInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
 export let ComplianceAuditSavedAuditQueryRevisionOutputSchema: z.ZodType<ComplianceAuditSavedAuditQueryRevisionOutput>;
 export let ComplianceAuditSavedAuditQueryViewOutputSchema: z.ZodType<ComplianceAuditSavedAuditQueryViewOutput>;
@@ -24950,6 +25835,7 @@ export let ComplianceAuditSecurityEventTaxonomyEntrySchema: z.ZodType<Compliance
 export let ComplianceAuditSecurityEventTaxonomyOutputSchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyOutput>;
 export let ComplianceAuditSecurityLogRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionExecutionOutput>;
 export let ComplianceAuditSecurityLogRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionPolicyOutput>;
+export let ComplianceAuditSecurityLogStorageTierReportOutputSchema: z.ZodType<ComplianceAuditSecurityLogStorageTierReportOutput>;
 export let ComplianceAuditSensitivityLevelSchema: z.ZodType<ComplianceAuditSensitivityLevel>;
 export let ComplianceAuditTopIpActivitySchema: z.ZodType<ComplianceAuditTopIpActivity>;
 export let ComplianceAuditTopUserActivitySchema: z.ZodType<ComplianceAuditTopUserActivity>;
@@ -24958,6 +25844,17 @@ export let ComplianceAuditUnifiedSecurityAuditInputSchema: z.ZodType<ComplianceA
 export let ComplianceAuditUnifiedSecurityAuditOutputSchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditOutput>;
 export let ComplianceAuditUploadComplianceDocumentInputSchema: z.ZodType<ComplianceAuditUploadComplianceDocumentInput>;
 export let ComplianceAuditUpsertPiiRedactionRuleInputSchema: z.ZodType<ComplianceAuditUpsertPiiRedactionRuleInput>;
+export let ComplianceAuditValueHistoryEntrySchema: z.ZodType<ComplianceAuditValueHistoryEntry>;
+export let ComplianceAuditValueHistoryOutputSchema: z.ZodType<ComplianceAuditValueHistoryOutput>;
+export let ComplianceAuditValueSnapshotFieldDiffOutputSchema: z.ZodType<ComplianceAuditValueSnapshotFieldDiffOutput>;
+export let ComplianceAuditValueSnapshotOutputSchema: z.ZodType<ComplianceAuditValueSnapshotOutput>;
+export let ComplianceAuditValueSnapshotRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditValueSnapshotRetentionExecutionOutput>;
+export let ComplianceAuditValueSnapshotRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditValueSnapshotRetentionPolicyOutput>;
+export let ComplianceAuditValueSnapshotRollbackPlanOutputSchema: z.ZodType<ComplianceAuditValueSnapshotRollbackPlanOutput>;
+export let ComplianceAuditValueSnapshotSearchResultSchema: z.ZodType<ComplianceAuditValueSnapshotSearchResult>;
+export let ComplianceAuditValueSnapshotStorageOverviewSchema: z.ZodType<ComplianceAuditValueSnapshotStorageOverview>;
+export let ComplianceAuditValueTrendOutputSchema: z.ZodType<ComplianceAuditValueTrendOutput>;
+export let ComplianceAuditValueTrendStatisticsSchema: z.ZodType<ComplianceAuditValueTrendStatistics>;
 export let ComplianceConsentConsentPolicyDtoSchema: z.ZodType<ComplianceConsentConsentPolicyDto>;
 export let ComplianceConsentContentTypeSchema: z.ZodType<ComplianceConsentContentType>;
 export let ComplianceConsentCreateConsentPolicyCommandSchema: z.ZodType<ComplianceConsentCreateConsentPolicyCommand>;
@@ -25214,13 +26111,22 @@ export let GameJamsJamStatusSchema: z.ZodType<GameJamsJamStatus>;
 export let GameJamsJamSubmissionDtoSchema: z.ZodType<GameJamsJamSubmissionDto>;
 export let GameJamsScoreJamSubmissionInputSchema: z.ZodType<GameJamsScoreJamSubmissionInput>;
 export let GameJamsSubmitJamEntryInputSchema: z.ZodType<GameJamsSubmitJamEntryInput>;
+export let IdentityAuthenticationAccountRecoveryApprovalOutputSchema: z.ZodType<IdentityAuthenticationAccountRecoveryApprovalOutput>;
+export let IdentityAuthenticationAccountRecoveryApprovalResultSchema: z.ZodType<IdentityAuthenticationAccountRecoveryApprovalResult>;
+export let IdentityAuthenticationAccountRecoveryCancelResultSchema: z.ZodType<IdentityAuthenticationAccountRecoveryCancelResult>;
+export let IdentityAuthenticationAccountRecoveryRequestInputSchema: z.ZodType<IdentityAuthenticationAccountRecoveryRequestInput>;
+export let IdentityAuthenticationAccountRecoveryRequestResultSchema: z.ZodType<IdentityAuthenticationAccountRecoveryRequestResult>;
+export let IdentityAuthenticationAccountRecoveryResetResultSchema: z.ZodType<IdentityAuthenticationAccountRecoveryResetResult>;
+export let IdentityAuthenticationAddTrustedContactInputSchema: z.ZodType<IdentityAuthenticationAddTrustedContactInput>;
 export let IdentityAuthenticationAdminResetUserMfaOutputSchema: z.ZodType<IdentityAuthenticationAdminResetUserMfaOutput>;
 export let IdentityAuthenticationApiKeyDtoSchema: z.ZodType<IdentityAuthenticationApiKeyDto>;
+export let IdentityAuthenticationApproveAccountRecoveryInputSchema: z.ZodType<IdentityAuthenticationApproveAccountRecoveryInput>;
 export let IdentityAuthenticationAssignRoleToUserInputSchema: z.ZodType<IdentityAuthenticationAssignRoleToUserInput>;
 export let IdentityAuthenticationAuthenticationStepSchema: z.ZodType<IdentityAuthenticationAuthenticationStep>;
 export let IdentityAuthenticationAuthSessionStateDtoSchema: z.ZodType<IdentityAuthenticationAuthSessionStateDto>;
 export let IdentityAuthenticationBackupCodesOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesOutput>;
 export let IdentityAuthenticationBackupCodesStatusOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesStatusOutput>;
+export let IdentityAuthenticationBeginPasskeyApprovalInputSchema: z.ZodType<IdentityAuthenticationBeginPasskeyApprovalInput>;
 export let IdentityAuthenticationBeginWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationBeginWebAuthnAuthenticationInput>;
 export let IdentityAuthenticationBeginWebAuthnRegistrationInputSchema: z.ZodType<IdentityAuthenticationBeginWebAuthnRegistrationInput>;
 export let IdentityAuthenticationBulkAssignRolesCommandSchema: z.ZodType<IdentityAuthenticationBulkAssignRolesCommand>;
@@ -25230,11 +26136,14 @@ export let IdentityAuthenticationBulkRoleAssignmentStatusSchema: z.ZodType<Ident
 export let IdentityAuthenticationCleanupKeysInputSchema: z.ZodType<IdentityAuthenticationCleanupKeysInput>;
 export let IdentityAuthenticationCleanupResultSchema: z.ZodType<IdentityAuthenticationCleanupResult>;
 export let IdentityAuthenticationClientCredentialsTokenOutputSchema: z.ZodType<IdentityAuthenticationClientCredentialsTokenOutput>;
+export let IdentityAuthenticationCompleteAccountRecoveryResetInputSchema: z.ZodType<IdentityAuthenticationCompleteAccountRecoveryResetInput>;
 export let IdentityAuthenticationCompleteMfaSetupInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSetupInput>;
 export let IdentityAuthenticationCompleteMfaSignInInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSignInInput>;
+export let IdentityAuthenticationCompletePasskeyApprovalInputSchema: z.ZodType<IdentityAuthenticationCompletePasskeyApprovalInput>;
 export let IdentityAuthenticationCompletePasswordResetInputSchema: z.ZodType<IdentityAuthenticationCompletePasswordResetInput>;
 export let IdentityAuthenticationCompleteWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnAuthenticationInput>;
 export let IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnRegistrationInput>;
+export let IdentityAuthenticationConfirmTrustedContactInputSchema: z.ZodType<IdentityAuthenticationConfirmTrustedContactInput>;
 export let IdentityAuthenticationConsumeEmailCodeInputSchema: z.ZodType<IdentityAuthenticationConsumeEmailCodeInput>;
 export let IdentityAuthenticationConsumeMagicLinkInputSchema: z.ZodType<IdentityAuthenticationConsumeMagicLinkInput>;
 export let IdentityAuthenticationCreateApiKeyCommandSchema: z.ZodType<IdentityAuthenticationCreateApiKeyCommand>;
@@ -25347,6 +26256,10 @@ export let IdentityAuthenticationSmsMfaSetupOutputSchema: z.ZodType<IdentityAuth
 export let IdentityAuthenticationStepUpChallengeOutputSchema: z.ZodType<IdentityAuthenticationStepUpChallengeOutput>;
 export let IdentityAuthenticationStepUpReceiptOutputSchema: z.ZodType<IdentityAuthenticationStepUpReceiptOutput>;
 export let IdentityAuthenticationTrustDeviceInputSchema: z.ZodType<IdentityAuthenticationTrustDeviceInput>;
+export let IdentityAuthenticationTrustedContactActionResultSchema: z.ZodType<IdentityAuthenticationTrustedContactActionResult>;
+export let IdentityAuthenticationTrustedContactConfirmResultSchema: z.ZodType<IdentityAuthenticationTrustedContactConfirmResult>;
+export let IdentityAuthenticationTrustedContactDtoSchema: z.ZodType<IdentityAuthenticationTrustedContactDto>;
+export let IdentityAuthenticationTrustedContactStatusSchema: z.ZodType<IdentityAuthenticationTrustedContactStatus>;
 export let IdentityAuthenticationTrustedDeviceOutputSchema: z.ZodType<IdentityAuthenticationTrustedDeviceOutput>;
 export let IdentityAuthenticationUpdateCredentialNameInputSchema: z.ZodType<IdentityAuthenticationUpdateCredentialNameInput>;
 export let IdentityAuthenticationUpdateRoleInputSchema: z.ZodType<IdentityAuthenticationUpdateRoleInput>;
@@ -25786,6 +26699,7 @@ export let LearningAssessmentsTaskItemDtoSchema: z.ZodType<LearningAssessmentsTa
 export let LearningAssessmentsTasksDtoSchema: z.ZodType<LearningAssessmentsTasksDto>;
 export let LearningAssessmentsUpdateAssessmentGroupInputSchema: z.ZodType<LearningAssessmentsUpdateAssessmentGroupInput>;
 export let LearningAssessmentsUpdateAssessmentInputSchema: z.ZodType<LearningAssessmentsUpdateAssessmentInput>;
+export let LearningCertificatesCertificateAnchorVerificationDtoSchema: z.ZodType<LearningCertificatesCertificateAnchorVerificationDto>;
 export let LearningCertificatesCertificateDtoSchema: z.ZodType<LearningCertificatesCertificateDto>;
 export let LearningCertificatesCertificateStatusSchema: z.ZodType<LearningCertificatesCertificateStatus>;
 export let LearningCertificatesCertificateTemplateDetailDtoSchema: z.ZodType<LearningCertificatesCertificateTemplateDetailDto>;
@@ -26049,6 +26963,7 @@ export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDel
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
 export let PagedResultGiftPublicViewSchema: z.ZodType<PagedResultGiftPublicView>;
 export let PagedResultPricingDecisionLedgerEntryDtoSchema: z.ZodType<PagedResultPricingDecisionLedgerEntryDto>;
+export let PagedResultPricingExperimentDtoSchema: z.ZodType<PagedResultPricingExperimentDto>;
 export let PagedResultPricingRuleDtoSchema: z.ZodType<PagedResultPricingRuleDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
@@ -30481,6 +31396,9 @@ CommercePaymentsWalletTransactionTypeVolumeSchema = z.object({
   type: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommercePricingExperimentStatus. Lifecycle statuses for a pricing experiment (issue #395). */
+CommercePricingExperimentStatusSchema = z.enum(['Draft', 'Running', 'Paused', 'Completed']);
+
 /** Zod schema for CommercePricingRuleType. Types of pricing rules - consolidated from Products and Payments modules */
 CommercePricingRuleTypeSchema = z.enum([
   'VolumeDiscount',
@@ -30489,6 +31407,7 @@ CommercePricingRuleTypeSchema = z.enum([
   'RegionBased',
   'SegmentBased',
   'MarketBased',
+  'UsageBased',
   'Percentage',
   'FixedAmount',
   'BuyXGetY',
@@ -30517,13 +31436,19 @@ CommerceProductsAppliedPromoCodeSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
 });
 
-/** Zod schema for CommerceProductsApplyPromoCodesInput. Request to apply promo codes */
+/** Zod schema for CommerceProductsApplyPromoCodesInput. Request to apply promo codes to an order */
 CommerceProductsApplyPromoCodesInputSchema = z.object({
   idempotencyKey: z.string().nullable().optional(),
   orderAmount: z.number().optional(),
   orderId: z.string().uuid().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   promoCodes: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsAssignExperimentInput. Request to resolve the arm of a bucket key. */
+CommerceProductsAssignExperimentInputSchema = z.object({
+  bucketKey: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsAssignSupportTicketInput. Data model for Commerce Products Assign Support Ticket Request. */
@@ -30568,10 +31493,12 @@ CommerceProductsBundleSavingsHintSchema = z.object({
 /** Zod schema for CommerceProductsCalculatePricingInput. Request to calculate a price through the pricing engine. */
 CommerceProductsCalculatePricingInputSchema = z.object({
   customerSegment: z.string().nullable().optional(),
+  experimentBucketKey: z.string().nullable().optional(),
   pricingId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().optional(),
   promoCodes: z.array(z.string()).nullable().optional(),
   quantity: z.number().int().optional(),
+  usageMetrics: z.record(z.string(), z.number()).nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsCampaignExpiringCodeDto. A campaign code approaching expiry */
@@ -30586,6 +31513,7 @@ CommerceProductsCampaignPerformanceDtoSchema = z.object({
   activeCodes: z.number().int().optional(),
   averageDiscountPerUse: z.number().optional(),
   campaignId: z.string().nullable().optional(),
+  conversionRate: z.number().nullable().optional(),
   expiringCodes: z
     .array(z.lazy(() => CommerceProductsCampaignExpiringCodeDtoSchema))
     .nullable()
@@ -30598,6 +31526,7 @@ CommerceProductsCampaignPerformanceDtoSchema = z.object({
   totalCodes: z.number().int().optional(),
   totalDiscountGiven: z.number().optional(),
   totalUses: z.number().int().optional(),
+  totalValidationAttempts: z.number().int().optional(),
   uniqueUsers: z.number().int().optional(),
   windowEnd: z.string().datetime().nullable().optional(),
   windowStart: z.string().datetime().nullable().optional(),
@@ -30637,6 +31566,20 @@ CommerceProductsCreateMySupportTicketInputSchema = z.object({
   subject: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsCreatePricingExperimentInput. Write model for creating a pricing experiment. */
+CommerceProductsCreatePricingExperimentInputSchema = z.object({
+  description: z.string().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  trafficPercentage: z.number().int().optional(),
+  variants: z
+    .array(z.lazy(() => CommerceProductsPricingExperimentVariantInputSchema))
+    .nullable()
+    .optional(),
+});
+
 /** Zod schema for CommerceProductsCreatePricingRuleInput. Request to create a pricing rule. */
 CommerceProductsCreatePricingRuleInputSchema = z.object({
   buyQuantity: z.number().int().nullable().optional(),
@@ -30649,6 +31592,7 @@ CommerceProductsCreatePricingRuleInputSchema = z.object({
   fixedPrice: z.number().nullable().optional(),
   getQuantity: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
+  isScheduled: z.boolean().optional(),
   maxQuantity: z.number().int().nullable().optional(),
   minQuantity: z.number().int().nullable().optional(),
   name: z.string().nullable().optional(),
@@ -30663,6 +31607,9 @@ CommerceProductsCreatePricingRuleInputSchema = z.object({
     .optional(),
   timeEnd: z.string().nullable().optional(),
   timeStart: z.string().nullable().optional(),
+  usageMaxValue: z.number().nullable().optional(),
+  usageMetricKey: z.string().nullable().optional(),
+  usageMinValue: z.number().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsCreateProductCategoryInput. Request model for creating a product category. */
@@ -30708,6 +31655,7 @@ CommerceProductsCreatePromoCodeInputSchema = z.object({
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
   name: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   stackingPriority: z.number().int().optional(),
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
@@ -30773,6 +31721,7 @@ CommerceProductsGenerateBulkPromoCodesInputSchema = z.object({
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
   name: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
   prefix: z.string().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   stackingPriority: z.number().int().optional(),
@@ -30824,6 +31773,7 @@ CommerceProductsPatchPromoCodeInputSchema = z.object({
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
   name: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   stackingPriority: z.number().int().nullable().optional(),
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
@@ -30833,16 +31783,95 @@ CommerceProductsPatchPromoCodeInputSchema = z.object({
 
 /** Zod schema for CommerceProductsPricingCalculationResult. Result of pricing calculation */
 CommerceProductsPricingCalculationResultSchema = z.object({
+  appliedExperimentId: z.string().uuid().nullable().optional(),
   appliedPromoCodes: z.array(z.string()).nullable().optional(),
   appliedRuleId: z.string().uuid().nullable().optional(),
   appliedRuleName: z.string().nullable().optional(),
+  appliedVariantName: z.string().nullable().optional(),
   basePrice: z.number().optional(),
   currency: z.string().nullable().optional(),
+  experimentDiscount: z.number().optional(),
   finalPrice: z.number().optional(),
   isSaleActive: z.boolean().optional(),
   promoDiscount: z.number().optional(),
   ruleDiscount: z.number().optional(),
   salePrice: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingExperimentAnalytics. Revenue-impact analytics for one experiment over a window (issue #395). */
+CommerceProductsPricingExperimentAnalyticsSchema = z.object({
+  currency: z.string().nullable().optional(),
+  experimentId: z.string().uuid().optional(),
+  experimentName: z.string().nullable().optional(),
+  status: z.lazy(() => CommercePricingExperimentStatusSchema).optional(),
+  totalConversions: z.number().int().optional(),
+  totalRevenue: z.number().optional(),
+  variants: z
+    .array(z.lazy(() => CommerceProductsPricingExperimentVariantAnalyticsSchema))
+    .nullable()
+    .optional(),
+  windowFromUtc: z.string().datetime().nullable().optional(),
+  windowToUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingExperimentAssignmentResult. Outcome of resolving (or creating) the sticky assignment of a bucket key. */
+CommerceProductsPricingExperimentAssignmentResultSchema = z.object({
+  assignedAt: z.string().datetime().optional(),
+  assignmentId: z.string().uuid().nullable().optional(),
+  bucketKey: z.string().nullable().optional(),
+  experimentId: z.string().uuid().optional(),
+  variant: z.lazy(() => CommerceProductsPricingExperimentVariantDtoSchema).optional(),
+});
+
+/** Zod schema for CommerceProductsPricingExperimentDto. Read model for a pricing experiment with its arms. */
+CommerceProductsPricingExperimentDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  description: z.string().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => CommercePricingExperimentStatusSchema).optional(),
+  trafficPercentage: z.number().int().optional(),
+  updatedAt: z.string().datetime().optional(),
+  variants: z
+    .array(z.lazy(() => CommerceProductsPricingExperimentVariantDtoSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for CommerceProductsPricingExperimentVariantAnalytics. Per-variant analytics row for an experiment window. */
+CommerceProductsPricingExperimentVariantAnalyticsSchema = z.object({
+  assignments: z.number().int().optional(),
+  averageOrderValue: z.number().nullable().optional(),
+  conversionRate: z.number().nullable().optional(),
+  conversions: z.number().int().optional(),
+  isControl: z.boolean().optional(),
+  revenue: z.number().optional(),
+  revenueLiftPercentage: z.number().nullable().optional(),
+  revenuePerAssignment: z.number().nullable().optional(),
+  variantId: z.string().uuid().optional(),
+  variantName: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingExperimentVariantDto. Read model for one arm of a pricing experiment. */
+CommerceProductsPricingExperimentVariantDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  allocationPercentage: z.number().int().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  isControl: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingExperimentVariantInput. Write model for one arm when creating an experiment. */
+CommerceProductsPricingExperimentVariantInputSchema = z.object({
+  allocationPercentage: z.number().int().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  isControl: z.boolean().optional(),
+  name: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsPricingRuleDto. Read model for a pricing rule (issue #395 dynamic & tiered pricing engine). */
@@ -30859,6 +31888,7 @@ CommerceProductsPricingRuleDtoSchema = z.object({
   fixedPrice: z.number().nullable().optional(),
   getQuantity: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
+  isScheduled: z.boolean().optional(),
   maxQuantity: z.number().int().nullable().optional(),
   minQuantity: z.number().int().nullable().optional(),
   name: z.string().nullable().optional(),
@@ -30874,6 +31904,9 @@ CommerceProductsPricingRuleDtoSchema = z.object({
   timeEnd: z.string().nullable().optional(),
   timeStart: z.string().nullable().optional(),
   updatedAt: z.string().datetime().optional(),
+  usageMaxValue: z.number().nullable().optional(),
+  usageMetricKey: z.string().nullable().optional(),
+  usageMinValue: z.number().nullable().optional(),
   version: z.number().int().optional(),
 });
 
@@ -30892,6 +31925,15 @@ CommerceProductsPricingRuleTierInputSchema = z.object({
   maxQuantity: z.number().int().nullable().optional(),
   minQuantity: z.number().int().nullable().optional(),
   price: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingScheduleSweepResult. Result of one automated pricing-rule/experiment scheduling pass (issue #395). */
+CommerceProductsPricingScheduleSweepResultSchema = z.object({
+  experimentsCompleted: z.number().int().optional(),
+  experimentsStarted: z.number().int().optional(),
+  ranAt: z.string().datetime().optional(),
+  rulesActivated: z.number().int().optional(),
+  rulesDeactivated: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceProductsProductAcquisitionType. Represents how a user acquired access to a product */
@@ -31031,6 +32073,7 @@ CommerceProductsPromoCodeDtoSchema = z.object({
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
   name: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   stackingPriority: z.number().int().optional(),
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
@@ -31066,13 +32109,34 @@ CommerceProductsPromoCodeUsageDtoSchema = z.object({
   uniqueUsers: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceProductsPromoCodeValidationOutcome. Outcome of a promo code validation attempt (issue #418 conversion tracking).
+The numerator of the campaign conversion metric is recorded usage
+(GameGuild.Commerce.Products.PromoCodeUse); this entity is the denominator — every code
+string submitted to the `:validate` endpoint, whether it succeeded or not. */
+CommerceProductsPromoCodeValidationOutcomeSchema = z.enum([
+  'Valid',
+  'NotFound',
+  'Inactive',
+  'Expired',
+  'ProductNotEligible',
+  'PlanNotEligible',
+  'MinimumOrderAmountNotMet',
+  'MaxUsesReached',
+  'MaxUsesPerUserReached',
+  'Invalid',
+]);
+
 /** Zod schema for CommerceProductsPromoCodeValidationResult. Result of validating a promo code */
 CommerceProductsPromoCodeValidationResultSchema = z.object({
   code: z.string().nullable().optional(),
   discountAmount: z.number().optional(),
   discountPercentage: z.number().nullable().optional(),
   errorMessage: z.string().nullable().optional(),
+  freeMonthsGranted: z.number().int().nullable().optional(),
   isValid: z.boolean().optional(),
+  outcome: z.lazy(() => CommerceProductsPromoCodeValidationOutcomeSchema).optional(),
+  promoCodeId: z.string().uuid().nullable().optional(),
+  trialExtensionDays: z.number().int().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsPromoStackingRuleDto. Promo stacking rule DTO */
@@ -31087,6 +32151,14 @@ CommerceProductsPromoStackingRuleDtoSchema = z.object({
   maxTotalDiscountPercentage: z.number().nullable().optional(),
   name: z.string().nullable().optional(),
   priority: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceProductsRecordExperimentOutcomeInput. Request to record a conversion outcome under an experiment arm. */
+CommerceProductsRecordExperimentOutcomeInputSchema = z.object({
+  amount: z.number().optional(),
+  bucketKey: z.string().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  orderId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsRejectedPromoCode. Details of a rejected promo code */
@@ -31205,6 +32277,7 @@ CommerceProductsUpdatePricingRuleInputSchema = z.object({
   fixedPrice: z.number().nullable().optional(),
   getQuantity: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
+  isScheduled: z.boolean().optional(),
   maxQuantity: z.number().int().nullable().optional(),
   minQuantity: z.number().int().nullable().optional(),
   name: z.string().nullable().optional(),
@@ -31219,6 +32292,9 @@ CommerceProductsUpdatePricingRuleInputSchema = z.object({
     .optional(),
   timeEnd: z.string().nullable().optional(),
   timeStart: z.string().nullable().optional(),
+  usageMaxValue: z.number().nullable().optional(),
+  usageMetricKey: z.string().nullable().optional(),
+  usageMinValue: z.number().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsUpdateProductCategoryInput. Request model for updating a product category. */
@@ -31266,6 +32342,7 @@ CommerceProductsUpdatePromoCodeInputSchema = z.object({
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
   name: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   stackingPriority: z.number().int().nullable().optional(),
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
@@ -31289,6 +32366,7 @@ CommerceProductsUpdatePromoStackingRuleInputSchema = z.object({
 CommerceProductsValidatePromoCodeInputSchema = z.object({
   code: z.string().nullable().optional(),
   orderAmount: z.number().optional(),
+  planId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
 });
 
@@ -31319,6 +32397,9 @@ CommerceSubscriptionsBillingSubscriptionsControllerCreateBillingSubscriptionInpu
   createdByUserId: z.string().uuid().optional(),
   fulfilledOrderId: z.string().uuid().nullable().optional(),
   planId: z.string().uuid().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  promoCodeIdempotencyKey: z.string().nullable().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
   startDate: z.string().datetime().nullable().optional(),
   tenantId: z.string().uuid().optional(),
   trialDays: z.number().int().nullable().optional(),
@@ -31662,6 +32743,9 @@ CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInputSchema = z.ob
   currency: z.string().nullable().optional(),
   fulfilledOrderId: z.string().uuid().nullable().optional(),
   planId: z.string().uuid().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  promoCodeIdempotencyKey: z.string().nullable().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
   startDate: z.string().datetime().nullable().optional(),
   tenantId: z.string().uuid().optional(),
   trialDays: z.number().int().nullable().optional(),
@@ -31714,6 +32798,39 @@ CommerceSubscriptionsSubscriptionUsageDtoSchema = z.object({
 /** Zod schema for ComplianceAuditAcknowledgeSecurityAlertInput. Data model for Compliance Audit Acknowledge Security Alert Request. */
 ComplianceAuditAcknowledgeSecurityAlertInputSchema = z.object({
   notes: z.string().max(1000).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAcknowledgeTransferInput. Data model for Compliance Audit Acknowledge Transfer Request. */
+ComplianceAuditAcknowledgeTransferInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditArchivedSecurityLogListOutput. One page of archived audit rows plus the total archived count. */
+ComplianceAuditArchivedSecurityLogListOutputSchema = z.object({
+  rows: z
+    .array(z.lazy(() => ComplianceAuditArchivedSecurityLogOutputSchema))
+    .nullable()
+    .optional(),
+  totalCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditArchivedSecurityLogOutput. One archived audit row served from the archive storage tier. */
+ComplianceAuditArchivedSecurityLogOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  actionType: z.string().nullable().optional(),
+  archivedAtUtc: z.string().datetime().optional(),
+  category: z.lazy(() => ComplianceAuditAuditCategorySchema).optional(),
+  correlationId: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  originalCreatedAt: z.string().datetime().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  riskLevel: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  sourceAuditLogId: z.string().uuid().optional(),
+  success: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditAuditAccessAgeBucket. Data model for Compliance Audit Audit Access Age Bucket. */
@@ -32473,10 +33590,59 @@ ComplianceAuditAuthenticationAuditOutputSchema = z.object({
   uniqueIpAddresses: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditBreakSealInput. Data model for Compliance Audit Break Seal Request. */
+ComplianceAuditBreakSealInputSchema = z.object({
+  purpose: z.string().nullable(),
+});
+
+/** Zod schema for ComplianceAuditBuildCustodyPackageInput. Data model for Compliance Audit Build Custody Package Request. */
+ComplianceAuditBuildCustodyPackageInputSchema = z.object({
+  certificationStatement: z.string().nullable().optional(),
+  evidenceId: z.string().uuid().nullable().optional(),
+  legalHoldId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditCaptureAuditReplayInput. Data model for Compliance Audit Capture Audit Replay Request. */
 ComplianceAuditCaptureAuditReplayInputSchema = z.object({
   end: z.string().datetime(),
   start: z.string().datetime(),
+});
+
+/** Zod schema for ComplianceAuditChangeImpactChange. Cascading-effect analysis of one mutation across its operation and entity lineage (issue #176). */
+ComplianceAuditChangeImpactChangeSchema = z.object({
+  actorId: z.string().uuid().nullable().optional(),
+  changeKind: z.string().nullable().optional(),
+  diffCount: z.number().int().optional(),
+  entityName: z.string().nullable().optional(),
+  isAnchor: z.boolean().optional(),
+  keyId: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  snapshotId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditChangeImpactOutput. Data model for Compliance Audit Change Impact Response. */
+ComplianceAuditChangeImpactOutputSchema = z.object({
+  anchorFieldDiffs: z
+    .array(z.lazy(() => ComplianceAuditValueSnapshotFieldDiffOutputSchema))
+    .nullable()
+    .optional(),
+  anchorSnapshotId: z.string().uuid().optional(),
+  cascadeEndedAtUtc: z.string().datetime().nullable().optional(),
+  cascadeStartedAtUtc: z.string().datetime().nullable().optional(),
+  correlationId: z.string().nullable().optional(),
+  entitiesTouched: z.number().int().optional(),
+  entityHistory: z
+    .array(z.lazy(() => ComplianceAuditChangeImpactChangeSchema))
+    .nullable()
+    .optional(),
+  entityHistoryChangeCount: z.number().int().optional(),
+  entityName: z.string().nullable().optional(),
+  keyId: z.string().nullable().optional(),
+  sameOperationChangeCount: z.number().int().optional(),
+  sameOperationChanges: z
+    .array(z.lazy(() => ComplianceAuditChangeImpactChangeSchema))
+    .nullable()
+    .optional(),
 });
 
 /** Zod schema for ComplianceAuditComplianceArtifactEntry. Data model for Compliance Audit Compliance Artifact Entry. */
@@ -32674,10 +33840,34 @@ ComplianceAuditConfigureAuditRetentionInputSchema = z.object({
 
 /** Zod schema for ComplianceAuditConfigureSecurityLogRetentionInput. Configures the retention policy applied to a tenant's security audit log. */
 ComplianceAuditConfigureSecurityLogRetentionInputSchema = z.object({
+  archiveAfterDays: z.number().int().min(1).max(3650).nullable().optional(),
   categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
   expectedRevision: z.number().int().min(0).max(2147483647).optional(),
   legalHoldUntilUtc: z.string().datetime().nullable().optional(),
   retentionDays: z.number().int().min(30).max(3650).optional(),
+});
+
+/** Zod schema for ComplianceAuditConfigureValueSnapshotRetentionInput. Data model for Compliance Audit Configure Value Snapshot Retention Request. */
+ComplianceAuditConfigureValueSnapshotRetentionInputSchema = z.object({
+  archiveAfterDays: z.number().int().optional(),
+  entityOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditCourtAdmissiblePackageOutput. Data model for Compliance Audit Court Admissible Package Response. */
+ComplianceAuditCourtAdmissiblePackageOutputSchema = z.object({
+  certificationStatement: z.string().nullable().optional(),
+  evidenceIds: z.array(z.string().uuid()).nullable().optional(),
+  manifestJson: z.string().nullable().optional(),
+  manifestSha256: z.string().nullable().optional(),
+  packageId: z.string().uuid().optional(),
+  preparedAtUtc: z.string().datetime().optional(),
+  preparedByUserId: z.string().uuid().optional(),
+  signature: z.string().nullable().optional(),
+  signingKeyId: z.string().nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  verification: z.lazy(() => ComplianceAuditCustodyPackageVerificationSchema).optional(),
 });
 
 /** Zod schema for ComplianceAuditCreateCompliancePackageInput. Data model for Compliance Audit Create Compliance Package Request. */
@@ -32688,6 +33878,20 @@ ComplianceAuditCreateCompliancePackageInputSchema = z.object({
   periodEndUtc: z.string().datetime().optional(),
   periodStartUtc: z.string().datetime().optional(),
   templateId: z.string().min(1).max(100),
+});
+
+/** Zod schema for ComplianceAuditCreateLegalHoldInput. Data model for Compliance Audit Create Legal Hold Request. */
+ComplianceAuditCreateLegalHoldInputSchema = z.object({
+  caseNumber: z.string().nullable(),
+  description: z.string().nullable().optional(),
+  notificationTargets: z
+    .array(z.lazy(() => ComplianceAuditNotificationTargetSchema))
+    .nullable()
+    .optional(),
+  preservationTargets: z
+    .array(z.lazy(() => ComplianceAuditPreservationTargetSchema))
+    .nullable()
+    .optional(),
 });
 
 /** Zod schema for ComplianceAuditCreateScheduledAuditExportInput. Data model for Compliance Audit Create Scheduled Audit Export Request. */
@@ -32706,6 +33910,58 @@ ComplianceAuditCreateScheduledAuditExportInputSchema = z.object({
   userId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for ComplianceAuditCreateValueSnapshotRollbackPlanInput. Data model for Compliance Audit Create Value Snapshot Rollback Plan Request. */
+ComplianceAuditCreateValueSnapshotRollbackPlanInputSchema = z.object({
+  asOfUtc: z.string().datetime().optional(),
+  entityName: z.string().nullable(),
+  keyId: z.string().nullable(),
+});
+
+/** Zod schema for ComplianceAuditCustodyEventOutput. Data model for Compliance Audit Custody Event Response. */
+ComplianceAuditCustodyEventOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  actorUserId: z.string().uuid().optional(),
+  eventType: z.string().nullable().optional(),
+  fromCustodianId: z.string().uuid().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  proofJson: z.string().nullable().optional(),
+  purpose: z.string().nullable().optional(),
+  sequenceNumber: z.number().int().optional(),
+  toCustodianId: z.string().uuid().nullable().optional(),
+  transferId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditCustodyEvidenceOutput. Data model for Compliance Audit Custody Evidence Response. */
+ComplianceAuditCustodyEvidenceOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  collectedAtUtc: z.string().datetime().optional(),
+  collectedByUserId: z.string().uuid().optional(),
+  contentLength: z.number().int().optional(),
+  contentSha256: z.string().nullable().optional(),
+  contentType: z.string().nullable().optional(),
+  currentCustodianId: z.string().uuid().optional(),
+  custodyState: z.string().nullable().optional(),
+  integrityVerified: z.boolean().optional(),
+  isolated: z.boolean().optional(),
+  legalHoldId: z.string().uuid().nullable().optional(),
+  sealBrokenAtUtc: z.string().datetime().nullable().optional(),
+  sourceId: z.string().nullable().optional(),
+  sourceKind: z.string().nullable().optional(),
+  timeline: z
+    .array(z.lazy(() => ComplianceAuditCustodyEventOutputSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditCustodyPackageVerification. Data model for Compliance Audit Custody Package Verification. */
+ComplianceAuditCustodyPackageVerificationSchema = z.object({
+  chainSequenceGapless: z.boolean().optional(),
+  contentHashVerified: z.boolean().optional(),
+  transferCount: z.number().int().optional(),
+  transferProofsVerified: z.boolean().optional(),
+  verifiedTransferCount: z.number().int().optional(),
+});
+
 /** Zod schema for ComplianceAuditDailyActivityTrend. Data model for Compliance Audit Daily Activity Trend. */
 ComplianceAuditDailyActivityTrendSchema = z.object({
   authenticationEvents: z.number().int().optional(),
@@ -32720,6 +33976,53 @@ ComplianceAuditEnforceSecurityLogRetentionInputSchema = z.object({
   dryRun: z.boolean().optional(),
 });
 
+/** Zod schema for ComplianceAuditEnforceValueSnapshotRetentionInput. Data model for Compliance Audit Enforce Value Snapshot Retention Request. */
+ComplianceAuditEnforceValueSnapshotRetentionInputSchema = z.object({
+  dryRun: z.boolean().optional(),
+  includeCompaction: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditEvidenceCustodianOutput. Data model for Compliance Audit Evidence Custodian Response. */
+ComplianceAuditEvidenceCustodianOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  authorizedAtUtc: z.string().datetime().optional(),
+  authorizedByUserId: z.string().uuid().optional(),
+  displayName: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  revocationReason: z.string().nullable().optional(),
+  revokedAtUtc: z.string().datetime().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditEvidenceIntegrityOutput. Data model for Compliance Audit Evidence Integrity Response. */
+ComplianceAuditEvidenceIntegrityOutputSchema = z.object({
+  verified: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditEvidenceTransferOutput. Data model for Compliance Audit Evidence Transfer Response. */
+ComplianceAuditEvidenceTransferOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  evidenceHash: z.string().nullable().optional(),
+  evidenceId: z.string().uuid().optional(),
+  fromCustodianId: z.string().uuid().optional(),
+  initiatedAtUtc: z.string().datetime().optional(),
+  proofJson: z.string().nullable().optional(),
+  proofVerified: z.boolean().optional(),
+  purpose: z.string().nullable().optional(),
+  signature: z.string().nullable().optional(),
+  signingKeyId: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  toCustodianId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditExecuteValueSnapshotRollbackInput. Data model for Compliance Audit Execute Value Snapshot Rollback Request. */
+ComplianceAuditExecuteValueSnapshotRollbackInputSchema = z.object({
+  acceptNewerChanges: z.boolean().optional(),
+});
+
 /** Zod schema for ComplianceAuditExportFormat. OpenAPI schema for Compliance Audit Export Format. */
 ComplianceAuditExportFormatSchema = z.enum(['Json', 'Csv', 'Xml', 'Parquet']);
 
@@ -32730,6 +34033,57 @@ ComplianceAuditExportStatusSchema = z.enum(['Pending', 'InProgress', 'Completed'
 ComplianceAuditFailureReasonCountSchema = z.object({
   count: z.number().int().optional(),
   reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditInitiateTransferInput. Data model for Compliance Audit Initiate Transfer Request. */
+ComplianceAuditInitiateTransferInputSchema = z.object({
+  evidenceId: z.string().uuid().optional(),
+  purpose: z.string().nullable().optional(),
+  toCustodianId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditLegalHoldNotificationOutput. Data model for Compliance Audit Legal Hold Notification Response. */
+ComplianceAuditLegalHoldNotificationOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAtUtc: z.string().datetime().optional(),
+  dispatchedAtUtc: z.string().datetime().nullable().optional(),
+  failureReason: z.string().nullable().optional(),
+  legalHoldId: z.string().uuid().optional(),
+  status: z.string().nullable().optional(),
+  target: z.string().nullable().optional(),
+  targetKind: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditLegalHoldOutput. Data model for Compliance Audit Legal Hold Response. */
+ComplianceAuditLegalHoldOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  caseNumber: z.string().nullable().optional(),
+  createdAtUtc: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  description: z.string().nullable().optional(),
+  notifications: z
+    .array(z.lazy(() => ComplianceAuditLegalHoldNotificationOutputSchema))
+    .nullable()
+    .optional(),
+  notificationTargets: z
+    .array(z.lazy(() => ComplianceAuditNotificationTargetSchema))
+    .nullable()
+    .optional(),
+  preservationTargets: z
+    .array(z.lazy(() => ComplianceAuditPreservationTargetSchema))
+    .nullable()
+    .optional(),
+  preservedEvidenceIds: z.array(z.string().uuid()).nullable().optional(),
+  releasedAtUtc: z.string().datetime().nullable().optional(),
+  releasedByUserId: z.string().uuid().nullable().optional(),
+  releaseReason: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditNotificationTarget. Data model for Compliance Audit Notification Target. */
+ComplianceAuditNotificationTargetSchema = z.object({
+  kind: z.string().nullable(),
+  target: z.string().nullable(),
 });
 
 /** Zod schema for ComplianceAuditPermissionAuditEntry. Permission audit entry. */
@@ -32846,10 +34200,45 @@ ComplianceAuditPiiTokenResolutionOutputSchema = z.object({
   value: z.string().nullable().optional(),
 });
 
+/** Zod schema for ComplianceAuditPreservationTarget. Data model for Compliance Audit Preservation Target. */
+ComplianceAuditPreservationTargetSchema = z.object({
+  contentType: z.string().nullable().optional(),
+  rawContent: z.string().nullable().optional(),
+  sourceId: z.string().nullable(),
+  sourceKind: z.string().nullable(),
+});
+
+/** Zod schema for ComplianceAuditPreserveEvidenceInput. Data model for Compliance Audit Preserve Evidence Request. */
+ComplianceAuditPreserveEvidenceInputSchema = z.object({
+  contentType: z.string().nullable().optional(),
+  legalHoldId: z.string().uuid().nullable().optional(),
+  purpose: z.string().nullable().optional(),
+  rawContent: z.string().nullable().optional(),
+  sourceId: z.string().nullable(),
+  sourceKind: z.string().nullable(),
+});
+
 /** Zod schema for ComplianceAuditReconstructAuditReplayInput. Client-held snapshot plus the digest it was captured with (issue #169). */
 ComplianceAuditReconstructAuditReplayInputSchema = z.object({
   document: z.lazy(() => ComplianceAuditAuditReplaySnapshotDocumentSchema).optional(),
   sha256: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditRegisterCustodianInput. Data model for Compliance Audit Register Custodian Request. */
+ComplianceAuditRegisterCustodianInputSchema = z.object({
+  displayName: z.string().nullable(),
+  scopes: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditReleaseEvidenceInput. Data model for Compliance Audit Release Evidence Request. */
+ComplianceAuditReleaseEvidenceInputSchema = z.object({
+  reason: z.string().nullable(),
+});
+
+/** Zod schema for ComplianceAuditReleaseHoldInput. Data model for Compliance Audit Release Hold Request. */
+ComplianceAuditReleaseHoldInputSchema = z.object({
+  reason: z.string().nullable(),
 });
 
 /** Zod schema for ComplianceAuditResolveSecurityAlertInput. Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
@@ -32862,6 +34251,11 @@ ComplianceAuditReviewComplianceDocumentInputSchema = z.object({
   decision: z.lazy(() => ComplianceAuditComplianceDocumentReviewSchema).optional(),
   expectedRevision: z.number().int().min(1).max(2147483647).optional(),
   notes: z.string().min(1).max(2000),
+});
+
+/** Zod schema for ComplianceAuditRevokeCustodianInput. Data model for Compliance Audit Revoke Custodian Request. */
+ComplianceAuditRevokeCustodianInputSchema = z.object({
+  reason: z.string().nullable(),
 });
 
 /** Zod schema for ComplianceAuditRunAuditRetentionSimulationInput. Data model for Compliance Audit Run Audit Retention Simulation Request. */
@@ -33046,6 +34440,7 @@ ComplianceAuditSecurityEventTaxonomyOutputSchema = z.object({
 /** Zod schema for ComplianceAuditSecurityLogRetentionExecutionOutput. Data model for Compliance Audit Security Log Retention Execution Response. */
 ComplianceAuditSecurityLogRetentionExecutionOutputSchema = z.object({
   id: z.string().uuid().optional(),
+  archivedCount: z.number().int().optional(),
   cutoffUtc: z.string().datetime().optional(),
   deletedCount: z.number().int().optional(),
   dryRun: z.boolean().optional(),
@@ -33060,6 +34455,7 @@ ComplianceAuditSecurityLogRetentionExecutionOutputSchema = z.object({
 /** Zod schema for ComplianceAuditSecurityLogRetentionPolicyOutput. Data model for Compliance Audit Security Log Retention Policy Response. */
 ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
   id: z.string().uuid().optional(),
+  archiveAfterDays: z.number().int().nullable().optional(),
   categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
   configuredAtUtc: z.string().datetime().optional(),
   legalHoldActive: z.boolean().optional(),
@@ -33068,6 +34464,18 @@ ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
   revision: z.number().int().optional(),
   tenantId: z.string().uuid().optional(),
   updatedByUserId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityLogStorageTierReportOutput. Storage-tier report for the tenant audit data (issue #193): row counts per real data-placement
+tier plus the configured tier windows, so administrators can see cost placement while
+accessibility is preserved by the archive endpoints. */
+ComplianceAuditSecurityLogStorageTierReportOutputSchema = z.object({
+  archiveAfterDays: z.number().int().nullable().optional(),
+  archiveRowCount: z.number().int().optional(),
+  hotRowCount: z.number().int().optional(),
+  legalHoldActive: z.boolean().optional(),
+  retentionDays: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
 });
 
 /** Zod schema for ComplianceAuditSensitivityLevel. Defines sensitivity levels for data access auditing */
@@ -33175,6 +34583,164 @@ ComplianceAuditUpsertPiiRedactionRuleInputSchema = z.object({
   ruleName: z.string().nullable().optional(),
   scope: z.lazy(() => ComplianceAuditPiiRuleScopeSchema).optional(),
   targetFields: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueHistoryEntry. Point-in-time value history entry for one entity field. */
+ComplianceAuditValueHistoryEntrySchema = z.object({
+  actorId: z.string().uuid().nullable().optional(),
+  changeKind: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  snapshotId: z.string().uuid().optional(),
+  truncated: z.boolean().optional(),
+  value: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueHistoryOutput. Data model for Compliance Audit Value History Response. */
+ComplianceAuditValueHistoryOutputSchema = z.object({
+  entityName: z.string().nullable().optional(),
+  entries: z
+    .array(z.lazy(() => ComplianceAuditValueHistoryEntrySchema))
+    .nullable()
+    .optional(),
+  field: z.string().nullable().optional(),
+  keyId: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueSnapshotFieldDiffOutput. Data model for Compliance Audit Value Snapshot Field Diff Response. */
+ComplianceAuditValueSnapshotFieldDiffOutputSchema = z.object({
+  after: z.string().nullable().optional(),
+  afterTruncated: z.boolean().optional(),
+  before: z.string().nullable().optional(),
+  beforeTruncated: z.boolean().optional(),
+  changeKind: z.string().nullable().optional(),
+  field: z.string().nullable().optional(),
+  numericDelta: z.number().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueSnapshotOutput. Data model for Compliance Audit Value Snapshot Response. */
+ComplianceAuditValueSnapshotOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  actorId: z.string().uuid().nullable().optional(),
+  afterBytes: z.number().int().optional(),
+  afterIntegritySha256: z.string().nullable().optional(),
+  afterPayload: z.string().nullable().optional(),
+  afterPayloadTruncated: z.boolean().optional(),
+  archivedAtUtc: z.string().datetime().nullable().optional(),
+  beforeBytes: z.number().int().optional(),
+  beforeIntegritySha256: z.string().nullable().optional(),
+  beforePayload: z.string().nullable().optional(),
+  beforePayloadTruncated: z.boolean().optional(),
+  changeKind: z.string().nullable().optional(),
+  correlationId: z.string().nullable().optional(),
+  diffCount: z.number().int().optional(),
+  entityName: z.string().nullable().optional(),
+  fieldDiffs: z
+    .array(z.lazy(() => ComplianceAuditValueSnapshotFieldDiffOutputSchema))
+    .nullable()
+    .optional(),
+  keyId: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  storageMode: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueSnapshotRetentionExecutionOutput. Data model for Compliance Audit Value Snapshot Retention Execution Response. */
+ComplianceAuditValueSnapshotRetentionExecutionOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  archivedCount: z.number().int().optional(),
+  bytesReclaimed: z.number().int().optional(),
+  compactedCount: z.number().int().optional(),
+  deletedCount: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  executedAtUtc: z.string().datetime().optional(),
+  legalHoldActive: z.boolean().optional(),
+  triggeredByUserId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueSnapshotRetentionPolicyOutput. Data model for Compliance Audit Value Snapshot Retention Policy Response. */
+ComplianceAuditValueSnapshotRetentionPolicyOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  archiveAfterDays: z.number().int().optional(),
+  configuredAtUtc: z.string().datetime().optional(),
+  entityOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  legalHoldActive: z.boolean().optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().optional(),
+  revision: z.number().int().optional(),
+  updatedByUserId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueSnapshotRollbackPlanOutput. Data model for Compliance Audit Value Snapshot Rollback Plan Response. */
+ComplianceAuditValueSnapshotRollbackPlanOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  asOfUtc: z.string().datetime().optional(),
+  basisSnapshotId: z.string().uuid().optional(),
+  basisStateJson: z.string().nullable().optional(),
+  basisStateSha256: z.string().nullable().optional(),
+  createdAtUtc: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  executedAtUtc: z.string().datetime().nullable().optional(),
+  executedByUserId: z.string().uuid().nullable().optional(),
+  failureReason: z.string().nullable().optional(),
+  planJson: z.string().nullable().optional(),
+  resultJson: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  targetEntityName: z.string().nullable().optional(),
+  targetKeyId: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueSnapshotSearchResult. Data model for Compliance Audit Value Snapshot Search Result. */
+ComplianceAuditValueSnapshotSearchResultSchema = z.object({
+  items: z
+    .array(z.lazy(() => ComplianceAuditValueSnapshotOutputSchema))
+    .nullable()
+    .optional(),
+  totalCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueSnapshotStorageOverview. Data model for Compliance Audit Value Snapshot Storage Overview. */
+ComplianceAuditValueSnapshotStorageOverviewSchema = z.object({
+  archivedSnapshots: z.number().int().optional(),
+  chunkBytes: z.number().int().optional(),
+  chunkCount: z.number().int().optional(),
+  chunkReferences: z.number().int().optional(),
+  deduplicatedBytesSaved: z.number().int().optional(),
+  deltaSnapshots: z.number().int().optional(),
+  executedRollbackPlans: z.number().int().optional(),
+  fullSnapshots: z.number().int().optional(),
+  inlinePayloadBytes: z.number().int().optional(),
+  rollbackPlans: z.number().int().optional(),
+  totalSnapshots: z.number().int().optional(),
+  truncatedPayloads: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueTrendOutput. Data model for Compliance Audit Value Trend Response. */
+ComplianceAuditValueTrendOutputSchema = z.object({
+  entityName: z.string().nullable().optional(),
+  field: z.string().nullable().optional(),
+  fromUtc: z.string().datetime().optional(),
+  keyId: z.string().nullable().optional(),
+  series: z
+    .array(z.lazy(() => ComplianceAuditValueHistoryEntrySchema))
+    .nullable()
+    .optional(),
+  statistics: z.lazy(() => ComplianceAuditValueTrendStatisticsSchema).optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditValueTrendStatistics. Statistical summary of how one field changed over a time window (issue #176). */
+ComplianceAuditValueTrendStatisticsSchema = z.object({
+  averageNumeric: z.number().nullable().optional(),
+  changeCount: z.number().int().optional(),
+  changesPerDay: z.number().optional(),
+  distinctValues: z.number().int().optional(),
+  firstObservedAtUtc: z.string().datetime().optional(),
+  firstValue: z.string().nullable().optional(),
+  lastObservedAtUtc: z.string().datetime().optional(),
+  lastValue: z.string().nullable().optional(),
+  longestStableDays: z.number().optional(),
+  maxNumeric: z.number().nullable().optional(),
+  minNumeric: z.number().nullable().optional(),
+  netChange: z.number().nullable().optional(),
 });
 
 /** Zod schema for ComplianceConsentConsentPolicyDto. Data model for Compliance Consent Consent Policy Dto. */
@@ -35912,6 +37478,51 @@ GameJamsSubmitJamEntryInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationAccountRecoveryApprovalOutput. Data model for Identity Authentication Account Recovery Approval Response. */
+IdentityAuthenticationAccountRecoveryApprovalOutputSchema = z.object({
+  message: z.string().nullable(),
+  resetUnlocked: z.boolean().optional(),
+  retryAfterSeconds: z.number().int().nullable().optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for IdentityAuthenticationAccountRecoveryApprovalResult. Outcome of one approval attempt; a denial never distinguishes code or request state. */
+IdentityAuthenticationAccountRecoveryApprovalResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  resetUnlocked: z.boolean().optional(),
+  retryAfterSeconds: z.number().int().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationAccountRecoveryCancelResult. Outcome of the owner's cancellation. */
+IdentityAuthenticationAccountRecoveryCancelResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationAccountRecoveryRequestInput. Data model for Identity Authentication Account Recovery Request Request. */
+IdentityAuthenticationAccountRecoveryRequestInputSchema = z.object({
+  email: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationAccountRecoveryRequestResult. Enumeration-safe acknowledgement; identical for known and unknown emails. */
+IdentityAuthenticationAccountRecoveryRequestResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationAccountRecoveryResetResult. Outcome of the forced reset; a denial never distinguishes token state. */
+IdentityAuthenticationAccountRecoveryResetResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationAddTrustedContactInput. Data model for Identity Authentication Add Trusted Contact Request. */
+IdentityAuthenticationAddTrustedContactInputSchema = z.object({
+  email: z.string().nullable(),
+  relation: z.string().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationAdminResetUserMfaOutput. Data model for Identity Authentication Admin Reset User Mfa Response. */
 IdentityAuthenticationAdminResetUserMfaOutputSchema = z.object({
   liveRecoveryCancelled: z.boolean(),
@@ -35933,6 +37544,11 @@ IdentityAuthenticationApiKeyDtoSchema = z.object({
   rotationGraceEndsAt: z.string().datetime().nullable().optional(),
   scopes: z.array(z.string()).nullable().optional(),
   usageCount: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationApproveAccountRecoveryInput. Data model for Identity Authentication Approve Account Recovery Request. */
+IdentityAuthenticationApproveAccountRecoveryInputSchema = z.object({
+  approvalCode: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationAssignRoleToUserInput. Request DTO for assigning a role to a user */
@@ -35976,6 +37592,11 @@ IdentityAuthenticationBackupCodesStatusOutputSchema = z.object({
   remainingCount: z.number().int(),
   totalCount: z.number().int(),
   usedCount: z.number().int(),
+});
+
+/** Zod schema for IdentityAuthenticationBeginPasskeyApprovalInput. Data model for Identity Authentication Begin Passkey Approval Request. */
+IdentityAuthenticationBeginPasskeyApprovalInputSchema = z.object({
+  email: z.string().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationBeginWebAuthnAuthenticationInput. Request to begin WebAuthn authentication. */
@@ -36041,6 +37662,13 @@ IdentityAuthenticationClientCredentialsTokenOutputSchema = z.object({
   tokenType: z.string().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationCompleteAccountRecoveryResetInput. Data model for Identity Authentication Complete Account Recovery Reset Request. */
+IdentityAuthenticationCompleteAccountRecoveryResetInputSchema = z.object({
+  confirmPassword: z.string().nullable(),
+  newPassword: z.string().nullable(),
+  resetToken: z.string().nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationCompleteMfaSetupInput. Request to complete MFA setup */
 IdentityAuthenticationCompleteMfaSetupInputSchema = z.object({
   code: z.string().min(1),
@@ -36053,6 +37681,11 @@ IdentityAuthenticationCompleteMfaSignInInputSchema = z.object({
   deviceFingerprint: z.string().min(0).max(64).nullable().optional(),
   method: z.lazy(() => IdentityAuthenticationMfaMethodSchema).optional(),
   mfaToken: z.string().min(43).max(43),
+});
+
+/** Zod schema for IdentityAuthenticationCompletePasskeyApprovalInput. Data model for Identity Authentication Complete Passkey Approval Request. */
+IdentityAuthenticationCompletePasskeyApprovalInputSchema = z.object({
+  assertionResponse: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationCompletePasswordResetInput. Request to complete password reset */
@@ -36073,6 +37706,11 @@ IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema = z.object({
   attestationResponse: z.string().nullable().optional(),
   friendlyName: z.string().nullable().optional(),
   isPasswordless: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationConfirmTrustedContactInput. Data model for Identity Authentication Confirm Trusted Contact Request. */
+IdentityAuthenticationConfirmTrustedContactInputSchema = z.object({
+  inviteToken: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationConsumeEmailCodeInput. Request to consume a one-time email sign-in code. */
@@ -36952,6 +38590,32 @@ IdentityAuthenticationStepUpReceiptOutputSchema = z.object({
 IdentityAuthenticationTrustDeviceInputSchema = z.object({
   deviceName: z.string().nullable().optional(),
 });
+
+/** Zod schema for IdentityAuthenticationTrustedContactActionResult. Outcome of a trusted-contact mutation by the owner. */
+IdentityAuthenticationTrustedContactActionResultSchema = z.object({
+  contact: z.lazy(() => IdentityAuthenticationTrustedContactDtoSchema).optional(),
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationTrustedContactConfirmResult. Outcome of an invite redemption; a denial never distinguishes token states. */
+IdentityAuthenticationTrustedContactConfirmResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationTrustedContactDto. Owner-facing view of a trusted contact; never carries token material. */
+IdentityAuthenticationTrustedContactDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  confirmedAt: z.string().datetime().nullable().optional(),
+  email: z.string().nullable().optional(),
+  invitedAt: z.string().datetime().optional(),
+  relation: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationTrustedContactStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationTrustedContactStatus. Lifecycle of a delegated trusted contact (issue #209). */
+IdentityAuthenticationTrustedContactStatusSchema = z.enum(['Invited', 'Confirmed', 'Revoked']);
 
 /** Zod schema for IdentityAuthenticationTrustedDeviceOutput. Trusted device response */
 IdentityAuthenticationTrustedDeviceOutputSchema = z.object({
@@ -41755,6 +43419,21 @@ LearningAssessmentsUpdateAssessmentInputSchema = z.object({
   title: z.string().nullable().optional(),
 });
 
+/** Zod schema for LearningCertificatesCertificateAnchorVerificationDto. DTO for on-chain certificate anchor verification results: PII-free digests and chain
+identifiers only. Status is one of `Verified`, `DigestMismatch`, `Revoked`,
+`NotAnchored` or `Unreachable` (fail-closed on backend errors). */
+LearningCertificatesCertificateAnchorVerificationDtoSchema = z.object({
+  anchoredAt: z.string().datetime().nullable().optional(),
+  anchoredDigest: z.string().nullable().optional(),
+  blockNumber: z.number().int().nullable().optional(),
+  certificateId: z.string().nullable().optional(),
+  detail: z.string().nullable().optional(),
+  digest: z.string().nullable().optional(),
+  network: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  transactionHash: z.string().nullable().optional(),
+});
+
 /** Zod schema for LearningCertificatesCertificateDto. DTO for certificate display */
 LearningCertificatesCertificateDtoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -44531,6 +46210,23 @@ PagedResultPricingDecisionLedgerEntryDtoSchema = z.object({
   hasPreviousPage: z.boolean().optional(),
   items: z
     .array(z.lazy(() => CommerceBillingPricingDecisionLedgerEntryDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultPricingExperimentDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultPricingExperimentDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceProductsPricingExperimentDtoSchema))
     .nullable()
     .optional(),
   pageNumber: z.number().int().optional(),
@@ -48952,6 +50648,10 @@ export type CommerceProductsCampaignTopCode = CommerceProductsCampaignTopCodeDto
 export { CommerceProductsCampaignTopCodeDtoSchema as CommerceProductsCampaignTopCodeSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
+export type CommerceProductsPricingExperiment = CommerceProductsPricingExperimentDto;
+export { CommerceProductsPricingExperimentDtoSchema as CommerceProductsPricingExperimentSchema };
+export type CommerceProductsPricingExperimentVariant = CommerceProductsPricingExperimentVariantDto;
+export { CommerceProductsPricingExperimentVariantDtoSchema as CommerceProductsPricingExperimentVariantSchema };
 export type CommerceProductsPricingRule = CommerceProductsPricingRuleDto;
 export { CommerceProductsPricingRuleDtoSchema as CommerceProductsPricingRuleSchema };
 export type CommerceProductsPricingRuleTier = CommerceProductsPricingRuleTierDto;
@@ -49088,6 +50788,8 @@ export type IdentityAuthenticationSamlAuthorizeRequest = IdentityAuthenticationS
 export { IdentityAuthenticationSamlAuthorizeRequestDtoSchema as IdentityAuthenticationSamlAuthorizeRequestSchema };
 export type IdentityAuthenticationSamlCallbackRequest = IdentityAuthenticationSamlCallbackRequestDto;
 export { IdentityAuthenticationSamlCallbackRequestDtoSchema as IdentityAuthenticationSamlCallbackRequestSchema };
+export type IdentityAuthenticationTrustedContact = IdentityAuthenticationTrustedContactDto;
+export { IdentityAuthenticationTrustedContactDtoSchema as IdentityAuthenticationTrustedContactSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
 export type IdentityAuthorizationContentTypePermissionGrant = IdentityAuthorizationContentTypePermissionGrantDto;
@@ -49196,6 +50898,8 @@ export type LearningAssessmentsTaskItem = LearningAssessmentsTaskItemDto;
 export { LearningAssessmentsTaskItemDtoSchema as LearningAssessmentsTaskItemSchema };
 export type LearningAssessmentsTasks = LearningAssessmentsTasksDto;
 export { LearningAssessmentsTasksDtoSchema as LearningAssessmentsTasksSchema };
+export type LearningCertificatesCertificateAnchorVerification = LearningCertificatesCertificateAnchorVerificationDto;
+export { LearningCertificatesCertificateAnchorVerificationDtoSchema as LearningCertificatesCertificateAnchorVerificationSchema };
 export type LearningCertificatesCertificate = LearningCertificatesCertificateDto;
 export { LearningCertificatesCertificateDtoSchema as LearningCertificatesCertificateSchema };
 export type LearningCertificatesCertificateTemplateDetail = LearningCertificatesCertificateTemplateDetailDto;
@@ -49456,6 +51160,8 @@ export type PagedResultEmailSuppression = PagedResultEmailSuppressionDto;
 export { PagedResultEmailSuppressionDtoSchema as PagedResultEmailSuppressionSchema };
 export type PagedResultPricingDecisionLedgerEntry = PagedResultPricingDecisionLedgerEntryDto;
 export { PagedResultPricingDecisionLedgerEntryDtoSchema as PagedResultPricingDecisionLedgerEntrySchema };
+export type PagedResultPricingExperiment = PagedResultPricingExperimentDto;
+export { PagedResultPricingExperimentDtoSchema as PagedResultPricingExperimentSchema };
 export type PagedResultPricingRule = PagedResultPricingRuleDto;
 export { PagedResultPricingRuleDtoSchema as PagedResultPricingRuleSchema };
 export type PagedResultProduct = PagedResultProductDto;
