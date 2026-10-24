@@ -145,10 +145,10 @@ public class ContentTypePermissionGrant : PermissionBase, IDacAttribute
 
     /// <summary>
     ///     Check whether the permission is effectively granted by this row
-    ///     (allowed and not denied).
+    ///     (effective, allowed and not denied).
     /// </summary>
     public bool HasEffectivePermission(string permission)
-        => HasPermission(permission) && !HasDenyPermission(permission);
+        => IsEffective() && HasPermission(permission) && !HasDenyPermission(permission);
 
     /// <summary>
     ///     True when this row is a tenant default (applies to every user of the tenant).

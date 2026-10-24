@@ -87,11 +87,11 @@ public class TenantPermission : PermissionBase
     }
 
     /// <summary>
-    ///     Check if permission is effectively granted (allowed and not denied)
+    ///     Check if an effective grant allows the permission without an explicit denial.
     /// </summary>
     public bool HasEffectivePermission(string permission)
     {
-        return HasPermission(permission) && !HasDenyPermission(permission);
+        return IsEffective() && HasPermission(permission) && !HasDenyPermission(permission);
     }
 
     /// <summary>

@@ -2025,6 +2025,40 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### Permission grant deletion and restoration (#352)
+
+`PermissionBase.IsEffective` and `Grants` reject soft-deleted grants even when a
+historical row is loaded with query filters disabled. This applies to tenant
+grants, content-type grants, legacy content permissions and generic resource
+permissions. Direct resource grants additionally include deletion in their
+computed `IsActive`, so `CanAccess`, string permission checks and permission
+updates reject a deleted row. Tenant and content-type `HasEffectivePermission`
+use the same lifecycle gate before evaluating allow/deny entries.
+
+Deleting a grant preserves its payload and grant metadata. Restoring it only
+clears deletion: an expired, inactive or revoked grant remains ineffective.
+Payload enumeration remains available for authorized historical inspection;
+authorization must use an effective-grant check or the permission engine.
+The persisted columns are unchanged. Regression coverage includes
+polymorphic calls and native PostgreSQL materialization/restoration across all
+five concrete grant families.
+
+Direct resource grants retain their required `Guid UserId` API while sharing its
+value with `PermissionBase.UserId`. Reads and writes through either contract refer
+to the same subject, including the DAC owner view. EF materializes this property
+through its accessor into the existing single, required `UserId` column. Clearing
+the shared subject leaves an invalid grant, and PostgreSQL regression coverage
+verifies subject preservation and updates after reloading the entity.
+
+Direct resource `IsActive` overrides the common writable property. Its computed
+getter retains the existing deletion, revocation and expiry rules through both
+views. Setting it to `false` uses `Expire()` and persists the existing revocation
+column; repeated deactivation preserves prior revocation timestamps, actor and
+reason. Setting an already active grant to `true` is a no-op. Setting an
+ineffective grant to `true` throws instead of clearing revocation, deletion or
+expiry history. Re-granting access must use the guarded grant lifecycle. The
+computed activity property remains unmapped, with no additional database column.
+
 ### Policy-selected authentication and the immutable actor
 
 The host authenticates explicit endpoint schemes and static default, named and fallback
