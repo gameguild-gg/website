@@ -22,10 +22,15 @@ mkdir -p "$artifact_root"
 printf '%s\n' "${projects[@]}" > "$artifact_root/projects.txt"
 
 postgres_id=''
+resource_monitor_pid=''
 template_database='economy_tests_template'
 cleanup() {
   local status=$?
   trap - EXIT INT TERM
+  if [[ -n "$resource_monitor_pid" ]]; then
+    kill "$resource_monitor_pid" 2>/dev/null || true
+    wait "$resource_monitor_pid" 2>/dev/null || true
+  fi
   if [[ -n "$postgres_id" ]]; then
     docker logs "$postgres_id" > "$artifact_root/postgres-server.log" 2>&1 || true
     docker inspect --format '{{json .State}}' "$postgres_id" \
@@ -41,6 +46,26 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+record_hosted_resources() {
+  # A cancelled cold HTTP request does not identify whether routing, GC or host
+  # pressure consumed its deadline. Preserve resource evidence without changing
+  # test timeouts, request behavior or assertions. Never record process arguments.
+  while true; do
+    date --utc +%FT%TZ
+    awk '/^(MemTotal|MemAvailable|SwapTotal|SwapFree):/ { print }' /proc/meminfo
+    if [[ -r /proc/pressure/memory ]]; then
+      cat /proc/pressure/memory
+    fi
+    ps -eo pid,comm,rss --sort=-rss | awk 'NR == 1 || (NR <= 16 && /dotnet|testhost|postgres/)'
+    sleep 15
+  done
+}
+
+if [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_OS:-}" == Linux ]]; then
+  record_hosted_resources > "$artifact_root/hosted-resources.log" 2>&1 &
+  resource_monitor_pid=$!
+fi
 
 prepare_economy_template() {
   local container_name="gameguild-affected-api-$$-$RANDOM"

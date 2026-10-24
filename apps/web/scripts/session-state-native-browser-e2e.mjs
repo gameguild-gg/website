@@ -173,17 +173,20 @@ try {
   // scenarios revoke the token. The owner has expired trust; another owner has
   // active trust for exactly the same fingerprint.
   await page.goto(webUrl + '/workspace/settings/security', { waitUntil: 'domcontentloaded', timeout });
-  const currentRow = page.getByTestId('session-row-' + account.sessionId);
-  const otherRow = page.getByTestId('session-row-' + account.otherSessionId);
-  const trustButton = page.getByRole('button', { name: 'Trust', exact: true });
-  const trustedRow = page.getByTestId('trusted-device-row-' + account.trustedDeviceId);
+  // A streamed reload can briefly retain hidden copies outside the active main.
+  // Keep strict row uniqueness and owner isolation within the rendered page.
+  const securityPage = page.getByRole('main');
+  const currentRow = securityPage.getByTestId('session-row-' + account.sessionId);
+  const otherRow = securityPage.getByTestId('session-row-' + account.otherSessionId);
+  const trustButton = securityPage.getByRole('button', { name: 'Trust', exact: true });
+  const trustedRow = securityPage.getByTestId('trusted-device-row-' + account.trustedDeviceId);
   const trustedBadge = currentRow.getByText('Trusted', { exact: true });
   await currentRow.waitFor({ state: 'visible', timeout });
   await otherRow.waitFor({ state: 'visible', timeout });
   await trustButton.waitFor({ state: 'visible', timeout });
-  assert.equal(await page.locator('[data-testid^="session-row-"]').count(), 2);
-  assert.equal(await page.getByTestId('session-row-' + account.foreignSessionId).count(), 0);
-  assert.equal(await page.getByTestId('trusted-device-row-' + account.foreignTrustedDeviceId).count(), 0);
+  assert.equal(await securityPage.locator('[data-testid^="session-row-"]').count(), 2);
+  assert.equal(await securityPage.getByTestId('session-row-' + account.foreignSessionId).count(), 0);
+  assert.equal(await securityPage.getByTestId('trusted-device-row-' + account.foreignTrustedDeviceId).count(), 0);
   assert.equal(await trustedRow.count(), 0);
   assert.equal(await trustedBadge.count(), 0);
   assert.equal(await otherRow.getByText('Trusted', { exact: true }).count(), 0);
@@ -198,7 +201,7 @@ try {
   await trustedBadge.waitFor({ state: 'visible', timeout });
   await trustedRow.waitFor({ state: 'visible', timeout });
   await trustButton.waitFor({ state: 'hidden', timeout });
-  assert.equal(await page.locator('[data-testid^="trusted-device-row-"]').count(), 1);
+  assert.equal(await securityPage.locator('[data-testid^="trusted-device-row-"]').count(), 1);
   assert.equal(await otherRow.getByText('Trusted', { exact: true }).count(), 0);
   const trustedResponse = await fetch(apiUrl + '/v1/auth/trusted-devices', {
     headers: { authorization: 'Bearer ' + accessToken, 'X-Tenant-Id': account.tenantId },
@@ -229,8 +232,10 @@ try {
   await currentRow.waitFor({ state: 'visible', timeout });
   await trustButton.waitFor({ state: 'visible', timeout });
   assert.equal(await trustedBadge.count(), 0);
-  assert.equal(await page.locator('[data-testid^="trusted-device-row-"]').count(), 0);
-  assert.equal(await page.locator('[data-testid^="session-row-"]').count(), 2);
+  assert.equal(await securityPage.locator('[data-testid^="trusted-device-row-"]').count(), 0);
+  assert.equal(await securityPage.locator('[data-testid^="session-row-"]').count(), 2);
+  assert.equal(await securityPage.getByTestId('session-row-' + account.foreignSessionId).count(), 0);
+  assert.equal(await securityPage.getByTestId('trusted-device-row-' + account.foreignTrustedDeviceId).count(), 0);
   trustPassed('A fresh security page preserves revoked trust and owner isolation');
   assert.equal(trustCases.length, 4);
   await writeFile(path.join(evidence, 'trust-browser.json'), JSON.stringify({
