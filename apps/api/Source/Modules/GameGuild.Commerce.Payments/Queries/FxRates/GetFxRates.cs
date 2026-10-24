@@ -163,7 +163,8 @@ public sealed class GetFxSyncStatusQueryHandler(
         var snapshots = context.Set<FxRateSnapshot>().AsNoTracking();
         var now = SystemClock.UtcNow;
 
-        var newest = await snapshots.MaxAsync(snapshot => (DateTime?)snapshot.EffectiveDateUtc, cancellationToken).ConfigureAwait(false);
+        var newest = await snapshots.Where(snapshot => !snapshot.IsOverride)
+            .MaxAsync(snapshot => (DateTime?)snapshot.EffectiveDateUtc, cancellationToken).ConfigureAwait(false);
         var snapshotCount = await snapshots.CountAsync(snapshot => !snapshot.IsOverride, cancellationToken).ConfigureAwait(false);
         var overrideCount = await snapshots.CountAsync(
             snapshot => snapshot.IsOverride && (snapshot.ExpiresAtUtc == null || snapshot.ExpiresAtUtc > now),

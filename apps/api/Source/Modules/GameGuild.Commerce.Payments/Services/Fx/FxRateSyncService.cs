@@ -69,6 +69,10 @@ public sealed class FxRateSyncService(
                     break;
                 }
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception exception) when (exception is FxRateProviderUnavailableException or HttpRequestException or TaskCanceledException)
             {
                 failure = $"{provider.Name} ({role}): {exception.Message}";
@@ -184,7 +188,7 @@ public sealed class FxRateSyncService(
         var now = SystemClock.UtcNow;
         var rates = context.Set<FxRateSnapshot>();
         var effectiveDate = rateSet.EffectiveDateUtc.Date;
-        var targetDateKeys = rateSet.Rates.Keys.ToList();
+        var targetDateKeys = rateSet.Rates.Keys.Where(code => code != rateSet.BaseCurrency).ToList();
 
         var existing = await rates
             .Where(snapshot => !snapshot.IsOverride
@@ -221,12 +225,14 @@ public sealed class FxRateSyncService(
                 {
                     changes.Add((quoteCurrency, row.Rate, value));
                     row.Rate = value;
-                    row.AsOfUtc = rateSet.AsOfUtc.UtcDateTime;
-                    row.SyncRunId = run.Id;
-                    row.Touch();
                     changed++;
                 }
 
+                // Every returned quotation belongs to this exact publication, even if its
+                // value is unchanged. Restart reconstruction must not mix old and new grids.
+                row.AsOfUtc = rateSet.AsOfUtc.UtcDateTime;
+                row.SyncRunId = run.Id;
+                row.Touch();
                 applied++;
                 continue;
             }

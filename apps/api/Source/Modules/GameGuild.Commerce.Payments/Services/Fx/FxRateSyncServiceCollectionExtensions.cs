@@ -49,7 +49,6 @@ public static class FxRateSyncServiceCollectionExtensions
                 var settings = provider.GetRequiredService<IOptions<FxSyncOptions>>().Value.OpenExchangeRates;
                 client.Timeout = TimeSpan.FromSeconds(Math.Max(5, settings.TimeoutSeconds));
             });
-            services.AddScoped<OpenExchangeRatesFxRateProvider>();
             services.AddScoped<IFxRateProvider>(provider => provider.GetRequiredService<OpenExchangeRatesFxRateProvider>());
         }
 
@@ -60,7 +59,6 @@ public static class FxRateSyncServiceCollectionExtensions
                 var settings = provider.GetRequiredService<IOptions<FxSyncOptions>>().Value.Ecb;
                 client.Timeout = TimeSpan.FromSeconds(Math.Max(5, settings.TimeoutSeconds));
             });
-            services.AddScoped<EcbFxRateProvider>();
             services.AddScoped<IFxRateProvider>(provider => provider.GetRequiredService<EcbFxRateProvider>());
         }
 

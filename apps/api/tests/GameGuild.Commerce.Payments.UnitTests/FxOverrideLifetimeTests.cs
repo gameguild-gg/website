@@ -171,6 +171,26 @@ public class FxOverrideLifetimeTests : IDisposable
         db.Set<FxRateSnapshot>().Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task FreshManualOverride_DoesNotHideStaleMarketDataInSyncStatus()
+    {
+        SystemClock.SetProvider(_clock);
+        await using var db = NewDatabase();
+        var now = _clock.GetUtcNow().UtcDateTime;
+        var market = Override(0.9m, now.AddDays(-10));
+        market.IsOverride = false;
+        market.ProviderName = "openexchangerates";
+        market.Source = "latest";
+        db.AddRange(market, Override(0.75m, now));
+        await db.SaveChangesAsync();
+
+        var status = await new GetFxSyncStatusQueryHandler(db, Options.Create(new FxSyncOptions()), Administrator())
+            .Handle(new GetFxSyncStatusQuery(), default);
+
+        status.IsStale.Should().BeTrue();
+        status.NewestSnapshotEffectiveDateUtc.Should().Be(now.AddDays(-10).Date);
+    }
+
     private static CurrencyFxTestDbContext NewDatabase() => new(
         new DbContextOptionsBuilder<CurrencyFxTestDbContext>().UseInMemoryDatabase($"fx-expiry-{Guid.NewGuid():N}").Options);
 

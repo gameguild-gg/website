@@ -24,9 +24,11 @@ public sealed class EcbFxRateProvider(HttpClient httpClient, IOptions<FxSyncOpti
     public async Task<FxRateSet> GetRatesAsync(DateTimeOffset? asOfUtc = null, CancellationToken cancellationToken = default)
     {
         var settings = Settings;
-        var baseCurrency = string.IsNullOrWhiteSpace(settings.BaseCurrency) || settings.BaseCurrency.Trim().Length != 3
-            ? "EUR"
-            : settings.BaseCurrency.Trim().ToUpperInvariant();
+        var baseCurrency = settings.BaseCurrency.Trim().ToUpperInvariant();
+        if (baseCurrency != "EUR")
+        {
+            throw new FxRateProviderUnavailableException(Name, "ECB reference rates are always quoted against EUR.");
+        }
 
         var path = asOfUtc is null ? "eurofxref/eurofxref-daily.xml" : "eurofxref/eurofxref-hist-90d.xml";
         var url = $"{settings.BaseUrl.TrimEnd('/')}/{path}";
@@ -37,7 +39,12 @@ public sealed class EcbFxRateProvider(HttpClient httpClient, IOptions<FxSyncOpti
         if (!response.IsSuccessStatusCode)
         {
             logger.LogWarning("ECB request to {Path} failed with {Status}.", path, (int)response.StatusCode);
-            throw new FxRateProviderUnavailableException(Name, $"HTTP {(int)response.StatusCode} from {path}: {(raw.Length <= 300 ? raw : raw[..300])}");
+            if ((int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
+            {
+                throw new HttpRequestException($"HTTP {(int)response.StatusCode} from ECB.", null, response.StatusCode);
+            }
+
+            throw new FxRateProviderUnavailableException(Name, $"HTTP {(int)response.StatusCode} from {path}.");
         }
 
         return Parse(raw, baseCurrency, asOfUtc?.UtcDateTime.Date);
@@ -51,6 +58,11 @@ public sealed class EcbFxRateProvider(HttpClient httpClient, IOptions<FxSyncOpti
     /// <exception cref="FxRateProviderUnavailableException">Thrown when the payload is malformed, empty or lacks the requested date.</exception>
     internal static FxRateSet Parse(string raw, string baseCurrency, DateTime? requestedDate)
     {
+        if (baseCurrency != "EUR")
+        {
+            throw new FxRateProviderUnavailableException("ecb", "ECB reference rates are always quoted against EUR.");
+        }
+
         XDocument document;
         try
         {
@@ -67,13 +79,16 @@ public sealed class EcbFxRateProvider(HttpClient httpClient, IOptions<FxSyncOpti
             .Where(element => element.Name.LocalName == "Cube" && element.Attribute("time") is not null)
             .Select(element => new
             {
-                Time = DateTime.Parse(element.Attribute("time")!.Value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal),
+                Time = DateTime.TryParseExact(element.Attribute("time")!.Value, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsedDate)
+                    ? parsedDate : throw new FxRateProviderUnavailableException("ecb", "Response contained an invalid effective date."),
                 Rates = element.Elements()
                     .Where(rate => rate.Name.LocalName == "Cube" && rate.Attribute("currency") is not null && rate.Attribute("rate") is not null)
                     .Select(rate => new
                     {
                         Currency = rate.Attribute("currency")!.Value.ToUpperInvariant(),
-                        Rate = decimal.Parse(rate.Attribute("rate")!.Value, CultureInfo.InvariantCulture)
+                        Rate = decimal.TryParse(rate.Attribute("rate")!.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsedRate)
+                            ? parsedRate : throw new FxRateProviderUnavailableException("ecb", "Response contained an invalid rate.")
                     })
                     .ToList()
             })
@@ -86,7 +101,7 @@ public sealed class EcbFxRateProvider(HttpClient httpClient, IOptions<FxSyncOpti
         }
 
         var selected = requestedDate is null
-            ? dayCubes[0]
+            ? dayCubes.OrderByDescending(day => day.Time).First()
             : dayCubes.Where(day => day.Time.Date <= requestedDate.Value.Date).OrderByDescending(day => day.Time).FirstOrDefault()
               ?? throw new FxRateProviderUnavailableException(
                   "ecb",
@@ -95,7 +110,7 @@ public sealed class EcbFxRateProvider(HttpClient httpClient, IOptions<FxSyncOpti
         var rates = new Dictionary<string, decimal>(StringComparer.Ordinal);
         foreach (var rate in selected.Rates)
         {
-            if (rate.Rate > 0m && !string.IsNullOrEmpty(rate.Currency))
+            if (rate.Rate > 0m && rate.Currency != baseCurrency && Iso4217CurrencyCatalog.Exists(rate.Currency))
             {
                 rates[rate.Currency] = rate.Rate;
             }
@@ -110,7 +125,7 @@ public sealed class EcbFxRateProvider(HttpClient httpClient, IOptions<FxSyncOpti
             "ecb",
             baseCurrency,
             rates,
-            new DateTimeOffset(selected.Time.Date.AddHours(16), TimeSpan.Zero), // ECB publishes the daily reference rates around 16:00 CET
+            new DateTimeOffset(selected.Time.Date, TimeSpan.Zero), // The feed supplies a date, not a publication instant.
             selected.Time.Date,
             raw,
             "application/xml");

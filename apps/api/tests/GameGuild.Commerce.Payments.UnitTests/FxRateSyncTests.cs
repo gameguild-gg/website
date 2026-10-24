@@ -254,6 +254,40 @@ public class FxRateSyncTests
 
     // ────────────────────────────── Conversion path: provider + cache ──────────────────────────────
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RuntimeSource_RestartSelectsOnePublicationWithoutMixingOlderQuotes(bool sameProvider)
+    {
+        var (db, services) = NewDbAndProvider();
+        var now = SystemClock.UtcNow;
+        db.AddRange(new FxRateSnapshot
+        {
+            BaseCurrency = "USD", QuoteCurrency = "GBP", Rate = 0.8m,
+            EffectiveDateUtc = now.Date, AsOfUtc = now.AddHours(-1),
+            ProviderName = "openexchangerates", Source = "latest",
+        }, new FxRateSnapshot
+        {
+            BaseCurrency = "USD", QuoteCurrency = "JPY", Rate = 150m,
+            EffectiveDateUtc = now.Date, AsOfUtc = now.AddHours(-1),
+            ProviderName = "openexchangerates", Source = "latest",
+        }, new FxRateSnapshot
+        {
+            BaseCurrency = sameProvider ? "USD" : "EUR", QuoteCurrency = sameProvider ? "EUR" : "USD", Rate = 0.9m,
+            EffectiveDateUtc = now.Date, AsOfUtc = now,
+            ProviderName = sameProvider ? "openexchangerates" : "ecb", Source = "latest",
+        });
+        await db.SaveChangesAsync();
+        var source = new FxRuntimeRateSource(services.GetRequiredService<IServiceScopeFactory>(), NullLogger<FxRuntimeRateSource>.Instance);
+
+        await source.EnsureSeededAsync();
+
+        source.CurrentProviderSet!.Rates.Should().ContainSingle();
+        source.CurrentProviderSet.ProviderName.Should().Be(sameProvider ? "openexchangerates" : "ecb");
+        source.TryGetRate("USD", "GBP", now).Should().BeNull();
+        source.TryGetRate(sameProvider ? "USD" : "EUR", sameProvider ? "EUR" : "USD", now)!.Rate.Should().Be(0.9m);
+    }
+
     [Fact]
     public async Task PersistedFxRateProvider_ServesFromCacheUntilInvalidated()
     {

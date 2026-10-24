@@ -291,39 +291,28 @@ public sealed class FxRuntimeRateSource
             return null;
         }
 
-        // Prefer the provider that contributed the most quotations for that date; rebuild the
-        // grid from its rows. Rows quoting the grid base reconstruct the forward direction;
-        // rows based on the grid base reconstruct the inverse.
+        // Pick one publication, never the provider with the most accumulated rows. A later
+        // fallback may have fewer quotations; mixing it with an older grid invents cross rates.
         var providerGroup = rows
-            .GroupBy(row => row.ProviderName)
-            .OrderByDescending(group => group.Count())
+            .GroupBy(row => new { row.ProviderName, row.BaseCurrency, row.AsOfUtc, row.Source })
+            .OrderByDescending(group => group.Key.AsOfUtc)
+            .ThenBy(group => group.Key.ProviderName, StringComparer.Ordinal)
+            .ThenBy(group => group.Key.BaseCurrency, StringComparer.Ordinal)
+            .ThenBy(group => group.Key.Source, StringComparer.Ordinal)
             .First();
 
         var gridRows = providerGroup.ToList();
-        var baseCurrency = gridRows.GroupBy(row => row.BaseCurrency).OrderByDescending(group => group.Count()).First().Key;
+        var baseCurrency = providerGroup.Key.BaseCurrency;
         var rates = new Dictionary<string, decimal>(StringComparer.Ordinal);
-        var asOf = DateTime.MinValue;
 
         foreach (var row in gridRows)
         {
-            if (row.Rate <= 0m)
+            if (row.Rate <= 0m || row.QuoteCurrency == baseCurrency)
             {
                 continue;
             }
 
-            if (row.BaseCurrency == baseCurrency)
-            {
-                rates[row.QuoteCurrency] = row.Rate;
-            }
-            else if (row.QuoteCurrency == baseCurrency)
-            {
-                rates[row.BaseCurrency] = decimal.Round(1m / row.Rate, 12, MidpointRounding.AwayFromZero);
-            }
-
-            if (row.AsOfUtc > asOf)
-            {
-                asOf = row.AsOfUtc;
-            }
+            rates[row.QuoteCurrency] = row.Rate;
         }
 
         if (rates.Count == 0)
@@ -332,10 +321,10 @@ public sealed class FxRuntimeRateSource
         }
 
         return new FxRateSet(
-            providerGroup.Key,
+            providerGroup.Key.ProviderName,
             baseCurrency,
             rates,
-            new DateTimeOffset(asOf == DateTime.MinValue ? latestDate.Value : asOf, TimeSpan.Zero),
+            new DateTimeOffset(providerGroup.Key.AsOfUtc, TimeSpan.Zero),
             latestDate.Value,
             RawResponse: string.Empty,
             RawResponseContentType: "application/json");

@@ -42,7 +42,12 @@ public sealed class OpenExchangeRatesFxRateProvider(HttpClient httpClient, IOpti
         if (!response.IsSuccessStatusCode)
         {
             logger.LogWarning("OpenExchangeRates request to {Path} failed with {Status}.", path, (int)response.StatusCode);
-            throw new FxRateProviderUnavailableException(Name, $"HTTP {(int)response.StatusCode} from {path}: {Truncate(raw)}");
+            if ((int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
+            {
+                throw new HttpRequestException($"HTTP {(int)response.StatusCode} from OpenExchangeRates.", null, response.StatusCode);
+            }
+
+            throw new FxRateProviderUnavailableException(Name, $"HTTP {(int)response.StatusCode} from {path}.");
         }
 
         return Parse(raw, baseCurrency);
@@ -65,16 +70,34 @@ public sealed class OpenExchangeRatesFxRateProvider(HttpClient httpClient, IOpti
         using (document)
         {
             var root = document.RootElement;
-            if (!root.TryGetProperty("rates", out var ratesElement) || ratesElement.ValueKind != JsonValueKind.Object)
+            if (root.ValueKind != JsonValueKind.Object
+                || !root.TryGetProperty("rates", out var ratesElement) || ratesElement.ValueKind != JsonValueKind.Object)
             {
                 throw new FxRateProviderUnavailableException("openexchangerates", "Response contained no 'rates' object.");
             }
 
-            var timestamp = root.TryGetProperty("timestamp", out var timestampElement)
-                            && timestampElement.ValueKind == JsonValueKind.Number
-                            && timestampElement.TryGetInt64(out var seconds)
-                ? DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime
-                : SystemClock.UtcNow;
+            if (!root.TryGetProperty("base", out var baseElement) || baseElement.ValueKind != JsonValueKind.String
+                || !string.Equals(baseElement.GetString(), baseCurrency, StringComparison.OrdinalIgnoreCase)
+                || !Iso4217CurrencyCatalog.Exists(baseCurrency))
+            {
+                throw new FxRateProviderUnavailableException("openexchangerates", "Response base currency did not match the requested ISO currency.");
+            }
+
+            if (!root.TryGetProperty("timestamp", out var timestampElement)
+                || timestampElement.ValueKind != JsonValueKind.Number || !timestampElement.TryGetInt64(out var seconds))
+            {
+                throw new FxRateProviderUnavailableException("openexchangerates", "Response contained no publication timestamp.");
+            }
+
+            DateTime timestamp;
+            try
+            {
+                timestamp = DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
+            }
+            catch (ArgumentOutOfRangeException exception)
+            {
+                throw new FxRateProviderUnavailableException("openexchangerates", "Response publication timestamp was invalid.", exception);
+            }
 
             var effectiveDate = root.TryGetProperty("date", out var dateElement)
                                 && dateElement.ValueKind == JsonValueKind.String
@@ -85,6 +108,12 @@ public sealed class OpenExchangeRatesFxRateProvider(HttpClient httpClient, IOpti
             var rates = new Dictionary<string, decimal>(StringComparer.Ordinal);
             foreach (var entry in ratesElement.EnumerateObject())
             {
+                var code = entry.Name.ToUpperInvariant();
+                if (code == baseCurrency || !Iso4217CurrencyCatalog.Exists(code))
+                {
+                    continue; // Providers include base:1; it is identity, not a persisted FX pair.
+                }
+
                 if (entry.Value.ValueKind != JsonValueKind.Number || !entry.Value.TryGetDecimal(out var rate))
                 {
                     continue;
@@ -95,7 +124,7 @@ public sealed class OpenExchangeRatesFxRateProvider(HttpClient httpClient, IOpti
                     continue;
                 }
 
-                rates[entry.Name.ToUpperInvariant()] = rate;
+                rates[code] = rate;
             }
 
             if (rates.Count == 0)
@@ -119,6 +148,4 @@ public sealed class OpenExchangeRatesFxRateProvider(HttpClient httpClient, IOpti
         var trimmed = value?.Trim() ?? string.Empty;
         return trimmed.Length == 3 ? trimmed.ToUpperInvariant() : fallback;
     }
-
-    private static string Truncate(string value) { return value.Length <= 300 ? value : value[..300]; }
 }

@@ -5,6 +5,9 @@ using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Commerce.Payments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Moq;
 
 namespace GameGuild.API.IntegrationTests;
 
@@ -84,5 +87,45 @@ public sealed class CurrencyFxAdministrationPostgreSqlHttpTests(ApiPostgreSqlFix
         Assert.Contains(await db.Set<AuditTrail>().Where(entry => entry.EntityId == row.Id).ToListAsync(), entry => entry.ChangedBy == user);
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/v1/fx-rates")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/v1/fx-rates/sync-status")).StatusCode);
+    }
+
+    [Fact]
+    public async Task FxSync_RetriesTransientProviderFailureAndPersistsGridWithoutIdentityPair()
+    {
+        await using var scope = fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var payload = $$"""{"base":"USD","timestamp":{{timestamp}},"rates":{"USD":1,"EUR":0.9,"JPY":150}}""";
+        var transport = new TransientRateHandler(payload);
+        using var client = new HttpClient(transport);
+        var settings = Options.Create(new FxSyncOptions
+        {
+            Provider = "openexchangerates", RetryMaxAttempts = 2, RetryBaseDelaySeconds = 0,
+            OpenExchangeRates = new() { AppId = "fixture-app-id" },
+        });
+        var adapter = new OpenExchangeRatesFxRateProvider(client, settings, NullLogger<OpenExchangeRatesFxRateProvider>.Instance);
+        var service = new FxRateSyncService([adapter], scope.ServiceProvider, settings,
+            scope.ServiceProvider.GetRequiredService<FxRuntimeRateSource>(), Mock.Of<IFxRateSyncAlerter>(), NullLogger<FxRateSyncService>.Instance);
+
+        var result = await service.SyncAsync();
+
+        Assert.Equal(FxRateSyncRunStatus.Succeeded, result.Status);
+        Assert.Equal(2, result.RatesApplied);
+        Assert.Equal(2, transport.Calls);
+        Assert.False(await db.Set<FxRateSnapshot>().AnyAsync(row => row.BaseCurrency == row.QuoteCurrency));
+        Assert.Contains(await db.Set<FxRateSyncRun>().Where(row => row.RawResponse == payload).ToListAsync(), row => row.RatesApplied == 2);
+    }
+
+    private sealed class TransientRateHandler(string payload) : HttpMessageHandler
+    {
+        public int Calls { get; private set; }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Calls++;
+            return Task.FromResult(new HttpResponseMessage(Calls == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK)
+            {
+                Content = new StringContent(Calls == 1 ? "temporary provider failure" : payload),
+            });
+        }
     }
 }

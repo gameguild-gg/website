@@ -122,20 +122,33 @@ public sealed class FxSyncOptionsValidator : IValidateOptions<FxSyncOptions>
             failures.Add("FxRates:FallbackProvider cannot be set while FxRates:Provider is 'none'.");
         }
 
-        if (options.Provider == FxSyncOptions.ProviderOpenExchangeRates && string.IsNullOrWhiteSpace(options.OpenExchangeRates.AppId))
+        var usesOpenExchangeRates = options.Provider == FxSyncOptions.ProviderOpenExchangeRates
+            || options.FallbackProvider == FxSyncOptions.ProviderOpenExchangeRates;
+        var usesEcb = options.Provider == FxSyncOptions.ProviderEcb || options.FallbackProvider == FxSyncOptions.ProviderEcb;
+
+        if (usesOpenExchangeRates && string.IsNullOrWhiteSpace(options.OpenExchangeRates.AppId))
         {
             failures.Add("FxRates:OpenExchangeRates:AppId is required when FxRates:Provider is 'openexchangerates'.");
         }
 
-        if (options.Provider == FxSyncOptions.ProviderOpenExchangeRates
-            && !Uri.TryCreate(options.OpenExchangeRates.BaseUrl, UriKind.Absolute, out _))
+        if (usesOpenExchangeRates && !IsSecureUrl(options.OpenExchangeRates.BaseUrl))
         {
-            failures.Add("FxRates:OpenExchangeRates:BaseUrl must be an absolute URL.");
+            failures.Add("FxRates:OpenExchangeRates:BaseUrl must use HTTPS (HTTP is allowed only for loopback tests).");
         }
 
-        if (options.Provider == FxSyncOptions.ProviderEcb && !Uri.TryCreate(options.Ecb.BaseUrl, UriKind.Absolute, out _))
+        if (usesOpenExchangeRates && !Iso4217CurrencyCatalog.Exists(options.OpenExchangeRates.BaseCurrency))
         {
-            failures.Add("FxRates:Ecb:BaseUrl must be an absolute URL.");
+            failures.Add("FxRates:OpenExchangeRates:BaseCurrency must be a known ISO currency.");
+        }
+
+        if (usesEcb && !IsSecureUrl(options.Ecb.BaseUrl))
+        {
+            failures.Add("FxRates:Ecb:BaseUrl must use HTTPS (HTTP is allowed only for loopback tests).");
+        }
+
+        if (usesEcb && !string.Equals(options.Ecb.BaseCurrency, "EUR", StringComparison.OrdinalIgnoreCase))
+        {
+            failures.Add("FxRates:Ecb:BaseCurrency must be EUR because ECB reference rates use the euro as their base.");
         }
 
         if (options.CacheTtlMinutes < 0)
@@ -184,5 +197,8 @@ public sealed class FxSyncOptionsValidator : IValidateOptions<FxSyncOptions>
                 or FxSyncOptions.ProviderOpenExchangeRates
                 or FxSyncOptions.ProviderEcb;
         }
+
+        static bool IsSecureUrl(string value) => Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttps || (uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback));
     }
 }
