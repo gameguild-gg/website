@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using GameGuild.API.Database;
 using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Commerce.Payments;
@@ -95,7 +96,11 @@ public sealed class CurrencyFxAdministrationPostgreSqlHttpTests(ApiPostgreSqlFix
         await using var scope = fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var payload = $$"""{"base":"USD","timestamp":{{timestamp}},"rates":{"USD":1,"EUR":0.9,"JPY":150}}""";
+        var payload = JsonSerializer.Serialize(new
+        {
+            @base = "USD", timestamp,
+            rates = new Dictionary<string, decimal> { ["USD"] = 1m, ["EUR"] = 0.9m, ["JPY"] = 150m },
+        });
         var transport = new TransientRateHandler(payload);
         using var client = new HttpClient(transport);
         var settings = Options.Create(new FxSyncOptions
