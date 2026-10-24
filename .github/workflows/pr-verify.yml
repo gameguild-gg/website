@@ -345,7 +345,9 @@ jobs:
     runs-on: ubuntu-latest
     # Reuse the same-run API/client outputs. Coverage and regression remain
     # required independent jobs; this lane verifies OpenAPI/web/browser surfaces.
-    timeout-minutes: 20
+    # Chromium system dependencies plus the release checks can consume 20 minutes
+    # before artifact upload and cleanup complete. Keep time for both phases.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
