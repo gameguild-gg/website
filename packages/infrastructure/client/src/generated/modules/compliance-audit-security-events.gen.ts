@@ -124,6 +124,32 @@ export class ComplianceAuditSecurityEventsModule {
   }
 
   /**
+   * Returns aged audit rows that were moved into the archive storage tier (issue #193). Archived
+   * evidence stays accessible for investigations and eDiscovery while the hot tier stays small.
+   */
+  async getApiAuditSecurityEventsRetentionArchive(query?: {
+    skip?: number;
+    take?: number;
+  }): Promise<Result<Types.ComplianceAuditArchivedSecurityLogListOutput, ApiError>> {
+    const url = '/api/audit/security-events/retention/archive';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditArchivedSecurityLogListOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
    * and are recorded in the execution history; use `DryRun` to preview deletions.
    */
@@ -212,6 +238,29 @@ export class ComplianceAuditSecurityEventsModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.ComplianceAuditSecurityLogRetentionPolicyOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Returns the storage-tier placement report for the tenant audit data (issue #193): hot and
+   * archive row counts plus the configured tier windows, so storage cost placement is
+   * observable next to accessibility.
+   */
+  async getApiAuditSecurityEventsRetentionStorageTiers(): Promise<Result<Types.ComplianceAuditSecurityLogStorageTierReportOutput, ApiError>> {
+    const url = '/api/audit/security-events/retention/storage-tiers';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditSecurityLogStorageTierReportOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -350,6 +399,32 @@ export class ComplianceAuditSecurityEventsModule {
   }
 
   /**
+   * Returns aged audit rows that were moved into the archive storage tier (issue #193). Archived
+   * evidence stays accessible for investigations and eDiscovery while the hot tier stays small.
+   */
+  async getAuditSecurityEventsRetentionArchive(query?: {
+    skip?: number;
+    take?: number;
+  }): Promise<Result<Types.ComplianceAuditArchivedSecurityLogListOutput, ApiError>> {
+    const url = '/v1/audit/security-events/retention/archive';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditArchivedSecurityLogListOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
    * and are recorded in the execution history; use `DryRun` to preview deletions.
    */
@@ -438,6 +513,29 @@ export class ComplianceAuditSecurityEventsModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.ComplianceAuditSecurityLogRetentionPolicyOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Returns the storage-tier placement report for the tenant audit data (issue #193): hot and
+   * archive row counts plus the configured tier windows, so storage cost placement is
+   * observable next to accessibility.
+   */
+  async getAuditSecurityEventsRetentionStorageTiers(): Promise<Result<Types.ComplianceAuditSecurityLogStorageTierReportOutput, ApiError>> {
+    const url = '/v1/audit/security-events/retention/storage-tiers';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditSecurityLogStorageTierReportOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

@@ -237,6 +237,292 @@ export const getApiAssetsContentEndpoint = {
   requiresAuth: false,
 } as const;
 
+/**
+ * Lists registered custodians with their authorization scopes.
+ */
+export type GetApiAuditChainOfCustodyCustodiansInput = void;
+export type GetApiAuditChainOfCustodyCustodiansOutput = Types.ComplianceAuditEvidenceCustodianOutput[];
+export const getApiAuditChainOfCustodyCustodiansEndpoint = {
+  operationId: 'getApiAuditChainOfCustodyCustodians' as const,
+  method: 'GET' as const,
+  path: '/api/audit/chain-of-custody/custodians' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Registers a custodian with authorization scopes. Fail-closed: only registered active custodians may act on evidence.
+ */
+export interface PostApiAuditChainOfCustodyCustodiansInput {
+  body?: Types.ComplianceAuditRegisterCustodianInput;
+}
+export type PostApiAuditChainOfCustodyCustodiansOutput = Types.ComplianceAuditEvidenceCustodianOutput;
+export const postApiAuditChainOfCustodyCustodiansEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyCustodians' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/custodians' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revokes a custodian's authorization (revocation is effective immediately and logged).
+ */
+export interface PostApiAuditChainOfCustodyCustodiansRevokeInput {
+  custodianId: string;
+  body?: Types.ComplianceAuditRevokeCustodianInput;
+}
+export type PostApiAuditChainOfCustodyCustodiansRevokeOutput = Types.ComplianceAuditEvidenceCustodianOutput;
+export const postApiAuditChainOfCustodyCustodiansRevokeEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyCustodiansRevoke' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/custodians/{custodianId}:revoke' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists preserved evidence for the tenant (custody-gated access; every read is logged).
+ */
+export interface GetApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceOutput = Types.ComplianceAuditCustodyEvidenceOutput[];
+export const getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceEndpoint = {
+  operationId: 'getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidence' as const,
+  method: 'GET' as const,
+  path: '/api/audit/chain-of-custody/evidence' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preserves evidence under chain of custody with content hashing (audit logs, security events, value snapshots, sealed packages, or raw content).
+ */
+export interface PostApiAuditChainOfCustodyEvidenceInput {
+  body?: Types.ComplianceAuditPreserveEvidenceInput;
+}
+export type PostApiAuditChainOfCustodyEvidenceOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const postApiAuditChainOfCustodyEvidenceEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyEvidence' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/evidence' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one evidence item with its full custody timeline (access logged; broken seals require forensic scope).
+ */
+export interface GetApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceByEvidenceIdInput {
+  evidenceId: string;
+  query?: {
+    purpose?: string;
+  };
+}
+export type GetApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceByEvidenceIdOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceByEvidenceIdEndpoint = {
+  operationId: 'getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceByEvidenceId' as const,
+  method: 'GET' as const,
+  path: '/api/audit/chain-of-custody/evidence/{evidenceId}' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deliberately breaks the evidence seal for forensic inspection (forensic scope required; custody event recorded).
+ */
+export interface PostApiAuditChainOfCustodyEvidenceBreakSealInput {
+  evidenceId: string;
+  body?: Types.ComplianceAuditBreakSealInput;
+}
+export type PostApiAuditChainOfCustodyEvidenceBreakSealOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const postApiAuditChainOfCustodyEvidenceBreakSealEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyEvidenceBreakSeal' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/evidence/{evidenceId}:break-seal' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Releases evidence from custody (release scope required; blocked while a legal hold is active).
+ */
+export interface PostApiAuditChainOfCustodyEvidenceReleaseInput {
+  evidenceId: string;
+  body?: Types.ComplianceAuditReleaseEvidenceInput;
+}
+export type PostApiAuditChainOfCustodyEvidenceReleaseOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const postApiAuditChainOfCustodyEvidenceReleaseEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyEvidenceRelease' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/evidence/{evidenceId}:release' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Verifies the preserved content against its recorded SHA-256 hash.
+ */
+export interface GetApiAuditChainOfCustodyEvidenceIntegrityInput {
+  evidenceId: string;
+}
+export type GetApiAuditChainOfCustodyEvidenceIntegrityOutput = Types.ComplianceAuditEvidenceIntegrityOutput;
+export const getApiAuditChainOfCustodyEvidenceIntegrityEndpoint = {
+  operationId: 'getApiAuditChainOfCustodyEvidenceIntegrity' as const,
+  method: 'GET' as const,
+  path: '/api/audit/chain-of-custody/evidence/{evidenceId}/integrity' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists legal holds with their preserved evidence and notification status.
+ */
+export interface GetApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsOutput = Types.ComplianceAuditLegalHoldOutput[];
+export const getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsEndpoint = {
+  operationId: 'getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHolds' as const,
+  method: 'GET' as const,
+  path: '/api/audit/chain-of-custody/legal-holds' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a legal hold: immediately preserves every in-scope target under custody and records stakeholder notifications.
+ */
+export interface PostApiAuditChainOfCustodyLegalHoldsInput {
+  body?: Types.ComplianceAuditCreateLegalHoldInput;
+}
+export type PostApiAuditChainOfCustodyLegalHoldsOutput = Types.ComplianceAuditLegalHoldOutput;
+export const postApiAuditChainOfCustodyLegalHoldsEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyLegalHolds' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/legal-holds' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one legal hold with preserved evidence ids and notifications.
+ */
+export interface GetApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsByHoldIdInput {
+  holdId: string;
+}
+export type GetApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsByHoldIdOutput = Types.ComplianceAuditLegalHoldOutput;
+export const getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsByHoldIdEndpoint = {
+  operationId: 'getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsByHoldId' as const,
+  method: 'GET' as const,
+  path: '/api/audit/chain-of-custody/legal-holds/{holdId}' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dispatches pending hold notifications (automated stakeholder notification workflow).
+ */
+export interface PostApiAuditChainOfCustodyLegalHoldsNotifyInput {
+  holdId: string;
+}
+export type PostApiAuditChainOfCustodyLegalHoldsNotifyOutput = Types.ComplianceAuditLegalHoldOutput;
+export const postApiAuditChainOfCustodyLegalHoldsNotifyEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyLegalHoldsNotify' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/legal-holds/{holdId}:notify' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Releases a legal hold (preserved evidence and custody chains are retained as investigation records).
+ */
+export interface PostApiAuditChainOfCustodyLegalHoldsReleaseInput {
+  holdId: string;
+  body?: Types.ComplianceAuditReleaseHoldInput;
+}
+export type PostApiAuditChainOfCustodyLegalHoldsReleaseOutput = Types.ComplianceAuditLegalHoldOutput;
+export const postApiAuditChainOfCustodyLegalHoldsReleaseEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyLegalHoldsRelease' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/legal-holds/{holdId}:release' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Builds a court-admissible custody package: full documentation, verification summary, and signed expert certification.
+ */
+export interface PostApiAuditChainOfCustodyPackagesInput {
+  body?: Types.ComplianceAuditBuildCustodyPackageInput;
+}
+export type PostApiAuditChainOfCustodyPackagesOutput = Types.ComplianceAuditCourtAdmissiblePackageOutput;
+export const postApiAuditChainOfCustodyPackagesEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyPackages' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/packages' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists evidence transfers with proof-verification status.
+ */
+export interface GetApiAuditChainOfCustodyTransfersInput {
+  query?: {
+    evidenceId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditChainOfCustodyTransfersOutput = Types.ComplianceAuditEvidenceTransferOutput[];
+export const getApiAuditChainOfCustodyTransfersEndpoint = {
+  operationId: 'getApiAuditChainOfCustodyTransfers' as const,
+  method: 'GET' as const,
+  path: '/api/audit/chain-of-custody/transfers' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Initiates a custody transfer: challenge nonce + ECDSA-signed proof binding evidence hash and both custodians.
+ */
+export interface PostApiAuditChainOfCustodyTransfersInput {
+  body?: Types.ComplianceAuditInitiateTransferInput;
+}
+export type PostApiAuditChainOfCustodyTransfersOutput = Types.ComplianceAuditEvidenceTransferOutput;
+export const postApiAuditChainOfCustodyTransfersEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyTransfers' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/transfers' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledges a transfer as the receiving custodian: verifies the proof, then counter-signs and takes custody.
+ */
+export interface PostApiAuditChainOfCustodyTransfersAcknowledgeInput {
+  transferId: string;
+  body?: Types.ComplianceAuditAcknowledgeTransferInput;
+}
+export type PostApiAuditChainOfCustodyTransfersAcknowledgeOutput = Types.ComplianceAuditEvidenceTransferOutput;
+export const postApiAuditChainOfCustodyTransfersAcknowledgeEndpoint = {
+  operationId: 'postApiAuditChainOfCustodyTransfersAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/api/audit/chain-of-custody/transfers/{transferId}:acknowledge' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiAuditCompliancePackagingForGetApiAuditCompliancePackagingInput {
   query?: {
     skip?: number;
@@ -853,6 +1139,25 @@ export const getApiAuditSecurityEventsDeliveryStatusEndpoint = {
 } as const;
 
 /**
+ * Returns aged audit rows that were moved into the archive storage tier (issue #193). Archived
+ * evidence stays accessible for investigations and eDiscovery while the hot tier stays small.
+ */
+export interface GetApiAuditSecurityEventsRetentionArchiveInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditSecurityEventsRetentionArchiveOutput = Types.ComplianceAuditArchivedSecurityLogListOutput;
+export const getApiAuditSecurityEventsRetentionArchiveEndpoint = {
+  operationId: 'getApiAuditSecurityEventsRetentionArchive' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/retention/archive' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
  * and are recorded in the execution history; use `DryRun` to preview deletions.
  */
@@ -915,6 +1220,21 @@ export const putApiAuditSecurityEventsRetentionPolicyEndpoint = {
 } as const;
 
 /**
+ * Returns the storage-tier placement report for the tenant audit data (issue #193): hot and
+ * archive row counts plus the configured tier windows, so storage cost placement is
+ * observable next to accessibility.
+ */
+export type GetApiAuditSecurityEventsRetentionStorageTiersInput = void;
+export type GetApiAuditSecurityEventsRetentionStorageTiersOutput = Types.ComplianceAuditSecurityLogStorageTierReportOutput;
+export const getApiAuditSecurityEventsRetentionStorageTiersEndpoint = {
+  operationId: 'getApiAuditSecurityEventsRetentionStorageTiers' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/retention/storage-tiers' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Returns the complete security event taxonomy used by the security event pipeline.
  * Query-operations tier (issue #375): enumerating the taxonomy catalog requires the
  * `queries:list` permission (fail-closed).
@@ -926,6 +1246,204 @@ export const getApiAuditSecurityEventsTaxonomyEndpoint = {
   method: 'GET' as const,
   path: '/api/audit/security-events/taxonomy' as const,
   tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Searches the value snapshot store by entity, key, changed field, value pattern, actor, and time window.
+ */
+export interface GetApiAuditValueSnapshotsForGetApiAuditValueSnapshotsInput {
+  query?: {
+    EntityName?: string;
+    KeyId?: string;
+    Field?: string;
+    ValuePattern?: string;
+    ChangeKind?: string;
+    ActorId?: string;
+    FromUtc?: string;
+    ToUtc?: string;
+    Skip?: number;
+    Take?: number;
+  };
+}
+export type GetApiAuditValueSnapshotsForGetApiAuditValueSnapshotsOutput = Types.ComplianceAuditValueSnapshotSearchResult;
+export const getApiAuditValueSnapshotsForGetApiAuditValueSnapshotsEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsForGetApiAuditValueSnapshots' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one snapshot with its structured field-level difference analysis.
+ */
+export interface GetApiAuditValueSnapshotsForGetApiAuditValueSnapshotsByIdInput {
+  id: string;
+}
+export type GetApiAuditValueSnapshotsForGetApiAuditValueSnapshotsByIdOutput = Types.ComplianceAuditValueSnapshotOutput;
+export const getApiAuditValueSnapshotsForGetApiAuditValueSnapshotsByIdEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsForGetApiAuditValueSnapshotsById' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots/{id}' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Point-in-time value history for one entity field (all fields default to the most changed one).
+ */
+export interface GetApiAuditValueSnapshotsHistoryInput {
+  query?: {
+    entityName?: string;
+    keyId?: string;
+    field?: string;
+  };
+}
+export type GetApiAuditValueSnapshotsHistoryOutput = Types.ComplianceAuditValueHistoryOutput;
+export const getApiAuditValueSnapshotsHistoryEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsHistory' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots/history' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Change impact analysis: the cascade of one mutation across its operation and entity lineage.
+ */
+export interface GetApiAuditValueSnapshotsImpactInput {
+  snapshotId: string;
+}
+export type GetApiAuditValueSnapshotsImpactOutput = Types.ComplianceAuditChangeImpactOutput;
+export const getApiAuditValueSnapshotsImpactEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsImpact' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots/impact/{snapshotId}' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Runs one retention pass now: deletion (respecting legal holds), archive-tier stripping, and deduplication compaction. Use `DryRun` to preview.
+ */
+export interface PostApiAuditValueSnapshotsRetentionEnforceInput {
+  body?: Types.ComplianceAuditEnforceValueSnapshotRetentionInput;
+}
+export type PostApiAuditValueSnapshotsRetentionEnforceOutput = Types.ComplianceAuditValueSnapshotRetentionExecutionOutput;
+export const postApiAuditValueSnapshotsRetentionEnforceEndpoint = {
+  operationId: 'postApiAuditValueSnapshotsRetentionEnforce' as const,
+  method: 'POST' as const,
+  path: '/api/audit/value-snapshots/retention/enforce' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the tenant's value snapshot retention policy, when configured.
+ */
+export type GetApiAuditValueSnapshotsRetentionPolicyInput = void;
+export type GetApiAuditValueSnapshotsRetentionPolicyOutput = Types.ComplianceAuditValueSnapshotRetentionPolicyOutput;
+export const getApiAuditValueSnapshotsRetentionPolicyEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsRetentionPolicy' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots/retention/policy' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates or updates the value snapshot retention policy (retention days, archive tier, entity overrides, legal hold).
+ */
+export interface PutApiAuditValueSnapshotsRetentionPolicyInput {
+  body?: Types.ComplianceAuditConfigureValueSnapshotRetentionInput;
+}
+export type PutApiAuditValueSnapshotsRetentionPolicyOutput = Types.ComplianceAuditValueSnapshotRetentionPolicyOutput;
+export const putApiAuditValueSnapshotsRetentionPolicyEndpoint = {
+  operationId: 'putApiAuditValueSnapshotsRetentionPolicy' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/value-snapshots/retention/policy' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Builds a rollback plan restoring one entity to its recorded state at a point in time.
+ */
+export interface PostApiAuditValueSnapshotsRollbackPlansInput {
+  body?: Types.ComplianceAuditCreateValueSnapshotRollbackPlanInput;
+}
+export type PostApiAuditValueSnapshotsRollbackPlansOutput = Types.ComplianceAuditValueSnapshotRollbackPlanOutput;
+export const postApiAuditValueSnapshotsRollbackPlansEndpoint = {
+  operationId: 'postApiAuditValueSnapshotsRollbackPlans' as const,
+  method: 'POST' as const,
+  path: '/api/audit/value-snapshots/rollback-plans' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one rollback plan with its reconstructed basis state.
+ */
+export interface GetApiAuditValueSnapshotsRollbackPlansInput {
+  planId: string;
+}
+export type GetApiAuditValueSnapshotsRollbackPlansOutput = Types.ComplianceAuditValueSnapshotRollbackPlanOutput;
+export const getApiAuditValueSnapshotsRollbackPlansEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsRollbackPlans' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots/rollback-plans/{planId}' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Executes a rollback plan. Fails closed while newer changes exist after the basis snapshot unless explicitly accepted.
+ */
+export interface PostApiAuditValueSnapshotsRollbackPlansExecuteInput {
+  planId: string;
+  body?: Types.ComplianceAuditExecuteValueSnapshotRollbackInput;
+}
+export type PostApiAuditValueSnapshotsRollbackPlansExecuteOutput = Types.ComplianceAuditValueSnapshotRollbackPlanOutput;
+export const postApiAuditValueSnapshotsRollbackPlansExecuteEndpoint = {
+  operationId: 'postApiAuditValueSnapshotsRollbackPlansExecute' as const,
+  method: 'POST' as const,
+  path: '/api/audit/value-snapshots/rollback-plans/{planId}:execute' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Storage accounting: delta/full share, truncation counts, archive tier, deduplication savings.
+ */
+export type GetApiAuditValueSnapshotsStorageInput = void;
+export type GetApiAuditValueSnapshotsStorageOutput = Types.ComplianceAuditValueSnapshotStorageOverview;
+export const getApiAuditValueSnapshotsStorageEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsStorage' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots/storage' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Value trend analysis for one field over a time window with statistical reporting.
+ */
+export interface GetApiAuditValueSnapshotsTrendsInput {
+  query?: {
+    entityName?: string;
+    keyId?: string;
+    field?: string;
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetApiAuditValueSnapshotsTrendsOutput = Types.ComplianceAuditValueTrendOutput;
+export const getApiAuditValueSnapshotsTrendsEndpoint = {
+  operationId: 'getApiAuditValueSnapshotsTrends' as const,
+  method: 'GET' as const,
+  path: '/api/audit/value-snapshots/trends' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
   requiresAuth: true,
 } as const;
 
@@ -1137,6 +1655,27 @@ export const getApiCertificatesVerifyEndpoint = {
   operationId: 'getApiCertificatesVerify' as const,
   method: 'GET' as const,
   path: '/api/certificates/verify/{certificateNumber}' as const,
+  tags: ['LearningCertificates'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Verify the blockchain anchor of a certificate by its number: recomputes the canonical
+ * SHA-256 digest, queries the anchoring backend for the on-chain record, and reports
+ * whether the chain corroborates the certificate (public endpoint).
+ *
+ * Fail-closed: backend errors report `Unreachable`, never `Verified`. The
+ * response contains only PII-free evidence (digests, transaction/network identifiers,
+ * block number, anchor timestamp).
+ */
+export interface GetApiCertificatesVerifyAnchorInput {
+  certificateNumber: string;
+}
+export type GetApiCertificatesVerifyAnchorOutput = Types.LearningCertificatesCertificateAnchorVerificationDto;
+export const getApiCertificatesVerifyAnchorEndpoint = {
+  operationId: 'getApiCertificatesVerifyAnchor' as const,
+  method: 'GET' as const,
+  path: '/api/certificates/verify/{certificateNumber}/anchor' as const,
   tags: ['LearningCertificates'] as const,
   requiresAuth: false,
 } as const;
@@ -7505,7 +8044,8 @@ export const postBillingPricingEngineEndpoint = {
 
 /**
  * Run the pricing engine for a product: base/sale price, the highest-priority applicable
- * rule (volume tiers, customer segment), and promo codes.
+ * rule (volume tiers, customer segment, usage-metric gate), the A/B experiment arm for
+ * the bucket key, and promo codes.
  */
 export interface PostBillingPricingEngineCalculateInput {
   body?: Types.CommerceProductsCalculatePricingInput;
@@ -7591,6 +8131,169 @@ export const postBillingPricingEngineDeactivateEndpoint = {
   operationId: 'postBillingPricingEngineDeactivate' as const,
   method: 'POST' as const,
   path: '/api/v1/billing/pricing-engine/{ruleId}:deactivate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List pricing experiments (paginated) with optional filters.
+ */
+export interface GetBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsInput {
+  query?: {
+    status?: Types.CommercePricingExperimentStatus;
+    productId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsOutput = Types.PagedResultPricingExperimentDto;
+export const getBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsEndpoint = {
+  operationId: 'getBillingPricingEngineExperimentsForGetBillingPricingEngineExperiments' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine/experiments' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a pricing experiment with its arms (starts in Draft).
+ */
+export interface PostBillingPricingEngineExperimentsInput {
+  body?: Types.CommerceProductsCreatePricingExperimentInput;
+}
+export type PostBillingPricingEngineExperimentsOutput = Types.CommerceProductsPricingExperimentDto;
+export const postBillingPricingEngineExperimentsEndpoint = {
+  operationId: 'postBillingPricingEngineExperiments' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/experiments' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one pricing experiment with its arms.
+ */
+export interface GetBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsByExperimentIdInput {
+  experimentId: string;
+}
+export type GetBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsByExperimentIdOutput = Types.CommerceProductsPricingExperimentDto;
+export const getBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsByExperimentIdEndpoint = {
+  operationId: 'getBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsByExperimentId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine/experiments/{experimentId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revenue-impact analytics for one experiment over an optional window: per-variant
+ * assignments, conversions, revenue, average order value and lift versus the control.
+ */
+export interface GetBillingPricingEngineExperimentsAnalyticsInput {
+  experimentId: string;
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetBillingPricingEngineExperimentsAnalyticsOutput = Types.CommerceProductsPricingExperimentAnalytics;
+export const getBillingPricingEngineExperimentsAnalyticsEndpoint = {
+  operationId: 'getBillingPricingEngineExperimentsAnalytics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine/experiments/{experimentId}:analytics' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolve (or create) the sticky assignment of a bucket key, returning the arm the key
+ * belongs to (null arm = held out by the traffic gate).
+ */
+export interface PostBillingPricingEngineExperimentsAssignInput {
+  experimentId: string;
+  body?: Types.CommerceProductsAssignExperimentInput;
+}
+export type PostBillingPricingEngineExperimentsAssignOutput = Types.CommerceProductsPricingExperimentAssignmentResult;
+export const postBillingPricingEngineExperimentsAssignEndpoint = {
+  operationId: 'postBillingPricingEngineExperimentsAssign' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/experiments/{experimentId}:assign' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Complete an experiment (retains assignments and outcomes for analysis).
+ */
+export interface PostBillingPricingEngineExperimentsCompleteInput {
+  experimentId: string;
+}
+export type PostBillingPricingEngineExperimentsCompleteOutput = Types.CommerceProductsPricingExperimentDto;
+export const postBillingPricingEngineExperimentsCompleteEndpoint = {
+  operationId: 'postBillingPricingEngineExperimentsComplete' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/experiments/{experimentId}:complete' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Record a monetized conversion outcome for a bucket key under its assigned arm.
+ */
+export interface PostBillingPricingEngineExperimentsConvertInput {
+  experimentId: string;
+  body?: Types.CommerceProductsRecordExperimentOutcomeInput;
+}
+export type PostBillingPricingEngineExperimentsConvertOutput = void;
+export const postBillingPricingEngineExperimentsConvertEndpoint = {
+  operationId: 'postBillingPricingEngineExperimentsConvert' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/experiments/{experimentId}:convert' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Pause a Running experiment (assignments stay sticky).
+ */
+export interface PostBillingPricingEngineExperimentsPauseInput {
+  experimentId: string;
+}
+export type PostBillingPricingEngineExperimentsPauseOutput = Types.CommerceProductsPricingExperimentDto;
+export const postBillingPricingEngineExperimentsPauseEndpoint = {
+  operationId: 'postBillingPricingEngineExperimentsPause' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/experiments/{experimentId}:pause' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Start a Draft experiment (begins enrolling bucket keys).
+ */
+export interface PostBillingPricingEngineExperimentsStartInput {
+  experimentId: string;
+}
+export type PostBillingPricingEngineExperimentsStartOutput = Types.CommerceProductsPricingExperimentDto;
+export const postBillingPricingEngineExperimentsStartEndpoint = {
+  operationId: 'postBillingPricingEngineExperimentsStart' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/experiments/{experimentId}:start' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Run one automated pricing scheduling pass immediately (issue #395): opt-in scheduled
+ * rules are activated/deactivated to match their date window and date-bounded
+ * experiments start/complete. The background scheduler runs the same pass periodically.
+ */
+export type PostBillingPricingEngineSchedulingSweepInput = void;
+export type PostBillingPricingEngineSchedulingSweepOutput = Types.CommerceProductsPricingScheduleSweepResult;
+export const postBillingPricingEngineSchedulingSweepEndpoint = {
+  operationId: 'postBillingPricingEngineSchedulingSweep' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/scheduling:sweep' as const,
   tags: ['CommerceProductsBillingPricingEngine'] as const,
   requiresAuth: true,
 } as const;
@@ -15080,6 +15783,292 @@ export const getAuditQueriesTemplatesEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Lists registered custodians with their authorization scopes.
+ */
+export type GetAuditChainOfCustodyCustodiansInput = void;
+export type GetAuditChainOfCustodyCustodiansOutput = Types.ComplianceAuditEvidenceCustodianOutput[];
+export const getAuditChainOfCustodyCustodiansEndpoint = {
+  operationId: 'getAuditChainOfCustodyCustodians' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/chain-of-custody/custodians' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Registers a custodian with authorization scopes. Fail-closed: only registered active custodians may act on evidence.
+ */
+export interface PostAuditChainOfCustodyCustodiansInput {
+  body?: Types.ComplianceAuditRegisterCustodianInput;
+}
+export type PostAuditChainOfCustodyCustodiansOutput = Types.ComplianceAuditEvidenceCustodianOutput;
+export const postAuditChainOfCustodyCustodiansEndpoint = {
+  operationId: 'postAuditChainOfCustodyCustodians' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/custodians' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revokes a custodian's authorization (revocation is effective immediately and logged).
+ */
+export interface PostAuditChainOfCustodyCustodiansRevokeInput {
+  custodianId: string;
+  body?: Types.ComplianceAuditRevokeCustodianInput;
+}
+export type PostAuditChainOfCustodyCustodiansRevokeOutput = Types.ComplianceAuditEvidenceCustodianOutput;
+export const postAuditChainOfCustodyCustodiansRevokeEndpoint = {
+  operationId: 'postAuditChainOfCustodyCustodiansRevoke' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/custodians/{custodianId}:revoke' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists preserved evidence for the tenant (custody-gated access; every read is logged).
+ */
+export interface GetAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceOutput = Types.ComplianceAuditCustodyEvidenceOutput[];
+export const getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceEndpoint = {
+  operationId: 'getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidence' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/chain-of-custody/evidence' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preserves evidence under chain of custody with content hashing (audit logs, security events, value snapshots, sealed packages, or raw content).
+ */
+export interface PostAuditChainOfCustodyEvidenceInput {
+  body?: Types.ComplianceAuditPreserveEvidenceInput;
+}
+export type PostAuditChainOfCustodyEvidenceOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const postAuditChainOfCustodyEvidenceEndpoint = {
+  operationId: 'postAuditChainOfCustodyEvidence' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/evidence' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one evidence item with its full custody timeline (access logged; broken seals require forensic scope).
+ */
+export interface GetAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceByEvidenceIdInput {
+  evidenceId: string;
+  query?: {
+    purpose?: string;
+  };
+}
+export type GetAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceByEvidenceIdOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceByEvidenceIdEndpoint = {
+  operationId: 'getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceByEvidenceId' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/chain-of-custody/evidence/{evidenceId}' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deliberately breaks the evidence seal for forensic inspection (forensic scope required; custody event recorded).
+ */
+export interface PostAuditChainOfCustodyEvidenceBreakSealInput {
+  evidenceId: string;
+  body?: Types.ComplianceAuditBreakSealInput;
+}
+export type PostAuditChainOfCustodyEvidenceBreakSealOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const postAuditChainOfCustodyEvidenceBreakSealEndpoint = {
+  operationId: 'postAuditChainOfCustodyEvidenceBreakSeal' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/evidence/{evidenceId}:break-seal' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Releases evidence from custody (release scope required; blocked while a legal hold is active).
+ */
+export interface PostAuditChainOfCustodyEvidenceReleaseInput {
+  evidenceId: string;
+  body?: Types.ComplianceAuditReleaseEvidenceInput;
+}
+export type PostAuditChainOfCustodyEvidenceReleaseOutput = Types.ComplianceAuditCustodyEvidenceOutput;
+export const postAuditChainOfCustodyEvidenceReleaseEndpoint = {
+  operationId: 'postAuditChainOfCustodyEvidenceRelease' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/evidence/{evidenceId}:release' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Verifies the preserved content against its recorded SHA-256 hash.
+ */
+export interface GetAuditChainOfCustodyEvidenceIntegrityInput {
+  evidenceId: string;
+}
+export type GetAuditChainOfCustodyEvidenceIntegrityOutput = Types.ComplianceAuditEvidenceIntegrityOutput;
+export const getAuditChainOfCustodyEvidenceIntegrityEndpoint = {
+  operationId: 'getAuditChainOfCustodyEvidenceIntegrity' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/chain-of-custody/evidence/{evidenceId}/integrity' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists legal holds with their preserved evidence and notification status.
+ */
+export interface GetAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsOutput = Types.ComplianceAuditLegalHoldOutput[];
+export const getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsEndpoint = {
+  operationId: 'getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHolds' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/chain-of-custody/legal-holds' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a legal hold: immediately preserves every in-scope target under custody and records stakeholder notifications.
+ */
+export interface PostAuditChainOfCustodyLegalHoldsInput {
+  body?: Types.ComplianceAuditCreateLegalHoldInput;
+}
+export type PostAuditChainOfCustodyLegalHoldsOutput = Types.ComplianceAuditLegalHoldOutput;
+export const postAuditChainOfCustodyLegalHoldsEndpoint = {
+  operationId: 'postAuditChainOfCustodyLegalHolds' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/legal-holds' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one legal hold with preserved evidence ids and notifications.
+ */
+export interface GetAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsByHoldIdInput {
+  holdId: string;
+}
+export type GetAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsByHoldIdOutput = Types.ComplianceAuditLegalHoldOutput;
+export const getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsByHoldIdEndpoint = {
+  operationId: 'getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsByHoldId' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/chain-of-custody/legal-holds/{holdId}' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dispatches pending hold notifications (automated stakeholder notification workflow).
+ */
+export interface PostAuditChainOfCustodyLegalHoldsNotifyInput {
+  holdId: string;
+}
+export type PostAuditChainOfCustodyLegalHoldsNotifyOutput = Types.ComplianceAuditLegalHoldOutput;
+export const postAuditChainOfCustodyLegalHoldsNotifyEndpoint = {
+  operationId: 'postAuditChainOfCustodyLegalHoldsNotify' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/legal-holds/{holdId}:notify' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Releases a legal hold (preserved evidence and custody chains are retained as investigation records).
+ */
+export interface PostAuditChainOfCustodyLegalHoldsReleaseInput {
+  holdId: string;
+  body?: Types.ComplianceAuditReleaseHoldInput;
+}
+export type PostAuditChainOfCustodyLegalHoldsReleaseOutput = Types.ComplianceAuditLegalHoldOutput;
+export const postAuditChainOfCustodyLegalHoldsReleaseEndpoint = {
+  operationId: 'postAuditChainOfCustodyLegalHoldsRelease' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/legal-holds/{holdId}:release' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Builds a court-admissible custody package: full documentation, verification summary, and signed expert certification.
+ */
+export interface PostAuditChainOfCustodyPackagesInput {
+  body?: Types.ComplianceAuditBuildCustodyPackageInput;
+}
+export type PostAuditChainOfCustodyPackagesOutput = Types.ComplianceAuditCourtAdmissiblePackageOutput;
+export const postAuditChainOfCustodyPackagesEndpoint = {
+  operationId: 'postAuditChainOfCustodyPackages' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/packages' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists evidence transfers with proof-verification status.
+ */
+export interface GetAuditChainOfCustodyTransfersInput {
+  query?: {
+    evidenceId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditChainOfCustodyTransfersOutput = Types.ComplianceAuditEvidenceTransferOutput[];
+export const getAuditChainOfCustodyTransfersEndpoint = {
+  operationId: 'getAuditChainOfCustodyTransfers' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/chain-of-custody/transfers' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Initiates a custody transfer: challenge nonce + ECDSA-signed proof binding evidence hash and both custodians.
+ */
+export interface PostAuditChainOfCustodyTransfersInput {
+  body?: Types.ComplianceAuditInitiateTransferInput;
+}
+export type PostAuditChainOfCustodyTransfersOutput = Types.ComplianceAuditEvidenceTransferOutput;
+export const postAuditChainOfCustodyTransfersEndpoint = {
+  operationId: 'postAuditChainOfCustodyTransfers' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/transfers' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledges a transfer as the receiving custodian: verifies the proof, then counter-signs and takes custody.
+ */
+export interface PostAuditChainOfCustodyTransfersAcknowledgeInput {
+  transferId: string;
+  body?: Types.ComplianceAuditAcknowledgeTransferInput;
+}
+export type PostAuditChainOfCustodyTransfersAcknowledgeOutput = Types.ComplianceAuditEvidenceTransferOutput;
+export const postAuditChainOfCustodyTransfersAcknowledgeEndpoint = {
+  operationId: 'postAuditChainOfCustodyTransfersAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/chain-of-custody/transfers/{transferId}:acknowledge' as const,
+  tags: ['ComplianceAuditChainOfCustody'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAuditCompliancePackagingForGetAuditCompliancePackagingInput {
   query?: {
     skip?: number;
@@ -15577,6 +16566,25 @@ export const getAuditSecurityEventsDeliveryStatusEndpoint = {
 } as const;
 
 /**
+ * Returns aged audit rows that were moved into the archive storage tier (issue #193). Archived
+ * evidence stays accessible for investigations and eDiscovery while the hot tier stays small.
+ */
+export interface GetAuditSecurityEventsRetentionArchiveInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditSecurityEventsRetentionArchiveOutput = Types.ComplianceAuditArchivedSecurityLogListOutput;
+export const getAuditSecurityEventsRetentionArchiveEndpoint = {
+  operationId: 'getAuditSecurityEventsRetentionArchive' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/retention/archive' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
  * and are recorded in the execution history; use `DryRun` to preview deletions.
  */
@@ -15639,6 +16647,21 @@ export const putAuditSecurityEventsRetentionPolicyEndpoint = {
 } as const;
 
 /**
+ * Returns the storage-tier placement report for the tenant audit data (issue #193): hot and
+ * archive row counts plus the configured tier windows, so storage cost placement is
+ * observable next to accessibility.
+ */
+export type GetAuditSecurityEventsRetentionStorageTiersInput = void;
+export type GetAuditSecurityEventsRetentionStorageTiersOutput = Types.ComplianceAuditSecurityLogStorageTierReportOutput;
+export const getAuditSecurityEventsRetentionStorageTiersEndpoint = {
+  operationId: 'getAuditSecurityEventsRetentionStorageTiers' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/retention/storage-tiers' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Returns the complete security event taxonomy used by the security event pipeline.
  * Query-operations tier (issue #375): enumerating the taxonomy catalog requires the
  * `queries:list` permission (fail-closed).
@@ -15651,6 +16674,309 @@ export const getAuditSecurityEventsTaxonomyEndpoint = {
   path: '/v1/audit/security-events/taxonomy' as const,
   tags: ['ComplianceAuditSecurityEvents'] as const,
   requiresAuth: true,
+} as const;
+
+/**
+ * Searches the value snapshot store by entity, key, changed field, value pattern, actor, and time window.
+ */
+export interface GetAuditValueSnapshotsForGetAuditValueSnapshotsInput {
+  query?: {
+    EntityName?: string;
+    KeyId?: string;
+    Field?: string;
+    ValuePattern?: string;
+    ChangeKind?: string;
+    ActorId?: string;
+    FromUtc?: string;
+    ToUtc?: string;
+    Skip?: number;
+    Take?: number;
+  };
+}
+export type GetAuditValueSnapshotsForGetAuditValueSnapshotsOutput = Types.ComplianceAuditValueSnapshotSearchResult;
+export const getAuditValueSnapshotsForGetAuditValueSnapshotsEndpoint = {
+  operationId: 'getAuditValueSnapshotsForGetAuditValueSnapshots' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one snapshot with its structured field-level difference analysis.
+ */
+export interface GetAuditValueSnapshotsForGetAuditValueSnapshotsByIdInput {
+  id: string;
+}
+export type GetAuditValueSnapshotsForGetAuditValueSnapshotsByIdOutput = Types.ComplianceAuditValueSnapshotOutput;
+export const getAuditValueSnapshotsForGetAuditValueSnapshotsByIdEndpoint = {
+  operationId: 'getAuditValueSnapshotsForGetAuditValueSnapshotsById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots/{id}' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Point-in-time value history for one entity field (all fields default to the most changed one).
+ */
+export interface GetAuditValueSnapshotsHistoryInput {
+  query?: {
+    entityName?: string;
+    keyId?: string;
+    field?: string;
+  };
+}
+export type GetAuditValueSnapshotsHistoryOutput = Types.ComplianceAuditValueHistoryOutput;
+export const getAuditValueSnapshotsHistoryEndpoint = {
+  operationId: 'getAuditValueSnapshotsHistory' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots/history' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Change impact analysis: the cascade of one mutation across its operation and entity lineage.
+ */
+export interface GetAuditValueSnapshotsImpactInput {
+  snapshotId: string;
+}
+export type GetAuditValueSnapshotsImpactOutput = Types.ComplianceAuditChangeImpactOutput;
+export const getAuditValueSnapshotsImpactEndpoint = {
+  operationId: 'getAuditValueSnapshotsImpact' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots/impact/{snapshotId}' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Runs one retention pass now: deletion (respecting legal holds), archive-tier stripping, and deduplication compaction. Use `DryRun` to preview.
+ */
+export interface PostAuditValueSnapshotsRetentionEnforceInput {
+  body?: Types.ComplianceAuditEnforceValueSnapshotRetentionInput;
+}
+export type PostAuditValueSnapshotsRetentionEnforceOutput = Types.ComplianceAuditValueSnapshotRetentionExecutionOutput;
+export const postAuditValueSnapshotsRetentionEnforceEndpoint = {
+  operationId: 'postAuditValueSnapshotsRetentionEnforce' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/value-snapshots/retention/enforce' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the tenant's value snapshot retention policy, when configured.
+ */
+export type GetAuditValueSnapshotsRetentionPolicyInput = void;
+export type GetAuditValueSnapshotsRetentionPolicyOutput = Types.ComplianceAuditValueSnapshotRetentionPolicyOutput;
+export const getAuditValueSnapshotsRetentionPolicyEndpoint = {
+  operationId: 'getAuditValueSnapshotsRetentionPolicy' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots/retention/policy' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates or updates the value snapshot retention policy (retention days, archive tier, entity overrides, legal hold).
+ */
+export interface PutAuditValueSnapshotsRetentionPolicyInput {
+  body?: Types.ComplianceAuditConfigureValueSnapshotRetentionInput;
+}
+export type PutAuditValueSnapshotsRetentionPolicyOutput = Types.ComplianceAuditValueSnapshotRetentionPolicyOutput;
+export const putAuditValueSnapshotsRetentionPolicyEndpoint = {
+  operationId: 'putAuditValueSnapshotsRetentionPolicy' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/value-snapshots/retention/policy' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Builds a rollback plan restoring one entity to its recorded state at a point in time.
+ */
+export interface PostAuditValueSnapshotsRollbackPlansInput {
+  body?: Types.ComplianceAuditCreateValueSnapshotRollbackPlanInput;
+}
+export type PostAuditValueSnapshotsRollbackPlansOutput = Types.ComplianceAuditValueSnapshotRollbackPlanOutput;
+export const postAuditValueSnapshotsRollbackPlansEndpoint = {
+  operationId: 'postAuditValueSnapshotsRollbackPlans' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/value-snapshots/rollback-plans' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns one rollback plan with its reconstructed basis state.
+ */
+export interface GetAuditValueSnapshotsRollbackPlansInput {
+  planId: string;
+}
+export type GetAuditValueSnapshotsRollbackPlansOutput = Types.ComplianceAuditValueSnapshotRollbackPlanOutput;
+export const getAuditValueSnapshotsRollbackPlansEndpoint = {
+  operationId: 'getAuditValueSnapshotsRollbackPlans' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots/rollback-plans/{planId}' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Executes a rollback plan. Fails closed while newer changes exist after the basis snapshot unless explicitly accepted.
+ */
+export interface PostAuditValueSnapshotsRollbackPlansExecuteInput {
+  planId: string;
+  body?: Types.ComplianceAuditExecuteValueSnapshotRollbackInput;
+}
+export type PostAuditValueSnapshotsRollbackPlansExecuteOutput = Types.ComplianceAuditValueSnapshotRollbackPlanOutput;
+export const postAuditValueSnapshotsRollbackPlansExecuteEndpoint = {
+  operationId: 'postAuditValueSnapshotsRollbackPlansExecute' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/value-snapshots/rollback-plans/{planId}:execute' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Storage accounting: delta/full share, truncation counts, archive tier, deduplication savings.
+ */
+export type GetAuditValueSnapshotsStorageInput = void;
+export type GetAuditValueSnapshotsStorageOutput = Types.ComplianceAuditValueSnapshotStorageOverview;
+export const getAuditValueSnapshotsStorageEndpoint = {
+  operationId: 'getAuditValueSnapshotsStorage' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots/storage' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Value trend analysis for one field over a time window with statistical reporting.
+ */
+export interface GetAuditValueSnapshotsTrendsInput {
+  query?: {
+    entityName?: string;
+    keyId?: string;
+    field?: string;
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetAuditValueSnapshotsTrendsOutput = Types.ComplianceAuditValueTrendOutput;
+export const getAuditValueSnapshotsTrendsEndpoint = {
+  operationId: 'getAuditValueSnapshotsTrends' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/value-snapshots/trends' as const,
+  tags: ['ComplianceAuditValueSnapshots'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Submits one trusted contact's single-use recovery code.
+ *
+ * Redeems a trusted contact's single-use recovery code after the cooling-off window. Denials are generic and never reveal code or request state.
+ */
+export interface PostAuthAccountRecoveryApproveInput {
+  body?: Types.IdentityAuthenticationApproveAccountRecoveryInput;
+}
+export type PostAuthAccountRecoveryApproveOutput = Types.IdentityAuthenticationAccountRecoveryApprovalResult;
+export const postAuthAccountRecoveryApproveEndpoint = {
+  operationId: 'postAuthAccountRecoveryApprove' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/account-recovery/approve' as const,
+  tags: ['AuthAccountRecovery'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Begins a passkey assertion for recovery approval: an enrolled WebAuthn
+ * credential on a surviving device can supply one approval factor.
+ *
+ * Issues WebAuthn assertion options so an enrolled passkey on a surviving device can approve a live recovery request. Issues no sign-in credentials.
+ */
+export interface PostAuthAccountRecoveryApprovePasskeyBeginInput {
+  body?: Types.IdentityAuthenticationBeginPasskeyApprovalInput;
+}
+export type PostAuthAccountRecoveryApprovePasskeyBeginOutput = Types.IdentityAuthenticationWebAuthnAuthenticationOptionsResult;
+export const postAuthAccountRecoveryApprovePasskeyBeginEndpoint = {
+  operationId: 'postAuthAccountRecoveryApprovePasskeyBegin' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/account-recovery/approve-passkey:begin' as const,
+  tags: ['AuthAccountRecovery'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Completes a passkey assertion for recovery approval. The assertion is
+ * verified cryptographically and never issues sign-in credentials.
+ *
+ * Verifies the WebAuthn assertion against an enrolled credential and records one approval for the live recovery request. Denials are generic and never reveal request state.
+ */
+export interface PostAuthAccountRecoveryApprovePasskeyCompleteInput {
+  body?: Types.IdentityAuthenticationCompletePasskeyApprovalInput;
+}
+export type PostAuthAccountRecoveryApprovePasskeyCompleteOutput = Types.IdentityAuthenticationAccountRecoveryApprovalOutput;
+export const postAuthAccountRecoveryApprovePasskeyCompleteEndpoint = {
+  operationId: 'postAuthAccountRecoveryApprovePasskeyComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/account-recovery/approve-passkey:complete' as const,
+  tags: ['AuthAccountRecovery'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Cancels the acting user's live recovery request (protective action while the
+ * owner still has access).
+ *
+ * Cancels the acting user's live recovery request and kills any minted reset token.
+ */
+export type PostAuthAccountRecoveryCancelInput = void;
+export type PostAuthAccountRecoveryCancelOutput = Types.IdentityAuthenticationAccountRecoveryCancelResult;
+export const postAuthAccountRecoveryCancelEndpoint = {
+  operationId: 'postAuthAccountRecoveryCancel' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/account-recovery/cancel' as const,
+  tags: ['AuthAccountRecovery'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Starts a delegated account recovery for an email address.
+ *
+ * Opens a delegated account recovery for an email address. Confirmed trusted contacts receive single-use recovery codes after a cooling-off window. Always returns a generic success response to prevent user enumeration.
+ */
+export interface PostAuthAccountRecoveryRequestInput {
+  body?: Types.IdentityAuthenticationAccountRecoveryRequestInput;
+}
+export type PostAuthAccountRecoveryRequestOutput = Types.IdentityAuthenticationAccountRecoveryRequestResult;
+export const postAuthAccountRecoveryRequestEndpoint = {
+  operationId: 'postAuthAccountRecoveryRequest' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/account-recovery/request' as const,
+  tags: ['AuthAccountRecovery'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Completes the forced credential reset with the token minted at the approval
+ * threshold: sets a new password, terminates all sessions, revokes all refresh
+ * tokens and revokes every passkey (mandatory re-enrollment).
+ *
+ * Consumes the single-use reset token, sets the new password, terminates all sessions, revokes all refresh tokens and revokes every passkey. Denials are generic and never reveal token state.
+ */
+export interface PostAuthAccountRecoveryResetInput {
+  body?: Types.IdentityAuthenticationCompleteAccountRecoveryResetInput;
+}
+export type PostAuthAccountRecoveryResetOutput = Types.IdentityAuthenticationAccountRecoveryResetResult;
+export const postAuthAccountRecoveryResetEndpoint = {
+  operationId: 'postAuthAccountRecoveryReset' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/account-recovery/reset' as const,
+  tags: ['AuthAccountRecovery'] as const,
+  requiresAuth: false,
 } as const;
 
 /**
@@ -17213,6 +18539,72 @@ export const postAuthTokensRevokeEndpoint = {
   path: '/v1/auth/tokens:revoke' as const,
   tags: ['Auth'] as const,
   requiresAuth: true,
+} as const;
+
+/**
+ * Lists the current user's trusted contacts (active invites and confirmed contacts).
+ *
+ * Returns the acting user's trusted contacts for account recovery. Never includes invite tokens.
+ */
+export type GetAuthTrustedContactsInput = void;
+export type GetAuthTrustedContactsOutput = Types.IdentityAuthenticationTrustedContactDto[];
+export const getAuthTrustedContactsEndpoint = {
+  operationId: 'getAuthTrustedContacts' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/trusted-contacts' as const,
+  tags: ['AuthTrustedContacts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Designates a trusted contact and emails them a single-use invite.
+ *
+ * Designates a trusted recovery contact for the acting user and sends a single-use confirmation invite. The contact must confirm before receiving recovery codes.
+ */
+export interface PostAuthTrustedContactsInput {
+  body?: Types.IdentityAuthenticationAddTrustedContactInput;
+}
+export type PostAuthTrustedContactsOutput = Types.IdentityAuthenticationTrustedContactActionResult;
+export const postAuthTrustedContactsEndpoint = {
+  operationId: 'postAuthTrustedContacts' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/trusted-contacts' as const,
+  tags: ['AuthTrustedContacts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Removes (revokes) one of the current user's trusted contacts.
+ *
+ * Revokes one of the acting user's trusted contacts. The contact immediately stops counting toward recovery thresholds.
+ */
+export interface DeleteAuthTrustedContactsInput {
+  contactId: string;
+}
+export type DeleteAuthTrustedContactsOutput = Types.IdentityAuthenticationTrustedContactActionResult;
+export const deleteAuthTrustedContactsEndpoint = {
+  operationId: 'deleteAuthTrustedContacts' as const,
+  method: 'DELETE' as const,
+  path: '/v1/auth/trusted-contacts/{contactId}' as const,
+  tags: ['AuthTrustedContacts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Redeems a trusted-contact invite token; the contact confirms participation.
+ *
+ * Consumes the single-use, expiring invite token emailed to the contact. Denials are generic and never reveal token state.
+ */
+export interface PostAuthTrustedContactsConfirmInput {
+  body?: Types.IdentityAuthenticationConfirmTrustedContactInput;
+}
+export type PostAuthTrustedContactsConfirmOutput = Types.IdentityAuthenticationTrustedContactConfirmResult;
+export const postAuthTrustedContactsConfirmEndpoint = {
+  operationId: 'postAuthTrustedContactsConfirm' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/trusted-contacts/confirm' as const,
+  tags: ['AuthTrustedContacts'] as const,
+  requiresAuth: false,
 } as const;
 
 /**
@@ -29930,6 +31322,26 @@ export const endpoints = {
   postApiAnalyticsWarehouseRun: postApiAnalyticsWarehouseRunEndpoint,
   postApiAssetsAccessUrl: postApiAssetsAccessUrlEndpoint,
   getApiAssetsContent: getApiAssetsContentEndpoint,
+  getApiAuditChainOfCustodyCustodians: getApiAuditChainOfCustodyCustodiansEndpoint,
+  postApiAuditChainOfCustodyCustodians: postApiAuditChainOfCustodyCustodiansEndpoint,
+  postApiAuditChainOfCustodyCustodiansRevoke: postApiAuditChainOfCustodyCustodiansRevokeEndpoint,
+  getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidence: getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceEndpoint,
+  postApiAuditChainOfCustodyEvidence: postApiAuditChainOfCustodyEvidenceEndpoint,
+  getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceByEvidenceId:
+    getApiAuditChainOfCustodyEvidenceForGetApiAuditChainOfCustodyEvidenceByEvidenceIdEndpoint,
+  postApiAuditChainOfCustodyEvidenceBreakSeal: postApiAuditChainOfCustodyEvidenceBreakSealEndpoint,
+  postApiAuditChainOfCustodyEvidenceRelease: postApiAuditChainOfCustodyEvidenceReleaseEndpoint,
+  getApiAuditChainOfCustodyEvidenceIntegrity: getApiAuditChainOfCustodyEvidenceIntegrityEndpoint,
+  getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHolds: getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsEndpoint,
+  postApiAuditChainOfCustodyLegalHolds: postApiAuditChainOfCustodyLegalHoldsEndpoint,
+  getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsByHoldId:
+    getApiAuditChainOfCustodyLegalHoldsForGetApiAuditChainOfCustodyLegalHoldsByHoldIdEndpoint,
+  postApiAuditChainOfCustodyLegalHoldsNotify: postApiAuditChainOfCustodyLegalHoldsNotifyEndpoint,
+  postApiAuditChainOfCustodyLegalHoldsRelease: postApiAuditChainOfCustodyLegalHoldsReleaseEndpoint,
+  postApiAuditChainOfCustodyPackages: postApiAuditChainOfCustodyPackagesEndpoint,
+  getApiAuditChainOfCustodyTransfers: getApiAuditChainOfCustodyTransfersEndpoint,
+  postApiAuditChainOfCustodyTransfers: postApiAuditChainOfCustodyTransfersEndpoint,
+  postApiAuditChainOfCustodyTransfersAcknowledge: postApiAuditChainOfCustodyTransfersAcknowledgeEndpoint,
   getApiAuditCompliancePackagingForGetApiAuditCompliancePackaging: getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingEndpoint,
   postApiAuditCompliancePackaging: postApiAuditCompliancePackagingEndpoint,
   getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingById: getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingByIdEndpoint,
@@ -29974,11 +31386,25 @@ export const endpoints = {
   postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
+  getApiAuditSecurityEventsRetentionArchive: getApiAuditSecurityEventsRetentionArchiveEndpoint,
   postApiAuditSecurityEventsRetentionEnforce: postApiAuditSecurityEventsRetentionEnforceEndpoint,
   getApiAuditSecurityEventsRetentionExecutions: getApiAuditSecurityEventsRetentionExecutionsEndpoint,
   getApiAuditSecurityEventsRetentionPolicy: getApiAuditSecurityEventsRetentionPolicyEndpoint,
   putApiAuditSecurityEventsRetentionPolicy: putApiAuditSecurityEventsRetentionPolicyEndpoint,
+  getApiAuditSecurityEventsRetentionStorageTiers: getApiAuditSecurityEventsRetentionStorageTiersEndpoint,
   getApiAuditSecurityEventsTaxonomy: getApiAuditSecurityEventsTaxonomyEndpoint,
+  getApiAuditValueSnapshotsForGetApiAuditValueSnapshots: getApiAuditValueSnapshotsForGetApiAuditValueSnapshotsEndpoint,
+  getApiAuditValueSnapshotsForGetApiAuditValueSnapshotsById: getApiAuditValueSnapshotsForGetApiAuditValueSnapshotsByIdEndpoint,
+  getApiAuditValueSnapshotsHistory: getApiAuditValueSnapshotsHistoryEndpoint,
+  getApiAuditValueSnapshotsImpact: getApiAuditValueSnapshotsImpactEndpoint,
+  postApiAuditValueSnapshotsRetentionEnforce: postApiAuditValueSnapshotsRetentionEnforceEndpoint,
+  getApiAuditValueSnapshotsRetentionPolicy: getApiAuditValueSnapshotsRetentionPolicyEndpoint,
+  putApiAuditValueSnapshotsRetentionPolicy: putApiAuditValueSnapshotsRetentionPolicyEndpoint,
+  postApiAuditValueSnapshotsRollbackPlans: postApiAuditValueSnapshotsRollbackPlansEndpoint,
+  getApiAuditValueSnapshotsRollbackPlans: getApiAuditValueSnapshotsRollbackPlansEndpoint,
+  postApiAuditValueSnapshotsRollbackPlansExecute: postApiAuditValueSnapshotsRollbackPlansExecuteEndpoint,
+  getApiAuditValueSnapshotsStorage: getApiAuditValueSnapshotsStorageEndpoint,
+  getApiAuditValueSnapshotsTrends: getApiAuditValueSnapshotsTrendsEndpoint,
   getApiCertificates: getApiCertificatesEndpoint,
   getApiCertificatesEvm: getApiCertificatesEvmEndpoint,
   getApiCertificatesEvmProof: getApiCertificatesEvmProofEndpoint,
@@ -29993,6 +31419,7 @@ export const endpoints = {
   deleteApiCertificatesTemplates: deleteApiCertificatesTemplatesEndpoint,
   getApiCertificatesTemplatesCourse: getApiCertificatesTemplatesCourseEndpoint,
   getApiCertificatesVerify: getApiCertificatesVerifyEndpoint,
+  getApiCertificatesVerifyAnchor: getApiCertificatesVerifyAnchorEndpoint,
   postApiCohorts: postApiCohortsEndpoint,
   getApiCohorts: getApiCohortsEndpoint,
   putApiCohorts: putApiCohortsEndpoint,
@@ -30437,6 +31864,17 @@ export const endpoints = {
   deleteBillingPricingEngine: deleteBillingPricingEngineEndpoint,
   postBillingPricingEngineActivate: postBillingPricingEngineActivateEndpoint,
   postBillingPricingEngineDeactivate: postBillingPricingEngineDeactivateEndpoint,
+  getBillingPricingEngineExperimentsForGetBillingPricingEngineExperiments: getBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsEndpoint,
+  postBillingPricingEngineExperiments: postBillingPricingEngineExperimentsEndpoint,
+  getBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsByExperimentId:
+    getBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsByExperimentIdEndpoint,
+  getBillingPricingEngineExperimentsAnalytics: getBillingPricingEngineExperimentsAnalyticsEndpoint,
+  postBillingPricingEngineExperimentsAssign: postBillingPricingEngineExperimentsAssignEndpoint,
+  postBillingPricingEngineExperimentsComplete: postBillingPricingEngineExperimentsCompleteEndpoint,
+  postBillingPricingEngineExperimentsConvert: postBillingPricingEngineExperimentsConvertEndpoint,
+  postBillingPricingEngineExperimentsPause: postBillingPricingEngineExperimentsPauseEndpoint,
+  postBillingPricingEngineExperimentsStart: postBillingPricingEngineExperimentsStartEndpoint,
+  postBillingPricingEngineSchedulingSweep: postBillingPricingEngineSchedulingSweepEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
@@ -30877,6 +32315,26 @@ export const endpoints = {
   postAuditQueriesSavedExecute: postAuditQueriesSavedExecuteEndpoint,
   getAuditQueriesSavedRevisions: getAuditQueriesSavedRevisionsEndpoint,
   getAuditQueriesTemplates: getAuditQueriesTemplatesEndpoint,
+  getAuditChainOfCustodyCustodians: getAuditChainOfCustodyCustodiansEndpoint,
+  postAuditChainOfCustodyCustodians: postAuditChainOfCustodyCustodiansEndpoint,
+  postAuditChainOfCustodyCustodiansRevoke: postAuditChainOfCustodyCustodiansRevokeEndpoint,
+  getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidence: getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceEndpoint,
+  postAuditChainOfCustodyEvidence: postAuditChainOfCustodyEvidenceEndpoint,
+  getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceByEvidenceId:
+    getAuditChainOfCustodyEvidenceForGetAuditChainOfCustodyEvidenceByEvidenceIdEndpoint,
+  postAuditChainOfCustodyEvidenceBreakSeal: postAuditChainOfCustodyEvidenceBreakSealEndpoint,
+  postAuditChainOfCustodyEvidenceRelease: postAuditChainOfCustodyEvidenceReleaseEndpoint,
+  getAuditChainOfCustodyEvidenceIntegrity: getAuditChainOfCustodyEvidenceIntegrityEndpoint,
+  getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHolds: getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsEndpoint,
+  postAuditChainOfCustodyLegalHolds: postAuditChainOfCustodyLegalHoldsEndpoint,
+  getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsByHoldId:
+    getAuditChainOfCustodyLegalHoldsForGetAuditChainOfCustodyLegalHoldsByHoldIdEndpoint,
+  postAuditChainOfCustodyLegalHoldsNotify: postAuditChainOfCustodyLegalHoldsNotifyEndpoint,
+  postAuditChainOfCustodyLegalHoldsRelease: postAuditChainOfCustodyLegalHoldsReleaseEndpoint,
+  postAuditChainOfCustodyPackages: postAuditChainOfCustodyPackagesEndpoint,
+  getAuditChainOfCustodyTransfers: getAuditChainOfCustodyTransfersEndpoint,
+  postAuditChainOfCustodyTransfers: postAuditChainOfCustodyTransfersEndpoint,
+  postAuditChainOfCustodyTransfersAcknowledge: postAuditChainOfCustodyTransfersAcknowledgeEndpoint,
   getAuditCompliancePackagingForGetAuditCompliancePackaging: getAuditCompliancePackagingForGetAuditCompliancePackagingEndpoint,
   postAuditCompliancePackaging: postAuditCompliancePackagingEndpoint,
   getAuditCompliancePackagingForGetAuditCompliancePackagingById: getAuditCompliancePackagingForGetAuditCompliancePackagingByIdEndpoint,
@@ -30913,11 +32371,31 @@ export const endpoints = {
   postAuditSecurityEventsAlertsResolve: postAuditSecurityEventsAlertsResolveEndpoint,
   postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
+  getAuditSecurityEventsRetentionArchive: getAuditSecurityEventsRetentionArchiveEndpoint,
   postAuditSecurityEventsRetentionEnforce: postAuditSecurityEventsRetentionEnforceEndpoint,
   getAuditSecurityEventsRetentionExecutions: getAuditSecurityEventsRetentionExecutionsEndpoint,
   getAuditSecurityEventsRetentionPolicy: getAuditSecurityEventsRetentionPolicyEndpoint,
   putAuditSecurityEventsRetentionPolicy: putAuditSecurityEventsRetentionPolicyEndpoint,
+  getAuditSecurityEventsRetentionStorageTiers: getAuditSecurityEventsRetentionStorageTiersEndpoint,
   getAuditSecurityEventsTaxonomy: getAuditSecurityEventsTaxonomyEndpoint,
+  getAuditValueSnapshotsForGetAuditValueSnapshots: getAuditValueSnapshotsForGetAuditValueSnapshotsEndpoint,
+  getAuditValueSnapshotsForGetAuditValueSnapshotsById: getAuditValueSnapshotsForGetAuditValueSnapshotsByIdEndpoint,
+  getAuditValueSnapshotsHistory: getAuditValueSnapshotsHistoryEndpoint,
+  getAuditValueSnapshotsImpact: getAuditValueSnapshotsImpactEndpoint,
+  postAuditValueSnapshotsRetentionEnforce: postAuditValueSnapshotsRetentionEnforceEndpoint,
+  getAuditValueSnapshotsRetentionPolicy: getAuditValueSnapshotsRetentionPolicyEndpoint,
+  putAuditValueSnapshotsRetentionPolicy: putAuditValueSnapshotsRetentionPolicyEndpoint,
+  postAuditValueSnapshotsRollbackPlans: postAuditValueSnapshotsRollbackPlansEndpoint,
+  getAuditValueSnapshotsRollbackPlans: getAuditValueSnapshotsRollbackPlansEndpoint,
+  postAuditValueSnapshotsRollbackPlansExecute: postAuditValueSnapshotsRollbackPlansExecuteEndpoint,
+  getAuditValueSnapshotsStorage: getAuditValueSnapshotsStorageEndpoint,
+  getAuditValueSnapshotsTrends: getAuditValueSnapshotsTrendsEndpoint,
+  postAuthAccountRecoveryApprove: postAuthAccountRecoveryApproveEndpoint,
+  postAuthAccountRecoveryApprovePasskeyBegin: postAuthAccountRecoveryApprovePasskeyBeginEndpoint,
+  postAuthAccountRecoveryApprovePasskeyComplete: postAuthAccountRecoveryApprovePasskeyCompleteEndpoint,
+  postAuthAccountRecoveryCancel: postAuthAccountRecoveryCancelEndpoint,
+  postAuthAccountRecoveryRequest: postAuthAccountRecoveryRequestEndpoint,
+  postAuthAccountRecoveryReset: postAuthAccountRecoveryResetEndpoint,
   getAuthApiKeys: getAuthApiKeysEndpoint,
   postAuthApiKeys: postAuthApiKeysEndpoint,
   postAuthApiKeysRevoke: postAuthApiKeysRevokeEndpoint,
@@ -31012,6 +32490,10 @@ export const endpoints = {
   postAuthStepUpChallengesWebauthnOptions: postAuthStepUpChallengesWebauthnOptionsEndpoint,
   postAuthTokensRefresh: postAuthTokensRefreshEndpoint,
   postAuthTokensRevoke: postAuthTokensRevokeEndpoint,
+  getAuthTrustedContacts: getAuthTrustedContactsEndpoint,
+  postAuthTrustedContacts: postAuthTrustedContactsEndpoint,
+  deleteAuthTrustedContacts: deleteAuthTrustedContactsEndpoint,
+  postAuthTrustedContactsConfirm: postAuthTrustedContactsConfirmEndpoint,
   getAuthTrustedDevices: getAuthTrustedDevicesEndpoint,
   postAuthTrustedDevices: postAuthTrustedDevicesEndpoint,
   deleteAuthTrustedDevices: deleteAuthTrustedDevicesEndpoint,

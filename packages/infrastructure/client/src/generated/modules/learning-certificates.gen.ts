@@ -252,6 +252,33 @@ export class LearningCertificatesModule {
 
     return result;
   }
+
+  /**
+   * Verify the blockchain anchor of a certificate by its number: recomputes the canonical
+   * SHA-256 digest, queries the anchoring backend for the on-chain record, and reports
+   * whether the chain corroborates the certificate (public endpoint).
+   *
+   * Fail-closed: backend errors report `Unreachable`, never `Verified`. The
+   * response contains only PII-free evidence (digests, transaction/network identifiers,
+   * block number, anchor timestamp).
+   */
+  async getApiCertificatesVerifyAnchor(certificateNumber: string): Promise<Result<Types.LearningCertificatesCertificateAnchorVerificationDto, ApiError>> {
+    const url = `/api/certificates/verify/${certificateNumber}/anchor`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningCertificatesCertificateAnchorVerificationDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
 }
 
 export function createLearningCertificatesModule(client: ApiClient): LearningCertificatesModule {

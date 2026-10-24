@@ -71,7 +71,8 @@ export class CommerceProductsBillingPricingEngineModule {
 
   /**
    * Run the pricing engine for a product: base/sale price, the highest-priority applicable
-   * rule (volume tiers, customer segment), and promo codes.
+   * rule (volume tiers, customer segment, usage-metric gate), the A/B experiment arm for
+   * the bucket key, and promo codes.
    */
   async postBillingPricingEngineCalculate(
     body: Types.CommerceProductsCalculatePricingInput,
@@ -197,6 +198,246 @@ export class CommerceProductsBillingPricingEngineModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.CommerceProductsPricingRuleDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * List pricing experiments (paginated) with optional filters.
+   */
+  async getBillingPricingEngineExperimentsForGetBillingPricingEngineExperiments(query?: {
+    status?: Types.CommercePricingExperimentStatus;
+    productId?: string;
+    skip?: number;
+    take?: number;
+  }): Promise<Result<Types.PagedResultPricingExperimentDto, ApiError>> {
+    const url = '/api/v1/billing/pricing-engine/experiments';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.PagedResultPricingExperimentDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Create a pricing experiment with its arms (starts in Draft).
+   */
+  async postBillingPricingEngineExperiments(
+    body: Types.CommerceProductsCreatePricingExperimentInput,
+  ): Promise<Result<Types.CommerceProductsPricingExperimentDto, ApiError>> {
+    const url = '/api/v1/billing/pricing-engine/experiments';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommerceProductsCreatePricingExperimentInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingExperimentDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Get one pricing experiment with its arms.
+   */
+  async getBillingPricingEngineExperimentsForGetBillingPricingEngineExperimentsByExperimentId(
+    experimentId: string,
+  ): Promise<Result<Types.CommerceProductsPricingExperimentDto, ApiError>> {
+    const url = `/api/v1/billing/pricing-engine/experiments/${experimentId}`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingExperimentDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Revenue-impact analytics for one experiment over an optional window: per-variant
+   * assignments, conversions, revenue, average order value and lift versus the control.
+   */
+  async getBillingPricingEngineExperimentsAnalytics(
+    experimentId: string,
+    query?: { fromUtc?: string; toUtc?: string },
+  ): Promise<Result<Types.CommerceProductsPricingExperimentAnalytics, ApiError>> {
+    const url = `/api/v1/billing/pricing-engine/experiments/${experimentId}:analytics`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingExperimentAnalyticsSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolve (or create) the sticky assignment of a bucket key, returning the arm the key
+   * belongs to (null arm = held out by the traffic gate).
+   */
+  async postBillingPricingEngineExperimentsAssign(
+    experimentId: string,
+    body: Types.CommerceProductsAssignExperimentInput,
+  ): Promise<Result<Types.CommerceProductsPricingExperimentAssignmentResult, ApiError>> {
+    const url = `/api/v1/billing/pricing-engine/experiments/${experimentId}:assign`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommerceProductsAssignExperimentInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingExperimentAssignmentResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Complete an experiment (retains assignments and outcomes for analysis).
+   */
+  async postBillingPricingEngineExperimentsComplete(experimentId: string): Promise<Result<Types.CommerceProductsPricingExperimentDto, ApiError>> {
+    const url = `/api/v1/billing/pricing-engine/experiments/${experimentId}:complete`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingExperimentDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Record a monetized conversion outcome for a bucket key under its assigned arm.
+   */
+  async postBillingPricingEngineExperimentsConvert(
+    experimentId: string,
+    body: Types.CommerceProductsRecordExperimentOutcomeInput,
+  ): Promise<Result<void, ApiError>> {
+    const url = `/api/v1/billing/pricing-engine/experiments/${experimentId}:convert`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommerceProductsRecordExperimentOutcomeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Pause a Running experiment (assignments stay sticky).
+   */
+  async postBillingPricingEngineExperimentsPause(experimentId: string): Promise<Result<Types.CommerceProductsPricingExperimentDto, ApiError>> {
+    const url = `/api/v1/billing/pricing-engine/experiments/${experimentId}:pause`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingExperimentDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Start a Draft experiment (begins enrolling bucket keys).
+   */
+  async postBillingPricingEngineExperimentsStart(experimentId: string): Promise<Result<Types.CommerceProductsPricingExperimentDto, ApiError>> {
+    const url = `/api/v1/billing/pricing-engine/experiments/${experimentId}:start`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingExperimentDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Run one automated pricing scheduling pass immediately (issue #395): opt-in scheduled
+   * rules are activated/deactivated to match their date window and date-bounded
+   * experiments start/complete. The background scheduler runs the same pass periodically.
+   */
+  async postBillingPricingEngineSchedulingSweep(): Promise<Result<Types.CommerceProductsPricingScheduleSweepResult, ApiError>> {
+    const url = '/api/v1/billing/pricing-engine/scheduling:sweep';
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsPricingScheduleSweepResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
