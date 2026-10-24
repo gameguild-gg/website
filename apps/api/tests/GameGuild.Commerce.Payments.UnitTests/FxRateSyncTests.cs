@@ -352,7 +352,7 @@ public class FxRateSyncTests
     public async Task RunFxRateSyncCommand_WithNoProviderConfigured_IsRejected()
     {
         var handler = new RunFxRateSyncCommandHandler(
-            Mock.Of<IFxRateSyncService>(), Options.Create(new FxSyncOptions()));
+            Mock.Of<IFxRateSyncService>(), Options.Create(new FxSyncOptions()), ActorAccessor());
 
         var act = () => handler.Handle(new RunFxRateSyncCommand(), CancellationToken.None);
 
@@ -576,7 +576,7 @@ public class FxRateSyncTests
             ActorKind = ActorKind.User,
             SubjectId = Guid.NewGuid().ToString(),
             TenantId = Guid.NewGuid(),
-            Roles = new HashSet<string>(),
+            Roles = new HashSet<string> { "SystemAdmin" },
             Permissions = new HashSet<string>(),
             TypedAttributes = ActorAttributes.Empty,
             AuthScheme = "Test",

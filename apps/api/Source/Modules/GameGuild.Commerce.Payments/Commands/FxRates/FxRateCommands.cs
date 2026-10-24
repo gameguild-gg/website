@@ -1,5 +1,7 @@
 using FluentValidation;
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -20,6 +22,7 @@ namespace GameGuild.Commerce.Payments;
 /// <param name="Rate">Quote units per one base unit; strictly positive.</param>
 /// <param name="Reason">Audit reason (why the market rate is being pinned).</param>
 /// <param name="ExpiresAtUtc">Optional expiry instant (UTC); null = effective until replaced.</param>
+[AuthorizeRequest("", RequireSystemAdmin = true)]
 public sealed record SetManualFxRateOverrideCommand(
     string BaseCurrency,
     string QuoteCurrency,
@@ -66,7 +69,7 @@ public sealed class SetManualFxRateOverrideCommandHandler(
     /// <inheritdoc />
     public async Task<Guid> Handle(SetManualFxRateOverrideCommand request, CancellationToken cancellationToken)
     {
-        var actorId = Guid.TryParse(actorContextAccessor.ActorContext.SubjectId, out var parsed) ? parsed : Guid.Empty;
+        var actorId = FxAdministrationActor.RequireSystemAdmin(actorContextAccessor);
         var baseCurrency = (request.BaseCurrency ?? string.Empty).Trim().ToUpperInvariant();
         var quoteCurrency = (request.QuoteCurrency ?? string.Empty).Trim().ToUpperInvariant();
 
@@ -158,6 +161,7 @@ public sealed class SetManualFxRateOverrideCommandHandler(
 ///     Command (issue #412 spec B): trigger one FX rate sync pass immediately (admin surface;
 ///     same code path as the scheduled worker). Returns the run outcome.
 /// </summary>
+[AuthorizeRequest("", RequireSystemAdmin = true)]
 public sealed record RunFxRateSyncCommand : ICommand<FxRateSyncResult>;
 
 /// <summary>
@@ -167,11 +171,13 @@ public sealed record RunFxRateSyncCommand : ICommand<FxRateSyncResult>;
 /// </summary>
 public sealed class RunFxRateSyncCommandHandler(
     IFxRateSyncService syncService,
-    Microsoft.Extensions.Options.IOptions<FxSyncOptions> options) : ICommandHandler<RunFxRateSyncCommand, FxRateSyncResult>
+    Microsoft.Extensions.Options.IOptions<FxSyncOptions> options,
+    IActorContextAccessor actorContextAccessor) : ICommandHandler<RunFxRateSyncCommand, FxRateSyncResult>
 {
     /// <inheritdoc />
     public async Task<FxRateSyncResult> Handle(RunFxRateSyncCommand request, CancellationToken cancellationToken)
     {
+        FxAdministrationActor.RequireSystemAdmin(actorContextAccessor);
         var settings = options.Value;
         if (settings.Provider == FxSyncOptions.ProviderNone)
         {
@@ -182,5 +188,20 @@ public sealed class RunFxRateSyncCommandHandler(
         }
 
         return await syncService.SyncAsync(cancellationToken).ConfigureAwait(false);
+    }
+}
+
+internal static class FxAdministrationActor
+{
+    public static Guid RequireSystemAdmin(IActorContextAccessor actorContextAccessor)
+    {
+        var actor = actorContextAccessor.ActorContext;
+        if (!actor.IsAuthenticated || !actor.IsSystemAdmin
+            || actor.SubjectIdAsGuid is not { } actorId || actorId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Global FX administration requires an authenticated system administrator.");
+        }
+
+        return actorId;
     }
 }

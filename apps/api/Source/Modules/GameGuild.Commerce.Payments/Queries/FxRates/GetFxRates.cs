@@ -1,4 +1,6 @@
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.EntityFrameworkCore;
 
 namespace GameGuild.Commerce.Payments;
@@ -30,6 +32,7 @@ public sealed record FxRateDto(
 ///     (<paramref name="FromEffectiveDateUtc"/>/<paramref name="ToEffectiveDateUtc"/>, inclusive).
 ///     Ordered newest-effective-first, capped at <paramref name="Limit"/> (default 500, max 2000).
 /// </summary>
+[AuthorizeRequest("", RequireSystemAdmin = true)]
 public sealed record GetFxRatesQuery(
     string? BaseCurrency = null,
     string? QuoteCurrency = null,
@@ -38,11 +41,12 @@ public sealed record GetFxRatesQuery(
     int Limit = 500) : IQuery<IReadOnlyList<FxRateDto>>;
 
 /// <summary>Handler for <see cref="GetFxRatesQuery"/>.</summary>
-public sealed class GetFxRatesQueryHandler(IApplicationDbContext context) : IQueryHandler<GetFxRatesQuery, IReadOnlyList<FxRateDto>>
+public sealed class GetFxRatesQueryHandler(IApplicationDbContext context, IActorContextAccessor actorContextAccessor) : IQueryHandler<GetFxRatesQuery, IReadOnlyList<FxRateDto>>
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<FxRateDto>> Handle(GetFxRatesQuery request, CancellationToken cancellationToken)
     {
+        FxAdministrationActor.RequireSystemAdmin(actorContextAccessor);
         var limit = Math.Clamp(request.Limit, 1, 2000);
         var query = context.Set<FxRateSnapshot>().AsNoTracking();
 
@@ -119,6 +123,7 @@ public sealed record FxRateSyncRunDto(
 ///     persisted snapshot and the currently active grid/override counts — the admin surface
 ///     for the sync job and the staleness auditing requirement.
 /// </summary>
+[AuthorizeRequest("", RequireSystemAdmin = true)]
 public sealed record GetFxSyncStatusQuery(int RunLimit = 10) : IQuery<FxSyncStatusDto>;
 
 /// <summary>Result of <see cref="GetFxSyncStatusQuery"/>.</summary>
@@ -147,11 +152,13 @@ public sealed record FxSyncStatusDto(
 /// <summary>Handler for <see cref="GetFxSyncStatusQuery"/>.</summary>
 public sealed class GetFxSyncStatusQueryHandler(
     IApplicationDbContext context,
-    Microsoft.Extensions.Options.IOptions<FxSyncOptions> options) : IQueryHandler<GetFxSyncStatusQuery, FxSyncStatusDto>
+    Microsoft.Extensions.Options.IOptions<FxSyncOptions> options,
+    IActorContextAccessor actorContextAccessor) : IQueryHandler<GetFxSyncStatusQuery, FxSyncStatusDto>
 {
     /// <inheritdoc />
     public async Task<FxSyncStatusDto> Handle(GetFxSyncStatusQuery request, CancellationToken cancellationToken)
     {
+        FxAdministrationActor.RequireSystemAdmin(actorContextAccessor);
         var settings = options.Value;
         var snapshots = context.Set<FxRateSnapshot>().AsNoTracking();
         var now = SystemClock.UtcNow;

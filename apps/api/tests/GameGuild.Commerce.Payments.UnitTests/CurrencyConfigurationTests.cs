@@ -276,7 +276,7 @@ public class CurrencyConfigurationTests
         ActorKind = ActorKind.User,
         SubjectId = Guid.NewGuid().ToString(),
         TenantId = Guid.NewGuid(),
-        Roles = new HashSet<string>(),
+        Roles = new HashSet<string> { "TenantAdmin" },
         Permissions = new HashSet<string>(),
         TypedAttributes = ActorAttributes.Empty,
         AuthScheme = "Test",

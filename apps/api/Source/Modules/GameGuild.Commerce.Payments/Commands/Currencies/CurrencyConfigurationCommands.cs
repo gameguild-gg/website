@@ -1,5 +1,6 @@
 using FluentValidation;
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -28,6 +29,7 @@ public static class CurrencyConfigurationRules
 /// <param name="CurrencyCode">ISO 4217 code to enable (any casing).</param>
 /// <param name="DisplaySymbol">Optional display-preference symbol override.</param>
 /// <param name="DisplayOrder">Optional selector ordering hint.</param>
+[AuthorizeRequest("", RequireTenantAdmin = true)]
 public sealed record EnableCurrencyCommand(
     string CurrencyCode,
     string? DisplaySymbol = null,
@@ -121,6 +123,7 @@ public sealed class EnableCurrencyCommandHandler(
 ///     Explicit confirmation that active subscriptions holding this currency may keep running
 ///     while it is disabled for new purchases.
 /// </param>
+[AuthorizeRequest("", RequireTenantAdmin = true)]
 public sealed record DisableCurrencyCommand(
     string CurrencyCode,
     bool ConfirmActiveSubscriptionImpact = false) : ICommand;
@@ -218,6 +221,7 @@ public sealed class DisableCurrencyCommandHandler(
 ///     at every statement boundary).
 /// </summary>
 /// <param name="CurrencyCode">ISO 4217 code to make the base currency (any casing).</param>
+[AuthorizeRequest("", RequireTenantAdmin = true)]
 public sealed record SetBaseCurrencyCommand(string CurrencyCode) : ICommand;
 
 /// <summary>Validator for <see cref="SetBaseCurrencyCommand"/>.</summary>
@@ -317,10 +321,20 @@ internal static class CurrencyConfigurationCommandHelpers
     public static (Guid TenantId, Guid ActorId) ResolveActor(IActorContextAccessor actorContextAccessor)
     {
         var actorContext = actorContextAccessor.ActorContext;
+        if (!actorContext.IsAuthenticated || !actorContext.IsTenantAdmin
+            || actorContext.SubjectIdAsGuid is not { } actorId || actorId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Currency configuration requires an authenticated tenant administrator.");
+        }
+
         var tenantId = actorContext.TenantId
             ?? throw new UnauthorizedAccessException("Currency configuration requires a tenant context.");
 
-        var actorId = Guid.TryParse(actorContext.SubjectId, out var parsed) ? parsed : Guid.Empty;
+        if (tenantId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Currency configuration requires a valid tenant context.");
+        }
+
         return (tenantId, actorId);
     }
 

@@ -14,7 +14,7 @@ namespace GameGuild.Commerce.Payments;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/fx-rates")]
 [Microsoft.AspNetCore.Http.Tags("fx-rates")]
-[Authorize]
+[Authorize(Roles = "SystemAdmin")]
 public sealed class FxRatesController(ISender sender) : BaseApiController
 {
     /// <summary>

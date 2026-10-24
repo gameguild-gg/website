@@ -1,4 +1,5 @@
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,6 +32,7 @@ public sealed record TenantCurrencyDto(
 ///     including the catalog symbol/EnglishName data the selector UI needs — plus which code is
 ///     the current base (null when none is set yet: fail-closed default).
 /// </summary>
+[AuthorizeRequest("")]
 public sealed record GetTenantCurrenciesQuery : IQuery<IReadOnlyList<TenantCurrencyDto>>;
 
 /// <summary>Handler for <see cref="GetTenantCurrenciesQuery"/>.</summary>
@@ -41,8 +43,11 @@ public sealed class GetTenantCurrenciesQueryHandler(
     /// <inheritdoc />
     public async Task<IReadOnlyList<TenantCurrencyDto>> Handle(GetTenantCurrenciesQuery request, CancellationToken cancellationToken)
     {
-        var tenantId = actorContextAccessor.ActorContext.TenantId
-            ?? throw new UnauthorizedAccessException("Currency configuration requires a tenant context.");
+        var actor = actorContextAccessor.ActorContext;
+        if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId || tenantId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Currency configuration requires an authenticated tenant context.");
+        }
 
         var configurations = await context.Set<CurrencyConfiguration>()
             .AsNoTracking()

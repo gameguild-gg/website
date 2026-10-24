@@ -39,6 +39,7 @@ public sealed class CurrenciesController(ISender sender) : BaseApiController
     /// <param name="body">Optional display preferences.</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpPost("{currencyCode}/enable")]
+    [Authorize(Roles = "SystemAdmin,Owner,TenantAdmin,Admin")]
     [EndpointSummary("Enable a currency")]
     [EndpointDescription("Enables an ISO 4217 currency for the tenant. Idempotent. Audit-logged.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -57,6 +58,7 @@ public sealed class CurrenciesController(ISender sender) : BaseApiController
     /// <param name="body">Confirmation payload.</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpPost("{currencyCode}/disable")]
+    [Authorize(Roles = "SystemAdmin,Owner,TenantAdmin,Admin")]
     [EndpointSummary("Disable a currency")]
     [EndpointDescription("Disables an ISO 4217 currency for the tenant. The base currency is always rejected; currencies held by active subscriptions need explicit confirmation.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -75,6 +77,7 @@ public sealed class CurrenciesController(ISender sender) : BaseApiController
     /// <param name="currencyCode">ISO 4217 code.</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpPost("{currencyCode}/set-base")]
+    [Authorize(Roles = "SystemAdmin,Owner,TenantAdmin,Admin")]
     [EndpointSummary("Set the tenant base currency")]
     [EndpointDescription("Makes the currency the tenant's base currency for calculation and reporting, clearing the previous marker. Audit-logged.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
