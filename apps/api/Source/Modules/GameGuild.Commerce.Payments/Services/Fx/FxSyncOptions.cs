@@ -57,6 +57,12 @@ public sealed class FxSyncOptions
     /// <summary>Operators are alerted after this many consecutive failed runs. At least 1.</summary>
     public int AlertAfterConsecutiveFailures { get; set; } = 3;
 
+    /// <summary>
+    ///     Account IDs of operators who administer the platform FX service. Required when
+    ///     a provider is selected; alerts are delivered to each account's in-app inbox.
+    /// </summary>
+    public Guid[] AlertRecipientIds { get; set; } = [];
+
     /// <summary>Newest persisted snapshot older than this many days counts as stale and raises a staleness alert.</summary>
     public int StalenessAlertDays { get; set; } = 2;
 
@@ -125,6 +131,12 @@ public sealed class FxSyncOptionsValidator : IValidateOptions<FxSyncOptions>
         var usesOpenExchangeRates = options.Provider == FxSyncOptions.ProviderOpenExchangeRates
             || options.FallbackProvider == FxSyncOptions.ProviderOpenExchangeRates;
         var usesEcb = options.Provider == FxSyncOptions.ProviderEcb || options.FallbackProvider == FxSyncOptions.ProviderEcb;
+
+        if (options.AlertRecipientIds is null || options.AlertRecipientIds.Any(id => id == Guid.Empty)
+            || ((usesOpenExchangeRates || usesEcb) && options.AlertRecipientIds.Length == 0))
+        {
+            failures.Add("FxRates:AlertRecipientIds must contain actual operator account IDs when an FX provider is selected; empty IDs are invalid.");
+        }
 
         if (usesOpenExchangeRates && string.IsNullOrWhiteSpace(options.OpenExchangeRates.AppId))
         {

@@ -108,6 +108,7 @@ public class CurrencyConfigurationTests
     {
         await using var db = NewDatabase();
         await EnableAsync(db, "EUR");
+        var setupAuditIds = db.Set<AuditTrail>().Select(entry => entry.Id).ToArray();
         _usageProbe
             .Setup(probe => probe.CountActiveSubscriptionsUsingCurrencyAsync(
                 It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -117,7 +118,8 @@ public class CurrencyConfigurationTests
         await handler.Handle(new DisableCurrencyCommand("EUR", ConfirmActiveSubscriptionImpact: true), CancellationToken.None);
 
         db.Set<CurrencyConfiguration>().Single().IsEnabled.Should().BeFalse();
-        var audit = db.Set<AuditTrail>().Single(entry => entry.EntityType == nameof(CurrencyConfiguration));
+        var audit = db.Set<AuditTrail>().Single(entry => entry.EntityType == nameof(CurrencyConfiguration)
+            && !setupAuditIds.Contains(entry.Id));
         audit.Metadata.Should().Contain("confirmedSubscriptionImpact\":true").And.Contain("activeSubscriptions\":7");
     }
 
@@ -139,6 +141,7 @@ public class CurrencyConfigurationTests
         await using var db = NewDatabase();
         await EnableAsync(db, "USD", isBase: true);
         await EnableAsync(db, "BRL");
+        var setupAuditIds = db.Set<AuditTrail>().Select(entry => entry.Id).ToArray();
 
         var handler = new SetBaseCurrencyCommandHandler(db, _actorAccessor.Object);
         await handler.Handle(new SetBaseCurrencyCommand("brl"), CancellationToken.None);
@@ -151,9 +154,12 @@ public class CurrencyConfigurationTests
         brl.IsEnabled.Should().BeTrue();
 
         // ClearBaseCurrency + SetBaseCurrency both audited.
-        db.Set<AuditTrail>()
-            .Count(audit => audit.EntityType == nameof(CurrencyConfiguration))
-            .Should().Be(2);
+        var mutationAudits = db.Set<AuditTrail>()
+            .Where(audit => audit.EntityType == nameof(CurrencyConfiguration) && !setupAuditIds.Contains(audit.Id))
+            .ToList();
+        mutationAudits.Should().HaveCount(2);
+        mutationAudits.Should().ContainSingle(audit => audit.EntityId == usd.Id && audit.Metadata!.Contains("ClearBaseCurrency"));
+        mutationAudits.Should().ContainSingle(audit => audit.EntityId == brl.Id && audit.Metadata!.Contains("SetBaseCurrency"));
     }
 
     [Fact]

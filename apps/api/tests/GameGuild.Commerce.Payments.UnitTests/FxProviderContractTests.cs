@@ -110,6 +110,7 @@ public class FxProviderContractTests
         {
             ["FxRates:Provider"] = providerName,
             ["FxRates:OpenExchangeRates:AppId"] = "fixture-app-id",
+            ["FxRates:AlertRecipientIds:0"] = Guid.NewGuid().ToString(),
         }).Build();
         var services = new ServiceCollection();
         services.AddLogging();

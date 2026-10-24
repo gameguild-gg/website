@@ -130,7 +130,7 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "ISK", "352", 0, "kr", "Iceland Krona");
         Add(seed, "PLN", "985", 2, "zł", "Zloty");
         Add(seed, "CZK", "203", 2, "Kč", "Czech Koruna");
-        Add(seed, "HUF", "348", 0, "Ft", "Forint");
+        Add(seed, "HUF", "348", 2, "Ft", "Forint");
         Add(seed, "RON", "946", 2, "lei", "Romanian Leu");
         Add(seed, "BGN", "975", 2, "лв", "Bulgarian Lev");
         Add(seed, "UAH", "980", 2, "₴", "Hryvnia");
@@ -177,13 +177,14 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "BDT", "050", 2, "৳", "Taka");
         Add(seed, "LKR", "144", 2, "Rs", "Sri Lanka Rupee");
         Add(seed, "NPR", "524", 2, "₨", "Nepalese Rupee");
-        Add(seed, "MMK", "104", 0, "K", "Kyat");
-        Add(seed, "KHR", "116", 0, "៛", "Riel");
-        Add(seed, "LAK", "418", 0, "₭", "Lao Kip");
+        Add(seed, "MMK", "104", 2, "K", "Kyat");
+        Add(seed, "KHR", "116", 2, "៛", "Riel");
+        Add(seed, "LAK", "418", 2, "₭", "Lao Kip");
         Add(seed, "TWD", "901", 2, "NT$", "New Taiwan Dollar");
         Add(seed, "MOP", "446", 2, "MOP$", "Pataca");
         Add(seed, "BND", "096", 2, "B$", "Brunei Dollar");
         Add(seed, "FJD", "242", 2, "FJ$", "Fiji Dollar");
+        Add(seed, "VUV", "548", 0, "VT", "Vatu");
         Add(seed, "XPF", "953", 0, "CFPF", "CFP Franc");
 
         // Remaining active ISO 4217 currencies (issue #412: full-catalog coverage for the
@@ -202,7 +203,7 @@ public static class Iso4217CurrencyCatalog
         Add(seed, "KMF", "174", 0, "CF", "Comorian Franc");
         Add(seed, "LRD", "430", 2, "L$", "Liberian Dollar");
         Add(seed, "LSL", "426", 2, "L", "Loti");
-        Add(seed, "MGA", "969", 0, "Ar", "Malagasy Ariary");
+        Add(seed, "MGA", "969", 2, "Ar", "Malagasy Ariary");
         Add(seed, "MRU", "929", 2, "UM", "Ouguiya");
         Add(seed, "MUR", "480", 2, "₨", "Mauritius Rupee");
         Add(seed, "MVR", "462", 2, "Rf", "Rufiyaa");

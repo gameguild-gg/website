@@ -3,13 +3,13 @@ using GameGuild.Notifications;
 using GameGuild.Notifications.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
 /// <summary>
 ///     Raises FX sync failure/staleness alerts (issue #412 spec B) through the platform
-///     system-alert notification pattern, mirroring
-/// <c>NotificationGatewayAvailabilityAlerter</c>. Implementations must be failure-tolerant:
+///     system notification service. Implementations must be failure-tolerant:
 /// an alerting problem is logged, never propagated into the sync path.
 /// </summary>
 public interface IFxRateSyncAlerter
@@ -33,19 +33,19 @@ public sealed class NullFxRateSyncAlerter : IFxRateSyncAlerter
 
 /// <summary>
 ///     Notification-backed <see cref="IFxRateSyncAlerter"/>: in-app <see cref="NotificationType.System"/>
-/// notifications to the system channel (recipient <c>Guid.Empty</c>), throttled so a sustained
-/// outage raises at most one alert per window per kind.
+/// notifications to configured operator accounts. Successful deliveries are throttled per
+/// recipient and kind; a failed delivery remains eligible for the next attempt.
 /// </summary>
 public sealed class NotificationFxRateSyncAlerter(
     IServiceScopeFactory scopeFactory,
-    ILogger<NotificationFxRateSyncAlerter> logger) : IFxRateSyncAlerter
+    ILogger<NotificationFxRateSyncAlerter> logger,
+    IOptions<FxSyncOptions> options) : IFxRateSyncAlerter
 {
     /// <summary>Minimum interval between two alerts of the same kind.</summary>
     public static readonly TimeSpan ThrottleWindow = TimeSpan.FromMinutes(15);
 
-    private readonly object _throttleSyncRoot = new();
-    private DateTime _lastFailureAlertAtUtc = DateTime.MinValue;
-    private DateTime _lastStalenessAlertAtUtc = DateTime.MinValue;
+    private readonly SemaphoreSlim _deliveryGate = new(1, 1);
+    private readonly Dictionary<(string Kind, Guid Recipient), DateTime> _lastDelivered = new();
 
     /// <inheritdoc />
     public async Task RaiseSyncFailureAlertAsync(
@@ -56,20 +56,13 @@ public sealed class NotificationFxRateSyncAlerter(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(providerName);
 
-        if (!TryBeginAlert(ref _lastFailureAlertAtUtc))
-        {
-            logger.LogWarning(
-                "FX rate sync failed again (provider {Provider}, {Failures} consecutive failures; alert throttled).",
-                providerName,
-                consecutiveFailures);
-            return;
-        }
+        var boundedError = lastError.Length <= 1000 ? lastError : lastError[..1000];
 
         var metadata = JsonSerializer.Serialize(new
         {
             provider = providerName,
             consecutiveFailures,
-            lastError = lastError.Length <= 1000 ? lastError : lastError[..1000],
+            lastError = boundedError,
             raisedAtUtc = SystemClock.UtcNow,
         });
 
@@ -78,7 +71,7 @@ public sealed class NotificationFxRateSyncAlerter(
             message:
                 $"FX rate sync has failed {consecutiveFailures} consecutive time(s); provider '{providerName}' returned no usable rate set. "
                 + "Cross-currency conversions keep using the last persisted rates (or fail closed when none exist). "
-                + $"Last error: {lastError}",
+                + $"Last error: {boundedError}",
             referenceEntityType: "FxRateSyncRuns",
             metadata: metadata,
             cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -87,15 +80,6 @@ public sealed class NotificationFxRateSyncAlerter(
     /// <inheritdoc />
     public async Task RaiseStalenessAlertAsync(DateTime newestEffectiveDateUtc, int thresholdDays, CancellationToken cancellationToken = default)
     {
-        if (!TryBeginAlert(ref _lastStalenessAlertAtUtc))
-        {
-            logger.LogWarning(
-                "FX rates are stale (newest effective date {Effective:yyyy-MM-dd}, threshold {Days} days; alert throttled).",
-                newestEffectiveDateUtc,
-                thresholdDays);
-            return;
-        }
-
         var metadata = JsonSerializer.Serialize(new
         {
             newestEffectiveDateUtc,
@@ -114,20 +98,6 @@ public sealed class NotificationFxRateSyncAlerter(
             cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
-    private bool TryBeginAlert(ref DateTime lastRaisedAtUtc)
-    {
-        lock (_throttleSyncRoot)
-        {
-            if (SystemClock.UtcNow - lastRaisedAtUtc < ThrottleWindow)
-            {
-                return false;
-            }
-
-            lastRaisedAtUtc = SystemClock.UtcNow;
-            return true;
-        }
-    }
-
     private async Task SendAsync(
         string title,
         string message,
@@ -135,40 +105,71 @@ public sealed class NotificationFxRateSyncAlerter(
         string metadata,
         CancellationToken cancellationToken)
     {
+        var recipients = options.Value.AlertRecipientIds.Where(id => id != Guid.Empty).Distinct().ToArray();
+        if (recipients.Length == 0)
+        {
+            logger.LogError("{Title} alert has no configured operator recipients.", title);
+            return;
+        }
+
+        await _deliveryGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            using var scope = scopeFactory.CreateScope();
-            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-
-            var result = await notificationService
-                .SendAsync(
-                    recipientId: Guid.Empty, // System-level alert — routed to the admin channel
-                    type: NotificationType.System,
-                    title: title,
-                    message: message,
-                    channel: NotificationChannel.InApp,
-                    tenantId: null,
-                    actionUrl: null,
-                    priority: NotificationPriority.High,
-                    referenceEntityId: null,
-                    referenceEntityType: referenceEntityType,
-                    metadata: metadata,
-                    recipientEmail: null,
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            if (result.IsSuccess)
+            foreach (var recipient in recipients)
             {
-                logger.LogError("{Title} alert sent.", title);
-            }
-            else
-            {
-                logger.LogError("{Title} alert was not delivered: {Reason}.", title, result.Error?.Description ?? "unknown notification failure");
+                var key = (referenceEntityType, recipient);
+                if (_lastDelivered.TryGetValue(key, out var lastDelivered)
+                    && SystemClock.UtcNow - lastDelivered < ThrottleWindow)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    // Separate scopes prevent one failed persistence operation from poisoning
+                    // delivery to the remaining operators.
+                    using var scope = scopeFactory.CreateScope();
+                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                    var result = await notificationService
+                        .SendAsync(
+                            recipientId: recipient,
+                            type: NotificationType.System,
+                            title: title,
+                            message: message,
+                            channel: NotificationChannel.InApp,
+                            tenantId: null,
+                            actionUrl: null,
+                            priority: NotificationPriority.High,
+                            referenceEntityId: null,
+                            referenceEntityType: referenceEntityType,
+                            metadata: metadata,
+                            recipientEmail: null,
+                            cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
+
+                    if (result.IsSuccess)
+                    {
+                        _lastDelivered[key] = SystemClock.UtcNow;
+                        logger.LogInformation("{Title} alert delivered to configured operator.", title);
+                    }
+                    else
+                    {
+                        logger.LogError("{Title} alert was not delivered: {Reason}.", title, result.Error?.Description ?? "unknown notification failure");
+                    }
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    logger.LogError(exception, "{Title} alert delivery failed; remaining operators will still be attempted.", title);
+                }
             }
         }
-        catch (Exception exception)
+        finally
         {
-            logger.LogError(exception, "{Title} alert raised an exception; alerting must never break the sync path.", title);
+            _deliveryGate.Release();
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using GameGuild.API.Database;
 using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Commerce.Payments;
+using GameGuild.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -119,6 +120,54 @@ public sealed class CurrencyFxAdministrationPostgreSqlHttpTests(ApiPostgreSqlFix
         Assert.Equal(2, transport.Calls);
         Assert.False(await db.Set<FxRateSnapshot>().AnyAsync(row => row.BaseCurrency == row.QuoteCurrency));
         Assert.Contains(await db.Set<FxRateSyncRun>().Where(row => row.RawResponse == payload).ToListAsync(), row => row.RatesApplied == 2);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OperatorAlerts_ArePersistedAndVisibleOnlyInRecipientInboxes(bool stale)
+    {
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        var outsider = Guid.NewGuid();
+        var tenant = Guid.NewGuid();
+        var alerter = new NotificationFxRateSyncAlerter(
+            fixture.Factory.Services.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<NotificationFxRateSyncAlerter>.Instance,
+            Options.Create(new FxSyncOptions { AlertRecipientIds = [first, second] }));
+
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            if (stale) await alerter.RaiseStalenessAlertAsync(DateTime.UtcNow.AddDays(-3), 2);
+            else await alerter.RaiseSyncFailureAlertAsync("ecb", 3, new string('x', 5000));
+        }
+
+        await using var scope = fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var stored = await db.Set<Notification>().AsNoTracking()
+            .Where(row => row.RecipientId == first || row.RecipientId == second).ToListAsync();
+        Assert.Equal(2, stored.Count);
+        Assert.All(stored, row =>
+        {
+            Assert.True(row.IsSent);
+            Assert.True(row.Message.Length <= 2000);
+            Assert.Equal(NotificationChannel.InApp, row.Channel);
+            Assert.Equal(stale ? "FxRateSnapshots" : "FxRateSyncRuns", row.ReferenceEntityType);
+        });
+
+        foreach (var recipient in new[] { first, second, outsider })
+        {
+            using var client = fixture.CreateAuthenticatedClient(recipient, tenant);
+            using var response = await client.GetAsync("/api/notifications");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var visible = document.RootElement.EnumerateArray().ToArray();
+            foreach (var notification in stored)
+            {
+                Assert.Equal(notification.RecipientId == recipient,
+                    visible.Any(value => value.GetProperty("id").GetGuid() == notification.Id));
+            }
+        }
     }
 
     private sealed class TransientRateHandler(string payload) : HttpMessageHandler
