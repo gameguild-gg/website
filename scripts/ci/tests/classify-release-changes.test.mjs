@@ -28,7 +28,7 @@ test("documentation and CI changes do not deploy runtime services", () => {
       "scripts/ci/economy-artifacts.sh",
       "scripts/ci/economy-integration-shards.json",
     ]),
-    { ...expectedEmptyClassification, economyCritical: true },
+    { ...expectedEmptyClassification, api: true, economyCritical: true },
   );
 });
 
@@ -41,6 +41,18 @@ for (const file of [
     const result = classifyReleaseChanges([file]);
     assert.deepEqual(result, { ...expectedEmptyClassification, api: true });
     assert.deepEqual(releaseServiceMatrix(result), ["api"]);
+    assert.deepEqual(runtimeReleaseServiceMatrix(result), []);
+  });
+}
+
+for (const file of [
+  "scripts/ci/api-integration-filter.mjs",
+  "scripts/ci/economy-integration-shards.json",
+  "scripts/ci/tests/api-integration-filter.test.mjs",
+]) {
+  test(`shared API partition ${file} verifies both runners without deployment`, () => {
+    const result = classifyReleaseChanges([file]);
+    assert.deepEqual(result, { ...expectedEmptyClassification, api: true, economyCritical: true });
     assert.deepEqual(runtimeReleaseServiceMatrix(result), []);
   });
 }

@@ -786,25 +786,7 @@ run_whole_solution_test_project() {
     if [[ "$regression_shard" == api-integration-* ]]; then
       # The first three filters name disjoint full class prefixes. The fourth
       # is their exact complement, so newly added tests are always selected.
-      integration_filter="$("$PYTHON_BIN" - "$script_dir/economy-integration-shards.json" "$regression_shard" <<'PY'
-import json
-import re
-import sys
-groups = json.load(open(sys.argv[1], encoding="utf-8"))
-if set(groups) != {"api-integration-1", "api-integration-2", "api-integration-3"}:
-    raise SystemExit("Integration shards require three explicit groups plus their complement")
-names = [name for group in groups.values() for name in group]
-if len(names) != len(set(names)) or any(not re.fullmatch(r"GameGuild\.API\.IntegrationTests\.[A-Za-z0-9_]+", name) for name in names):
-    raise SystemExit("Integration shard classes must be valid and disjoint")
-if any(not group for group in groups.values()):
-    raise SystemExit("An explicit integration shard is empty")
-shard = sys.argv[2]
-if shard == "api-integration-4":
-    print("&".join(f"FullyQualifiedName!~{name}." for name in names))
-else:
-    print("|".join(f"FullyQualifiedName~{name}." for name in groups[shard]))
-PY
-)"
+      integration_filter="$(node "$script_dir/api-integration-filter.mjs" "$regression_shard")"
       test_filter=(--filter "$integration_filter")
       printf '%s\n' "$integration_filter" > "$results/test-filter.txt"
       cp "$script_dir/economy-integration-shards.json" "$results/integration-partition.json"

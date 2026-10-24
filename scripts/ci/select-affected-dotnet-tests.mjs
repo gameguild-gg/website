@@ -22,6 +22,9 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
       [
         "scripts/ci/select-affected-dotnet-tests.mjs",
         "scripts/ci/run-affected-dotnet-tests.sh",
+        "scripts/ci/api-integration-filter.mjs",
+        "scripts/ci/economy-integration-shards.json",
+        "scripts/ci/tests/api-integration-filter.test.mjs",
         "scripts/ci/tests/select-affected-dotnet-tests.test.mjs",
       ].includes(filePath)
     ) {
