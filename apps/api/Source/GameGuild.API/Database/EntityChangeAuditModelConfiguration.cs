@@ -20,6 +20,8 @@ public sealed class EntityChangeAuditModelConfiguration : IModelConfiguration
             .HasDatabaseName("ix_entity_change_audit_entity");
         entity.HasIndex(record => record.OccurredAtUtc)
             .HasDatabaseName("ix_entity_change_audit_time");
+        entity.HasIndex(record => new { record.TenantId, record.OccurredAtUtc })
+            .HasDatabaseName("ix_entity_change_audit_tenant_time");
         entity.HasIndex(record => record.CorrelationId)
             .HasDatabaseName("ix_entity_change_audit_correlation");
     }

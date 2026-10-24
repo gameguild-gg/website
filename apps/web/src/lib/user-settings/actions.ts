@@ -66,16 +66,7 @@ const PROFILE_FIELDS = [
 
 const PROFILE_URL_FIELDS = ['website', 'avatarUrl', 'bannerUrl'] as const;
 
-const ACCOUNT_PROFILE_FIELDS = [
-  'displayName',
-  'bio',
-  'location',
-  'website',
-  'jobTitle',
-  'company',
-] as const;
-
-type AccountProfileBody = Record<(typeof ACCOUNT_PROFILE_FIELDS)[number], string>;
+type AccountProfileBody = Pick<ProfileFormInput, 'displayName' | 'bio' | 'location' | 'website' | 'jobTitle' | 'company'>;
 
 function isHttpUrl(value: string): boolean {
   try {

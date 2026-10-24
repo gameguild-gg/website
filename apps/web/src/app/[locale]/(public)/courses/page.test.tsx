@@ -88,14 +88,12 @@ const courseFixtures = [
 const { default: CoursesPage } = await import('./page');
 
 function hasStat(value: string, label: string) {
-  const statValue = screen.getByText(
-    (content, element) => element?.tagName === 'DD' && content === value,
-  );
-  const statCard = statValue.parentElement;
+  const statLabel = screen.getByText(label, { selector: 'p' });
+  const statCard = statLabel.parentElement;
   if (!statCard) {
-    throw new Error(`Stat card for ${value} not found`);
+    throw new Error(`Stat card for ${label} not found`);
   }
-  return within(statCard).getByText(label, { selector: 'p' });
+  return within(statCard).getByText(value, { selector: 'dd' });
 }
 
 describe('CoursesPage', () => {

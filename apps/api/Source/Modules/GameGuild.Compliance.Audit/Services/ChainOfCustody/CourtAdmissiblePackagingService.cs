@@ -95,7 +95,7 @@ public sealed class CourtAdmissiblePackagingService(
             .Distinct()
             .ToList();
         var custodianRecords = await context.Set<EvidenceCustodian>().AsNoTracking()
-            .Where(custodian => custodianIds.Contains(custodian.Id))
+            .Where(custodian => custodian.TenantId == tenantId && custodianIds.Contains(custodian.UserId))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -5,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GameGuild.API.Database.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20261020120000_AddRefundKindAndDisputeFees")]
     public partial class AddRefundKindAndDisputeFees : Migration
     {
         /// <inheritdoc />

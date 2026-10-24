@@ -138,6 +138,23 @@ describe('ProfileForm', () => {
     expect(screen.getByText('Enter a valid http(s) URL.')).toBeInTheDocument();
   });
 
+  it('rejects a file in a required text field instead of stringifying it', () => {
+    render(<ProfileForm {...defaultProps} />);
+    const getEntry = FormData.prototype.get;
+    const getSpy = vi.spyOn(FormData.prototype, 'get').mockImplementation(function (this: FormData, name: string) {
+      return name === 'displayName' ? new File([], 'profile.txt') : getEntry.call(this, name);
+    });
+
+    try {
+      fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!);
+
+      expect(mocks.updateProfileAction).not.toHaveBeenCalled();
+      expect(screen.getByText('This field is required.')).toBeInTheDocument();
+    } finally {
+      getSpy.mockRestore();
+    }
+  });
+
   it('saves the profile through the server action and refreshes server data', async () => {
     mocks.updateProfileAction.mockResolvedValue({ success: true, data: undefined });
     render(<ProfileForm {...defaultProps} />);

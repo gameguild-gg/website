@@ -5,6 +5,7 @@ using System.Text.Json;
 using GameGuild.API.Database;
 using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Configuration.ApplicationLayer;
+using GameGuild.Compliance.Audit;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
@@ -99,12 +100,15 @@ public sealed class MfaSignInPolicyPostgreSqlTests(ApiPostgreSqlFixture fixture,
                 provider.GetRequiredService<IPasswordHasher>().HashPassword(password), "mfa-" + marker);
             user.VerifyEmail();
             var context = provider.GetRequiredService<ApplicationDbContext>();
+            Assert.True(provider.GetRequiredService<IOptions<ValueSnapshotOptions>>().Value.StagingEnabled);
             context.Set<User>().Add(user);
             context.Set<Tenant>().Add(new Tenant { Id = tenantId, Name = "MFA " + marker,
                 Slug = "mfa-" + marker, AdminEmail = "admin-" + marker + "@example.test", IsActive = true });
             context.Set<TenantMember>().Add(new TenantMember { Id = Guid.NewGuid(), TenantId = tenantId,
                 UserId = user.Id, Role = "Member", IsActive = true });
             await context.SaveChangesAsync();
+            Assert.True(await context.Set<MutationValueSnapshot>().IgnoreQueryFilters()
+                .AnyAsync(snapshot => snapshot.EntityName == nameof(User) && snapshot.KeyId == user.Id.ToString()));
             var tracking = provider.GetRequiredService<IMfaAttemptTrackingService>();
             var mfa = provider.GetRequiredService<IMfaService>();
             Assert.IsType<MfaAttemptTrackingService>(tracking);

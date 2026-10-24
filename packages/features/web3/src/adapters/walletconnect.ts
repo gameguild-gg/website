@@ -17,9 +17,9 @@
  * wallet reports unavailable and every operation rejects (`wallet_not_found`).
  * Current SDK releases ship under the proprietary WalletConnect/Reown
  * Community License, so this repository does not vendor the package — a
- * deployment that has accepted the license installs it, and the adapter
- * resolves it from the host at runtime (mirroring the Torus fail-closed
- * pattern, see `src/types/walletconnect-ethereum-provider.d.ts`).
+ * deployment that has accepted the license supplies an SDK-backed loader
+ * or browser ESM resolution for the optional native import. Installing the
+ * package on the Node host alone does not provide browser module resolution.
  */
 import { toProviderError, toWeb3Error } from '../types';
 import type {
@@ -84,9 +84,10 @@ export interface WalletConnectAdapterOptions extends WalletConnectNetworkOptions
   readonly projectId?: string;
   /**
    * Loader for the SDK-backed provider. Defaults to the lazy dynamic import
-   * of `@walletconnect/ethereum-provider` + `EthereumProvider.init(...)`;
-   * rejects (fail closed) when the package is not installed or the relay is
-   * unreachable.
+   * of `@walletconnect/ethereum-provider` + `EthereumProvider.init(...)`.
+   * That native import requires browser ESM resolution supplied by the host;
+   * applications can instead inject a loader backed by their bundled SDK.
+   * Rejects (fail closed) when the SDK cannot be resolved or the relay is unreachable.
    */
   readonly loadProvider?: () => Promise<WalletConnectEthereumProviderLike>;
 }
@@ -102,14 +103,12 @@ export type WalletConnectAdapter = WalletAdapter & {
 };
 
 /**
- * SDK module specifier, held in a deliberately widened `string` binding so
- * no bundler or test runner can statically resolve it: the repository does
- * not vendor `@walletconnect/ethereum-provider` (proprietary WalletConnect/
- * Reown Community License), so a statically analyzable specifier would fail
- * vite transforms, turbopack/webpack production builds and vitest imports
- * of this file even though the import only ever executes in deployments
- * that installed the SDK. Its rejection is handled by the fail-closed
- * `loadProvider` path (mapped to `wallet_not_found`).
+ * Optional SDK specifier. A widened TypeScript string does not prevent
+ * Turbopack from resolving a constant import while compiling ordinary sign-in.
+ * The import below explicitly remains native in each supported bundler, so
+ * an absent optional SDK cannot break routes where WalletConnect is disabled.
+ * Hosts enabling it still need an SDK-backed loader or browser ESM resolution;
+ * load failures map to `wallet_not_found` without bypassing authentication.
  */
 const ETHEREUM_PROVIDER_MODULE: string = '@walletconnect/ethereum-provider';
 
@@ -174,10 +173,12 @@ export const createWalletConnectAdapter = (
   const loadProvider =
     options.loadProvider ??
     (async (): Promise<WalletConnectEthereumProviderLike> => {
-      // Dynamic specifier + @vite-ignore: the import is only ever resolved
-      // at runtime, in deployments that installed the SDK. Everywhere else
-      // the rejection lands in the fail-closed catch below.
+      // Preserve the optional native import in Vite, Webpack and Turbopack.
+      // The host must provide browser module resolution or inject loadProvider;
+      // a failed runtime import lands in the fail-closed catch below.
       const module = (await import(
+        /* webpackIgnore: true */
+        /* turbopackIgnore: true */
         /* @vite-ignore */ ETHEREUM_PROVIDER_MODULE
       )) as WalletConnectEthereumProviderModule;
       return module.default.init({

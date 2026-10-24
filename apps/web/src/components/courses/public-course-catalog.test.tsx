@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { AnchorHTMLAttributes, ImgHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -17,12 +17,6 @@ vi.mock('@/i18n/navigation', () => ({
     <a href={href} {...rest}>
       {children}
     </a>
-  ),
-}));
-
-vi.mock('next/image', () => ({
-  default: ({ alt, src, ...rest }: ImgHTMLAttributes<HTMLImageElement> & { alt: string; src: string }) => (
-    <img alt={alt} src={src} {...rest} />
   ),
 }));
 
@@ -71,6 +65,12 @@ const courseFixtures = [
 describe('PublicCourseCatalog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('renders the course thumbnail through the real Next image component', () => {
+    render(<PublicCourseCatalog initialCourses={[makeCourse({ thumbnail: '/course-cover.svg' })]} />);
+
+    expect(screen.getByRole('img', { name: 'AI for Games' })).toHaveAttribute('src', '/course-cover.svg');
   });
 
   it('renders courses with accessible search and filter groups', () => {

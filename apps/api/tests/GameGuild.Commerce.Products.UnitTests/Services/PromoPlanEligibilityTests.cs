@@ -20,6 +20,7 @@ public class PromoPlanEligibilityTests
             _promoCodeRepository.Object,
             Mock.Of<IPromoStackingRuleRepository>(),
             Mock.Of<IPricingRuleRepository>(),
+            Mock.Of<IPricingExperimentService>(),
             new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
     }
 

@@ -1,4 +1,5 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,6 +7,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GameGuild.API.Database.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20261022124500_AddPromoPlanEligibilityConversionSubscriptionApplication")]
     public partial class AddPromoPlanEligibilityConversionSubscriptionApplication : Migration
     {
         /// <inheritdoc />
@@ -19,7 +22,7 @@ namespace GameGuild.API.Database.Migrations
                 nullable: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_promo_codes_plan_id",
+                name: "IX_promo_codes_PlanId",
                 table: "promo_codes",
                 column: "PlanId");
 
@@ -37,12 +40,12 @@ namespace GameGuild.API.Database.Migrations
                 nullable: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_promo_code_uses_subscription_id",
+                name: "IX_promo_code_uses_SubscriptionId",
                 table: "promo_code_uses",
                 column: "SubscriptionId");
 
             migrationBuilder.CreateIndex(
-                name: "ix_promo_code_uses_invoice_id",
+                name: "IX_promo_code_uses_InvoiceId",
                 table: "promo_code_uses",
                 column: "InvoiceId");
 
@@ -70,22 +73,22 @@ namespace GameGuild.API.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_promo_code_validation_attempts_attempted_at",
+                name: "IX_promo_code_validation_attempts_AttemptedAt",
                 table: "promo_code_validation_attempts",
                 column: "AttemptedAt");
 
             migrationBuilder.CreateIndex(
-                name: "ix_promo_code_validation_attempts_code",
+                name: "IX_promo_code_validation_attempts_Code",
                 table: "promo_code_validation_attempts",
                 column: "Code");
 
             migrationBuilder.CreateIndex(
-                name: "ix_promo_code_validation_attempts_promo_code_id",
+                name: "IX_promo_code_validation_attempts_PromoCodeId",
                 table: "promo_code_validation_attempts",
                 column: "PromoCodeId");
 
             migrationBuilder.CreateIndex(
-                name: "ix_promo_code_validation_attempts_user_id",
+                name: "IX_promo_code_validation_attempts_UserId",
                 table: "promo_code_validation_attempts",
                 column: "UserId");
         }
@@ -97,15 +100,15 @@ namespace GameGuild.API.Database.Migrations
                 name: "promo_code_validation_attempts");
 
             migrationBuilder.DropIndex(
-                name: "ix_promo_code_uses_invoice_id",
+                name: "IX_promo_code_uses_InvoiceId",
                 table: "promo_code_uses");
 
             migrationBuilder.DropIndex(
-                name: "ix_promo_code_uses_subscription_id",
+                name: "IX_promo_code_uses_SubscriptionId",
                 table: "promo_code_uses");
 
             migrationBuilder.DropIndex(
-                name: "ix_promo_codes_plan_id",
+                name: "IX_promo_codes_PlanId",
                 table: "promo_codes");
 
             migrationBuilder.DropColumn(

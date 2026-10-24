@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
-import { randomBytes } from "node:crypto";
-import { createServer } from "node:http";
+import { createHash, randomBytes } from "node:crypto";
+import { createServer, request as httpRequest } from "node:http";
+import { deflateSync, gzipSync } from "node:zlib";
 import { once } from "node:events";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -136,6 +137,154 @@ async function startHeaderServer(context, handler) {
   return `http://127.0.0.1:${server.address().port}`;
 }
 
+for (const packageRoot of installedConsumers("undici")) {
+  const consumerRequire = createRequire(join(packageRoot, "package.json"));
+  const undici = consumerRequire("./index.js");
+  test(`${packageRoot}: reviewed HTTP client enforces mixed-case response integrity`, { timeout: 15000 }, async context => {
+    assert.ok(["7.30.1", "8.12.2"].includes(consumerRequire("./package.json").version));
+    const origin = await startHeaderServer(context, (_request, response) => response.end("fixture body"));
+    const valid = createHash("sha256").update("fixture body").digest("base64");
+    const invalid = createHash("sha256").update("different body").digest("base64");
+    for (const algorithm of ["sha256", "SHA256", "Sha256"]) {
+      const response = await undici.fetch(origin, { integrity: `${algorithm}-${valid}`, signal: AbortSignal.timeout(5000) });
+      assert.equal(await response.text(), "fixture body");
+      await assert.rejects(undici.fetch(origin, { integrity: `${algorithm}-${invalid}`, signal: AbortSignal.timeout(5000) }),
+        error => /integrity mismatch/.test(String(error.cause)));
+    }
+  });
+  test(`${packageRoot}: excess response encodings reject without an uncaught stream error`, { timeout: 10000 }, async context => {
+    const origin = await startHeaderServer(context, (_request, response) => {
+      response.setHeader("Content-Encoding", Array(6).fill("gzip").join(", "));
+      response.end(gzipSync("fixture"));
+    });
+    await assert.rejects(async () => {
+      const response = await undici.fetch(origin, { signal: AbortSignal.timeout(5000) });
+      await response.text();
+    }, error => /too many content-encodings/.test(String(error.cause)));
+  });
+  test(`${packageRoot}: SSE bounds retained fields while preserving ordinary events`, { timeout: 10000 }, async context => {
+    const { EventSourceStream } = consumerRequire("./lib/web/eventsource/eventsource-stream.js");
+    const ordinary = new EventSourceStream({ readableObjectMode: true, maxEventSize: 128 * 1024 });
+    const events = [];
+    ordinary.on("data", event => events.push(event));
+    context.after(() => ordinary.destroy());
+    const finished = once(ordinary, "end");
+    ordinary.end("data: ordinary\n\n");
+    await finished;
+    assert.equal(events.length, 1);
+    assert.equal(events[0].options.data, "ordinary");
+    const bounded = new EventSourceStream({ readableObjectMode: true, maxEventSize: 128 * 1024 });
+    context.after(() => bounded.destroy());
+    const rejected = once(bounded, "error");
+    bounded.end("data:\n".repeat(1025));
+    const [error] = await rejected;
+    assert.match(error.message, /EventSource message size exceeded/);
+  });
+}
+
+for (const packageRoot of installedConsumers("fast-uri")) {
+  test(`${packageRoot}: URI normalization preserves authority, scheme and relative-path boundaries`, () => {
+    const uri = require(packageRoot);
+    assert.equal(require(join(packageRoot, "package.json")).version, "3.1.9");
+    assert.equal(uri.normalize("https://EXAMPLE.test/a/../b"), "https://example.test/b");
+    assert.match(uri.parse("ht%74ps://example.test/").error, /scheme is malformed/);
+    assert.match(uri.parse("https://user@allowed@other.test/").error, /host is malformed/);
+    assert.equal(uri.equal("a/../b", "/b"), false);
+    assert.equal(uri.normalize("a/..//b"), ".//b");
+    assert.equal(uri.serialize({ path: "label:value" }, { reference: "suffix" }), "label%3Avalue");
+    assert.equal(uri.parse(uri.normalize("./label:value")).scheme, undefined);
+  });
+}
+
+for (const packageRoot of installedConsumers("happy-dom")) {
+  test(`${packageRoot}: module imports retain valid aliases and cannot inject an initializer`, { timeout: 10000 }, async context => {
+    assert.equal(require(join(packageRoot, "package.json")).version, "21.0.4");
+    const { Window } = await import(pathToFileURL(join(packageRoot, "lib/index.js")).href);
+    const { default: Compiler } = await import(pathToFileURL(join(packageRoot, "lib/module/ECMAScriptModuleCompiler.js")).href);
+    const window = new Window({ url: "https://fixture.example/", settings: {
+      enableJavaScriptEvaluation: true, suppressCodeGenerationFromStringsWarning: true, disableErrorCapturing: true,
+    } });
+    context.after(() => window.happyDOM.close());
+    const imports = new Map([["https://fixture.example/values.json", { value: "ordinary" }]]);
+    const compiler = new Compiler(window);
+    const valid = compiler.compile("https://fixture.example/valid.js",
+      'import { value as label } from "./values.json" with { type: "json" }; window.__fixtureValue = label;');
+    await valid.execute({ imports });
+    assert.equal(window.__fixtureValue, "ordinary");
+    const invalid = compiler.compile("https://fixture.example/invalid.js",
+      'import { absent as injected = globalThis.__fixtureInjected = true } from "./values.json" with { type: "json" };');
+    await invalid.execute({ imports });
+    assert.equal(window.__fixtureInjected, undefined);
+  });
+}
+
+function assertConfiguredTokenEndpoint(actual, expected) {
+  const url = new URL(actual);
+  assert.deepEqual([...url.searchParams.keys()], ["client-request-id"]);
+  assert.match(url.searchParams.get("client-request-id"), /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i);
+  url.search = "";
+  assert.equal(url.href, expected);
+}
+
+for (const packageRoot of installedConsumers("@azure/msal-node")) {
+  test(`${packageRoot}: authorization response metadata cannot redirect credential-bearing requests`, { timeout: 10000 }, async () => {
+    const consumerRequire = createRequire(join(packageRoot, "package.json"));
+    const { ConfidentialClientApplication } = consumerRequire(packageRoot);
+    assert.equal(consumerRequire("./package.json").version, "7.1.0");
+    assert.equal(consumerRequire("@azure/msal-common/package.json").version, "16.14.2");
+    const authority = "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111";
+    const endpoint = `${authority}/oauth2/v2.0/token`;
+    const requests = [];
+    const stopped = new Error("Disposable token transport stopped");
+    const app = new ConfidentialClientApplication({ auth: {
+      clientId: "22222222-2222-2222-2222-222222222222", clientSecret: randomBytes(32).toString("hex"),
+      authority, knownAuthorities: ["login.microsoftonline.com"],
+      authorityMetadata: JSON.stringify({ authorization_endpoint: `${authority}/oauth2/v2.0/authorize`,
+        token_endpoint: endpoint, end_session_endpoint: `${authority}/oauth2/v2.0/logout`, issuer: `${authority}/v2.0` }),
+    }, system: { disableInternalRetries: true, networkClient: {
+      sendGetRequestAsync: async url => { requests.push({ method: "GET", url }); throw stopped; },
+      sendPostRequestAsync: async (url, options) => { requests.push({ method: "POST", url, body: options.body }); throw stopped; },
+    } } });
+    await assert.rejects(app.acquireTokenByCode({ code: "disposable-code", redirectUri: "https://app.example/callback", scopes: ["User.Read"] },
+      { code: "untrusted-response-code", cloud_instance_host_name: "other.example.invalid" }));
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].method, "POST");
+    assertConfiguredTokenEndpoint(requests[0].url, endpoint);
+    assert.equal(new URLSearchParams(requests[0].body).get("code"), "disposable-code");
+  });
+}
+
+for (const packageRoot of installedConsumers("@azure/identity")) {
+  test(`${packageRoot}: Azure Identity remains compatible with the fixed MSAL client`, { timeout: 10000 }, async () => {
+    const consumerRequire = createRequire(join(packageRoot, "package.json"));
+    const { ClientSecretCredential } = consumerRequire(packageRoot);
+    const { createHttpHeaders } = consumerRequire("@azure/core-rest-pipeline");
+    assert.equal(consumerRequire("@azure/msal-node/package.json").version, "7.1.0");
+    const authority = "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111";
+    const token = randomBytes(32).toString("hex");
+    const requests = [];
+    const credential = new ClientSecretCredential("11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222", randomBytes(32).toString("hex"), {
+      disableInstanceDiscovery: true, retryOptions: { maxRetries: 0 }, httpClient: {
+        sendRequest: async request => {
+          requests.push({ url: request.url, method: request.method, body: request.body });
+          assert.equal(new URL(request.url).origin, "https://login.microsoftonline.com");
+          const body = request.method === "GET"
+            ? { authorization_endpoint: `${authority}/oauth2/v2.0/authorize`, token_endpoint: `${authority}/oauth2/v2.0/token`,
+              end_session_endpoint: `${authority}/oauth2/v2.0/logout`, issuer: `${authority}/v2.0` }
+            : { access_token: token, token_type: "Bearer", expires_in: 3600 };
+          return { request, status: 200, headers: createHttpHeaders({ "content-type": "application/json" }), bodyAsText: JSON.stringify(body) };
+        },
+      },
+    });
+    const result = await credential.getToken("https://database.windows.net/.default");
+    assert.equal(result.token, token);
+    const posts = requests.filter(request => request.method === "POST");
+    assert.equal(posts.length, 1);
+    assertConfiguredTokenEndpoint(posts[0].url, `${authority}/oauth2/v2.0/token`);
+    assert.equal(new URLSearchParams(posts[0].body).get("grant_type"), "client_credentials");
+  });
+}
+
 function readRedirectedHeaders(client, url, headers) {
   return new Promise((resolveHeaders, rejectHeaders) => {
     const request = client.get(url, { headers, sensitiveHeaders: ["X-Test-Credential"] }, response => {
@@ -189,6 +338,75 @@ for (const packageRoot of installedConsumers("follow-redirects")) {
       });
     }
   }
+}
+
+// GHSA-27r3-jxmh-p828: the decoder must be detached after its frame completes,
+// while the remaining HTTP body is still consumed. Exercise the installed graph.
+for (const packageRoot of installedConsumers("body-parser")) {
+  const consumerRequire = createRequire(join(packageRoot, "package.json"));
+  const bodyParser = consumerRequire("./index.js");
+  for (const encoding of ["identity", "gzip"]) {
+    test(`${packageRoot}: patched body parser preserves ordinary ${encoding} JSON requests`, async context => {
+      assert.equal(consumerRequire("./package.json").version, "2.4.0");
+      assert.equal(consumerRequire("qs/package.json").version, "6.16.1");
+      const parser = bodyParser.json();
+      const origin = await startHeaderServer(context, (request, response) => {
+        parser(request, response, error => {
+          response.statusCode = error ? 400 : 200;
+          response.end(JSON.stringify(error ? { rejected: true } : request.body));
+        });
+      });
+      const payload = Buffer.from(JSON.stringify({ message: "ordinary compressed JSON", count: 3 }));
+      const response = await fetch(origin, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Content-Encoding": encoding },
+        body: encoding === "gzip" ? gzipSync(payload) : payload,
+        signal: AbortSignal.timeout(5000),
+      });
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { message: "ordinary compressed JSON", count: 3 });
+    });
+  }
+
+  test(`${packageRoot}: trailing compressed-body bytes finish without an uncaught decoder error`, { timeout: 10000 }, async context => {
+    const parser = bodyParser.json();
+    const payload = { message: "late request bytes" };
+    const first = Buffer.concat([deflateSync(JSON.stringify(payload)), Buffer.from([0])]);
+    const trailing = Buffer.alloc(1024);
+    let client;
+    context.after(() => client?.destroy());
+    const origin = await startHeaderServer(context, (request, response) => {
+      parser(request, response, error => {
+        if (error) {
+          response.statusCode = 400;
+          response.end("rejected");
+          client.end(trailing);
+          return;
+        }
+        // Deliver the rest only after parsing has finished, then require the HTTP
+        // request to finish too. Sending one combined buffer misses this lifecycle.
+        request.once("end", () => response.end(JSON.stringify(request.body)));
+        client.end(trailing);
+      });
+    });
+    const result = await new Promise((resolveResponse, rejectResponse) => {
+      client = httpRequest(origin, {
+        method: "POST", agent: false,
+        headers: { "Content-Type": "application/json", "Content-Encoding": "deflate",
+          "Content-Length": first.length + trailing.length },
+      }, response => {
+        const chunks = [];
+        response.on("data", chunk => chunks.push(chunk));
+        response.on("error", rejectResponse);
+        response.on("end", () => resolveResponse({ status: response.statusCode, body: Buffer.concat(chunks).toString("utf8") }));
+      });
+      client.on("error", rejectResponse);
+      client.setTimeout(5000, () => client.destroy(new Error("Compressed request did not finish")));
+      client.write(first);
+    });
+    assert.equal(result.status, 200);
+    assert.deepEqual(JSON.parse(result.body), payload);
+  });
 }
 
 for (const packageRoot of installedConsumers("sharp")) {
