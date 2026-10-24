@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GameGuild.API.IntegrationTests;
@@ -27,15 +28,18 @@ public sealed class CommerceMigrationDiscoveryPostgreSqlTests(ApiPostgreSqlFixtu
 
         Type[] stores = [typeof(Refund), typeof(PaymentDispute), typeof(DisputeEvidence),
             typeof(PromoCode), typeof(PromoCodeUse), typeof(PromoCodeValidationAttempt)];
+        var sqlGeneration = db.GetService<ISqlGenerationHelper>();
         foreach (var type in stores)
         {
             var entity = db.Model.FindEntityType(type)!;
             var table = entity.GetTableName()!;
             var store = StoreObjectIdentifier.Table(table, entity.GetSchema());
             var columns = string.Join(", ", entity.GetProperties().Select(property =>
-                '"' + property.GetColumnName(store)!.Replace("\"", "\"\"", StringComparison.Ordinal) + '"'));
-            // Fixed host-model identifiers only. LIMIT 0 still makes PostgreSQL bind every column.
-            await db.Database.ExecuteSqlRawAsync($"SELECT {columns} FROM \"{table}\" LIMIT 0");
+                sqlGeneration.DelimitIdentifier(property.GetColumnName(store)!)));
+            // SQL parameters cannot represent identifiers. Quote fixed model identifiers with
+            // the provider helper; LIMIT 0 still makes PostgreSQL bind every mapped column.
+            var sql = $"SELECT {columns} FROM {sqlGeneration.DelimitIdentifier(table, entity.GetSchema())} LIMIT 0";
+            await db.Database.ExecuteSqlRawAsync(sql);
         }
 
         var assembly = db.GetService<IMigrationsAssembly>();
